@@ -1,9 +1,81 @@
 #! {{ bash_path }}
 
+
+function increase_revision_number() {
+  # this increase the revision number an ebuild
+  # (except for revision number 9999 which is a value for "live ebuild", for dev revisions)
+  # see https://devmanual.gentoo.org/general-concepts/ebuild-revisions/
+
+  if [ -z "$1" ] ; then
+    echo "ERROR: No parameter given to function: increase_revision_number."
+    echo "Usage: increase_revision_number /path/to/dir/containing/ebuild"
+    exit 1
+  elif [ -d "$1" ]; then
+    DIR="$1"
+    CURRENT_FILE=""
+    CURRENT_REVISION=0
+    # get the biggest revision number
+    # XXX: may break if there are many version of an ebuild
+    # (eg: bash-4.3_p42-r4.ebuild and bash-3.7-r8.ebuild)
+    for FILENAME in $(find "${DIR}" -maxdepth 1 -regextype sed -regex .*-r[0-9]*\.ebuild); do
+      echo $FILENAME
+      REVISION="$(echo ${FILENAME} | rev | cut -d- -f1 | rev | tr -d [:alpha:] | tr -d [:punct:])"
+      echo "${REVISION}"
+      if [ "$CURRENT_REVISION" -lt "$REVISION" ] ; then
+          CURRENT_REVISION=${REVISION}
+          CURRENT_FILE=${FILENAME}
+      fi
+    done
+    if [ "$CURRENT_REVISION" -ne "9999" ]; then
+      # increase REVISION
+      NEW_REVISION=$((CURRENT_REVISION+1))
+      NEW_FILE="$(echo ${CURRENT_FILE} | sed -r 's/-r'${CURRENT_REVISION}'/-r'${NEW_REVISION}'/')"
+      echo "changing revision number: ${CURRENT_FILE} -> ${NEW_FILE}"
+      mv "${CURRENT_FILE}" "${NEW_FILE}"
+    fi
+  fi
+}
+
+
+function insert_packages_into_ebuild() {
+  # Insert packages (in form of "category/package") into RDEPEND part of ebuild.
+  # Optionally increasing version of given ebuild.
+  EBUILD=$1
+  changed=0
+  shift
+  while [ ! -z "$1" ]
+  do
+    package=$1
+    if [[ $( grep "${package}" "${EBUILD}" ) ]] ; then
+      echo "no need to change ${EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+    else
+      printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${EBUILD}
+      changed=1
+    fi
+    shift
+  done;
+
+  if [ $changed -eq 1 ]
+  then
+    # if we inserted at least one package then increase the version to be sure
+    # it gets selected in case of more overlays with the same package
+    increase_revision_number $(dirname $EBUILD)
+  fi
+}
+
+
+function latest_ebuild() {
+  # find the latest ebuild file (previously we hardcoded the versions)
+  # @argument ebuild directory to find the file in
+  find $1 -type f -name '*ebuild' | sort -r | head -1
+}
+
+
 ######################## Download of sources using the "repo" command ########################
 DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
 BRANCH="{{ branch }}"
 CHROMIUM_OVERLAY="{{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay"
+PORTAGE_STABLE="{{ cros_location }}/{{ branch }}/src/third_party/portage-stable"
 
 {{ export_path_cmd }}
 echo "getting Chromium OS sources..." >> $DL_LOG
@@ -22,6 +94,8 @@ repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ bra
 # in case changes were already made, stash changes to be able to pull
 cd ${CHROMIUM_OVERLAY}
 git stash
+cd ${PORTAGE_STABLE}
+git stash
 
 repo sync >> $DL_LOG || { echo "Problem while downloading Chromium OS sources (repo sync). Exiting." ; exit 1 ; }
 
@@ -38,10 +112,10 @@ cros_sdk --download || { echo "Problem while entering chroot or downloading chro
 # it is needed by re6st
 # just need to change -sqlite by sqlite on the right line
 # same for IPv6 support
-PACKAGE_USE_FILE=${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use
+PACKAGE_USE_FILE="${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use"
 line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
 if [ $line_number ] ; then
-    echo $line_number
+    echo "$line_number"
     sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
     if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
         sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
@@ -51,57 +125,169 @@ fi
 # add some ebuilds, specific to NayuOS
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
-  cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
+  cp -R "{{ ebuilds_dir }}/${category}/"* "${CHROMIUM_OVERLAY}/${category}/"
 done
 
 install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
 
 ### packages management ###
 
-BASE_CHROMEOS_DEV_ROOT_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
-VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+# make virtual ebuild responsible for installing all packages dependent on NayuOS own packages
+insert_packages_into_ebuild \
+  $(latest_ebuild ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev) \
+  net-misc/re6stnet dev-vcs/git dev-python/flask dev-python/virtualenv sys-fs/cryptsetup
 
-# change the virtual ebuild responsible for installing all packages to add the ones
-# needed for NayuOS
-for package in {{ nayu_dev_packages }} ; do
-  echo $package
-  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" ) ]] ; then
-    echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
-  else
-    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
-  fi
-done
+# insert policies into /etc/chromium/policies/recommended with NayuOS customizations
+CHROMEOS_DEV_ROOT_EBIULD=
+insert_packages_into_ebuild \
+  $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root) \
+  app-misc/nayuos-chromium-policy
 
 # do not install the Upstart init script that starts ssh daemon at boot time
-rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
-sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
-sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
+find ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init* -name openssh-server.conf -delete
+
+# strip away the src_install part because it only sets up booting scripts
+# and increase version in case of other overlays with the same packages
+sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init)
+increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init)
+increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
+
 
 # bashrc modifications
-BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
-if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
-  echo "git alias already set"
-else
-  echo "# git quickfix for finding right git executables
-if [ -d /usr/local/libexec/git-core/ ] ; then
-    alias git='git --exec-path=/usr/local/libexec/git-core/'
+BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
+if ! grep "BEGIN NayuOS configuration" "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
+  cat >> "${BASH_EBUILD_DIR}/files/dot-bashrc" <<EOF
+
+# ----- BEGIN NayuOS configuration -----
+
+# use vim as default editor if nano does not exist
+which nano &> /dev/null || export EDITOR=vim
+
+# git quickfix for finding right git executables
+export GIT_EXEC_PATH=/usr/local/libexec/git-core
+
+# configure .gitconfig once
+if [ ! -e ~/.gitconfig ] ; then
+  which less &> /dev/null && git config --global core.pager less
 fi
 
-# git quickfix for finding 'less' and using it as pager
-less_path=\$(which less 2>/dev/null)
-if [ "\${less_path}" ] ; then
-    git config --global core.pager \${less_path}
-fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
+# go to ~/Download
+[ "\$(pwd)" = / ] && cd ~/Downloads
+
+alias ls='ls -CF --color=auto'
+alias l='ls -lF'
+alias lh='ls -hAl'
+alias la='ls -la'
+alias ll='ls -l'
+
+tree() {
+  python -Sc 'import sys, os
+aa = sys.argv[1:] or ["."]
+for a in aa:
+  o = len(a.split(os.sep))
+  for r, dd, ff in os.walk(a):
+    dp = len(r.split(os.sep)) - o + 1
+    print "%s- %s" % ((dp - 1) * "  ", os.path.basename(r))
+    for f in ff:
+      print "%s- %s" % (dp * "  ", f)' "\$@"
+}
+
+showzip() {
+  [ \$# = 1 ] || { echo "Usage: showzip ZIPFILE" >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile
+zfile = zipfile.ZipFile(sys.argv[1])
+zfile.printdir()
+zfile.close()' "\$@"
+}
+
+zip() {
+  [ \$# -gt 1 ] || { echo "Usage: zip ZIPFILE FILE..." >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile, os
+if os.path.lexists(sys.argv[1]):
+  sys.stderr.write("zip: file %r already exists\n" % sys.argv[1])
+  sys.exit(1)
+zfile = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED)
+def arc(arg):
+  if os.path.islink(arg):
+    sys.stderr.write("zip: symlink %r ignored\n" % arg)
+  elif os.path.isdir(arg):
+    for r, _, ff in os.walk(arg):
+      zfile.write(r)
+      for f in ff: arc(os.path.join(r, f))
+  else:
+    zfile.write(arg)
+for arg in sys.argv[2:]: arc(arg)
+zfile.close()' "\$@"
+}
+
+unzip() {
+  [ \$# != 0 ] || { echo "Usage: unzip ZIPFILE [TARGET]" >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile
+zfile = zipfile.ZipFile(sys.argv[1])
+zfile.extractall(sys.argv[2] if len(sys.argv) > 2 else ".")
+zfile.close()' "\$@"
+}
+
+encmount() {
+  if [ -z \$1 ] ; then
+      echo "Please, give a device as parameter, ex: /dev/sda"
+      return 1
+  fi
+  if  [ ! -d /media/removable/key ] ; then
+      echo "New dir at /media/removable/key"
+      sudo mkdir /media/removable/key
+  fi
+  echo "Mounting \$1 on /media/removable/key"
+  sudo cryptsetup luksOpen \$1 key
+  sudo mount -o noexec /dev/mapper/key /media/removable/key
+}
+
+__safewrite() {
+  local cmd=safewrite
+  local usage="Usage: \$cmd DST < stdin
+
+Where DST is the destination file
+
+Copy stdin to DST. Data is flushed regularly to avoid some eventual crash during cache sync.
+
+Example:
+  gunzip myimage.img.gz -c | sudosafewrite /dev/sda"
+
+  local KiB=1024
+  local MiB=\$((1024 * \$KiB))
+  local bs=4096
+  local count=\$((50 * \$MiB / \$bs))
+
+  local infostep=50
+  local infounit=MiB
+
+  local safewrite_seek=0
+  local safewrite_out=
+  local safewrite_length=\$infostep
+
+  [ \$# = 2 ] || { echo "\$usage" >&2 ; return 2 ; }
+  [ \$1 != - ] || { echo "DST should not be '-'" >&2 ; return 2 ; }
+
+  while [ \$? = 0 ] ; do
+    echo "+ copying until \$safewrite_length \$infounit"
+    safewrite_out=\$(\$1 bs=\$bs count=\$count seek=\$safewrite_seek of="\$2" 2>&1) || { echo "\$safewrite_out" ; return 1 ; }
+    safewrite_length=\$((\$safewrite_length + \$infostep))
+    safewrite_seek=\$((\$safewrite_seek + \$count))
+    echo "\$safewrite_out"
+    ! echo "\$safewrite_out" | grep '(0 B) copied' > /dev/null
+  done
+  return 0
+}
+safewrite() { __safewrite dd "\$@" ; }
+sudodd() { sudo dd "\$@" ; }
+sudosafewrite() { __safewrite sudodd "\$@" ; }
+
+# ----- END NayuOS configuration -----
+EOF
 fi
 
-# increase the revision number
-# XXX: remove hardcoded revision numbers
-cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
-ln -s openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
-cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
-ln -s chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
-cd ${BASH_EBUILD_DIR}
-ln -s bash-4.2_p48-r1.ebuild bash-4.2_p48-r2.ebuild
+increase_revision_number "${BASH_EBUILD_DIR}"
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
@@ -118,7 +304,7 @@ for board in ${BOARDS} ; do
   # preparing packages (for chroot and image)
   date >> "${BUILD_LOG}"
   echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
-  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # change boot pictures
   cros_sdk -- cros_workon --board=${board} start chromiumos-assets
@@ -131,20 +317,22 @@ for board in ${BOARDS} ; do
   NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
   # rebuild packages with boot pictures
-  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image-- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS images
   date >> "${BUILD_LOG}"
   echo "building image" >> "${BUILD_LOG}"
-  cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
+  cros_sdk --nouse-image -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
+    && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
-#     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
 
-  # save ~15Go/device but delete cache (next build will be as long)
+  # save a lot of space on the server but delete cache and build files
+  # (it means that the next build will be as long and use as much resources as this one)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
-    cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
+    cros_sdk -- sudo rm -R "/var/cache/chromeos-chrome/chrome-src/src/out_${board}"
+    cros_sdk -- sudo rm -R "/build/${board}"
   fi
 
   if [ ${board} == daisy ]; then

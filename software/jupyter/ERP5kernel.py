@@ -1,17 +1,13 @@
-#!{{ python_executable }}
-
 from ipykernel.kernelbase import Kernel
 from ipykernel.kernelapp import IPKernelApp
 from IPython.core.display import HTML
 import requests
 import json
+import sys
 
-# erp5_url from buildout
-erp5_url = "{{ erp5_url }}"
-if not erp5_url:
-    erp5_url = None
-else:
-    erp5_url = "%s/erp5/Base_executeJupyter" % erp5_url
+erp5_url = None
+if len(sys.argv) > 1:
+    erp5_url = "%s/erp5/Base_executeJupyter" % (sys.argv[1],)
 
 class MagicInfo:
   """
@@ -61,7 +57,7 @@ class ERP5Kernel(Kernel):
   language = 'ERP5'
   language_version = '0.1'
   language_info = {'mimetype': 'text/plain', 'name':'python'}
-  banner = "ERP5 integration with ipython notebook"
+  banner = "ERP5 integration with jupyter notebook"
 
   def __init__(self, user=None, password=None, url=None, status_code=None,
               *args, **kwargs):

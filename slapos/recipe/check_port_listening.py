@@ -26,7 +26,23 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout.easy_install import _safe_arg, script_header
 import sys
+
+template = script_header + r"""
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+import socket
+import sys
+
+addr = "%(hostname)s", %(port)s
+
+try:
+  socket.create_connection(addr).close()
+except (socket.error, socket.timeout):
+  sys.stderr.write("%%s on %%s isn't listening\n" %% addr)
+  sys.exit(127)
+"""
 
 class Recipe(GenericBaseRecipe):
   """
@@ -34,16 +50,11 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-    config = dict(
-      hostname=self.options['hostname'],
-      port=self.options['port'],
-      python_path=sys.executable,
-    )
+    promise = self.createExecutable(self.options['path'], template % {
+      'python': _safe_arg(sys.executable),
+      'dash_S': '', # BBB buildout 1.x
+      'hostname': self.options['hostname'],
+      'port': self.options['port'],
+      })
 
-    vnc_promise = self.createExecutable(
-      self.options['path'],
-      self.substituteTemplate(
-        self.getTemplateFilename('socket_connection_attempt.py.in'),
-        config))
-
-    return [vnc_promise]
+    return [promise]

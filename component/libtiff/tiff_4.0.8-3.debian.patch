@@ -1,0 +1,747 @@
+diff -pur tiff-4.0.4/tools/tiffsplit.c tiff-4.0.4_patch/tools/tiffsplit.c
+--- tiff-4.0.4/tools/tiffsplit.c	2015-05-28 15:10:26.000000000 +0200
++++ tiff-4.0.4_patch/tools/tiffsplit.c	2016-02-12 19:15:30.532005041 +0100
+@@ -179,8 +179,9 @@ tiffcp(TIFF* in, TIFF* out)
+ 		    TIFFSetField(out, TIFFTAG_JPEGTABLES, count, table);
+ 		}
+ 	}
++	uint32 count = 0;
+         CopyField(TIFFTAG_PHOTOMETRIC, shortv);
+-	CopyField(TIFFTAG_PREDICTOR, shortv);
++	CopyField2(TIFFTAG_PREDICTOR, count, shortv);
+ 	CopyField(TIFFTAG_THRESHHOLDING, shortv);
+ 	CopyField(TIFFTAG_FILLORDER, shortv);
+ 	CopyField(TIFFTAG_ORIENTATION, shortv);
+@@ -188,7 +189,7 @@ tiffcp(TIFF* in, TIFF* out)
+ 	CopyField(TIFFTAG_MAXSAMPLEVALUE, shortv);
+ 	CopyField(TIFFTAG_XRESOLUTION, floatv);
+ 	CopyField(TIFFTAG_YRESOLUTION, floatv);
+-	CopyField(TIFFTAG_GROUP3OPTIONS, longv);
++	CopyField2(TIFFTAG_GROUP3OPTIONS, count, longv);
+ 	CopyField(TIFFTAG_GROUP4OPTIONS, longv);
+ 	CopyField(TIFFTAG_RESOLUTIONUNIT, shortv);
+ 	CopyField(TIFFTAG_PLANARCONFIG, shortv);
+From 02669064e927074819ce1ed39aba0fccaa167717 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Mon, 29 May 2017 10:12:54 +0000
+Subject: [PATCH] * libtiff/tif_color.c: TIFFYCbCrToRGBInit(): stricter
+ clamping to avoid int32 overflow in TIFFYCbCrtoRGB(). Fixes
+ https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1844 Credit to OSS Fuzz
+
+---
+ ChangeLog           | 7 +++++++
+ libtiff/tif_color.c | 6 +++---
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index ee8d9d08..61116596 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,10 @@
++2017-05-29  Even Rouault <even.rouault at spatialys.com>
++
++	* libtiff/tif_color.c: TIFFYCbCrToRGBInit(): stricter clamping to avoid
++	int32 overflow in TIFFYCbCrtoRGB().
++	Fixes https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1844
++	Credit to OSS Fuzz
++
+ 2017-05-21  Bob Friesenhahn  <bfriesen@simple.dallas.tx.us>
+ 
+ 	* configure.ac: libtiff 4.0.8 released.
+diff --git a/libtiff/tif_color.c b/libtiff/tif_color.c
+index 055ed3b2..10a5e66e 100644
+--- a/libtiff/tif_color.c
++++ b/libtiff/tif_color.c
+@@ -275,10 +275,10 @@ TIFFYCbCrToRGBInit(TIFFYCbCrToRGB* ycbcr, float *luma, float *refBlackWhite)
+       for (i = 0, x = -128; i < 256; i++, x++) {
+ 	    int32 Cr = (int32)CLAMPw(Code2V(x, refBlackWhite[4] - 128.0F,
+ 			    refBlackWhite[5] - 128.0F, 127),
+-                            -128.0F * 64, 128.0F * 64);
++                            -128.0F * 32, 128.0F * 32);
+ 	    int32 Cb = (int32)CLAMPw(Code2V(x, refBlackWhite[2] - 128.0F,
+ 			    refBlackWhite[3] - 128.0F, 127),
+-                            -128.0F * 64, 128.0F * 64);
++                            -128.0F * 32, 128.0F * 32);
+ 
+ 	    ycbcr->Cr_r_tab[i] = (int32)((D1*Cr + ONE_HALF)>>SHIFT);
+ 	    ycbcr->Cb_b_tab[i] = (int32)((D3*Cb + ONE_HALF)>>SHIFT);
+@@ -286,7 +286,7 @@ TIFFYCbCrToRGBInit(TIFFYCbCrToRGB* ycbcr, float *luma, float *refBlackWhite)
+ 	    ycbcr->Cb_g_tab[i] = D4*Cb + ONE_HALF;
+ 	    ycbcr->Y_tab[i] =
+ 		    (int32)CLAMPw(Code2V(x + 128, refBlackWhite[0], refBlackWhite[1], 255),
+-                                  -128.0F * 64, 128.0F * 64);
++                                  -128.0F * 32, 128.0F * 32);
+       }
+     }
+ 
+From 468988860e0dae62ebbf991627c74bcbb4bd256f Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Mon, 29 May 2017 11:29:06 +0000
+Subject: [PATCH] * libtiff/tif_getimage.c: initYCbCrConversion(): stricter
+ validation for refBlackWhite coefficients values. To avoid invalid
+ float->int32 conversion (when refBlackWhite[0] == 2147483648.f) Fixes
+ https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1907 Credit to OSS Fuzz
+
+---
+ ChangeLog              | 8 ++++++++
+ libtiff/tif_getimage.c | 2 +-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index a2ddaac2..04881ba7 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,13 @@
+ 2017-05-29  Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_getimage.c: initYCbCrConversion(): stricter validation for
++	refBlackWhite coefficients values. To avoid invalid float->int32 conversion
++	(when refBlackWhite[0] == 2147483648.f)
++	Fixes https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1907
++	Credit to OSS Fuzz
++
++2017-05-29  Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_color.c: TIFFYCbCrToRGBInit(): stricter clamping to avoid
+ 	int32 overflow in TIFFYCbCrtoRGB().
+ 	Fixes https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=1844
+diff --git a/libtiff/tif_getimage.c b/libtiff/tif_getimage.c
+index dc373abc..a209a7a7 100644
+--- a/libtiff/tif_getimage.c
++++ b/libtiff/tif_getimage.c
+@@ -2241,7 +2241,7 @@ DECLARESepPutFunc(putseparate8bitYCbCr11tile)
+ 
+ static int isInRefBlackWhiteRange(float f)
+ {
+-    return f >= (float)(-0x7FFFFFFF + 128) && f <= (float)0x7FFFFFFF;
++    return f > (float)(-0x7FFFFFFF + 128) && f < (float)0x7FFFFFFF;
+ }
+ 
+ static int
+commit 40448d58fbfad52d2dde5bd18daa30b17fe35fcd
+Author: erouault <erouault>
+Date:   Thu Jun 1 12:44:04 2017 +0000
+
+    * libtiff/tif_dirinfo.c, tif_dirread.c: add _TIFFCheckFieldIsValidForCodec(),
+    and use it in TIFFReadDirectory() so as to ignore fields whose tag is a
+    codec-specified tag but this codec is not enabled. This avoids TIFFGetField()
+    to behave differently depending on whether the codec is enabled or not, and
+    thus can avoid stack based buffer overflows in a number of TIFF utilities
+    such as tiffsplit, tiffcmp, thumbnail, etc.
+    Patch derived from 0063-Handle-properly-CODEC-specific-tags.patch
+    (http://bugzilla.maptools.org/show_bug.cgi?id=2580) by Raphaël Hertzog.
+    Fixes:
+    http://bugzilla.maptools.org/show_bug.cgi?id=2580
+    http://bugzilla.maptools.org/show_bug.cgi?id=2693
+    http://bugzilla.maptools.org/show_bug.cgi?id=2625 (CVE-2016-10095)
+    http://bugzilla.maptools.org/show_bug.cgi?id=2564 (CVE-2015-7554)
+    http://bugzilla.maptools.org/show_bug.cgi?id=2561 (CVE-2016-5318)
+    http://bugzilla.maptools.org/show_bug.cgi?id=2499 (CVE-2014-8128)
+    http://bugzilla.maptools.org/show_bug.cgi?id=2441
+    http://bugzilla.maptools.org/show_bug.cgi?id=2433
+
+diff --git a/ChangeLog b/ChangeLog
+index 04881ba7..ebd1a3c0 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,23 @@
++2017-06-01  Even Rouault <even.rouault at spatialys.com>
++
++	* libtiff/tif_dirinfo.c, tif_dirread.c: add _TIFFCheckFieldIsValidForCodec(),
++	and use it in TIFFReadDirectory() so as to ignore fields whose tag is a
++	codec-specified tag but this codec is not enabled. This avoids TIFFGetField()
++	to behave differently depending on whether the codec is enabled or not, and
++	thus can avoid stack based buffer overflows in a number of TIFF utilities
++	such as tiffsplit, tiffcmp, thumbnail, etc.
++	Patch derived from 0063-Handle-properly-CODEC-specific-tags.patch
++	(http://bugzilla.maptools.org/show_bug.cgi?id=2580) by Raphaël Hertzog.
++	Fixes:
++	http://bugzilla.maptools.org/show_bug.cgi?id=2580
++	http://bugzilla.maptools.org/show_bug.cgi?id=2693
++	http://bugzilla.maptools.org/show_bug.cgi?id=2625 (CVE-2016-10095)
++	http://bugzilla.maptools.org/show_bug.cgi?id=2564 (CVE-2015-7554)
++	http://bugzilla.maptools.org/show_bug.cgi?id=2561 (CVE-2016-5318)
++	http://bugzilla.maptools.org/show_bug.cgi?id=2499 (CVE-2014-8128)
++	http://bugzilla.maptools.org/show_bug.cgi?id=2441
++	http://bugzilla.maptools.org/show_bug.cgi?id=2433
++
+ 2017-05-29  Even Rouault <even.rouault at spatialys.com>
+ 
+ 	* libtiff/tif_getimage.c: initYCbCrConversion(): stricter validation for
+diff --git a/libtiff/tif_dir.h b/libtiff/tif_dir.h
+index 6af5f3dc..5a380767 100644
+--- a/libtiff/tif_dir.h
++++ b/libtiff/tif_dir.h
+@@ -1,4 +1,4 @@
+-/* $Id: tif_dir.h,v 1.54 2011-02-18 20:53:05 fwarmerdam Exp $ */
++/* $Id: tif_dir.h,v 1.55 2017-06-01 12:44:04 erouault Exp $ */
+ 
+ /*
+  * Copyright (c) 1988-1997 Sam Leffler
+@@ -291,6 +291,7 @@ struct _TIFFField {
+ extern int _TIFFMergeFields(TIFF*, const TIFFField[], uint32);
+ extern const TIFFField* _TIFFFindOrRegisterField(TIFF *, uint32, TIFFDataType);
+ extern  TIFFField* _TIFFCreateAnonField(TIFF *, uint32, TIFFDataType);
++extern int _TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag);
+ 
+ #if defined(__cplusplus)
+ }
+diff --git a/libtiff/tif_dirinfo.c b/libtiff/tif_dirinfo.c
+index 23ad0020..4904f540 100644
+--- a/libtiff/tif_dirinfo.c
++++ b/libtiff/tif_dirinfo.c
+@@ -1,4 +1,4 @@
+-/* $Id: tif_dirinfo.c,v 1.126 2016-11-18 02:52:13 bfriesen Exp $ */
++/* $Id: tif_dirinfo.c,v 1.127 2017-06-01 12:44:04 erouault Exp $ */
+ 
+ /*
+  * Copyright (c) 1988-1997 Sam Leffler
+@@ -956,6 +956,109 @@ TIFFMergeFieldInfo(TIFF* tif, const TIFFFieldInfo info[], uint32 n)
+ 	return 0;
+ }
+ 
++int
++_TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag)
++{
++	/* Filter out non-codec specific tags */
++	switch (tag) {
++	    /* Shared tags */
++	    case TIFFTAG_PREDICTOR:
++	    /* JPEG tags */
++	    case TIFFTAG_JPEGTABLES:
++	    /* OJPEG tags */
++	    case TIFFTAG_JPEGIFOFFSET:
++	    case TIFFTAG_JPEGIFBYTECOUNT:
++	    case TIFFTAG_JPEGQTABLES:
++	    case TIFFTAG_JPEGDCTABLES:
++	    case TIFFTAG_JPEGACTABLES:
++	    case TIFFTAG_JPEGPROC:
++	    case TIFFTAG_JPEGRESTARTINTERVAL:
++	    /* CCITT* */
++	    case TIFFTAG_BADFAXLINES:
++	    case TIFFTAG_CLEANFAXDATA:
++	    case TIFFTAG_CONSECUTIVEBADFAXLINES:
++	    case TIFFTAG_GROUP3OPTIONS:
++	    case TIFFTAG_GROUP4OPTIONS:
++		break;
++	    default:
++		return 1;
++	}
++	/* Check if codec specific tags are allowed for the current
++	 * compression scheme (codec) */
++	switch (tif->tif_dir.td_compression) {
++	    case COMPRESSION_LZW:
++		if (tag == TIFFTAG_PREDICTOR)
++		    return 1;
++		break;
++	    case COMPRESSION_PACKBITS:
++		/* No codec-specific tags */
++		break;
++	    case COMPRESSION_THUNDERSCAN:
++		/* No codec-specific tags */
++		break;
++	    case COMPRESSION_NEXT:
++		/* No codec-specific tags */
++		break;
++	    case COMPRESSION_JPEG:
++		if (tag == TIFFTAG_JPEGTABLES)
++		    return 1;
++		break;
++	    case COMPRESSION_OJPEG:
++		switch (tag) {
++		    case TIFFTAG_JPEGIFOFFSET:
++		    case TIFFTAG_JPEGIFBYTECOUNT:
++		    case TIFFTAG_JPEGQTABLES:
++		    case TIFFTAG_JPEGDCTABLES:
++		    case TIFFTAG_JPEGACTABLES:
++		    case TIFFTAG_JPEGPROC:
++		    case TIFFTAG_JPEGRESTARTINTERVAL:
++			return 1;
++		}
++		break;
++	    case COMPRESSION_CCITTRLE:
++	    case COMPRESSION_CCITTRLEW:
++	    case COMPRESSION_CCITTFAX3:
++	    case COMPRESSION_CCITTFAX4:
++		switch (tag) {
++		    case TIFFTAG_BADFAXLINES:
++		    case TIFFTAG_CLEANFAXDATA:
++		    case TIFFTAG_CONSECUTIVEBADFAXLINES:
++			return 1;
++		    case TIFFTAG_GROUP3OPTIONS:
++			if (tif->tif_dir.td_compression == COMPRESSION_CCITTFAX3)
++			    return 1;
++			break;
++		    case TIFFTAG_GROUP4OPTIONS:
++			if (tif->tif_dir.td_compression == COMPRESSION_CCITTFAX4)
++			    return 1;
++			break;
++		}
++		break;
++	    case COMPRESSION_JBIG:
++		/* No codec-specific tags */
++		break;
++	    case COMPRESSION_DEFLATE:
++	    case COMPRESSION_ADOBE_DEFLATE:
++		if (tag == TIFFTAG_PREDICTOR)
++		    return 1;
++		break;
++	   case COMPRESSION_PIXARLOG:
++		if (tag == TIFFTAG_PREDICTOR)
++		    return 1;
++		break;
++	    case COMPRESSION_SGILOG:
++	    case COMPRESSION_SGILOG24:
++		/* No codec-specific tags */
++		break;
++	    case COMPRESSION_LZMA:
++		if (tag == TIFFTAG_PREDICTOR)
++		    return 1;
++		break;
++
++	}
++	return 0;
++}
++
+ /* vim: set ts=8 sts=8 sw=8 noet: */
+ 
+ /*
+diff --git a/libtiff/tif_dirread.c b/libtiff/tif_dirread.c
+index 772ebaf7..acde78b5 100644
+--- a/libtiff/tif_dirread.c
++++ b/libtiff/tif_dirread.c
+@@ -1,4 +1,4 @@
+-/* $Id: tif_dirread.c,v 1.208 2017-04-27 15:46:22 erouault Exp $ */
++/* $Id: tif_dirread.c,v 1.209 2017-06-01 12:44:04 erouault Exp $ */
+ 
+ /*
+  * Copyright (c) 1988-1997 Sam Leffler
+@@ -3580,6 +3580,10 @@ TIFFReadDirectory(TIFF* tif)
+ 							goto bad;
+ 						dp->tdir_tag=IGNORE;
+ 						break;
++                                        default:
++                                            if( !_TIFFCheckFieldIsValidForCodec(tif, dp->tdir_tag) )
++                                                dp->tdir_tag=IGNORE;
++                                            break;
+ 				}
+ 			}
+ 		}
+From fe8d7165956b88df4837034a9161dc5fd20cf67a Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Mon, 26 Jun 2017 15:19:59 +0000
+Subject: [PATCH] * libtiff/tif_jbig.c: fix memory leak in error code path of
+ JBIGDecode() Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2706 Reported
+ by team OWL337
+
+* libtiff/tif_jpeg.c: error out at decoding time if anticipated libjpeg
+---
+ ChangeLog          | 8 +++++++-
+ libtiff/tif_jbig.c | 1 +
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index bc5096e7..ecd70534 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,9 @@
++2017-06-26  Even Rouault <even.rouault at spatialys.com>
++
++	* libtiff/tif_jbig.c: fix memory leak in error code path of JBIGDecode()
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2706
++	Reported by team OWL337
++
+ 2017-06-01  Even Rouault <even.rouault at spatialys.com>
+ 
+ 	* libtiff/tif_dirinfo.c, tif_dirread.c: add _TIFFCheckFieldIsValidForCodec(),
+diff --git a/libtiff/tif_jbig.c b/libtiff/tif_jbig.c
+index 5f5f75e2..c75f31d9 100644
+--- a/libtiff/tif_jbig.c
++++ b/libtiff/tif_jbig.c
+@@ -94,6 +94,7 @@ static int JBIGDecode(TIFF* tif, uint8* buffer, tmsize_t size, uint16 s)
+ 			     jbg_strerror(decodeStatus)
+ #endif
+ 			     );
++		jbg_dec_free(&decoder);
+ 		return 0;
+ 	}
+ 
+From 1077fad562e03d1cad591dd10163dd80ad63ab0e Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Fri, 30 Jun 2017 13:11:18 +0000
+Subject: [PATCH] * libtiff/tif_read.c, tiffiop.h: add a
+ _TIFFReadEncodedStripAndAllocBuffer() function, variant of
+ TIFFReadEncodedStrip() that allocates the decoded buffer only after a first
+ successful TIFFFillStrip(). This avoids excessive memory allocation on
+ corrupted files. * libtiff/tif_getimage.c: use
+ _TIFFReadEncodedStripAndAllocBuffer(). Fixes
+ http://bugzilla.maptools.org/show_bug.cgi?id=2708 and
+ https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=2433 . Credit to OSS
+ Fuzz
+
+---
+ ChangeLog              | 11 +++++++
+ libtiff/tif_getimage.c | 59 ++++++++++++++++++++++----------------
+ libtiff/tif_read.c     | 78 +++++++++++++++++++++++++++++++++++++++++++-------
+ libtiff/tiffiop.h      |  5 ++++
+ 4 files changed, 118 insertions(+), 35 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index c969f9e2..6f085e09 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,14 @@
++2017-06-30  Even Rouault <even.rouault at spatialys.com>
++
++	* libtiff/tif_read.c, tiffiop.h: add a _TIFFReadEncodedStripAndAllocBuffer()
++	function, variant of TIFFReadEncodedStrip() that allocates the
++	decoded buffer only after a first successful TIFFFillStrip(). This avoids
++	excessive memory allocation on corrupted files.
++	* libtiff/tif_getimage.c: use _TIFFReadEncodedStripAndAllocBuffer(). 
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2708 and
++	https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=2433 .
++	Credit to OSS Fuzz
++
+ 2017-06-26  Even Rouault <even.rouault at spatialys.com>
+ 
+ 	* libtiff/tif_jbig.c: fix memory leak in error code path of JBIGDecode()
+diff --git a/libtiff/tif_getimage.c b/libtiff/tif_getimage.c
+index cee8e930..cc6e8f30 100644
+--- a/libtiff/tif_getimage.c
++++ b/libtiff/tif_getimage.c
+@@ -905,26 +905,22 @@ gtStripContig(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+ 	tileContigRoutine put = img->put.contig;
+ 	uint32 row, y, nrow, nrowsub, rowstoread;
+ 	tmsize_t pos;
+-	unsigned char* buf;
++	unsigned char* buf = NULL;
+ 	uint32 rowsperstrip;
+ 	uint16 subsamplinghor,subsamplingver;
+ 	uint32 imagewidth = img->width;
+ 	tmsize_t scanline;
+ 	int32 fromskew, toskew;
+ 	int ret = 1, flip;
++        tmsize_t maxstripsize;
+ 
+ 	TIFFGetFieldDefaulted(tif, TIFFTAG_YCBCRSUBSAMPLING, &subsamplinghor, &subsamplingver);
+ 	if( subsamplingver == 0 ) {
+ 		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Invalid vertical YCbCr subsampling");
+ 		return (0);
+ 	}
+-
+-	buf = (unsigned char*) _TIFFmalloc(TIFFStripSize(tif));
+-	if (buf == 0) {
+-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "No space for strip buffer");
+-		return (0);
+-	}
+-	_TIFFmemset(buf, 0, TIFFStripSize(tif));
++	
++	maxstripsize = TIFFStripSize(tif);
+ 
+ 	flip = setorientation(img);
+ 	if (flip & FLIP_VERTICALLY) {
+@@ -946,11 +942,12 @@ gtStripContig(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+ 		nrowsub = nrow;
+ 		if ((nrowsub%subsamplingver)!=0)
+ 			nrowsub+=subsamplingver-nrowsub%subsamplingver;
+-		if (TIFFReadEncodedStrip(tif,
++		if (_TIFFReadEncodedStripAndAllocBuffer(tif,
+ 		    TIFFComputeStrip(tif,row+img->row_offset, 0),
+-		    buf,
++		    (void**)(&buf),
++                    maxstripsize,
+ 		    ((row + img->row_offset)%rowsperstrip + nrowsub) * scanline)==(tmsize_t)(-1)
+-		    && img->stoponerr)
++		    && (buf == NULL || img->stoponerr))
+ 		{
+ 			ret = 0;
+ 			break;
+@@ -994,8 +991,8 @@ gtStripSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+ {
+ 	TIFF* tif = img->tif;
+ 	tileSeparateRoutine put = img->put.separate;
+-	unsigned char *buf;
+-	unsigned char *p0, *p1, *p2, *pa;
++	unsigned char *buf = NULL;
++	unsigned char *p0 = NULL, *p1 = NULL, *p2 = NULL, *pa = NULL;
+ 	uint32 row, y, nrow, rowstoread;
+ 	tmsize_t pos;
+ 	tmsize_t scanline;
+@@ -1014,15 +1011,6 @@ gtStripSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+ 		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Integer overflow in %s", "gtStripSeparate");
+ 		return (0);
+ 	}
+-	p0 = buf = (unsigned char *)_TIFFmalloc(bufsize);
+-	if (buf == 0) {
+-		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "No space for tile buffer");
+-		return (0);
+-	}
+-	_TIFFmemset(buf, 0, bufsize);
+-	p1 = p0 + stripsize;
+-	p2 = p1 + stripsize;
+-	pa = (alpha?(p2+stripsize):NULL);
+ 
+ 	flip = setorientation(img);
+ 	if (flip & FLIP_VERTICALLY) {
+@@ -1040,7 +1028,6 @@ gtStripSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+           case PHOTOMETRIC_MINISBLACK:
+           case PHOTOMETRIC_PALETTE:
+             colorchannels = 1;
+-            p2 = p1 = p0;
+             break;
+ 
+           default:
+@@ -1056,7 +1043,31 @@ gtStripSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
+ 		rowstoread = rowsperstrip - (row + img->row_offset) % rowsperstrip;
+ 		nrow = (row + rowstoread > h ? h - row : rowstoread);
+ 		offset_row = row + img->row_offset;
+-		if (TIFFReadEncodedStrip(tif, TIFFComputeStrip(tif, offset_row, 0),
++                if( buf == NULL )
++                {
++                    if (_TIFFReadEncodedStripAndAllocBuffer(
++                            tif, TIFFComputeStrip(tif, offset_row, 0),
++                            (void**) &buf, bufsize,
++                            ((row + img->row_offset)%rowsperstrip + nrow) * scanline)==(tmsize_t)(-1)
++                        && (buf == NULL || img->stoponerr))
++                    {
++                            ret = 0;
++                            break;
++                    }
++                    p0 = buf;
++                    if( colorchannels == 1 )
++                    {
++                        p2 = p1 = p0;
++                        pa = (alpha?(p0+3*stripsize):NULL);
++                    }
++                    else
++                    {
++                        p1 = p0 + stripsize;
++                        p2 = p1 + stripsize;
++                        pa = (alpha?(p2+stripsize):NULL);
++                    }
++                }
++		else if (TIFFReadEncodedStrip(tif, TIFFComputeStrip(tif, offset_row, 0),
+ 		    p0, ((row + img->row_offset)%rowsperstrip + nrow) * scanline)==(tmsize_t)(-1)
+ 		    && img->stoponerr)
+ 		{
+diff --git a/libtiff/tif_read.c b/libtiff/tif_read.c
+index fc0072e7..047305ab 100644
+--- a/libtiff/tif_read.c
++++ b/libtiff/tif_read.c
+@@ -442,18 +442,17 @@ TIFFReadScanline(TIFF* tif, void* buf, uint32 row, uint16 sample)
+ }
+ 
+ /*
+- * Read a strip of data and decompress the specified
+- * amount into the user-supplied buffer.
++ * Calculate the strip size according to the number of
++ * rows in the strip (check for truncated last strip on any
++ * of the separations).
+  */
+-tmsize_t
+-TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
++static tmsize_t TIFFReadEncodedStripGetStripSize(TIFF* tif, uint32 strip, uint16* pplane)
+ {
+ 	static const char module[] = "TIFFReadEncodedStrip";
+ 	TIFFDirectory *td = &tif->tif_dir;
+ 	uint32 rowsperstrip;
+ 	uint32 stripsperplane;
+ 	uint32 stripinplane;
+-	uint16 plane;
+ 	uint32 rows;
+ 	tmsize_t stripsize;
+ 	if (!TIFFCheckRead(tif,0))
+@@ -465,23 +464,37 @@ TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
+ 		    (unsigned long)td->td_nstrips);
+ 		return((tmsize_t)(-1));
+ 	}
+-	/*
+-	 * Calculate the strip size according to the number of
+-	 * rows in the strip (check for truncated last strip on any
+-	 * of the separations).
+-	 */
++
+ 	rowsperstrip=td->td_rowsperstrip;
+ 	if (rowsperstrip>td->td_imagelength)
+ 		rowsperstrip=td->td_imagelength;
+ 	stripsperplane= TIFFhowmany_32_maxuint_compat(td->td_imagelength, rowsperstrip);
+ 	stripinplane=(strip%stripsperplane);
+-	plane=(uint16)(strip/stripsperplane);
++	if( pplane ) *pplane=(uint16)(strip/stripsperplane);
+ 	rows=td->td_imagelength-stripinplane*rowsperstrip;
+ 	if (rows>rowsperstrip)
+ 		rows=rowsperstrip;
+ 	stripsize=TIFFVStripSize(tif,rows);
+ 	if (stripsize==0)
+ 		return((tmsize_t)(-1));
++	return stripsize;
++}
++
++/*
++ * Read a strip of data and decompress the specified
++ * amount into the user-supplied buffer.
++ */
++tmsize_t
++TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
++{
++	static const char module[] = "TIFFReadEncodedStrip";
++	TIFFDirectory *td = &tif->tif_dir;
++	tmsize_t stripsize;
++	uint16 plane;
++
++	stripsize=TIFFReadEncodedStripGetStripSize(tif, strip, &plane);
++	if (stripsize==((tmsize_t)(-1)))
++		return((tmsize_t)(-1));
+ 
+     /* shortcut to avoid an extra memcpy() */
+     if( td->td_compression == COMPRESSION_NONE &&
+@@ -510,6 +523,49 @@ TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size)
+ 	return(stripsize);
+ }
+ 
++/* Variant of TIFFReadEncodedStrip() that does 
++ * * if *buf == NULL, *buf = _TIFFmalloc(bufsizetoalloc) only after TIFFFillStrip() has
++ *   suceeded. This avoid excessive memory allocation in case of truncated
++ *   file.
++ * * calls regular TIFFReadEncodedStrip() if *buf != NULL
++ */
++tmsize_t
++_TIFFReadEncodedStripAndAllocBuffer(TIFF* tif, uint32 strip,
++                                    void **buf, tmsize_t bufsizetoalloc,
++                                    tmsize_t size_to_read)
++{
++    tmsize_t this_stripsize;
++    uint16 plane;
++
++    if( *buf != NULL )
++    {
++        return TIFFReadEncodedStrip(tif, strip, *buf, size_to_read);
++    }
++
++    this_stripsize=TIFFReadEncodedStripGetStripSize(tif, strip, &plane);
++    if (this_stripsize==((tmsize_t)(-1)))
++            return((tmsize_t)(-1));
++
++    if ((size_to_read!=(tmsize_t)(-1))&&(size_to_read<this_stripsize))
++            this_stripsize=size_to_read;
++    if (!TIFFFillStrip(tif,strip))
++            return((tmsize_t)(-1));
++
++    *buf = _TIFFmalloc(bufsizetoalloc);
++    if (*buf == NULL) {
++            TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "No space for strip buffer");
++            return((tmsize_t)(-1));
++    }
++    _TIFFmemset(*buf, 0, bufsizetoalloc);
++
++    if ((*tif->tif_decodestrip)(tif,*buf,this_stripsize,plane)<=0)
++            return((tmsize_t)(-1));
++    (*tif->tif_postdecode)(tif,*buf,this_stripsize);
++    return(this_stripsize);
++
++
++}
++
+ static tmsize_t
+ TIFFReadRawStrip1(TIFF* tif, uint32 strip, void* buf, tmsize_t size,
+     const char* module)
+diff --git a/libtiff/tiffiop.h b/libtiff/tiffiop.h
+index 846ade03..7f0b90f7 100644
+--- a/libtiff/tiffiop.h
++++ b/libtiff/tiffiop.h
+@@ -365,6 +365,11 @@ extern void* _TIFFCheckRealloc(TIFF*, void*, tmsize_t, tmsize_t, const char*);
+ extern double _TIFFUInt64ToDouble(uint64);
+ extern float _TIFFUInt64ToFloat(uint64);
+ 
++extern tmsize_t
++_TIFFReadEncodedStripAndAllocBuffer(TIFF* tif, uint32 strip,
++                                    void **buf, tmsize_t bufsizetoalloc,
++                                    tmsize_t size_to_read);
++
+ extern int TIFFInitDumpMode(TIFF*, int);
+ #ifdef PACKBITS_SUPPORT
+ extern int TIFFInitPackBits(TIFF*, int);
+From 6173a57d39e04d68b139f8c1aa499a24dbe74ba1 Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Fri, 30 Jun 2017 17:29:44 +0000
+Subject: [PATCH] * libtiff/tif_dirwrite.c: in
+ TIFFWriteDirectoryTagCheckedXXXX() functions associated with LONG8/SLONG8
+ data type, replace assertion that the file is BigTIFF, by a non-fatal error.
+ Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2712 Reported by team
+ OWL337
+
+---
+ ChangeLog              |  8 ++++++++
+ libtiff/tif_dirwrite.c | 20 ++++++++++++++++----
+ 2 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 6f085e09..77a64385 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,13 @@
+ 2017-06-30  Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_dirwrite.c: in TIFFWriteDirectoryTagCheckedXXXX()
++	functions associated with LONG8/SLONG8 data type, replace assertion that
++	the file is BigTIFF, by a non-fatal error.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2712
++	Reported by team OWL337
++
++2017-06-30  Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_read.c, tiffiop.h: add a _TIFFReadEncodedStripAndAllocBuffer()
+ 	function, variant of TIFFReadEncodedStrip() that allocates the
+ 	decoded buffer only after a first successful TIFFFillStrip(). This avoids
+diff --git a/libtiff/tif_dirwrite.c b/libtiff/tif_dirwrite.c
+index 2967da58..8d6686ba 100644
+--- a/libtiff/tif_dirwrite.c
++++ b/libtiff/tif_dirwrite.c
+@@ -2111,7 +2111,10 @@ TIFFWriteDirectoryTagCheckedLong8(TIFF* tif, uint32* ndir, TIFFDirEntry* dir, ui
+ {
+ 	uint64 m;
+ 	assert(sizeof(uint64)==8);
+-	assert(tif->tif_flags&TIFF_BIGTIFF);
++	if( !(tif->tif_flags&TIFF_BIGTIFF) ) {
++		TIFFErrorExt(tif->tif_clientdata,"TIFFWriteDirectoryTagCheckedLong8","LONG8 not allowed for ClassicTIFF");
++		return(0);
++	}
+ 	m=value;
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabLong8(&m);
+@@ -2124,7 +2127,10 @@ TIFFWriteDirectoryTagCheckedLong8Array(TIFF* tif, uint32* ndir, TIFFDirEntry* di
+ {
+ 	assert(count<0x20000000);
+ 	assert(sizeof(uint64)==8);
+-	assert(tif->tif_flags&TIFF_BIGTIFF);
++	if( !(tif->tif_flags&TIFF_BIGTIFF) ) {
++		TIFFErrorExt(tif->tif_clientdata,"TIFFWriteDirectoryTagCheckedLong8","LONG8 not allowed for ClassicTIFF");
++		return(0);
++	}
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabArrayOfLong8(value,count);
+ 	return(TIFFWriteDirectoryTagData(tif,ndir,dir,tag,TIFF_LONG8,count,count*8,value));
+@@ -2136,7 +2142,10 @@ TIFFWriteDirectoryTagCheckedSlong8(TIFF* tif, uint32* ndir, TIFFDirEntry* dir, u
+ {
+ 	int64 m;
+ 	assert(sizeof(int64)==8);
+-	assert(tif->tif_flags&TIFF_BIGTIFF);
++	if( !(tif->tif_flags&TIFF_BIGTIFF) ) {
++		TIFFErrorExt(tif->tif_clientdata,"TIFFWriteDirectoryTagCheckedLong8","SLONG8 not allowed for ClassicTIFF");
++		return(0);
++	}
+ 	m=value;
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabLong8((uint64*)(&m));
+@@ -2149,7 +2158,10 @@ TIFFWriteDirectoryTagCheckedSlong8Array(TIFF* tif, uint32* ndir, TIFFDirEntry* d
+ {
+ 	assert(count<0x20000000);
+ 	assert(sizeof(int64)==8);
+-	assert(tif->tif_flags&TIFF_BIGTIFF);
++	if( !(tif->tif_flags&TIFF_BIGTIFF) ) {
++		TIFFErrorExt(tif->tif_clientdata,"TIFFWriteDirectoryTagCheckedLong8","SLONG8 not allowed for ClassicTIFF");
++		return(0);
++	}
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabArrayOfLong8((uint64*)value,count);
+ 	return(TIFFWriteDirectoryTagData(tif,ndir,dir,tag,TIFF_SLONG8,count,count*8,value));

@@ -73,7 +73,7 @@ extra-context =
 
 [dynamic-template-erp5-parameters]
 jupyter-enable-default = {{ jupyter_enable_default }}
-local-bt5-repository = {{ local_bt5_repository }}
+local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-erp5]
@@ -93,6 +93,7 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
+apdex-result-check-script = {{ apdex_result_check_script }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
 bin-directory = {{ bin_directory }}
@@ -101,6 +102,7 @@ run-apachedex-location = {{ bin_directory }}/runApacheDex
 6tunnel = {{ sixtunnel_location }}
 curl-location = {{ curl_location }}
 dash = {{ dash_location }}
+bash = {{ bash_location }}
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
 template-monitor = {{ dumps(template_monitor) }}
@@ -169,6 +171,7 @@ extra-context =
     section parameter_dict dynamic-template-kumofs-parameters
 
 [dynamic-template-mariadb-parameters]
+bash = {{ bash_location }}
 coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
@@ -180,6 +183,7 @@ link-binary = {{ dumps(mariadb_link_binary) }}
 bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
+mariadb-slowquery-check-script = {{ mariadb_slowquery_check_script}}
 percona-tools-location = {{ percona_toolkit_location }}
 template-monitor = {{ template_monitor }}
 

@@ -219,7 +219,7 @@ path = ${directory:promise}/apache
 hostname = {{ ipv4 }}
 port = {{ apache_dict.values()[0][0] }}
 
-[publish]
+[{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
 {% for family_name, (apache_port, scheme, _, _) in apache_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
@@ -260,7 +260,7 @@ cert =
 crl =
 {%- endif %}
 
-[logrotate-apache]
+[{{ section('logrotate-apache') }}]
 < = logrotate-entry-base
 name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
@@ -271,7 +271,7 @@ recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
-promise = ${directory:etc}/promise
+promise = ${:etc}/promise
 services = ${:etc}/run
 var = ${buildout:directory}/var
 run = ${:var}/run
@@ -284,39 +284,39 @@ newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
 
-[monitor-generate-apachedex-report]
+[{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
-command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" --default "${apachedex-parameters:default}" --apache-log-list "${apachedex-parameters:apache-log-list}" --base-list "${apachedex-parameters:base-list}" --skip-base-list "${apachedex-parameters:skip-base-list}" --erp5-base-list "${apachedex-parameters:erp5-base-list}"
+command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --config "${apachedex-parameters:configuration}"
 command = apachedex_every_3_hour
 
 [apachedex-parameters]
-default_parameter = 
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = ${apache-conf-parameter-dict:access-log}
-default = ${monitor-directory:etc}/apdex_default
-base-list = ${monitor-directory:etc}/apdex_base_list
-skip-base-list = ${monitor-directory:etc}/apdex_skip_base_list
-erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
+configuration = {{ slapparameter_dict['apachedex-configuration'] }}
+promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
+
+[{{ section('monitor-promise-apachedex-result') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['apdex-result-check-script'] }}
+rendered = ${monitor-directory:promises}/check-apachedex-result
+status-file = ${monitor-directory:private}/apachedex.report.json 
+context = 
+  raw bash {{ parameter_dict['bash'] }}/bin/bash
+  raw user_threshold ${apachedex-parameters:promise-threshold}
+  key apdex_file directory:apachedex
+  key apdex_status_file :status-file
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
-monitor-title = Balancer monitor
+monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
-instance-configuration = 
-  file apachedex-default ${apachedex-parameters:default}
-  file apachedex-base-list ${apachedex-parameters:base-list}
-  file apachedex-skip-base-list ${apachedex-parameters:skip-base-list}
-  file apachedex-erp5-base-list ${apachedex-parameters:erp5-base-list}
 
 [buildout]
 extends =
   {{ logrotate_cfg }}
   {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish
-  logrotate-apache
-  monitor-generate-apachedex-report
   {{ part_list | join('\n  ') }}

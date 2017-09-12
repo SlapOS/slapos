@@ -111,7 +111,7 @@ framebuffer = ${:srv}/framebuffer
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 2 }}
-monitor-title = Cloudooo monitor
+monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [binary-link]

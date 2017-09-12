@@ -282,14 +282,30 @@ context =
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
 rendered = ${monitor-directory:reports}/${:filename}
-output-folder = ${directory:srv}/monitor/
 filename = mariadb_slow_query_every_23_hour
 mode = 755
 context = 
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
-  key output_folder :output-folder 
+  key output_folder monitor-directory:private
+
+[slow-query-digest-parameters]
+max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
+slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
+
+[{{ section('monitor-promise-slowquery-result') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['mariadb-slowquery-check-script'] }}
+rendered = ${monitor-directory:promises}/mariadb-slow-queries-result
+status-file = ${monitor-directory:private}/mariadb_slow_query.report.json
+context =
+  raw default_threshold 4000
+  raw bash {{ parameter_dict['bash'] }}/bin/bash
+  key slow_query_digest monitor-directory:private
+  key slow_query_status :status-file
+  key max_queries_threshold slow-query-digest-parameters:max_queries_threshold
+  key slowest_queries_threshold slow-query-digest-parameters:slowest_queries_threshold
 
 [{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
@@ -297,11 +313,10 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
-{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
-monitor-title = Mariadb monitor
+monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]

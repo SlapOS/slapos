@@ -1,4 +1,4 @@
-{% import "root_common" as root_common with context %}
+{% import "root_common" as root_common with context -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
@@ -10,6 +10,7 @@
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set monitor_base_url_dict = {} -%}
 {% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}
 [request-common]
 <= request-common-base
@@ -38,12 +39,13 @@ config-{{ k }} = {{ dumps(v) }}
 {% for k, v in key_config.iteritems() -%}
 config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
+config-name = {{ name }}
 {% endmacro -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', '') }, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -57,7 +59,7 @@ connection-url = smtp://127.0.0.2:0/
 [request-caucase]
 connection-http-url = {{ caucase_url }}
 {%- else %}
-{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891}, {'http-url': True, 'https-url': False}) }}
+{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891, 'auto-sign-csr-amount': 2}, {'http-url': True, 'https-url': False}) }}
 {% endif -%}
 
 {# ZODB -#}
@@ -274,10 +276,14 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
+config-name = ${:name}
 config-caucase-url = ${request-caucase:connection-http-url}
 config-crl-update-periodicity = {{ crl_update_period }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
+config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
+config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configuration',
+'--erp5-base "/erp5(/|$|/\?)" --skip-user-agent Zabbix  --error-detail --js-embed --quiet')) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
@@ -331,7 +337,7 @@ parts +=
   monitor-base
 
 [monitor-conf-parameters]
-monitor-title = ERP5 monitor
+monitor-title = ERP5
 password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]

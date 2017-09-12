@@ -10,6 +10,8 @@ if [ ! -d "$OUTPUT_FOLDER" ]; then
   exit 0
 fi
 
+OUTPUT_FILE=${OUTPUT_FOLDER}/slowquery_digest.txt
+
 TODAY=`date +%Y%m%d`
 
 SLOW_LOG=$SLOW_QUERY_PATH-$TODAY
@@ -19,4 +21,5 @@ if [ ! -f "$SLOW_LOG" ]; then
   exit 1
 fi
 
-eval $PT_QUERY_EXEC $SLOW_LOG
+$PT_QUERY_EXEC $SLOW_LOG >  $OUTPUT_FILE
+echo "ok"

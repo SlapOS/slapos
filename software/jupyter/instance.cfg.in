@@ -1,9 +1,10 @@
 [buildout]
 parts =
   instance
-  ipython_notebook
+  jupyter_notebook
   read-knowledge0
   publish-connection-parameter
+  jupyter-notebook-config
   erp5-kernel
   kernel-json
   custom-js
@@ -33,7 +34,7 @@ port = 8888
 host = ${slapconfiguration:ipv6-random}
 cert_file = ${generate-certificate:cert_file}
 key_file = ${generate-certificate:key_file}
-logfile = ${directory:log}/ipython_notebook.log
+logfile = ${directory:log}/jupyter_notebook.log
 notebook_dir = ${directory:notebook_dir}
 
 [dynamic-jinja2-template-base]
@@ -52,13 +53,13 @@ command =
       -out ${instance-parameter:cert_file}
   fi
 update-command = ${:command}
-cert_file = ${directory:etc}/ipython_notebook_cert.crt
-key_file = ${directory:etc}/ipython_notebook_cert.key
+cert_file = ${directory:etc}/jupyter_cert.crt
+key_file = ${directory:etc}/jupyter_cert.key
 
 [instance]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ bin_directory }}/ipython notebook
+  {{ bin_directory }}/jupyter-lab
   --no-browser
   --ip=${instance-parameter:host}
   --port=${instance-parameter:port}
@@ -66,24 +67,19 @@ command-line =
   --certfile=${instance-parameter:cert_file}
   --keyfile=${instance-parameter:key_file}
   --notebook-dir=${instance-parameter:notebook_dir}
-  --logfile=${instance-parameter:logfile}
-  --config=${ipython-notebook-config:rendered}
-# Add 'log-level' alias to 'DEBUG' so as to log requests being done while running
-# of service ipython_notebook.
   --log-level="DEBUG"
-wrapper-path = ${directory:service}/ipython_notebook
+wrapper-path = ${directory:service}/jupyter-lab
 parameters-extra = true
-# Explicitly define IPython Directory to be used while starting ipython notebook
-# Also explicitly force IPython to use en_US.utf8 encoding
 environment =
-  IPYTHONDIR=${directory:ipython_dir}
-  JUPYTER_CONFIG_DIR=${directory:ipython_dir}
+  JUPYTER_PATH=${directory:jupyter_dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter_config_dir}
+  JUPYTER_RUNTIME_DIR=${directory:jupyter_runtime_dir}
   LANG=C.UTF-8
 
-[ipython-notebook-config]
+[jupyter-notebook-config]
 <= dynamic-jinja2-template-base
-template = {{ ipython_notebook_config_location }}/{{ ipython_notebook_config_filename }}
-rendered = ${directory:etc}/ipython_notebook_config.py
+template = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
+rendered = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
 mode = 0744
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
@@ -98,12 +94,16 @@ service = ${:etc}/service
 promise = ${:etc}/promise/
 log = ${:var}/log
 notebook_dir = ${:var}/notebooks
-# Add folders to explicitly define ipython directory
-ipython_dir = ${:home}/ipython
-ipython_kernel_dir = ${:ipython_dir}/kernels
-erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
+# Add folders to explicitly define jupyter directory
+jupyter_dir = ${:home}/jupyter
+jupyter_config_dir = ${:jupyter_dir}/etc
+jupyter_kernel_dir = ${:jupyter_dir}/kernels
+jupyter_runtime_dir = ${:jupyter_dir}/runtime
+jupyter_custom_dir = ${:jupyter_config_dir}/custom
+jupyter_nbextensions_dir = ${:jupyter_dir}/nbextensions
+erp5_kernel_dir = ${:jupyter_kernel_dir}/ERP5
 
-[ipython_notebook]
+[jupyter_notebook]
 # This part is called like this because knowledge0.write uses the part name for
 # the section name in the config file.
 recipe = slapos.cookbook:zero-knowledge.write
@@ -126,16 +126,13 @@ instance-configuration =
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
-url = https://[${instance-parameter:host}]:${instance-parameter:port}
+jupyter-classic-url = https://[${instance-parameter:host}]:${instance-parameter:port}/tree
+jupyterlab-url = https://[${instance-parameter:host}]:${instance-parameter:port}/lab
 
 [erp5-kernel]
-<= dynamic-jinja2-template-base
-template = {{ erp5_kernel_location }}/{{ erp5_kernel_filename }}
-rendered = ${directory:erp5_kernel_dir}/ERP5kernel.py
-# Use ipython as executable python as we'll be needing requests library in kernel
-context =
-  raw python_executable {{ bin_directory }}/ipython
-  key erp5_url slapconfiguration:configuration.erp5-url
+recipe = slapos.cookbook:symbolic.link
+link-binary = {{ erp5_kernel_location }}/{{ erp5_kernel_filename }}
+target-directory = ${directory:erp5_kernel_dir}
 
 [kernel-json]
 <= dynamic-jinja2-template-base
@@ -144,13 +141,13 @@ rendered = ${directory:erp5_kernel_dir}/kernel.json
 # Use python2.7 executable bin file for kernel config
 context =
   raw python_executable {{ python_executable }}
-  key kernel_dir erp5-kernel:rendered
+  raw kernel_dir ${erp5-kernel:target-directory}/{{ erp5_kernel_filename }}
+  key erp5_url slapconfiguration:configuration.erp5-url 
   raw display_name ERP5
   raw language_name python
 
 [custom-js]
-<= dynamic-jinja2-template-base
-template = {{ custom_js_location }}/{{ custom_js_filename }}
-rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
-mode = 0744
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:jupyter_custom_dir}
+link-binary = {{ custom_js_location }}/custom.js
 
