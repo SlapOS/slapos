@@ -468,7 +468,7 @@ class Computer(object):
           user=user,
           address_list=address_list,
           tap=tap,
-          tun=tun,
+          tun=tun if conf.create_tun else None,
           external_storage_list=external_storage_list,
       )
 
@@ -1278,6 +1278,7 @@ def parse_computer_definition(conf, definition_path):
       ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
       tap_gateway_interface=conf.tap_gateway_interface,
+      conf=conf
   )
   partition_list = []
   for partition_number in range(int(conf.partition_amount)):
@@ -1290,7 +1291,7 @@ def parse_computer_definition(conf, definition_path):
     tap = Tap(computer_definition.get(section, 'network_interface'))
     tun = Tun("slaptun" + str(partition_number),
               partition_number,
-              int(conf.partition_amount)) if conf.create_tap else None
+              int(conf.partition_amount)) if conf.create_tun else None
     partition = Partition(reference=computer_definition.get(section, 'pathname'),
                           path=os.path.join(conf.instance_root,
                                             computer_definition.get(section, 'pathname')),
@@ -1356,7 +1357,7 @@ def parse_computer_xml(conf, xml_path):
         user=User('%s%s' % (conf.user_base_name, i)),
         address_list=None,
         tap=Tap('%s%s' % (conf.tap_base_name, i)),
-        tun=Tun('slaptun' + str(i), i, partition_amount)
+        tun=Tun('slaptun' + str(i), i, partition_amount) if conf.create_tun else None
     )
     computer.partition_list.append(partition)
 
@@ -1437,6 +1438,7 @@ class FormatConfig(object):
   alter_network = None
   alter_user = None
   create_tap = None
+  create_tun = None
   computer_xml = None
   computer_json = None
   input_definition_file = None
@@ -1520,7 +1522,7 @@ class FormatConfig(object):
       self.use_unique_local_address_block = False
 
     # Convert strings to booleans
-    for option in ['alter_network', 'alter_user', 'create_tap', 'use_unique_local_address_block']:
+    for option in ['alter_network', 'alter_user', 'create_tap', 'create_tun', 'use_unique_local_address_block']:
       attr = getattr(self, option)
       if isinstance(attr, str):
         if attr.lower() == 'true':
