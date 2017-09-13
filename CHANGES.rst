@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.0.53 (2017-09-13)
+-------------------
+
+  * check_port_listening: workaround for sheband limitation, reduce to a single file
+  * erp5.test: pass new --conversion_server_url option to runUnitTest
+
 1.0.52 (2017-07-04)
 -------------------
 
