@@ -127,6 +127,7 @@ instance-configuration =
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
 jupyter-classic-url = https://[${instance-parameter:host}]:${instance-parameter:port}/tree
+url = ${:jupyter-classic-url}
 jupyterlab-url = https://[${instance-parameter:host}]:${instance-parameter:port}/lab
 
 [erp5-kernel]
