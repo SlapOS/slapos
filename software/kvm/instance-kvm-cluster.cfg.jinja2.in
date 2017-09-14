@@ -82,7 +82,11 @@ config-enable-monitor = {{ enable_monitoring }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-
+# Enable disk wipe options
+{% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
+config-wipe-disk-ondestroy = True
+config-wipe-disk-iterations = {{ dumps(kvm_parameter_dict.get('wipe-disk-iterations', 1)) }}
+{% endif -%}
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
