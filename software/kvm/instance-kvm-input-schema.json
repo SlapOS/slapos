@@ -159,6 +159,21 @@
       "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
     },
 
+    "wipe-disk-ondestroy": {
+      "title": "Wipe disks when destroy the VM",
+      "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+      "type": "boolean",
+      "default": false
+    },
+    "wipe-disk-iterations": {
+      "title": "Wipe disk iterations",
+      "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 5
+    },
+
     "use-tap": {
       "title": "Use QEMU TAP network interface",
       "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",

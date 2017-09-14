@@ -1,6 +1,7 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
+{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', 'False').lower() -%}
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
@@ -42,6 +43,7 @@ services = ${:etc}/service
 promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
+prerm = ${:etc}/prerm
 ca-dir = ${:srv}/ssl
 public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
@@ -218,6 +220,19 @@ input = inline:#!/bin/sh
   fi
 output = ${directory:promises}/kvm-disk-image-corruption
 mode = 700
+
+{% if wipe_disk == 'true' -%}
+{% do part_list.append('wipe-disk-wrapper') -%}
+{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
+{% if storage_dict -%}
+{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' ~ ' ' ~ '/* '.join(storage_dict.values()) ~ '/*' -%}
+{% endif -%}
+[wipe-disk-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
+command-line = 
+  {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
+{% endif -%}
 
 [kvm-started-promise]
 recipe = slapos.recipe.template:jinja2
