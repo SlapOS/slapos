@@ -80,7 +80,7 @@ PROMISE_TIMEOUT = 3
 COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
 COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME = '.slapos_latest_bang_timestamp'
 COMPUTER_PARTITION_INSTALL_ERROR_FILENAME = '.slapgrid-%s-error.log'
-COMPUTER_PARTITION_WAIT_LIST_FILENAME = '.slapos-wait-services'
+COMPUTER_PARTITION_WAIT_LIST_FILENAME = '.slapos-report-wait-service-list'
 
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
@@ -1273,7 +1273,7 @@ stderr_logfile_backups=1
 
     if os.path.exists(wait_file) and os.path.isfile(wait_file):
       with open(wait_file) as wait_f:
-        processes_list = [name.strip() for name in wait_f.readlines() if name]
+        processes_list = [name.strip() for name in wait_f if name]
         # return True if one of process in the list is running
         return partition.checkProcessesFromStateList(processes_list,
                                                      state_list)

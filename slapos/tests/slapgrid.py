@@ -40,6 +40,7 @@ import time
 import unittest
 import urlparse
 import json
+import re
 
 import xml_marshaller
 from mock import patch
@@ -53,6 +54,7 @@ from slapos.grid import SlapObject
 from slapos.grid.SlapObject import WATCHDOG_MARK
 from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 import slapos.grid.SlapObject
+from slapos import manager as slapmanager
 
 import httmock
 
@@ -2415,69 +2417,214 @@ class TestSlapgridCPWithTransaction(MasterMixin, unittest.TestCase):
 
       self.assertFalse(os.path.exists(request_list_file))
 
-class TestSlapgridCPWithPreDeleteScript(MasterMixin, unittest.TestCase):
+class TestSlapgridReportWithPreDeleteScript(MasterMixin, unittest.TestCase):
 
-  def test_one_partition_pre_destroy_service(self):
-    from slapos import manager as slapmanager
-    from slapos.manager.predestroy import WIPE_WRAPPER_BASE_PATH
+  prerm_script_content = """#!/bin/sh
+
+echo "Running prerm script for this partition..."
+touch etc/prerm.txt
+for i in {1..2}
+do
+  echo "sleeping for 1s..."
+  sleep 1
+done
+echo "finished prerm script."
+rm etc/prerm.txt
+
+exit 0
+"""
+
+  def _wait_prerm_script_finished(self, base_path):
+    check_file = os.path.join(base_path, 'etc/prerm.txt')
+    limit = 10
+    count = 0
+    time.sleep(1)
+    while (count < limit) and os.path.exists(check_file):
+      time.sleep(1)
+      count += 1
+
+  def test_partition_destroy_with_pre_remove_service(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     with httmock.HTTMock(computer.request_handler):
       partition = computer.instance_list[0]
-      pre_delete_dir = os.path.join(partition.partition_path, WIPE_WRAPPER_BASE_PATH)
+      pre_delete_dir = os.path.join(partition.partition_path, 'etc/prerm')
       pre_delete_script = os.path.join(pre_delete_dir, 'slapos_pre_delete')
       partition.requested_state = 'started'
       partition.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       os.makedirs(pre_delete_dir, 0o700)
       with open(pre_delete_script, 'w') as f:
-        f.write("""#!/bin/sh
-
-echo "Running script to wipe this partition..."
-
-for i in {1..3}
-do
-  echo "sleeping for 1s..."
-  sleep 1
-done
-
-echo "finished wipe disk."
-
-exit 0
-""")
+        f.write(self.prerm_script_content)
       os.chmod(pre_delete_script, 0754)
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
-                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 'var',
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
-      wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
-      self.assertLogContent(wrapper_log, 'Working')
-      self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
       self.assertEqual(computer.sequence,
                        ['/getFullComputerInformation', '/availableComputerPartition',
                         '/startedComputerPartition'])
       self.assertEqual(partition.state, 'started')
-      partition.requested_state = 'stopped'
-      self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertEqual(partition.state, 'stopped')
-      manager_list = slapmanager.from_config({'manager_list': 'predestroy'})
+      manager_list = slapmanager.from_config({'manager_list': 'prerm'})
       self.grid._manager_list = manager_list
 
       partition.requested_state = 'destroyed'
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
-      # Assert partition directory is not destroyed (pre-destroy is running)
+      # Assert partition directory is not destroyed (pre-delete is running)
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
-                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 'var',
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay',
-                             '.0-destroy_slapos_pre_delete.log', '.slapos-wait-services',
+                             '.0-prerm_slapos_pre_delete.log', '.slapos-report-wait-service-list',
                              '.slapos-request-transaction-0'])
       self.assertItemsEqual(os.listdir(self.software_root),
                             [partition.software.software_hash])
 
-      # wait until the pre-destroy script is finished
-      time.sleep(5)
+      # wait until the pre-delete script is finished
+      self._wait_prerm_script_finished(partition.partition_path)
 
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
       # Assert partition directory is empty
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path), [])
+
+  def test_partition_destroy_pre_remove_with_retention_lock(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+      pre_delete_dir = os.path.join(partition.partition_path, 'etc/prerm')
+      pre_delete_script = os.path.join(pre_delete_dir, 'slapos_pre_delete')
+      partition.requested_state = 'started'
+      partition.filter_dict = {'retention_delay': 1.0 / (3600 * 24)}
+
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      self.assertTrue(os.path.exists(os.path.join(
+          partition.partition_path,
+          slapos.grid.SlapObject.Partition.retention_lock_delay_filename
+      )))
+
+      os.makedirs(pre_delete_dir, 0o700)
+      with open(pre_delete_script, 'w') as f:
+        f.write(self.prerm_script_content)
+      os.chmod(pre_delete_script, 0754)
+      self.assertTrue(os.path.exists(pre_delete_script))
+
+      manager_list = slapmanager.from_config({'manager_list': 'prerm'})
+      self.grid._manager_list = manager_list
+
+      partition.requested_state = 'destroyed'
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is not destroyed (retention-delay-lock)
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'etc', 'software_release',
+                             'worked', '.slapos-retention-lock-delay',
+                             '.slapos-retention-lock-date', '.slapos-request-transaction-0'])
+      self.assertTrue(os.path.exists(pre_delete_script))
+      self.assertTrue(os.path.exists(os.path.join(
+          partition.partition_path,
+          slapos.grid.SlapObject.Partition.retention_lock_date_filename
+      )))
+
+      time.sleep(1)
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+
+      # Assert partition directory is not destroyed (pre-delete is running)
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'etc', 'software_release',
+                             'worked', '.slapos-retention-lock-delay', '.slapos-retention-lock-date',
+                             '.0-prerm_slapos_pre_delete.log', '.slapos-report-wait-service-list',
+                             '.slapos-request-transaction-0'])
+
+      # wait until the pre-delete script is finished
+      self._wait_prerm_script_finished(partition.partition_path)
+
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is empty
+      self.assertItemsEqual(os.listdir(partition.partition_path), [])
+
+  def test_partition_destroy_pre_remove_script_not_stopped(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+      pre_delete_dir = os.path.join(partition.partition_path, 'etc/prerm')
+      pre_delete_script = os.path.join(pre_delete_dir, 'slapos_pre_delete')
+      partition.requested_state = 'started'
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      os.makedirs(pre_delete_dir, 0o700)
+      with open(pre_delete_script, 'w') as f:
+        f.write(self.prerm_script_content)
+      os.chmod(pre_delete_script, 0754)
+      self.assertEqual(partition.state, 'started')
+      manager_list = slapmanager.from_config({'manager_list': 'prerm'})
+      self.grid._manager_list = manager_list
+
+      partition.requested_state = 'destroyed'
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is not destroyed (pre-delete is running)
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'etc', 'software_release',
+                             'worked', '.slapos-retention-lock-delay', '.slapos-request-transaction-0',
+                             '.0-prerm_slapos_pre_delete.log', '.slapos-report-wait-service-list'])
+
+      # wait until the pre-delete script is finished
+      self._wait_prerm_script_finished(partition.partition_path)
+      with open(os.path.join(partition.partition_path, '.0-prerm_slapos_pre_delete.log')) as f:
+        # the script is well finished...
+        self.assertTrue("finished prerm script." in f.read())
+
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is empty
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path), [])
+
+  def test_partition_destroy_pre_remove_script_run_as_partition_user(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+      pre_delete_dir = os.path.join(partition.partition_path, 'etc/prerm')
+      pre_delete_script = os.path.join(pre_delete_dir, 'slapos_pre_delete')
+      partition.requested_state = 'started'
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      os.makedirs(pre_delete_dir, 0o700)
+      with open(pre_delete_script, 'w') as f:
+        f.write(self.prerm_script_content)
+      os.chmod(pre_delete_script, 0754)
+
+      manager_list = slapmanager.from_config({'manager_list': 'prerm'})
+      self.grid._manager_list = manager_list
+
+      partition.requested_state = 'destroyed'
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is not destroyed (pre-delete is running)
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'etc', 'software_release',
+                             'worked', '.slapos-retention-lock-delay', '.slapos-request-transaction-0',
+                             '.0-prerm_slapos_pre_delete.log', '.slapos-report-wait-service-list'])
+
+      stat_info = os.stat(partition.partition_path)
+      uid = stat_info.st_uid
+      gid = stat_info.st_gid
+      supervisor_conf_file = os.path.join(self.instance_root,
+                                          'etc/supervisord.conf.d',
+                                          '%s.conf' % partition.name)
+      self.assertTrue(os.path.exists(supervisor_conf_file))
+      regex_user = r"user=(\d+)"
+      regex_group = r"group=(\d+)"
+      with open(supervisor_conf_file) as f:
+        config = f.read()
+        # search user uid in conf file
+        result = re.search(regex_user, config, re.DOTALL)
+        self.assertTrue(result is not None)
+        self.assertEqual(int(result.groups()[0]), uid)
+        # search user group gid in conf file
+        result = re.search(regex_group, config, re.DOTALL)
+        self.assertTrue(result is not None)
+        self.assertEqual(int(result.groups()[0]), gid)
+
+      # wait until the pre-delete script is finished
+      self._wait_prerm_script_finished(partition.partition_path)
+
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is empty
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path), [])
+      

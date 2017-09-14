@@ -354,6 +354,7 @@ class Partition(object):
     self.instance_path = instance_path
     self.run_path = os.path.join(self.instance_path, 'etc', 'run')
     self.service_path = os.path.join(self.instance_path, 'etc', 'service')
+    self.prerm_path = os.path.join(self.instance_path, 'etc', 'prerm')
     self.supervisord_partition_configuration_path = \
         supervisord_partition_configuration_path
     self.supervisord_socket = supervisord_socket
@@ -453,16 +454,18 @@ class Partition(object):
               'USER': pwd.getpwuid(uid).pw_name,
           }
 
-  def addServiceToCustomGroup(self, group_id, runner_list, path):
+  def addServiceToCustomGroup(self, group_suffix, partition_id, runner_list,
+      path, extension=''):
     """Add new services to supervisord that belong to specific group"""
     group_partition_template = pkg_resources.resource_stream(__name__,
       'templates/group_partition_supervisord.conf.in').read()
-    self.supervisor_configuration_groups += group_partition_template % {
+    group_id = '-'.join([partition_id, group_suffix])
+    self.supervisor_configuration_group += group_partition_template % {
         'instance_id': group_id,
         'program_list': ','.join(['_'.join([group_id, runner])
                                   for runner in runner_list])
     }
-    return self.addServiceToGroup(group_id, runner_list, path)
+    return self.addServiceToGroup(group_id, runner_list, path, extension)
 
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
@@ -612,7 +615,7 @@ class Partition(object):
     runner_list = []
     service_list = []
     self.partition_supervisor_configuration = ""
-    self.supervisor_configuration_groups = ""
+    self.supervisor_configuration_group = ""
     if os.path.exists(self.run_path):
       if os.path.isdir(self.run_path):
         runner_list = os.listdir(self.run_path)
@@ -628,7 +631,7 @@ class Partition(object):
       partition_id = self.computer_partition.getId()
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
-      self.supervisor_configuration_groups = group_partition_template % {
+      self.supervisor_configuration_group = group_partition_template % {
           'instance_id': partition_id,
           'program_list': ','.join(['_'.join([partition_id, runner])
                                     for runner in runner_list + service_list])
@@ -642,10 +645,10 @@ class Partition(object):
     """
       Write supervisord configuration file and update supervisord
     """
-    if self.supervisor_configuration_groups and \
+    if self.supervisor_configuration_group and \
         self.partition_supervisor_configuration:
       updateFile(self.supervisord_partition_configuration_path,
-                 self.supervisor_configuration_groups +
+                 self.supervisor_configuration_group +
                  self.partition_supervisor_configuration)
     self.updateSupervisor()
 
