@@ -208,8 +208,8 @@ def save_former_config(conf):
 
 
 def fetch_configuration_template():
-    template_arg_list = (__name__.split('.')[0], 'slapos.cfg.example')
-    with pkg_resources.resource_stream(*template_arg_list) as fout:
+    template_path = os.path.join("/".join(__file__.split('/')[:-2]), 'slapos.cfg.example')
+    with open(template_path, 'r') as fout:
       slapos_node_configuration_template = fout.read()
     return slapos_node_configuration_template
 
