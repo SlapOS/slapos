@@ -291,7 +291,7 @@ class Database:
     for table in table_list:
       self._execute(update_sql % (table, date_scope))
 
-  def select(self, table, date=None, columns="*", where=None, order=None, limit=0):
+  def select(self, table, date=None, columns="*", where=None, order=None, group=None, limit=0):
     """ Query database for a full table information """
     if date is not None:
       where_clause = " WHERE date = '%s' " % date
@@ -303,6 +303,8 @@ class Database:
         where_clause += " WHERE 1 = 1 "
       where_clause += " AND %s " % where
     select_sql = "SELECT %s FROM %s %s " % (columns, table, where_clause)
+    if group is not None:
+      select_sql += " GROUP BY %s" % group
     if order is not None:
       select_sql += " ORDER BY %s" % order
     if limit:
