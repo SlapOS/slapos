@@ -294,7 +294,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(url, software_installation.getUrlString())
     self.assertEqual('validated', software_installation.getValidationState())
 
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='destroyed')
 
