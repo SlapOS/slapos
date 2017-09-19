@@ -27,12 +27,12 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     self._testConfiguredPromiseViaAlarm("promise_slapos_pas")
 
   def testConfiguredPASExternal(self):
-    """ Make sure External PAS (Facebook, Google, Browser ID) 
+    """ Make sure External PAS (Facebook, Google, Browser ID)
         is well configured, in this case we trust on promise outcome."""
     self._testConfiguredPromiseViaAlarm("promise_slapos_pas_external")
 
   def testConfiguredModuleGeneratorID(self):
-    """ Make sure Generator ID is well configured, in this 
+    """ Make sure Generator ID is well configured, in this
         case we trust on promise outcome."""
     self._testConfiguredPromiseViaAlarm("promise_slapos_module_id_generator")
 
@@ -42,32 +42,32 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     self._testConfiguredPromiseViaAlarm("promise_slapos_shacache_website")
 
   def testConfiguredVolatileCacheViaPromise(self):
-    """ Make sure Volitile Cache was configured well, 
+    """ Make sure Volitile Cache was configured well,
         invoking the alarm to check """
     self._testConfiguredPromiseViaAlarm("promise_memcached_server")
 
   def testConfiguredPersistentCacheViaPromise(self):
-    """ Make sure Persistent Cache was configured well, 
+    """ Make sure Persistent Cache was configured well,
         invoking the alarm to check """
     self._testConfiguredPromiseViaAlarm("promise_kumofs_server")
 
   def testConfiguredConversionServerViaPromise(self):
-    """ Make sure Conversion Server was configured well, 
+    """ Make sure Conversion Server was configured well,
         invoking the alarm to check """
     self._testConfiguredPromiseViaAlarm("promise_conversion_server")
 
   def testConfiguredCertificateAuthoringViaPromise(self):
-    """Make sure Certificate Authoring was configured well, 
+    """Make sure Certificate Authoring was configured well,
        invoking the alarm to check. """
     self._testConfiguredPromiseViaAlarm("promise_certificate_autority_tool")
 
   def testConfiguredTemplateToolViaPromise(self):
-    """ Make sure Template Tool Repositories was configured well, 
+    """ Make sure Template Tool Repositories was configured well,
         invoking the alarm to check """
     self._testConfiguredPromiseViaAlarm("promise_template_tool_configuration")
 
   def testConfiguredVolatileCache(self):
-    """  Make sure Memcached is configured  
+    """  Make sure Memcached is configured
     """
     if self.isLiveTest():
       # This test is redundant with testConfiguredVolatileCacheViaPromise
@@ -99,9 +99,9 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     url_string = '%(hostname)s:%(port)s' % connection_dict
     self.assertEquals(memcached_tool.persistent_memcached_plugin.getUrlString(),
                       url_string)
- 
+
   def testConfiguredConversionServer(self):
-    """ Make sure Conversion Server (Cloudooo) is 
+    """ Make sure Conversion Server (Cloudooo) is
         well configured """
     if self.isLiveTest():
       # This test is redundant with testConfiguredVolatileCacheViaPromise
@@ -184,11 +184,23 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'erp5_web_shacache',
       'erp5_data_set',
       'erp5_web_shadir',
-      'erp5_accounting',
       'erp5_invoicing',
       'erp5_simplified_invoicing',
       'erp5_credential_oauth2',
       'erp5_accounting_l10n_fr',
+      'erp5_ace_editor',
+      'erp5_code_mirror',
+      'erp5_font',
+      'erp5_hal_json_style',
+      'erp5_l10n_fr',
+      'erp5_l10n_zh',
+      'erp5_movement_table_catalog',
+      'erp5_web_renderjs_ui',
+      'erp5_web_service',
+      'slapos_ecoallocation',
+	    'slapos_jio',
+      'slapos_l10n_zh',
+      'slapos_trial_request',
       'erp5_bearer_token',
       'erp5_access_token',
       'erp5_project',
