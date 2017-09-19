@@ -55,10 +55,20 @@ if [[ ! -s "$DEPLOYMENT_SCRIPT" ]] ; then
   echo "exit 1" > $DEPLOYMENT_SCRIPT
 fi
 
+function add_log ()
+{
+  LOG_FILE=$1
+  for f in /opt/slapos/log/slapos-node-{software,instance}.log ; do
+    echo "Tail of '$f':" >> $LOG_FILE
+    tail -n 500 $f >> $LOG_FILE
+  done
+}
+
 function upload ()
 {
   try=$1
   LOG_FILE=$2
+  add_log $LOG_FILE
   t=`date '+%Y%m%d%H%S'`
   mv $LOG_FILE ${LOG_FILE}.$t
   # just to be sure flush all disk operations before uploading
