@@ -49,7 +49,6 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     erp5_person = self._makeUser()
     self.tic()
     self.portal.changeSkin('Hal')
-    self.portal.ERP5Site_reindexSkinList()
     self.tic()
 
     authorization = 'Basic %s' % base64.b64encode(
@@ -413,7 +412,6 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     self._makeTree()
     instance = self.software_instance
     self.portal.changeSkin('Hal')
-    self.portal.ERP5Site_reindexSkinList()
     self.tic()
 
     remote_user = instance.getReference()
