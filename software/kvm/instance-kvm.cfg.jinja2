@@ -43,7 +43,7 @@ services = ${:etc}/service
 promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
-wipe = ${:run}/slapos/pre-destroy
+prerm = ${:etc}/prerm
 ca-dir = ${:srv}/ssl
 public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
@@ -224,12 +224,12 @@ mode = 700
 {% if wipe_disk == 'true' -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
 {% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
-{% for key, path in storage_dict.items() -%}
-{%   set wipe_file_list  = wipe_file_list  ~ ' ' ~ path ~ '/*' -%}
-{% endfor -%}
+{% if storage_dict -%}
+{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' ~ ' ' ~ '/* '.join(storage_dict.values()) ~ '/*' -%}
+{% endif -%}
 [wipe-disk-wrapper]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:wipe}/slapos_wipe_qemu_disk
+wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
 command-line = 
   {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
 {% endif -%}
