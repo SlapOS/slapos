@@ -41,9 +41,9 @@ class Manager(object):
 
     - Those folders are "/sys/fs/cgroup/cpuset/cpu<N>".
     """
-    if not os.path.exists("/sys/fs/cgroup/cpuset/cpuset.cpus"):
+    if not os.path.exists(os.path.join(self.cpuset_path, "cpuset.cpus")):
       logger.warning("CPUSet Manager cannot format computer because cgroups do not exist.")
-      return 
+      return
 
     for cpu in self._cpu_id_list():
       cpu_path = self._prepare_folder(

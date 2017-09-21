@@ -468,7 +468,7 @@ class Computer(object):
           user=user,
           address_list=address_list,
           tap=tap,
-          tun=tun if conf.create_tun else None,
+          tun=tun if config.create_tun else None,
           external_storage_list=external_storage_list,
       )
 
@@ -1516,6 +1516,8 @@ class FormatConfig(object):
       self.software_user = 'slapsoft'
     if self.create_tap is None:
       self.create_tap = True
+    if self.create_tun is None:
+      self.create_tun = False
     if self.tap_gateway_interface is None:
       self.tap_gateway_interface = ''
     if self.use_unique_local_address_block is None:
