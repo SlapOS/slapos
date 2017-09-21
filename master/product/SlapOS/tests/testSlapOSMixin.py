@@ -34,6 +34,8 @@ from Products.ERP5Type.tests.utils import DummyMailHost
 from Products.ERP5Type.Utils import convertToUpperCase
 import os
 import glob
+from functools import wraps
+from Products.ERP5Type.tests.utils import createZODBPythonScript
 from AccessControl.SecurityManagement import getSecurityManager, \
     setSecurityManager
 

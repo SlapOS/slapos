@@ -429,7 +429,7 @@ class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(organisation, 'G-COMPANY', ['Assignor'])
     self.assertRoles(organisation, 'R-MEMBER', ['Auditor'])
     self.assertRoles(organisation, 'R-SHADOW-PERSON', ['Auditor'])
-    self.assertRoles(organisation, self.user_id, ['Owner'])
+    self.assertRoles(organisation, self.user_id, ['Owner', 'Assignee'])
 
   test_Member = test_GroupCompany
 
@@ -439,11 +439,35 @@ class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
     self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', self.user_id, 'R-SHADOW-PERSON'], False)
-    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, self.user_id, ['Owner'])
+
+class TestProjectModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.project_module
+    self.changeOwnership(module)
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', self.user_id, 'R-SHADOW-PERSON'], True)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(module, self.user_id, ['Owner'])
+
+class TestProject(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    project = self.portal.project_module.newContent(
+        portal_type='Project')
+    project.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(project,
+        ['G-COMPANY', self.user_id, 'R-MEMBER', 'R-SHADOW-PERSON'], False)
+    self.assertRoles(project, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(project, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(project, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(project, self.user_id, ['Owner', 'Assignee'])
 
 class TestPDF(TestSlapOSGroupRoleSecurityMixin):
   def test_SecurityForShacache(self):

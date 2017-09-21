@@ -47,6 +47,7 @@ portal_gadgets
 portal_integrations
 portal_integrations/slapos_payzen_test_integration
 product_module
+project_module
 purchase_order_module
 purchase_trade_condition_module
 query_module
