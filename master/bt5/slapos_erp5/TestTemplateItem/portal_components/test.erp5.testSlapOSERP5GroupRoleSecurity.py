@@ -11,6 +11,13 @@ class TestSlapOSGroupRoleSecurityMixin(testSlapOSMixin):
   def beforeTearDown(self):
     transaction.abort()
 
+  def changeOwnership(self, document):
+    """ Change the ownership of the document to the right and
+        expected user. Normally the user which setups the site.
+    """
+    document.changeOwnership(getSecurityManager().getUser(), False)
+    document.updateLocalRolesOnSecurityGroups()
+
   def generateNewId(self):
     return self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_core_test'))
@@ -155,6 +162,7 @@ class TestComputerModel(TestSlapOSGroupRoleSecurityMixin):
 class TestComputerModelModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_model_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -164,6 +172,7 @@ class TestComputerModelModule(TestSlapOSGroupRoleSecurityMixin):
 class TestComputerModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'R-SHADOW-PERSON', self.user_id],
         False)
@@ -202,6 +211,7 @@ class TestComputerNetwork(TestSlapOSGroupRoleSecurityMixin):
 class TestComputerNetworkModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_network_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', 'R-SHADOW-PERSON', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -262,6 +272,7 @@ class TestComputerPartition(TestSlapOSGroupRoleSecurityMixin):
 class TestCredentialUpdateModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.credential_update_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         [self.user_id, 'R-MEMBER', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -285,6 +296,7 @@ class TestDataSet(TestSlapOSGroupRoleSecurityMixin):
 class TestDataSetModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.data_set_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
@@ -296,6 +308,7 @@ class TestDataSetModule(TestSlapOSGroupRoleSecurityMixin):
 class TestDocumentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.document_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', self.user_id, 'G-COMPANY'], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
@@ -369,6 +382,7 @@ class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
 class TestHostingSubscriptionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.hosting_subscription_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'R-INSTANCE', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -396,6 +410,7 @@ class TestImage(TestSlapOSGroupRoleSecurityMixin):
 class TestImageModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.image_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', self.user_id, 'G-COMPANY'], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
@@ -421,6 +436,7 @@ class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
 class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.organisation_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', self.user_id, 'R-SHADOW-PERSON'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor'])
@@ -472,6 +488,7 @@ class TestPerson(TestSlapOSGroupRoleSecurityMixin):
 class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.person_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id, 'R-SHADOW-PERSON'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor'])
@@ -613,6 +630,7 @@ class TestSoftwareInstallation(TestSlapOSGroupRoleSecurityMixin):
 class TestSoftwareInstallationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.software_installation_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', 'R-COMPUTER', self.user_id], False)
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
@@ -678,6 +696,7 @@ class TestSoftwareInstance(TestSlapOSGroupRoleSecurityMixin):
 class TestSoftwareInstanceModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.software_instance_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -702,6 +721,7 @@ class TestSoftwareProduct(TestSlapOSGroupRoleSecurityMixin):
 class TestSoftwareProductModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.software_product_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor'])
@@ -724,6 +744,7 @@ class TestSoftwareRelease(TestSlapOSGroupRoleSecurityMixin):
 class TestSoftwareReleaseModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.software_release_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
@@ -767,6 +788,7 @@ class TestText(TestSlapOSGroupRoleSecurityMixin):
 class TestContributionTool(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.portal_contributions
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', self.user_id, 'G-COMPANY'], True)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
@@ -778,6 +800,7 @@ class TestContributionTool(TestSlapOSGroupRoleSecurityMixin):
 class TestOpenSaleOrderModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.open_sale_order_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -796,6 +819,7 @@ class TestOpenSaleOrder(TestSlapOSGroupRoleSecurityMixin):
 class TestSaleOrderModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_order_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -814,6 +838,7 @@ class TestSaleOrder(TestSlapOSGroupRoleSecurityMixin):
 class TestSalePackingListModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_packing_list_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-MEMBER'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -867,6 +892,7 @@ class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
 class TestAccountingTransactionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.accounting_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-SHADOW-PERSON', 'R-MEMBER'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -979,6 +1005,7 @@ class TestSaleInvoiceTransaction(TestSlapOSGroupRoleSecurityMixin):
 class TestServiceModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.service_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-MEMBER'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -999,6 +1026,7 @@ class TestService(TestSlapOSGroupRoleSecurityMixin):
 class TestAccountModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.account_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-SHADOW-PERSON', 'R-MEMBER'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1021,6 +1049,7 @@ class TestAccount(TestSlapOSGroupRoleSecurityMixin):
 class TestCurrencyModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.currency_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-SHADOW-PERSON', 'R-MEMBER'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1043,6 +1072,7 @@ class TestCurrency(TestSlapOSGroupRoleSecurityMixin):
 class TestSaleTradeConditionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_trade_condition_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-MEMBER'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1125,6 +1155,7 @@ class TestBankAccount(TestSlapOSGroupRoleSecurityMixin):
 class TestCampaignModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.campaign_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1154,6 +1185,7 @@ class TestCashRegister(TestSlapOSGroupRoleSecurityMixin):
 class TestComponentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.component_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1183,6 +1215,7 @@ class TestCreditCard(TestSlapOSGroupRoleSecurityMixin):
 class TestDocumentIngestionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.document_ingestion_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1191,6 +1224,7 @@ class TestDocumentIngestionModule(TestSlapOSGroupRoleSecurityMixin):
 class TestEventModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.event_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1250,6 +1284,7 @@ class TestGadget(TestSlapOSGroupRoleSecurityMixin):
 class TestGadgetTool(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.portal_gadgets
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1268,6 +1303,7 @@ class TestInventory(TestSlapOSGroupRoleSecurityMixin):
 class TestInventoryModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.inventory_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1297,6 +1333,7 @@ class TestKnowledgePad(TestSlapOSGroupRoleSecurityMixin):
 class TestKnowledgePadModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.knowledge_pad_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1395,6 +1432,7 @@ class TestMeeting(TestSlapOSGroupRoleSecurityMixin):
 class TestMeetingModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.meeting_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1523,6 +1561,7 @@ class TestVisit(TestSlapOSGroupRoleSecurityMixin):
 class TestNotificationMessageModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.notification_message_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1541,6 +1580,7 @@ class TestNotificationMessage(TestSlapOSGroupRoleSecurityMixin):
 class TestProductModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.product_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1559,6 +1599,7 @@ class TestProduct(TestSlapOSGroupRoleSecurityMixin):
 class TestPurchaseOrderModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.purchase_order_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1577,6 +1618,7 @@ class TestPurchaseOrder(TestSlapOSGroupRoleSecurityMixin):
 class TestPurchaseTradeConditionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.purchase_trade_condition_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1595,6 +1637,7 @@ class TestPurchaseTradeCondition(TestSlapOSGroupRoleSecurityMixin):
 class TestQueryModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.query_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1613,6 +1656,7 @@ class TestQuery(TestSlapOSGroupRoleSecurityMixin):
 class TestSaleOpportunityModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_opportunity_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1764,6 +1808,7 @@ class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
 class TestSupportRequestModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.support_request_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1811,6 +1856,7 @@ class TestSupportRequest(TestSlapOSGroupRoleSecurityMixin):
 class TestTransformationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.transformation_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1829,6 +1875,7 @@ class TestTransformation(TestSlapOSGroupRoleSecurityMixin):
 class TestWebPageModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.web_page_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1847,6 +1894,7 @@ class TestWebPage(TestSlapOSGroupRoleSecurityMixin):
 class TestIntegrationTool(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.portal_integrations
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-SHADOW-PERSON', 'ERP5TypeTestCase', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
@@ -1856,6 +1904,7 @@ class TestIntegrationTool(TestSlapOSGroupRoleSecurityMixin):
 class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.portal_integrations
+    self.changeOwnership(module)
     product = module.newContent(
         portal_type='Integration Site')
     self.assertSecurityGroup(product,
@@ -1867,6 +1916,7 @@ class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
 class TestSystemEventModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.system_event_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-SHADOW-PERSON', self.user_id, 'G-COMPANY'], False)
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Author'])
@@ -1919,6 +1969,7 @@ class TestSecurePaymentTool(TestSlapOSGroupRoleSecurityMixin):
 class TestBusinessProcessModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.business_process_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', self.user_id, 'R-MEMBER'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor'])
@@ -1939,6 +1990,7 @@ class TestBusinessProcess(TestSlapOSGroupRoleSecurityMixin):
 class TestRegularisationRequestModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.regularisation_request_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -1986,6 +2038,7 @@ class TestRegularisationRequest(TestSlapOSGroupRoleSecurityMixin):
 class TestAccessTokenModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.access_token_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
@@ -2015,6 +2068,7 @@ class TestRestrictedAccessToken(TestSlapOSGroupRoleSecurityMixin):
 class TestConsumptionDocumentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.consumption_document_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['R-COMPUTER', 'R-MEMBER', self.user_id, 'G-COMPANY'], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
@@ -2063,6 +2117,7 @@ class TestUserConsumptionHTMLFile(TestSlapOSGroupRoleSecurityMixin):
 class TestCloudContractModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.cloud_contract_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         [self.user_id, 'G-COMPANY'], False)
     self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
@@ -2082,6 +2137,7 @@ class TestCloudContract(TestSlapOSGroupRoleSecurityMixin):
 class TestUpgradeDecisionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.upgrade_decision_module
+    self.changeOwnership(module)
     self.assertSecurityGroup(module,
         ['G-COMPANY', 'R-MEMBER', self.user_id], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
