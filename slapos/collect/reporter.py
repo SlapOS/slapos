@@ -128,13 +128,78 @@ def compressLogFolder(log_directory):
     finally:
       os.chdir(initial_folder)
 
-class ConsumptionReport(object):
+
+class ConsumptionReportBase(object):
+  def __init__(self, db):
+    self.db = db
+
+  def getPartitionCPULoadAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="SUM(cpu_percent)", 
+                       where="partition = '%s'" % partition_id)
+
+    cpu_percent_sum = zip(*query_result_cursor)
+    if len(cpu_percent_sum) and cpu_percent_sum[0][0] is None:
+      return
+
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+
+    sample_amount = zip(*query_result_cursor)
+    self.db.close()
+
+    if len(sample_amount) and len(cpu_percent_sum):
+      return cpu_percent_sum[0][0]/sample_amount[0][0]
+
+  def getPartitionUsedMemoryAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="SUM(memory_rss)", 
+                       where="partition = '%s'" % partition_id)
+
+    memory_sum = zip(*query_result_cursor)
+    if len(memory_sum) and memory_sum[0][0] is None:
+      return
+
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+
+    sample_amount = zip(*query_result_cursor)
+    self.db.close()
+
+    if len(sample_amount) and len(memory_sum):
+      return memory_sum[0][0]/sample_amount[0][0]
+
+  def getPartitionDiskUsedAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("folder", date_scope,
+                       columns="SUM(disk_used)", 
+                       where="partition = '%s'" % partition_id)
+
+    disk_used_sum = zip(*query_result_cursor)
+    if len(disk_used_sum) and disk_used_sum[0][0] is None:
+      return
+    query_result_cursor = self.db.select("folder", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+
+    collect_amount = zip(*query_result_cursor)
+    self.db.close()
+
+    if len(collect_amount) and len(disk_used_sum):
+      return disk_used_sum[0][0]/collect_amount[0][0]
+
+class ConsumptionReport(ConsumptionReportBase):
 
   def __init__(self, database, computer_id, location, user_list):
     self.computer_id = computer_id
     self.db = database
     self.user_list = user_list
     self.location = location
+    ConsumptionReportBase.__init__(self.db)
 
   def buildXMLReport(self, date_scope):
 
@@ -230,7 +295,7 @@ class ConsumptionReport(object):
 
   def _getAverageFromList(self, data_list):
     return sum(data_list)/len(data_list)
-    
+
   def _getCpuLoadAverageConsumption(self, date_scope):
     self.db.connect()
     query_result_cursor = self.db.select("system", date_scope, 
@@ -256,65 +321,6 @@ class ConsumptionReport(object):
     zer = self.db.getLastZeroEmissionRatio()  
     self.db.close()
     return zer
-
-  def _getPartitionCPULoadAverage(self, partition_id, date_scope):
-    self.db.connect()
-    query_result_cursor = self.db.select("user", date_scope,
-                       columns="SUM(cpu_percent)", 
-                       where="partition = '%s'" % partition_id)
-
-    cpu_percent_sum = zip(*query_result_cursor)
-    if len(cpu_percent_sum) and cpu_percent_sum[0][0] is None:
-      return
-
-    query_result_cursor = self.db.select("user", date_scope,
-                       columns="COUNT(DISTINCT time)", 
-                       where="partition = '%s'" % partition_id)
-
-    sample_amount = zip(*query_result_cursor)
-    self.db.close()
-
-    if len(sample_amount) and len(cpu_percent_sum):
-      return cpu_percent_sum[0][0]/sample_amount[0][0]
-
-  def _getPartitionUsedMemoryAverage(self, partition_id, date_scope):
-    self.db.connect()
-    query_result_cursor = self.db.select("user", date_scope,
-                       columns="SUM(memory_rss)", 
-                       where="partition = '%s'" % partition_id)
-
-    memory_sum = zip(*query_result_cursor)
-    if len(memory_sum) and memory_sum[0][0] is None:
-      return
-
-    query_result_cursor = self.db.select("user", date_scope,
-                       columns="COUNT(DISTINCT time)", 
-                       where="partition = '%s'" % partition_id)
-
-    sample_amount = zip(*query_result_cursor)
-    self.db.close()
-
-    if len(sample_amount) and len(memory_sum):
-      return memory_sum[0][0]/sample_amount[0][0]
-
-  def _getPartitionDiskUsedAverage(self, partition_id, date_scope):
-    self.db.connect()
-    query_result_cursor = self.db.select("folder", date_scope,
-                       columns="SUM(disk_used)", 
-                       where="partition = '%s'" % partition_id)
-
-    disk_used_sum = zip(*query_result_cursor)
-    if len(disk_used_sum) and disk_used_sum[0][0] is None:
-      return
-    query_result_cursor = self.db.select("folder", date_scope,
-                       columns="COUNT(DISTINCT time)", 
-                       where="partition = '%s'" % partition_id)
-  
-    collect_amount = zip(*query_result_cursor)
-    self.db.close()
-  
-    if len(collect_amount) and len(disk_used_sum):
-      return disk_used_sum[0][0]/collect_amount[0][0]
 
 class Journal(object):
 

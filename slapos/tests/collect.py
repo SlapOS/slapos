@@ -101,6 +101,25 @@ class TestCollectDatabase(unittest.TestCase):
         self.assertTrue(os.path.exists(
                   "%s/collector.db" % self.instance_root ))
 
+    def test_database_select(self):
+      def _fake_execute(sql): return sql
+
+      database = db.Database(self.instance_root)
+      database.connect()
+      original_execute = database._execute
+      try:
+        database._execute = _fake_execute
+        self.assertEquals("SELECT * FROM user  ", database.select('user'))
+        self.assertEquals("SELECT DATE FROM user  WHERE date = '0.1'  AND time=\"00:02\"  ",
+                          database.select('user', 0.1, 'DATE', 'time="00:02"'))
+        self.assertEquals("SELECT DATE FROM user  WHERE date = '0.1'   GROUP BY time ORDER BY date",
+                          database.select('user', 0.1, 'DATE', order='date', group='time' ))
+        self.assertEquals("SELECT DATE FROM user  WHERE date = '0.1'   limit 1",
+                          database.select('user', 0.1, 'DATE', limit=1))
+      finally:
+        database._execute = original_execute
+        database.close()
+
     def test_insert_user_snapshot(self):
 
         database = db.Database(self.instance_root)
