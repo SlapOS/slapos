@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.4.1 (2017-09-25)
+------------------
+
+ * slapos.format: Introduce create_tun config option (default false)
+ * slapos.cli: get template directly and not reply on namespaces for register
+ * slapos.grid: add pluging which run instance custom script at partition pre-destroy phase
+
 1.4.0 (2017-06-26)
 ------------------
 
