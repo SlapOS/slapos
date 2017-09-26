@@ -135,6 +135,8 @@ DATABASE="$HOME/srv/runner/proxy.db"
 # Change slapproxy database to point instances to new software release
 # XXX hardcoded
 PARTITION=$(basename $HOME)
+# Change to WAL mode to avoide locks
+"$SQLITE3" "$DATABASE" "PRAGMA journal_mode=WAL;"
 OLD_SOFTWARE_RELEASE=$("$SQLITE3" "$DATABASE" "select software_release from partition11 where reference='slappart0';")
 SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test0-\)[0-9][0-9][0-9]\?/\1'"$PARTITION"'/')
 "$SQLITE3" "$DATABASE" "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
@@ -146,6 +148,7 @@ IPV4='{{ ipv4 }}'
 IPV6='{{ ipv6 }}'
 "$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
 "$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
+"$SQLITE3" "PRAGMA journal_mode=DELETE;"
 
 MASTERURL='http://{{ ipv4 }}:{{ proxy_port }}'
 
