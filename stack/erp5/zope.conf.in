@@ -69,10 +69,24 @@ products {{ parameter_dict['instance-products'] }}
 </timer-server>
 
 {% endif -%}
-{% set promise_path = parameter_dict['promise-path'] -%}
-{% if promise_path -%}
-<product-config /{{ parameter_dict['site-id'] }}>
-  promise_path {{ promise_path }}
+{% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
+{% if sql_connection_string -%}
+{%   set bt5_repository_url = [] -%}
+{%   set sr_path = os.path.realpath(parameter_dict['home'] + '/software_release') + '/' -%}
+{%   for url in parameter_dict['bt5-repository-url'].split() -%}
+{%     if url.startswith(sr_path) -%}
+{%       set url = '~/software_release/' + url[len(sr_path):] -%}
+{%     endif -%}
+{%     do bt5_repository_url.append(url) -%}
+{%   endfor -%}
+<product-config initsite>
+  id {{ parameter_dict['site-id'] }}
+  owner {{ parameter_dict['inituser'] }}
+  erp5_sql_connection_string {{ sql_connection_string }}
+  cmf_activity_sql_connection_string {{ sql_connection_string }}
+  bt5_repository_url {{ ' '.join(bt5_repository_url) }}
+  bt5 {{ parameter_dict['bt5'] }}
+  cloudooo_url {{ parameter_dict['cloudooo-url'] }}
 </product-config>
 
 {% endif -%}

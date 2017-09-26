@@ -13,7 +13,7 @@
       "type": "object"
     },
     "site-id": {
-      "description": "ERP5Site object's id",
+      "description": "ERP5Site object's id. An empty value disables automatic site creation.",
       "default": "erp5",
       "type": "string"
     },

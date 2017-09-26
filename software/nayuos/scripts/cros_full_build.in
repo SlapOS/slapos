@@ -135,13 +135,12 @@ install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ bra
 # make virtual ebuild responsible for installing all packages dependent on NayuOS own packages
 insert_packages_into_ebuild \
   $(latest_ebuild ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev) \
-  net-misc/re6stnet dev-vcs/git dev-python/flask dev-python/virtualenv sys-fs/cryptsetup
+  {{ nayu_dev_packages }}
 
 # insert policies into /etc/chromium/policies/recommended with NayuOS customizations
-CHROMEOS_DEV_ROOT_EBIULD=
 insert_packages_into_ebuild \
   $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root) \
-  app-misc/nayuos-chromium-policy
+  {{ nayu_dev_rootfs_packages }}
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 find ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init* -name openssh-server.conf -delete

@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.53'
+version = '1.0.54.dev0'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -101,7 +101,6 @@ setup(name=name,
           'duplicity = slapos.recipe.duplicity:Recipe',
           'egg_test = slapos.recipe.erp5_test:EggTestRecipe',
           'equeue = slapos.recipe.equeue:Recipe',
-          'erp5.bootstrap = slapos.recipe.erp5_bootstrap:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
           'erp5.test = slapos.recipe.erp5_test:Recipe',
           'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
