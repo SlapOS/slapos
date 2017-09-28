@@ -4,6 +4,7 @@
 
 cd {{ workdir }}
 export PATH={{- path }}
+export SHELL={{-shell }}
 export PS1="$ "
 
 if [ -f "$HOME/.bashrc" ] ; then
