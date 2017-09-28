@@ -31,11 +31,11 @@
         </item>
         <item>
             <key> <string>business_template_skin_layer_priority</string> </key>
-            <value> <float>60.0</float> </value>
+            <value> <float>81.0</float> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_web</string> </value>
+            <value> <string>slapos_rss_style</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
