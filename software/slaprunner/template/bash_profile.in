@@ -30,13 +30,4 @@ alias l='ls -CF'
 
 echo "Welcome to SlapOS slaprunner shell"
 echo 
-# TODO: how to run slapos ?
-#echo "You can use the following slapos CLI commands:"
-#echo "slapos node software"
-#echo "slapos node instance"
-#echo "slapos request"
-#echo ""
-# XXX for now we can use:
-#echo ~/bin/supervisorctl -c ~/etc/supervisorctl.conf
-#echo ~/bin/supervisorctl -c ~/srv/runner/instance/etc/supervisorctl.conf
 
