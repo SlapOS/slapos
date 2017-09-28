@@ -22,6 +22,14 @@ RESTORE_ERROR_MESSAGE_FILE='{{ restore_error_message_file }}'
 ERROR_MESSAGE=""
 
 fail_with_exit_code () {
+  # if the disk is full, retry after few seconds
+  tail -n 100 '{{ output_log_file }}' | grep "DiskSpaceError|No space left on device"
+  if [ $? -eq 0 ]
+  then
+    sleep 500
+    exec '{{ script_path }}'
+    exit 0
+  fi
   echo 1 > $RESTORE_EXIT_CODE_FILE
   echo -e "Failure during step : $ERROR_MESSAGE" > $RESTORE_ERROR_MESSAGE_FILE
   exit 1
