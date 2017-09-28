@@ -99,6 +99,7 @@ context =
   raw  rsync_binary {{ rsync_executable_location }}
   raw  restore_exit_code_file ${:restore-exit-code-file}
   raw  restore_error_message_file ${:restore-error-message-file}
+  raw  script_path ${:rendered}
 
 [importer-consistency-promise]
 # Test that the importer script and "after-import" subscripts
