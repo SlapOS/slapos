@@ -126,7 +126,7 @@ class Recipe(object):
       for key, value in parameter_dict.iteritems():
           if match(key) is not None:
               continue
-          options['configuration.' + key] = value
+          options['configuration.' + key] = value or ''
 
   def fetch_parameter_dict(self, options, instance_root):
       """Gather parameters about current computer and partition.
@@ -264,7 +264,7 @@ class Recipe(object):
           # be very careful with overriding master's information
           for key, value in flatten_dict(partition_params).items():
             if key not in options:
-              options[key] = value
+              options[key] = value or ''
       # print out augmented options to see what we are passing
       logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
