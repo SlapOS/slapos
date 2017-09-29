@@ -6,6 +6,7 @@ umask 077
 # Exit on any error, to prevent inconsistent backup
 # Error on unset variable expansion
 set -eu
+set -o pipefail
 
 # Redirect output to log
 exec > >(tee -ai '{{ output_log_file }}')
@@ -22,18 +23,10 @@ rsync () {
   # Workaround for bug https://bugzilla.samba.org/show_bug.cgi?id=3653
   IGNOREEXIT=24
   IGNOREOUT='^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
-  set -o pipefail
 
   set -x
-  '{{ rsync_binary }}' -rlptgov --stats --safe-links --ignore-missing-args --delete --delete-excluded "$@" 2>1 | (egrep -v "$IGNOREOUT" || true)
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --ignore-missing-args --delete --delete-excluded "$@" 2>&1 | (egrep -v "$IGNOREOUT" || true) || [ $? = "$IGNOREEXIT" ]
   set +x
-
-  ret=$?
-  if [[ $ret == $IGNOREEXIT ]]; then
-    ret=0
-  fi
-
-  exit $ret
 }
 
 (
