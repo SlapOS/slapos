@@ -157,12 +157,6 @@
       "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
       "type": "string"
     },
-    "enable-monitor": {
-      "title": "Enable Monitoring on this cluster",
-      "description": "Deploy monitor instance to this kvm instance. It help to check instance status, log and promise results.",
-      "type": "boolean",
-      "default": true
-    },
     "monitor-interface-url": {
         "title": "Monitor Web Interface URL",
         "description": "Give Url of HTML web interface that will be used to render this monitor instance.",

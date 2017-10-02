@@ -203,12 +203,6 @@
       "type": "boolean",
       "default": false
     },
-    "enable-monitor": {
-      "title": "Deploy monitoring tools",
-      "description": "Deploy monitor instance to this kvm instance. It help to check instance status, log and promise results.",
-      "type": "boolean",
-      "default": true
-    },
     "monitor-interface-url": {
         "title": "Monitor Web Interface URL",
         "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
