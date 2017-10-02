@@ -18,6 +18,14 @@ backup_directory='{{ directory["backup"] }}'
 etc_directory='{{ directory["etc"] }}'
 tmp_directory='{{ directory["tmp"] }}'
 
+echo "Checking disk space on the machine..."
+avail=`df -h |grep '\/$' | awk '{ print $4 }' | cut -d'G' -f1`
+if [ "$avail" -lt 2 ]
+then
+  echo "ERROR: Not enough disk space available on this machine"
+  exit 1
+fi
+
 rsync () {
   # Workaround for bug https://bugzilla.samba.org/show_bug.cgi?id=3653
   IGNOREEXIT=24

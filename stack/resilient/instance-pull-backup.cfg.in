@@ -139,6 +139,7 @@ ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
 instance-root-name = $${instance-info-parameters:root-name}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
+disk-status-url = $${monitor-publish-parameters:monitor-base-url}/public/check-free-disk-space.status.json
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
