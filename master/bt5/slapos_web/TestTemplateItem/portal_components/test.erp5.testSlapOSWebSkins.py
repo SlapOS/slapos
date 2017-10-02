@@ -37,23 +37,6 @@ from DateTime import DateTime
 
 class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
 
-  def createPerson(self):
-    person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % self.new_id,
-      reference="live_test_%s" % self.new_id,
-      default_email_text="live_test_%s@example.org" % self.new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-
-    person_user.immediateReindexObject()
-    transaction.commit()
-    return person_user
-
   def createComputer(self, person=None):
     computer = self.portal.computer_module.newContent(
         portal_type="Computer",
@@ -134,7 +117,7 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
 
     if getattr(self, "person", None) is None:
       self.new_id = self.generateNewId()
-      self.person = self.createPerson()
+      self.person = self.makePerson(new_id=self.new_id)
       self.computer = self.createComputer(person=self.person)
       self.hosting_subscription = self.createHostingSubscription(
                                                            person=self.person)

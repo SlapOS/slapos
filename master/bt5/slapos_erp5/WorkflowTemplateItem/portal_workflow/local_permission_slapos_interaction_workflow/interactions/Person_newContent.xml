@@ -52,13 +52,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_edit</string> </value>
+            <value> <string>Person_newContent</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setReference</string>
+                <string>newContent</string>
               </list>
             </value>
         </item>
@@ -72,6 +72,12 @@
               <list>
                 <string>Person</string>
               </list>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type_group_filter</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>

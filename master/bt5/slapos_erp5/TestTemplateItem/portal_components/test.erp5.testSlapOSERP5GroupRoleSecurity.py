@@ -495,19 +495,25 @@ class TestPerson(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(person, 'G-COMPANY', ['Assignor'])
     self.assertRoles(person, self.user_id, ['Owner'])
 
-  def test_TheUserHimself(self):
-    reference = 'TESTPERSON-%s' % self.generateNewId()
-    person = self.portal.person_module.newContent(portal_type='Person',
-        reference=reference)
+  def test_TheUserHimself(self, login_portal_type="ERP5 Login"):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    person.newContent(portal_type=login_portal_type)
     person.updateLocalRolesOnSecurityGroups()
 
-    shadow_reference = 'SHADOW-%s' % reference
+    shadow_reference = 'SHADOW-%s' % person.getUserId()
     self.assertSecurityGroup(person,
         ['G-COMPANY', self.user_id, person.getUserId(), shadow_reference], False)
     self.assertRoles(person, 'G-COMPANY', ['Assignor'])
     self.assertRoles(person, person.getUserId(), ['Associate'])
     self.assertRoles(person, shadow_reference, ['Auditor'])
     self.assertRoles(person, self.user_id, ['Owner'])
+
+  # XXX Uncommment once facebook and google login be merged.
+  # def test_TheUserHimself_Facebook(self):
+  #   self.test_TheUserHimself(login_portal_type="Facebook Login")
+
+  # def test_TheUserHimself_Google(self):
+  #   self.test_TheUserHimself(login_portal_type="Google Login")
 
 class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):

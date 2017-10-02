@@ -27,6 +27,7 @@
 ##############################################################################
 
 import random
+import transaction
 import unittest
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
 import functools
@@ -216,6 +217,39 @@ class testSlapOSMixin(ERP5TypeTestCase):
     ]
     return result
 
+
+  def makePerson(self, new_id=None, index=True, user=True):
+
+    if new_id is None:
+      new_id = self.generateNewId()
+    # Clone person document
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+
+
+    if user:
+      login = person_user.newContent(
+        portal_type="ERP5 Login",
+        reference=person_user.getReference())
+      login.validate()
+
+    if index:
+      transaction.commit()
+      person_user.immediateReindexObject()
+      if user:
+        login.immediateReindexObject()
+
+    return person_user
+
   def _makeTree(self, requested_template_id='template_software_instance'):
     new_id = self.generateNewId()
 
@@ -229,18 +263,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
         state="started"
     )
 
-    # Clone person document
-    self.person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    self.person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    self.person_user.validate()
-    for assignment in self.person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
+    self.person_user = self.makePerson(new_id=new_id, index=False)
     self.commit()
     # prepare part of tree
     self.hosting_subscription = self.portal.hosting_subscription_module\

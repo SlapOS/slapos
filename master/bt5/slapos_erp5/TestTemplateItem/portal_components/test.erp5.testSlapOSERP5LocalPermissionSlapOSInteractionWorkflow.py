@@ -141,10 +141,22 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
         False)
 
   def test_Person_setReference(self):
+    # Due the change of security the interaction workflow don't trigger
+    # updateLocalRolesOnSecurityGroups.
+
     person = self.portal.person_module.newContent(portal_type='Person')
     self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY'], False)
 
     person.edit(reference='TESTPER-%s' % self.generateNewId())
+    transaction.commit()
+
+    self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY'], False)
+
+  def test_Person_newContent(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY'], False)
+
+    person.newContent(portal_type="ERP5 Login")
     transaction.commit()
 
     self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY',
