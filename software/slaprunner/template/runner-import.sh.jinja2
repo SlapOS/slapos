@@ -35,6 +35,9 @@ log_message () {
 # Delete the error message file, to not keep it even after a successful build
 rm "$RESTORE_ERROR_MESSAGE_FILE" || true
 
+log_message "Checking disk space on the machine..."
+( exec {{ check_disk }} false )
+
 rsync () {
   set -x
   '{{ rsync_binary }}' -rlptgov --stats --safe-links --delete "$@"

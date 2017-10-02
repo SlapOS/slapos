@@ -23,6 +23,7 @@ parts +=
   shellinabox
   slapos-cfg
   cron-entry-prepare-software
+  cron-entry-retry-export-import-on-space-full
   deploy-instance-parameters
   instance-software
   instance-software-type
@@ -31,6 +32,7 @@ parts +=
   supervisord-wrapper
   supervisord-promise
   httpd-graceful-wrapper
+  check-exporter-disk
 ## Monitoring part
 ## Monitor for runner
   monitor-base
@@ -77,6 +79,7 @@ context =
   raw  output_log_file ${directory:log}/resilient.log
   raw  shell_binary {{ bash_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}
+  raw  check_disk ${check-exporter-disk:output}
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port
@@ -108,6 +111,12 @@ configuration-file-path = ${buildout:directory}/knowledge0.cfg
 [publish-connection-information]
 <= resilient-publish-connection-parameter
 
+[check-exporter-disk]
+<= retry-if-disk-free
+
+[importer-exporter-binary]
+path = ${notifier-exporter:wrapper}
+
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
 template = {{ monitor_check_resilient_feed_template_path }}
@@ -118,3 +127,4 @@ context =
   key monitor_feed_directory monitor-directory:public
   raw base_url http://[${notifier:host}]:${notifier:port}/get/
   raw python_executable ${buildout:executable}
+

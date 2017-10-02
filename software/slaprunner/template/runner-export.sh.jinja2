@@ -19,6 +19,11 @@ backup_directory='{{ directory["backup"] }}'
 etc_directory='{{ directory["etc"] }}'
 tmp_directory='{{ directory["tmp"] }}'
 
+# Check if we have disk space on this computer
+(
+  exec {{ check_disk }} false
+)
+
 rsync () {
   # Workaround for bug https://bugzilla.samba.org/show_bug.cgi?id=3653
   IGNOREEXIT=24

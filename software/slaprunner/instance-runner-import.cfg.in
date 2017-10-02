@@ -21,6 +21,7 @@ parts +=
   symlinks
   slapos-cfg
   cron-entry-prepare-software
+  cron-entry-retry-export-import-on-space-full
   deploy-instance-parameters
   instance-software-type
   bash-profile
@@ -92,6 +93,7 @@ context =
   key ipv6 slaprunner:ipv6
   key proxy_port slaprunner:proxy_port
   key instance_folder slaprunner:instance_root
+  key check_disk check-importer-disk:output
   section directory directory
   section supervisord supervisord
   raw  output_log_file ${directory:log}/${:resilient-log-basename}
@@ -175,6 +177,12 @@ instance-configuration =
   raw takeover-url http://[${resilient-web-takeover-httpd-configuration-file:listening-ip}]:${resilient-web-takeover-httpd-configuration-file:listening-port}/
   raw takeover-password ${resilient-web-takeover-password:passwd}
 configuration-file-path = ${buildout:directory}/knowledge0.cfg
+
+[check-importer-disk]
+<= retry-if-disk-free
+
+[importer-exporter-binary]
+path = ${importer:wrapper}
 
 [monitor-conf-parameters]
 private-path-list += 

@@ -75,10 +75,19 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     # Create a simple rdiff-backup wrapper that will push
 
     template = textwrap.dedent("""\
-        #!/bin/sh
+        #!/bin/bash
         #
         # Push data to a PBS *-import instance.
         #
+
+        # check space in *-import instance
+        disk_status_url="%(disk_status_url)s"
+        status=$(wget $disk_status_url -q -O -)
+        if [[ ! -z "$status" ]] && [[ $(echo "$status" | grep '"status": "OK"' | wc -c) -eq 0  ]];
+        then
+          echo "Not enough space on the import instance as reported by monitor: $disk_status_url"
+          exit 0
+        fi
 
         LC_ALL=C
         export LC_ALL
@@ -92,6 +101,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         """)
 
     template_dict = {
+      'wget': shlex.quote(self.options['wget-binary']),
+      'disk_status_url': shlex.quote(self.options['disk-status-url']),
       'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
       'remote_schema': shlex.quote(remote_schema),
       'remote_dir': shlex.quote(remote_dir),
