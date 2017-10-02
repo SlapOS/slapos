@@ -100,3 +100,33 @@ command = touch file_created_when_running_instance
         ])
 
 
+    @mock.patch('slapos.slap.slap.registerComputerPartition')
+    def test_case_sensitive_options(self, mock_client):
+        mock_client.return_value = self._mockComputerPartition()
+
+        buildout_directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, buildout_directory)
+        instance_buildout_file = os.path.join(buildout_directory, 'instance-test.cfg')
+        with open(instance_buildout_file, 'w') as software_type_buildout:
+            software_type_buildout.write('''
+[buildout]
+parts = test
+
+[other-section]
+OpTiOn = file_created_when_running_instance
+
+[test]
+recipe = plone.recipe.command
+command = touch ${other-section:OpTiOn}
+''')
+
+        self.recipe.buildout['buildout']['directory'] = buildout_directory
+        self.recipe.options['test'] = instance_buildout_file
+
+        sys.argv = ['buildout', ]
+        self.recipe.install()
+
+        self.assertIn(
+            'file_created_when_running_instance',
+            os.listdir(buildout_directory))
+

@@ -54,6 +54,11 @@ class SlapConfigParser(ConfigParser, object):
       
       This is invalid with buildout version 2.
   """
+  def optionxform(self, option):
+    """Treat options in a case sensitive way.
+    This is what buildout does, but not the default ConfigParser.
+    """
+    return option
 
   def write(self, fp):
     """Write an .ini-format representation of the configuration state."""
