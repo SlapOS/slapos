@@ -1,0 +1,152 @@
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+[buildout]
+extends =
+  {{ parameter_dict['template-monitor'] }}
+parts +=
+  publish
+  cloudooo-instance
+  resiliency-exclude-file
+  promise
+  promise-openoffice
+  {% if use_ipv6 %}promise-tunnel{% endif %}
+  xvfb-instance
+  wkhtmltopdf-on-xvfb
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+url = http://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
+{% else -%}
+url = http://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+{% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+
+[cloudooo-instance]
+recipe = slapos.cookbook:generic.cloudooo
+
+# Network options
+ip = {{ (ipv4_set | list)[0] }}
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+port = {{ tcpv4_port }}
+openoffice-port = {{ tcpv4_port + 1 }}
+
+# Paths
+configuration-file = ${directory:etc}/cloudooo.cfg
+wrapper = ${directory:service}/cloudooo
+
+# Paths: Data
+data-directory = ${directory:cloudooo-data}
+
+environment =
+  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+  PATH = ${binary-link:target-directory}
+
+# Binary information
+# cloudooo specific configuration
+ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
+ooo-paster = {{ bin_directory }}/cloudooo_paster
+ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+[fontconfig-instance]
+recipe = slapos.cookbook:fontconfig
+conf-path = ${directory:etc}/font.conf
+font-system-folder = {{ parameter_dict['fonts'] }}
+font-folder = ${directory:font}
+service-folder = ${directory:service}
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
+
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/cloudooo
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:port}
+
+[promise-openoffice]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/openoffice
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:openoffice-port}
+
+{% if use_ipv6 -%}
+[promise-tunnel]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/tunnel
+hostname = ${ipv6toipv4:ipv6}
+port = ${ipv6toipv4:ipv6-port}
+
+[ipv6toipv4]
+recipe = slapos.cookbook:ipv6toipv4
+runner-path = ${directory:service}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = ${cloudooo-instance:ip}
+ipv6 = {{ (ipv6_set | list)[0] }}
+ipv6-port = ${cloudooo-instance:port}
+ipv4-port = ${cloudooo-instance:port}
+base-name = cloudooo-tunnel
+
+{% endif -%}
+# rest of parts are candidates for some generic stuff
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+service = ${:etc}/run
+promise = ${:etc}/promise
+cloudooo-data = ${:srv}/cloudooo
+font = ${:srv}/font
+framebuffer = ${:srv}/framebuffer
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ tcpv4_port + 2 }}
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['coreutils'] }}/bin/dirname
+# wrapper recipe needs the head command
+  {{ parameter_dict['coreutils'] }}/bin/head
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['onlyoffice-x2t'] }}/x2t
+
+[xvfb-instance]
+recipe = slapos.cookbook:xvfb
+runner-path = ${directory:service}/xvfb
+xvfb-path = {{ parameter_dict["xserver"] }}/bin/Xvfb
+fbdir-path = ${directory:framebuffer}
+tmp-path = ${directory:run}
+shell-path = {{ parameter_dict["dash"] }}/bin/dash
+
+[wkhtmltopdf-on-xvfb]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/wkhtmltopdf
+environment =
+  DISPLAY=:0
+  TMPDIR=${directory:run}
+command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
+parameters-extra = true
