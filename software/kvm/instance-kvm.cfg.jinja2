@@ -10,7 +10,6 @@
 {% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
-{% set monitor = str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
 
 {% set bootstrap_url = '' -%}
 {% set bootstrap_url_md5sum = '' -%}
@@ -27,10 +26,9 @@
 {%   set nat_rule_list = '' %}
 {% endif -%}
 
-{% if monitor -%}
 {% do extends_list.append(template_monitor) -%}
-{% endif -%}
 {% do extends_list.append(logrotate_cfg) -%}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -358,22 +356,20 @@ hostname = ${httpd:host}
 port = ${httpd:port}
 {% endif %}
 
-{% if monitor -%}
-
 [monitor-instance-parameter]
 monitor-httpd-port = 8026
 monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-{%   if slapparameter_dict.get('monitor-username', '') -%}
+{% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
-{%   endif -%}
-{%   if slapparameter_dict.get('monitor-password', '') -%}
-password = {{ slapparameter_dict['monitor-password'] }}
-{%   endif -%}
-
 {% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
 
 [publish-connection-information]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
@@ -407,13 +403,6 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
-{% if monitor -%}
-monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-{%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-{%   if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-{%   endif -%}
-{% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
@@ -646,10 +635,8 @@ parts =
   cron
   cron-entry-logrotate
   frontend-promise
-{% if monitor -%}
 # monitor parts
   monitor-base
-{% endif -%}
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
 
