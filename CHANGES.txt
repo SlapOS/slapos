@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.4.2 (2017-10-02)
+------------------
+
+ * slapos.collect: Make internal API usable as library for third parties
+
 1.4.1 (2017-09-25)
 ------------------
 
