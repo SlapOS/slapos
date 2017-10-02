@@ -3,6 +3,7 @@ import json
 import mock
 import os
 import unittest
+import tempfile
 from collections import defaultdict
 from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
@@ -12,8 +13,7 @@ class SlapConfigurationTest(unittest.TestCase):
 
   def setUp(self):
     """Prepare files on filesystem."""
-    self.instance_root = "/tmp/instance_test_resourcefile"
-    os.mkdir(self.instance_root)
+    self.instance_root = tempfile.mkdtemp()
     # create testing resource file
     self.resource_file = os.path.join(self.instance_root, slapformat.Partition.resource_file)
     self.resource = {
