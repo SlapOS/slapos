@@ -1,6 +1,12 @@
 Changes
 =======
 
+(unreleased)
+----------
+
+ * slapos.cli.grid: Allow definition of different pidfiles for each software subcommand in config file
+
+
 1.4.2 (2017-10-02)
 ------------------
 

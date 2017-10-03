@@ -41,6 +41,7 @@ class SlapgridCommand(ConfigCommand):
 
     method_name = NotImplemented
     default_pidfile = NotImplemented
+    pidfile_option_name = NotImplemented
 
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
@@ -63,8 +64,9 @@ class SlapgridCommand(ConfigCommand):
                         help='Location of buildout binary.')
         ap.add_argument('--pidfile',
                         help='The location where pidfile will be created. '
-                             'Can be provided by configuration file, or defaults '
-                             'to %s' % self.default_pidfile)
+                             'Can be provided by configuration file as option '
+                             '`%s` in slapos section, otherwise defaults '
+                             'to %s' % (self.pidfile_option_name, self.default_pidfile))
         ap.add_argument('--key_file',
                         help='SSL Authorisation key file.')
         ap.add_argument('--cert_file',
@@ -106,7 +108,9 @@ class SlapgridCommand(ConfigCommand):
 
         slapgrid_object = create_slapgrid_object(options, logger=self.app.log)
 
-        pidfile = options.get('pidfile') or self.default_pidfile
+        pidfile = ( options.get(self.pidfile_option_name) or
+            options.get('pidfile') or # for compatibility we also read pidfile from option `pidfile`
+            self.default_pidfile )
 
         if pidfile:
             setRunning(logger=self.app.log, pidfile=pidfile)
@@ -122,6 +126,7 @@ class SoftwareCommand(SlapgridCommand):
 
     method_name = 'processSoftwareReleaseList'
     default_pidfile = '/opt/slapos/slapgrid-sr.pid'
+    pidfile_option_name = 'pidfile_software'
 
     def get_parser(self, prog_name):
         ap = super(SoftwareCommand, self).get_parser(prog_name)
@@ -141,6 +146,7 @@ class InstanceCommand(SlapgridCommand):
 
     method_name = 'processComputerPartitionList'
     default_pidfile = '/opt/slapos/slapgrid-cp.pid'
+    pidfile_option_name = 'pidfile_instance'
 
     def get_parser(self, prog_name):
         ap = super(InstanceCommand, self).get_parser(prog_name)
@@ -160,3 +166,4 @@ class ReportCommand(SlapgridCommand):
 
     method_name = 'agregateAndSendUsage'
     default_pidfile = '/opt/slapos/slapgrid-ur.pid'
+    pidfile_option_name = 'pidfile_report'
