@@ -49,13 +49,13 @@ class Recipe(object):
     except IOError, e:
       if e.errno != errno.ENOENT:
         raise
-      readline = None
+      readline = ''
 
     self.readline = readline
     options['readline'] = readline
 
   def install(self):
-    if self.readline is None:
+    if self.readline is '':
       raise ValueError('Unable to read the file content.')
     return ()
 
