@@ -41,8 +41,8 @@ extra-context =
     key ipv4_set slap-parameters:ipv4
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = ${cloudooo-dynamic-template:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+default = cloudooo-dynamic-template:rendered
 
 [slap-connection]
 # part to migrate to new - separated words
