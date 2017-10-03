@@ -43,7 +43,7 @@ state = stopped
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
-{{ setconfig('instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
+{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
@@ -54,6 +54,8 @@ config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
+{{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
+{{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
 {{ setconfig('cpu-options', kvm_parameter_dict.get('cpu-options', '')) }}
 {{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
 {{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
@@ -158,7 +160,7 @@ name = Frontend {{ name }}
 software-type = {{ slave_frontend_stype }}
 slave = true
 config-url = {{ url }}
-{{ setconfig('domain', kvm_parameter_dict.get('domain', '')) }}
+{{ setconfig('custom_domain', kvm_parameter_dict.get('domain', '')) }}
 config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}
 config-https-only = {{ dumps(frontend_parameter_dict.get('https-only', False)) }}
 {%  if frontend_parameter_dict.get('type', '') -%}
