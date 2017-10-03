@@ -155,22 +155,20 @@ rm '{{ instance_folder }}'/etc/supervisord.conf.d/* || true
 
 SLAPOSCFG='{{ supervisord["slapos-cfg"] }}'
 SLAPGRIDSRLOG='{{ supervisord["slapgrid-sr-log"] }}'
-SLAPGRIDSRPID='{{ supervisord["slapgrid-sr-pid"] }}'
 SLAPGRIDCPLOG='{{ supervisord["slapgrid-cp-log"] }}'
-SLAPGRIDCPPID='{{ supervisord["slapgrid-cp-pid"] }}'
 
 log_message "Building newest Software Release..."
-"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
-"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
-"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
 (tail -n 200 "$SLAPGRIDSRLOG" && false)
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm "$srv_directory"/runner/instance/slappart*/srv/runner-import-restore || true
 log_message "Fixing Instances as needed after import..."
 # XXX hardcoded
-"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
-"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
-"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" >/dev/null 2>&1 ||
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" >/dev/null 2>&1 ||
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" >/dev/null 2>&1 ||
 (tail -n 200 "$SLAPGRIDCPLOG" && false)
 
 # Invoke defined scripts for each partition inside of slaprunner
