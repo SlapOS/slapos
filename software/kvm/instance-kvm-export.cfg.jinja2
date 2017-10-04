@@ -34,17 +34,17 @@ context =
 # Extends publish section with resilient parameters
 [publish-connection-information]
 <= resilient-publish-connection-parameter
+monitor-base-url = ${monitor-publish:monitor-base-url}
+monitor-setup-url = ${monitor-publish:monitor-setup-url}
 
-{% if str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
 [monitor-instance-parameter]
 monitor-httpd-port = 8026
 monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-{%   if slapparameter_dict.get('monitor-username', '') -%}
+{% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
-{%   endif -%}
-{%   if slapparameter_dict.get('monitor-password', '') -%}
-password = {{ slapparameter_dict['monitor-password'] }}
-{%   endif -%}
-
 {% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+
