@@ -13,10 +13,10 @@ class Person(ERP5Person):
       # in ERP5 user has no SetOwnPassword permission on Person document
       # referring himself, so implement "security" by checking that currently
       # logged in user is trying to get/revoke his own certificate
-      reference = self.getReference()
-      if not reference:
+      user_id = self.getUserId()
+      if not user_id:
         raise
-      if getSecurityManager().getUser().getId() != reference:
+      if getSecurityManager().getUser().getId() != user_id:
         raise
 
   def _getCertificate(self):

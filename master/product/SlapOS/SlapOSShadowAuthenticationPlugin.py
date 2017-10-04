@@ -25,29 +25,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 ##############################################################################
-
-from zLOG import LOG, PROBLEM
+from functools import partial
 from Products.ERP5Type.Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
-import sys
 
+from Products import ERP5Security
 from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
-from Products.PluggableAuthService.PluggableAuthService import \
-    _SWALLOWABLE_PLUGIN_EXCEPTIONS
+
 from Products.PluggableAuthService.interfaces import plugins
 from Products.PluggableAuthService.utils import classImplements
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
-from Products.ERP5Type.Cache import transactional_cached
-from Products import ERP5Security
-from ZODB.POSException import ConflictError
-from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
+from Products.ERP5Security.ERP5GroupManager import NO_CACHE_MODE
 from Products.ERP5Type.Cache import CachingMethod
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
-from Products.ERP5Security.ERP5UserManager import getValidAssignmentList
+from Products.ERP5Security.ERP5LoginUserManager import SYSTEM_USER_USER_NAME,\
+                                                   SPECIAL_USER_NAME_SET
 
 # some usefull globals
-LOGGABLE_PORTAL_TYPE_LIST = ["Person", "Computer", "Software Instance"]
 LOGIN_PREFIX = 'SHADOW-'
 LOGIN_PREFIX_LENGTH = len(LOGIN_PREFIX)
 
@@ -69,49 +63,6 @@ def addSlapOSShadowAuthenticationPlugin(dispatcher, id, title=None, REQUEST=None
           'SlapOSShadowAuthenticationPlugin+added.'
           % dispatcher.absolute_url())
 
-@transactional_cached(lambda portal, *args: args)
-def getUserByLogin(portal, login):
-  if isinstance(login, basestring):
-    login = login,
-
-  if len(login) != 1:
-    return []
-
-  login = login[0]
-  if login.startswith(LOGIN_PREFIX):
-    login = login[LOGIN_PREFIX_LENGTH:]
-  else:
-    return []
-
-  machine_query = Query(portal_type=["Computer", "Software Instance"],
-      validation_state="validated",
-      reference=dict(query=login, key='ExactMatch'))
-  person_query = Query(portal_type=["Person"],
-      reference=dict(query=login, key='ExactMatch'))
-  result = portal.portal_catalog.unrestrictedSearchResults(
-    query=ComplexQuery(machine_query, person_query,logical_operator="OR"),
-    select_expression='reference')
-  result = [x for x in result if \
-    (x.getPortalType() == 'Person' and x.getValidationState() != 'deleted') or \
-    (x.getPortalType() in ("Computer", "Software Instance") and \
-      x.getValidationState() == 'validated')]
-  # XXX: Here, we filter catalog result list ALTHOUGH we did pass
-  # parameters to unrestrictedSearchResults to restrict result set.
-  # This is done because the following values can match person with
-  # reference "foo":
-  # "foo " because of MySQL (feature, PADSPACE collation):
-  #  mysql> SELECT reference as r FROM catalog
-  #      -> WHERE reference="foo      ";
-  #  +-----+
-  #  | r   |
-  #  +-----+
-  #  | foo |
-  #  +-----+
-  #  1 row in set (0.01 sec)
-  # "bar OR foo" because of ZSQLCatalog tokenizing searched strings
-  #  by default (feature).
-  return [x.getObject() for x in result if x['reference'] in login]
-
 class SlapOSShadowAuthenticationPlugin(BasePlugin):
   """
   Plugin to authenicate as shadows.
@@ -125,59 +76,12 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
     self._setId(id)
     self.title = title
 
-  ################################
-  #     IAuthenticationPlugin    #
-  ################################
-  security.declarePrivate('authenticateCredentials')
-  def authenticateCredentials(self, credentials):
-    """Authentificate with credentials"""
-    login = credentials.get('machine_login', None)
-    # Forbidden the usage of the super user.
-    if login == ERP5Security.SUPER_USER:
-      return None
-
-    #Search the user by his login
-    user_list = self.getUserByLogin(login)
-    if len(user_list) != 1:
-      return None
-    user = user_list[0]
-    if user.getPortalType() == 'Person':
-      if len(getValidAssignmentList(user)) == 0:
-        return None
-    return (login, login)
-
-  def getUserByLogin(self, login):
-    # Search the Catalog for login and return a list of person objects
-    # login can be a string or a list of strings
-    # (no docstring to prevent publishing)
-    if not login:
-      return []
-    if isinstance(login, list):
-      login = tuple(login)
-    elif not isinstance(login, tuple):
-      login = str(login)
-    try:
-      return getUserByLogin(self.getPortalObject(), login)
-    except ConflictError:
-      raise
-    except:
-      LOG('SlapOSShadowAuthenticationPlugin', PROBLEM, 'getUserByLogin failed',
-        error=sys.exc_info())
-      # Here we must raise an exception to prevent callers from caching
-      # a result of a degraded situation.
-      # The kind of exception does not matter as long as it's catched by
-      # PAS and causes a lookup using another plugin or user folder.
-      # As PAS does not define explicitely such exception, we must use
-      # the _SWALLOWABLE_PLUGIN_EXCEPTIONS list.
-      raise _SWALLOWABLE_PLUGIN_EXCEPTIONS[0]
-
   #################################
   #   IGroupsPlugin               #
   #################################
   # This is patched version of
   #   Products.ERP5Security.ERP5GroupManager.ERP5GroupManager.getGroupsForPrincipal
   # which allows to treat Computer and Software Instance as loggable user
-  loggable_portal_type_list = LOGGABLE_PORTAL_TYPE_LIST
   def getGroupsForPrincipal(self, principal, request=None):
     """ See IGroupsPlugin.
     """
@@ -186,30 +90,28 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
       return ()
 
     @UnrestrictedMethod
-    def _getGroupsForPrincipal(user_name, path):
-      if user_name.startswith(LOGIN_PREFIX):
-        user_name = user_name[LOGIN_PREFIX_LENGTH:]
+    def _getGroupsForPrincipal(user_id, path):
+      if user_id.startswith(LOGIN_PREFIX):
+        user_id = user_id[LOGIN_PREFIX_LENGTH:]
       else:
         return ( )
 
-      # get the loggable document from its reference - no security check needed
-      catalog_result = self.portal_catalog.unrestrictedSearchResults(
-          portal_type=self.loggable_portal_type_list,
-          reference=dict(query=user_name, key='ExactMatch'))
-      if len(catalog_result) != 1: # we won't proceed with groups
-        if len(catalog_result) > 1: # configuration is screwed
-          raise ConsistencyError, 'There is more than one of %s whose \
-              login is %s : %s' % (','.join(self.loggable_portal_type_list),
-              user_name,
-              repr([r.getObject() for r in catalog_result]))
-        else:
-          return ()
-      else:
-        portal_type = catalog_result[0].getPortalType()
+      # get the person from its login - no security check needed
+      user_path_set = {
+        x['path']
+        for x in self.searchUsers(id=user_id, exact_match=True)
+        if 'path' in x
+      }
+      if not user_path_set:
+        return ()
+      user_path, = user_path_set
+      person_object = self.getPortalObject().unrestrictedTraverse(user_path)
+
+      portal_type = person_object.getPortalType()
 
       return (
         'R-SHADOW-%s' % portal_type.replace(' ', '').upper(), # generic group
-        'SHADOW-%s' % user_name # user specific shadow
+        'SHADOW-%s' % user_id # user specific shadow
         )
 
     if not NO_CACHE_MODE:
@@ -218,52 +120,141 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
                                              cache_factory='erp5_content_short')
 
     return _getGroupsForPrincipal(
-                user_name=principal.getId(),
+                user_id=principal.getId(),
                 path=self.getPhysicalPath())
 
   #
   #   IUserEnumerationPlugin implementation
   #
-  security.declarePrivate( 'enumerateUsers' )
+  security.declarePrivate('enumerateUsers')
   def enumerateUsers(self, id=None, login=None, exact_match=False,
-                   sort_by=None, max_results=None, **kw):
+             sort_by=None, max_results=None, login_portal_type=None, **kw):
     """ See IUserEnumerationPlugin.
     """
-    if id is None:
-      id = login
-    if isinstance(id, str):
-      id = (id,)
-    if isinstance(id, list):
-      id = tuple(id)
+    portal = self.getPortalObject()
+    if login_portal_type is None:
+      login_portal_type = portal.getPortalLoginTypeList()
+    unrestrictedSearchResults = portal.portal_catalog.unrestrictedSearchResults
+    searchUser = lambda **kw: unrestrictedSearchResults(
+      select_list=('user_id', ),
+      **kw
+    ).dictionaries()
+    searchLogin = lambda **kw: unrestrictedSearchResults(
+      select_list=('parent_uid', 'reference'),
+      validation_state='validated',
+      **kw
+    ).dictionaries()
+    if login_portal_type is not None:
+      searchLogin = partial(searchLogin, portal_type=login_portal_type)
+    special_user_name_set = set()
+    if login is None:
+      # Only search by id if login is not given. Same logic as in
+      # PluggableAuthService.searchUsers.
 
-    user_info = []
+      # CUSTOM: Modify the id to remove the prefix before search the User
+      if id.startswith(LOGIN_PREFIX):
+        id = id[LOGIN_PREFIX_LENGTH:]
+      else:
+        return ( )
+      # END OF CUSTOM CODE
+
+      if isinstance(id, str):
+        id = (id, )
+
+      # Short-cut "System Processes" as not being searchable by user_id.
+      # This improves performance in proxy-role'd execution by avoiding an
+      # sql query expected to find no user.
+      id = [x for x in id if x != SYSTEM_USER_USER_NAME]
+      if id:
+        if exact_match:
+          requested = set(id).__contains__
+        else:
+          requested = lambda x: True
+        user_list = [
+          x for x in searchUser(
+            user_id={
+              'query': id,
+              'key': 'ExactMatch' if exact_match else 'Keyword',
+            },
+            limit=max_results,
+          )
+          if requested(x['user_id'])
+        ]
+      else:
+        user_list = []
+      login_dict = {}
+      if user_list:
+        for login in searchLogin(parent_uid=[x['uid'] for x in user_list]):
+          login_dict.setdefault(login['parent_uid'], []).append(login)
+    else:
+
+      # CUSTOM: Modify the login to remove the prefix before search the User
+      if login.startswith(LOGIN_PREFIX):
+        login = login[LOGIN_PREFIX_LENGTH:]
+      else:
+        return ( )
+      # END OF CUSTOM CODE
+
+      if isinstance(login, str):
+        login = (login, )
+
+      login_list = []
+      for user_login in login:
+        if user_login in SPECIAL_USER_NAME_SET:
+          special_user_name_set.add(user_login)
+        else:
+          login_list.append(user_login)
+      login_dict = {}
+      if exact_match:
+        requested = set(login_list).__contains__
+      else:
+        requested = lambda x: True
+      if login_list:
+        for login in searchLogin(
+          reference={
+            'query': login_list,
+            'key': 'ExactMatch' if exact_match else 'Keyword',
+          },
+          limit=max_results,
+        ):
+          if requested(login['reference']):
+            login_dict.setdefault(login['parent_uid'], []).append(login)
+      if login_dict:
+        user_list = searchUser(uid=list(login_dict))
+      else:
+        user_list = []
     plugin_id = self.getId()
 
-    id_list = []
-    for user_id in id:
-      if ERP5Security.SUPER_USER == user_id:
-        info = { 'id' : ERP5Security.SUPER_USER
-                , 'login' : ERP5Security.SUPER_USER
-                , 'pluginid' : plugin_id
-                }
-        user_info.append(info)
-      else:
-        id_list.append(user_id)
+    # CUSTOM: In the block below the LOGIN_PREFIX is added before id and login
+    # to keep compatibility.
 
-    if id_list:
-      for user in self.getUserByLogin(tuple(id_list)):
-          info = { 'id' : LOGIN_PREFIX + user.getReference()
-                 , 'login' : LOGIN_PREFIX + user.getReference()
-                 , 'pluginid' : plugin_id
-                 }
+    result = [
+      {
+        'id': LOGIN_PREFIX + user['user_id'],
+        # Note: PAS forbids us from returning more than one entry per given id,
+        # so take any available login.
+        'login': LOGIN_PREFIX + login_dict.get(user['uid'], [{'reference': None}])[0]['reference'],
+        'pluginid': plugin_id,
 
-          user_info.append(info)
+        # Extra properties, specific to ERP5
+        'path': user['path'],
+        'uid': user['uid'],
+        'login_list': [
+          {
+            'reference': LOGIN_PREFIX + login['reference'],
+            'path': login['path'],
+            'uid': login['uid'],
+          }
+          for login in login_dict.get(user['uid'], [])
+        ],
+      }
+      for user in user_list if user['user_id']
+    ]
+    # END OF CUSTOM CODE
 
-    return tuple(user_info)
+    return tuple(result)
 
 #List implementation of class
-classImplements(SlapOSShadowAuthenticationPlugin,
-                plugins.IAuthenticationPlugin)
 classImplements( SlapOSShadowAuthenticationPlugin,
                plugins.IGroupsPlugin
                )

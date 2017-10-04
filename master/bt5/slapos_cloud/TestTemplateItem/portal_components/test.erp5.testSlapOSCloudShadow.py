@@ -28,7 +28,6 @@
 
 import unittest
 import random
-import transaction
 from AccessControl import getSecurityManager
 from erp5.component.test.testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
 
@@ -36,96 +35,125 @@ class TestSlapOSShadowPerson(TestSlapOSSecurityMixin):
   def test_active(self):
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
-    shadow_reference = 'SHADOW-%s' % reference
-    person = self.portal.person_module.newContent(portal_type='Person',
-      reference=reference, password=password)
+    user_id = self._generateRandomUniqueUserId('Person')
+    shadow_user_id = 'SHADOW-%s' % user_id
+
+    person = self.portal.person_module.newContent(
+      portal_type='Person')
+    person.setUserId(user_id)
     person.newContent(portal_type='Assignment').open()
 
-    transaction.commit()
+    person.newContent(portal_type='ERP5 Login',
+          reference=reference, password=password).validate()
+    self.commit()
     person.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, password)
-    self._assertUserExists(shadow_reference, None)
+    self._assertUserExists(user_id, reference, password)
 
-    self.login(shadow_reference)
+    # XXX shadow user cannot login himself.
+    self._assertUserExists(shadow_user_id, reference, None)
+
+    self.login(shadow_user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
-    self.assertSameSet(['R-SHADOW-PERSON', 'SHADOW-%s' % reference],
+    self.assertSameSet(['R-SHADOW-PERSON', 'SHADOW-%s' % user_id],
       user.getGroups())
 
   def test_inactive(self):
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
-    shadow_reference = 'SHADOW-%s' % reference
-    person = self.portal.person_module.newContent(portal_type='Person',
-      reference=reference, password=password)
+    user_id = self._generateRandomUniqueUserId('Person')
 
-    transaction.commit()
+    shadow_user_id = 'SHADOW-%s' % user_id
+    person = self.portal.person_module.newContent(
+      portal_type='Person')
+    person.setUserId(user_id)
+
+    self.commit()
     person.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, password)
-    self._assertUserDoesNotExists(shadow_reference, None)
+    self._assertUserDoesNotExists(user_id, reference, password)
+    self._assertUserDoesNotExists(shadow_user_id, reference, None)
 
 class TestSlapOSShadowComputer(TestSlapOSSecurityMixin):
   def test_active(self):
     reference = self._generateRandomUniqueReference('Computer')
-    shadow_reference = 'SHADOW-%s' % reference
+    user_id = self._generateRandomUniqueUserId('Computer')
+
+    shadow_user_id = 'SHADOW-%s' % user_id
 
     computer = self.portal.computer_module.newContent(portal_type='Computer',
       reference=reference)
+    computer.setUserId(user_id)
+
+    computer.newContent(portal_type='ERP5 Login',
+          reference=reference).validate()
+
     computer.validate()
     computer.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, None)
-    self._assertUserExists(shadow_reference, None)
+    self._assertUserExists(user_id, reference, None)
+    self._assertUserExists(shadow_user_id, reference, None)
 
-    self.login(shadow_reference)
+    self.login(shadow_user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
-    self.assertSameSet(['R-SHADOW-COMPUTER', 'SHADOW-%s' % reference],
+    self.assertSameSet(['R-SHADOW-COMPUTER', 'SHADOW-%s' % user_id],
       user.getGroups())
 
   def test_inactive(self):
     reference = self._generateRandomUniqueReference('Computer')
+    user_id = self._generateRandomUniqueUserId('Computer')
+
     shadow_reference = 'SHADOW-%s' % reference
 
     computer = self.portal.computer_module.newContent(portal_type='Computer',
       reference=reference)
+    computer.setUserId(user_id)
+
     computer.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, None)
-    self._assertUserDoesNotExists(shadow_reference, None)
+    self._assertUserDoesNotExists(user_id, reference, None)
+    self._assertUserDoesNotExists(user_id, shadow_reference, None)
 
 class TestSlapOSShadowSoftwareInstance(TestSlapOSSecurityMixin):
   portal_type = 'Software Instance'
   def test_active(self):
     reference = self._generateRandomUniqueReference(self.portal_type)
-    shadow_reference = 'SHADOW-%s' % reference
+    user_id = self._generateRandomUniqueUserId(self.portal_type)
+
+    shadow_user_id = 'SHADOW-%s' % user_id
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
       .newContent(portal_type=self.portal_type, reference=reference)
+    instance.setUserId(user_id)
+    instance.newContent(portal_type='ERP5 Login',
+          reference=reference).validate()
     instance.validate()
     instance.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, None)
-    self._assertUserExists(shadow_reference, None)
+    self._assertUserExists(user_id, reference, None)
+    self._assertUserExists(shadow_user_id, reference, None)
 
-    self.login(shadow_reference)
+    self.login(shadow_user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
-    self.assertSameSet(['R-SHADOW-SOFTWAREINSTANCE', 'SHADOW-%s' % reference],
+    self.assertSameSet(['R-SHADOW-SOFTWAREINSTANCE', 'SHADOW-%s' % user_id],
       user.getGroups())
 
   def test_inactive(self):
     reference = self._generateRandomUniqueReference(self.portal_type)
+    user_id = self._generateRandomUniqueUserId(self.portal_type)
+
     shadow_reference = 'SHADOW-%s' % reference
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
       .newContent(portal_type=self.portal_type, reference=reference)
+    instance.setUserId(user_id)
     instance.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, None)
-    self._assertUserDoesNotExists(shadow_reference, None)
+    self._assertUserDoesNotExists(user_id, reference, None)
+    self._assertUserDoesNotExists(user_id, shadow_reference, None)
 
 def test_suite():
   suite = unittest.TestSuite()

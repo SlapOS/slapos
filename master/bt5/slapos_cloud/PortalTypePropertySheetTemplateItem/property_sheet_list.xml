@@ -3,6 +3,7 @@
   <item>SlaposAssignmentConstraint</item>
  </portal_type>
  <portal_type id="Computer">
+  <item>ERP5User</item>
   <item>SlaposCapacity</item>
   <item>SlaposComputerConstraint</item>
   <item>Url</item>
@@ -42,6 +43,7 @@
   <item>VariationRange</item>
  </portal_type>
  <portal_type id="Software Instance">
+  <item>ERP5User</item>
   <item>HostingSubscription</item>
   <item>Reference</item>
   <item>SoftwareInstance</item>

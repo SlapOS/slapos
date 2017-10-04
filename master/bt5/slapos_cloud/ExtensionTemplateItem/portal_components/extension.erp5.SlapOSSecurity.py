@@ -30,7 +30,7 @@ from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager, newSecurityManager
 from AccessControl import Unauthorized
 
-def getComputerSecurityCategory(self, base_category_list, user_name, 
+def getComputerSecurityCategory(self, base_category_list, user_name,
                                 object, portal_type):
   """
   This script returns a list of dictionaries which represent
@@ -39,8 +39,8 @@ def getComputerSecurityCategory(self, base_category_list, user_name,
   category_list = []
 
   computer_list = self.portal_catalog.unrestrictedSearchResults(
-    portal_type='Computer', 
-    reference=user_name,
+    portal_type='Computer',
+    user_id=user_name,
     validation_state="validated",
     limit=2,
   )
@@ -51,12 +51,12 @@ def getComputerSecurityCategory(self, base_category_list, user_name,
         category_list.append(
          {base_category: ['role/computer']})
   elif len(computer_list) > 1:
-    raise ConsistencyError, "Error: There is more than one Computer " \
-                            "with reference '%s'" % user_name
+    raise ConsistencyError("Error: There is more than one Computer " \
+                            "with reference '%s'" % user_name)
 
   return category_list
 
-def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name, 
+def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
                                 object, portal_type):
   """
   This script returns a list of dictionaries which represent
@@ -65,8 +65,8 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
   category_list = []
 
   software_instance_list = self.portal_catalog.unrestrictedSearchResults(
-    portal_type='Software Instance', 
-    reference=user_name,
+    portal_type='Software Instance',
+    user_id=user_name,
     validation_state="validated",
     limit=2,
   )
@@ -83,8 +83,8 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
           category_dict.setdefault(base_category, []).append(hosting_item.getRelativeUrl())
     category_list.append(category_dict)
   elif len(software_instance_list) > 1:
-    raise ConsistencyError, "Error: There is more than one Software Instance " \
-                            "with reference %r" % user_name
+    raise ConsistencyError("Error: There is more than one Software Instance " \
+                            "with reference %r" % user_name)
 
   return category_list
 
@@ -109,14 +109,14 @@ def restrictMethodAsShadowUser(self, shadow_document=None, callable_object=None,
     # Switch to the shadow user temporarily, so that the behavior would not
     # change even if this method is invoked by random users.
     acl_users = shadow_document.getPortalObject().acl_users
-    reference = shadow_document.getReference()
-    if reference is None:
+    user_id = shadow_document.getUserId()
+    if user_id is None:
       raise Unauthorized('%r is not configured' % relative_url)
-    real_user = acl_users.getUserById(reference)
+    real_user = acl_users.getUserById(user_id)
     if real_user is None:
       raise Unauthorized('%s is not loggable user' % relative_url)
     sm = getSecurityManager()
-    shadow_user = acl_users.getUserById('SHADOW-' + reference)
+    shadow_user = acl_users.getUserById('SHADOW-' + user_id)
     if shadow_user is None:
       raise Unauthorized('Shadow of %s is not loggable user' % relative_url)
     newSecurityManager(None, shadow_user)

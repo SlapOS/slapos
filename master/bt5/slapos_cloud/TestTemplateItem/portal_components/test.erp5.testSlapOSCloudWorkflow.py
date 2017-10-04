@@ -10,18 +10,23 @@ from AccessControl.SecurityManagement import getSecurityManager, \
 
 class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
   def afterSetUp(self):
+    self.login()
     super(TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow, self).afterSetUp()
     # Clone computer document
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
-    new_id = self.generateNewId()
     self.computer.edit(
-      title="computer %s" % (new_id, ),
-      reference="TESTCOMP-%s" % (new_id, ),
+      title="computer %s" % (self.new_id, ),
+      reference="TESTCOMP-%s" % (self.new_id, ),
       allocation_scope='open/personal',
       capacity_scope='open',
     )
     self.computer.validate()
+    login = self.computer.newContent(
+      portal_type="ERP5 Login",
+      reference=self.computer.getReference()
+    )
+    login.validate()
 
     # install an software release
     self.software_installation = self.portal.software_installation_module\
@@ -32,9 +37,9 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
     self.software_installation.requestStart()
 
     self.tic()
+    self.login(self.computer.getUserId())
 
   def test_markFree(self):
-    self.login(self.computer.getReference())
     partition = self.computer.newContent(portal_type='Computer Partition',
         reference='PART-%s' % self.generateNewId())
     partition.validate()
@@ -44,7 +49,6 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
         parent_uid=self.computer.getUid(), free_for_request=1)[0][0])
 
   def test_markFree_markBusy(self):
-    self.login(self.computer.getReference())
     partition = self.computer.newContent(portal_type='Computer Partition',
         reference='PART-%s' % self.generateNewId())
     partition.validate()
@@ -58,7 +62,6 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
         parent_uid=self.computer.getUid(), free_for_request=1)[0][0])
 
   def test_markFree_markBusy_markFree(self):
-    self.login(self.computer.getReference())
     partition = self.computer.newContent(portal_type='Computer Partition',
         reference='PART-%s' % self.generateNewId())
     partition.validate()
@@ -76,7 +79,6 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
         parent_uid=self.computer.getUid(), free_for_request=1)[0][0])
 
   def test_markInactive(self):
-    self.login(self.computer.getReference())
     partition = self.computer.newContent(portal_type='Computer Partition',
         reference='PART-%s' % self.generateNewId())
     partition.validate()
@@ -86,7 +88,6 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
         parent_uid=self.computer.getUid(), free_for_request=1)[0][0])
 
   def test_markInactive_markFree(self):
-    self.login(self.computer.getReference())
     partition = self.computer.newContent(portal_type='Computer Partition',
         reference='PART-%s' % self.generateNewId())
     partition.validate()
@@ -113,28 +114,13 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.computer.validate()
     self.tic()
 
-  def _makePerson(self):
-    new_id = self.generateNewId()
-    self.person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    self.person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    self.person_user.validate()
-    for assignment in self.person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    self.tic()
-
   def beforeTearDown(self):
     super(TestSlapOSCoreComputerSlapInterfaceWorkflow, self).beforeTearDown()
     self.portal.REQUEST['computer_key'] = None
     self.portal.REQUEST['computer_certificate'] = None
 
   def test_generateCertificate(self):
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
@@ -146,7 +132,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertTrue(self.computer.getReference() in computer_certificate.decode('string_escape'))
 
   def test_generateCertificate_twice(self):
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
@@ -162,12 +148,11 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
 
   def test_approveComputerRegistration(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
-    new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(portal_type='Computer',
-      title="Computer %s for %s" % (new_id, self.person_user.getReference()),
-      reference="TESTCOMP-%s" % new_id)
+      title="Computer %s for %s" % (self.new_id, self.person_user.getReference()),
+      reference="TESTCOMP-%s" % self.new_id)
     computer.requestComputerRegistration()
     computer.approveComputerRegistration()
     self.assertEqual('open/personal', computer.getAllocationScope())
@@ -187,7 +172,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
 
   def test_reportComputerBang(self):
     self._makeComplexComputer()
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     comment = 'Bang from computer'
     started_instance = self.computer.partition1.getAggregateRelatedValue(
         portal_type='Software Instance')
@@ -230,7 +215,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
         self._countInstanceBang(destroyed_instance2, comment))
 
   def test_requestSoftwareRelease_software_release_url_required(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -239,7 +224,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestSoftwareRelease_state_required(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -249,7 +234,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestSoftwareRelease_available(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -265,7 +250,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual('validated', software_installation.getValidationState())
 
   def test_requestSoftwareRelease_destroyed(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -279,7 +264,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(None, software_installation)
 
   def test_requestSoftwareRelease_available_destroyed(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -307,7 +292,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual('validated', software_installation.getValidationState())
 
   def test_requestSoftwareRelease_not_indexed(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -322,7 +307,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
 
   @expectedFailure
   def test_requestSoftwareRelease_same_transaction(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
     self.login(self.person_user.getUserId())
@@ -335,7 +320,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_revokeCertificate(self):
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
@@ -353,14 +338,14 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(None, self.computer.getDestinationReference())
 
   def test_revokeCertificateNoCertificate(self):
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     self.assertRaises(ValueError, self.computer.revokeCertificate)
     self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
     self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
     self.assertEqual(None, self.computer.getDestinationReference())
 
   def test_revokeCertificate_twice(self):
-    self.login(self.computer.getReference())
+    self.login(self.computer.getUserId())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
@@ -387,32 +372,21 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSCorePersonComputerSupply, self).afterSetUp()
     portal = self.getPortalObject()
-    new_id = self.generateNewId()
 
     # Clone computer document
     computer = portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     # Clone person document
-    person_user = portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
+    person_user = self.makePerson(new_id=self.new_id, index=0)
 
     computer.edit(
-      title="Computer %s for %s" % (new_id, person_user.getReference()),
-      reference="TESTCOMP-%s" % new_id,
+      title="Computer %s for %s" % (self.new_id, person_user.getReference()),
+      reference="TESTCOMP-%s" % self.new_id,
       source_administration=person_user.getRelativeUrl()
     )
     computer.validate()
     self.computer = computer
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    transaction.commit()
-    # XXX Tic is needed to reindex the created open order
+
     self.tic()
 
     # Login as new user
@@ -501,7 +475,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_createdSoftwareInstallation(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference', 
+        .generateNewId(id_group='slap_software_installation_reference',
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -525,7 +499,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_multiple_supply_available_createdSoftwareInstallation(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference', 
+        .generateNewId(id_group='slap_software_installation_reference',
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -557,7 +531,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference', 
+        .generateNewId(id_group='slap_software_installation_reference',
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -598,7 +572,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed_available(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference', 
+        .generateNewId(id_group='slap_software_installation_reference',
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -645,7 +619,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed_finalised_available(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference', 
+        .generateNewId(id_group='slap_software_installation_reference',
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -735,33 +709,33 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
             q['comment'] == comment])
 
   def test_bang_required_comment(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.assertRaises(KeyError, self.instance.bang, bang_tree=0)
     transaction.abort()
 
   def test_bang_required_bang_tree(self):
-    self.login(self.instance.getReference())
-    comment = 'Comment %s' % self.generateNewId()
+    self.login(self.instance.getUserId())
+    comment = 'Comment %s' % self.new_id
     self.assertRaises(KeyError, self.instance.bang, comment=comment)
     transaction.abort()
 
   def test_bang(self):
-    self.login(self.instance.getReference())
-    comment = 'Comment %s' % self.generateNewId()
+    self.login(self.instance.getUserId())
+    comment = 'Comment %s' % self.new_id
     count = self._countInstanceBang(self.instance, comment)
     self.instance.bang(bang_tree=0, comment=comment)
     self.assertEqual(count+1, self._countInstanceBang(self.instance, comment))
 
   def test_bang_tree(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     request_kw = self.request_kw.copy()
-    request_kw['software_title'] = 'New %s' % self.generateNewId()
+    request_kw['software_title'] = 'New %s' % self.new_id
     self.instance.requestInstance(**request_kw)
     request_instance = self.instance.REQUEST['request_instance']
     self.instance.REQUEST['request_instance'] = None
     self.tic()
 
-    comment = 'Comment %s' % self.generateNewId()
+    comment = 'Comment %s' % self.new_id
     count1 = self._countInstanceBang(self.instance, comment)
     count2 = self._countInstanceBang(request_instance, comment)
     self.instance.bang(bang_tree=1, comment=comment)
@@ -772,7 +746,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         comment))
 
   def test_allocatePartition_computer_partition_url_required(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.assertRaises(TypeError, self.instance.allocatePartition)
 
   def test_allocatePartition(self):
@@ -821,19 +795,19 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertRaises(AssertionError, self.instance.unallocatePartition)
 
   def test_rename_new_name_required(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.assertRaises(KeyError, self.instance.rename)
 
   def test_rename(self):
     new_name = 'New %s' % self.generateNewId()
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.instance.rename(new_name=new_name)
     self.assertEqual(new_name, self.instance.getTitle())
     transaction.abort()
 
   def test_rename_twice_not_indexed(self):
     new_name = 'New %s' % self.generateNewId()
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.instance.rename(new_name=new_name)
     self.assertEqual(new_name, self.instance.getTitle())
     transaction.commit()
@@ -844,7 +818,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
   @expectedFailure
   def test_rename_twice_same_transaction(self):
     new_name = 'New %s' % self.generateNewId()
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
     self.instance.rename(new_name=new_name)
     self.assertEqual(new_name, self.instance.getTitle())
     self.assertRaises(NotImplementedError, self.instance.rename,
@@ -853,7 +827,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
 
   def test_rename_existing(self):
     new_name = 'New %s' % self.generateNewId()
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     request_kw['software_title'] = new_name
@@ -869,7 +843,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestDestroy(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestDestroy(**request_kw)
@@ -877,7 +851,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestDestroy_required(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     software_release=self.request_kw['software_release']
     software_type=self.request_kw['software_type']
@@ -923,7 +897,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
       sla_xml=sla_xml,
     )
     transaction.abort()
-    
+
     # no sla_xml
     self.assertRaises(TypeError, self.instance.requestDestroy,
       software_release=software_release,
@@ -934,7 +908,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestStop(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestStop(**request_kw)
@@ -942,7 +916,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestStop_required(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     software_release=self.request_kw['software_release']
     software_type=self.request_kw['software_type']
@@ -999,7 +973,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestStart(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestStop(**request_kw)
@@ -1008,7 +982,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_requestStart_required(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     self.instance.requestStop(**self.request_kw)
 
@@ -1067,7 +1041,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_updateConnection(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestStop(**request_kw)
@@ -1077,7 +1051,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_updateConnectionRequired(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestStop(**request_kw)
@@ -1087,7 +1061,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   def test_updateConnectionBrokenXml(self):
-    self.login(self.instance.getReference())
+    self.login(self.instance.getUserId())
 
     request_kw = self.request_kw.copy()
     self.instance.requestStop(**request_kw)
@@ -1099,6 +1073,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
 
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
   """Tests instance.requestInstance"""
+
   def afterSetUp(self):
     super(TestSlapOSCoreSoftwareInstanceRequest, self).afterSetUp()
     portal = self.getPortalObject()
@@ -1147,7 +1122,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.tic()
 
     # Login as new Software Instance
-    self.login(self.software_instance.getReference())
+    self.login(self.software_instance.getUserId())
 
   def beforeTearDown(self):
     transaction.abort()
@@ -1938,27 +1913,13 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
 
   def afterSetUp(self):
     super(TestSlapOSCorePersonRequest, self).afterSetUp()
-    portal = self.getPortalObject()
-    new_id = self.generateNewId()
 
-    # Clone person document
-    person_user = portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    transaction.commit()
-    # XXX Tic is needed to reindex the created open order
+    person_user = self.makePerson()
     self.tic()
 
     # Login as new user
     self.login(person_user.getUserId())
+
     new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
 
@@ -2501,27 +2462,13 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSCorePersonRequestComputer, self).afterSetUp()
     portal = self.getPortalObject()
-    new_id = self.generateNewId()
 
-    # Clone person document
-    person_user = portal.person_module.template_member\
-        .Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-        title="live_test_%s" % new_id,
-        reference="live_test_%s" % new_id,
-        default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    transaction.commit()
-    # XXX Tic is needed to reindex the created open order
+    person_user = self.makePerson()
     self.tic()
 
     # Login as new user
     self.login(person_user.getUserId())
-    new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+    new_person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
 
   def beforeTearDown(self):
@@ -2709,23 +2656,8 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
 
 class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
-  def _makePerson(self):
-    new_id = self.generateNewId()
-    self.person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    self.person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    self.person_user.validate()
-    for assignment in self.person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    self.tic()
-
   def test_Computer_setSubjectList(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
@@ -2742,29 +2674,33 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
       self.person_user.getRelativeUrl()
 
   def check_Instance_validate(self, portal_type):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
+
     instance = self.portal.software_instance_module.newContent(
       portal_type=portal_type,
       title="Instance %s for %s" % (new_id, self.person_user.getReference()),
       reference="TESTINST-%s" % new_id)
 
+    if portal_type == "Software Instance":
+      self._addERP5Login(instance)
+    self.tic()
+
     def verify_activeSense_call(self):
       if self.getRelativeUrl() == 'portal_alarms/slapos_allocate_instance':
-        instance.portal_workflow.doActionFor(instance, action='edit_action', 
+        instance.portal_workflow.doActionFor(instance, action='edit_action',
           comment='activeSense triggered')
       else:
         return self.activeSense_call()
 
-    # Replace activeSense by a dummy method
     from Products.ERP5Type.Document.Alarm import Alarm
+
     Alarm.activeSense_call = Alarm.activeSense
     Alarm.activeSense = verify_activeSense_call
     try:
       instance.validate()
-      instance.portal_alarms.slapos_allocate_instance.activeSense()
       self.tic()
     finally:
       Alarm.activeSense = Alarm.activeSense_call
@@ -2779,14 +2715,14 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     return self.check_Instance_validate("Slave Instance")
 
   def test_SlaveInstance_requestDestroy(self):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
-    new_id = self.generateNewId()
+
     instance = self.portal.software_instance_module.newContent(
       portal_type='Slave Instance',
-      title="Instance %s for %s" % (new_id, self.person_user.getReference()),
-      reference="TESTINST-%s" % new_id,
-      destination_reference="TESTINST-%s" % new_id,
+      title="Instance %s for %s" % (self.new_id, self.person_user.getReference()),
+      reference="TESTINST-%s" % self.new_id,
+      destination_reference="TESTINST-%s" % self.new_id,
       )
     request_kw = dict(
       software_release='http://example.org',
@@ -2803,28 +2739,28 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     self.assertEqual(instance.getValidationState(), 'invalidated')
 
   def check_SoftwareInstallation_changeState(self, method_id):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
-    new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(
       portal_type='Computer',
-      title="Computer %s for %s" % (new_id, self.person_user.getReference()),
-      reference="TESTCOMP-%s" % new_id)
+      title="Computer %s for %s" % (self.new_id, self.person_user.getReference()),
+      reference="TESTCOMP-%s" % self.new_id)
+    self._addERP5Login(computer)
+
     installation = self.portal.software_installation_module.newContent(
       portal_type='Software Installation',
-      title="Installation %s for %s" % (new_id, self.person_user.getReference()),
+      title="Installation %s for %s" % (self.new_id, self.person_user.getReference()),
       aggregate_value=computer,
       )
     self.tic()
 
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() == computer.getRelativeUrl():
-        computer.portal_workflow.doActionFor(computer, action='edit_action', 
+        computer.portal_workflow.doActionFor(computer, action='edit_action',
           comment='reindexObject triggered on %s' % method_id)
       else:
         return self.reindexObject_call(*args, **kw)
 
-    # Replace activeSense by a dummy method
     from Products.ERP5Type.Base import Base
     Base.reindexObject_call = Base.reindexObject
     Base.reindexObject = verify_reindexObject_call
@@ -2844,7 +2780,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     return self.check_SoftwareInstallation_changeState('requestDestroy')
 
   def check_SoftwareInstance_changeState(self, method_id):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
@@ -2852,6 +2788,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
       portal_type='Computer',
       title="Computer %s for %s" % (new_id, self.person_user.getReference()),
       reference="TESTCOMP-%s" % new_id)
+    self._addERP5Login(computer)
     partition = computer.newContent(
       portal_type='Computer Partition',
       title="Partition Computer %s for %s" % (new_id,
@@ -2908,15 +2845,14 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     return self.check_SoftwareInstance_changeState("requestDestroy")
 
   def check_change_instance_parameter(self, portal_type, method_id):
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
 
-    new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
       portal_type=portal_type,
-      title="Instance %s for %s" % (new_id, self.person_user.getReference()),
-      reference="TESTINST-%s" % new_id,
-      destination_reference="TESTINST-%s" % new_id,
+      title="Instance %s for %s" % (self.new_id, self.person_user.getReference()),
+      reference="TESTINST-%s" % self.new_id,
+      destination_reference="TESTINST-%s" % self.new_id,
       ssl_certificate="foo",
       ssl_key="bar",
       )
@@ -2965,7 +2901,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
   def test_SoftwareInstance_setPredecessorList(self):
     portal_type = "Software Instance"
 
-    self._makePerson()
+    self.person_user = self.makePerson()
     self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()

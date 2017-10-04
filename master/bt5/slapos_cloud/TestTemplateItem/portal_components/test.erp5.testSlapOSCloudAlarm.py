@@ -1,7 +1,7 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+  testSlapOSMixin, simulate
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from unittest import skip
 import json
@@ -10,25 +10,7 @@ from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
 from App.Common import rfc1123_date
-from functools import wraps
 
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
 

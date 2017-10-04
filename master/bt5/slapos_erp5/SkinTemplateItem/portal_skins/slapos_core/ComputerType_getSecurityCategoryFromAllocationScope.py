@@ -11,7 +11,6 @@
 if obj is None:
   return []
 
-portal = obj.getPortalObject()
 computer = obj
 
 category_list = []
@@ -22,10 +21,10 @@ if scope == 'open/public':
 elif scope == 'open/personal':
   person = computer.getSourceAdministrationValue(portal_type="Person")
   if person is not None:
-    return {"Auditor": ["SHADOW-%s" % person.getReference()]}
+    return {"Auditor": ["SHADOW-%s" % person.getUserId()]}
 elif scope == 'open/friend':
   person_list = computer.getDestinationSectionValueList(portal_type="Person")
   if person_list:
-    return {"Auditor": ["SHADOW-%s" % x.getReference() for x in person_list]}
+    return {"Auditor": ["SHADOW-%s" % x.getUserId() for x in person_list]}
 
 return category_list

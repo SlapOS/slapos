@@ -2,51 +2,15 @@
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+  testSlapOSMixin, changeSkin, simulate
 from zExceptions import Unauthorized
-from Products.ERP5Type.tests.utils import createZODBPythonScript
 from unittest import skip
-from functools import wraps
 
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
 
 import json
 import StringIO
-
-def changeSkin(skin_name):
-  def decorator(func):
-    def wrapped(self, *args, **kwargs):
-      default_skin = self.portal.portal_skins.default_skin
-      self.portal.portal_skins.changeSkin(skin_name)
-      self.app.REQUEST.set('portal_skin', skin_name)
-      try:
-        v = func(self, *args, **kwargs)
-      finally:
-        self.portal.portal_skins.changeSkin(default_skin)
-        self.app.REQUEST.set('portal_skin', default_skin)
-      return v
-    return wrapped
-  return decorator
-
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      transaction.commit()
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
 
 def do_fake_request(request_method, headers={}):
   __version__ = "0.1"
@@ -177,18 +141,7 @@ class TestSlapOSHypermediaMixin(testSlapOSMixin):
     transaction.abort()
 
   def _makePerson(self):
-    new_id = self.generateNewId()
-    person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
+    person_user = self.makePerson()
     self.tic()
     self.changeSkin('Hal')
     return person_user
@@ -368,7 +321,7 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
   @changeSkin('Hal')
   def test_getHateoasMaster_instance_result(self):
     self._makeTree()
-    self.login(self.software_instance.getReference())
+    self.login(self.software_instance.getUserId())
     self.changeSkin('Hal')
     fake_request = do_fake_request("GET")
     result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
@@ -716,6 +669,7 @@ class TestSlapOSInstance_getHateoasNews(TestSlapOSHypermediaMixin):
         sla_xml=self.generateSafeXml(),
         connection_xml=self.generateSafeXml(),
     )
+    self._addERP5Login(instance)
     self.tic()
     return instance
 
@@ -803,6 +757,7 @@ class TestSlapOSInstance_getHateoasRelatedHostingSubscription(TestSlapOSHypermed
         sla_xml=self.generateSafeXml(),
         connection_xml=self.generateSafeXml(),
     )
+    self._addERP5Login(instance)
     self.tic()
     return instance
 
@@ -893,6 +848,7 @@ class TestSlapOSInstance_getHateoasInformation(TestSlapOSHypermediaMixin):
         sla_xml=self.generateSafeXml(),
         connection_xml=self.generateSafeXml(),
     )
+    self._addERP5Login(instance)
     self.tic()
     return instance
 

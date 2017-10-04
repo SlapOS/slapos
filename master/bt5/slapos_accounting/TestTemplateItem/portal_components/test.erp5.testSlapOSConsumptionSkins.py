@@ -7,28 +7,8 @@
 
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort
+  testSlapOSMixin, withAbort, simulate
 from zExceptions import Unauthorized
-from functools import wraps
-from Products.ERP5Type.tests.utils import createZODBPythonScript
-
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
 
 class TestSlapOSComputer_reportComputerConsumption(testSlapOSMixin):
 

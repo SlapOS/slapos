@@ -27,28 +27,9 @@
 ##############################################################################
 
 import transaction
-from functools import wraps
-from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
-from Products.ERP5Type.tests.utils import createZODBPythonScript
+from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin, simulate
 from DateTime import DateTime
 
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
 
 class TestSlapOSPDMSkins(testSlapOSMixin):
   def afterSetUp(self):
@@ -77,20 +58,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
  
 
   def _makePerson(self):
-    # Clone person document
-    person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % self.new_id,
-      reference="live_test_%s" % self.new_id,
-      default_email_text="live_test_%s@example.org" % self.new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    transaction.commit()
-
+    person_user = self.makePerson(new_id=self.new_id)
     return person_user
 
   def _makeComputer(self):

@@ -43,10 +43,12 @@ def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   if (software_instance.getPortalType() == "Slave Instance") and \
     (software_instance.getReference() == reference):
     # XXX There is no account for Slave Instance
-    reference = ERP5Security.SUPER_USER
+    user_id = ERP5Security.SUPER_USER
+  else:
+    user_id = software_instance.getUserId()
 
   newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
-    reference))
+    user_id))
   try:
     software_instance.bang(bang_tree=True, comment=comment)
   finally:

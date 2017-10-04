@@ -30,96 +30,110 @@ import unittest
 import random
 from AccessControl import getSecurityManager
 from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
+from Products.PluggableAuthService.interfaces.plugins import\
+                                                      IAuthenticationPlugin
 
 class TestSlapOSSecurityMixin(testSlapOSMixin):
-  def _generateRandomUniqueReference(self, portal_type):
-    reference = None
-    while reference is None:
-      random_reference = "test_%s" % random.random()
+
+  def _generateRandomUniqueUserId(self, portal_type, search_key="user_id"):
+    user_id = None
+    while user_id is None:
+      random_user_id = "test_%s_%s" % (
+        portal_type.replace(" ", "_").lower(), random.random())
       result_list = self.portal.portal_catalog(
           portal_type=portal_type,
-          reference=random_reference,
+          **{search_key: random_user_id}
           )
       if not len(result_list):
-        reference = random_reference
-    return reference
+        user_id = random_user_id
+    return user_id
 
-  def _assertUserExists(self, login, password):
+  def _generateRandomUniqueReference(self, portal_type):
+    return self._generateRandomUniqueUserId(portal_type, "reference")
+
+  def _assertUserExists(self, user_id, login, password):
     """Checks that a user with login and password exists and can log in to the
     system.
     """
-    from Products.PluggableAuthService.interfaces.plugins import\
-                                                      IAuthenticationPlugin
     uf = self.getUserFolder()
-    self.assertNotEquals(uf.getUserById(login, None), None)
-    for plugin_name, plugin in uf._getOb('plugins').listPlugins(
+    self.assertNotEquals(uf.getUserById(user_id, None), None)
+    for _, plugin in uf._getOb('plugins').listPlugins(
                                 IAuthenticationPlugin ):
       if plugin.authenticateCredentials(
-                  {'login':login,
-                   'password':password,
-                   'machine_login': login}) is not None:
+                  {'login_portal_type': 'ERP5 Login',
+                   'external_login': login}) is not None:
         break
     else:
       self.fail("No plugin could authenticate '%s' with password '%s'" %
               (login, password))
 
-  def _assertUserDoesNotExists(self, login, password):
+  def _assertUserDoesNotExists(self, user_id, login, password):
     """Checks that a user with login and password does not exists and cannot
     log in to the system.
     """
-    from Products.PluggableAuthService.interfaces.plugins import\
-                                                        IAuthenticationPlugin
     uf = self.getUserFolder()
     for plugin_name, plugin in uf._getOb('plugins').listPlugins(
                               IAuthenticationPlugin ):
       if plugin.authenticateCredentials(
-                {'login':login,
-                 'password':password,
-                 'machine_login': login}) is not None:
+                {'login_portal_type': 'ERP5 Login',
+                 'external_login': login}) is not None:
         self.fail(
            "Plugin %s should not have authenticated '%s' with password '%s'" %
            (plugin_name, login, password))
 
 class TestSlapOSComputerSecurity(TestSlapOSSecurityMixin):
   def test_active(self):
+    user_id = self._generateRandomUniqueUserId('Computer')
     reference = self._generateRandomUniqueReference('Computer')
 
-    computer = self.portal.computer_module.newContent(portal_type='Computer',
-      reference=reference)
+    computer = self.portal.computer_module.newContent(
+      portal_type='Computer', reference=reference)
+    computer.setUserId(user_id)
     computer.validate()
+    computer.newContent(portal_type='ERP5 Login',
+                      reference=reference).validate()
+
     computer.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, None)
+    self._assertUserExists(user_id, reference, None)
 
-    self.login(reference)
+    self.login(user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet(['R-COMPUTER'],
       user.getGroups())
 
   def test_inactive(self):
+    user_id = self._generateRandomUniqueUserId('Computer')
     reference = self._generateRandomUniqueReference('Computer')
 
-    computer = self.portal.computer_module.newContent(portal_type='Computer',
-      reference=reference)
+    computer = self.portal.computer_module.newContent(
+      portal_type='Computer', reference=reference)
+    computer.setUserId(user_id)
+    computer.newContent(portal_type='ERP5 Login',
+                      reference=reference)
     computer.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, None)
+    self._assertUserDoesNotExists(user_id, reference, None)
 
 class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
   portal_type = 'Software Instance'
   def test_active(self):
+    user_id = self._generateRandomUniqueUserId(self.portal_type)
     reference = self._generateRandomUniqueReference(self.portal_type)
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
       .newContent(portal_type=self.portal_type, reference=reference)
+    instance.setUserId(user_id)
     instance.validate()
+    instance.newContent(portal_type='ERP5 Login',
+                      reference=reference).validate()
     instance.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, None)
+    self._assertUserExists(user_id, reference, None)
 
     # instance w/o subscription is loggable and it has some roles
-    self.login(reference)
+    self.login(user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet(['R-INSTANCE'],
@@ -129,7 +143,8 @@ class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
     subscription_reference = self._generateRandomUniqueReference(
         'Hosting Suscription')
     subscription = self.portal.hosting_subscription_module.newContent(
-        portal_type='Hosting Subscription', reference=subscription_reference)
+        portal_type='Hosting Subscription',
+        reference=subscription_reference)
     subscription.validate()
     instance.setSpecialise(subscription.getRelativeUrl())
     subscription.recursiveImmediateReindexObject()
@@ -137,33 +152,42 @@ class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
 
     # clear cache in order to reset calculation
     self.portal.portal_caches.clearAllCache()
-    self.login(reference)
+    self.login(user_id)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet(['R-INSTANCE', subscription_reference],
       user.getGroups())
 
   def test_inactive(self):
+    user_id = self._generateRandomUniqueUserId(self.portal_type)
     reference = self._generateRandomUniqueReference(self.portal_type)
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
       .newContent(portal_type=self.portal_type, reference=reference)
+    instance.setUserId(user_id)
     instance.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, None)
+    self._assertUserDoesNotExists(user_id, reference, None)
 
 class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
   def test_active(self):
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
-    person = self.portal.person_module.newContent(portal_type='Person',
+    user_id = self._generateRandomUniqueUserId('Person')
+
+    person = self.portal.person_module.newContent(
+      portal_type='Person',
       reference=reference, password=password)
+    person.setUserId(user_id)
+
     person.newContent(portal_type='Assignment').open()
+    person.newContent(portal_type='ERP5 Login',
+      reference=reference, password=password).validate()
 
     self.commit()
     person.recursiveImmediateReindexObject()
 
-    self._assertUserExists(reference, password)
+    self._assertUserExists(user_id, reference, password)
 
     self.login(person.getUserId())
     user = getSecurityManager().getUser()
@@ -176,7 +200,6 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
     person.newContent(portal_type='Assignment', group='company').open()
     self.commit()
     person.recursiveImmediateReindexObject()
-
 
     self.tic()
     self.portal.portal_caches.clearAllCache()
@@ -199,13 +222,15 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
   def test_inactive(self):
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
+    user_id = self._generateRandomUniqueReference('Person')
+    
     person = self.portal.person_module.newContent(portal_type='Person',
       reference=reference, password=password)
 
     self.commit()
     person.recursiveImmediateReindexObject()
 
-    self._assertUserDoesNotExists(reference, password)
+    self._assertUserDoesNotExists(user_id, reference, password)
 
 def test_suite():
   suite = unittest.TestSuite()

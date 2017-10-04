@@ -33,6 +33,6 @@ if obj is None:
 person = obj.getDestinationSectionValue(portal_type="Person")
 if person is not None:
   for base_category in base_category_list:
-    return {"Auditor": ["SHADOW-%s" % person.getReference()]}
+    return {"Auditor": ["SHADOW-%s" % person.getUserId()]}
 
 return category_list

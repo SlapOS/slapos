@@ -56,7 +56,7 @@
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setReference</string>
+                <string>_setUserId.*</string>
                 <string>_setSourceAdministration.*</string>
                 <string>_setAllocationScope.*</string>
                 <string>_setDestinationSection.*</string>
@@ -73,6 +73,12 @@
               <list>
                 <string>Computer</string>
               </list>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type_group_filter</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>

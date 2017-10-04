@@ -2,6 +2,7 @@ Assignment | SlaposAssignmentConstraint
 Computer Model | SlaposCapacity
 Computer Partition | ComputerPartition
 Computer Partition | SlaposComputerPartitionConstraint
+Computer | ERP5User
 Computer | SlaposCapacity
 Computer | SlaposComputerConstraint
 Computer | Url
@@ -22,6 +23,7 @@ Slave Instance | Url
 Slave Instance | VariationRange
 Software Installation | Url
 Software Installation | VariationRange
+Software Instance | ERP5User
 Software Instance | HostingSubscription
 Software Instance | Reference
 Software Instance | SoftwareInstance

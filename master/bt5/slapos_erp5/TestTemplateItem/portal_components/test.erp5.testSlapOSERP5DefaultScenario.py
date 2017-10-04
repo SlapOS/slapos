@@ -6,27 +6,13 @@
 ##############################################################################
 
 from erp5.component.test.testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
+from Products.SlapOS.tests.testSlapOSMixin import changeSkin
 import re
 import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 from DateTime import DateTime
 import json
-
-def changeSkin(skin_name):
-  def decorator(func):
-    def wrapped(self, *args, **kwargs):
-      default_skin = self.portal.portal_skins.default_skin
-      self.portal.portal_skins.changeSkin(skin_name)
-      self.app.REQUEST.set('portal_skin', skin_name)
-      try:
-        v = func(self, *args, **kwargs)
-      finally:
-        self.portal.portal_skins.changeSkin(default_skin)
-        self.app.REQUEST.set('portal_skin', default_skin)
-      return v
-    return wrapped
-  return decorator
 
 class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
   def joinSlapOS(self, web_site, reference):
@@ -151,7 +137,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       ))
     sm = getSecurityManager()
     try:
-      self.login(computer.getReference())
+      self.login(computer.getUserId())
       self.portal.portal_slap.loadComputerConfigurationFromXML(
           xml_marshaller.xml_marshaller.dumps(computer_dict))
       self.tic()
@@ -162,9 +148,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
   def simulateSlapgridSR(self, computer):
     sm = getSecurityManager()
-    computer_reference = computer.getReference()
+    computer_user_id = computer.getUserId()
     try:
-      self.login(computer_reference)
+      self.login(computer_user_id)
       computer_xml = self.portal.portal_slap.getFullComputerInformation(
           computer_id=computer.getReference())
       slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
@@ -184,9 +170,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
   def simulateSlapgridUR(self, computer):
     sm = getSecurityManager()
-    computer_reference = computer.getReference()
+    computer_user_id = computer.getUserId()
     try:
-      self.login(computer_reference)
+      self.login(computer_user_id)
       computer_xml = self.portal.portal_slap.getFullComputerInformation(
           computer_id=computer.getReference())
       slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
@@ -214,8 +200,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
   def simulateSlapgridCP(self, computer):
     sm = getSecurityManager()
     computer_reference = computer.getReference()
+    computer_user_id = computer.getUserId()
     try:
-      self.login(computer_reference)
+      self.login(computer_user_id)
       computer_xml = self.portal.portal_slap.getFullComputerInformation(
           computer_id=computer.getReference())
       slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
@@ -229,9 +216,13 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
             url_1 = 'http://%s/' % ip_list[0][1],
             url_2 = 'http://%s/' % ip_list[1][1],
           ))
+          self.login()
+          instance_user_id = self.portal.portal_catalog.getResultValue(
+              reference=instance_reference, portal_type="Software Instance").getUserId()
+
           oldsm = getSecurityManager()
           try:
-            self.login(instance_reference)
+            self.login(instance_user_id)
             self.portal.portal_slap.setComputerPartitionConnectionXml(
               computer_id=computer_reference,
               computer_partition_id=partition._partition_id,
@@ -314,10 +305,11 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
                 portal_type='Internet Protocol Address')],
         connection_dict.values())
 
-  def checkSlaveInstanceUnallocation(self, person_reference, instance_title,
+  def checkSlaveInstanceUnallocation(self, person_user_id,
+      person_reference, instance_title,
       software_release, software_type, server):
 
-    self.login(person_reference)
+    self.login(person_user_id)
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
@@ -333,10 +325,11 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.assertEqual(0, len(hosting_subscription_list))
 
-  def checkInstanceUnallocation(self, person_reference, instance_title,
+  def checkInstanceUnallocation(self, person_user_id,
+      person_reference, instance_title,
       software_release, software_type, server):
 
-    self.login(person_reference)
+    self.login(person_user_id)
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
@@ -723,19 +716,21 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         friend_instance_type, friend_server)
 
     # now deallocate the slaves
-    self.checkSlaveInstanceUnallocation(public_reference,
-        public_slave_instance_title, friend_server_software,
+    self.checkSlaveInstanceUnallocation(public_person.getUserId(),
+        public_reference, public_slave_instance_title, friend_server_software,
         friend_instance_type, friend_server)
 
-    self.checkSlaveInstanceUnallocation(friend_reference,
-        friend_slave_instance_title, public_server_software,
+    self.checkSlaveInstanceUnallocation(friend_person.getUserId(),
+        friend_reference, friend_slave_instance_title, public_server_software,
         public_instance_type, public_server)
 
     # and the instances
-    self.checkInstanceUnallocation(public_reference, public_instance_title,
+    self.checkInstanceUnallocation(public_person.getUserId(),
+        public_reference, public_instance_title,
         public_server_software, public_instance_type, public_server)
 
-    self.checkInstanceUnallocation(friend_reference, friend_instance_title,
+    self.checkInstanceUnallocation(friend_person.getUserId(),
+        friend_reference, friend_instance_title,
         friend_server_software, friend_instance_type, friend_server)
 
     # and uninstall some software on them

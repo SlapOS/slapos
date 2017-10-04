@@ -1,50 +1,42 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+  testSlapOSMixin, simulate
 from zExceptions import Unauthorized
 from DateTime import DateTime
-from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 import difflib
 import json
 
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
-
-
 def getFakeSlapState():
   return "destroy_requested"
 
-class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
+class TestCRMSkinsMixin(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def afterSetUp(self):
-    super(TestSlapOSFolder_getOpenTicketList, self).afterSetUp()
-    self.new_id = self.generateNewId()
-    self.person = self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % self.new_id,
-      reference="TESTPERS-%s" % self.new_id,
-      default_email_text="live_test_%s@example.org" % self.new_id,
-      )
+    super(TestCRMSkinsMixin, self).afterSetUp()
+    self.person = self.makePerson(new_id=self.new_id, index=0, user=0)
+
+  def _cancelTestSupportRequestList(self, title="%"):
+    for support_request in self.portal.portal_catalog(
+                        portal_type="Support Request",
+                        title=title,
+                        simulation_state=["validated", "suspended"]):
+      support_request.invalidate()
+    self.tic()
+
+  def _updatePersonAssignment(self, person, role='role/member'):
+    for assignment in person.contentValues(portal_type="Assignment"):
+      assignment.cancel()
+    assignment = person.newContent(portal_type='Assignment')
+    assignment.setRole(role)
+    assignment.setStartDate(DateTime())
+    assignment.open()
+    return assignment
+
+class TestSlapOSFolder_getOpenTicketList(TestCRMSkinsMixin):
 
   def _test_ticket(self, ticket, expected_amount):
     module = ticket.getParentValue()
@@ -156,13 +148,7 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
     ticket = newUpgradeDecision()
     self._test_upgrade_decision(ticket, 2)
 
-class TestSlapOSTicketEvent(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def afterSetUp(self):
-    super(TestSlapOSTicketEvent, self).afterSetUp()
+class TestSlapOSTicketEvent(TestCRMSkinsMixin):
 
   def _test_event(self, ticket):
 
@@ -231,19 +217,6 @@ class TestSlapOSTicketEvent(testSlapOSMixin):
 
 class TestSlapOSEvent_getRSSTextContent(TestSlapOSTicketEvent):
 
-  def afterSetUp(self):
-    super(TestSlapOSEvent_getRSSTextContent, self).afterSetUp()
-    self.new_id = self.generateNewId()
-    self.person = self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % self.new_id,
-      reference="TESTPERS-%s" % self.new_id,
-      default_email_text="live_test_%s@example.org" % self.new_id,
-      )
-
-  def beforeTearDown(self):
-    transaction.abort()
-
   def test_Event_getRSSTextContent(self):
     source = self.person
 
@@ -311,19 +284,6 @@ class TestSlapOSEvent_getRSSTextContent(TestSlapOSTicketEvent):
 
 class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def afterSetUp(self):
-    super(TestSlapOSTicket_getLatestEvent, self).afterSetUp()
-    self.new_id = self.generateNewId()
-    self.person = self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % self.new_id,
-      reference="TESTPERS-%s" % self.new_id,
-      default_email_text="live_test_%s@example.org" % self.new_id,
-      )
-
   def test_support_request(self):
     ticket = self.portal.support_request_module.newContent(\
                         title="Test Support Request %s" % self.new_id,
@@ -357,17 +317,7 @@ class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
 
 class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    return self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
+  abort_transaction = 1
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_payment_requested(self):
@@ -377,7 +327,7 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
       if preference.getPreferenceState() == 'global':
         preference.setPreferredSlaposWebSiteUrl('http://foobar.org/')
 
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     before_date = DateTime()
     ticket, event = person.Person_checkToCreateRegularisationRequest()
     after_date = DateTime()
@@ -431,7 +381,7 @@ The slapos team
       if preference.getPreferenceState() == 'global':
         preference.setPreferredSlaposWebSiteUrl('http://foobar.org/')
 
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     new_id = self.generateNewId()
     notification_message = self.portal.notification_message_module.newContent(
       portal_type="Notification Message",
@@ -484,7 +434,7 @@ The slapos team
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_do_not_duplicate_ticket_if_not_reindexed(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket, event = person.Person_checkToCreateRegularisationRequest()
     transaction.commit()
     ticket2, event2 = person.Person_checkToCreateRegularisationRequest()
@@ -498,14 +448,14 @@ The slapos team
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_addRegularisationRequest_balance_ok(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket, event = person.Person_checkToCreateRegularisationRequest()
     self.assertEquals(ticket, None)
     self.assertEquals(event, None)
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_existing_suspended_ticket(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket, event = person.Person_checkToCreateRegularisationRequest()
     transaction.commit()
     self.tic()
@@ -517,7 +467,7 @@ The slapos team
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_existing_validated_ticket(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket, event = person.Person_checkToCreateRegularisationRequest()
     ticket.validate()
     transaction.commit()
@@ -530,7 +480,7 @@ The slapos team
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_existing_invalidated_ticket(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = person.Person_checkToCreateRegularisationRequest()[0]
     ticket.invalidate()
     transaction.commit()
@@ -540,7 +490,7 @@ The slapos team
     self.assertNotEquals(event2, None)
 
   def test_addRegularisationRequest_REQUEST_disallowed(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     self.assertRaises(
       Unauthorized,
       person.Person_checkToCreateRegularisationRequest,
@@ -550,16 +500,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
                                                          testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    return self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      )
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -578,7 +519,7 @@ class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
   def test_invalidateIfPersonBalanceIsOk_matching_case(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(source_project_value=person)
     ticket.validate()
@@ -588,7 +529,7 @@ class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
   def test_invalidateIfPersonBalanceIsOk_not_suspended(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(source_project_value=person)
     ticket.validate()
@@ -605,7 +546,7 @@ class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_invalidateIfPersonBalanceIsOk_wrong_balance(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(source_project_value=person)
     ticket.validate()
@@ -615,17 +556,7 @@ class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
 
 class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    return self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -637,7 +568,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
       )
 
   def test_checkToSendUniqEvent_no_event(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       source='organisation_module/slapos',
@@ -673,7 +604,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
       )
 
   def test_checkToSendUniqEvent_call_twice_with_tic(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       source='organisation_module/slapos',
@@ -692,7 +623,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
     self.assertEquals(event.getRelativeUrl(), event2.getRelativeUrl())
 
   def test_checkToSendUniqEvent_manual_event(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       source='organisation_module/slapos',
@@ -717,7 +648,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
     self.assertEquals(event.getRelativeUrl(), event2.getRelativeUrl())
 
   def test_checkToSendUniqEvent_not_suspended(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       source='organisation_module/slapos',
@@ -730,7 +661,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
     self.assertEquals(event, None)
 
   def test_checkToSendUniqEvent_event_not_reindexed(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       source='organisation_module/slapos',
@@ -757,17 +688,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
 class TestSlapOSRegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty(
                                                          testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    return self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -822,7 +743,7 @@ class TestSlapOSRegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty(
   '%s %s %s %s" % (service_relative_url, title, text_content, comment))\n' \
   'return "fooevent"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_invoice_to_cancel(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       destination_value=person,
@@ -885,7 +806,7 @@ The slapos team
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_not_suspended_ticket(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       destination_value=person,
@@ -922,7 +843,7 @@ The slapos team
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_no_open_order(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       destination_value=person,
@@ -943,7 +864,7 @@ The slapos team
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_with_open_order_line(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       destination_value=person,
@@ -974,7 +895,7 @@ The slapos team
   '%s %s %s %s" % (service_relative_url, title, text_content, comment))\n' \
   'return "fooevent"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_no_invoice(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     ticket.edit(
       destination_value=person,
@@ -996,8 +917,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1194,8 +1114,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 class TestSlapOSRegularisationRequest_triggerAcknowledgmentEscalation(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1280,8 +1199,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_triggerStopReminderEscalation(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1366,8 +1284,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_triggerStopAcknowledgmentEscalation(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1452,8 +1369,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_triggerDeleteReminderEscalation(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1538,8 +1454,7 @@ The slapos team
 class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1549,20 +1464,6 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
       reference="TESTREGREQ-%s" % new_id,
       resource='foo/bar',
       )
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    person = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person.edit(
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
-    person.manage_delObjects(
-      [x.getId() for x in person.contentValues(portal_type="Assignment")]
-    )
-    return person
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1591,7 +1492,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
   'comment="Visited by HostingSubscription_stopFromRegularisationRequest ' \
   '%s" % (person))')
   def test_stopHostingSubscriptionList_matching_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     hosting_subscription = self.createHostingSubscription()
 
@@ -1623,7 +1524,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
   'comment="Visited by HostingSubscription_stopFromRegularisationRequest ' \
   '%s" % (person))')
   def test_stopHostingSubscriptionList_matching_subscription_2(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     hosting_subscription = self.createHostingSubscription()
 
@@ -1652,7 +1553,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_other_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -1675,7 +1576,6 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_no_person(self):
-    self.createPerson()
     ticket = self.createRegularisationRequest()
 
     ticket.edit(
@@ -1696,7 +1596,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_not_suspended(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -1718,7 +1618,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_other_resource(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -1740,22 +1640,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
 class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    person = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person.edit(
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
-    person.manage_delObjects(
-      [x.getId() for x in person.contentValues(portal_type="Assignment")]
-    )
-    return person
+  abort_transaction = 1
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1777,7 +1662,7 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
       REQUEST={})
 
   def test_stopFromRegularisationRequest_matching_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     hosting_subscription = self.createHostingSubscription()
     hosting_subscription.edit(
       destination_section=person.getRelativeUrl(),
@@ -1805,7 +1690,7 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
     self.assertEquals(hosting_subscription.getSlapState(), "stop_requested")
 
   def test_stopFromRegularisationRequest_stopped_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     hosting_subscription = self.createHostingSubscription()
     hosting_subscription.edit(
       destination_section=person.getRelativeUrl(),
@@ -1828,22 +1713,7 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
 class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    person = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person.edit(
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
-    person.manage_delObjects(
-      [x.getId() for x in person.contentValues(portal_type="Assignment")]
-    )
-    return person
+  abort_transaction = 1
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1865,7 +1735,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
       REQUEST={})
 
   def test_deleteFromRegularisationRequest_started_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     hosting_subscription = self.createHostingSubscription()
     hosting_subscription.edit(
       destination_section=person.getRelativeUrl(),
@@ -1893,7 +1763,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
     self.assertEquals(hosting_subscription.getSlapState(), "destroy_requested")
 
   def test_deleteFromRegularisationRequest_stopped_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     hosting_subscription = self.createHostingSubscription()
     hosting_subscription.edit(
       destination_section=person.getRelativeUrl(),
@@ -1923,7 +1793,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
     self.assertEquals(hosting_subscription.getSlapState(), "destroy_requested")
 
   def test_deleteFromRegularisationRequest_destroyed_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     hosting_subscription = self.createHostingSubscription()
     hosting_subscription.edit(
       destination_section=person.getRelativeUrl(),
@@ -1946,8 +1816,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
 class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
                                                           testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1957,20 +1826,6 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
       reference="TESTREGREQ-%s" % new_id,
       resource='foo/bar',
       )
-
-  def createPerson(self):
-    new_id = self.generateNewId()
-    person = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person.edit(
-      title="Person %s" % new_id,
-      reference="TESTPERS-%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-      )
-    person.manage_delObjects(
-      [x.getId() for x in person.contentValues(portal_type="Assignment")]
-    )
-    return person
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1999,7 +1854,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
   'comment="Visited by HostingSubscription_deleteFromRegularisationRequest ' \
   '%s" % (person))')
   def test_deleteHostingSubscriptionList_matching_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     hosting_subscription = self.createHostingSubscription()
 
@@ -2028,7 +1883,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_other_subscription(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -2051,7 +1906,6 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_no_person(self):
-    self.createPerson()
     ticket = self.createRegularisationRequest()
 
     ticket.edit(
@@ -2072,7 +1926,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_not_suspended(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -2094,7 +1948,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_other_resource(self):
-    person = self.createPerson()
+    person = self.makePerson(index=0, user=0)
     ticket = self.createRegularisationRequest()
     self.createHostingSubscription()
 
@@ -2113,49 +1967,20 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
 
     self.tic()
 
-class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSComputer_notifyWrongAllocationScope(TestCRMSkinsMixin):
 
   def afterSetUp(self):
     super(TestSlapOSComputer_notifyWrongAllocationScope, self).afterSetUp()
-    self.new_id = self.generateNewId()
-    self._cancelTestSupportRequestList()
-
-  def _cancelTestSupportRequestList(self):
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        title="%%TESTCOMPT-%",
-                        simulation_state=["validated", "suspended"]):
-      support_request.invalidate()
-    self.tic()
+    self._cancelTestSupportRequestList(title="%%TESTCOMPT-%")
 
   def _makeComputer(self):
     super(TestSlapOSComputer_notifyWrongAllocationScope, self)._makeComputer()
 
     # Clone computer document
     self.computer.edit(
-      source_administration_value=self._makePerson()
+      source_administration_value=self.makePerson()
     )
     return self.computer
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
-
-  def _updatePersonAssignment(self, person, role='role/member'):
-    for assignment in person.contentValues(portal_type="Assignment"):
-      assignment.cancel()
-    assignment = person.newContent(portal_type='Assignment')
-    assignment.setRole(role)
-    assignment.setStartDate(DateTime())
-    assignment.open()
-    return assignment
 
   def _getGeneratedSupportRequest(self, computer):
     request_title = '%%We have changed allocation scope for %s' % \
@@ -2195,7 +2020,6 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   def test_computerNotAllowedAllocationScope_OpenPublic(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
-    self._updatePersonAssignment(person, 'role/member')
 
     self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenPublic'] = \
         self._makeNotificationMessage(computer.getReference())
@@ -2232,12 +2056,11 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   def test_computerNotAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
-    self._updatePersonAssignment(person, 'role/member')
 
     self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenFriend'] = \
         self._makeNotificationMessage(computer.getReference())
 
-    friend_person = self._makePerson()
+    friend_person = self.makePerson()
     computer.edit(allocation_scope='open/friend',
         destination_section=friend_person.getRelativeUrl())
     ticket = computer.Computer_checkAndUpdateAllocationScope()
@@ -2289,7 +2112,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   def test_computerNormalAllocationScope_OpenPersonal(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
-    self._updatePersonAssignment(person, 'role/member')
+    self._updatePersonAssignment(person, 'role/service_provider')
 
     computer.edit(allocation_scope='open/personal')
     computer.Computer_checkAndUpdateAllocationScope()
@@ -2308,10 +2131,10 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
 
   def test_computerAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer()
+    friend_person = self.makePerson()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/service_provider')
 
-    friend_person = self._makePerson()
     computer.edit(allocation_scope='open/friend',
         destination_section=friend_person.getRelativeUrl())
     computer.Computer_checkAndUpdateAllocationScope()
@@ -2321,11 +2144,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
 
 class TestComputer_hasContactedRecently(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def afterSetUp(self):
-    super(TestComputer_hasContactedRecently, self).afterSetUp()
+  abort_transaction = 1
 
   def _makeComputer(self):
     super(TestComputer_hasContactedRecently, self)._makeComputer()
@@ -2422,11 +2241,7 @@ class TestComputer_hasContactedRecently(testSlapOSMixin):
 
 class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def afterSetUp(self):
-    super(TestSlapOSPerson_isServiceProvider, self).afterSetUp()
+  abort_transaction = 1
 
   def test_Person_isServiceProvider(self):
     person = self.portal.person_module.template_member\
@@ -2450,35 +2265,16 @@ class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
     self.assertTrue(person.Person_isServiceProvider())
 
 
-class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSisSupportRequestCreationClosed(TestCRMSkinsMixin):
 
   def afterSetUp(self):
     super(TestSlapOSisSupportRequestCreationClosed, self).afterSetUp()
-    self.new_id = self.generateNewId()
     self._cancelTestSupportRequestList()
-
-  def _cancelTestSupportRequestList(self):
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        simulation_state=["validated", "suspended"]):
-      support_request.invalidate()
-    self.tic()
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
 
   def test_ERP5Site_isSupportRequestCreationClosed(self):
 
-    person = self._makePerson()
-    other_person = self._makePerson()
+    person = self.makePerson(user=0)
+    other_person = self.makePerson(user=0)
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
@@ -2508,7 +2304,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
                      other_person.getRelativeUrl()))
 
   def test_ERP5Site_isSupportRequestCreationClosed_suspended_state(self):
-    person = self._makePerson()
+    person = self.makePerson(user=0)
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
@@ -2532,7 +2328,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
 
 
   def test_ERP5Site_isSupportRequestCreationClosed_nonmonitoring(self):
-    person = self._makePerson()
+    person = self.makePerson(user=0)
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
@@ -2555,19 +2351,13 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
 
 
-class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
+class TestSlapOSGenerateSupportRequestForSlapOS(TestCRMSkinsMixin):
 
   def afterSetUp(self):
     super(TestSlapOSGenerateSupportRequestForSlapOS, self).afterSetUp()
     self.tic()
     self._cancelTestSupportRequestList()
 
-  def _cancelTestSupportRequestList(self):
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        simulation_state=["validated", "suspended"]):
-      support_request.invalidate()
-    self.tic()
 
   def _makeHostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -2604,17 +2394,9 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
     # Clone computer document
     self.computer.edit(
-      source_administration_value=self._makePerson()
+      source_administration_value=self.makePerson(user=0)
     )
     return self.computer
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
 
   def _makeSoftwareInstallation(self):
     self._makeComputer()
@@ -2808,7 +2590,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
     self.assertEqual(support_request.getRelativeUrl(), in_progress)
 
-class TestSlapOSComputer_CheckState(testSlapOSMixin):
+class TestSlapOSComputer_CheckState(TestCRMSkinsMixin):
 
   def beforeTearDown(self):
     self._cancelTestSupportRequestList()
@@ -2816,8 +2598,7 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
 
   def afterSetUp(self):
     super(TestSlapOSComputer_CheckState, self).afterSetUp()
-    self.new_id = self.generateNewId()
-    self._cancelTestSupportRequestList()
+    self._cancelTestSupportRequestList("% TESTCOMPT-%")
 
   def _makeSupportRequest(self):
     support_request = self.portal.\
@@ -2825,14 +2606,6 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
       slapos_crm_support_request_template_for_monitoring.\
        Base_createCloneDocument(batch_mode=1)
     return support_request
-
-  def _cancelTestSupportRequestList(self):
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        title="% TESTCOMPT-%",
-                        simulation_state=["validated", "suspended"]):
-      support_request.invalidate()
-    self.tic()
 
   def _makeNotificationMessage(self, reference):
     notification_message = self.portal.notification_message_module.newContent(
@@ -2858,17 +2631,9 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
 
     # Clone computer document
     self.computer.edit(
-      source_administration_value=self._makePerson()
+      source_administration_value=self.makePerson(user=0)
     )
     return self.computer
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
 
   def _simulateBase_generateSupportRequestForSlapOS(self):
     script_name = 'Base_generateSupportRequestForSlapOS'
@@ -3396,17 +3161,9 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
 
     # Clone computer document
     self.computer.edit(
-      source_administration_value=self._makePerson()
+      source_administration_value=self.makePerson(user=0)
     )
     return self.computer
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
 
   def test_SupportRequest_trySendNotificationMessage(self):
     self._makeComputer()
@@ -3500,17 +3257,9 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
 
     # Clone computer document
     self.computer.edit(
-      source_administration_value=self._makePerson()
+      source_administration_value=self.makePerson(user=0)
     )
     return self.computer
-
-  def _makePerson(self):
-    # Clone computer document
-    person = self.portal.person_module.template_member\
-         .Base_createCloneDocument(batch_mode=1)
-    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    person.immediateReindexObject()
-    return person
 
   def _makeHostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -3607,7 +3356,7 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringComputerState())
 
-    support_request.setDestinationDecisionValue(self._makePerson())
+    support_request.setDestinationDecisionValue(self.makePerson(user=0))
     expected_text = """Visited by SupportRequest_trySendNotificationMessage Computer is contacting again  Suspending this ticket as the computer contacted again.  %s""" % support_request.getDestinationDecision()
     self.assertEquals(expected_text,
       support_request.SupportRequest_updateMonitoringComputerState())
@@ -3633,7 +3382,7 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
 
-    support_request.setDestinationDecisionValue(self._makePerson())
+    support_request.setDestinationDecisionValue(self.makePerson(user=0))
 
     self.assertEquals("Visited by SupportRequest_trySendNotificationMessage Suspending this ticket as the problem is not present anymore  Suspending this ticket as the problem is not present anymore.  %s" % \
     support_request.getDestinationDecision(),
@@ -3665,7 +3414,7 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     hs.getSlapState = getFakeSlapState
     self.commit()
 
-    support_request.setDestinationDecisionValue(self._makePerson())
+    support_request.setDestinationDecisionValue(self.makePerson(user=0))
     expected_text = """Visited by SupportRequest_trySendNotificationMessage Hosting Subscription was destroyed was destroyed by the user  Closing this ticket as the Hosting Subscription was destroyed by the user. 
    %s""" % support_request.getDestinationDecision()
     self.assertEquals(expected_text,

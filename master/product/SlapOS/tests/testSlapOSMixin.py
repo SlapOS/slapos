@@ -40,6 +40,39 @@ from Products.ERP5Type.tests.utils import createZODBPythonScript
 from AccessControl.SecurityManagement import getSecurityManager, \
     setSecurityManager
 
+def changeSkin(skin_name):
+  def decorator(func):
+    def wrapped(self, *args, **kwargs):
+      default_skin = self.portal.portal_skins.default_skin
+      self.portal.portal_skins.changeSkin(skin_name)
+      self.app.REQUEST.set('portal_skin', skin_name)
+      try:
+        v = func(self, *args, **kwargs)
+      finally:
+        self.portal.portal_skins.changeSkin(default_skin)
+        self.app.REQUEST.set('portal_skin', default_skin)
+      return v
+    return wrapped
+  return decorator
+
+def simulate(script_id, params_string, code_string):
+  def upperWrap(f):
+    @wraps(f)
+    def decorated(self, *args, **kw):
+      if script_id in self.portal.portal_skins.custom.objectIds():
+        raise ValueError('Precondition failed: %s exists in custom' % script_id)
+      createZODBPythonScript(self.portal.portal_skins.custom,
+                          script_id, params_string, code_string)
+      transaction.commit()
+      try:
+        result = f(self, *args, **kw)
+      finally:
+        if script_id in self.portal.portal_skins.custom.objectIds():
+          self.portal.portal_skins.custom.manage_delObjects(script_id)
+        transaction.commit()
+      return result
+    return decorated
+  return upperWrap
 
 def withAbort(func):
   @functools.wraps(func)
@@ -51,6 +84,8 @@ def withAbort(func):
   return wrapped
 
 class testSlapOSMixin(ERP5TypeTestCase):
+
+  abort_transaction = 0
 
   def clearCache(self):
     self.portal.portal_caches.clearAllCache()
@@ -100,7 +135,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
                               'newcerts'))
     for newcert in newcerts_list:
       os.remove(newcert)
-      
+
 
   def setupPortalAlarms(self):
     if not self.portal.portal_alarms.isSubscribed():
@@ -125,7 +160,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
   def beforeTearDown(self):
     if self.isLiveTest():
       self.deSetUpPersistentDummyMailHost()
-      return
+    if self.abort_transaction:
+      transaction.abort()
 
   def getUserFolder(self):
     """
@@ -143,6 +179,10 @@ class testSlapOSMixin(ERP5TypeTestCase):
   def afterSetUp(self):
     self.login()
     self.createAlarmStep()
+
+    # Helpfull for the tests
+    self.new_id = self.generateNewId()
+
     if self.isLiveTest():
       self.setUpPersistentDummyMailHost()
       return
@@ -160,8 +200,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       self.bootstrapSite()
       self.portal._p_changed = 1
       self.commit()
-    
-    
+
 
   def deSetUpPersistentDummyMailHost(self):
     if 'MailHost' in self.portal.objectIds():
@@ -237,10 +276,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
 
 
     if user:
-      login = person_user.newContent(
-        portal_type="ERP5 Login",
-        reference=person_user.getReference())
-      login.validate()
+      login = self._addERP5Login(person_user)
 
     if index:
       transaction.commit()
@@ -249,6 +285,13 @@ class testSlapOSMixin(ERP5TypeTestCase):
         login.immediateReindexObject()
 
     return person_user
+
+  def _addERP5Login(self, document):
+      login = document.newContent(
+        portal_type="ERP5 Login",
+        reference=document.getReference())
+      login.validate()
+      return login
 
   def _makeTree(self, requested_template_id='template_software_instance'):
     new_id = self.generateNewId()
@@ -313,7 +356,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.requested_software_instance.validate()
     self.tic()
 
-  def _makeComputer(self):
+  def _makeComputer(self, owner=None):
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     reference = 'TESTCOMP-%s' % self.generateNewId()
@@ -332,6 +375,11 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.partition.markFree()
     self.partition.validate()
     self.tic()
+
+    if owner is not None:
+      self.computer.edit(
+        source_administration_value=owner,
+      )
     return self.computer, self.partition
 
   def _makeComputerNetwork(self):

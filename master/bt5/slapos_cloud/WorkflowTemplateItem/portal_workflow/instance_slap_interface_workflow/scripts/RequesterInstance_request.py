@@ -98,8 +98,14 @@ if (request_software_instance is None):
       activate_kw={'tag': tag},
       **new_content_kw
     )
-    # request_software_instance.portal_workflow.doActionFor(request_software_instance, 'validate_action')
     request_software_instance.validate()
+    if software_instance_portal_type == "Software Instance":
+      # Include ERP5 Login so Instance become a User
+      erp5_login = request_software_instance.newContent(
+        portal_type="ERP5 Login",
+        reference=request_software_instance.getReference())
+      erp5_login = erp5_login.validate()
+
     graph[request_software_instance.getUid()] = []
 
 else:

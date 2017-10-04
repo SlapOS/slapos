@@ -18,7 +18,7 @@
   </role>
   <role id='Assignor'>
    <property id='title'>Self Computer</property>
-   <property id='condition'>python: context.getReference("") != ""</property>
+   <property id='condition'>python: context.getUserId("") != ""</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
    <multi_property id='base_category'>destination_decision</multi_property>
   </role>
