@@ -299,6 +299,7 @@ promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
 recipe = slapos.cookbook:wrapper
+recipe =
 wrapper-path = ${directory:promise}/check-apachedex-result
 command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_file "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
