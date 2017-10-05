@@ -19,9 +19,21 @@ etc_directory='{{ directory["etc"] }}'
 tmp_directory='{{ directory["tmp"] }}'
 
 rsync () {
+  # Workaround for bug https://bugzilla.samba.org/show_bug.cgi?id=3653
+  IGNOREEXIT=24
+  IGNOREOUT='^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
+  set -o pipefail
+
   set -x
-  '{{ rsync_binary }}' -rlptgov --stats --safe-links --ignore-missing-args --delete --delete-excluded "$@"
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --ignore-missing-args --delete --delete-excluded "$@" 2>1 | (egrep -v "$IGNOREOUT" || true)
   set +x
+
+  ret=$?
+  if [[ $ret == $IGNOREEXIT ]]; then
+    ret=0
+  fi
+
+  exit $ret
 }
 
 (

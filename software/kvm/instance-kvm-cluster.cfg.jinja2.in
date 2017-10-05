@@ -9,7 +9,13 @@
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
 {% set monitor_url_list = [] -%}
-{% set enable_monitoring = slapparameter_dict.get('enable-monitor', True) -%}
+
+{% macro setconfig(name, value) -%}
+{# will set a config-name = value if value is not empty -#}
+{% if value and value != '' -%}
+config-{{ name }} = {{ dumps(value) }}
+{% endif -%}
+{% endmacro -%}
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -37,36 +43,38 @@ state = stopped
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
-config-frontend-instance-guid = {{ dumps(frontend_dict.get('instance-guid', '')) }}
+{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
 {% endif -%}
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
-config-nbd-host = {{ dumps(kvm_parameter_dict.get('nbd-host', '')) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
-config-nbd2-host = {{ dumps(kvm_parameter_dict.get('nbd-host2', '')) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
-config-cpu-options = {{ dumps(kvm_parameter_dict.get('cpu-options', '')) }}
-config-numa = {{ dumps(kvm_parameter_dict.get('numa', '')) }}
-config-disk-cache = {{ dumps(kvm_parameter_dict.get('disk-cache', '')) }}
-config-disk-aio = {{ dumps(kvm_parameter_dict.get('disk-aio', '')) }}
+{{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
+{{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
+{{ setconfig('cpu-options', kvm_parameter_dict.get('cpu-options', '')) }}
+{{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
+{{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
+
 config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}
-config-machine-options = {{ dumps(kvm_parameter_dict.get('machine-options', '')) }}
-config-cpu-model = {{ dumps(kvm_parameter_dict.get('cpu-model', '')) }}
+{{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
+{{ setconfig('disk-aio', kvm_parameter_dict.get('disk-aio', '')) }}
+{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', '')) }}
+{{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
-config-nat-rules = {{ nat_rules_list | join(' ') }}
+{{ setconfig('nat-rules', ' '.join(nat_rules_list)) }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
 config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
 config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
-config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
-config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
+{{ setconfig('virtual-hard-drive-url', kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
+{{ setconfig('virtual-hard-drive-md5sum', kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
 config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
 config-hard-drive-url-check-certificate = {{ dumps(kvm_parameter_dict.get('hard-drive-url-check-certificate', True)) }}
 config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
@@ -74,15 +82,18 @@ config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size'
 config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
 config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
 config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
-{% if kvm_parameter_dict.get('data-to-vm', '') -%}
-config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
-{% endif -%}
+
+{{ setconfig('data-to-vm', kvm_parameter_dict.get('data-to-vm', '')) }}
+
 config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
-config-enable-monitor = {{ enable_monitoring }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-
+# Enable disk wipe options
+{% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
+config-wipe-disk-ondestroy = True
+config-wipe-disk-iterations = {{ dumps(kvm_parameter_dict.get('wipe-disk-iterations', 1)) }}
+{% endif -%}
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
@@ -109,13 +120,11 @@ return =
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
 {% endif -%}
-{% if enable_monitoring -%}
 {{ '  ' }}monitor-base-url
-{%    do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
-{% endif -%}
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
+{% do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
@@ -151,7 +160,7 @@ name = Frontend {{ name }}
 software-type = {{ slave_frontend_stype }}
 slave = true
 config-url = {{ url }}
-config-custom_domain = {{ dumps(frontend_parameter_dict.get('domain', '')) }}
+{{ setconfig('custom_domain', kvm_parameter_dict.get('domain', '')) }}
 config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}
 config-https-only = {{ dumps(frontend_parameter_dict.get('https-only', False)) }}
 {%  if frontend_parameter_dict.get('type', '') -%}
@@ -245,18 +254,14 @@ recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% if enable_monitoring -%}
-{%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-{% do part_list.append('monitor-base') -%}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-{% endif -%}
+{% do part_list.append('monitor-base') -%}
 
 [buildout]
 extends = 
   {{ template_httpd_cfg }}
-{% if enable_monitoring -%}
 {{ '  ' ~ template_monitor }}
-{% endif -%}
 
 parts = 
   httpd

@@ -159,6 +159,21 @@
       "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
     },
 
+    "wipe-disk-ondestroy": {
+      "title": "Wipe disks when destroy the VM",
+      "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+      "type": "boolean",
+      "default": false
+    },
+    "wipe-disk-iterations": {
+      "title": "Wipe disk iterations",
+      "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 5
+    },
+
     "use-tap": {
       "title": "Use QEMU TAP network interface",
       "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
@@ -187,12 +202,6 @@
       "description": "The vhost-net provides much improved network performance for your VM. Only work if the vhost-net kernel module is loaded and available on host machine, please keep this option off if you're not shure.",
       "type": "boolean",
       "default": false
-    },
-    "enable-monitor": {
-      "title": "Deploy monitoring tools",
-      "description": "Deploy monitor instance to this kvm instance. It help to check instance status, log and promise results.",
-      "type": "boolean",
-      "default": true
     },
     "monitor-interface-url": {
         "title": "Monitor Web Interface URL",

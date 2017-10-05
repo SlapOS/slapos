@@ -1,6 +1,7 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
+{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', 'False').lower() -%}
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
@@ -9,7 +10,6 @@
 {% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
-{% set monitor = str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
 
 {% set bootstrap_url = '' -%}
 {% set bootstrap_url_md5sum = '' -%}
@@ -26,10 +26,9 @@
 {%   set nat_rule_list = '' %}
 {% endif -%}
 
-{% if monitor -%}
 {% do extends_list.append(template_monitor) -%}
-{% endif -%}
 {% do extends_list.append(logrotate_cfg) -%}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -42,6 +41,7 @@ services = ${:etc}/service
 promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
+prerm = ${:etc}/prerm
 ca-dir = ${:srv}/ssl
 public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
@@ -219,6 +219,19 @@ input = inline:#!/bin/sh
 output = ${directory:promises}/kvm-disk-image-corruption
 mode = 700
 
+{% if wipe_disk == 'true' -%}
+{% do part_list.append('wipe-disk-wrapper') -%}
+{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
+{% if storage_dict -%}
+{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' ~ ' ' ~ '/* '.join(storage_dict.values()) ~ '/*' -%}
+{% endif -%}
+[wipe-disk-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
+command-line = 
+  {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
+{% endif -%}
+
 [kvm-started-promise]
 recipe = slapos.recipe.template:jinja2
 template = {{ qemu_start_promise_tpl }}
@@ -343,22 +356,20 @@ hostname = ${httpd:host}
 port = ${httpd:port}
 {% endif %}
 
-{% if monitor -%}
-
 [monitor-instance-parameter]
 monitor-httpd-port = 8026
 monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-{%   if slapparameter_dict.get('monitor-username', '') -%}
+{% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
-{%   endif -%}
-{%   if slapparameter_dict.get('monitor-password', '') -%}
-password = {{ slapparameter_dict['monitor-password'] }}
-{%   endif -%}
-
 {% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
 
 [publish-connection-information]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
@@ -392,13 +403,6 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
-{% if monitor -%}
-monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-{%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-{%   if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-{%   endif -%}
-{% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
@@ -631,10 +635,8 @@ parts =
   cron
   cron-entry-logrotate
   frontend-promise
-{% if monitor -%}
 # monitor parts
   monitor-base
-{% endif -%}
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
 

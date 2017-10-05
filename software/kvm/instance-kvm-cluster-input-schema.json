@@ -157,12 +157,6 @@
       "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
       "type": "string"
     },
-    "enable-monitor": {
-      "title": "Enable Monitoring on this cluster",
-      "description": "Deploy monitor instance to this kvm instance. It help to check instance status, log and promise results.",
-      "type": "boolean",
-      "default": true
-    },
     "monitor-interface-url": {
         "title": "Monitor Web Interface URL",
         "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
@@ -340,6 +334,20 @@
               "type": "string",
               "default": "qcow2",
               "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
+            },
+            "wipe-disk-ondestroy": {
+              "title": "Wipe disks when destroy the VM",
+              "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+              "type": "boolean",
+              "default": false
+            },
+            "wipe-disk-iterations": {
+              "title": "Wipe disk iterations",
+              "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "maximum": 5
             },
             "use-tap": {
               "title": "Enable QEMU TAP network interface",
