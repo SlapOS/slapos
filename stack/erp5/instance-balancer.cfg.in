@@ -288,7 +288,7 @@ apachedex = ${monitor-directory:private}/apachedex
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
 command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --config "${apachedex-parameters:configuration}"
-command = apachedex_every_3_hour
+command = apachedex_every_23_hour
 
 [apachedex-parameters]
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
@@ -300,7 +300,7 @@ promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 [{{ section('monitor-promise-apachedex-result') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-apachedex-result
-command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_file "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
+command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
