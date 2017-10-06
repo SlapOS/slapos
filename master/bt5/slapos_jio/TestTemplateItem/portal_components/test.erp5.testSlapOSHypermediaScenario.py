@@ -28,19 +28,11 @@ def getRelativeUrlFromUrn(urn):
 class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
 
   def _makeUser(self):
-    new_id = self.generateNewId()
-    person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      password="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
+    person_user = self.makePerson()
+    login = person_user.objectValues("ERP5 Login")[0]
+    login.edit(
+      reference=person_user.getReference(),
+      password=person_user.getReference())
     self.tic()
     return person_user
 
@@ -291,7 +283,7 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     # We are going to check computer and software
     # First create a computer and a software. We could alternatively later
     # create them through hypermedia links
-    self.login(erp5_person.getReference())
+    self.login(erp5_person.getUserId())
     self.portal.portal_slap.requestComputer(
                        "computer %s" % erp5_person.getReference())
     self.tic()
