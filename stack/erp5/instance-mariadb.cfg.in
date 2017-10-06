@@ -297,7 +297,7 @@ slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 [{{ section('monitor-promise-slowquery-result') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-slow-query-pt-digest-result
-command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_file "${monitor-directory:private}/slowquery_digest.txt" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
+command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${monitor-directory:private}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
 
 
 [{{ section('promise') }}]
