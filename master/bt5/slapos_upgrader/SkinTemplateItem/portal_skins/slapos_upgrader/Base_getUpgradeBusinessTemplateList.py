@@ -9,7 +9,7 @@ bt5_update_catalog_list = ('erp5_ingestion_mysql_innodb_catalog',
                            'slapos_cloud', 'erp5_accounting',
                            'erp5_movement_table_catalog')
 
-bt5_id_list = bt5_update_catalog_list + ('erp5_promise', 'slapos_configurator',
+bt5_id_list = bt5_update_catalog_list + ('slapos_configurator',
   'slapos_erp5',)
 
 keep_bt5_id_list = ['erp5_ui_test',

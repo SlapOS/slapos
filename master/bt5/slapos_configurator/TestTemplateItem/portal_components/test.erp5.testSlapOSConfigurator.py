@@ -140,7 +140,6 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'erp5_xhtml_style',
       'erp5_property_sheets',
       'erp5_mysql_innodb_catalog',
-      'erp5_promise',
       'erp5_upgrader',
       'slapos_upgrader',
       'erp5_full_text_myisam_catalog',
