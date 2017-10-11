@@ -1,0 +1,18 @@
+diff --git a/PythonAPI/setup.py b/PythonAPI/setup.py
+index eb3d508..d619b3c 100644
+--- a/PythonAPI/setup.py
++++ b/PythonAPI/setup.py
+@@ -1,4 +1,5 @@
+-from distutils.core import setup
++#from distutils.core import setup
++from setuptools import setup
+ from Cython.Build import cythonize
+ from distutils.extension import Extension
+ import numpy as np
+@@ -21,4 +22,4 @@ setup(name='pycocotools',
+       version='2.0',
+       ext_modules=
+           cythonize(ext_modules)
+-      )
+\ No newline at end of file
++      )
