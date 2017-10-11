@@ -1,6 +1,6 @@
 #############################
 #
-# Deploy hello-world instance
+# Deploy caddy instance
 #
 #############################
 [buildout]
