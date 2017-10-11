@@ -1,0 +1,13 @@
+diff --git a/setup.py b/setup.py
+index 1d9a765..a50e9cb 100644
+--- a/setup.py
++++ b/setup.py
+@@ -90,7 +90,7 @@ def build_libs(libs):
+         assert lib in dep_libs, 'invalid lib: {}'.format(lib)
+     build_libs_cmd = ['bash', 'torch/lib/build_libs.sh']
+     my_env = os.environ.copy()
+-    my_env["PYTORCH_PYTHON"] = sys.executable
++    #my_env["PYTORCH_PYTHON"] = sys.executable
+     if WITH_SYSTEM_NCCL:
+         my_env["NCCL_ROOT_DIR"] = NCCL_ROOT_DIR
+     if WITH_CUDA:
