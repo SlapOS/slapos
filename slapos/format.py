@@ -436,6 +436,7 @@ class Computer(object):
         config=config,
     )
 
+    partition_amount = int(config.partition_amount)
     for partition_index, partition_dict in enumerate(dumped_dict['partition_list']):
 
       if partition_dict['user']:
@@ -454,10 +455,10 @@ class Computer(object):
         tap = Tap(partition_dict['reference'])
 
       if partition_dict.get('tun') is not None and partition_dict['tun'].get('ipv4_addr') is not None:
-        tun = Tun(partition_dict['tun']['name'], partition_index, len(dumped_dict['partition_list']))
+        tun = Tun(partition_dict['tun']['name'], partition_index, partition_amount)
         tun.ipv4_addr = partition_dict['tun']['ipv4_addr']
       else:
-        tun = Tun("slaptun" + str(partition_index), partition_index, len(dumped_dict['partition_list']))
+        tun = Tun("slaptun" + str(partition_index), partition_index, partition_amount)
 
       address_list = partition_dict['address_list']
       external_storage_list = partition_dict.get('external_storage_list', [])
