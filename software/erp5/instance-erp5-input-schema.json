@@ -18,7 +18,7 @@
       "type": "string"
     },
     "bt5": {
-      "description": "Initial Business Template to install at automatic site creation. By default, all configurators are installed.",
+      "description": "Business Template to install at automatic site creation. By default, all configurators are installed.",
       "type": "string"
     },
     "timezone": {
