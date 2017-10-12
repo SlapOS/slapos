@@ -17,6 +17,10 @@
       "default": "erp5",
       "type": "string"
     },
+    "bt5": {
+      "description": "Initial Business Template to install at automatic site creation. By default, all configurators are installed.",
+      "type": "string"
+    },
     "timezone": {
       "description": "Zope's timezone. Possible values are determined by host's libc, and typically come from a separate package (tzdata, ...)",
       "default": "UTC",
