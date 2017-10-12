@@ -54,7 +54,7 @@ template = inline:
   EXPORTER_FEED="${notifier-exporter:log-file}"
   FAILURE_PATTERN="FAILURE"
   if [ -s "$EXPORTER_FEED" ]; then
-    tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
+    tail -n 1 $EXPORTER_FEED | grep -vq $FAILURE_PATTERN
   fi
 rendered = ${basedirectory:promises}/exporter-status
 
