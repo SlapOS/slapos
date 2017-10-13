@@ -16,36 +16,96 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
+{% set hosts_dict = {} -%}
+{% set port_dict = {} -%}
+{% for alias, url in (
+    ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
+    ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
+    ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
+    ('erp5-smtp', slapparameter_dict['smtp-url']),
+  ) -%}
+{%   set parsed_url = urlparse.urlparse(url) -%}
+{%   do port_dict.__setitem__(alias, parsed_url.port)  -%}
+{%   do hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
+{%- endfor %}
+{% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
+{%   do hosts_dict.__setitem__(
+       'erp5-catalog-' ~ i,
+       urlparse.urlparse(url).hostname,
+     ) -%}
+{%- endfor %}
+{% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
-{% if slapparameter_dict['mysql-test-url-list'] -%}
-[{{ section('test-runner') }}]
-recipe = slapos.cookbook:erp5.test
-certificate-authority-path = ${test-certificate-authority:ca-dir}
-mysql-url-list = {{ dumps(slapparameter_dict['mysql-test-url-list']) }}
-kumofs-url = {{ dumps(slapparameter_dict['kumofs-url']) }}
-memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
-cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
-test-instance-path = ${directory:unit-test-path}
-prepend-path = ${buildout:bin-directory}
-run-unit-test = ${buildout:bin-directory}/runUnitTest
-run-test-suite = ${buildout:bin-directory}/runTestSuite
-openssl-binary = ${test-certificate-authority:openssl-binary}
-run-unit-test-binary = {{ parameter_dict['bin-directory'] }}/runUnitTest
-run-test-suite-binary = {{ parameter_dict['bin-directory'] }}/runTestSuite
+[run-common]
+recipe = slapos.cookbook:wrapper
+parameters-extra = true
+environment-extra =
+environment =
+  HOSTALIASES=${hostaliases:rendered}
+  HOSTS=${hosts:rendered}
+  TMP=${directory:tmp}
+  TMPDIR=${directory:tmp}
+  HOME=${buildout:directory}
+  PATH=${directory:bin}:{{ parameter_dict['coreutils'] }}/bin
+  TZ={{ slapparameter_dict['timezone'] }}
+  MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
+  INSTANCE_HOME=${:instance-home}
+  CAUCASE={{ slapparameter_dict['caucase-url'] }}
+{% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
+  WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
+  ${:environment-extra}
 
-[test-certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = ${binary-link:target-directory}/openssl
-ca-dir = ${directory:test-ca-dir}
-requests-directory = ${directory:test-ca-requests}
-wrapper = ${directory:services}/test-ca
-ca-private = ${directory:test-ca-private}
-ca-certs = ${directory:test-ca-certs}
-ca-newcerts = ${directory:test-ca-newcerts}
-ca-crl = ${directory:test-ca-crl}
+{% if slapparameter_dict['mysql-test-url-list'] -%}
+{% set connection_string_list = [] -%}
+{% for url in slapparameter_dict['mysql-test-url-list'] -%}
+{%   parsed_url = urlparse.urlparse(url) -%}
+{%   do connection_string_list.append(
+       '%s@%s:%s %s %s' % (
+         parsed_url.path.lstrip('/'),
+         parsed_url.hostname,
+         parsed_url.port,
+         parsed_url.username,
+         parsed_url.password,
+       ),
+     ) -%}
+{% endfor -%}
+[run-test-common]
+< = run-common
+environment-extra =
+  REAL_INSTANCE_HOME=${:instance-home}
+  OPENSSL_BINARY=${test-certificate-authority:openssl-binary}
+  TEST_CA_PATH=${test-certificate-authority:ca-dir}
+instance-home = ${directory:unit-test-path}
+wrapper-path = ${directory:bin}/${:command-name}
+command-line =
+  '{{ parameter_dict['bin-directory'] }}/${:command-name}'
+  ${:command-line-extra}
+  --conversion_server_url={{ slapparameter_dict['cloudooo-url'] }}
+{#- BBB: We still have test suites that only accept the following 2 options. #}
+  --conversion_server_hostname={{ host_dict['erp5-cloudooo'] }}
+  --conversion_server_port={{ port_dict['erp5-cloudooo'] }}
+  --volatile_memcached_server_hostname=erp5-memcached-volatile
+  --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
+  --persistent_memcached_server_hostname=erp5-memcached-persistent
+  --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[{{ section('runUnitTest') }}]
+< = run-test-common
+command-name = runUnitTest
+command-line-extra =
+  --erp5_sql_connection_string {{ connection_string_list[0] }}
+  --extra_sql_connection_string_list {{ ','.join(connection_string_list[1:]) }}
+
+[{{ section('runTestSuite') }}]
+< = run-test-common
+command-name = runTestSuite
+command-line-extra =
+  --db_list {{ ','.join(connection_string_list) }}
 {%- endif %}
 
 [directory]
@@ -116,27 +176,6 @@ ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
 {% endif -%}
 
-{% set hosts_dict = {} -%}
-{% for alias, url in (
-    ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
-    ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
-    ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
-    ('erp5-smtp', slapparameter_dict['smtp-url']),
-  ) -%}
-{%   do hosts_dict.__setitem__(
-       alias,
-       urlparse.urlparse(url).hostname,
-     )  -%}
-{%- endfor %}
-{% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
-{%   do hosts_dict.__setitem__(
-       'erp5-catalog-' ~ i,
-       urlparse.urlparse(url).hostname,
-     ) -%}
-{%- endfor %}
-{% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
-[host-common]
-
 [hosts-parameter]
 # Used for both hosts and hostaliases sections.
 host-dict = {{ dumps(hosts_dict) }}
@@ -190,21 +229,8 @@ pem = {{dumps(storage_dict.pop(k))}}
 {# endhack -#}
 
 [runzope-base]
-recipe = slapos.cookbook:wrapper
-environment =
-  HOSTALIASES=${hostaliases:rendered}
-  HOSTS=${hosts:rendered}
-  TMP=${directory:tmp}
-  TMPDIR=${directory:tmp}
-  HOME=${buildout:directory}
-  PATH=${directory:bin}:{{ parameter_dict['coreutils'] }}/bin
-  TZ={{ slapparameter_dict['timezone'] }}
-  INSTANCE_HOME=${directory:instance}
-  MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
-{% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
-  WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
-{% endif %}
-parameters-extra = true
+< = run-common
+instance-home = ${directory:instance}
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 
 [{{ section('zcml') }}]

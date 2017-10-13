@@ -25,72 +25,9 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import urlparse
 
 # The follow recipes should be unified somehow in order to improve
 # code mantainence.
-
-class Recipe(GenericBaseRecipe):
-  def install(self):
-    testinstance = self.options['test-instance-path']
-    mysql_connection_string_list = []
-    path_list = []
-    # XXX: assume existence of 100 test databases, because slaves are not
-    # functional yet in slapos: testdb_0...testdb_100, with testuser_N
-    mysql_template = "%s@%s:%s %s %s"
-    mysql_url_list = self.options.get('mysql-url-list')
-    if mysql_url_list is None:
-      mysql_parsed = urlparse.urlparse(self.options['mysql-url'])
-      for i in range(0, 100):
-        mysql_connection_string_list.append(mysql_template % ('testdb_%s'% i,
-          mysql_parsed.hostname, mysql_parsed.port, 'testuser_%s'% i, mysql_parsed.password))
-      mysql_connection_string = mysql_template % ('erp5_test', mysql_parsed.hostname,
-        mysql_parsed.port, 'erp5_test', mysql_parsed.password)
-    else:
-      for mysql_url in mysql_url_list:
-        mysql_parsed = urlparse.urlparse(mysql_url)
-        mysql_connection_string_list.append(mysql_template % (
-          mysql_parsed.path.lstrip('/'),
-          mysql_parsed.hostname,
-          mysql_parsed.port,
-          mysql_parsed.username,
-          mysql_parsed.password,
-        ))
-      mysql_connection_string = mysql_connection_string_list.pop()
-    cloudooo_url = self.options['cloudooo-url']
-    cloudooo_parsed = urlparse.urlparse(cloudooo_url)
-    memcached_parsed = urlparse.urlparse(self.options['memcached-url'])
-    kumofs_parsed = urlparse.urlparse(self.options['kumofs-url'])
-    common_dict = dict(
-        instance_home=testinstance,
-        prepend_path=self.options['prepend-path'],
-        openssl_binary=self.options['openssl-binary'],
-        test_ca_path=self.options['certificate-authority-path'],
-    )
-    common_list = [
-      '--conversion_server_url=' + cloudooo_url,
-      # BBB: We still have test suites that only accept the following 2 options.
-      '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
-      '--conversion_server_port=%s' % cloudooo_parsed.port,
-      '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
-      '--volatile_memcached_server_port=%s' % memcached_parsed.port,
-      '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
-      '--persistent_memcached_server_port=%s' % kumofs_parsed.port,
-    ]
-    path_list.append(self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-unit-test-binary'],
-          '--erp5_sql_connection_string', mysql_connection_string,
-          '--extra_sql_connection_string_list', ','.join(
-            mysql_connection_string_list),
-          ] + common_list, **common_dict)]))
-    path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-test-suite-binary'],
-          '--db_list', ','.join(mysql_connection_string_list),
-          ] + common_list, **common_dict)]))
-
-    return path_list
 
 class CloudoooRecipe(GenericBaseRecipe):
   def install(self):
