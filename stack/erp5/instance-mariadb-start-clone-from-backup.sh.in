@@ -1,0 +1,116 @@
+#!{{ dash }}
+set -eu
+
+if [ $# -ne 7 ]; then
+  echo "Bootstrap a mariadb instance from available backup data so it replicates from given master."
+  echo "  $0 <BACKUP FILE> <MASTER HOST> <MASTER PORT> <MASTER USER> <MASTER SSL CA FILE> <MASTER SSL CERT FILE> <MASTER SSL KEY FILE>"
+  exit 1
+fi
+
+BACKUP=$1
+MASTER_HOST=$2
+MASTER_PORT=$3
+MASTER_USER=$4
+MASTER_SSL_CA=$5
+MASTER_SSL_CERT=$6
+MASTER_SSL_KEY=$7
+
+CLIENT='{{ client }}'
+DATA_DIRECTORY='{{ data_directory }}'
+PID_FILE='{{ pid_file }}'
+SERVER='{{ server }}'
+UPDATE='{{ update }}'
+SOCKET='{{ socket }}'
+
+# Make sure mariadb is not already running
+if [ -e "$PID_FILE" ]; then
+  PID=$(cat "$PID_FILE")
+  if [ $? -ne 0 ]; then
+    echo "Cannot read Mariadb pidfile, assuming running. Aborting."
+    exit 1
+  fi
+  if kill -0 "$PID"; then
+    echo "Mariadb is already running with pid $PID. Aborting."
+    exit 1
+  fi
+fi
+
+BACKUP_HEAD="$(zcat "$BACKUP" | head -n 100)"
+
+SQL_CHANGE_MASTER=$(echo "$BACKUP_HEAD" | grep "^--\s*CHANGE MASTER TO " | sed "s/^--\s*//")
+if [ -z "$SQL_CHANGE_MASTER" ]; then
+  echo "'CHANGE MASTER TO' statement not found in given backup file."
+  echo "Is replication enabled on future master ?"
+  exit 1
+fi
+
+SQL_SET_GTID="$(echo "$BACKUP_HEAD" | grep "^--\s*SET GLOBAL gtid_slave_pos=" | sed "s/^--\s*//")"
+if [ -z "$SQL_SET_GTID" ]; then
+  echo "Info: GTID not found in backup, it will not be enabled."
+  MASTER_USE_GTID=0
+else
+  echo "Info: GTID found in backup, it will be enabled."
+  MASTER_USE_GTID=1
+fi
+
+echo "EXISTING DATABASE CONTENT WILL BE DESTROYED"
+echo "You have 5 seconds to interrupt this script..."
+if sleep 5; then
+  echo "Expired, proceeding"
+else
+  echo "Interrupted, aborting"
+  exit 1
+fi
+
+echo "Emptying data directory..."
+find "$DATA_DIRECTORY" -mindepth 1 -delete
+
+echo -n "Starting mariadb for backup restoration"
+"$SERVER" --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
+PID=$!
+trap "kill $PID; wait; exit 1" EXIT
+while true; do
+  if [ ! -e "/proc/$PID" ]; then
+    trap EXIT
+    echo "Service exited, check logs"
+    wait
+    exit 1
+  fi
+  test -e "$SOCKET" && break
+  echo -n .
+  sleep 0.5
+done
+
+"$UPDATE"
+
+echo "Importing $BACKUP ..."
+zcat "$BACKUP" | "$CLIENT" -u root
+
+echo "Configuring server as slave..."
+if [ "$MASTER_USE_GTID" -eq 1 ]; then
+  MASTER_USE_GTID_SQL="current_pos"
+else
+  MASTER_USE_GTID_SQL="NO"
+fi
+"$CLIENT" -u root -e "
+  CHANGE MASTER TO
+  MASTER_HOST='$MASTER_HOST',
+  MASTER_USER='$MASTER_USER',
+  MASTER_PORT=$MASTER_PORT,
+  MASTER_SSL=1,
+  MASTER_SSL_CA='$MASTER_SSL_CA',
+  MASTER_SSL_CERT='$MASTER_SSL_CERT',
+  MASTER_SSL_KEY='$MASTER_SSL_KEY',
+  MASTER_SSL_VERIFY_SERVER_CERT=1,
+  MASTER_USE_GTID=$MASTER_USE_GTID_SQL;
+"
+"$CLIENT" -u root -e "$SQL_CHANGE_MASTER"
+test "$MASTER_USE_GTID" -eq 1 && "$CLIENT" -u root -e "$SQL_SET_GTID"
+"$CLIENT" -u root -e "START SLAVE;"
+
+echo "Stopping mariadb..."
+trap EXIT
+kill $PID
+wait
+
+echo "Done. Start mariadb normally. You may use 'show slave status' SQL command to monitor progress."
