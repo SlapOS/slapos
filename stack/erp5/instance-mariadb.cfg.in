@@ -273,7 +273,6 @@ context =
   key mysql_executable binary-wrap-mysql:wrapper-path
   key mariadb_data_directory directory:mariadb-data
   key mariadb_backup_directory directory:mariadb-backup-full
-  key instance_directory buildout:directory
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mysqld:rendered
