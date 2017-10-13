@@ -263,6 +263,19 @@ rendered = ${directory:srv}/exporter.exclude
 [dash]
 dash = {{ dumps(dash) }}
 
+[{{ section('start-clone-from-backup') }}]
+< = jinja2-template-executable
+template = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
+rendered = ${directory:bin}/start-clone-from-backup
+context =
+  key dash dash:dash
+  key client binary-wrap-mysql:wrapper-path
+  key data_directory directory:mariadb-data
+  key pid_file my-cnf-parameters:pid-file
+  key server mysqld:rendered
+  key update update-mysql:output
+  key socket my-cnf-parameters:socket
+
 [{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
 < = jinja2-template-executable
