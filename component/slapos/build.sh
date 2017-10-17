@@ -11,7 +11,7 @@ cd /opt/slapos/
 
 # Create buildout.cfg SlapOS bootstrap file
 echo "[buildout]
-extends = https://lab.nexedi.com/nexedi/slapos/raw/1.0/component/slapos/buildout.cfg
+extends = https://lab.nexedi.com/ardohr/slapos/raw/ardohr-windows/component/slapos/buildout.cfg
 " > buildout.cfg
 
 # Required in some distros such as Mandriva
