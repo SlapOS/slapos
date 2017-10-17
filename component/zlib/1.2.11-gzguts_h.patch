@@ -1,0 +1,11 @@
+--- gzguts.h	2017-10-17 19:41:46.045002300 +0700
++++ zlib-1.2.11/gzguts.h	2017-10-17 19:04:58.353537100 +0700
+@@ -39,7 +39,7 @@
+ #  include <io.h>
+ #endif
+ 
+-#if defined(_WIN32) || defined(__CYGWIN__)
++#if defined(_WIN32)
+ #  define WIDECHAR
+ #endif
+ 
