@@ -14,8 +14,16 @@ passwd = root1234
 environment = 
   GITLAB_ROOT_PASSWORD=${root-password:passwd}
 
-[backend-info]
-# host    = ${instance-parameter:ipv4-random}
+[service-postgresql]
+pgdata-directory = ${directory:srv}/pg
+
+[gitlab-workhorse-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/glab-wh
+
+[gitlab-workhorse]
+srv     = ${gitlab-workhorse-dir:srv}
+socket  = ${gitlab-workhorse:srv}/wh.socket
 
 [publish-instance-info]
 password = ${root-password:passwd}
