@@ -1,0 +1,1 @@
+$${caddy-configuration:ip}:$${caddy-configuration:port}
