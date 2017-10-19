@@ -1,0 +1,47 @@
+[buildout]
+parts =
+  caddy-service
+  caddy-configuration
+  publish-connection-information
+
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+run = $${:var}/run
+log = $${:var}/log
+#www = $${:srv}/www
+#ssl = $${:etc}/ssl
+
+#################################
+# caddy service
+#################################
+[caddy-service]
+recipe = slapos.recipe.template
+url = ${template-caddy-service:output}
+output = $${directory:services}/caddy
+mode = 0700
+virtual-depends =
+  $${caddy-configuration:ip}
+
+[caddy-configuration]
+recipe = slapos.recipe.template
+url = ${template-Caddyfile:output}
+output = $${directory:etc}/Caddyfile
+mode = 0600
+access_log = $${directory:log}/caddy-access.log
+error_log = $${directory:log}/caddy-error.log
+ip = $${slap-network-information:global-ipv6}
+local_ip = $${slap-network-information:local-ipv4}
+port = 9443
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+url = $${caddy-configuration:ip}
