@@ -1,0 +1,15 @@
+# env.sh for a Go workspace
+# Usage: env.sh [/path/to/env.sh]
+
+# ---- 8< ---- (buildout substitution here)
+# PATH so that go & friends work out of the box
+export PATH=${gowork:golang}/bin:${git:location}/bin:${buildout:bin-directory}:$PATH
+X=${gowork:directory}
+# ---- 8< ----
+
+export GOPATH=$X:$GOPATH
+export PATH=$X/bin:$PATH
+export PS1="(`basename $X`) $PS1"
+
+# strip trailing : from $GOPATH
+GOPATH=$${GOPATH%:}
