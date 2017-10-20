@@ -1,0 +1,51 @@
+#############################
+#
+# Deploy caddy instance
+#
+#############################
+[buildout]
+parts =
+  switch-softwaretype
+  
+#  publish-connection-parameter
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = $${:caddy}
+caddy = $${dynamic-template-caddy:rendered}
+
+[dynamic-template-caddy]
+recipe = slapos.recipe.template:jinja2
+template = ${template-caddy:output}
+rendered = $${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+filename = instance-caddy.cfg
+
+[slap-connection]
+computer-id = {slap_connection:computer_id}
+partition-id = $${slap_connection:partition_id}
+server-url = $${slap_connection:server_url}
+software-release-url = $${slap_connection:software_release_url}
+key-file = $${slap_connection:key_file}
+cert-file = $${slap_connection:cert_file}
+
+[instance-parameter]
+# Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
+# We use the slapconfiguration recipe with a few parameters (partition id,
+# computer id, certificate, etc).
+# It will then authenticate to SlapOS Master and fetch the instance parameters.
+# The parameters are accessible from {instance-parameter:configuration.name-of-parameter}
+# Always the same. Just copy/paste.
+# See docstring of slapos.cookbook:slapconfiguration for more information.
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
