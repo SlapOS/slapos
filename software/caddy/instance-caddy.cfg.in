@@ -15,6 +15,7 @@ etc = $${buildout:directory}/etc
 bin = $${buildout:directory}/bin
 srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
+public-html =  $${buildout:directory}/public-html
 run = $${:var}/run
 log = $${:var}/log
 #www = $${:srv}/www
@@ -26,7 +27,7 @@ log = $${:var}/log
 [caddy-service]
 recipe = slapos.recipe.template
 url = ${template-caddy-service:output}
-output = $${directory:services}/caddy
+output = $${directory:srv}/caddy
 mode = 0700
 virtual-depends =
   $${caddy-configuration:ip}
