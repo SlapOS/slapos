@@ -28,12 +28,10 @@ log = $${:var}/log
 # caddy service
 #################################
 [caddy-service]
-recipe = slapos.recipe.template
-url = ${template-caddy-service:output}
-output = $${directory:service}/caddy
-mode = 0700
-virtual-depends =
-  $${caddy-configuration:ipv6}
+recipe = slapos.cookbook:wrapper 
+command-line = ${caddy:output}  -conf $${caddy-configuration:output}
+wrapper-path = $${directory:service}/caddy
+output = $${:wrapper-path}
 
 [caddy-configuration]
 recipe = slapos.recipe.template
