@@ -1,5 +1,5 @@
-[$${caddy-configuration:ip}]:$${caddy-configuration:port}
+[$${caddy-configuration:ipv6}]:$${caddy-configuration:port}
 
 log $${caddy-configuration:access_log}
 
-root  $${directory:public-html}
+root  $${directory:public_html}
