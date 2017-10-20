@@ -25,6 +25,9 @@ srv     = ${directory:srv}/glab-wh
 srv     = ${gitlab-workhorse-dir:srv}
 socket  = ${gitlab-workhorse:srv}/wh.socket
 
+[unicorn]
+socket  = ${:srv}/unc.socket
+
 [publish-instance-info]
 password = ${root-password:passwd}
 # token for default.user user in gitlab demo backup
