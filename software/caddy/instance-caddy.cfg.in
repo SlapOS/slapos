@@ -2,6 +2,7 @@
 parts =
   caddy-service
   caddy-configuration
+  public-html
   publish-connection-information
 
 
@@ -15,9 +16,11 @@ etc = $${buildout:directory}/etc
 bin = $${buildout:directory}/bin
 srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
-public-html =  $${buildout:directory}/public-html
+service = $${:etc}/service
+public_html =  $${buildout:directory}/public_html
 run = $${:var}/run
 log = $${:var}/log
+
 #www = $${:srv}/www
 #ssl = $${:etc}/ssl
 
@@ -27,22 +30,28 @@ log = $${:var}/log
 [caddy-service]
 recipe = slapos.recipe.template
 url = ${template-caddy-service:output}
-output = $${directory:srv}/caddy
+output = $${directory:service}/caddy
 mode = 0700
 virtual-depends =
-  $${caddy-configuration:ip}
+  $${caddy-configuration:ipv6}
 
 [caddy-configuration]
 recipe = slapos.recipe.template
-url = ${template-Caddyfile:output}
+url = ${template-caddyfile:output}
 output = $${directory:etc}/Caddyfile
 mode = 0600
 access_log = $${directory:log}/caddy-access.log
 error_log = $${directory:log}/caddy-error.log
-ip = $${slap-network-information:global-ipv6}
+ipv6 = $${slap-network-information:global-ipv6}
 local_ip = $${slap-network-information:local-ipv4}
 port = 9443
 
+[public-html]
+recipe = slapos.recipe.template
+url = ${template-public-html:output}
+output = $${directory:public_html}/index.html
+mode = 0600
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-url = $${caddy-configuration:ip}
+url = http://[$${caddy-configuration:ipv6}]:$${caddy-configuration:port}
