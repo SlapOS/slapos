@@ -6,7 +6,7 @@
 [buildout]
 parts =
   switch-softwaretype
-  
+
 #  publish-connection-parameter
 
 # Define egg directories to be the one from Software Release
@@ -28,7 +28,7 @@ rendered = $${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 filename = instance-caddy.cfg
 
 [slap-connection]
-computer-id = {slap_connection:computer_id}
+computer-id = $${slap_connection:computer_id}
 partition-id = $${slap_connection:partition_id}
 server-url = $${slap_connection:server_url}
 software-release-url = $${slap_connection:software_release_url}
@@ -49,3 +49,4 @@ partition = $${slap_connection:partition_id}
 url = $${slap_connection:server_url}
 key = $${slap_connection:key_file}
 cert = $${slap_connection:cert_file}
+
