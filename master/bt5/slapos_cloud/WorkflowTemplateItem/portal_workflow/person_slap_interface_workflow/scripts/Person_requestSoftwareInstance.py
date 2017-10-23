@@ -25,20 +25,9 @@ empty_parameter = """<?xml version="1.0" encoding="utf-8"?>
 empty_parameter2 = """<?xml version='1.0' encoding='utf-8'?>
 <instance/>"""
 
-
-# XXX Hardcode default parameter
-if (instance_xml == empty_parameter) or (instance_xml.startswith(empty_parameter2)):
-  if software_release_url_string == "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5-frontend:/software/erp5/software.cfg":  
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-<instance>
-<parameter id="frontend-instance-guid">SOFTINST-9238</parameter>
-<parameter id="frontend-software-url">http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg</parameter>
-</instance>
-"""
-
 hosting_subscription_portal_type = "Hosting Subscription"
 
-tag = "%s_%s_inProgress" % (person.getUid(), 
+tag = "%s_%s_inProgress" % (person.getUid(),
                                software_title)
 
 if (portal.portal_activities.countMessageWithTag(tag) > 0):
