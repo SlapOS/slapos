@@ -37,3 +37,39 @@ basicauth / admin {{htpasswd_dict}}
   basicauth / admin {{htpasswd_dict}}
 
 }
+
+{% if parameter_dict['cert-content'] and parameter_dict['key-content']  -%}
+
+tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
+  
+  ca {{ca_custom_frontend_dict['rendered']}}
+
+}
+
+{%- endif %}
+
+log {{caddy_configuration_dict['access_log']}}
+
+root {{ directory_dict['public_html'] }}
+
+basicauth / admin {{htpasswd_dict}}
+
+}
+
+{%- endif %}
+
+[{{caddy_configuration_dict['ipv6']}}]:{{caddy_configuration_dict['port']}} {
+
+  tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
+  
+    ca {{ certificate_authority_dict['ca-cert-file'] }}
+  
+  }
+
+  log {{caddy_configuration_dict['access_log']}}
+
+  root {{ directory_dict['public_html'] }}
+
+  basicauth / admin {{htpasswd_dict}}
+
+}
