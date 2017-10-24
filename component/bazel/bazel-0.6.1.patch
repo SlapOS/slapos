@@ -1,0 +1,24 @@
+diff -u -r a/compile.sh b/compile.sh
+--- a/compile.sh	1980-01-01 00:00:00.000000000 +0900
++++ b/compile.sh	2017-10-24 10:57:21.469702614 +0900
+@@ -49,6 +49,8 @@
+ # a chance of overriding this in case they want to do so.
+ : ${VERBOSE:=no}
+ 
++export LDFLAGS=$LDFLAGS
++
+ source scripts/bootstrap/buildenv.sh
+ 
+ mkdir -p output
+diff -u -r a/src/main/java/com/google/devtools/build/lib/analysis/skylark/SkylarkRuleImplementationFunctions.java b/src/main/java/com/google/devtools/build/lib/analysis/skylark/SkylarkRuleImplementationFunctions.java
+--- a/src/main/java/com/google/devtools/build/lib/analysis/skylark/SkylarkRuleImplementationFunctions.java	1980-01-01 00:00:00.000000000 +0900
++++ b/src/main/java/com/google/devtools/build/lib/analysis/skylark/SkylarkRuleImplementationFunctions.java	2017-10-18 17:44:51.975049512 +0900
+@@ -165,7 +165,7 @@
+       @Param(
+         name = "use_default_shell_env",
+         type = Boolean.class,
+-        defaultValue = "False",
++        defaultValue = "True",
+         named = true,
+         positional = false,
+         doc = "whether the action should use the built in shell environment or not."
