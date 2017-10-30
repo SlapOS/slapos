@@ -4,12 +4,16 @@ Computer Network | local_permission_slapos_interaction_workflow
 Computer | local_permission_slapos_interaction_workflow
 Hosting Subscription | local_permission_slapos_interaction_workflow
 Integration Site | local_permission_slapos_interaction_workflow
+Organisation | slapos_erp5_interaction_workflow
+Organisation | slapos_erp5_interaction_workflow
 Payment Transaction | local_permission_slapos_interaction_workflow
 Payzen Event | local_permission_slapos_interaction_workflow
 Person | local_permission_slapos_interaction_workflow
+Project | slapos_erp5_interaction_workflow
 Restricted Access Token | local_permission_slapos_interaction_workflow
 Sale Invoice Transaction | local_permission_slapos_interaction_workflow
 Sale Packing List | local_permission_slapos_interaction_workflow
 Slave Instance | local_permission_slapos_interaction_workflow
 Software Installation | local_permission_slapos_interaction_workflow
 Software Instance | local_permission_slapos_interaction_workflow
+Support Request | slapos_erp5_interaction_workflow

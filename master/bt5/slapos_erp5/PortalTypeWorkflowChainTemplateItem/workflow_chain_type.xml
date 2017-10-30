@@ -24,6 +24,10 @@
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Organisation</type>
+  <workflow>slapos_erp5_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Payment Transaction</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
@@ -34,6 +38,10 @@
  <chain>
   <type>Person</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Project</type>
+  <workflow>slapos_erp5_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Restricted Access Token</type>
@@ -58,5 +66,9 @@
  <chain>
   <type>Software Instance</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Support Request</type>
+  <workflow>slapos_erp5_interaction_workflow</workflow>
  </chain>
 </workflow_chain>
