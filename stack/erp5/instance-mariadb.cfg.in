@@ -252,6 +252,7 @@ mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
+slowquery =  ${monitor-directory:private}/slowquerydex
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
@@ -262,7 +263,20 @@ rendered = ${directory:srv}/exporter.exclude
 [dash]
 dash = {{ dumps(dash) }}
 
-[resiliency-after-import-script]
+[{{ section('start-clone-from-backup') }}]
+< = jinja2-template-executable
+template = {{ parameter_dict['mariadb-start-clone-from-backup'] }}
+rendered = ${directory:bin}/start-clone-from-backup
+context =
+  key dash dash:dash
+  key client binary-wrap-mysql:wrapper-path
+  key data_directory directory:mariadb-data
+  key pid_file my-cnf-parameters:pid-file
+  key server mysqld:rendered
+  key update update-mysql:output
+  key socket my-cnf-parameters:socket
+
+[{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
 < = jinja2-template-executable
 template = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
@@ -272,7 +286,6 @@ context =
   key mysql_executable binary-wrap-mysql:wrapper-path
   key mariadb_data_directory directory:mariadb-data
   key mariadb_backup_directory directory:mariadb-backup-full
-  key instance_directory buildout:directory
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mysqld:rendered
@@ -288,7 +301,7 @@ context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
-  key output_folder monitor-directory:private
+  key output_folder directory:slowquery
 
 [slow-query-digest-parameters]
 max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
@@ -296,9 +309,8 @@ slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 
 [{{ section('monitor-promise-slowquery-result') }}]
 recipe = slapos.cookbook:wrapper
-recipe =
 wrapper-path = ${directory:promise}/check-slow-query-pt-digest-result
-command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_file "${monitor-directory:private}/slowquery_digest.txt" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
+command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
 
 
 [{{ section('promise') }}]

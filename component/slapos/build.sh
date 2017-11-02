@@ -4,6 +4,12 @@
 # /opt/slapos folder, adapt this script as you please.  
 #
 # Be carefull to not run this script were the script is already installed.
+# 
+# Before run this script, ensure dependencies are installed, on debian, you can 
+# use the command bellow:
+#
+# apt-get install python gcc g++ make uml-utilities bridge-utils patch wget
+#
 
 # Use sudo or superuser and create slapos directory (you can pick a different directory)
 mkdir -p /opt/slapos/log/

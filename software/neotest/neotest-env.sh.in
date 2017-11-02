@@ -1,0 +1,30 @@
+# env.sh for putting everything needed to run neotest on path
+
+. ${gowork:env.sh}
+
+PATH="${ethtool:location}/sbin:$PATH"
+PATH="${ioping:location}/bin:$PATH"
+PATH="${lmbench:location}/bin:$PATH"
+PATH="${mariadb:location}/bin:$PATH"
+PATH="${mariadb:location}/scripts:$PATH"
+PATH="${python2.7:location}/bin:$PATH"
+
+# add all eggs and develop-eggs to py path
+#
+# XXX better leverage something like zc.recipe.egg to generate eggs path buildout way
+# XXX see e.g. https://lab.nexedi.com/nexedi/slapos/merge_requests/242#note_49644 for why
+# TODO(kirr) try doing so
+PYTHONPATH=${buildout:develop-eggs-directory}:$PYTHONPATH       # for .egg-link to be found by setuptools
+for egglink in ${buildout:develop-eggs-directory}/*.egg-link; do
+    PYTHONPATH=`cat $egglink |head -1`:$PYTHONPATH
+done
+
+for egg in ${buildout:develop-eggs-directory}/*.egg ${buildout:eggs-directory}/*.egg; do
+        export PYTHONPATH=$egg:$PYTHONPATH
+done
+
+
+export PATH
+export PYTHONPATH
+
+export PS1="(neotest-`basename ${buildout:directory}`) $PS1"

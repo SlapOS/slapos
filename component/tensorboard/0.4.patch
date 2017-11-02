@@ -1,0 +1,23 @@
+diff --git a/tensorboard/pip_package/build_pip_package.sh b/tensorboard/pip_package/build_pip_package.sh
+index b386d59..f03b056 100755
+--- a/tensorboard/pip_package/build_pip_package.sh
++++ b/tensorboard/pip_package/build_pip_package.sh
+@@ -26,6 +26,7 @@ function main() {
+   DEST=$1
+   TMPDIR=$(mktemp -d -t tmp.XXXXXXXXXX)
+   RUNFILES="bazel-bin/tensorboard/pip_package/build_pip_package.runfiles/org_tensorflow_tensorboard"
++  WORKDIR=$(pwd)
+ 
+   echo $(date) : "=== Using tmpdir: ${TMPDIR}"
+ 
+@@ -45,8 +46,8 @@ function main() {
+   rm -f MANIFEST
+   echo $(date) : "=== Building wheel"
+   echo $(pwd)
+-  python setup.py bdist_wheel >/dev/null
+-  python3 setup.py bdist_wheel >/dev/null
++  PYTHONPATH=${WORKDIR}/${RUNFILES} $PYTHON_BIN_PATH setup.py bdist_egg >/dev/null
++  #python3 setup.py bdist_wheel >/dev/null
+   mkdir -p ${DEST}
+   cp dist/* ${DEST}
+   popd
