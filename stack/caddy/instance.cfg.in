@@ -49,4 +49,3 @@ partition = $${slap_connection:partition_id}
 url = $${slap_connection:server_url}
 key = $${slap_connection:key_file}
 cert = $${slap_connection:cert_file}
-

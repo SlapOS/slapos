@@ -3,6 +3,7 @@ parts =
   caddy-service
   caddy-configuration
   certificate-authority
+  custom-cert
   htpasswd
   public-html
   publish-connection-information
@@ -41,7 +42,6 @@ access_log = $${directory:log}/caddy-access.log
 error_log = $${directory:log}/caddy-error.log
 ipv6 = $${slap-network-information:global-ipv6}
 local_ip = $${slap-network-information:local-ipv4}
-port = 9443
 context =
   section parameter_dict slap-parameter
   section directory_dict directory
@@ -50,7 +50,6 @@ context =
   key htpasswd_dict htpasswd:passwd
   section custom_cert_dict custom-cert
   section ca_custom_frontend_dict ca-custom-frontend
-
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -77,11 +76,11 @@ ca-key-file = $${:ca-private}/cakey.pem
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 executable = $${directory:service}/caddy
+wrapper = $${directory:service}/caddy
 key-file = $${ca-directory:private}/custom.key
 cert-file = $${ca-directory:certs}/custom.crt
 key-content = $${slap-parameter:key-content}
 cert-content = $${slap-parameter:cert-content}
-
 
 [ca-custom-frontend]
 recipe = slapos.recipe.template:jinja2
@@ -94,7 +93,6 @@ context =
 recipe = slapos.recipe.build:download
 url = ${:_profile_base_location_}/templates/$${:filename}
 filename = empty.in
-
 
 [htpasswd]
 recipe = slapos.cookbook:generate.password
@@ -111,10 +109,11 @@ mode = 0600
 recipe = slapos.cookbook:publish
 init-password = $${htpasswd:passwd}
 init-user = admin
-url = https://[$${caddy-configuration:ipv6}]:$${caddy-configuration:port}
+url = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port}
 
 [slap-parameter]
 domain =
 key-content =
 cert-content =
-caddy-ca-certificate =   
+caddy-ca-certificate =
+port = 9443
