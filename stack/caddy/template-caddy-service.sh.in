@@ -2,7 +2,7 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
-{{ caddy_exec }} -conf {{caddy_configuration_dict['rendered']}} 
+{{ caddy_exec }} -conf {{caddy_configuration_dict['rendered']}}
  {%- if parameter_dict['enable-quic'] != 'false'  %}
  -quic
  {%- endif -%}

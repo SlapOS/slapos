@@ -114,16 +114,17 @@ mode = 0600
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-#init-password = $${htpasswd:passwd}
-#init-user = admin
-url-ipv6 = https://admin:$${htpasswd:passwd}@[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
-url-ipv4 = http://admin:$${htpasswd:passwd}@[$${caddy-configuration:local_ip}]:$${slap-parameter:port-ipv4}
+url-ipv6 = https://$${slap-parameter:username}:$${slap-parameter:password}@[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
+url-ipv4 = http://$${slap-parameter:username}:$${slap-parameter:password}@[$${caddy-configuration:local_ip}]:$${slap-parameter:port-ipv4}
 
 [slap-parameter]
 domain =
 key-content =
 cert-content =
 caddy-ca-certificate =
-port-ipv6 = 4443
-port-ipv4 = 9443
-enable-quic = 
+port-ipv6 = 9443
+port-ipv4 = 4443
+enable-quic = true
+enable-basic-auth =
+username = admin
+password = $${htpasswd:passwd}
