@@ -28,10 +28,17 @@ ca-dir = $${:srv}/ssl
 # caddy service
 #################################
 [caddy-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${caddy:output}  -conf $${caddy-configuration:rendered}
-wrapper-path = $${directory:service}/caddy
-output = $${:wrapper-path}
+recipe = slapos.recipe.template:jinja2
+template = ${template-caddy-service:output}
+rendered = $${directory:service}/caddy
+mode = 0700
+context =
+  key caddy_exec caddy-exec-dict:caddy-exec-file
+  section caddy_configuration_dict caddy-configuration
+  section parameter_dict slap-parameter
+
+[caddy-exec-dict]
+caddy-exec-file = ${caddy:output}
 
 [caddy-configuration]
 recipe = slapos.recipe.template:jinja2
@@ -117,3 +124,4 @@ key-content =
 cert-content =
 caddy-ca-certificate =
 port = 9443
+enable-quic = 
