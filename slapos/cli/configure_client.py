@@ -87,11 +87,10 @@ def get_certificate_key_pair(logger, master_url_web, token):
     return json_dict["certificate"], json_dict["key"]
 
 def fetch_configuration_template():
-    # XXX: change to local version.
-    req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos-client.cfg.example')
-    req.raise_for_status()
-    return req.text
-
+    template_path = os.path.join("/".join(__file__.split('/')[:-2]), 'slapos-client.cfg.example')
+    with open(template_path, 'r') as fout:
+      slapos_node_configuration_template = fout.read()
+    return slapos_node_configuration_template
 
 def do_configure_client(logger, master_url_web, token, config_path, master_url):
     while not token:
