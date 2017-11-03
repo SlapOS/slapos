@@ -30,11 +30,12 @@
 import re
 import os
 import sys
+import json
 
 import requests
 
 from slapos.cli.config import ClientConfigCommand
-from slapos.util import mkdir_p, parse_certificate_key_pair
+from slapos.util import mkdir_p
 
 
 class ConfigureClientCommand(ClientConfigCommand):
@@ -70,7 +71,7 @@ class ConfigureClientCommand(ClientConfigCommand):
 
 
 def get_certificate_key_pair(logger, master_url_web, token):
-    req = requests.post('/'.join([master_url_web, 'myspace/my_account/request-a-certificate/WebSection_requestNewCertificate']),
+    req = requests.post('/'.join([master_url_web, 'Person_getCertificate']),
                         data={},
                         headers={'X-Access-Token': token},
                         verify=False)
@@ -82,8 +83,8 @@ def get_certificate_key_pair(logger, master_url_web, token):
 
     req.raise_for_status()
 
-    return parse_certificate_key_pair(req.text)
-
+    json_dict = json.loads(req.text)
+    return json_dict["certificate"], json_dict["key"]
 
 def fetch_configuration_template():
     # XXX: change to local version.

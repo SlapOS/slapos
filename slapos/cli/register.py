@@ -35,9 +35,9 @@ import stat
 import sys
 import pkg_resources
 import requests
+import json
 
 from slapos.cli.command import Command, must_be_root
-from slapos.util import parse_certificate_key_pair
 
 
 class RegisterCommand(Command):
@@ -147,12 +147,12 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
     """Download certificates from SlapOS Master"""
 
     if token:
-        req = requests.post('/'.join([master_url_web, 'add-a-server/WebSection_registerNewComputer']),
+        req = requests.post('/'.join([master_url_web, 'Person_requestComputer']),
                             data={'title': node_name},
                             headers={'X-Access-Token': token},
                             verify=False)
     else:
-        register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?title={}".format(node_name))])
+        register_server_url = '/'.join([master_url_web, ("Person_requestComputer?title={}".format(node_name))])
         req = requests.get(register_server_url, auth=(login, password), verify=False)
 
     if not req.ok and 'Certificate still active.' in req.text:
@@ -178,8 +178,8 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
     else:
         req.raise_for_status()
 
-    return parse_certificate_key_pair(req.text)
-
+    json_dict = json.loads(req.text)
+    return json_dict["certificate"], json_dict["key"]
 
 def get_computer_name(certificate):
     """Parse certificate to get computer name and return it"""
