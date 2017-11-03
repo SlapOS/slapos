@@ -22,13 +22,23 @@ basicauth / admin {{htpasswd_dict}}
 
 {%- endif %}
 
-[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port']}} {
+[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}} {
 
   tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
   
     ca {{ certificate_authority_dict['ca-cert-file'] }}
   
   }
+
+  log {{caddy_configuration_dict['access_log']}}
+
+  root {{ directory_dict['public_html'] }}
+
+  basicauth / admin {{htpasswd_dict}}
+
+}
+
+[{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
 
   log {{caddy_configuration_dict['access_log']}}
 
