@@ -230,6 +230,7 @@ sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
     mysql.path.split('/')[1], mysql.port, mysql.username, mysql.password) }}
 bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
+id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
 home = ${buildout:directory}
 # We only want to change the hostname to 'erp5-cloudooo' if we use the internal
 # cloudooo. We plan to remove the ability to have an internal one, so this

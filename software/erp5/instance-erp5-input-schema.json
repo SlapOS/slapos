@@ -21,6 +21,10 @@
       "description": "Business Template to install at automatic site creation. By default, all configurators are installed.",
       "type": "string"
     },
+    "id-store-interval": {
+      "description": "Set Store Interval of default SQL Non Continuous Increasing Id Generator at automatic site creation. If unset, the value from the erp5_core Business Template is not touched.",
+      "type": "integer"
+    },
     "timezone": {
       "description": "Zope's timezone. Possible values are determined by host's libc, and typically come from a separate package (tzdata, ...)",
       "default": "UTC",

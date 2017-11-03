@@ -155,6 +155,7 @@ config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
+config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${publish-early:inituser-password}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
