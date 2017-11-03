@@ -1,7 +1,11 @@
 USE mysql;
 DROP FUNCTION IF EXISTS last_insert_grn_id;
+DROP FUNCTION IF EXISTS mroonga_snippet;
+DROP FUNCTION IF EXISTS mroonga_command;
 {% set mroonga = parameter_dict.get('mroonga', 'ha_mroonga.so') -%}
-{% if mroonga %}CREATE FUNCTION last_insert_grn_id RETURNS INTEGER SONAME '{{ mroonga }}';{% endif %}
+{% if mroonga %}CREATE FUNCTION last_insert_grn_id RETURNS INTEGER SONAME '{{ mroonga }}';
+CREATE FUNCTION mroonga_snippet RETURNS STRING SONAME '{{ mroonga }}';
+CREATE FUNCTION mroonga_command RETURNS STRING SONAME '{{ mroonga }}';{% endif %}
 DROP FUNCTION IF EXISTS sphinx_snippets;
 #CREATE FUNCTION sphinx_snippets RETURNS STRING SONAME 'ha_sphinx.so';
 
