@@ -1,0 +1,128 @@
+#!{{runTestSuite_py}}
+from __future__ import print_function
+import argparse, os, re, subprocess, sys
+from time import gmtime, strftime, time
+from erp5.util import taskdistribution
+from erp5.util.testsuite import SubprocessError, TestSuite
+from zc.buildout.buildout import Buildout
+
+slapos_buildout = {{repr(slapos_buildout)}}
+test_dict = {
+  'zc.buildout': slapos_buildout,
+  'zc.recipe.egg': os.path.join(slapos_buildout, 'zc.recipe.egg_'),
+}
+
+class DummyTestResult:
+
+  class DummyTestResultLine:
+    def stop(self, **kw):
+      pass
+
+  done = 0
+
+  def __init__(self, test_name_list):
+    self.test_name_list = test_name_list
+
+  def start(self):
+    test_result_line = self.DummyTestResultLine()
+    try:
+      test_result_line.name = self.test_name_list[self.done]
+    except IndexError:
+      return
+    self.done += 1
+    return test_result_line
+
+class BuildoutTestSuite(TestSuite):
+
+  RUN_RE = re.compile(
+    r'Ran (?P<all_tests>\d+) tests with'
+    ' (?P<failures>\d+) failures,'
+    ' (?P<errors>\d+) errors and'
+    ' (?P<skips>\d+) skipped in')
+
+  def run(self, test):
+    start = time()
+    try:
+      status_dict = self.spawn(os.path.join('bin', 'zope-testrunner'),
+        '--test-path', os.path.join(test_dict[test], 'src'))
+    except SubprocessError, e:
+      status_dict = e.status_dict
+    end = time()
+    status_dict.update(
+      date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
+      duration = end - start)
+    search = self.RUN_RE.search(status_dict['stdout'])
+    if search:
+      groupdict = search.groupdict()
+      status_dict.update(
+        test_count = int(groupdict['all_tests']),
+        error_count = int(groupdict['errors']),
+        failure_count = int(groupdict['failures']),
+        skip_count = int(groupdict['skips']))
+    return status_dict
+
+def main():
+  os.environ['TEMP'] = {{repr(temp_directory)}}
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  test_title = args.test_suite_title or args.test_suite
+  if args.master_url:
+    tool = taskdistribution.TaskDistributionTool(args.master_url)
+    test_result = tool.createTestResult(args.revision,
+                                        list(test_dict),
+                                        args.test_node_title,
+                                        test_title=test_title,
+                                        project_title=args.project_title)
+    if test_result is None:
+      return
+  else:
+    test_result = DummyTestResult(list(test_dict))
+
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  try:
+    os.write(fd, """\
+[buildout]
+extends = %s
+develop =%s
+parts = test
+
+[versions]
+%s
+
+[bootstrap]
+recipe = zc.recipe.egg
+eggs = zc.buildout
+
+[test]
+recipe = zc.recipe.egg
+eggs +=
+  zope.testrunner
+scripts =
+  zope-testrunner
+""" % (os.path.join(slapos_buildout, 'buildout.cfg'),
+       ''.join('\n  ' + x for x in test_dict.itervalues()),
+       '\n'.join(x + ' =' for x in test_dict)))
+  finally:
+    os.close(fd)
+  Buildout('buildout.cfg', {}).install(['bootstrap'])
+  subprocess.check_call((os.path.join('bin', 'buildout'),))
+
+  test_suite = BuildoutTestSuite(1)
+  while 1:
+    test_result_line = test_result.start()
+    if not test_result_line:
+      break
+    test_result_line.stop(**test_suite.run(test_result_line.name))
+
+if __name__ == "__main__":
+    main()
