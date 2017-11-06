@@ -114,8 +114,9 @@ mode = 0600
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-url-ipv6 = https://$${slap-parameter:username}:$${slap-parameter:password}@[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
-url-ipv4 = http://$${slap-parameter:username}:$${slap-parameter:password}@[$${caddy-configuration:local_ip}]:$${slap-parameter:port-ipv4}
+password = $${slap-parameter:password}
+user = $${slap-parameter:username}
+secure_access = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
 
 [slap-parameter]
 domain =
