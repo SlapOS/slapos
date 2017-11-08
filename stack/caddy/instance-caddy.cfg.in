@@ -129,3 +129,6 @@ enable-quic = true
 enable-basic-auth =
 username = admin
 password = $${htpasswd:passwd}
+proxy = true
+zope = false
+url = 

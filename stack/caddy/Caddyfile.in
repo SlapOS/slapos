@@ -36,6 +36,17 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
 
+  {% if parameter_dict['proxy'] == 'true'  -%}
+
+  {% if parameter_dict['zope'] == 'true'  -%}
+
+  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}}/VirtualHostRoot/
+
+  {% else %}
+    proxy / 	{{parameter_dict['url']}}
+  {%- endif %}
+
+  {%- endif %}
 }
 
 [{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
