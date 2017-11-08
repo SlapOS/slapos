@@ -166,8 +166,8 @@ SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
 
 include {{frontend_configuration.get('log-access-configuration')}}
-include {{ slave_configuration_directory }}/*.conf
-include {{ slave_with_cache_configuration_directory }}/*.conf
+includeoptional {{ slave_configuration_directory }}/*.conf
+includeoptional {{ slave_with_cache_configuration_directory }}/*.conf
 
 ErrorDocument 404 /notfound.html
 RewriteRule (.*) /notfound.html [R=404,L]
