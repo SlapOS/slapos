@@ -1,42 +1,38 @@
 Changes
 =======
 
-(unreleased)
-----------
-
+1.4.3 (2017-11-08)
+-----------------
  * slapos.cli.grid: Allow definition of different pidfiles for each software subcommand in config file
-
+ * slapos.cli.configure_local: Get template locally instead do an http request.
+ * slapos.cli: Update API for get person certificates and register computer
+ * format: fix some conflicts about tun interfaces when changing the number of partitions
 
 1.4.2 (2017-10-02)
 ------------------
-
  * slapos.collect: Make internal API usable as library for third parties
 
 1.4.1 (2017-09-25)
 ------------------
-
  * slapos.format: Introduce create_tun config option (default false)
  * slapos.cli: get template directly and not reply on namespaces for register
  * slapos.grid: add pluging which run instance custom script at partition pre-destroy phase
 
 1.4.0 (2017-06-26)
 ------------------
-
-  * slapos.grid: Use local configuration to extend master configuration
-  * slapos.format: Export partition configuration for the partition
-  * slapos: improve logs and general cleanup
-  * slapos.manager: Added cpuset plugin (for cgroups)
-  * slapos.format: Add TUN interface support
-  * slapos: Implement plugin system
+ * slapos.grid: Use local configuration to extend master configuration
+ * slapos.format: Export partition configuration for the partition
+ * slapos: improve logs and general cleanup
+ * slapos.manager: Added cpuset plugin (for cgroups)
+ * slapos.format: Add TUN interface support
+ * slapos: Implement plugin system
 
 1.3.18 (2016-11-03)
 -------------------
-
  * update default web url of master to slapos.vifib.com
 
 1.3.17 (2016-10-25)
 -------------------
-
  * slapos.grid: Always remove .timestamp and .slapgrid if partition is destroyed.
  * slapos.proxy: Propagate parent partition state to children
  * slapos.grid: Increase min space (1G)
