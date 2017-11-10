@@ -119,7 +119,7 @@ user = $${slap-parameter:username}
 url = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
 
 [slap-parameter]
-domain =
+domain = caddy-test.erp5.net:9443
 key-content =
 cert-content =
 caddy-ca-certificate =
