@@ -35,6 +35,7 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 
   {%- endif %}
 
+  bind {{caddy_configuration_dict['ipv6']}}
 }
 
 {%- endif %}
@@ -72,6 +73,8 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
 
   {%- endif %}
+  
+  bind {{caddy_configuration_dict['ipv6']}}
 }
 
 [{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
@@ -85,5 +88,7 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
+  
+  bind {{caddy_configuration_dict['local_ip']}}
 
 }
