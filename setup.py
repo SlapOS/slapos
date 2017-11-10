@@ -59,7 +59,7 @@ setup(name=name,
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
-        'inotifyx', # to watch filesystem changes (used in lockfile)
+        'inotifyx', # XXX use pyinotify instead
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
         'zc.buildout', # plays with buildout
@@ -133,7 +133,6 @@ setup(name=name,
           'lamp.static = slapos.recipe.lamp:Static',
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
-          'lockfile = slapos.recipe.lockfile:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
           'logrotate.d = slapos.recipe.logrotate:Part',
           'memcached = slapos.recipe.memcached:Recipe',

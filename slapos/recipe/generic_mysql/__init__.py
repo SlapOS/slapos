@@ -80,7 +80,7 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list = []
 
     # user defined functions
-    udf_registration = ""
+    udf_registration = "DROP FUNCTION IF EXISTS last_insert_grn_id;\nDROP FUNCTION IF EXISTS mroonga_snippet;\nDROP FUNCTION IF EXISTS mroonga_command;\n"
     mroonga = self.options.get('mroonga', 'ha_mroonga.so')
     if mroonga:
       udf_registration += "CREATE FUNCTION last_insert_grn_id RETURNS " \

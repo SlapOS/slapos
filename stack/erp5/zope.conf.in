@@ -86,6 +86,9 @@ products {{ parameter_dict['instance-products'] }}
   cmf_activity_sql_connection_string {{ sql_connection_string }}
   bt5_repository_url {{ ' '.join(bt5_repository_url) }}
   bt5 {{ parameter_dict['bt5'] }}
+{%- if parameter_dict['id-store-interval'] != None %}
+  id_store_interval {{ parameter_dict['id-store-interval'] }}
+{%- endif %}
   cloudooo_url {{ parameter_dict['cloudooo-url'] }}
 </product-config>
 
