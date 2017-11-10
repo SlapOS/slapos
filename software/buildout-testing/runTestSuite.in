@@ -4,7 +4,6 @@ import argparse, os, re, subprocess, sys
 from time import gmtime, strftime, time
 from erp5.util import taskdistribution
 from erp5.util.testsuite import SubprocessError, TestSuite
-from setuptools.version import __version__ as setuptools_version
 from zc.buildout.buildout import Buildout
 
 slapos_buildout = {{repr(slapos_buildout)}}
@@ -96,9 +95,9 @@ def main():
 extends = %s
 develop =%s
 parts = test
+newest = false
 
 [versions]
-setuptools = %s
 %s
 
 [bootstrap]
@@ -113,7 +112,6 @@ scripts =
   zope-testrunner
 """ % (os.path.join(slapos_buildout, 'buildout.cfg'),
        ''.join('\n  ' + x for x in test_dict.itervalues()),
-       setuptools_version,
        '\n'.join(x + ' =' for x in test_dict)))
   finally:
     os.close(fd)
