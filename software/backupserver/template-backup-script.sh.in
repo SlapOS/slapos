@@ -18,7 +18,7 @@ ${rdiff-backup-output:rdiff-backup} \
   $${:exclude_string} \
   --include='$${:include}' \
   --exclude='**' \
-  --remote-schema '${dropbear-output:ssh} -T -y -i $${:sshkey} %s $${:remote_schema}' \
+  --remote-schema '${openssh-output:ssh} -6 -q -T -y -o "StrictHostKeyChecking no" -i $${:sshkey} -p $${:connection_port} %s $${:remote_schema}' \
   $${:connection}::/ ./
 
 RESULT=$?
