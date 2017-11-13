@@ -3,18 +3,39 @@
 {{ parameter_dict['domain'] }} {
 
 tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
-  
+
   ca {{ca_custom_frontend_dict['rendered']}}
 
 }
 
 log {{caddy_configuration_dict['access_log']}}
 
+errors {{caddy_configuration_dict['error_log']}}
+
 root {{ directory_dict['public_html'] }}
 
 {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
 basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
+
 {%- endif %}
+
+{% if parameter_dict['proxy'] == 'true'  -%}
+
+  {% if parameter_dict['zope'] == 'true'  -%}
+
+  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/{{ parameter_dict['domain'] }}/VirtualHostRoot/ {
+
+  insecure_skip_verify
+
+  }
+
+  {% else %}
+    proxy / 	{{parameter_dict['url']}}
+  {%- endif %}
+
+  {%- endif %}
+
+  bind {{caddy_configuration_dict['ipv6']}}
 
 }
 
@@ -23,12 +44,14 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 [{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}} {
 
   tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
-  
+
     ca {{ certificate_authority_dict['ca-cert-file'] }}
-  
+
   }
 
   log {{caddy_configuration_dict['access_log']}}
+
+  errors {{caddy_configuration_dict['error_log']}}
 
   root {{ directory_dict['public_html'] }}
 
@@ -36,16 +59,35 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
 
+  {% if parameter_dict['proxy'] == 'true'  -%}
+
+  {% if parameter_dict['zope'] == 'true'  -%}
+
+  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}}/VirtualHostRoot/ {
+
+  insecure_skip_verify
+
+  }
+
+  {% else %}
+    proxy / 	{{parameter_dict['url']}}
+  {%- endif %}
+
+  {%- endif %}
+  bind {{caddy_configuration_dict['ipv6']}}
 }
 
 [{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
 
   log {{caddy_configuration_dict['access_log']}}
 
+  errors {{caddy_configuration_dict['error_log']}}
+
   root {{ directory_dict['public_html'] }}
 
   {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
 
+  bind {{caddy_configuration_dict['local_ip']}}
 }
