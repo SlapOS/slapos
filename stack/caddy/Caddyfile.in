@@ -19,22 +19,6 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 
 {%- endif %}
 
-{% if parameter_dict['proxy'] == 'true'  -%}
-
-  {% if parameter_dict['zope'] == 'true'  -%}
-
-  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/{{ parameter_dict['domain'] }}/VirtualHostRoot/ {
-
-  insecure_skip_verify
-
-  }
-
-  {% else %}
-    proxy / 	{{parameter_dict['url']}}
-  {%- endif %}
-
-  {%- endif %}
-
   bind {{caddy_configuration_dict['ipv6']}}
 
 }
@@ -59,21 +43,6 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
 
-  {% if parameter_dict['proxy'] == 'true'  -%}
-
-  {% if parameter_dict['zope'] == 'true'  -%}
-
-  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}}/VirtualHostRoot/ {
-
-  insecure_skip_verify
-
-  }
-
-  {% else %}
-    proxy / 	{{parameter_dict['url']}}
-  {%- endif %}
-
-  {%- endif %}
   bind {{caddy_configuration_dict['ipv6']}}
 }
 

@@ -119,7 +119,7 @@ user = $${slap-parameter:username}
 secure_access = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
 
 [slap-parameter]
-domain = caddy-test.erp5.net:9443
+domain = 
 key-content =
 cert-content =
 caddy-ca-certificate =
@@ -129,6 +129,3 @@ enable-quic = true
 enable-basic-auth =
 username = admin
 password = $${htpasswd:passwd}
-proxy = true
-zope = true
-url = https://[2001:67c:1254:72::5d03]:2151
