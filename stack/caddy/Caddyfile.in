@@ -10,6 +10,8 @@ tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
 
 log {{caddy_configuration_dict['access_log']}}
 
+errors {{caddy_configuration_dict['error_log']}}
+
 root {{ directory_dict['public_html'] }}
 
 {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
@@ -17,6 +19,8 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 {%- endif %}
 
 }
+
+bind {{caddy_configuration_dict['ipv6']}}
 
 {%- endif %}
 
@@ -29,23 +33,31 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   }
 
   log {{caddy_configuration_dict['access_log']}}
+  
+  errors {{caddy_configuration_dict['error_log']}}
 
   root {{ directory_dict['public_html'] }}
 
   {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
+  
+  bind {{caddy_configuration_dict['ipv6']}}
 
 }
 
 [{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
 
   log {{caddy_configuration_dict['access_log']}}
+  
+  errors {{caddy_configuration_dict['error_log']}}
 
   root {{ directory_dict['public_html'] }}
 
   {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
+  
+  bind {{caddy_configuration_dict['local_ip']}}
 
 }
