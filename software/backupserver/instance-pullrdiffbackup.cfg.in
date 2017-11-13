@@ -27,6 +27,7 @@ statistic = $${:srv}/statistic
 backupscript = $${:etc}/backup
 www = $${:srv}/www
 home = $${:etc}/home
+promises = $${:etc}/promise
 ssl = $${:etc}/ssl
 ssh = $${:home}/.ssh
 
@@ -167,6 +168,12 @@ mode = 0700
 virtual-depends = 
   $${nginx-configuration:ip}
 
+[nginx-listen-promise]
+recipe = slapos.cookbook:check_port_listening
+hostname = $${nginx-configuration:ip}
+port = $${nginx-configuration:port}
+path = $${directory:promises}/nginx_listen
+
 [nginx-configuration]
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
@@ -185,6 +192,7 @@ ssl_crt = $${directory:ssl}/nginx.crt
 parts =
   dcron-service
   nginx-service
+  nginx-listen-promise
   activate-crontab-file
   publish-global-rss
 {% for part in part_list -%}
