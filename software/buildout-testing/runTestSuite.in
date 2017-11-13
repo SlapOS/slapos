@@ -95,6 +95,7 @@ def main():
 extends = %s
 develop =%s
 parts = test
+newest = false
 
 [versions]
 %s
