@@ -25,8 +25,7 @@
 #
 ##############################################################################
 import os
-
-import inotifyx
+from inotify_simple import INotify, flags
 
 def subfiles(directory):
   """Return the list of subfiles of a directory, and wait for the newly created
@@ -34,18 +33,12 @@ def subfiles(directory):
 
   CAUTION : *DONT TRY TO CONVERT THE RESULT OF THIS FUNCTION INTO A LIST !
   ALWAYS ITERATE OVER IT !!!*"""
-  watchfd = inotifyx.init()
-  inotifyx.add_watch(watchfd, directory, inotifyx.IN_CREATE)
-  try:
 
-    subfiles = set(os.listdir(directory))
-    subfiles |= set([file_.name for file_ in inotifyx.get_events(watchfd, 0)])
+  with INotify() as inotify:
+    inotify.add_watch(directory, flags.CLOSE_WRITE | flags.MOVED_TO)
 
+    names = os.listdir(directory)
     while True:
-      for file_ in subfiles:
-        yield os.path.join(directory, file_)
-
-      subfiles = [file_.name for file_ in inotifyx.get_events(watchfd)]
-
-  finally:
-    os.close(watchfd)
+      for name in names:
+        yield os.path.join(directory, name)
+      names = (event.name for event in inotify.read())

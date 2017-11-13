@@ -3,47 +3,31 @@ import os
 import signal
 import subprocess
 import time
-
-import inotifyx
+from collections import defaultdict
+from inotify_simple import INotify, flags
 
 def _wait_files_creation(file_list):
-  # Etablish a list of directory and subfiles
-  directories = dict()
-  for dirname, filename in [os.path.split(f) for f in file_list]:
-    directories.setdefault(dirname, dict())
-    directories[dirname][filename] = False
+  # Establish a list of directory and subfiles.
+  # and test existence before watching, so that we don't miss an event.
+  directories = defaultdict(dict)
+  for f in file_list:
+    dirname, filename = os.path.split(f)
+    directories[dirname][filename] = os.path.lexists(f)
 
   def all_files_exists():
-    return all([all(files.values()) for files in directories.values()])
+    return all(all(files.itervalues()) for files in directories.itervalues())
 
-  fd = inotifyx.init()
-  try:
-    # Watch every directories where the file are
-    watchdescriptors = dict()
-    for dirname in directories.keys():
-      wd = inotifyx.add_watch(fd,
-                      dirname,
-                      inotifyx.IN_CREATE | inotifyx.IN_DELETE | inotifyx.IN_MOVE)
-      watchdescriptors[wd] = dirname
+  with INotify() as inotify:
+    watchdescriptors = {inotify.add_watch(dirname,
+        flags.CREATE | flags.DELETE | flags.MOVED_TO | flags.MOVED_FROM
+        ): dirname
+      for dirname in directories}
 
-    # Set to True the file wich exists
-    for dirname, filename in [os.path.split(f) for f in file_list]:
-      directories[dirname][filename] = os.path.exists(os.path.join(dirname,
-                                                                   filename))
-    # Let's wait for every file creation
     while not all_files_exists():
-      events_list = inotifyx.get_events(fd)
-      for event in events_list:
-        dirname = watchdescriptors[event.wd]
-        if event.name in directories[dirname]:
-          # One of watched file was created or deleted
-          if event.mask & inotifyx.IN_DELETE:
-            directories[dirname][event.name] = False
-          else:
-            directories[dirname][event.name] = True
-
-  finally:
-    os.close(fd)
+      for event in inotify.read():
+        directory = directories[watchdescriptors[event.wd]]
+        if event.name in directory:
+          directory[event.name] = event.mask & (flags.CREATE | flags.MOVED_TO)
 
 def execute(args):
   """Portable execution with process replacement"""
@@ -83,8 +67,8 @@ def generic_exec(args):
 
   os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
-def sig_handler(signal, frame):
-  print 'Received signal %r, killing children and exiting' % signal
+def sig_handler(sig, frame):
+  print 'Received signal %r, killing children and exiting' % sig
   if child_pg is not None:
     os.killpg(child_pg, signal.SIGHUP)
     os.killpg(child_pg, signal.SIGTERM)
@@ -97,6 +81,7 @@ signal.signal(signal.SIGTERM, sig_handler)
 
 def execute_with_signal_translation(args):
   """Run process as children and translate from SIGTERM to another signal"""
+  global child_pg
   child = subprocess.Popen(args, close_fds=True, preexec_fn=os.setsid)
   child_pg = child.pid
   try:
