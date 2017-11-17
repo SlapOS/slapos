@@ -159,6 +159,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -183,6 +184,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_jquery
 erp5_ods_core
 erp5_odt_core
@@ -197,6 +199,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -266,6 +269,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -291,6 +295,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_jquery
 erp5_ods_core
 erp5_odt_core
@@ -305,6 +310,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -374,6 +380,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -398,6 +405,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_jquery
 erp5_km_widget_library
 erp5_ods_core
@@ -413,6 +421,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -482,6 +491,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -506,6 +516,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -519,6 +530,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -587,6 +599,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -611,6 +624,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -624,6 +638,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -693,6 +708,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -717,6 +733,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -730,6 +747,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -798,6 +816,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -822,6 +841,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -835,6 +855,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -904,6 +925,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -928,6 +950,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -941,6 +964,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1010,6 +1034,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -1034,6 +1059,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1047,6 +1073,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1117,6 +1144,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -1141,6 +1169,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1154,6 +1183,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1223,6 +1253,7 @@ erp5_administration
 erp5_auto_logout
 erp5_base
 erp5_bearer_token
+erp5_ckeditor
 erp5_code_mirror
 erp5_commerce
 erp5_commerce_widget_library
@@ -1247,6 +1278,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1260,6 +1292,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_svg_editor
 erp5_system_event
 erp5_toolbox
 erp5_trade
