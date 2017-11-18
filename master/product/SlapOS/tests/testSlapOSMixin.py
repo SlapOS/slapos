@@ -170,9 +170,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
     return getattr(self.getPortal(), 'acl_users', None)
 
   def setUpOnce(self):
-    # Reload promise and include yet another bt5 path.
-    self.loadPromise(searchable_business_template_list=["erp5_core", "erp5_base", "slapos_configurator"])
-    self.portal.portal_alarms.promise_template_tool_configuration.solve()
     self.commit()
     self.launchConfigurator()
 
