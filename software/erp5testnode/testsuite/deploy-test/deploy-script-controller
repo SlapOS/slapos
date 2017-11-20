@@ -1,4 +1,5 @@
 #!/bin/bash
+TEST_PREFIX="${TEST_PREFIX:-}"
 
 # Script for controlling deploy script
 #
@@ -22,11 +23,11 @@
 #  * post results on each try
 #  * use function + trap to assure posting on exit
 
-LOG_FILE=/var/log/test-script-deployment.log
+LOG_FILE=${TEST_PREFIX}/var/log/test-script-deployment.log
 
-wget -O /tmp/test-script.cfg.$$ -q http://10.0.2.100/data
+wget -O ${TEST_PREFIX}/tmp/test-script.cfg.$$ -q http://10.0.2.100/data
 
-source /tmp/test-script.cfg.$$
+source ${TEST_PREFIX}/tmp/test-script.cfg.$$
 
 if [ -z "$LOG_FILE" ] ; then
   echo "Output log file is missing"
@@ -48,7 +49,7 @@ if [ -z "$TRIES" ] ; then
   exit 1
 fi
 
-DEPLOYMENT_SCRIPT=/tmp/test-script-deployment.bash.$$
+DEPLOYMENT_SCRIPT=${TEST_PREFIX}/tmp/test-script-deployment.bash.$$
 wget -O $DEPLOYMENT_SCRIPT -q $URL
 
 if [[ ! -s "$DEPLOYMENT_SCRIPT" ]] ; then
@@ -58,7 +59,7 @@ fi
 function add_log ()
 {
   LOG_FILE=$1
-  for f in /opt/slapos/log/slapos-node-{software,instance}.log ; do
+  for f in ${TEST_PREFIX}/opt/slapos/log/slapos-node-{software,instance}.log ; do
     echo "Tail of '$f':" >> $LOG_FILE
     tail -n 500 $f >> $LOG_FILE
   done
