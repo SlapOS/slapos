@@ -171,6 +171,9 @@ class testSlapOSMixin(ERP5TypeTestCase):
 
   def setUpOnce(self):
     self.commit()
+    self.portal.portal_templates.updateRepositoryBusinessTemplateList(
+       repository_list=self.portal.portal_templates.getRepositoryList())
+    self.commit()
     self.launchConfigurator()
 
   def afterSetUp(self):
