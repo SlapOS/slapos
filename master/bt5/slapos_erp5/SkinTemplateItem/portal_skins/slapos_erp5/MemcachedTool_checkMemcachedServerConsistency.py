@@ -1,27 +1,25 @@
 portal_memcached = context
-
 portal = context.getPortalObject()
-promise_url = portal.getPromiseParameter('external_service', 'memcached_url')
 
-if promise_url is None:
-  return
 
-plugin = portal_memcached.default_memcached_plugin
+# erp5-memcached-persistent is provided by SlapOS, so here we are
+# ensuring the site uses real DNS Configuration provided by SlapOS.
+# Port and name is hardcoded (unfortunally).
+expected_url = "erp5-memcached-volatile:2013"
 
-url = "memcached://%s/" % plugin.getUrlString()
+plugin = portal_memcached.restrictedTraverse("default_memcached_plugin", None)
+if plugin is None:
+  return ["portal_memcached/default_memcached_plugin wasn't found!"]
 
-if promise_url != url:
+url = plugin.getUrlString()
+
+if url != expected_url:
   fixing = ''
   if fixit:
+    portal_memcached.default_memcached_plugin.edit(url_string=expected_url)
     fixing = ' (fixed)'
-    _, promise_url = promise_url.split('://', 1)
 
-    domain_port = promise_url.split('/', 1)[0]
-    port = domain_port.split(':')[-1]
-    domain = domain_port[:-(len(port)+1)]
-
-    portal_memcached.default_memcached_plugin.edit(url_string="%s:%s" % (domain, port))
   return ["Memcached not configured as expected%s: %s" %
-    (fixing, "Expect %s\nGot %s" % (promise_url, url))]
-else:
-  return []
+    (fixing, "Expect %s\nGot %s" % (expected_url, url))]
+
+return []

@@ -1,29 +1,24 @@
 portal_memcached = context
 portal = context.getPortalObject()
-promise_url = portal.getPromiseParameter('external_service', 'kumofs_url')
 
-if promise_url is None:
-  return
+# erp5-memcached-persistent is provided by SlapOS, so here we are
+# ensuring the site uses real DNS Configuration provided by SlapOS.
+# Port and name is hardcoded (unfortunally).
+expected_url = "erp5-memcached-persistent:2003"
 
 plugin = portal_memcached.restrictedTraverse("persistent_memcached_plugin", None)
 if plugin is None:
-  return []
+  return ["portal_memcached/persistent_memcached_plugin wasn't found!"]
 
-url = "memcached://%s/" % plugin.getUrlString()
+url = plugin.getUrlString()
 
-if promise_url != url:
+if url != expected_url:
   fixing = ''
   if fixit:
-    _, promise_url = promise_url.split('://', 1)
-
-    domain_port = promise_url.split('/', 1)[0]
-    port = domain_port.split(':')[-1]
-    domain = domain_port[:-(len(port)+1)]
-    
-    portal_memcached.persistent_memcached_plugin.edit(url_string="%s:%s" % (domain, port))
+    portal_memcached.persistent_memcached_plugin.edit(url_string=expected_url)
     fixing = ' (fixed)'
 
   return ["Kumofs not configured as expected%s: %s" %
-    (fixing, "Expect %s\nGot %s" % (promise_url, url))]
+    (fixing, "Expect %s\nGot %s" % (expected_url, url))]
 
 return []
