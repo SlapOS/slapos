@@ -6,7 +6,6 @@ acl_users/slapos_google_authentication
 image_module/vifib.cloud
 image_module/vifib.kvm
 image_module/vifib.rack
-portal_alarms/promise_slapos_pas_external
 portal_caches/browser_id_auth_token_cache_factory
 portal_caches/browser_id_auth_token_cache_factory/persistent_cache_plugin
 portal_caches/facebook_server_auth_token_cache_factory
