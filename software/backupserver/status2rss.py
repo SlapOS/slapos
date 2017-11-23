@@ -31,7 +31,7 @@ while 1:
       open(statistic).read())).split("\n")),
     link = LINK,
     pubDate = datetime.datetime.fromtimestamp(mktime_tz(parsedate_tz(time))),
-    guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (time, desc)))
+    guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (time, desc)), isPermaLink=0)
     )
   items.append(rss_item)
 
