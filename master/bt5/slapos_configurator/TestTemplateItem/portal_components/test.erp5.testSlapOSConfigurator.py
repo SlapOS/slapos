@@ -11,60 +11,40 @@ import os
 
 class TestSlapOSConfigurator(testSlapOSMixin):
 
-  def _testConfiguredPromiseViaAlarm(self, alarm_id):
-    """
-      Make sue one alarm is configured.
-    """
-    alarm = getattr(self.portal.portal_alarms, alarm_id, None)
-    self.assertNotEquals(alarm, None)
-    alarm.activeSense()
-    self.tic()
-    self.failIf(alarm.sense())
-
-  def testConfiguredPAS(self):
-    """ Make sure PAS is well configured, in this case
-        we trust on promise outcome."""
-    self._testConfiguredPromiseViaAlarm("promise_slapos_pas")
-
-  def testConfiguredPASExternal(self):
-    """ Make sure External PAS (Facebook, Google, Browser ID)
-        is well configured, in this case we trust on promise outcome."""
-    self._testConfiguredPromiseViaAlarm("promise_slapos_pas_external")
-
-  def testConfiguredModuleGeneratorID(self):
+  def testConfiguredModuleGeneratorIDViaConstraint(self):
     """ Make sure Generator ID is well configured, in this
         case we trust on promise outcome."""
-    self._testConfiguredPromiseViaAlarm("promise_slapos_module_id_generator")
+    self.assertEquals(self.portal.portal_ids.checkConsistency(), [])
 
   def testConfiguredShacacheWebSite(self):
     """ Make sure Shacache WebSite is setuped by Alarm
         case we trust on promise outcome."""
-    self._testConfiguredPromiseViaAlarm("promise_slapos_shacache_website")
+    self.assertEquals(self.portal.web_site_module.checkConsistency(), [])
 
-  def testConfiguredVolatileCacheViaPromise(self):
-    """ Make sure Volitile Cache was configured well,
-        invoking the alarm to check """
-    self._testConfiguredPromiseViaAlarm("promise_memcached_server")
+  def testConfiguredCacheViaConstraint(self):
+    """ Make sure Volitile and Persistent Cache was configured well,
+        invoking the consistency to check """
+    self.assertEquals(self.portal.portal_memcached.checkConsistency(), [])
 
-  def testConfiguredPersistentCacheViaPromise(self):
-    """ Make sure Persistent Cache was configured well,
-        invoking the alarm to check """
-    self._testConfiguredPromiseViaAlarm("promise_kumofs_server")
-
-  def testConfiguredConversionServerViaPromise(self):
+  def testConfiguredConversionServerViaConstraint(self):
     """ Make sure Conversion Server was configured well,
-        invoking the alarm to check """
-    self._testConfiguredPromiseViaAlarm("promise_conversion_server")
+        invoking checkConsistency """
+    self.assertEquals(self.portal.portal_preferences.checkConsistency(), [])
 
-  def testConfiguredCertificateAuthoringViaPromise(self):
+  def testConfiguredCertificateAuthoringConstraint(self):
     """Make sure Certificate Authoring was configured well,
-       invoking the alarm to check. """
-    self._testConfiguredPromiseViaAlarm("promise_certificate_autority_tool")
+       invoking checkConsistency.
 
-  def testConfiguredTemplateToolViaPromise(self):
+       Make sure PAS is well configured."""
+    self.assertEquals(self.portal.portal_certificate_authority.checkConsistency(), [])
+
+  def testConfiguredTemplateToolViaConstraint(self):
     """ Make sure Template Tool Repositories was configured well,
-        invoking the alarm to check """
-    self._testConfiguredPromiseViaAlarm("promise_template_tool_configuration")
+        invoking checkConsistency """
+    self.assertEquals(
+        [ i for i in self.portal.portal_templates.checkConsistency()
+                     if "(reinstall)" not in i.message], [])
+
 
   def testConfiguredVolatileCache(self):
     """  Make sure Memcached is configured
@@ -79,7 +59,7 @@ class TestSlapOSConfigurator(testSlapOSMixin):
 
     memcached_tool = self.getPortal().portal_memcached
     connection_dict = _getVolatileMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
+    url_string = 'erp5-memcached-volatile:%(port)s' % connection_dict
     self.assertEquals(memcached_tool.default_memcached_plugin.getUrlString(),
                       url_string)
 
@@ -96,7 +76,7 @@ class TestSlapOSConfigurator(testSlapOSMixin):
             _getPersistentMemcachedServerDict
     memcached_tool = self.getPortal().portal_memcached
     connection_dict = _getPersistentMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
+    url_string = 'erp5-memcached-persistent:%(port)s' % connection_dict
     self.assertEquals(memcached_tool.persistent_memcached_plugin.getUrlString(),
                       url_string)
 
@@ -104,18 +84,17 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     """ Make sure Conversion Server (Cloudooo) is
         well configured """
     if self.isLiveTest():
-      # This test is redundant with testConfiguredVolatileCacheViaPromise
+      # This test is redundant with testConfiguredConversionServerViaConstraint
       # and it is only aims to verify if test environment is behaving as
       # expected, nothing else, and if alamrs were invoked.
       return
 
     from Products.ERP5Type.tests.ERP5TypeTestCase import\
-            _getConversionServerDict
+           _getConversionServerUrl
     # set preference
     preference_tool = self.portal.portal_preferences
-    conversion_dict = _getConversionServerDict()
-    self.assertEquals(preference_tool.getPreferredOoodocServerAddress(),conversion_dict['hostname'])
-    self.assertEquals(preference_tool.getPreferredOoodocServerPortNumber(), conversion_dict['port'])
+    conversion_url = _getConversionServerUrl()
+    self.assertEquals(preference_tool.getPreferredDocumentConversionServerUrl(), conversion_url)
 
   def testConfiguredCertificateAuthoring(self):
     """ Make sure Certificate Authoting is

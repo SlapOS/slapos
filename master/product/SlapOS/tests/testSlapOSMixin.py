@@ -39,6 +39,9 @@ from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from AccessControl.SecurityManagement import getSecurityManager, \
     setSecurityManager
+from App.config import getConfiguration
+
+config = getConfiguration()
 
 def changeSkin(skin_name):
   def decorator(func):
@@ -190,17 +193,24 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.portal_caches._p_changed = 1
     self.commit()
     self.portal.portal_caches.updateCache()
-    if getattr(self.portal, 'is_site_bootstrapped', 0):
-      for alarm in self.portal.portal_alarms.contentValues():
-        if alarm.getId().startswith("promise_slapos"):
-           alarm.solve()
-      return
-    else:
+
+    try:
+      initsite = config.product_config["initsite"]
+    except KeyError:
+      initsite = {}
+
+    if initsite.get("cloudooo_url", None) is None:
+      from Products.ERP5Type.tests.ERP5TypeTestCase import\
+                  _getConversionServerUrl
+      initsite["cloudooo_url"] = _getConversionServerUrl()
+
+    config.product_config["initsite"] = initsite
+
+    if not getattr(self.portal, 'is_site_bootstrapped', 0):
       self.portal.is_site_bootstrapped = 1
       self.bootstrapSite()
       self.portal._p_changed = 1
       self.commit()
-
 
   def deSetUpPersistentDummyMailHost(self):
     if 'MailHost' in self.portal.objectIds():
@@ -237,6 +247,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
   def bootstrapSite(self):
     self.setupPortalAlarms()
     self.createCertificateAuthorityFile()
+    self.getDefaultSystemPreference().setPreferredHateoasUrl("http://dummy/")
+    self.getBusinessConfiguration().BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
 
     self.clearCache()
     self.tic()
