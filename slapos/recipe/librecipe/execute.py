@@ -67,8 +67,8 @@ def generic_exec(args):
 
   os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
-def sig_handler(sig, frame):
-  print 'Received signal %r, killing children and exiting' % sig
+def sig_handler(signal, frame):
+  print 'Received signal %r, killing children and exiting' % signal
   if child_pg is not None:
     os.killpg(child_pg, signal.SIGHUP)
     os.killpg(child_pg, signal.SIGTERM)
@@ -81,7 +81,6 @@ signal.signal(signal.SIGTERM, sig_handler)
 
 def execute_with_signal_translation(args):
   """Run process as children and translate from SIGTERM to another signal"""
-  global child_pg
   child = subprocess.Popen(args, close_fds=True, preexec_fn=os.setsid)
   child_pg = child.pid
   try:
