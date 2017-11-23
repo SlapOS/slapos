@@ -8,8 +8,9 @@ erp5_forge
 erp5_dhtml_style
 erp5_ace_editor
 erp5_code_mirror
+erp5_web_shacache
+erp5_web_shadir
 slapos_accounting
-slapos_cache
 slapos_category
 slapos_cloud
 slapos_ecoallocation

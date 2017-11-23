@@ -8,4 +8,10 @@
  <portal_type id="Memcached Tool">
   <item>MemcachedToolServerConstraint</item>
  </portal_type>
+ <portal_type id="Organisation">
+  <item>GeographicOrganisation</item>
+ </portal_type>
+ <portal_type id="Web Site Module">
+  <item>WebSiteModuleShacacheConstraint</item>
+ </portal_type>
 </property_sheet_list>

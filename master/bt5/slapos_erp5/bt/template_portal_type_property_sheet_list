@@ -1,3 +1,5 @@
 Certificate Authority Tool | CertificateAuthorityToolConsistencyConstraint
 Id Tool | SlapOSModuleIdGeneratorConstraint
 Memcached Tool | MemcachedToolServerConstraint
+Organisation | GeographicOrganisation
+Web Site Module | WebSiteModuleShacacheConstraint

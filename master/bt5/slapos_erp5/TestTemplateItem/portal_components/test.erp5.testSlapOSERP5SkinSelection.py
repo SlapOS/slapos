@@ -124,7 +124,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -237,7 +236,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -345,7 +343,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -454,7 +451,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -560,7 +556,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -667,7 +662,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -773,7 +767,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -880,7 +873,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -986,7 +978,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -1094,7 +1085,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
@@ -1203,7 +1193,6 @@ slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
-slapos_cache
 slapos_cloud
 slapos_consumption
 slapos_core
