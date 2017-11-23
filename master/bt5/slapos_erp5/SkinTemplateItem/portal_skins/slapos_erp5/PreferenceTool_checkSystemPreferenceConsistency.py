@@ -1,10 +1,7 @@
 """
-  Verify the consistency of the System Preference for the SlapOS Master to 
-  ensure the site configuration is set. 
+  Verify the consistency of the System Preference for the SlapOS Master to
+  ensure the site configuration is set.
 """
-
-
-
 
 if context.getPortalType() not in [ "System Preference"]:
   return []
@@ -12,21 +9,13 @@ if context.getPortalType() not in [ "System Preference"]:
 if context.getPreferenceState() != "global":
   return []
 
-portal = context.getPortalObject()
-
 error_list = []
 
 preference_method_list = [
   "getPreferredHateoasUrl",
-  "getPreferredVifibFacebookApplicationId",
-  "getPreferredVifibFacebookApplicationSecret",
-  "getPreferredVifibGoogleApplicationId",
-  "getPreferredVifibGoogleApplicationSecret",
-  "getPreferredVifibRestApiLoginCheck",
-  "getPreferredPayzenPaymentServiceReference",
-  "getPreferredPayzenIntegrationSite"
+   "getPreferredPayzenPaymentServiceReference",
+   "getPreferredPayzenIntegrationSite"
   ]
-
 
 for method_id in preference_method_list:
 
