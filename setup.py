@@ -60,7 +60,7 @@ setup(name=name,
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
-        'inotify_simple',
+        'inotify-simple',
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
         'zc.buildout', # plays with buildout
