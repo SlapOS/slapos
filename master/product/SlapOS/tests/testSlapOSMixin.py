@@ -248,7 +248,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.setupPortalAlarms()
     self.createCertificateAuthorityFile()
     self.getDefaultSystemPreference().setPreferredHateoasUrl("http://dummy/")
-    self.getBusinessConfiguration().BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
 
     self.clearCache()
     self.tic()

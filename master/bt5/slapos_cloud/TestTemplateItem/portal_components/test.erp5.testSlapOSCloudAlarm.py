@@ -1363,7 +1363,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
         'text': '#access ok',
         'created_at': rfc1123_date(DateTime())
     })
-    transaction.commit()
+    self.commit()
 
   def test_Computer_checkAndUpdateCapacityScope(self):
     self.computer.Computer_checkAndUpdateCapacityScope()

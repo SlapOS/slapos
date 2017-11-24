@@ -11,6 +11,12 @@ import os
 
 class TestSlapOSConfigurator(testSlapOSMixin):
 
+
+  def bootstrapSite(self):
+    super(TestSlapOSConfigurator, self).bootstrapSite()
+    self.getBusinessConfiguration().BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
+    self.tic()
+
   def testConfiguredModuleGeneratorIDViaConstraint(self):
     """ Make sure Generator ID is well configured, in this
         case we trust on promise outcome."""
