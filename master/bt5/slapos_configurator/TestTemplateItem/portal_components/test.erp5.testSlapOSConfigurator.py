@@ -16,6 +16,14 @@ class TestSlapOSConfigurator(testSlapOSMixin):
         case we trust on promise outcome."""
     self.assertEquals(self.portal.portal_ids.checkConsistency(), [])
 
+    self.portal.person_module.setIdGenerator("_Id_fake")
+    self.assertNotEquals(self.portal.portal_ids.checkConsistency(), [])
+    self.portal.portal_ids.fixConsistency()
+    self.assertEquals(self.portal.portal_ids.checkConsistency(), [])
+    self.assertEquals(self.portal.person_module.getIdGenerator(),
+                        "_generatePerDayId")
+
+
   def testConfiguredShacacheWebSite(self):
     """ Make sure Shacache WebSite is setuped by Alarm
         case we trust on promise outcome."""
@@ -110,6 +118,97 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     self.assertEquals(os.environ['TEST_CA_PATH'],
           self.portal.portal_certificate_authority.certificate_authority_path)
 
+  def testModuleHasIdGeneratorByDay(self):
+    """ Ensure the Constraint sets appropriate id generator on all modules.
+    """
+    module_list = [module.getId() for module in self.portal.objectValues() 
+                     if getattr(module, "getIdGenerator", None) is not None and \
+                                        module.getIdGenerator() == "_generatePerDayId"]
+    self.assertSameSet(module_list,
+                [
+       'access_token_module',
+       'account_module',
+       'accounting_module',
+       'bug_module',
+       'business_configuration_module',
+       'business_process_module',
+       'campaign_module',
+       'component_module',
+       'computer_model_module',
+       'computer_module',
+       'computer_network_module',
+       'consumption_document_module',
+       'credential_recovery_module',
+       'credential_request_module',
+       'credential_update_module',
+       'currency_module',
+       'cloud_contract_module',
+       'data_set_module',
+       'delivery_node_module',
+       'document_ingestion_module',
+       'document_module',
+       'event_module',
+       'external_source_module',
+       'glossary_module',
+       'hosting_subscription_module',
+       'image_module',
+       'implicit_item_movement_module',
+       'internal_order_module',
+       'internal_packing_list_module',
+       'internal_supply_module',
+       'internal_trade_condition_module',
+       'inventory_module',
+       'item_module',
+       'knowledge_pad_module',
+       'meeting_module',
+       'notification_message_module',
+       'open_internal_order_module',
+       'open_purchase_order_module',
+       'open_sale_order_module',
+       'organisation_module',
+       'person_module',
+       'portal_activities',
+       'portal_simulation',
+       'product_module',
+       'project_module',
+       'purchase_order_module',
+       'purchase_packing_list_module',
+       'purchase_supply_module',
+       'purchase_trade_condition_module',
+       'quantity_unit_conversion_module',
+       'query_module',
+       'regularisation_request_module',
+       'requirement_module',
+       'returned_purchase_order_module',
+       'returned_purchase_packing_list_module',
+       'returned_sale_order_module',
+       'returned_sale_packing_list_module',
+       'sale_opportunity_module',
+       'sale_order_module',
+       'sale_packing_list_module',
+       'sale_supply_module',
+       'sale_trade_condition_module',
+       'service_module',
+       'service_report_module',
+       'software_installation_module',
+       'software_instance_module',
+       'software_licence_module',
+       'software_product_module',
+       'software_publication_module',
+       'software_release_module',
+       'support_request_module',
+       'system_event_module',
+       'task_module',
+       'task_report_module',
+       'transformation_module',
+       'trial_request_module',
+       'upgrade_decision_module',
+       'web_page_module',
+       'web_site_module',
+       'workflow_module',
+     ])
+
+
   def testConfiguredBusinessTemplateList(self):
     """ Make sure Installed business Templates are
         what it is expected.  """
@@ -183,7 +282,7 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'erp5_web_renderjs_ui',
       'erp5_web_service',
       'slapos_ecoallocation',
-	    'slapos_jio',
+      'slapos_jio',
       'slapos_l10n_zh',
       'slapos_trial_request',
       'erp5_bearer_token',
