@@ -182,8 +182,8 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_jquery_sheet_editor
 erp5_jquery
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -290,8 +290,8 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_jquery_sheet_editor
 erp5_jquery
+erp5_jquery_sheet_editor
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -397,8 +397,8 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_jquery_sheet_editor
 erp5_jquery
+erp5_jquery_sheet_editor
 erp5_km_widget_library
 erp5_ods_core
 erp5_odt_core
