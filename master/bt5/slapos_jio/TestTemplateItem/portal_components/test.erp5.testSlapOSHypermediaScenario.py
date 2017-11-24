@@ -403,6 +403,8 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
   def test(self):
     self._makeTree()
     instance = self.software_instance
+
+
     self.portal.changeSkin('Hal')
     self.tic()
 
