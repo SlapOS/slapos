@@ -537,8 +537,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
-    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-        reference=person_reference)
+    person = self.portal.portal_catalog.getResultValue(
+       portal_type='ERP5 Login',
+       reference=person_reference).getParentValue()
     hosting_subscription_list = self.portal.portal_catalog(
         portal_type='Hosting Subscription',
         default_destination_section_uid=person.getUid()
@@ -703,9 +704,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     # instance on instance provided by friend
 
     self.login()
-    public_email = self.portal.portal_catalog.getResultValue(
+    public_person = self.portal.portal_catalog.getResultValue(
       portal_type='ERP5 Login', reference=public_reference).getParentValue()
-    public_person.getDefaultEmailText()
+    public_email = public_person.getDefaultEmailText()
     self.login(owner_person.getUserId())
     self.setServerOpenFriend(friend_server, [friend_email, public_email])
 
