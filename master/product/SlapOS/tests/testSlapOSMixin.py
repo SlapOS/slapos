@@ -353,7 +353,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.portal_workflow._jumpToStateFor(self.software_instance, 'start_requested')
     self.software_instance.validate()
 
-    self._addERP5Login(self.software_instance)
 
     self.requested_software_instance.edit(
         title=self.generateNewSoftwareTitle(),

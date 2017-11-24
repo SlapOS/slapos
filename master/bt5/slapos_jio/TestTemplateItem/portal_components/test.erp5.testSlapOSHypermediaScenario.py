@@ -404,6 +404,7 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     self._makeTree()
     instance = self.software_instance
 
+    self._addERP5Login(self.software_instance)
 
     self.portal.changeSkin('Hal')
     self.tic()
