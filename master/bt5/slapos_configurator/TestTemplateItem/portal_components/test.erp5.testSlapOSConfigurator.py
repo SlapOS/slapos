@@ -11,7 +11,6 @@ import os
 
 class TestSlapOSConfigurator(testSlapOSMixin):
 
-
   def bootstrapSite(self):
     super(TestSlapOSConfigurator, self).bootstrapSite()
     self.getBusinessConfiguration().BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
@@ -28,7 +27,6 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     self.assertEquals(self.portal.portal_ids.checkConsistency(), [])
     self.assertEquals(self.portal.person_module.getIdGenerator(),
                         "_generatePerDayId")
-
 
   def testConfiguredShacacheWebSite(self):
     """ Make sure Shacache WebSite is setuped by Alarm
@@ -294,7 +292,6 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'erp5_bearer_token',
       'erp5_access_token',
       'erp5_project',
-      'slapos_cache',
       'slapos_cloud',
       'slapos_slap_tool',
       'slapos_category',
