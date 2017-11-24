@@ -69,27 +69,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
         'Visited by Person_checkToCreateRegularisationRequest',
         person.workflow_history['edit_workflow'][-1]['comment'])
 
-  def test_alarm_no_reference(self):
-    new_id = self.generateNewId()
-    person = self.portal.person_module.newContent(
-      portal_type='Person',
-      title="Test person %s" % new_id,
-      default_email_text="%s@example.org" % new_id,
-      )
-    person.validate()
-
-    self.tic()
-    self._simulatePerson_checkToCreateRegularisationRequest()
-    try:
-      self.portal.portal_alarms.\
-          slapos_crm_create_regularisation_request.activeSense()
-      self.tic()
-    finally:
-      self._dropPerson_checkToCreateRegularisationRequest()
-    self.assertNotEqual(
-        'Visited by Person_checkToCreateRegularisationRequest',
-        person.workflow_history['edit_workflow'][-1]['comment'])
-
   def test_alarm_not_validated(self):
     new_id = self.generateNewId()
     person = self.portal.person_module.newContent(
