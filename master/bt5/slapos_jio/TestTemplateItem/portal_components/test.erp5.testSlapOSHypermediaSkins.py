@@ -217,30 +217,36 @@ class TestSlapOSPersonERP5Document_getHateoas(TestSlapOSHypermediaMixin):
     self.assertEqual(len(action_object_slap), 3)
     for action in [
       {
-        'href': '%s/Person_getHateoasComputerList' % \
+        u'href': u'%s/Person_getHateoasComputerList' % \
           person_user.absolute_url(),
-        'name': 'get_hateoas_computer_list',
-        'title': 'getHateoasComputerList'
+        u'name': u'get_hateoas_computer_list',
+        u'icon': u'',
+        u'title': u'getHateoasComputerList'
       },
       {
-        'href': '%s/Person_getHateoasHostingSubscriptionList' % \
+        u'href': u'%s/Person_getHateoasHostingSubscriptionList' % \
           person_user.absolute_url(),
-        'name': 'get_hateoas_hosting_subscription_list',
-        'title': 'getHateoasHostingSubscriptionList'
+        u'name': u'get_hateoas_hosting_subscription_list',
+        u'icon': u'',
+        u'title': u'getHateoasHostingSubscriptionList'
       },
       {
-        'href': '%s/Person_getHateoasInformation' % \
+        u'href': u'%s/Person_getHateoasInformation' % \
           person_user.absolute_url(),
-        'name': 'get_hateoas_information',
-        'title': 'getHateoasInformation'
+        u'name': u'get_hateoas_information',
+        u'icon': u'',
+        u'title': u'getHateoasInformation'
       },
     ]:
-      self.assertTrue(action in action_object_slap)
+      
+      self.assertTrue(action in action_object_slap, \
+        "%s not in %s" % (action, action_object_slap))
     self.assertEquals(results['_links']['action_object_slap_post'], {
-        "href": '%s/Person_requestHateoasHostingSubscription' %  \
+        u"href": u'%s/Person_requestHateoasHostingSubscription' %  \
           person_user.absolute_url(),
-        "name": "request_hateoas_hosting_subscription",
-        "title": "requestHateoasHostingSubscription"
+        u"name": u"request_hateoas_hosting_subscription",
+        u'icon': u'',
+        u"title": u"requestHateoasHostingSubscription"
     })
 
 class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
