@@ -129,7 +129,11 @@ if is_ubuntu; then
   is_package_installed ansible || install_package ansible=1.*
 elif is_fedora; then
   # is_fedora also handle CentOS distro
-  is_package_installed ansible || install_package ansible1.9.noarch
+  if [[ "$os_VENDOR" =~ (CentOS) ]] ; then
+    is_package_installed ansible || install_package ansible
+  else
+    is_package_installed ansible || install_package ansible1.9.noarch
+  fi
 else
   is_package_installed ansible || install_package ansible
 fi
