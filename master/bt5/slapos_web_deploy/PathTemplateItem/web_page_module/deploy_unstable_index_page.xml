@@ -99,6 +99,12 @@
             </value>
         </item>
         <item>
+            <key> <string>text_content</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>title</string> </key>
             <value> <string>Unstable Index Page</string> </value>
         </item>
