@@ -351,9 +351,7 @@
             </item>
             <item>
                 <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
+                <value> <string>Deleted objects: []</string> </value>
             </item>
             <item>
                 <key> <string>error_message</string> </key>
@@ -379,7 +377,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1478616898.14</float>
+                        <float>1502894352.61</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
