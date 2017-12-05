@@ -127,6 +127,11 @@ is_package_installed ansible || install_package ansible
 
 is_package_installed python-setuptools || install_package python-setuptools
 
+if is_fedora && [[ $DISTRO == "f26" ]]; then
+  is_package_installed python2-rpm || install_package python2-rpm
+  is_package_installed yum || install_package yum
+fi
+
 if is_ubuntu && [[ $DISTRO == "trusty" ]]; then
   is_package_installed python-apt || install_package python-apt
   is_package_installed python-pycurl || install_package python-pycurl
