@@ -40,7 +40,7 @@ fi
 
 # Warn users who aren't on an explicitly supported distro, but allow them to
 # override check and attempt installation with ``export FORCE=yes``
-if [[ ! ${DISTRO} =~ (wheezy|jessie|trusty|vivid|xenial|rhel7|rhel6|LinuxMint-17.2) ]]; then
+if [[ ! ${DISTRO} =~ (wheezy|jessie|trusty|vivid|xenial|rhel7|rhel6|LinuxMint-17.2|f20|f19|f26|artful|stretch) ]]; then
     echo "WARNING: this script has not been tested on $DISTRO"
     if [[ "$FORCE" != "yes" ]]; then
         die $LINENO "If you wish to run this script anyway run with FORCE=yes"
@@ -52,7 +52,7 @@ if [[ $DISTRO == "wheezy" ]]; then
     echo "deb http://ftp.debian.org/debian wheezy-backports main contrib " > /etc/apt/sources.list.d/wheezy-backports.list
 fi
 
-if is_fedora && [[ $DISTRO == "rhel7" ]]; then
+if is_fedora && [[ $DISTRO =~ rhel7|f20|f19 ]]; then
     # RHEL requires EPEL for many Ansible dependencies
 
     # NOTE: We always remove and install latest -- some environments
@@ -123,20 +123,8 @@ EOF
 fi
 
 is_package_installed openssl || install_package openssl
-# stick to a specific ansible package version
-if is_ubuntu; then
-  # is_ubuntu also handle debian distro
-  is_package_installed ansible || install_package ansible=1.*
-elif is_fedora; then
-  # is_fedora also handle CentOS distro
-  if [[ "$os_VENDOR" =~ (CentOS) ]] ; then
-    is_package_installed ansible || install_package ansible
-  else
-    is_package_installed ansible || install_package ansible1.9.noarch
-  fi
-else
-  is_package_installed ansible || install_package ansible
-fi
+is_package_installed ansible || install_package ansible
+
 is_package_installed python-setuptools || install_package python-setuptools
 
 if is_ubuntu && [[ $DISTRO == "trusty" ]]; then
