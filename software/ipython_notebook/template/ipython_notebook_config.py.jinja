@@ -34,5 +34,28 @@ if not parser.has_option("ipython_notebook", "password") or \
 
 c.NotebookApp.password = passwd(parser.get("ipython_notebook", "password"))
 
+#
+# START CUSTOM JIO CONTENTS MANAGER
+#
+from notebook.services.contents.manager import ContentsManager
+
+class ClientSideContentsManager(ContentsManager):
+  def dir_exists(self, path):
+      return True
+
+  def is_hidden(self, path):
+      return False
+
+  def file_exists(self, path=''):
+      return True
+
+  def get(self, path, content=True, type=None, format=None):
+      return {'type':'notebook'}
+c.NotebookApp.tornado_settings = {'contents_js_source': 'nbextensions/jiocontents/jiocontents'}
+c.NotebookApp.contents_manager_class = ClientSideContentsManager
+#
+# END JIO CONTENTS MANAGER
+#
+
 with open(knowledge_0, 'w') as file:
   parser.write(file)
