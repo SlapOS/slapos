@@ -169,7 +169,7 @@ def main():
     browser.quit()
     is_browser_running = False
 
-    tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
+    tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),
                                         node_title = args.test_node_title,
