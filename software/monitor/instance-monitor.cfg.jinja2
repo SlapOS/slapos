@@ -8,7 +8,6 @@ parts =
   symlink-re6st-logs
   symlink-collected-logs
   monitor-collect-csv-wrapper
-  fluentd-wrapper
   monitor-base
   monitor-check-memory-usage
   monitor-check-cpu-usage
@@ -24,7 +23,10 @@ offline = true
 recipe = slapos.cookbook:cron.d
 name = network-bench-test
 frequency = */10 * * * *
-command = {{ buildout }}/networkbench ${network-bench-configuration:rendered} ${monitor-directory:monitor-log}
+# skip to not fill cron log file.
+# command = {{ buildout_bin }}/networkbench ${network-bench-configuration:rendered} ${monitor-directory:monitor-log}
+command = true
+
 
 [symlink-re6st-logs]
 recipe = cns.recipe.symlink
@@ -63,8 +65,7 @@ monitor-log = ${:private}/monitor-log
 cache = ${:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
 system-log = ${:private}/system-log
-fluentd-log = ${:log}/fluentd
-consumption = ${:fluentd-log}/consumption
+consumption = ${:log}/consumption
 
 [monitor-httpd-configuration-file]
 context =
@@ -76,28 +77,10 @@ context =
   section slave_information slap-configuration
   key monitor_private_hash slap-configuration:private-hash  
 
-[fluentd-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = {{ fluentd_location }}/bin/fluentd -qq -l ${monitor-directory:log}/fluend.log -c ${fluentd-conf-configuration:rendered}
-wrapper-path = ${monitor-directory:service}/fluentd
-environment = 
-  GEM_PATH={{ fluentd_location }}/lib/ruby/gems/1.8/
-
-[fluentd-conf-configuration]
-recipe = slapos.recipe.template:jinja2
-template = {{ fluent_conf_output }}
-rendered = ${monitor-directory:etc}/fluentd.cfg
-mode = 0744
-context =
-  key slapparameter_dict slap-configuration:configuration
-  key slave_instance_list slap-configuration:slave-instance-list
-  key fluentd_log_directory monitor-directory:fluentd-log
-  key computer_id slap-connection:computer-id
-
 [monitor-collect-csv-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = 
-  ${monitor-directory:bin}/python {{ monitor_collect_csv_dump }} --output_folder ${monitor-directory:fluentd-log}/consumption/
+  ${monitor-directory:bin}/python {{ monitor_collect_csv_dump }} --output_folder ${monitor-directory:consumption}
 wrapper-path = ${monitor-directory:reports}/monitor-collect-csv-dump  
 parameters-extra = true
 
