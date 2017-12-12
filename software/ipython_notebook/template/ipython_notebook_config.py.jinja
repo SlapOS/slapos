@@ -51,7 +51,7 @@ class ClientSideContentsManager(ContentsManager):
 
   def get(self, path, content=True, type=None, format=None):
       return {'type':'notebook'}
-c.NotebookApp.tornado_settings = {'contents_js_source': 'nbextensions/jiocontents/jiocontents'}
+c.NotebookApp.tornado_settings = {'contents_js_source': 'nbextensions/jiocontents/src/jiocontents'}
 c.NotebookApp.contents_manager_class = ClientSideContentsManager
 #
 # END JIO CONTENTS MANAGER
