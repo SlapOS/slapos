@@ -60,7 +60,8 @@ from slapos.grid.svcbackend import (launchSupervisord,
                                     createSupervisordConfiguration,
                                     _getSupervisordConfigurationDirectory,
                                     _getSupervisordSocketPath)
-from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen, updateFile)
+from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen, updateFile,
+                               checkPromiseList, PromiseError)
 from slapos.human import human2bytes
 import slapos.slap
 from netaddr import valid_ipv4, valid_ipv6
@@ -294,9 +295,6 @@ class Slapgrid(object):
   """ Main class for SlapGrid. Fetches and processes informations from master
   server and pushes usage information to master server.
   """
-
-  class PromiseError(Exception):
-    pass
 
   def __init__(self,
                software_root,
@@ -619,7 +617,7 @@ stderr_logfile_backups=1
       return SLAPGRID_FAIL
     return SLAPGRID_SUCCESS
 
-  def _checkPromises(self, computer_partition):
+  def _checkPromiseList(self, computer_partition):
     self.logger.info("Checking promises...")
     instance_path = os.path.join(self.instance_root, computer_partition.getId())
 
@@ -629,54 +627,11 @@ stderr_logfile_backups=1
     #stat sys call to get statistics informations
     uid = stat_info.st_uid
     gid = stat_info.st_gid
-
-    promise_present = False
-    # Get the list of promises
     promise_dir = os.path.join(instance_path, 'etc', 'promise')
-    if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
-      # Check whether every promise is kept
-      for promise in os.listdir(promise_dir):
-        promise_present = True
 
-        command = [os.path.join(promise_dir, promise)]
-
-        promise = os.path.basename(command[0])
-        self.logger.info("Checking promise '%s'.", promise)
-
-        process_handler = subprocess.Popen(command,
-                                           preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
-                                           cwd=instance_path,
-                                           env=None if sys.platform == 'cygwin' else {},
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.PIPE,
-                                           stdin=subprocess.PIPE)
-        process_handler.stdin.flush()
-        process_handler.stdin.close()
-        process_handler.stdin = None
-
-        # Check if the promise finished every tenth of second,
-        # but timeout after promise_timeout.
-        sleep_time = 0.1
-        increment_limit = int(self.promise_timeout / sleep_time)
-        for current_increment in range(0, increment_limit):
-          if process_handler.poll() is None:
-            time.sleep(sleep_time)
-            continue
-          if process_handler.poll() == 0:
-            # Success!
-            break
-          else:
-            stderr = process_handler.communicate()[1]
-            if stderr is None:
-              stderr = "No error output from '%s'." % promise
-            else:
-              stderr = "Promise '%s':" % promise + stderr
-            raise Slapgrid.PromiseError(stderr)
-        else:
-          process_handler.terminate()
-          raise Slapgrid.PromiseError("The promise '%s' timed out" % promise)
-
-    if not promise_present:
+    if not checkPromiseList(promise_dir, self.promise_timeout, uid=uid, gid=gid,
+                            cwd=instance_path, logger=self.logger, profile=True,
+                            raise_on_failure=True):
       self.logger.info("No promise.")
 
   def _endInstallationTransaction(self, computer_partition):
@@ -1091,7 +1046,7 @@ stderr_logfile_backups=1
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
                                               partition_ip_list)
-        self._checkPromises(computer_partition)
+        self._checkPromiseList(computer_partition)
         computer_partition.started()
         self._endInstallationTransaction(computer_partition)
       elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
@@ -1235,7 +1190,7 @@ stderr_logfile_backups=1
         computer_partition.error(traceback.format_exc(), logger=self.logger)
         raise
 
-      except Slapgrid.PromiseError as exc:
+      except PromiseError as exc:
         clean_run_promise = False
         try:
           self.logger.error(exc)
