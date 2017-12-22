@@ -252,7 +252,7 @@ mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
-slowquery =  ${monitor-directory:private}/slowquerydex
+slowquery = ${monitor-directory:private}/slowquery_digest
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
