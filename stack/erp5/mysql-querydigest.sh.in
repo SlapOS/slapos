@@ -7,19 +7,20 @@ PT_QUERY_EXEC='{{pt_query_exec}}'
 
 if [ ! -d "$OUTPUT_FOLDER" ]; then
   echo "ERROR: output_folder don't exists"
-  exit 0
+  exit 1
 fi
 
-OUTPUT_FILE=${OUTPUT_FOLDER}/slowquery_digest.txt
+dashed_today=$(date +%Y-%m-%d)
+today=$(date -d "$dashed_today" +%Y%m%d)
 
-TODAY=`date +%Y%m%d`
-
-SLOW_LOG=$SLOW_QUERY_PATH-$TODAY
+SLOW_LOG="$SLOW_QUERY_PATH-$today"
+OUTPUT_FILE="$OUTPUT_FOLDER/slowquery_digest.txt-$dashed_today"
 
 if [ ! -f "$SLOW_LOG" ]; then
   echo "ERROR: cannot read mysql slow query log file $SLOW_LOG. Exiting."
   exit 1
 fi
 
-$PT_QUERY_EXEC $SLOW_LOG >  $OUTPUT_FILE
-echo "ok"
+"$PT_QUERY_EXEC" "$SLOW_LOG" > "$OUTPUT_FILE" && \
+echo "Report generated successfully." || \
+echo "Report failed with code $?"
