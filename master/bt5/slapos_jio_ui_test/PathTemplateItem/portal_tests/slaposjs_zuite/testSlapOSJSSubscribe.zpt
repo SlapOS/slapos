@@ -1,0 +1,239 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Test SlapJS UI</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Test RenderJS UI</td></tr>
+</thead><tbody>
+<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/init" />
+
+<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/wait_for_activities" />
+
+<tr>
+  <td>assertTextPresent</td>
+  <td>Done.</td>
+  <td></td>
+</tr>
+<tr>
+  <td>open</td>
+  <td>${base_url}/ERP5Site_removeTestUserList</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Done.</td>
+  <td></td>
+</tr>
+<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/wait_for_activities" />
+
+<tr>
+  <td>assertTextPresent</td>
+  <td>Done.</td>
+  <td></td>
+</tr>
+
+<!-- Initialize -->
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_site_module/hostingjs/</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value='Login']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[text()=' Subscribe ']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>//a[text()=' Subscribe ']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@name='first_name']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@name='first_name']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value='Request User']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='first_name']</td>
+  <td>Test</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='last_name']</td>
+  <td>User</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='default_email_text']</td>
+  <td>demo@nexedi.com</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='reference']</td>
+  <td>testSlapOSJSSubscribeUser</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='password']</td>
+  <td>testSlapOSJSSubscribeUser</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='password_confirmation']</td>
+  <td>testSlapOSJSSubscribeUser</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='career_subordination_title']</td>
+  <td>testSlapOSJSSubscribeOrganisation</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='default_telefone_text']</td>
+  <td>1234567890</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='default_address_street_address']</td>
+  <td>1234567890</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='default_address_zip_code']</td>
+  <td>75000</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>//input[@name='default_address_city']</td>
+  <td>Paris</td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>One email will be send to you to confirm your email.</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>//input[@value='Request User']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextNotPresent</td>
+  <td>Selected login is already in use, please choose different one.</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value='Login']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Credential Request Created.</td>
+  <td></td>
+</tr>
+
+<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/wait_for_activities" />
+
+<tr>
+  <td>assertTextPresent</td>
+  <td>Done.</td>
+  <td></td>
+</tr>
+
+
+<!-- Initialize -->
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_site_module/hostingjs/</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>__ac_name</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>__ac_name</td>
+  <td>testSlapOSJSSubscribeUser</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>__ac_password</td>
+  <td>testSlapOSJSSubscribeUser</td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value="Login"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>//input[@value="Login"]</td>
+  <td></td>
+</tr>
+
+<!-- Logout -->
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n='Logout']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n='Logout']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value='Confirm']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//input[@value='Confirm']</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@value='Login']</td>
+  <td></td>
+</tr>
+
+
+</tbody></table>
+</body>
+</html>
