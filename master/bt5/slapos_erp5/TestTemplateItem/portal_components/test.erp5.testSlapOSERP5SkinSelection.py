@@ -132,7 +132,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 vifib_hosting_theme
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -183,6 +182,9 @@ erp5_integration
 erp5_invoicing
 erp5_jquery
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -243,7 +245,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_knowledge_pad
@@ -290,6 +291,9 @@ erp5_integration
 erp5_invoicing
 erp5_jquery
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -349,7 +353,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_km_theme
@@ -396,6 +399,9 @@ erp5_integration
 erp5_invoicing
 erp5_jquery
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_km_widget_library
 erp5_ods_core
 erp5_odt_core
@@ -456,7 +462,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_commerce_multiflex_layout
 erp5_km
@@ -502,6 +507,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -560,7 +568,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_web_download_theme
@@ -606,6 +613,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -665,7 +675,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_knowledge_pad
@@ -711,6 +720,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -769,7 +781,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_knowledge_pad
@@ -815,6 +826,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -860,7 +874,7 @@ erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
-slapos_rss
+slapos_rss_style
 slapos_contract
 slapos_trial
 slapos_crm_monitoring
@@ -874,7 +888,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_rss_style
 erp5_km
@@ -920,6 +933,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -978,7 +994,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_web_shacache
 erp5_km
@@ -1025,6 +1040,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1084,7 +1102,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_web_shadir
 erp5_km
@@ -1131,6 +1148,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1173,6 +1193,7 @@ activity
 """
 custom
 erp5_font
+slapos_hal_json_style
 erp5_web_hal_json
 erp5_web_renderjs_ui
 slapos_ecoallocation
@@ -1191,7 +1212,6 @@ slapos_payzen
 slapos_pdm
 slapos_simulation
 slapos_slap_tool
-slapos_web
 slapos_configurator
 erp5_km
 erp5_knowledge_pad
@@ -1236,6 +1256,9 @@ erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_jquery_sheet_editor
+erp5_oauth
+erp5_oauth_facebook_login
+erp5_oauth_google_login
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
