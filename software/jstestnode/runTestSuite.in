@@ -92,8 +92,8 @@ def main():
       firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
       firefox_capabilities['marionette'] = True
       browser = webdriver.Firefox(capabilities=firefox_capabilities,
-                                  firefox_binary='${firefox:location}/firefox-slapos',
-                                  executable_path='${firefox:location}/geckodriver')
+                                  firefox_binary='${firefox:location}',
+                                  executable_path='${geckodriver:location}')
     elif args.target in ['iOS', 'Android']:
       # parameters for mobile emulators have different names then parameters for
       # desktop OSes
