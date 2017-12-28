@@ -2001,7 +2001,7 @@ class TestSecurePaymentTool(TestSlapOSGroupRoleSecurityMixin):
     self.assertPermissionsOfRole(tool, 'Owner', [])
     self.assertPermissionsOfRole(tool, 'Reviewer', [])
 
-    self.assertAcquiredPermissions(tool, ['Add SlapOS Tools', 'Add Vifib Tools'])
+    self.assertAcquiredPermissions(tool, ['Add ERP5 SQL Methods', 'Add Vifib Tools'])
 
 class TestBusinessProcessModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
