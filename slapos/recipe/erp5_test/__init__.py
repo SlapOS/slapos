@@ -85,7 +85,7 @@ class Recipe(GenericBaseRecipe):
             mysql_connection_string_list),
           ] + common_list, **common_dict)]))
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runUnitTest', [dict(
+        __name__ + '.test.runTestSuite', [dict(
         call_list=[self.options['run-test-suite-binary'],
           '--db_list', ','.join(mysql_connection_string_list),
           ] + common_list, **common_dict)]))
