@@ -1,7 +1,23 @@
-diff --git ocrolib/__init__.py ocrolib/__init__.py
+From 80b496756881fe435ec55155037bef45d66089d0 Mon Sep 17 00:00:00 2001
+From: Francois Le Corre <francois.lecorre@nexedi.com>
+Date: Thu, 6 Apr 2017 11:32:27 +0200
+Subject: [PATCH] WIP
+
+- New OCROPY_MODEL_PATH environment variable to specify the position of models
+- Import for the first time a module that compiles C code from python,
+  allowing us to have the static library built before runtime and
+  preventing us from using gcc through zope.
+---
+ ocrolib/__init__.py |  3 ++-
+ ocrolib/common.py   |  7 ++++---
+ ocrolib/native.py   |  1 +
+ setup.py            | 15 ++++++++++++---
+ 4 files changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/ocrolib/__init__.py b/ocrolib/__init__.py
 index 1e0d627..81e85fb 100644
---- ocrolib/__init__.py
-+++ ocrolib/__init__.py
+--- a/ocrolib/__init__.py
++++ b/ocrolib/__init__.py
 @@ -1,7 +1,7 @@
  __all__ = [
      "binnednn","cairoextras","common","components","dbtables",
@@ -11,18 +27,18 @@ index 1e0d627..81e85fb 100644
  ]
  
  ################################################################
-@@ -9,5 +9,6 @@ __all__ = [
+@@ -9,5 +9,6 @@
  ################################################################
  
  import default
 +from psegutils import *
  from common import *
  from default import traceback as trace
-diff --git ocrolib/common.py ocrolib/common.py
+diff --git a/ocrolib/common.py b/ocrolib/common.py
 index 27c0f26..14f088f 100644
---- ocrolib/common.py
-+++ ocrolib/common.py
-@@ -14,6 +14,7 @@ import unicodedata
+--- a/ocrolib/common.py
++++ b/ocrolib/common.py
+@@ -14,6 +14,7 @@
  import inspect
  import glob
  import cPickle
@@ -38,7 +54,7 @@ index 27c0f26..14f088f 100644
  def load_object(fname,zip=0,nofind=0,verbose=0):
      """Loads an object from disk. By default, this handles zipped files
      and searches in the usual places for OCRopus. It also handles some
-@@ -439,8 +441,7 @@ def load_object(fname,zip=0,nofind=0,verbose=0):
+@@ -439,8 +441,7 @@ class names that have changed."""
      if zip==0 and fname.endswith(".gz"):
          zip = 1
      if zip>0:
@@ -57,10 +73,10 @@ index 27c0f26..14f088f 100644
  
      possible_prefixes.append("/usr/local/share/ocropus")
  
-diff --git ocrolib/native.py ocrolib/native.py
+diff --git a/ocrolib/native.py b/ocrolib/native.py
 index b7a207f..240450b 100644
---- ocrolib/native.py
-+++ ocrolib/native.py
+--- a/ocrolib/native.py
++++ b/ocrolib/native.py
 @@ -44,6 +44,7 @@ class CompileError(Exception):
  
  def compile_and_find(c_string,prefix=".pynative",opt="-g -O4",libs="-lm",
@@ -69,11 +85,11 @@ index b7a207f..240450b 100644
      if not os.path.exists(prefix):
          os.mkdir(prefix)
      m = hashlib.md5()
-diff --git setup.py setup.py
+diff --git a/setup.py b/setup.py
 index 2ec5832..6697b12 100644
---- setup.py
-+++ setup.py
-@@ -10,7 +10,9 @@ assert sys.version_info[0]==2 and sys.version_info[1]>=7,\
+--- a/setup.py
++++ b/setup.py
+@@ -10,7 +10,9 @@
  from distutils.core import setup #, Extension, Command
  #from distutils.command.install_data import install_data
  
@@ -84,7 +100,7 @@ index 2ec5832..6697b12 100644
      print()
      print("You should download the default model 'en-default.pyrnn.gz'")
      print("and put it into ./models.")
-@@ -18,16 +20,23 @@ if not os.path.exists("models/en-default.pyrnn.gz"):
+@@ -18,16 +20,23 @@
      print("Check https://github.com/tmbdev/ocropy for the location")
      print("of model files.")
      print()
@@ -110,3 +126,6 @@ index 2ec5832..6697b12 100644
 +    data_files= [('share/ocropus', models), ("", ["LICENSE"])],
      scripts = scripts,
      )
+-- 
+2.14.1
+
