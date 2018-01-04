@@ -34,7 +34,10 @@ def runTestSuite(args):
   if 'test_ca_path' in d:
     env['TEST_CA_PATH'] = d['test_ca_path']
   if 'prepend_path' in d:
-    env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
+    try:
+      env['PATH'] = d['prepend_path'] + ':' + env['PATH']
+    except KeyError:
+      env['PATH'] = d['prepend_path']
   if 'instance_home' in d:
     env['INSTANCE_HOME'] = d['instance_home']
     env['REAL_INSTANCE_HOME'] = d['instance_home']

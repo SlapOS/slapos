@@ -1,4 +1,4 @@
-From 80b496756881fe435ec55155037bef45d66089d0 Mon Sep 17 00:00:00 2001
+From 1bb1546b12b0c08b1b32b293207de2d58d43ff1c Mon Sep 17 00:00:00 2001
 From: Francois Le Corre <francois.lecorre@nexedi.com>
 Date: Thu, 6 Apr 2017 11:32:27 +0200
 Subject: [PATCH] WIP
@@ -86,7 +86,7 @@ index b7a207f..240450b 100644
          os.mkdir(prefix)
      m = hashlib.md5()
 diff --git a/setup.py b/setup.py
-index 2ec5832..6697b12 100644
+index 2ec5832..0ad4d85 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -10,7 +10,9 @@
@@ -94,8 +94,8 @@ index 2ec5832..6697b12 100644
  #from distutils.command.install_data import install_data
  
 -if not os.path.exists("models/en-default.pyrnn.gz"):
-+models = os.environ.get('OCROPY_MODEL_PATH', '').split(':') or \
-+    [c for c in glob.glob("models/*pyrnn.gz")]
++models = os.environ.get('OCROPY_MODEL_PATH')
++models = models.split(':') if models else glob.glob("models/*pyrnn.gz")
 +if not models:
      print()
      print("You should download the default model 'en-default.pyrnn.gz'")
