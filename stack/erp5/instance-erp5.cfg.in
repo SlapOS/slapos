@@ -8,6 +8,7 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+{% set jupyter_hateoas_url = jupyter_dict.get('erp5-hateoas-url', '') -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -216,7 +217,8 @@ config-url = ${request-balancer:connection-{{ family_name }}-v6}
 
 {% if has_jupyter -%}
 {# request jupyter connected to balancer of proper zope family -#}
-{{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family}) }}
+{{   request('jupyter', 'jupyter', 'jupyter', { 'erp5-hateoas-url': jupyter_hateoas_url }, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family }) }}
+#{{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family }) }}
 
 {%   if has_frontend -%}
 [frontend-jupyter]
