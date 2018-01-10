@@ -1,0 +1,63 @@
+commit 8449f750e62cd229026e9df3bd023ec7e073a7d4
+Author: Maxim Dounin <mdounin@mdounin.ru>
+Date:   Thu Apr 27 16:57:18 2017 +0300
+
+    Added missing "fall through" comments (ticket #1259).
+    
+    Found by gcc7 (-Wimplicit-fallthrough).
+
+diff --git src/core/ngx_murmurhash.c src/core/ngx_murmurhash.c
+index c31e0e03..5ade658d 100644
+--- src/core/ngx_murmurhash.c
++++ src/core/ngx_murmurhash.c
+@@ -35,8 +35,10 @@ ngx_murmur_hash2(u_char *data, size_t len)
+     switch (len) {
+     case 3:
+         h ^= data[2] << 16;
++        /* fall through */
+     case 2:
+         h ^= data[1] << 8;
++        /* fall through */
+     case 1:
+         h ^= data[0];
+         h *= 0x5bd1e995;
+diff --git src/http/ngx_http_parse.c src/http/ngx_http_parse.c
+index 36220fdc..e8e51563 100644
+--- src/http/ngx_http_parse.c
++++ src/http/ngx_http_parse.c
+@@ -1396,6 +1396,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
+                 goto done;
+             case '+':
+                 r->plus_in_uri = 1;
++                /* fall through */
+             default:
+                 state = sw_usual;
+                 *u++ = ch;
+@@ -1437,6 +1438,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
+                 goto done;
+             case '+':
+                 r->plus_in_uri = 1;
++                /* fall through */
+             default:
+                 state = sw_usual;
+                 *u++ = ch;
+@@ -1484,6 +1486,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
+                 goto done;
+             case '+':
+                 r->plus_in_uri = 1;
++                /* fall through */
+             default:
+                 state = sw_usual;
+                 *u++ = ch;
+diff --git src/os/unix/ngx_process.c src/os/unix/ngx_process.c
+index dd50b5ca..993c032a 100644
+--- src/os/unix/ngx_process.c
++++ src/os/unix/ngx_process.c
+@@ -413,6 +413,7 @@ ngx_signal_handler(int signo, siginfo_t *siginfo, void *ucontext)
+                 break;
+             }
+             ngx_debug_quit = 1;
++            /* fall through */
+         case ngx_signal_value(NGX_SHUTDOWN_SIGNAL):
+             ngx_quit = 1;
+             action = ", shutting down";

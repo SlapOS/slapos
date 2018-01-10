@@ -77,7 +77,7 @@ def main():
 
   test_title = args.test_suite_title or args.test_suite
   if args.master_url:
-    tool = taskdistribution.TaskDistributionTool(args.master_url)
+    tool = taskdistribution.TaskDistributor(args.master_url)
     test_result = tool.createTestResult(args.revision,
                                         list(test_dict),
                                         args.test_node_title,

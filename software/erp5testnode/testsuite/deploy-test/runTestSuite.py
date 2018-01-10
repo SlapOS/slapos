@@ -158,10 +158,10 @@ def main():
     access_url_https = 'https://%s:10443' % (args.partition_ipv4,)
     os.environ['TEST_ACCESS_URL_HTTP'] = access_url_http
     os.environ['TEST_ACCESS_URL_HTTPS'] = access_url_https
-  tool = taskdistribution.TaskDistributionTool(
+  distributor = taskdistribution.TaskDistributor(
       args.master_url,
       logger=logger)
-  test_result = tool.createTestResult(
+  test_result = distributor.createTestResult(
       revision, suite.getTestList(), args.test_node_title,
       suite.allow_restart, test_suite_title, args.project_title)
   if test_result is None:

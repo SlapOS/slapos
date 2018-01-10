@@ -3,12 +3,8 @@ Available ``software-type`` values
 
 - ``default``
 
-  Recommended for production use.
-
-- ``create-erp5-site``
-
-  Automated creation of ERP5Site instance, for easy deployment.
-  Usage in production discouraged due to the increased risk of data loss.
+  Recommended for developemnt and production use. Automatic creation of
+  erp5-site.
 
 Notes
 =====

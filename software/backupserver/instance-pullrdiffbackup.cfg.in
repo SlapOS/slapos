@@ -27,6 +27,7 @@ statistic = $${:srv}/statistic
 backupscript = $${:etc}/backup
 www = $${:srv}/www
 home = $${:etc}/home
+promises = $${:etc}/promise
 ssl = $${:etc}/ssl
 ssh = $${:home}/.ssh
 
@@ -49,12 +50,13 @@ logfile = $${directory:log}/crond.log
 {%   set frequency = slave_instance.get('frequency', '') -%}
 {%   set hostname = slave_instance.get('hostname', '') -%}
 {%   set connection = slave_instance.get('connection', '') -%}
+{%   set connection_port = slave_instance.get('connection_port', '22') -%}
 {%   set include = slave_instance.get('include', '') -%}
 {%   set include_string = "' --include='".join(include.split(' ')) -%}
 {%   set exclude = slave_instance.get('exclude', '') -%}
 {%   set exclude_string = '' -%}
 {%   set sudo = slave_instance.get('sudo', 'False') -%}
-{%   set remote_schema = 'rdiff-backup --server --restrict-read-only / -- "$@"' -%}
+{%   set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' --server --restrict-read-only / -- "$@"' -%}
 
 {%   if (exclude != '') -%}
 {%     set exclude_string = "' --exclude='".join(exclude.split(' ')) -%}
@@ -73,23 +75,19 @@ directory = $${directory:backup}/$${:_buildout_section_name_}
 
 [{{ slave_reference }}-backup-private_key]
 recipe = plone.recipe.command
-stop-on-error = false
-command = ${dropbear-output:keygen} -t $${:type} -s 2048 -f $${:key} 
+stop-on-error = true
+command = ${coreutils-output:rm} -f $${:key} $${:public_key} && ${openssh-output:keygen} -t $${:type} -b 2048 -f $${:key} -q -N ""
 key = $${directory:ssh}/$${:_buildout_section_name_}
+public_key = $${:key}.pub
+location = $${:public_key}
 type = rsa
 
-[{{ slave_reference }}-backup-public_key]
-recipe = plone.recipe.command
-stop-on-error = true
-command = ${coreutils-output:rm} -f $${:key} && ${dropbear-output:keygen} -y -f {{ '$${' ~ slave_reference }}-backup-private_key:key} | ${grep-output:grep} {{ '$${' ~ slave_reference }}-backup-private_key:type} > $${:key}
-key = {{ '$${' ~ slave_reference }}-backup-private_key:key}.pub
-location = $${:key}
 # Insert as a beginning part, to ensure that all public keys are generated before trying to publish. This will reduce the number of slapgrid-cp run.
-{%   do part_list.insert(0, "%s-backup-public_key" % slave_reference) -%}
+{%   do part_list.insert(0, "%s-backup-private_key" % slave_reference) -%}
 
 [{{ slave_reference }}-backup-read-public_key]
 recipe = slapos.cookbook:readline
-storage-path = {{ '$${' ~ slave_reference }}-backup-public_key:key}
+storage-path = {{ '$${' ~ slave_reference }}-backup-private_key:public_key}
 
 # Publish slave {{ slave_reference }} information
 [{{ slave_reference }}-backup-publish]
@@ -107,6 +105,7 @@ mode = 0700
 datadirectory = {{ '$${' ~ slave_reference }}-backup-directory:directory}
 sshkey = {{ '$${' ~ slave_reference }}-backup-private_key:key}
 connection = {{ connection }}
+connection_port = {{ connection_port }}
 hostname = {{ hostname }}
 include = {{ include_string }}
 exclude_string = {{ exclude_string }}
@@ -169,6 +168,12 @@ mode = 0700
 virtual-depends = 
   $${nginx-configuration:ip}
 
+[nginx-listen-promise]
+recipe = slapos.cookbook:check_port_listening
+hostname = $${nginx-configuration:ip}
+port = $${nginx-configuration:port}
+path = $${directory:promises}/nginx_listen
+
 [nginx-configuration]
 recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
@@ -187,6 +192,7 @@ ssl_crt = $${directory:ssl}/nginx.crt
 parts =
   dcron-service
   nginx-service
+  nginx-listen-promise
   activate-crontab-file
   publish-global-rss
 {% for part in part_list -%}

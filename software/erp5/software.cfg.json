@@ -9,13 +9,6 @@
       "request": "instance-erp5-input-schema.json",
       "response": "instance-erp5-output-schema.json",
       "index": 0
-    },
-    "create-erp5-site": {
-      "title": "Create ERP5 Site", 
-      "description": "Automated ERP5Site creation on instanciation when ZODB is found empty.",
-      "request": "instance-erp5-input-schema.json",
-      "response": "instance-erp5-output-schema.json",
-      "index": 1
     }
   }
 }

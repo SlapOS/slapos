@@ -55,11 +55,12 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+        'enum34',  # for inotify-simple
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
-        'inotifyx', # XXX use pyinotify instead
+        'inotify_simple',
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
         'zc.buildout', # plays with buildout

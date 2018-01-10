@@ -70,6 +70,11 @@
             "default": 1,
             "type": "integer"
           },
+          "data-deduplication": {
+              "description": "Set the --dedup option for storage nodes.",
+              "default": false,
+              "type": "boolean"
+          },
           "disable-drop-partitions": {
               "description": "Set the --disable-drop-partitions option for storage nodes.",
               "default": false,
