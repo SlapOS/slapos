@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+#
+# Paste content of function-common
+# https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/roles/install-script/files/function-common
+#
+${function_common_content}
+
+${base_setup_content}
+
+${slapos_install_content}
+
+clear
+
+# Force run upgrade
+echo 0 > /opt/upgrader/last-upgrade
+echo 0 > /opt/upgrader/current-upgrade-signature
+rm -rf /opt/upgrader/playbook-tmp
+rm -rf /opt/upgrader/playbook
+
+echo "Starting Ansible playbook:"
+ansible-playbook upgrader-run.yml --extra-vars "upgrader_playbook=vifib-kernel-upgrade.yml" -i hosts --connection=local
