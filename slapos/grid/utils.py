@@ -38,6 +38,7 @@ import subprocess
 import sys
 import logging
 import time
+import psutil
 from datetime import datetime
 
 from slapos.grid.exception import BuildoutFailedError, WrongPermissionError
@@ -370,7 +371,7 @@ def checkPromiseList(promise_dir, promise_timeout, uid=None, gid=None, cwd=None,
   """
     Check a promise list and return the result or raise in case of failure
     if `raise_on_failure` is set to True
-    When `profile` is set to True, log each promise execution duration.
+    When `profile` is set to True, log each promise resource usage.
   """
   if logger is None:
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
@@ -415,9 +416,28 @@ def checkPromiseList(promise_dir, promise_timeout, uid=None, gid=None, cwd=None,
       # Check if the promise finished every tenth of second,
       # but timeout after promise_timeout.
       sleep_time = 0.1
+      check_profile = False
+      if profile:
+        try:
+          psutil_process = psutil.Process(process_handler.pid)
+          check_profile = True
+        except psutil.NoSuchProcess:
+          # process is gone
+          pass
       increment_limit = int(promise_timeout / sleep_time)
       for current_increment in range(0, increment_limit):
         if process_handler.poll() is None:
+          if check_profile:
+            logger.debug(
+              "[t=%ss] CPU: %s%%, MEM: %s MB (%s%%), DISK: %s Read - %s Write" % (
+                current_increment * sleep_time,
+                psutil_process.cpu_percent(),
+                psutil_process.memory_info().rss / float(2 ** 20),
+                round(psutil_process.memory_percent(), 4),
+                psutil_process.io_counters().read_count,
+                psutil_process.io_counters().write_count
+              )
+            )
           time.sleep(sleep_time)
           continue
         result_dict["execution-time"] = current_increment * sleep_time
@@ -450,9 +470,7 @@ def checkPromiseList(promise_dir, promise_timeout, uid=None, gid=None, cwd=None,
         result_dict["execution-time"] = current_increment * sleep_time
 
       promise_result_list.append(result_dict)
-
-      if profile:
-        logger.info("Finished promise %r in %s second(s)." % (
-                    promise, result_dict["execution-time"]))
+      logger.info("Finished promise %r in %s second(s)." % (
+                  promise, result_dict["execution-time"]))
 
   return promise_result_list

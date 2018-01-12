@@ -630,7 +630,7 @@ stderr_logfile_backups=1
     promise_dir = os.path.join(instance_path, 'etc', 'promise')
 
     if not checkPromiseList(promise_dir, self.promise_timeout, uid=uid, gid=gid,
-                            cwd=instance_path, logger=self.logger, profile=True,
+                            cwd=instance_path, logger=self.logger, profile=False,
                             raise_on_failure=True):
       self.logger.info("No promise.")
 
