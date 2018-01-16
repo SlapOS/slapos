@@ -66,5 +66,5 @@ while read pkg url rev; do
     echo "<= go-git-package"
     echo "go.importpath = $pkg"
     echo "repository    = $url"
-    echo "revision  = $rev"
+    echo "revision      = $rev"
 done
