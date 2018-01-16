@@ -25,8 +25,8 @@ gogit_list() {
 # git_upstream_url <repo>   - show current branch upstream URL
 git_upstream_url() {
     repo=$1
-    head="`git -C $repo symbolic-ref --short HEAD`"             # current branch - e.g. "t"
-    remote="`git -C $repo config --get branch.$head.remote`"    # upstream name, e.g. "kirr"
+    head="`git -C $repo symbolic-ref --short HEAD`"             # current branch - e.g. "master"
+    remote="`git -C $repo config --get branch.$head.remote`"    # upstream name, e.g. "origin"
     url="`git -C $repo config --get remote.$remote.url`"        # upstream URL
     echo "$url"
 }
