@@ -39,6 +39,7 @@ extensions = jinja2.ext.do
 extra-context =
     section parameter_dict cloudooo-dynamic-template-parameter-dict
     key ipv4_set slap-parameters:ipv4
+    import itertools itertools
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype

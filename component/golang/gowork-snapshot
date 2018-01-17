@@ -25,9 +25,16 @@ gogit_list() {
 # git_upstream_url <repo>   - show current branch upstream URL
 git_upstream_url() {
     repo=$1
-    head="`git -C $repo symbolic-ref --short HEAD`"             # current branch - e.g. "t"
-    remote="`git -C $repo config --get branch.$head.remote`"    # upstream name, e.g. "kirr"
-    url="`git -C $repo config --get remote.$remote.url`"        # upstream URL
+    head="`git -C $repo symbolic-ref -q --short HEAD`"            # current branch - e.g. "master"
+    if [ -z $head ] ; then
+        remote="origin" # If we are in detached HEAD, assume the upstream name is origin
+    else
+        remote="`git -C $repo config --get branch.$head.remote`"  # upstream name, e.g. "origin"
+    fi
+    url="`git -C $repo config --get remote.$remote.url`"          # upstream URL
+    if [ -z $url ] ; then
+        echo "ERROR: Failed to guess upstream url from $repo" 1>&2
+    fi
     echo "$url"
 }
 
@@ -59,5 +66,5 @@ while read pkg url rev; do
     echo "<= go-git-package"
     echo "go.importpath = $pkg"
     echo "repository    = $url"
-    echo "revision  = $rev"
+    echo "revision      = $rev"
 done

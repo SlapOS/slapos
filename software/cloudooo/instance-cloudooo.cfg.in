@@ -10,6 +10,7 @@
 {%   set next_port = slapparameter_dict.get(instance_parameter_dict['port-parameter-name'], next_port) | int -%}
 {% endif -%}
 {% do assert(next_port > 0) -%}
+{% set next_port = itertools.count(next_port).next -%}
 
 {% set backend_count = instance_parameter_dict['backend-count'] | int -%}
 {% if instance_parameter_dict.get('backend-count-parameter-name') -%}
@@ -33,9 +34,8 @@
 {%   set mimetype_entry_addition = mimetype_entry_addition ~ "\n" ~ slapparameter_dict.get(instance_parameter_dict['mimetype-entry-addition-parameter-name'], '') -%}
 {% endif -%}
 
-{% set apache_port = next_port -%}
-{% set haproxy_port = next_port + 1 -%}
-{% set next_port = next_port + 2 -%}
+{% set apache_port = next_port() -%}
+{% set haproxy_port = next_port() -%}
 
 {% set apache_ip_list = [ipv4] -%}
 {% if ipv6_set -%}
@@ -184,13 +184,12 @@ ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 {%   set name = 'cloudooo-' ~ index -%}
 [{{ cloudooo(name) }}]
 < = cloudooo-base
-port = {{ next_port }}
-openoffice-port = {{ next_port + 1 }}
+port = {{ next_port() }}
+openoffice-port = {{ next_port() }}
 configuration-file = ${directory:etc}/{{ name }}.cfg
 data-directory = ${directory:srv}/{{ name }}
 wrapper = ${directory:services}/{{ name }}
 
-{%   set next_port = next_port + 2 -%}
 {% endfor -%}
 
 [haproxy]
