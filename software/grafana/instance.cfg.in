@@ -154,8 +154,9 @@ port = ${grafana:port}
 [telegraf]
 recipe = slapos.cookbook:wrapper
 extra-config-dir = ${directory:telegraf-extra-config-dir}
+# telegraf needs influxdb to be already listening before starting
 command-line =
-   nice -19 chrt --idle 0 ionice -c3 {{ telegraf_bin }} --config ${telegraf-config-file:rendered} --config-directory ${:extra-config-dir}
+   bash -c '${influxdb-listen-promise:path} && nice -19 chrt --idle 0 ionice -c3 {{ telegraf_bin }} --config ${telegraf-config-file:rendered} --config-directory ${:extra-config-dir}'
 wrapper-path = ${directory:service}/telegraf
 
 [telegraf-config-file]
