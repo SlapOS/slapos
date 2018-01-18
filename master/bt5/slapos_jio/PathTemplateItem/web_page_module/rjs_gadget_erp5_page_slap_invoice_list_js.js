@@ -36,6 +36,19 @@
                 title: "Status Date",
                 type: "DateTimeField"
               };
+            }
+            if (1 || (result.data.rows[i].hasOwnProperty("id"))) {
+              value = result.data.rows[i].id;
+              result.data.rows[i].value.download = {
+                css_class: "",
+                description: "Download Invoice",
+                hidden: 0,
+                "default": {jio_key: value},
+                key: "download",
+                url: "gadget_slapos_invoice_printout.html",
+                title: "Download",
+                type: "GadgetField"
+              };
               result.data.rows[i].value["listbox_uid:list"] = {
                 key: "listbox_uid:list",
                 value: 2713
@@ -73,7 +86,7 @@
             ['title', 'Title'],
             ['start_date', 'Date'],
             ['total_price', 'Price'],
-            ['translated_simulation_state_title', 'State'],
+            ['translated_simulation_state_title', 'Payment'],
             ['download', 'Download']
           ];
           return form_list.render({
