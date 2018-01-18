@@ -65,9 +65,9 @@ class GenericBaseRecipe(object):
   def _ws(self):
     # getWorkingSet() is slow and it is not always needed.
     # So _ws should be a lazy attribute.
-    if getattr(self, '__ws', None) is None:
-      self.__ws = self.getWorkingSet()
-    return self.__ws
+    if getattr(self, '_ws_internal', None) is None:
+      self._ws_internal = self.getWorkingSet()
+    return self._ws_internal
 
   def update(self):
     """By default update method does the same thing than install"""
