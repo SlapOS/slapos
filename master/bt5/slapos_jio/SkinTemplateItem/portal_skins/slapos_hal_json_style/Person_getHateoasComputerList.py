@@ -1,5 +1,4 @@
 from zExceptions import Unauthorized
-from AccessControl import getSecurityManager
 if REQUEST is None:
   raise Unauthorized
 
@@ -36,7 +35,7 @@ for sql_obj in context.getPortalObject().portal_catalog(
   obj = sql_obj.getObject()
   result_dict['_links']['content'].append({
     'href': '%s/ERP5Document_getHateoas' % obj.absolute_url(),
-    'title': obj.getTitle(),
+    'title': sql_obj.title,
   })
 
 response.setHeader('Content-Type', mime_type)
