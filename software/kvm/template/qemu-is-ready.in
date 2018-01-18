@@ -1,7 +1,16 @@
 #!{{ dash }}
 
-if [ -f "{{ qemu_ready_path }}" ]; then
-  echo "VM correctly started."
+FILE="{{ qemu_ready_path }}"
+# don't start checks too fast
+sleep 2
+if [ -f "$FILE" ]; then
+  if [ "$(cat $FILE)" = "" ]; then
+    echo "VM correctly started."
+  else
+    >&2 echo "Qemu Controller failed"
+    >&2 cat $FILE
+    exit 1
+  fi
 else
   log_file="{{ qemu_service_log_file }}"
   >&2 echo "Qemu process is not correctly started."

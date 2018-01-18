@@ -6,40 +6,47 @@
 import socket
 import time
 import os
+from slapos.qemuqmpclient import QemuQMPWrapper
 
 # XXX: to be factored with slapos.toolbox qemu qmp wrapper.
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
 status_path = '{{ parameter_dict.get("kvm-status-path") }}'
+cpu_hotplug_amount = {{ parameter_dict.get("cpu-hotplug-amount", 0) }}
+cpu_model = '{{ parameter_dict.get("cpu-model", '') }}'
+max_ram_hotplug_size = {{ parameter_dict.get("max-ram-hotplug-size", 0) }}
+ram_hotplug_amount = {{ parameter_dict.get("hotplugged-slot-amount", 0) }}
+slot_hotplug_size = {{ parameter_dict.get("hotplug-slot-size", 512) }}
 
-if os.path.exists(status_path):
-  os.unlink(status_path)
+def update():
+  if os.path.exists(status_path):
+    os.unlink(status_path)
 
-# Connect to KVM qmp socket
-so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-connected = False
-while not connected:
+  qemu_wrapper = QemuQMPWrapper(socket_path)
   try:
-    so.connect(socket_path)
-  except socket.error:
-    time.sleep(1)
-  else:
-    connected = True
-data = so.recv(1024)
+    qemu_wrapper.setVNCPassword(vnc_password)
+    cpu_option_dict = {
+      'device': 'cpu',
+      'amount': cpu_hotplug_amount
+    }
+    if cpu_model:
+      cpu_option_dict['model'] = cpu_model
+    qemu_wrapper.updateDevice(cpu_option_dict)
+    if max_ram_hotplug_size > 0:
+      qemu_wrapper.updateDevice({
+        'device': 'memory',
+        'mem': ram_hotplug_amount * slot_hotplug_size,
+        'slot': slot_hotplug_size,
+        'nslot': max_ram_hotplug_size / slot_hotplug_size
+      })
+  except ValueError, e:
+    with open(status_path, 'w') as status_file:
+      status_file.write(str(e))
+    raise
 
-# Enable qmp
-so.send('{ "execute": "qmp_capabilities" }')
-data = so.recv(1024)
+  with open(status_path, 'w') as status_file:
+    status_file.write("")
 
-# Set VNC password
-so.send('{ "execute": "change", ' \
-        '"arguments": { "device": "vnc", "target": "password", ' \
-        '               "arg": "' + vnc_password + '" } }')
-data = so.recv(1024)
-
-# Finish
-so.close()
-
-with open(status_path, 'w') as status_file:
-  status_file.write("OK")
+if __name__ == "__main__":
+  update()

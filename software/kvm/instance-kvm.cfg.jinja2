@@ -62,10 +62,14 @@ storage-path = ${directory:srv}/passwd
 bytes = 8
 
 [kvm-controller-parameter-dict]
-python-path = {{ python_executable }}
+python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
 socket-path = ${directory:var}/qmp_socket
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
+cpu-hotplug-amount = ${slap-parameter:cpu-hotplug-amount}
+hotplugged-slot-amount = ${slap-parameter:hotplugged-slot-amount}
+hotplug-slot-size = ${slap-parameter:hotplug-slot-size}
+max-ram-hotplug-size = ${slap-parameter:max-ram-hotplug-size}
 
 [kvm-parameter-dict]
 python-path = {{ python_executable }}
@@ -91,9 +95,10 @@ pid-file-path = ${directory:run}/pid_file
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
 smp-count = ${slap-parameter:cpu-count}
-smp-options = ${slap-parameter:cpu-options}
+max-smp-hotplug-count = ${slap-parameter:max-cpu-hotplug-count}
 ram-size = ${slap-parameter:ram-size}
-numa = ${slap-parameter:numa}
+max-ram-hotplug-size = ${slap-parameter:max-ram-hotplug-size}
+hotplug-slot-size = ${slap-parameter:hotplug-slot-size}
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
 
@@ -143,7 +148,7 @@ disk-cache = ${slap-parameter:disk-cache}
 disk-aio = ${slap-parameter:disk-aio}
 auto-ballooning = ${slap-parameter:auto-ballooning}
 machine-options = ${slap-parameter:machine-options}
-cpu-options = ${slap-parameter:cpu-model}
+cpu-hotplug-slot-size = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
@@ -551,14 +556,15 @@ nbd2-port = 1024
 nbd2-host =
 
 ram-size = 1024
+hotplug-slot-size = 512
+max-ram-hotplug-size = 0
+hotplugged-slot-amount = 0
 disk-size = 10
 disk-type = virtio
 
 cpu-count = 1
-# cpu-option is a string: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]
-cpu-options = 
-# list of numa options separate by space: node,nodeid=1,cpus=9-15 node,nodeid=2,cpus=1,3,7
-numa = 
+max-cpu-hotplug-count = 1
+cpu-hotplug-amount = 0
 disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
