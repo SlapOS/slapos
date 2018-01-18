@@ -7,14 +7,13 @@
 
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
-import transaction
 
 class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
-  def sumReceivable(self, transaction):
+  def sumReceivable(self, payment_transaction):
     quantity = .0
     default_source_uid = self.portal.restrictedTraverse(
         'account_module/receivable').getUid()
-    for line in transaction.searchFolder(
+    for line in payment_transaction.searchFolder(
         portal_type=self.portal.getPortalAccountingMovementTypeList(),
         default_source_uid=default_source_uid):
       quantity += line.getQuantity()
@@ -141,7 +140,7 @@ class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
     invoice.stop()
     self.tic()
     payment_list = self.fullBuild(uid=invoice.getUid())
-    transaction.commit()
+    self.commit()
     # the payment transaction is immediately indexed
     self.assertEqual(1, len(payment_list))
 

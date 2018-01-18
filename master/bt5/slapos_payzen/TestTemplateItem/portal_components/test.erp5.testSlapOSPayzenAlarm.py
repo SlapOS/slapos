@@ -1,16 +1,12 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-from unittest import skip
-import json
 from DateTime import DateTime
 
 class TestSlapOSPayzenUpdateConfirmedPayment(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def _simulatePaymentTransaction_startPayzenPayment(self):
     script_name = 'PaymentTransaction_startPayzenPayment'
@@ -22,13 +18,13 @@ class TestSlapOSPayzenUpdateConfirmedPayment(testSlapOSMixin):
                         '# Script body\n'
 """portal_workflow = context.portal_workflow
 portal_workflow.doActionFor(context, action='edit_action', comment='Visited by PaymentTransaction_startPayzenPayment') """ )
-    transaction.commit()
+    self.commit()
 
   def _dropPaymentTransaction_startPayzenPayment(self):
     script_name = 'PaymentTransaction_startPayzenPayment'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
+    self.commit()
 
   def test_alarm_confirmed_draft_payzen(self):
     new_id = self.generateNewId()
@@ -126,7 +122,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
                         '*args, **kwargs',
                         '# Script body\n'
 """return 1""")
-    transaction.commit()
+    self.commit()
 
   def _simulatePaymentTransaction_getZeroTotalPayablePrice(self):
     script_name = 'PaymentTransaction_getTotalPayablePrice'
@@ -137,13 +133,13 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
                         '*args, **kwargs',
                         '# Script body\n'
 """return 0""")
-    transaction.commit()
+    self.commit()
 
   def _dropPaymentTransaction_getTotalPayablePrice(self):
     script_name = 'PaymentTransaction_getTotalPayablePrice'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
+    self.commit()
 
   def test_not_confirmed_payment(self):
     new_id = self.generateNewId()
@@ -222,7 +218,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
 class TestSlapOSPayzenUpdateStartedPayment(testSlapOSMixin):
 
   def beforeTearDown(self):
-    transaction.abort()
+    self.abort()
 
   def test_not_started_payment(self):
     new_id = self.generateNewId()
@@ -281,7 +277,7 @@ class Foo:
     context.stop()
 return Foo()
 """ )
-    transaction.commit()
+    self.commit()
 
   def _simulatePaymentTransaction_createNotPaidPayzenEvent(self):
     script_name = 'PaymentTransaction_createPayzenEvent'
@@ -299,13 +295,13 @@ class Foo:
     pass
 return Foo()
 """ )
-    transaction.commit()
+    self.commit()
 
   def _dropPaymentTransaction_createPayzenEvent(self):
     script_name = 'PaymentTransaction_createPayzenEvent'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
+    self.commit()
 
   def test_paid_payment(self):
     new_id = self.generateNewId()
@@ -368,13 +364,13 @@ return Foo()
                         '# Script body\n'
 """portal_workflow = context.portal_workflow
 portal_workflow.doActionFor(context, action='edit_action', comment='Visited by PaymentTransaction_updateStatus') """ )
-    transaction.commit()
+    self.commit()
 
   def _dropPaymentTransaction_updateStatus(self):
     script_name = 'PaymentTransaction_updateStatus'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
+    self.commit()
 
   def test_alarm_started_draft_payzen(self):
     new_id = self.generateNewId()

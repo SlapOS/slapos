@@ -1,15 +1,10 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
-import transaction
-from unittest import expectedFailure
-from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
-from AccessControl.SecurityManagement import getSecurityManager, \
-             setSecurityManager
+
 from DateTime import DateTime
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 import difflib
-from functools import wraps
 
 HARDCODED_PRICE = 99.6
 
@@ -22,8 +17,7 @@ vads_url_return = 'http://example.org/return'
 
 class TestSlapOSPayzenInterfaceWorkflow(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -118,7 +112,7 @@ class TestSlapOSPayzenInterfaceWorkflow(testSlapOSMixin):
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
-    transaction_date, payzen_id = payment.PaymentTransaction_generatePayzenId()
+    _ , _ = payment.PaymentTransaction_generatePayzenId()
     self.assertRaises(ValueError, event.generateManualPaymentPage,
       vads_url_cancel=vads_url_cancel,
       vads_url_error=vads_url_error,
@@ -275,7 +269,7 @@ class TestSlapOSPayzenInterfaceWorkflow(testSlapOSMixin):
     event.edit(
       destination_value=payment,
     )
-    transaction_date, payzen_id = payment.PaymentTransaction_generatePayzenId()
+    _ , _ = payment.PaymentTransaction_generatePayzenId()
     self.assertRaises(AttributeError, event.updateStatus)
 
   def mockSoapGetInfo(self, method_to_call, expected_args, result_tuple):
@@ -300,13 +294,13 @@ class TestSlapOSPayzenInterfaceWorkflow(testSlapOSMixin):
                         '# Script body\n'
 """portal_workflow = context.portal_workflow
 portal_workflow.doActionFor(context, action='edit_action', comment='Visited by PayzenEvent_processUpdate') """ )
-    transaction.commit()
+    self.commit()
 
   def _dropPayzenEvent_processUpdate(self):
     script_name = 'PayzenEvent_processUpdate'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
+    self.commit()
 
   def test_updateStatus_defaultUseCase(self):
     event = self.createPayzenEvent()
