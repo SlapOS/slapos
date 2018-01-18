@@ -63,4 +63,7 @@ else:
     credential_request.submit("Automatic submit")
     message_str = "Credential Request Created."
 
+if batch_mode:
+  return credential_request
+    
 return context.REQUEST.RESPONSE.redirect(context.absolute_url() + "/login_form?portal_status_message=" + context.Base_translateString(message_str))
