@@ -61,13 +61,7 @@ class GenericBaseRecipe(object):
     self._options(options) # Options Hook
     self.options = options.copy() # Updated options dict
 
-  @property
-  def _ws(self):
-    # getWorkingSet() is slow and it is not always needed.
-    # So _ws should be a lazy attribute.
-    if getattr(self, '__ws', None) is None:
-      self.__ws = self.getWorkingSet()
-    return self.__ws
+    self._ws = self.getWorkingSet()
 
   def update(self):
     """By default update method does the same thing than install"""
