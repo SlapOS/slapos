@@ -1,5 +1,4 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 from DateTime import DateTime
@@ -8,8 +7,7 @@ from Products.ERP5Type.tests.utils import createZODBPythonScript
 
 class TestSlapOSCurrency_getIntegrationMapping(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def test_integratedCurrency(self):
     currency = self.portal.currency_module.EUR
@@ -23,14 +21,13 @@ class TestSlapOSCurrency_getIntegrationMapping(testSlapOSMixin):
       reference="TESTCUR-%s" % new_id,
       )
     self.assertRaises(
-      AssertionError, 
+      AssertionError,
       currency.Currency_getIntegrationMapping)
 
 
 class TestSlapOSAccountingTransaction_updateStartDate(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -42,23 +39,22 @@ class TestSlapOSAccountingTransaction_updateStartDate(testSlapOSMixin):
 
   def test_date_changed(self):
     date = DateTime("2001/01/01")
-    transaction = self.createPaymentTransaction()
-    transaction.AccountingTransaction_updateStartDate(date)
-    self.assertEquals(transaction.getStartDate(), date)
+    payment_transaction = self.createPaymentTransaction()
+    payment_transaction.AccountingTransaction_updateStartDate(date)
+    self.assertEquals(payment_transaction.getStartDate(), date)
 
   def test_REQUEST_disallowed(self):
     date = DateTime()
-    transaction = self.createPaymentTransaction()
+    payment_transaction = self.createPaymentTransaction()
     self.assertRaises(
       Unauthorized,
-      transaction.AccountingTransaction_updateStartDate,
+      payment_transaction.AccountingTransaction_updateStartDate,
       date, REQUEST={})
 
 
 class TestSlapOSPaymentTransaction_getPayzenId(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -69,48 +65,46 @@ class TestSlapOSPaymentTransaction_getPayzenId(testSlapOSMixin):
       )
 
   def test_getPayzenId_newPaymentTransaction(self):
-    transaction = self.createPaymentTransaction()
-    self.assertEquals(transaction.PaymentTransaction_getPayzenId(), (None, None))
+    payment_transaction = self.createPaymentTransaction()
+    self.assertEquals(payment_transaction.PaymentTransaction_getPayzenId(), (None, None))
 
   def test_getPayzenId_mappedPaymentTransaction(self):
-    transaction = self.createPaymentTransaction()
-    transaction_date, payzen_id = transaction.PaymentTransaction_generatePayzenId()
-    transaction_date2, payzen_id2 = transaction.PaymentTransaction_getPayzenId()
+    payment_transaction = self.createPaymentTransaction()
+    transaction_date, payzen_id = payment_transaction.PaymentTransaction_generatePayzenId()
+    transaction_date2, payzen_id2 = payment_transaction.PaymentTransaction_getPayzenId()
     self.assertEquals(payzen_id, payzen_id2)
     self.assertEquals(transaction_date, transaction_date2)
 
   def test_getPayzenId_manualMappedPaymentTransaction(self):
-    transaction = self.createPaymentTransaction()
+    payment_transaction = self.createPaymentTransaction()
     integration_site = self.portal.restrictedTraverse(
       self.portal.portal_preferences.getPreferredPayzenIntegrationSite())
 
     try:
-      mapping = integration_site.getCategoryFromMapping(
-        'Causality/%s' % transaction.getId().replace('-', '_'),
+      integration_site.getCategoryFromMapping(
+        'Causality/%s' % payment_transaction.getId().replace('-', '_'),
       create_mapping_line=True,
       create_mapping=True)
     except ValueError:
       pass
-    integration_site.Causality[transaction.getId().replace('-', '_')].\
+    integration_site.Causality[payment_transaction.getId().replace('-', '_')].\
       setDestinationReference("20010101_123456")
 
-    transaction_date, payzen_id = transaction.PaymentTransaction_getPayzenId()
+    transaction_date, payzen_id = payment_transaction.PaymentTransaction_getPayzenId()
     self.assertEquals(payzen_id, "123456")
     self.assertEquals(transaction_date, DateTime("20010101"))
 
   def test_getPayzenId_REQUEST_disallowed(self):
-    date = DateTime()
-    transaction = self.createPaymentTransaction()
+    payment_transaction = self.createPaymentTransaction()
     self.assertRaises(
       Unauthorized,
-      transaction.PaymentTransaction_getPayzenId,
+      payment_transaction.PaymentTransaction_getPayzenId,
       REQUEST={})
 
 
 class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -121,8 +115,8 @@ class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
       )
 
   def test_generatePayzenId_newPaymentTransaction(self):
-    transaction = self.createPaymentTransaction()
-    transaction_url = transaction.getId().replace('-', '_')
+    payment_transaction = self.createPaymentTransaction()
+    transaction_url = payment_transaction.getId().replace('-', '_')
 
     integration_site = self.portal.restrictedTraverse(
       self.portal.portal_preferences.getPreferredPayzenIntegrationSite())
@@ -134,7 +128,7 @@ class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
     category = integration_site.getMappingFromCategory(mapping)
     self.assertEquals(category, 'Causality/%s' % transaction_url)
 
-    transaction_date, payzen_id = transaction.PaymentTransaction_generatePayzenId()
+    transaction_date, payzen_id = payment_transaction.PaymentTransaction_generatePayzenId()
 
     mapping = integration_site.getCategoryFromMapping(
       'Causality/%s' % transaction_url)
@@ -155,34 +149,32 @@ class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
 
 
   def test_generatePayzenId_mappedPaymentTransaction(self):
-    transaction = self.createPaymentTransaction()
-    transaction.PaymentTransaction_generatePayzenId()
-    payzen_id = transaction.PaymentTransaction_generatePayzenId()
+    payment_transaction = self.createPaymentTransaction()
+    payment_transaction.PaymentTransaction_generatePayzenId()
+    payzen_id = payment_transaction.PaymentTransaction_generatePayzenId()
     self.assertEquals(payzen_id, (None, None))
 
   def test_generatePayzenId_increasePaymentId(self):
-    transaction = self.createPaymentTransaction()
-    transaction2 = self.createPaymentTransaction()
-    date, payzen_id = transaction.PaymentTransaction_generatePayzenId()
-    date2, payzen_id2 = transaction2.PaymentTransaction_generatePayzenId()
+    payment_transaction = self.createPaymentTransaction()
+    payment_transaction2 = self.createPaymentTransaction()
+    date, payzen_id = payment_transaction.PaymentTransaction_generatePayzenId()
+    date2, payzen_id2 = payment_transaction2.PaymentTransaction_generatePayzenId()
     self.assertEquals(date.asdatetime().strftime('%Y%m%d'),
                       date2.asdatetime().strftime('%Y%m%d'))
     self.assertNotEquals(payzen_id, payzen_id2)
     self.assertTrue(int(payzen_id) < int(payzen_id2))
 
   def test_generatePayzenId_REQUEST_disallowed(self):
-    date = DateTime()
-    transaction = self.createPaymentTransaction()
+    payment_transaction = self.createPaymentTransaction()
     self.assertRaises(
       Unauthorized,
-      transaction.PaymentTransaction_generatePayzenId,
+      payment_transaction.PaymentTransaction_generatePayzenId,
       REQUEST={})
 
 
 class TestSlapOSPaymentTransaction_createPayzenEvent(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -193,38 +185,34 @@ class TestSlapOSPaymentTransaction_createPayzenEvent(testSlapOSMixin):
       )
 
   def test_createPayzenEvent_REQUEST_disallowed(self):
-    date = DateTime()
-    transaction = self.createPaymentTransaction()
+    payment_transaction = self.createPaymentTransaction()
     self.assertRaises(
       Unauthorized,
-      transaction.PaymentTransaction_createPayzenEvent,
+      payment_transaction.PaymentTransaction_createPayzenEvent,
       REQUEST={})
 
   def test_createPayzenEvent_newPayment(self):
-    date = DateTime()
-    transaction = self.createPaymentTransaction()
-    payzen_event = transaction.PaymentTransaction_createPayzenEvent()
+    payment_transaction = self.createPaymentTransaction()
+    payzen_event = payment_transaction.PaymentTransaction_createPayzenEvent()
     self.assertEquals(payzen_event.getPortalType(), "Payzen Event")
-    self.assertEquals(payzen_event.getSource(), 
+    self.assertEquals(payzen_event.getSource(),
       "portal_secure_payments/slapos_payzen_test")
-    self.assertEquals(payzen_event.getDestination(), transaction.getRelativeUrl())
+    self.assertEquals(payzen_event.getDestination(), payment_transaction.getRelativeUrl())
 
   def test_createPayzenEvent_kwParameter(self):
-    date = DateTime()
-    transaction = self.createPaymentTransaction()
-    payzen_event = transaction.PaymentTransaction_createPayzenEvent(
+    payment_transaction = self.createPaymentTransaction()
+    payzen_event = payment_transaction.PaymentTransaction_createPayzenEvent(
       title='foo')
     self.assertEquals(payzen_event.getPortalType(), "Payzen Event")
-    self.assertEquals(payzen_event.getSource(), 
+    self.assertEquals(payzen_event.getSource(),
       "portal_secure_payments/slapos_payzen_test")
-    self.assertEquals(payzen_event.getDestination(), transaction.getRelativeUrl())
+    self.assertEquals(payzen_event.getDestination(), payment_transaction.getRelativeUrl())
     self.assertEquals(payzen_event.getTitle(), "foo")
 
 
 class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -240,7 +228,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         reference='PAY-%s' % self.generateNewId())
 
   def test_processUpdate_REQUEST_disallowed(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     self.assertRaises(
       Unauthorized,
@@ -249,7 +236,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       REQUEST={})
 
   def test_processUpdate_noTransaction(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     self.assertRaises(
       AttributeError,
@@ -257,7 +243,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       'a', 'b')
 
   def test_processUpdate_signatureBoolean(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -267,7 +252,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       'a', 'b')
 
   def test_processUpdate_falseSignature(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -279,7 +263,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_wrongDataDictionnary(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -289,7 +272,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       'a', True)
 
   def test_processUpdate_unknownErrorCode(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -305,7 +287,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_unknownTransactionStatus(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -322,7 +303,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_notSupportedTransactionStatus(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     event.edit(destination_value=payment)
@@ -340,7 +320,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_notProcessedTransactionStatus(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(start_date=DateTime())
@@ -368,7 +347,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         payment.workflow_history['accounting_workflow'][-1]['comment'])
 
   def test_processUpdate_notProcessedTransactionStatusConfirmedPayment(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(start_date=DateTime())
@@ -382,7 +360,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.PayzenEvent_processUpdate(data_kw, True)
 
   def test_processUpdate_noAuthAmount(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(start_date=DateTime())
@@ -399,7 +376,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       data_kw, True)
 
   def test_processUpdate_noAuthDevise(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(start_date=DateTime())
@@ -417,7 +393,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       data_kw, True)
 
   def test_processUpdate_differentAmount(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(start_date=DateTime())
@@ -439,7 +414,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_differentDevise(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(
@@ -463,7 +437,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_cancelledTransaction(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(
@@ -488,7 +461,6 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
   def test_processUpdate_defaultUseCase(self):
-    date = DateTime()
     event = self.createPayzenEvent()
     payment = self.createPaymentTransaction()
     payment.edit(
@@ -608,8 +580,7 @@ return addToDate(DateTime(), to_add={'day': -1, 'second': -1}).toZone('UTC'), 'f
 
 class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
 
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def test_getPayzenServiceRelativeUrl_REQUEST_disallowed(self):
     self.assertRaises(
@@ -623,9 +594,7 @@ class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
 
 class TestSlapOSPayzenSaleInvoiceTransaction_createReversalPayzenTransaction(
                                                     testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+  abort_transaction = 1
 
   def createPayzenSaleInvoiceTransaction(self):
     new_title = self.generateNewId()
@@ -777,7 +746,7 @@ class TestSlapOSPayzenSaleInvoiceTransaction_createReversalPayzenTransaction(
     self.assertEqual(invoice[invoice_line_id].getQuantity(),
                      -reversale_invoice[invoice_line_id].getQuantity())
     self.assertEqual(reversale_invoice[invoice_line_id].getQuantity(), 2)
-    
+
     self.assertEqual(invoice[transaction_line_id].getQuantity(),
                      -reversale_invoice[transaction_line_id].getQuantity())
     self.assertEqual(reversale_invoice[transaction_line_id].getQuantity(), 3)
