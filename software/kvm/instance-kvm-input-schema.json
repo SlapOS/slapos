@@ -12,6 +12,29 @@
       "minimum": 128,
       "multipleOf": 128
     },
+    "hotplug-slot-size": {
+      "title": "Size of Hotpluggable RAM slot, in MB",
+      "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
+      "type": "integer",
+      "default": 512,
+      "minimum": 128,
+      "multipleOf": 128
+    },
+    "max-ram-hotplug-size": {
+      "title": "Maximum hotpluggable RAM size, in MB",
+      "description": "Define the maximum size of hotpluggable memory. The size is in MB and should be a multiple of the defined hotpluggable slot size.",
+      "type": "integer",
+      "default": 0,
+      "minimum": 128,
+      "multipleOf": 128
+    },
+    "hotplugged-slot-amount": {
+      "title": "Hotplugged RAM slot amount",
+      "description": "Define the number of Memory slot to hotplug. Ex: if slot-hotplug-size=512 MB, then to hotplug 1G of RAM 2 slots will be used.",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
     "auto-ballooning": {
       "title": "Enable qemu auto ballooning.",
       "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
@@ -54,10 +77,17 @@
       "type": "integer",
       "minimum": 1
     },
-    "cpu-options": {
-      "title": "CPU Additional options: cores, threads, sockets, maxcpus.",
-      "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Set this option if you know what you're doing.",
-      "type": "string"
+    "max-cpu-hotplug-count": {
+      "title": "Maximum hotpluggable CPU amount",
+      "description": "Specifies the maximum number of hotpluggable CPUs.",
+      "type": "integer",
+      "default": 1
+    },
+    "cpu-hotplug-amount": {
+      "title": "CPU hotplug amount",
+      "description": "Specifies the number of CPUs to hotplug",
+      "type": "integer",
+      "default": 0
     },
     "numa": {
       "title": "Simulate a multi node NUMA system.",

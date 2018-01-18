@@ -39,13 +39,15 @@ tap_interface = '{{ parameter_dict.get("tap-interface") }}'
 listen_ip = '{{ parameter_dict.get("ipv4") }}'
 mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
-smp_count = '{{ parameter_dict.get("smp-count") }}'
-smp_options = '{{ parameter_dict.get("smp-options") }}'.strip()
-numa_list = '{{ parameter_dict.get("numa") }}'.split()
-ram_size = '{{ parameter_dict.get("ram-size") }}'
+smp_count = {{ parameter_dict.get("smp-count") }}
+max_smp_hotplug_count = {{ parameter_dict.get("max-smp-hotplug-count") }}
+numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
+ram_size = {{ parameter_dict.get("ram-size") }}
+max_ram_hotplug_size = {{ parameter_dict.get("max-ram-hotplug-size") }}
+slot_hotplug_size = {{ parameter_dict.get("hotplug-slot-size") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
-external_disk_size = '{{ parameter_dict.get("external-disk-size") }}'
+external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = '{{ parameter_dict.get("external-disk-format") }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
@@ -143,6 +145,12 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
     with open(last_disk_num_f, 'w') as lf:
       lf.write('%s' % external_disk_number)
   return id_list, external_disk_number
+
+def getMemHotplugDict(max_mem_size, slot_size):
+  if max_mem_size == 0:
+    return None
+  number = max_mem_size / slot_size
+  return {'maxmem': max_mem_size + ram_size, 'slots': number}
 
 # Download existing hard drive if needed at first boot
 if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
@@ -255,15 +263,18 @@ if use_tap == 'true':
             tap_interface, vhost),
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, tap_mac_address)]
 
-smp = smp_count
-if smp_options:
-  for option in smp_options.split(','):
-    key, val = option.split('=')
-    if key in ('cores', 'threads', 'sockets', 'maxcpus') and val.isdigit():
-      smp += ',%s=%s' % (key, val)
+if not max_smp_hotplug_count >= 0:
+  raise ValueError("Max CPU hotpluggable count is not a valid interger")
+smp ='%s,maxcpus=%s' % (smp_count, smp_count + max_smp_hotplug_count)
+
+mem_dict = getMemHotplugDict(max_ram_hotplug_size, slot_hotplug_size)
+if mem_dict is not None:
+ ram_string = '%sM,slots=%s,maxmem=%sM' % (ram_size, mem_dict['slots'], mem_dict['maxmem'])
+else:
+  ram_string = '%s' % ram_size
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name,
-  '-m', ram_size, '-vga', 'std',
+  '-m', ram_string, '-vga', 'std',
   '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',
