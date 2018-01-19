@@ -197,6 +197,30 @@
               "minimum": 128,
               "multipleOf": 128
             },
+            "max-ram-hotplug-size": {
+              "title": "Maximum hotpluggable RAM size",
+              "description": "Define the maximum size of hotpluggable memory. The size is in MB and must be a multiple of the defined hotpluggable slot size.",
+              "type": "integer",
+              "default": 0,
+              "minimum": 128,
+              "multipleOf": 128
+            },
+            "slot-hotplug-size": {
+              "title": "Hotpluggable slot size",
+              "description": "Define the RAM size on one hotpluggable slot. All hotplugged slot will have the same RAM size.",
+              "type": "integer",
+              "default": 512,
+              "minimum": 128,
+              "multipleOf": 128
+            },
+            "ram-hotplug-size": {
+              "title": "RAM hotplug size",
+              "description": "Define the size of memory to hotplug. The size is in MB and must be a multiple of the defined hotpluggable slot size.",
+              "type": "integer",
+              "default": 0,
+              "minimum": 128,
+              "multipleOf": 128
+            },
             "auto-ballooning": {
               "title": "Enable qemu auto ballooning.",
               "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
@@ -245,10 +269,17 @@
               "type": "integer",
               "minimum": 1
             },
-            "cpu-options": {
-              "title": "CPU Additional options: cores, threads, sockets, maxcpus.",
-              "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Set this option if you know what you're doing.",
-              "type": "string"
+            "max-cpu-hotplug-count": {
+              "title": "Maximum hotpluggable CPU amount",
+              "description": "Specifies the maximum number of hotpluggable CPUs.",
+              "type": "integer",
+              "default": 1
+            },
+            "cpu-hotplug-amount": {
+              "title": "hotpluggable CPU amount",
+              "description": "Specifies the number of CPUs to hotplug",
+              "type": "integer",
+              "default": 0
             },
             "numa": {
               "title": "Simulate a multi node NUMA system.",
