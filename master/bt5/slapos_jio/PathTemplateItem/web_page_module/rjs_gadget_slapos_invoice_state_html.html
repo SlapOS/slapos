@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Background</title>
+
+    <script src="rsvp.js"></script>
+    <script src="renderjs.js"></script>
+    <script src="handlebars.js"></script>
+    <script src="gadget_slapos_invoice_state.js"></script>
+
+    <script id="payment-link-template" type="text/x-handlebars-template">
+      <ul class="grid-items">
+        <li><a class="ui-btn ui-first-child ui-btn-icon-center" data-i18n="Pay Now" href={{invoice_url}}> Pay Now</a></li>
+      </ul>
+    </script>
+
+    <script id="payment-state-template" type="text/x-handlebars-template">
+      <ul class="grid-items">
+        <li>{{invoice_state}}</li>
+      </ul>
+    </script>
+
+  </head>
+  <body>
+    <button data-i18n="loading" type="submit" class="responsive ui-btn ui-icon-spinner ui-icon-spin ui-btn-icon-center ui-disabled" style="border:none;">loading</button>
+  </body>
+</html>
