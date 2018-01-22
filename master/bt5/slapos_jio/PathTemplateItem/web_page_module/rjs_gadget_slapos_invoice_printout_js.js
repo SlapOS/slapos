@@ -1,9 +1,13 @@
-/*globals console, window, rJS, RSVP, loopEventListener, i18n, $*/
+/*globals console, window, rJS, RSVP, loopEventListener, i18n, Handlebars $*/
 /*jslint indent: 2, nomen: true, maxlen: 80*/
 
-(function (window, rJS, RSVP) {
+(function (window, rJS, RSVP, Handlebars) {
   "use strict";
-  var gadget_klass = rJS(window);
+  var gadget_klass = rJS(window),
+    download_invoice_source = gadget_klass.__template_element
+                         .getElementById("download-link-template")
+                         .innerHTML,
+    download_invoice_template = Handlebars.compile(download_invoice_source);
 
   gadget_klass
     .declareAcquiredMethod("jio_get", "jio_get")
@@ -19,10 +23,14 @@
         .push(function (element) {
           return gadget.getSetting("hateoas_url")
             .push(function (hateoas_url) {
-              var link = "<a href=" + hateoas_url + "/" + options.value.jio_key + "/SaleInvoiceTransaction_viewSlapOSPrintout> <img src='pdf_icon.png'></img> </a>";
-              element.innerHTML = link;
+              var link = hateoas_url + "/" +
+                         options.value.jio_key +
+                         "/SaleInvoiceTransaction_viewSlapOSPrintout";
+              element.innerHTML = download_invoice_template({
+                invoice_url: link
+              });
               return element;
             });
         });
     });
-}(window, rJS, RSVP));
+}(window, rJS, RSVP, Handlebars));

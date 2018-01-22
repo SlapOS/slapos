@@ -8,8 +8,16 @@
 
     <script src="rsvp.js"></script>
     <script src="renderjs.js"></script>
+    <script src="handlebars.js"></script>
     <script src="gadget_slapos_invoice_printout.js"></script>
 
+    <script id="download-link-template" type="text/x-handlebars-template">
+      <ul class="grid-items">
+        <li><a class="ui-btn ui-first-child ui-btn-icon-center" data-i18n="Download Invoice" target=_blank href={{invoice_url}} > <img src='pdf_icon.png'></img></a></li>
+      </ul>
+    </script>
+
+  </head>
   <body>
     <button data-i18n="loading" type="submit" class="responsive ui-btn ui-icon-spinner ui-icon-spin ui-btn-icon-center ui-disabled" style="border:none;">loading</button>
   </body>
