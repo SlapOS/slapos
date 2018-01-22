@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Background</title>
+
+    <script src="rsvp.js"></script>
+    <script src="renderjs.js"></script>
+    <script src="handlebars.js"></script>
+    <script src="gadget_slapos_payment_result.js"></script>
+
+    <script id="message-template" type="text/x-handlebars-template">
+      <p> <center><strong>{{message_to_acknowledge}} </strong> </center> </p>
+      <p> <center>{{advice}} </center></p>
+
+      <p>  </p>
+
+      <p>  <center><a class="ui-btn ui-first-child ui-btn-icon-center" data-i18n="Return to Invoice List" href="{{payment_url}}"> Return to Invoice List</a></center> </p>
+    </script>
+  </head>
+
+  <body>
+   <div></div>
+  </body>
+</html>
