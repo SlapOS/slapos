@@ -8,7 +8,7 @@
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
-{% set monitor_url_list = [] -%}
+{% set monitor_base_url_dict = {} -%}
 
 {% macro setconfig(name, value) -%}
 {# will set a config-name = value if value is not empty -#}
@@ -128,10 +128,10 @@ return =
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
-{% do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
+{% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
@@ -245,11 +245,12 @@ cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.of
 username = admin
 password = ${monitor-htpasswd:passwd}
 
-[monitor-conf-parameters]
-monitor-url-list +=
-{% for url in monitor_url_list -%}
-{{ '  ' ~ url }}
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
 {% endfor %}
+
+[monitor-conf-parameters]
 private-path-list += 
   ${directory:webroot}/
 
