@@ -50,7 +50,7 @@
 
           if (result.portal_type !== undefined) {
             child_gadget_url = 'gadget_erp5_page_slap_' +
-              result.portal_type.replace(' ', '_').toLowerCase() +
+              result.portal_type.replace(/ /g, '_').toLowerCase() +
               '_view.html';
           } else {
             throw new Error('Can not display document: ' + options.jio_key);
