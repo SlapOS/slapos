@@ -92,12 +92,8 @@ pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 randomsleep = {{ bin_directory }}/randomsleep
 
 public-path-list = 
-private-path-list = 
-    ${directory:log}
-# 
-monitor-url-list = 
-  ${monitor-instance-parameter:monitor-url-list}
-
+private-path-list = ${directory:log}
+monitor-url-list = ${monitor-instance-parameter:monitor-url-list}
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list = 
