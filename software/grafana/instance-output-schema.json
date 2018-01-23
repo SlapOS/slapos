@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Grafana instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "url": {
+      "description": "IPv6 URL to access grafana",
+      "pattern": "^https://",
+      "type": "string"
+    },
+    "grafana-username": {
+      "description": "Admin user for grafana",
+      "type": "string"
+    },
+    "grafana-password": {
+      "description": "Password for grafana's admin user",
+      "type": "string"
+    },
+    "influxdb-url": {
+      "description": "IPv6 URL of influxdb HTTP endpoint",
+      "pattern": "^https://",
+      "type": "string"
+    },
+    "influxdb-database": {
+      "description": "database created in influxdb",
+      "type": "string"
+    },
+    "influxdb-username": {
+      "description": "username for influxdb",
+      "type": "string"
+    },
+    "influxdb-password": {
+      "description": "password for influxdb user",
+      "type": "string"
+    },
+    "telegraf-extra-config-dir": {
+      "description": "Directory in telegraf partition where extra configuration file will be loaded. These files must match *.conf pattern",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

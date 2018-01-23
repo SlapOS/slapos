@@ -334,16 +334,23 @@ allow_sign_up = true
 
 #################################### SMTP / Emailing #####################
 [smtp]
-enabled = false
-host = localhost:25
-user =
+#enabled = false
+enabled = {{ slapparameter_dict.get('smtp-server') and 'true' or 'false' }}
+#host = locahost:25
+host = {{ slapparameter_dict.get('smtp-server', '') }}
+#user =
+user = {{ slapparameter_dict.get('smtp-username', '') }}
 # If the password contains # or ; you have to wrap it with trippel quotes. Ex """#password;"""
-password =
+#password =
+password = {{ slapparameter_dict.get('smtp-password', '') and '"""%s"""' % slapparameter_dict['smtp-password'] or ""}}
 cert_file =
 key_file =
-skip_verify = false
-from_address = admin@grafana.localhost
-from_name = Grafana
+#skip_verify = false
+skip_verify = {{ slapparameter_dict.get('smtp-verify-ssl', True) and 'false' or 'true' }}
+#from_address = admin@grafana.localhost
+from_address = {{ slapparameter_dict.get('email-from-address', '') }}
+#from_name = Grafana
+from_name = {{ slapparameter_dict.get('email-from-name', 'Grafana') }}
 ehlo_identity =
 
 [emails]

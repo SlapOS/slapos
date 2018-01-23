@@ -143,6 +143,7 @@ recipe = slapos.cookbook:generate.password
 <= config-file
 context =
   section grafana grafana
+  key slapparameter_dict slap-configuration:configuration
 
 [grafana-listen-promise]
 <= check-port-listening-promise

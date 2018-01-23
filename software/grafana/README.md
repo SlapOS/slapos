@@ -28,7 +28,6 @@ before using grafana, but using proxy seems easier.
 
 ## TODO
 
-* make a configuration option to send emails (to invite users)
 * influxdb and telegraf runs with very low priority, this could become an option
 * make one partition for each service and use switch software type
 * make it easier to add custom configuration (how ?)
