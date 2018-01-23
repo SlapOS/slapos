@@ -41,14 +41,14 @@ http_addr = [{{ grafana['ipv6'] }}]
 http_port = {{ grafana['port'] }}
 
 # The public facing domain name used to access grafana from a browser
-domain = localhost
+domain = {{ apache_frontend['connection-domain'] }}
 
 # Redirect to correct domain if host header does not match domain
 # Prevents DNS rebinding attacks
 enforce_domain = false
 
 # The full public facing url
-root_url = %(protocol)s://%(domain)s:%(http_port)s/
+root_url = {{ apache_frontend['connection-secure_access'] }}
 
 # Log web requests
 router_logging = false

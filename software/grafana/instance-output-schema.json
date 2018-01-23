@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "url": {
-      "description": "IPv6 URL to access grafana",
+      "description": "Shared frontend for this Grafana instance",
       "pattern": "^https://",
       "type": "string"
     },
@@ -14,6 +14,11 @@
     },
     "grafana-password": {
       "description": "Password for grafana's admin user",
+      "type": "string"
+    },
+    "grafana-url": {
+      "description": "IPv6 URL to access grafana",
+      "pattern": "^https://",
       "type": "string"
     },
     "influxdb-url": {
