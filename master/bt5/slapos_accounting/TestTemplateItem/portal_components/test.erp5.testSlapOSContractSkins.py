@@ -1,17 +1,10 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
+
 from zExceptions import Unauthorized
 from DateTime import DateTime
-from functools import wraps
-from Products.ERP5Type.tests.utils import createZODBPythonScript
-import difflib
 
-class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSSoftwareInstance_requestValidationPayment(SlapOSTestCaseMixinWithAbort):
 
   def createCloudContract(self):
     new_id = self.generateNewId()
@@ -62,23 +55,23 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     return person, instance, subscription
 
   def test_requestValidationPayment_REQUEST_disallowed(self):
-    person, instance, subscription = self.createNeededDocuments()
+    _, instance, _ = self.createNeededDocuments()
     self.assertRaises(
       Unauthorized,
       instance.SoftwareInstance_requestValidationPayment,
       REQUEST={})
 
   def test_prevent_concurrency(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     tag = "%s_requestValidationPayment_inProgress" % person.getUid()
     person.reindexObject(activate_kw={'tag': tag})
-    transaction.commit()
+    self.commit()
 
     result = instance.SoftwareInstance_requestValidationPayment()
     self.assertEquals(result, None)
 
   def test_addCloudContract(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = instance.SoftwareInstance_requestValidationPayment()
 
     # Default property
@@ -89,34 +82,34 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
            'Contract for "%s"' % person.getTitle())
 
   def test_addCloudContract_do_not_duplicate_contract_if_not_reindexed(self):
-    person, instance, subscription = self.createNeededDocuments()
+    _, instance, _ = self.createNeededDocuments()
     contract = instance.SoftwareInstance_requestValidationPayment()
-    transaction.commit()
+    self.commit()
     contract2 = instance.SoftwareInstance_requestValidationPayment()
     self.assertNotEquals(contract, None)
     self.assertEquals(contract2, None)
 
   def test_addCloudContract_existing_invalidated_contract(self):
-    person, instance, subscription = self.createNeededDocuments()
+    _, instance, _ = self.createNeededDocuments()
     contract = instance.SoftwareInstance_requestValidationPayment()
-    transaction.commit()
+    self.commit()
     self.tic()
     contract2 = instance.SoftwareInstance_requestValidationPayment()
     self.assertNotEquals(contract, None)
     self.assertEquals(contract2.getRelativeUrl(), contract.getRelativeUrl())
 
   def test_addCloudContract_existing_validated_contract(self):
-    person, instance, subscription = self.createNeededDocuments()
+    _, instance, _ = self.createNeededDocuments()
     contract = instance.SoftwareInstance_requestValidationPayment()
     contract.validate()
-    transaction.commit()
+    self.commit()
     self.tic()
     contract2 = instance.SoftwareInstance_requestValidationPayment()
     self.assertNotEquals(contract, None)
     self.assertEquals(contract2.getRelativeUrl(), contract.getRelativeUrl())
 
   def test_do_nothing_if_validated_contract(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     contract.edit(destination_section_value=person)
     contract.validate()
@@ -128,7 +121,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getValidationState(), "validated")
 
   def test_validate_contract_if_payment_found(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     contract.edit(destination_section_value=person)
     payment = self.createPaymentTransaction()
@@ -145,7 +138,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getValidationState(), "validated")
 
   def test_create_invoice_if_needed_and_no_payment_found(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     contract.edit(destination_section_value=person)
     self.assertEquals(contract.getValidationState(), "invalidated")
@@ -173,7 +166,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(invoice.getStartDate(), invoice.getStopDate())
 
   def test_do_nothing_if_invoice_is_ongoing(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     invoice = self.createInvoiceTransaction()
     self.portal.portal_workflow._jumpToStateFor(invoice, 'confirmed')
@@ -190,7 +183,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getValidationState(), "invalidated")
 
   def test_forget_current_cancelled_invoice(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     invoice = self.createInvoiceTransaction()
     self.portal.portal_workflow._jumpToStateFor(invoice, 'cancelled')
@@ -207,7 +200,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getValidationState(), "invalidated")
 
   def test_forget_current_grouped_invoice(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     invoice = self.createInvoiceTransaction()
     line = invoice.newContent(
@@ -230,7 +223,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getValidationState(), "invalidated")
 
   def test_do_nothing_if_invoice_is_not_grouped(self):
-    person, instance, subscription = self.createNeededDocuments()
+    person, instance, _ = self.createNeededDocuments()
     contract = self.createCloudContract()
     invoice = self.createInvoiceTransaction()
     invoice.newContent(
@@ -250,10 +243,7 @@ class TestSlapOSSoftwareInstance_requestValidationPayment(testSlapOSMixin):
     self.assertEquals(contract2.getCausality(""), invoice.getRelativeUrl())
     self.assertEquals(contract2.getValidationState(), "invalidated")
 
-class TestSlapOSPerson_isAllowedToAllocate(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
 
   def createPerson(self):
     new_id = self.generateNewId()

@@ -4,14 +4,13 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
 #
 ##############################################################################
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin, withAbort
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort
 from zExceptions import Unauthorized
 from DateTime import DateTime
 import time
 
-class TestSlapOSAccounting(testSlapOSMixin):
+class TestSlapOSAccounting(SlapOSTestCaseMixin):
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()

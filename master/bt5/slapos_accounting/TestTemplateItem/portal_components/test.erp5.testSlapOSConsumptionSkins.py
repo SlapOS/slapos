@@ -6,14 +6,11 @@
 ##############################################################################
 
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort, simulate
+from erp5.component.test.SlapOSTestCaseMixin import \
+  SlapOSTestCaseMixinWithAbort, SlapOSTestCaseMixin, simulate
 from zExceptions import Unauthorized
 
-class TestSlapOSComputer_reportComputerConsumption(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSComputer_reportComputerConsumption(SlapOSTestCaseMixinWithAbort):
 
   def createComputer(self):
     new_id = self.generateNewId()
@@ -128,10 +125,7 @@ class TestSlapOSComputer_reportComputerConsumption(testSlapOSMixin):
     self.assertEquals(document2.getValidationState(), "submitted")
     self.assertEquals(document2.getContributor(), computer.getRelativeUrl())
 
-class TestSlapOSComputerConsumptionTioXMLFile_parseXml(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSComputerConsumptionTioXMLFile_parseXml(SlapOSTestCaseMixinWithAbort):
 
   def createTioXMLFile(self):
     document = self.portal.consumption_document_module.newContent(
@@ -261,7 +255,7 @@ class TestSlapOSComputerConsumptionTioXMLFile_parseXml(testSlapOSMixin):
     })
 
 class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
-                                                           testSlapOSMixin):
+                                                           SlapOSTestCaseMixin):
 
   def createTioXMLFile(self):
     document = self.portal.consumption_document_module.newContent(

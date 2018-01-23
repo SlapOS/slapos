@@ -1,6 +1,5 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 
 from DateTime import DateTime
 from Products.ERP5Type.tests.utils import createZODBPythonScript
@@ -15,22 +14,7 @@ vads_url_refused = 'http://example.org/refused'
 vads_url_success = 'http://example.org/success'
 vads_url_return = 'http://example.org/return'
 
-class TestSlapOSPayzenInterfaceWorkflow(testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createPaymentTransaction(self):
-    new_id = self.generateNewId()
-    return self.portal.accounting_module.newContent(
-      portal_type='Payment Transaction',
-      title="Transaction %s" % new_id,
-      reference="TESTTRANS-%s" % new_id,
-      )
-
-  def createPayzenEvent(self):
-    return self.portal.system_event_module.newContent(
-        portal_type='Payzen Event',
-        reference='PAY-%s' % self.generateNewId())
+class TestSlapOSPayzenInterfaceWorkflow(SlapOSTestCaseMixinWithAbort):
 
   def _simulatePaymentTransaction_getTotalPayablePrice(self):
     script_name = 'PaymentTransaction_getTotalPayablePrice'

@@ -47,14 +47,14 @@
             <value>
               <tuple>
                 <string>W: 12,  5: Using type() instead of isinstance() for a typecheck. (unidiomatic-typecheck)</string>
-                <string>W: 59, 28: Unused variable \'api_path\' (unused-variable)</string>
-                <string>W:290,  4: Unused variable \'news_hal\' (unused-variable)</string>
-                <string>W: 60,  8: Unused variable \'api_fragment\' (unused-variable)</string>
-                <string>W: 59, 38: Unused variable \'api_query\' (unused-variable)</string>
-                <string>W:395,  4: Unused variable \'software_hal\' (unused-variable)</string>
-                <string>W:422, 28: Unused variable \'api_path\' (unused-variable)</string>
-                <string>W:422, 38: Unused variable \'api_query\' (unused-variable)</string>
-                <string>W:423,  8: Unused variable \'api_fragment\' (unused-variable)</string>
+                <string>W: 50, 28: Unused variable \'api_path\' (unused-variable)</string>
+                <string>W:281,  4: Unused variable \'news_hal\' (unused-variable)</string>
+                <string>W: 51,  8: Unused variable \'api_fragment\' (unused-variable)</string>
+                <string>W: 50, 38: Unused variable \'api_query\' (unused-variable)</string>
+                <string>W:386,  4: Unused variable \'software_hal\' (unused-variable)</string>
+                <string>W:412, 28: Unused variable \'api_path\' (unused-variable)</string>
+                <string>W:412, 38: Unused variable \'api_query\' (unused-variable)</string>
+                <string>W:413,  8: Unused variable \'api_fragment\' (unused-variable)</string>
               </tuple>
             </value>
         </item>

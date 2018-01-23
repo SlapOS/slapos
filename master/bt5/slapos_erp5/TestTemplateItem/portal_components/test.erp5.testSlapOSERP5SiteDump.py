@@ -5,12 +5,12 @@
 #
 ##############################################################################
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
+
 import os
 from Testing import ZopeTestCase
 
-class TestSlapOSDump(testSlapOSMixin):
+class TestSlapOSDump(SlapOSTestCaseMixin):
   def write(self, name, output):
     path = os.path.join(os.environ['INSTANCE_HOME'], name)
     with open(path, 'w') as f:

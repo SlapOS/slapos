@@ -29,11 +29,11 @@
 import unittest
 import random
 from AccessControl import getSecurityManager
-from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 from Products.PluggableAuthService.interfaces.plugins import\
                                                       IAuthenticationPlugin
 
-class TestSlapOSSecurityMixin(testSlapOSMixin):
+class TestSlapOSSecurityMixin(SlapOSTestCaseMixin):
 
   def _generateRandomUniqueUserId(self, portal_type, search_key="user_id"):
     user_id = None

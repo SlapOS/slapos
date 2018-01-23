@@ -5,14 +5,14 @@
 #
 ##############################################################################
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import \
+  SlapOSTestCaseMixin
 import os
 
-class TestSlapOSConfigurator(testSlapOSMixin):
+class TestSlapOSConfigurator(SlapOSTestCaseMixin):
 
   def bootstrapSite(self):
-    super(TestSlapOSConfigurator, self).bootstrapSite()
+    SlapOSTestCaseMixin.bootstrapSite(self)
     self.getBusinessConfiguration().BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
     self.tic()
 

@@ -3,3 +3,4 @@ test.erp5.testSlapOSCloudWorkflow
 test.erp5.testSlapOSCloudSecurityGroup
 test.erp5.testSlapOSCloudConstraint
 test.erp5.testSlapOSCloudShadow
+test.erp5.SlapOSTestCaseMixin

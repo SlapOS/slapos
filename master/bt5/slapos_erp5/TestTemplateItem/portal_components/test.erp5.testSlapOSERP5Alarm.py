@@ -1,17 +1,12 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
+
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-from unittest import skip
-import json
 from DateTime import DateTime
 from zExceptions import Unauthorized
 
-class TestSlapOSERP5CleanupActiveProcess(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSERP5CleanupActiveProcess(SlapOSTestCaseMixinWithAbort):
 
   def _simulateActiveProcess_deleteSelf(self):
     script_name = 'ActiveProcess_deleteSelf'
@@ -69,10 +64,7 @@ context.edit(description=description)""")
     self.check_cleanup_active_process_alarm(DateTime() - 20, self.assertFalse)
 
 
-class TestSlapOSERP5ActiveProcess_deleteSelf(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    transaction.abort()
+class TestSlapOSERP5ActiveProcess_deleteSelf(SlapOSTestCaseMixinWithAbort):
 
   def createActiveProcess(self):
     new_id = self.generateNewId()
@@ -100,9 +92,9 @@ class TestSlapOSERP5ActiveProcess_deleteSelf(testSlapOSMixin):
   def test_default_use_case(self):
     active_process = self.createActiveProcess()
     module = active_process.getParentValue()
-    id = active_process.getId()
+    ac_id = active_process.getId()
     active_process.ActiveProcess_deleteSelf()
     self.assertRaises(
       KeyError,
       module._getOb,
-      id)
+      ac_id)

@@ -26,14 +26,13 @@
 #
 ##############################################################################
 
-import transaction
-from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin, simulate
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin, simulate
 from DateTime import DateTime
 
 
-class TestSlapOSPDMSkins(testSlapOSMixin):
+class TestSlapOSPDMSkins(SlapOSTestCaseMixin):
   def afterSetUp(self):
-    super(TestSlapOSPDMSkins, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self.new_id = self.generateNewId()
     self.request_kw = dict(
         software_title=self.generateNewSoftwareTitle(),
@@ -43,7 +42,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
         shared=False,
         state="started"
     )
-  
+
   def beforeTearDown(self):
     id_list = []
     for upgrade_decision in self.portal.portal_catalog(
@@ -51,11 +50,6 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
       id_list.append(upgrade_decision.getId())
     self.portal.upgrade_decision_module.manage_delObjects(id_list)
     self.tic()
-
-  def generateNewId(self):
-    return "%sTEST" % self.portal.portal_ids.generateNewId(
-         id_group=('slapos_core_test'))
- 
 
   def _makePerson(self):
     person_user = self.makePerson(new_id=self.new_id)
@@ -203,7 +197,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     return hosting_subscription
 
   def _makeFullSoftwareInstance(self, hosting_subscription, software_url):
-    
+
     software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
     software_instance.edit(
@@ -220,7 +214,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     )
     self.portal.portal_workflow._jumpToStateFor(software_instance, 'start_requested')
     software_instance.validate()
-    
+
     return software_instance
 
   def _makeUpgradeDecision(self):
@@ -228,19 +222,18 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
        upgrade_decision_module.newContent(
          portal_type="Upgrade Decision",
          title="TESTUPDE-%s" % self.new_id)
-  
+
   def _makeUpgradeDecisionLine(self, upgrade_decision):
     return upgrade_decision.newContent(
          portal_type="Upgrade Decision Line",
          title="TESTUPDE-%s" % self.new_id)
-  
-  
+
   def test_getSortedSoftwareReleaseListFromSoftwareProduct(self):
     software_product = self._makeSoftwareProduct()
     release_list = software_product.SoftwareProduct_getSortedSoftwareReleaseList(
       software_product.getReference())
     self.assertEqual(release_list, [])
-    
+
     # published software release
     software_release1 = self._makeSoftwareRelease()
     software_release1.edit(aggregate_value=software_product.getRelativeUrl(),
@@ -265,8 +258,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
       software_product.getReference())
     self.assertEquals([release.getUrlString() for release in release_list],
       ['http://example.org/2-%s.cfg' % self.new_id, 'http://example.org/1-%s.cfg' % self.new_id])
-    
-    
+
   def test_getSortedSoftwareReleaseListFromSoftwareProduct_Changed(self):
     software_product = self._makeSoftwareProduct()
     release_list = software_product.SoftwareProduct_getSortedSoftwareReleaseList(

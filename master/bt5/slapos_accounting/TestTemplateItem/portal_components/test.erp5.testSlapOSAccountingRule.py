@@ -4,9 +4,8 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
 #
 ##############################################################################
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin, withAbort
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
 from Products.ERP5.Document.SimulationMovement import SimulationMovement
@@ -17,9 +16,9 @@ def getSimulationStatePlanned(self, *args, **kwargs):
 
 def getSimulationStateDelivered(self, *args, **kwargs):
   if self.getId() == 'root_simulation_movement' or \
-      self.getParentValue().getParentValue().getId() == \
+    self.getParentValue().getParentValue().getId() == \
           'root_simulation_movement':
-      return 'delivered'
+    return 'delivered'
   return 'planned'
 
 def getSimulationStatePlannedDelivered(self, *args, **kwargs):
@@ -27,7 +26,7 @@ def getSimulationStatePlannedDelivered(self, *args, **kwargs):
     return 'delivered'
   return 'planned'
 
-class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
+class TestDefaultInvoiceTransactionRule(SlapOSTestCaseMixin):
   @withAbort
   def test_simulation(self):
     SimulationMovement.original_getSimulationState = SimulationMovement\
@@ -159,7 +158,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
         .original_getSimulationState
 
 
-class TestDefaultInvoiceRule(testSlapOSMixin):
+class TestDefaultInvoiceRule(SlapOSTestCaseMixin):
   @withAbort
   def test_simulation(self):
     SimulationMovement.original_getSimulationState = SimulationMovement\
@@ -233,7 +232,7 @@ class TestDefaultInvoiceRule(testSlapOSMixin):
         .original_getSimulationState
 
 
-class TestDefaultInvoicingRule(testSlapOSMixin):
+class TestDefaultInvoicingRule(SlapOSTestCaseMixin):
   @withAbort
   def test_simulation(self):
     SimulationMovement.original_getSimulationState = SimulationMovement\
@@ -353,7 +352,7 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
 
-class TestDefaultPaymentRule(testSlapOSMixin):
+class TestDefaultPaymentRule(SlapOSTestCaseMixin):
   @withAbort
   def test_simulation(self):
     SimulationMovement.original_getSimulationState = SimulationMovement\
@@ -418,7 +417,7 @@ class TestDefaultPaymentRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
 
-class TestHostingSubscriptionSimulation(testSlapOSMixin):
+class TestHostingSubscriptionSimulation(SlapOSTestCaseMixin):
   def _prepare(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -666,7 +665,7 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
       SimulationMovement.isFrozen = SimulationMovement.originalIsFrozen
       delattr(SimulationMovement, 'originalIsFrozen')
 
-class TestDefaultTradeModelRule(testSlapOSMixin):
+class TestDefaultTradeModelRule(SlapOSTestCaseMixin):
   @withAbort
   def test_simulation(self):
     SimulationMovement.original_getSimulationState = SimulationMovement\
@@ -779,7 +778,7 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
 
-class TestDefaultDeliveryRule(testSlapOSMixin):
+class TestDefaultDeliveryRule(SlapOSTestCaseMixin):
   trade_condition = 'sale_trade_condition_module/slapos_aggregated_trade_condition'
   def test(self):
     def newArrow():
@@ -867,7 +866,7 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
     self.assertSameSet(['default_invoicing_rule'], [q.getSpecialiseReference()
         for q in simulation_movement.contentValues(portal_type='Applied Rule')])
 
-class TestDefaultDeliveryRuleConsumption(testSlapOSMixin):
+class TestDefaultDeliveryRuleConsumption(SlapOSTestCaseMixin):
   def test(self):
     def newArrow():
       return self.portal.organisation_module.newContent(
@@ -907,6 +906,6 @@ class TestDefaultDeliveryRuleConsumption(testSlapOSMixin):
     applied_rule_list = delivery.getCausalityRelatedValueList()
     self.assertEqual(0, len(applied_rule_list))
 
-class TestDefaultDeliveryRuleSubscription(testSlapOSMixin):
+class TestDefaultDeliveryRuleSubscription(SlapOSTestCaseMixin):
   trade_condition = 'sale_trade_condition_module/slapos_subscr'\
       'iption_trade_condition'

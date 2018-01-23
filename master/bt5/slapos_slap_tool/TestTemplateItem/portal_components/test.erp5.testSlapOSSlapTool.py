@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-    testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 
 from DateTime import DateTime
 from App.Common import rfc1123_date
@@ -34,24 +33,22 @@ class Simulator:
       'reckwargs': kwargs})
     open(self.outfile, 'w').write(repr(l))
 
-class TestSlapOSSlapToolMixin(testSlapOSMixin):
-  def afterSetUp(self, person=None):
-    testSlapOSMixin.afterSetUp(self)
+class TestSlapOSSlapToolMixin(SlapOSTestCaseMixin):
+  def afterSetUp(self):
+    SlapOSTestCaseMixin.afterSetUp(self)
     self.portal_slap = self.portal.portal_slap
-    new_id = self.generateNewId()
 
     # Prepare computer
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
-      title="Computer %s" % new_id,
-      reference="TESTCOMP-%s" % new_id
+      title="Computer %s" % self.new_id,
+      reference="TESTCOMP-%s" % self.new_id
     )
-    if (person is not None):
+    if getattr(self, "person", None) is not None:
       self.computer.edit(
-        source_administration_value=person,
+        source_administration_value=getattr(self, "person", None),
         )
-
     self.computer.validate()
 
     self._addERP5Login(self.computer)
@@ -2145,7 +2142,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self.person = person
     self.person_reference = person.getReference()
     self.person_user_id = person.getUserId()
-    TestSlapOSSlapToolMixin.afterSetUp(self, person=person)
+    TestSlapOSSlapToolMixin.afterSetUp(self)
 
   def test_not_accessed_getComputerStatus(self):
     self.login(self.person_user_id)

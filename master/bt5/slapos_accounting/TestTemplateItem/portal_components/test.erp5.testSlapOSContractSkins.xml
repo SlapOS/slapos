@@ -7,8 +7,20 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_recorded_property_dict</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>testSlapOSContractSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -33,28 +45,7 @@
         <item>
             <key> <string>text_content_warning_message</string> </key>
             <value>
-              <tuple>
-                <string>W: 65,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W: 65, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W: 72, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W: 81, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W: 92,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W: 92, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:100,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W:100, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:109,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W:109, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:119, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:131, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:148, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:176, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:193, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:210, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:233, 22: Unused variable \'subscription\' (unused-variable)</string>
-                <string>W:  7,  0: Unused import wraps (unused-import)</string>
-                <string>W:  8,  0: Unused import createZODBPythonScript (unused-import)</string>
-                <string>W:  9,  0: Unused import difflib (unused-import)</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -64,7 +55,7 @@
         <item>
             <key> <string>workflow_history</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
       </dictionary>
@@ -79,11 +70,26 @@
         <item>
             <key> <string>data</string> </key>
             <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
               <dictionary>
                 <item>
                     <key> <string>component_validation_workflow</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
                     </value>
                 </item>
               </dictionary>
@@ -92,7 +98,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="3" aka="AAAAAAAAAAM=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
     </pickle>

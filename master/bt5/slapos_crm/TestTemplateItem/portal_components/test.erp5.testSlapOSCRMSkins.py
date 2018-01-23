@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, simulate
+from erp5.component.test.SlapOSTestCaseMixin import \
+  SlapOSTestCaseMixin,SlapOSTestCaseMixinWithAbort, simulate
 from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.tests.utils import createZODBPythonScript
@@ -11,12 +11,10 @@ import json
 def getFakeSlapState():
   return "destroy_requested"
 
-class TestCRMSkinsMixin(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestCRMSkinsMixin(SlapOSTestCaseMixinWithAbort):
 
   def afterSetUp(self):
-    super(TestCRMSkinsMixin, self).afterSetUp()
+    SlapOSTestCaseMixinWithAbort.afterSetUp(self)
     self.person = self.makePerson(new_id=self.new_id, index=0, user=0)
 
   def _cancelTestSupportRequestList(self, title="%"):
@@ -315,9 +313,7 @@ class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
     self._test_event(ticket)
 
 
-class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSPerson_checkToCreateRegularisationRequest(SlapOSTestCaseMixinWithAbort):
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
   def test_addRegularisationRequest_payment_requested(self):
@@ -498,9 +494,7 @@ The slapos team
 
 
 class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
-                                                         testSlapOSMixin):
-
-  abort_transaction = 1
+                                                         SlapOSTestCaseMixinWithAbort):
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -554,9 +548,7 @@ class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
     ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk()
     self.assertEquals(ticket.getSimulationState(), 'suspended')
 
-class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSRegularisationRequest_checkToSendUniqEvent(SlapOSTestCaseMixin):
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -686,9 +678,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
       REQUEST={})
 
 class TestSlapOSRegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty(
-                                                         testSlapOSMixin):
-
-  abort_transaction = 1
+                                                         SlapOSTestCaseMixinWithAbort):
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -915,9 +905,7 @@ The slapos team
     self.assertEqual(invoice_list, [])
 
 class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1112,18 +1100,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
       REQUEST={})
 
 class TestSlapOSRegularisationRequest_triggerAcknowledgmentEscalation(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createRegularisationRequest(self):
-    new_id = self.generateNewId()
-    return self.portal.regularisation_request_module.newContent(
-      portal_type='Regularisation Request',
-      title="Test Reg. Req.%s" % new_id,
-      reference="TESTREGREQ-%s" % new_id,
-      resource='foo/bar',
-      )
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def test_triggerAcknowledgmentEscalation_REQUEST_disallowed(self):
     ticket = self.createRegularisationRequest()
@@ -1197,18 +1174,7 @@ The slapos team
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestSlapOSRegularisationRequest_triggerStopReminderEscalation(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createRegularisationRequest(self):
-    new_id = self.generateNewId()
-    return self.portal.regularisation_request_module.newContent(
-      portal_type='Regularisation Request',
-      title="Test Reg. Req.%s" % new_id,
-      reference="TESTREGREQ-%s" % new_id,
-      resource='foo/bar',
-      )
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def test_triggerStopReminderEscalation_REQUEST_disallowed(self):
     ticket = self.createRegularisationRequest()
@@ -1282,18 +1248,7 @@ The slapos team
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestSlapOSRegularisationRequest_triggerStopAcknowledgmentEscalation(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createRegularisationRequest(self):
-    new_id = self.generateNewId()
-    return self.portal.regularisation_request_module.newContent(
-      portal_type='Regularisation Request',
-      title="Test Reg. Req.%s" % new_id,
-      reference="TESTREGREQ-%s" % new_id,
-      resource='foo/bar',
-      )
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def test_triggerStopAcknowledgmentEscalation_REQUEST_disallowed(self):
     ticket = self.createRegularisationRequest()
@@ -1367,18 +1322,7 @@ The slapos team
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestSlapOSRegularisationRequest_triggerDeleteReminderEscalation(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createRegularisationRequest(self):
-    new_id = self.generateNewId()
-    return self.portal.regularisation_request_module.newContent(
-      portal_type='Regularisation Request',
-      title="Test Reg. Req.%s" % new_id,
-      reference="TESTREGREQ-%s" % new_id,
-      resource='foo/bar',
-      )
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def test_triggerDeleteReminderEscalation_REQUEST_disallowed(self):
     ticket = self.createRegularisationRequest()
@@ -1452,18 +1396,7 @@ The slapos team
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createRegularisationRequest(self):
-    new_id = self.generateNewId()
-    return self.portal.regularisation_request_module.newContent(
-      portal_type='Regularisation Request',
-      title="Test Reg. Req.%s" % new_id,
-      reference="TESTREGREQ-%s" % new_id,
-      resource='foo/bar',
-      )
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1638,9 +1571,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
     self.tic()
 
 class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1711,9 +1642,7 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
       'foobar')
 
 class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def createHostingSubscription(self):
     new_id = self.generateNewId()
@@ -1814,9 +1743,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
       'foobar')
 
 class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
-                                                          testSlapOSMixin):
-
-  abort_transaction = 1
+                                                          SlapOSTestCaseMixinWithAbort):
 
   def createRegularisationRequest(self):
     new_id = self.generateNewId()
@@ -1970,11 +1897,11 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
 class TestSlapOSComputer_notifyWrongAllocationScope(TestCRMSkinsMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSComputer_notifyWrongAllocationScope, self).afterSetUp()
+    TestCRMSkinsMixin.afterSetUp(self)
     self._cancelTestSupportRequestList(title="%%TESTCOMPT-%")
 
   def _makeComputer(self):
-    super(TestSlapOSComputer_notifyWrongAllocationScope, self)._makeComputer()
+    TestCRMSkinsMixin._makeComputer(self)
 
     # Clone computer document
     self.computer.edit(
@@ -2142,12 +2069,10 @@ class TestSlapOSComputer_notifyWrongAllocationScope(TestCRMSkinsMixin):
     self.assertEquals(computer.getAllocationScope(), 'open/friend')
 
 
-class TestComputer_hasContactedRecently(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestComputer_hasContactedRecently(SlapOSTestCaseMixinWithAbort):
 
   def _makeComputer(self):
-    super(TestComputer_hasContactedRecently, self)._makeComputer()
+    SlapOSTestCaseMixinWithAbort._makeComputer(self)
     return self.computer
 
   def createSPL(self, computer):
@@ -2239,7 +2164,7 @@ class TestComputer_hasContactedRecently(testSlapOSMixin):
     has_contacted = computer.Computer_hasContactedRecently()
     self.assertFalse(has_contacted)
 
-class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
+class TestSlapOSPerson_isServiceProvider(SlapOSTestCaseMixin):
 
   abort_transaction = 1
 
@@ -2268,7 +2193,7 @@ class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
 class TestSlapOSisSupportRequestCreationClosed(TestCRMSkinsMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSisSupportRequestCreationClosed, self).afterSetUp()
+    TestCRMSkinsMixin.afterSetUp(self)
     self._cancelTestSupportRequestList()
 
   def test_ERP5Site_isSupportRequestCreationClosed(self):
@@ -2354,7 +2279,7 @@ class TestSlapOSisSupportRequestCreationClosed(TestCRMSkinsMixin):
 class TestSlapOSGenerateSupportRequestForSlapOS(TestCRMSkinsMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSGenerateSupportRequestForSlapOS, self).afterSetUp()
+    TestCRMSkinsMixin.afterSetUp(self)
     self.tic()
     self._cancelTestSupportRequestList()
 
@@ -2390,8 +2315,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(TestCRMSkinsMixin):
     hosting_subscription.requestInstance(**kw)
 
   def _makeComputer(self):
-    super(TestSlapOSGenerateSupportRequestForSlapOS, self)._makeComputer()
-
+    SlapOSTestCaseMixin._makeComputer(self)
     # Clone computer document
     self.computer.edit(
       source_administration_value=self.makePerson(user=0)
@@ -2597,7 +2521,7 @@ class TestSlapOSComputer_CheckState(TestCRMSkinsMixin):
     transaction.abort()
 
   def afterSetUp(self):
-    super(TestSlapOSComputer_CheckState, self).afterSetUp()
+    TestCRMSkinsMixin.afterSetUp(self)
     self._cancelTestSupportRequestList("% TESTCOMPT-%")
 
   def _makeSupportRequest(self):
@@ -2627,7 +2551,7 @@ class TestSlapOSComputer_CheckState(TestCRMSkinsMixin):
     return support_request
 
   def _makeComputer(self):
-    super(TestSlapOSComputer_CheckState, self)._makeComputer()
+    TestCRMSkinsMixin._makeComputer(self)
 
     # Clone computer document
     self.computer.edit(
@@ -2770,7 +2694,7 @@ class TestSlapOSComputer_CheckState(TestCRMSkinsMixin):
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
 
-class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
+class TestSlapOSHostingSubscription_createSupportRequestEvent(SlapOSTestCaseMixin):
 
   def _makeNotificationMessage(self, reference):
     notification_message = self.portal.notification_message_module.newContent(
@@ -2869,7 +2793,7 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
       hosting_subscription.HostingSubscription_createSupportRequestEvent(
          hosting_subscription, "test-slapos-crm-check.notification"))
 
-class TestSlapOSHasError(testSlapOSMixin):
+class TestSlapOSHasError(SlapOSTestCaseMixin):
 
   def _makeSoftwareRelease(self, software_release_url=None):
     software_release = self.portal.software_release_module\
@@ -3154,11 +3078,10 @@ class TestSlapOSHasError(testSlapOSMixin):
         None,
         hosting_subscription.HostingSubscription_checkSoftwareInstanceState())
 
-class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
+class TestSupportRequestTrySendNotificationMessage(SlapOSTestCaseMixin):
 
   def _makeComputer(self):
-    super(TestSupportRequestTrySendNotificationMessage, self)._makeComputer()
-
+    SlapOSTestCaseMixin._makeComputer(self)
     # Clone computer document
     self.computer.edit(
       source_administration_value=self.makePerson(user=0)
@@ -3250,11 +3173,10 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
      another_support_request.getRelativeUrl())
 
 
-class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
+class TestSupportRequestUpdateMonitoringState(SlapOSTestCaseMixin):
 
   def _makeComputer(self):
-    super(TestSupportRequestUpdateMonitoringState, self)._makeComputer()
-
+    SlapOSTestCaseMixin._makeComputer(self)
     # Clone computer document
     self.computer.edit(
       source_administration_value=self.makePerson(user=0)

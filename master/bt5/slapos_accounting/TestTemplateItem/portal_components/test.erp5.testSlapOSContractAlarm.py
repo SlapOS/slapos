@@ -1,14 +1,13 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 
-class TestSlapOSRequestValidationPayment(testSlapOSMixin):
+class TestSlapOSRequestValidationPayment(SlapOSTestCaseMixin):
 
   def _makeSlaveTree(self, requested_template_id='template_slave_instance'):
-    super(TestSlapOSRequestValidationPayment, self).\
-        _makeTree(requested_template_id=requested_template_id)
+    SlapOSTestCaseMixin.\
+        _makeTree(self, requested_template_id=requested_template_id)
 
   def _simulateSoftwareInstance_requestValidationPayment(self):
     script_name = 'SoftwareInstance_requestValidationPayment'

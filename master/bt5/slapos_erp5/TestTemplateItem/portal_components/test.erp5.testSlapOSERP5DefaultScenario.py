@@ -6,7 +6,7 @@
 ##############################################################################
 
 from erp5.component.test.testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
-from Products.SlapOS.tests.testSlapOSMixin import changeSkin
+from erp5.component.test.SlapOSTestCaseMixin import changeSkin
 import re
 import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \

@@ -45,10 +45,7 @@
         <item>
             <key> <string>text_content_warning_message</string> </key>
             <value>
-              <tuple>
-                <string>W:127,  2: Arguments number differs from overridden method (arguments-differ)</string>
-                <string>W:140,  2: Arguments number differs from overridden method (arguments-differ)</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>

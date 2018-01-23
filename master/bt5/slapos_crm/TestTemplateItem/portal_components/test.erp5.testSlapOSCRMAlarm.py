@@ -1,12 +1,12 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import \
+  SlapOSTestCaseMixin
 from unittest import skip
 from DateTime import DateTime
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 
-class TestSlapOSCRMCreateRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCRMCreateRegularisationRequest(SlapOSTestCaseMixin):
 
   def _simulatePerson_checkToCreateRegularisationRequest(self):
     script_name = 'Person_checkToCreateRegularisationRequest'
@@ -92,7 +92,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
         'Visited by Person_checkToCreateRegularisationRequest',
         person.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmInvalidateSuspendedRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmInvalidateSuspendedRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -156,7 +156,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_invalidateIfPersonBalanceIsOk',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmCancelInvoiceRelatedToSuspendedRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmCancelInvoiceRelatedToSuspendedRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -220,7 +220,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmTriggerEscalationOnAcknowledgmentRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmTriggerEscalationOnAcknowledgmentRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -303,7 +303,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_triggerAcknowledgmentEscalation',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmTriggerEscalationOnStopReminderRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmTriggerEscalationOnStopReminderRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -386,7 +386,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_triggerStopReminderEscalation',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmTriggerEscalationOnStopAcknowledgmentRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmTriggerEscalationOnStopAcknowledgmentRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -469,7 +469,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_triggerStopAcknowledgmentEscalation',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmTriggerEscalationOnDeleteReminderRegularisationRequest(testSlapOSMixin):
+class TestSlapOSCrmTriggerEscalationOnDeleteReminderRegularisationRequest(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -552,7 +552,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_triggerDeleteReminderEscalation',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmStopHostingSubscription(testSlapOSMixin):
+class TestSlapOSCrmStopHostingSubscription(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -654,7 +654,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
         'Visited by RegularisationRequest_stopHostingSubscriptionList',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmDeleteHostingSubscription(testSlapOSMixin):
+class TestSlapOSCrmDeleteHostingSubscription(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -737,9 +737,8 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
     self.assertNotEqual(
         'Visited by RegularisationRequest_deleteHostingSubscriptionList',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
-        
 
-class TestSlapOSCrmMonitoringCheckComputerState(testSlapOSMixin):
+class TestSlapOSCrmMonitoringCheckComputerState(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -811,21 +810,21 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
   def test_alarm_check_computer_state_no_public_computer(self):
     self._test_alarm_check_computer_state_not_selected(
       allocation_scope='open/personal')
-      
+
   def test_alarm_check_computer_state_closed_forever_computer(self):
     self._test_alarm_check_computer_state_not_selected(
       allocation_scope='closed/forever')
-      
+
   def test_alarm_check_computer_state_closed_mantainence_computer(self):
     self._test_alarm_check_computer_state_not_selected(
       allocation_scope='closed/maintenance')
-      
+
   def test_alarm_check_computer_state_closed_termination_computer(self):
     self._test_alarm_check_computer_state_not_selected(
       allocation_scope='closed/termination')
 
 
-class TestSlapOSCrmMonitoringCheckComputerAllocationScope(testSlapOSMixin):
+class TestSlapOSCrmMonitoringCheckComputerAllocationScope(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -896,7 +895,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
   def test_alarm_not_allowed_allocationScope_open_personal(self):
     self._makeComputer()
     self.computer.edit(allocation_scope = 'open/personal')
-    
+
     self._simulateComputer_checkAndUpdateAllocationScope()
 
     try:
@@ -909,7 +908,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
       self.computer.workflow_history['edit_workflow'][-1]['comment'])
 
 
-class TestSlapOSCrmMonitoringCheckComputerPersonalAllocationScope(testSlapOSMixin):
+class TestSlapOSCrmMonitoringCheckComputerPersonalAllocationScope(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -1007,7 +1006,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
     self.assertNotEqual('Visited by Computer_checkAndUpdatePersonalAllocationScope',
       self.computer.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSCrmMonitoringCheckInstanceInError(testSlapOSMixin):
+class TestSlapOSCrmMonitoringCheckInstanceInError(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()
@@ -1077,7 +1076,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
   def test_alarm_check_instance_in_error_archived_hosting_subscription(self):
     host_sub = self._makeHostingSubscription()
     host_sub.archive()
-    
+
     self._simulateHostingSubscription_checkSoftwareInstanceState()
 
     try:
@@ -1089,7 +1088,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
     self.assertNotEqual('Visited by HostingSubscription_checkSoftwareInstanceState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlaposCrmUpdateSupportRequestState(testSlapOSMixin):
+class TestSlaposCrmUpdateSupportRequestState(SlapOSTestCaseMixin):
 
   def beforeTearDown(self):
     transaction.abort()

@@ -1,13 +1,11 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
+
 from DateTime import DateTime
 from zExceptions import Unauthorized
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 
-class TestSlapOSCurrency_getIntegrationMapping(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSCurrency_getIntegrationMapping(SlapOSTestCaseMixinWithAbort):
 
   def test_integratedCurrency(self):
     currency = self.portal.currency_module.EUR
@@ -25,9 +23,7 @@ class TestSlapOSCurrency_getIntegrationMapping(testSlapOSMixin):
       currency.Currency_getIntegrationMapping)
 
 
-class TestSlapOSAccountingTransaction_updateStartDate(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSAccountingTransaction_updateStartDate(SlapOSTestCaseMixinWithAbort):
 
   def createPaymentTransaction(self):
     new_id = self.generateNewId()
@@ -52,17 +48,7 @@ class TestSlapOSAccountingTransaction_updateStartDate(testSlapOSMixin):
       date, REQUEST={})
 
 
-class TestSlapOSPaymentTransaction_getPayzenId(testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createPaymentTransaction(self):
-    new_id = self.generateNewId()
-    return self.portal.accounting_module.newContent(
-      portal_type='Payment Transaction',
-      title="Transaction %s" % new_id,
-      reference="TESTTRANS-%s" % new_id,
-      )
+class TestSlapOSPaymentTransaction_getPayzenId(SlapOSTestCaseMixinWithAbort):
 
   def test_getPayzenId_newPaymentTransaction(self):
     payment_transaction = self.createPaymentTransaction()
@@ -102,17 +88,7 @@ class TestSlapOSPaymentTransaction_getPayzenId(testSlapOSMixin):
       REQUEST={})
 
 
-class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createPaymentTransaction(self):
-    new_id = self.generateNewId()
-    return self.portal.accounting_module.newContent(
-      portal_type='Payment Transaction',
-      title="Transaction %s" % new_id,
-      reference="TESTTRANS-%s" % new_id,
-      )
+class TestSlapOSPaymentTransaction_generatePayzenId(SlapOSTestCaseMixinWithAbort):
 
   def test_generatePayzenId_newPaymentTransaction(self):
     payment_transaction = self.createPaymentTransaction()
@@ -172,17 +148,7 @@ class TestSlapOSPaymentTransaction_generatePayzenId(testSlapOSMixin):
       REQUEST={})
 
 
-class TestSlapOSPaymentTransaction_createPayzenEvent(testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createPaymentTransaction(self):
-    new_id = self.generateNewId()
-    return self.portal.accounting_module.newContent(
-      portal_type='Payment Transaction',
-      title="Transaction %s" % new_id,
-      reference="TESTTRANS-%s" % new_id,
-      )
+class TestSlapOSPaymentTransaction_createPayzenEvent(SlapOSTestCaseMixinWithAbort):
 
   def test_createPayzenEvent_REQUEST_disallowed(self):
     payment_transaction = self.createPaymentTransaction()
@@ -210,22 +176,7 @@ class TestSlapOSPaymentTransaction_createPayzenEvent(testSlapOSMixin):
     self.assertEquals(payzen_event.getTitle(), "foo")
 
 
-class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
-
-  abort_transaction = 1
-
-  def createPaymentTransaction(self):
-    new_id = self.generateNewId()
-    return self.portal.accounting_module.newContent(
-      portal_type='Payment Transaction',
-      title="Transaction %s" % new_id,
-      reference="TESTTRANS-%s" % new_id,
-      )
-
-  def createPayzenEvent(self):
-    return self.portal.system_event_module.newContent(
-        portal_type='Payzen Event',
-        reference='PAY-%s' % self.generateNewId())
+class TestSlapOSPayzenEvent_processUpdate(SlapOSTestCaseMixinWithAbort):
 
   def test_processUpdate_REQUEST_disallowed(self):
     event = self.createPayzenEvent()
@@ -578,9 +529,7 @@ return addToDate(DateTime(), to_add={'day': -1, 'second': -1}).toZone('UTC'), 'f
         'Aborting refused payzen payment.',
         payment.workflow_history['accounting_workflow'][-1]['comment'])
 
-class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(SlapOSTestCaseMixinWithAbort):
 
   def test_getPayzenServiceRelativeUrl_REQUEST_disallowed(self):
     self.assertRaises(
@@ -592,47 +541,28 @@ class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
     result = self.portal.Base_getPayzenServiceRelativeUrl()
     self.assertEquals(result, 'portal_secure_payments/slapos_payzen_test')
 
+
+class TestSlapOSPayzenSaleInvoiceTransaction_getPayzenPaymentRelatedValue(
+                                                    SlapOSTestCaseMixinWithAbort):
+
+  def test_SaleInvoiceTransaction_getPayzenPaymentRelatedValue(self):
+    invoice =  self.createPayzenSaleInvoiceTransaction()
+    self.tic()
+    payment = invoice.SaleInvoiceTransaction_getPayzenPaymentRelatedValue()
+    self.assertNotEquals(None, payment)
+    self.assertEquals(payment.getSimulationState(), "started")
+    self.assertEquals(payment.getCausalityValue(), invoice)
+    self.assertEquals(payment.getPaymentModeUid(),
+      self.portal.portal_categories.payment_mode.payzen.getUid())
+
+    payment.setStartDate(DateTime())
+    payment.stop()
+    payment.immediateReindexObject()
+    payment = invoice.SaleInvoiceTransaction_getPayzenPaymentRelatedValue()
+    self.assertEquals(None, payment)
+
 class TestSlapOSPayzenSaleInvoiceTransaction_createReversalPayzenTransaction(
-                                                    testSlapOSMixin):
-  abort_transaction = 1
-
-  def createPayzenSaleInvoiceTransaction(self):
-    new_title = self.generateNewId()
-    new_reference = self.generateNewId()
-    new_source_reference = self.generateNewId()
-    new_destination_reference = self.generateNewId()
-    invoice = self.portal.accounting_module.newContent(
-      portal_type="Sale Invoice Transaction",
-      title=new_title,
-      start_date=DateTime(),
-      reference=new_reference,
-      source_reference=new_source_reference,
-      destination_reference=new_destination_reference,
-      payment_mode="payzen",
-      specialise="sale_trade_condition_module/slapos_aggregated_trade_condition",
-      created_by_builder=1 # to prevent init script to create lines
-    )
-    self.portal.portal_workflow._jumpToStateFor(invoice, 'stopped')
-    invoice.newContent(
-      title="",
-      portal_type="Invoice Line",
-      quantity=-2,
-      price=2,
-    )
-    invoice.newContent(
-      portal_type="Sale Invoice Transaction Line",
-      source="account_module/receivable",
-      quantity=-3,
-    )
-
-    payment = self.portal.accounting_module.newContent(
-      portal_type="Payment Transaction",
-      payment_mode="payzen",
-      causality_value=invoice,
-      created_by_builder=1 # to prevent init script to create lines
-    )
-    self.portal.portal_workflow._jumpToStateFor(payment, 'started')
-    return invoice
+                                                    SlapOSTestCaseMixinWithAbort):
 
   def test_createReversalPayzenTransaction_REQUEST_disallowed(self):
     self.assertRaises(

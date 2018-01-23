@@ -14,7 +14,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>testSlapOSPDMAlarm</string> </value>
+            <value> <string>SlapOSTestCaseMixin</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>test.erp5.testSlapOSPDMAlarm</string> </value>
+            <value> <string>test.erp5.SlapOSTestCaseMixin</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -45,7 +45,13 @@
         <item>
             <key> <string>text_content_warning_message</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>W:438,  0: Cannot decode using encoding "ascii", unexpected byte at position 32 (invalid-encoded-data)</string>
+                <string>W:441,  0: Cannot decode using encoding "ascii", unexpected byte at position 17 (invalid-encoded-data)</string>
+                <string>W:444,  0: Cannot decode using encoding "ascii", unexpected byte at position 18 (invalid-encoded-data)</string>
+                <string>W:449,  0: Cannot decode using encoding "ascii", unexpected byte at position 13 (invalid-encoded-data)</string>
+                <string>W:460,  0: Cannot decode using encoding "ascii", unexpected byte at position 14 (invalid-encoded-data)</string>
+              </tuple>
             </value>
         </item>
         <item>

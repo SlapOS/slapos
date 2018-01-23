@@ -1,6 +1,5 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 import transaction
 from unittest import expectedFailure
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
@@ -8,10 +7,10 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 
-class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
+class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(SlapOSTestCaseMixin):
   def afterSetUp(self):
     self.login()
-    super(TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     # Clone computer document
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
@@ -100,9 +99,9 @@ class TestSlapOSCoreComputerPartitionSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(1, self.portal.portal_catalog.countResults(
         parent_uid=self.computer.getUid(), free_for_request=1)[0][0])
 
-class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
+class TestSlapOSCoreComputerSlapInterfaceWorkflow(SlapOSTestCaseMixin):
   def afterSetUp(self):
-    super(TestSlapOSCoreComputerSlapInterfaceWorkflow, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     # Clone computer document
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
@@ -115,7 +114,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.tic()
 
   def beforeTearDown(self):
-    super(TestSlapOSCoreComputerSlapInterfaceWorkflow, self).beforeTearDown()
+    SlapOSTestCaseMixin.beforeTearDown(self)
     self.portal.REQUEST['computer_key'] = None
     self.portal.REQUEST['computer_certificate'] = None
 
@@ -367,10 +366,10 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
     self.assertEqual(None, self.computer.getDestinationReference())
 
-class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
+class TestSlapOSCorePersonComputerSupply(SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSCorePersonComputerSupply, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     portal = self.getPortalObject()
 
     # Clone computer document
@@ -674,9 +673,9 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
     self.assertEqual('SOFTINSTALL-%s' % (previous_id+2),
         software_installation.getReference())
 
-class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
+class TestSlapOSCoreInstanceSlapInterfaceWorkflow(SlapOSTestCaseMixin):
   def afterSetUp(self):
-    super(TestSlapOSCoreInstanceSlapInterfaceWorkflow, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
 
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -1071,11 +1070,11 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         connection_xml="<foo bar /<>")
     transaction.abort()
 
-class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
+class TestSlapOSCoreSoftwareInstanceRequest(SlapOSTestCaseMixin):
   """Tests instance.requestInstance"""
 
   def afterSetUp(self):
-    super(TestSlapOSCoreSoftwareInstanceRequest, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
@@ -1909,10 +1908,10 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
 
     self.assertEqual(bang_amount+1, self._countBang(self.software_instance))
 
-class TestSlapOSCorePersonRequest(testSlapOSMixin):
+class TestSlapOSCorePersonRequest(SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSCorePersonRequest, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
 
     person_user = self.makePerson()
     self.tic()
@@ -2454,13 +2453,13 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     self.assertNotEquals(hosting_subscription.getRelativeUrl(),
                          hosting_subscription2.getRelativeUrl())
 
-class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
+class TestSlapOSCorePersonRequestComputer(SlapOSTestCaseMixin):
 
   def generateNewComputerTitle(self):
     return 'My Comp %s' % self.generateNewId()
 
   def afterSetUp(self):
-    super(TestSlapOSCorePersonRequestComputer, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     portal = self.getPortalObject()
 
     person_user = self.makePerson()
@@ -2654,7 +2653,7 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
     self.assertRaises(NotImplementedError, person.requestComputer,
                       computer_title=computer_title)
 
-class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
+class TestSlapOSCoreSlapOSCloudInteractionWorkflow(SlapOSTestCaseMixin):
 
   def test_Computer_setSubjectList(self):
     self.person_user = self.makePerson()

@@ -1,12 +1,9 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from DateTime import DateTime
 
-class TestSlapOSPayzenUpdateConfirmedPayment(testSlapOSMixin):
-
-  abort_transaction = 1
+class TestSlapOSPayzenUpdateConfirmedPayment(SlapOSTestCaseMixinWithAbort):
 
   def _simulatePaymentTransaction_startPayzenPayment(self):
     script_name = 'PaymentTransaction_startPayzenPayment'
@@ -215,10 +212,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
     self.assertEquals(transaction.getSimulationState(), 'started')
 
 
-class TestSlapOSPayzenUpdateStartedPayment(testSlapOSMixin):
-
-  def beforeTearDown(self):
-    self.abort()
+class TestSlapOSPayzenUpdateStartedPayment(SlapOSTestCaseMixinWithAbort):
 
   def test_not_started_payment(self):
     new_id = self.generateNewId()

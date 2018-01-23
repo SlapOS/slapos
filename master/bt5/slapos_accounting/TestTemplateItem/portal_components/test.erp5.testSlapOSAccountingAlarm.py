@@ -8,8 +8,8 @@
 import transaction
 from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin, withAbort
+
 import os
 import tempfile
 from DateTime import DateTime
@@ -83,7 +83,7 @@ if context.getTitle() == 'Not visited by %s':
     return wrapped
   return wrapper
 
-class TestInstanceInvoicingAlarm(testSlapOSMixin):
+class TestInstanceInvoicingAlarm(SlapOSTestCaseMixin):
   @withAbort
   def test_noSaleOrderPackingList_newSoftwareInstance(self):
     """
@@ -275,7 +275,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(2, instance.getInvoicingSynchronizationPointer())
     delivery = instance.getCausalityValue()
 
-    setup_line, update_line, destroy_line =\
+    setup_line, _, destroy_line =\
       self.check_instance_delivery(delivery, start_date, stop_date, person, 2)
     self.check_instance_movement(setup_line, instance, subscription, 1)
     self.check_instance_movement(destroy_line, instance, subscription, 1)
@@ -347,7 +347,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(2, instance.getInvoicingSynchronizationPointer())
     delivery = instance.getCausalityValue()
 
-    setup_line, update_line, destroy_line =\
+    setup_line, update_line, _ =\
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(setup_line, instance, subscription, 1)
 
@@ -404,7 +404,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(4, instance.getInvoicingSynchronizationPointer())
     delivery = instance.getCausalityValue()
 
-    setup_line, update_line, destroy_line =\
+    setup_line, update_line, _ =\
       self.check_instance_delivery(delivery, start_date, stop_date, person, 2)
     self.check_instance_movement(setup_line, instance, subscription, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
@@ -525,7 +525,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(4, instance.getInvoicingSynchronizationPointer())
     delivery = instance.getCausalityValue()
 
-    setup_line, update_line, destroy_line =\
+    _, update_line, destroy_line =\
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
@@ -646,7 +646,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(4, instance.getInvoicingSynchronizationPointer())
     delivery = instance.getCausalityValue()
 
-    setup_line, update_line, destroy_line =\
+    setup_line, update_line, _ =\
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
@@ -689,7 +689,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       self.check_instance_delivery(delivery, stop_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 1)
 
-class TestOpenSaleOrderAlarm(testSlapOSMixin):
+class TestOpenSaleOrderAlarm(SlapOSTestCaseMixin):
   def test_noOSO_newPerson(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -743,7 +743,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
         subscription.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
+class TestHostingSubscription_requestUpdateOpenSaleOrder(SlapOSTestCaseMixin):
   def test_REQUEST_disallowed(self):
     subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -1291,7 +1291,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertTrue(new_effective_date > effective_date,
                     "%s <= %s" % (new_effective_date, effective_date))
 
-class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
+class TestSlapOSTriggerBuildAlarm(SlapOSTestCaseMixin):
   @simulateByTitlewMark('SimulationMovement_buildSlapOS')
   def test_SimulationMovement_withoutDelivery(self):
     applied_rule = self.portal.portal_simulation.newContent(
@@ -1332,7 +1332,7 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   def test_SimulationMovement_buildSlapOS(self):
     build_simulator = tempfile.mkstemp()[1]
     activate_simulator = tempfile.mkstemp()[1]
-    
+
     business_process = self.portal.business_process_module.newContent(
         portal_type='Business Process')
     root_business_link = business_process.newContent(
@@ -1415,7 +1415,7 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   def test_SimulationMovement_buildSlapOS_withDelivery(self):
     build_simulator = tempfile.mkstemp()[1]
     activate_simulator = tempfile.mkstemp()[1]
-    
+
     delivery = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List')
     delivery_line = delivery.newContent(portal_type='Sale Packing List Line')
@@ -1475,7 +1475,7 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
       if os.path.exists(activate_simulator):
         os.unlink(activate_simulator)
 
-class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
+class TestSlapOSManageBuildingCalculatingDeliveryAlarm(SlapOSTestCaseMixin):
   @simulateByTitlewMark('Delivery_manageBuildingCalculatingDelivery')
   def _test(self, state, message):
     delivery = self.portal.sale_packing_list_module.newContent(
@@ -1506,7 +1506,7 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
   def _test_Delivery_manageBuildingCalculatingDelivery(self, state, empty=False):
     updateCausalityState_simulator = tempfile.mkstemp()[1]
     updateSimulation_simulator = tempfile.mkstemp()[1]
-    
+
     delivery = self.portal.sale_packing_list_module.newContent(
         title='Not visited by Delivery_manageBuildingCalculatingDelivery',
         portal_type='Sale Packing List')
@@ -1656,7 +1656,7 @@ class TestSlapOSConfirmedDeliveryMixin:
         'confirmed', True)
 
 class TestSlapOSStartConfirmedAggregatedSalePackingListAlarm(
-      testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
+      SlapOSTestCaseMixin, TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'started'
   script = 'Delivery_startConfirmedAggregatedSalePackingList'
   portal_type = 'Sale Packing List'
@@ -1692,7 +1692,7 @@ class TestSlapOSStartConfirmedAggregatedSalePackingListAlarm(
       destination_decision='organisation_module/slapos',
       price_currency='currency_module/EUR',
       )
-    movement = delivery.newContent(
+    delivery.newContent(
       portal_type="Sale Packing List Line",
       resource='service_module/slapos_instance_setup',
       quantity=0,
@@ -1708,7 +1708,7 @@ class TestSlapOSStartConfirmedAggregatedSalePackingListAlarm(
     self.assertEquals(delivery.getSimulationState(), 'started')
 
 class TestSlapOSDeliverStartedAggregatedSalePackingListAlarm(
-      testSlapOSMixin):
+      SlapOSTestCaseMixin):
   destination_state = 'delivered'
   script = 'Delivery_deliverStartedAggregatedSalePackingList'
   portal_type = 'Sale Packing List'
@@ -1805,13 +1805,13 @@ class TestSlapOSDeliverStartedAggregatedSalePackingListAlarm(
         'started', True)
 
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
-      testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
+      SlapOSTestCaseMixin, TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'stopped'
   script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
   portal_type = 'Sale Invoice Transaction'
   alarm = 'slapos_stop_confirmed_aggregated_sale_invoice_transaction'
 
-class TestSlapOSUpdateOpenSaleOrderPeriod(testSlapOSMixin):
+class TestSlapOSUpdateOpenSaleOrderPeriod(SlapOSTestCaseMixin):
 
   def createOpenOrder(self):
     open_order = self.portal.open_sale_order_module\
@@ -1947,7 +1947,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by O
         'Visited by OpenSaleOrder_updatePeriod',
         open_order.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSReindexOpenSaleOrder(testSlapOSMixin):
+class TestSlapOSReindexOpenSaleOrder(SlapOSTestCaseMixin):
 
   def createOpenOrder(self):
     open_order = self.portal.open_sale_order_module\
@@ -2004,7 +2004,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by O
         'Visited by OpenSaleOrder_reindexIfIndexedBeforeLine',
         open_order.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSGeneratePackingListFromTioXML(testSlapOSMixin):
+class TestSlapOSGeneratePackingListFromTioXML(SlapOSTestCaseMixin):
 
   def createTioXMLFile(self):
     document = self.portal.consumption_document_module.newContent(

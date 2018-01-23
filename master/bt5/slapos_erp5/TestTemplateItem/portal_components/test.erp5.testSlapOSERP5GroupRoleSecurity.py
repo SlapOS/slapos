@@ -1,12 +1,11 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 from AccessControl import getSecurityManager
 
-class TestSlapOSGroupRoleSecurityMixin(testSlapOSMixin):
-  abort_transaction = 1
+class TestSlapOSGroupRoleSecurityMixin(SlapOSTestCaseMixinWithAbort):
 
   def afterSetUp(self):
-    super(TestSlapOSGroupRoleSecurityMixin, self).afterSetUp()
+    SlapOSTestCaseMixinWithAbort.afterSetUp(self)
     self.user_id = getSecurityManager().getUser().getId()
 
   def changeOwnership(self, document):
@@ -15,10 +14,6 @@ class TestSlapOSGroupRoleSecurityMixin(testSlapOSMixin):
     """
     document.changeOwnership(getSecurityManager().getUser(), False)
     document.updateLocalRolesOnSecurityGroups()
-
-  def generateNewId(self):
-    return self.getPortalObject().portal_ids.generateNewId(
-                                     id_group=('slapos_core_test'))
 
   def _getLocalRoles(self, context):
     return [x[0] for x in context.get_local_roles()]

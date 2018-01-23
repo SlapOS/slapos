@@ -1,12 +1,11 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
+
 import transaction
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from DateTime import DateTime
-from Products.ERP5Type.DateUtils import addToDate
 
-class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
+class TestSlapOSAccountingInteractionWorkflow(SlapOSTestCaseMixin):
   def beforeTearDown(self):
     transaction.abort()
 

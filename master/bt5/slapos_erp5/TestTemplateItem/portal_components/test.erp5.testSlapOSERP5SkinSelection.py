@@ -27,12 +27,10 @@
 #
 ##############################################################################
 import unittest
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
-
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 import difflib
 
-class TestSlaposSkinSelection(testSlapOSMixin):
+class TestSlaposSkinSelection(SlapOSTestCaseMixin):
   run_all_test = 1
 
   def getTitle(self):

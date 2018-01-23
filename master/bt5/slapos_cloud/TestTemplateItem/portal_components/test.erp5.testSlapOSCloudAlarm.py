@@ -1,7 +1,6 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, simulate
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin, simulate
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from unittest import skip
 import json
@@ -11,11 +10,11 @@ from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
 from App.Common import rfc1123_date
 
-class TestSlapOSAllocation(testSlapOSMixin):
+
+class TestSlapOSAllocation(SlapOSTestCaseMixin):
 
   def _makeSlaveTree(self, requested_template_id='template_slave_instance'):
-    super(TestSlapOSAllocation, self).\
-        _makeTree(requested_template_id=requested_template_id)
+    SlapOSTestCaseMixin._makeTree(self, requested_template_id=requested_template_id)
 
   def _simulatePerson_isAllowedToAllocate(self):
     script_name = 'Person_isAllowedToAllocate'
@@ -874,7 +873,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_local_area_network_type_sla(self):
-    return self.check_allocation_category_sla('local_area_network_type', 
+    return self.check_allocation_category_sla('local_area_network_type',
                                               'ethernet', 'wifi')
 
   @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
@@ -887,12 +886,12 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_region_sla(self):
-    return self.check_allocation_category_sla('region', 'africa', 
+    return self.check_allocation_category_sla('region', 'africa',
                                               'america')
 
   @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_storage_capacity_sla(self):
-    return self.check_allocation_category_sla('storage_capacity', 'finite', 
+    return self.check_allocation_category_sla('storage_capacity', 'finite',
                                               'infinite')
 
   @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
@@ -904,11 +903,10 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     return self.check_allocation_category_sla('storage_redundancy', 'dht', 'raid')
 
 class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
-    testSlapOSMixin):
+    SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm,
-        self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self._makeTree()
 
   def test_HostingSubscription_assertPredecessor(self):
@@ -1006,10 +1004,10 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
         'Visited by HostingSubscription_assertPredecessor',
         self.hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSFreeComputerPartitionAlarm(testSlapOSMixin):
+class TestSlapOSFreeComputerPartitionAlarm(SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSFreeComputerPartitionAlarm, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self._makeTree()
 
   def test_Instance_tryToUnallocatePartition(self):
@@ -1145,9 +1143,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToUnallocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSFreeComputerPartitionAlarmWithSlave(testSlapOSMixin):
+class TestSlapOSFreeComputerPartitionAlarmWithSlave(SlapOSTestCaseMixin):
   def afterSetUp(self):
-    super(TestSlapOSFreeComputerPartitionAlarmWithSlave, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self._makeTree(requested_template_id='template_slave_instance')
 
   def test_Instance_tryToUnallocatePartition(self):
@@ -1176,10 +1174,10 @@ class TestSlapOSFreeComputerPartitionAlarmWithSlave(testSlapOSMixin):
     self.assertEqual('busy', self.partition.getSlapState())
 
 
-class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
+class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSGarbageCollectDestroyedRootTreeAlarm, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self._makeTree()
 
   def test_Instance_tryToGarbageCollect(self):
@@ -1344,10 +1342,10 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToGarbageCollect',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
+class TestSlapOSUpdateComputerCapacityScopeAlarm(SlapOSTestCaseMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSUpdateComputerCapacityScopeAlarm, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
@@ -1363,7 +1361,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
         'text': '#access ok',
         'created_at': rfc1123_date(DateTime())
     })
-    self.commit()
+    transaction.commit()
 
   def test_Computer_checkAndUpdateCapacityScope(self):
     self.computer.Computer_checkAndUpdateCapacityScope()
@@ -1389,7 +1387,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
   def test_Computer_checkAndUpdateCapacityScope_model(self):
     computer_model = self._newComputerModel(9999)
 
-    self.computer.edit(specialise_value=computer_model, 
+    self.computer.edit(specialise_value=computer_model,
                        capacity_quantity=None)
     transaction.commit()
 
@@ -1402,10 +1400,10 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
     self._makeTree()
 
     computer_model = self._newComputerModel(1)
-    self.computer.edit(specialise_value=computer_model, 
+    self.computer.edit(specialise_value=computer_model,
                        capacity_quantity=None)
 
-    self._addPartitionToComputer() 
+    self._addPartitionToComputer()
     self.computer.Computer_checkAndUpdateCapacityScope()
     self.assertEqual('close', self.computer.getCapacityScope())
     self.assertEqual('Computer capacity limit exceeded',
@@ -1419,7 +1417,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
     self._makeTree()
 
     computer_model = self._newComputerModel(1)
-    self.computer.edit(specialise_value=computer_model, 
+    self.computer.edit(specialise_value=computer_model,
                        capacity_quantity=2)
 
     self._addPartitionToComputer()
@@ -1435,7 +1433,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
         plugin_path='portal_memcached/default_memcached_plugin')
     memcached_dict[self.computer.getReference()] = json.dumps({
         'text': '#access ok',
-        'created_at': rfc1123_date(addToDate(DateTime(), 
+        'created_at': rfc1123_date(addToDate(DateTime(),
                                              to_add={'minute': -11}))
     })
     self.computer.Computer_checkAndUpdateCapacityScope()
@@ -1542,7 +1540,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
         'Visited by Computer_checkAndUpdateCapacityScope',
         self.computer.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSGarbageCollectStoppedRootTreeAlarm(testSlapOSMixin):
+class TestSlapOSGarbageCollectStoppedRootTreeAlarm(SlapOSTestCaseMixin):
 
   def createInstance(self):
     hosting_subscription = self.portal.hosting_subscription_module\
@@ -1654,7 +1652,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToStopCollect',
         instance.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(testSlapOSMixin):
+class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(SlapOSTestCaseMixin):
 
   def createInstance(self):
     hosting_subscription = self.portal.hosting_subscription_module\
@@ -1859,7 +1857,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
         instance.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSGarbageCollectUnlinkedInstanceAlarm(testSlapOSMixin):
+class TestSlapOSGarbageCollectUnlinkedInstanceAlarm(SlapOSTestCaseMixin):
 
   def createInstance(self):
     hosting_subscription = self.portal.hosting_subscription_module\
@@ -1932,7 +1930,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     script_name = 'SoftwareInstance_tryToGarbageUnlinkedInstance'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()  
+    transaction.commit()
 
   def test_SoftwareInstance_tryToGarbageUnlinkedInstance(self):
     instance = self.createInstance()
@@ -2024,7 +2022,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     partition = self.createComputerPartition()
     instance.edit(aggregate_value=partition)
     self.tic()
-    
+
     self.assertEqual(self.hosting_subscription.getTitle(), instance.getTitle())
 
     # Remove predecessor link
@@ -2105,7 +2103,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_tryToGarbageUnlinkedInstance',
         slave_instance0.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSInvalidateDestroyedInstance(testSlapOSMixin):
+class TestSlapOSInvalidateDestroyedInstance(SlapOSTestCaseMixin):
 
   def createSoftwareInstance(self):
     new_id = self.generateNewId()

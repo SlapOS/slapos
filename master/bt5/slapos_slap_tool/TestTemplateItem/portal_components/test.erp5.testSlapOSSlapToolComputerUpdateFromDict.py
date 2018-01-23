@@ -1,12 +1,10 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 
-class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
+class TestSlapOSCoreComputerUpdateFromDict(SlapOSTestCaseMixinWithAbort):
 
   def afterSetUp(self):
-    super(TestSlapOSCoreComputerUpdateFromDict, self).afterSetUp()
+    SlapOSTestCaseMixinWithAbort.afterSetUp(self)
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
@@ -22,9 +20,6 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
     partition_list = self.computer.contentValues(
         portal_type='Computer Partition')
     self.assertEqual(len(partition_list), 0)
-
-  def beforeTearDown(self):
-    transaction.abort()
 
   #############################################
   # Computer network information
@@ -420,7 +415,7 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
       id ='foo',
       portal_type='Internet Protocol Address',
     )
-    other_address2 = partition.newContent(
+    partition.newContent(
       id ='route_foo',
       portal_type='Internet Protocol Address',
     )
@@ -553,11 +548,11 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
     address_list = partition.contentValues(
         portal_type='Internet Protocol Address')
     self.assertEqual(len(address_list), 0)
-    other_address = partition.newContent(
+    partition.newContent(
       id ='foo',
       portal_type='Internet Protocol Address',
     )
-    default_address = partition.newContent(
+    partition.newContent(
       id ='default_network_interface',
       portal_type='Internet Protocol Address',
     )
@@ -594,11 +589,11 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
     address_list = partition.contentValues(
         portal_type='Internet Protocol Address')
     self.assertEqual(len(address_list), 0)
-    other_address = partition.newContent(
+    partition.newContent(
       id ='foo',
       portal_type='Internet Protocol Address',
     )
-    default_address = partition.newContent(
+    partition.newContent(
       id ='default_network_interface',
       portal_type='Internet Protocol Address',
     )

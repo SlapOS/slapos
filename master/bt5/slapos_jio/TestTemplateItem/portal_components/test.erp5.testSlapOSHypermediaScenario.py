@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
+
 import json
 import httplib
 import urlparse
@@ -25,7 +25,7 @@ def getRelativeUrlFromUrn(urn):
     return
   return url
 
-class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
+class TestSlapOSHypermediaPersonScenario(SlapOSTestCaseMixin):
 
   def _makeUser(self):
     person_user = self.makePerson()
@@ -386,10 +386,7 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     software_hal = json.loads(response.read())
 
 
-class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
-  def generateNewId(self):
-    return "%s" % self.portal.portal_ids.generateNewId(
-        id_group=('slapos_core_test'))
+class TestSlapOSHypermediaInstanceScenario(SlapOSTestCaseMixin):
 
   def generateNewSoftwareReleaseUrl(self):
     return 'http://example.org/test%s.cfg' % self.generateNewId()
@@ -490,7 +487,7 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
       body="",
     )
     response = connection.getresponse()
- 
+
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
 
@@ -591,7 +588,7 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
       body="",
     )
     response = connection.getresponse()
- 
+
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     instance_collection_hal = json.loads(response.read())
@@ -613,7 +610,7 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
       body="",
     )
     response = connection.getresponse()
- 
+
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     instance_hal = json.loads(response.read())

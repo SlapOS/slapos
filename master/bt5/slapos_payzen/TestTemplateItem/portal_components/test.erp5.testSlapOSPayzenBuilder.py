@@ -5,10 +5,9 @@
 #
 ##############################################################################
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 
-class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
+class TestSlapOSPaymentTransactionOrderBuilder(SlapOSTestCaseMixin):
   def sumReceivable(self, payment_transaction):
     quantity = .0
     default_source_uid = self.portal.restrictedTraverse(

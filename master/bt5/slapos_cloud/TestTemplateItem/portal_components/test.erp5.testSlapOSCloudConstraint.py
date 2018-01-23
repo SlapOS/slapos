@@ -4,11 +4,11 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
 #
 ##############################################################################
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
+
 import transaction
 
-class TestSlapOSConstraintMixin(testSlapOSMixin):
+class TestSlapOSConstraintMixin(SlapOSTestCaseMixin):
   @staticmethod
   def getMessageList(o):
     return [str(q.getMessage()) for q in o.checkConsistency()]

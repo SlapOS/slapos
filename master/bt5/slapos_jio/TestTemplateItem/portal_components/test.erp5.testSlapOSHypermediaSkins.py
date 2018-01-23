@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, changeSkin, simulate
+from erp5.component.test.SlapOSTestCaseMixin import \
+  SlapOSTestCaseMixinWithAbort, changeSkin, simulate
 from zExceptions import Unauthorized
 from unittest import skip
 
@@ -132,13 +132,10 @@ class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
         )
 
 
-class TestSlapOSHypermediaMixin(testSlapOSMixin):
+class TestSlapOSHypermediaMixin(SlapOSTestCaseMixinWithAbort):
   def afterSetUp(self):
-    testSlapOSMixin.afterSetUp(self)
+    SlapOSTestCaseMixinWithAbort.afterSetUp(self)
     self.changeSkin('Hal')
-
-  def beforeTearDown(self):
-    transaction.abort()
 
   def _makePerson(self):
     person_user = self.makePerson()
@@ -238,7 +235,6 @@ class TestSlapOSPersonERP5Document_getHateoas(TestSlapOSHypermediaMixin):
         u'title': u'getHateoasInformation'
       },
     ]:
-      
       self.assertTrue(action in action_object_slap, \
         "%s not in %s" % (action, action_object_slap))
     self.assertEquals(results['_links']['action_object_slap_post'], {

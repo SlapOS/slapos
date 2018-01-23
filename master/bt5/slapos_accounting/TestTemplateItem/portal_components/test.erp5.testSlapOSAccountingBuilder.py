@@ -5,15 +5,13 @@
 #
 ##############################################################################
 
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
 from DateTime import DateTime
-import transaction
 
 def convertCategoryList(base, l):
   return ['%s/%s' % (base, q) for q in l]
 
-class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
+class TestSlapOSSalePackingListBuilder(SlapOSTestCaseMixin):
   def checkSimulationMovement(self, simulation_movement):
     self.assertEqual(1.0, simulation_movement.getDeliveryRatio())
     self.assertEqual(0.0, simulation_movement.getDeliveryError())
@@ -1210,7 +1208,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.assertEqual(invoice_2.getRelativeUrl(),
         model_line_2_tax_bis.getParentValue().getRelativeUrl())
 
-class TestSlapOSAggregatedDeliveryBuilder(testSlapOSMixin):
+class TestSlapOSAggregatedDeliveryBuilder(SlapOSTestCaseMixin):
   def emptyBuild(self, **kw):
     delivery_list = self._build(**kw)
     self.assertSameSet([], delivery_list)

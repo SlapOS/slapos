@@ -1,27 +1,23 @@
 # Copyright (c) 2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
-from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixin
+
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 
-class TestSlapOSUpgradeDecisionProcess(testSlapOSMixin):
+class TestSlapOSUpgradeDecisionProcess(SlapOSTestCaseMixin):
   def afterSetUp(self):
-    super(TestSlapOSUpgradeDecisionProcess, self).afterSetUp()
+    SlapOSTestCaseMixin.afterSetUp(self)
     self.new_id = self.generateNewId()
-
-  def generateNewId(self):
-    return "%sTEST" % self.portal.portal_ids.generateNewId(
-         id_group=('slapos_core_test'))
 
   def _makeUpgradeDecision(self, confirm=True):
     upgrade_decision = self.portal.\
        upgrade_decision_module.newContent(
-         portal_type="Upgrade Decision", 
+         portal_type="Upgrade Decision",
          title="TESTUPDE-%s" % self.new_id)
     if confirm:
       upgrade_decision.confirm()
     return upgrade_decision
-  
+
   def _makeComputer(self,new_id):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -59,7 +55,7 @@ return %s
     upgrade_decision = self._makeUpgradeDecision()
     upgrade_decision.start()
     self.tic()
-    
+
     self._simulateScript('UpgradeDecision_processUpgrade', 'True')
     try:
       self.portal.portal_alarms.slapos_pdm_upgrade_decision_process_started.activeSense()
@@ -67,7 +63,7 @@ return %s
     finally:
       self._dropScript('UpgradeDecision_processUpgrade')
     self.assertEqual(
-        'Visited by UpgradeDecision_processUpgrade', 
+        'Visited by UpgradeDecision_processUpgrade',
         upgrade_decision.workflow_history['edit_workflow'][-1]['comment'])
 
   def test_alarm_upgrade_decision_process_planned(self):

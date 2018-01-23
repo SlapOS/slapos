@@ -46,7 +46,7 @@
             <key> <string>text_content_warning_message</string> </key>
             <value>
               <tuple>
-                <string>W:1127,  0: Cannot decode using encoding "ascii", unexpected byte at position 32 (invalid-encoded-data)</string>
+                <string>W:1105,  0: Cannot decode using encoding "ascii", unexpected byte at position 32 (invalid-encoded-data)</string>
               </tuple>
             </value>
         </item>

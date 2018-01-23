@@ -6,7 +6,7 @@
 ##############################################################################
 from erp5.component.test.testSlapOSCloudConstraint import TestSlapOSConstraintMixin
 from Products.ERP5Type.Base import WorkflowMethod
-from Products.SlapOS.tests.testSlapOSMixin import withAbort
+from erp5.component.test.SlapOSTestCaseMixin import withAbort
 from unittest import skip
 
 import transaction
