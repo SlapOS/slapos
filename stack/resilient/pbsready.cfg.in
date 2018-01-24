@@ -5,6 +5,10 @@ parts +=
   logrotate-entry-equeue
   logrotate-entry-notifier
   logrotate-entry-resilient
+  logrotate-entry-apache
+  logrotate-entry-nginx
+  logrotate-entry-monitor-apache
+  logrotate-entry-supervisord
   cron
   cron-entry-notifier-status-feed
   notifier-feed-status-promise
@@ -95,6 +99,30 @@ name = resilient_log
 log = $${basedirectory:log}/resilient.log
 frequency = weekly
 rotate-num = 7
+
+[logrotate-entry-apache]
+<= logrotate-entry-base
+name = apache
+log = $${basedirectory:log}/httpd-access.log $${basedirectory:log}/httpd-error.log
+post = test ! -s $${buildout:directory}/var/run/httpd.pid || $${buildout:directory}/bin/slapos-kill --pidfile $${buildout:directory}/var/run/httpd.pid -s USR1
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = $${basedirectory:log}/nginx.access.log $${basedirectory:log}/nginx.error.log
+post = kill -HUP $(cat $${buildout:directory}/var/run/nginx.pid)
+
+[logrotate-entry-monitor-apache]
+<= logrotate-entry-base
+name = monitor-apache
+log = $${basedirectory:log}/monitor/monitor-httpd-error.log
+post = test ! -s $${buildout:directory}/var/run/monitor-httpd.pid || $${buildout:directory}/bin/slapos-kill --pidfile $${buildout:directory}/var/run/monitor-httpd.pid -s USR1
+
+[logrotate-entry-supervisord]
+<= logrotate-entry-base
+name = supervisord
+log = $${basedirectory:log}/slapproxy.log $${basedirectory:log}/supervisord.log $${basedirectory:log}/supervisord-errors.log
+post = kill -HUP $(cat $${buildout:directory}/var/run/supervisord.pid)
 
 #----------------
 #--
