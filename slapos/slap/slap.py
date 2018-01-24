@@ -607,6 +607,7 @@ class ComputerPartition(SlapRequester):
       # Should we check existence?
       slave_parameter_list = self.getInstanceParameter("slave_instance_list")
       slave_connection_dict = {}
+      connection_parameter_hash = None
       for slave_parameter_dict in slave_parameter_list:
         if slave_parameter_dict.get("slave_reference") == slave_reference:
           connection_parameter_hash = slave_parameter_dict.get("connection-parameter-hash", None)
