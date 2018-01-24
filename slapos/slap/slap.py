@@ -821,6 +821,7 @@ class ConnectionHelper:
     return req.text.encode('utf-8')
 
 
+getHateoasUrl_cache = {}
 class slap:
   zope.interface.implements(interface.slap)
 
@@ -835,8 +836,14 @@ class slap:
     self._connection_helper = ConnectionHelper(slapgrid_uri, key_file, cert_file, master_ca_file, timeout)
 
     if not slapgrid_rest_uri:
+      getHateoasUrl_cache_key = (slapgrid_uri, key_file, cert_file, master_ca_file, timeout)
       try:
-        slapgrid_rest_uri = self._connection_helper.GET('getHateoasUrl')
+        slapgrid_rest_uri = getHateoasUrl_cache[getHateoasUrl_cache_key]
+      except KeyError:
+        pass
+    if not slapgrid_rest_uri:
+      try:
+        slapgrid_rest_uri = getHateoasUrl_cache[getHateoasUrl_cache_key] = self._connection_helper.GET('getHateoasUrl')
       except:
         pass
     if slapgrid_rest_uri:
