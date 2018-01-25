@@ -234,6 +234,12 @@ context =
     raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
+[logrotate-entry-monitor-httpd]
+<= logrotate-entry-base
+name = monitor-apache
+log = $${basedirectory:log}/monitor/monitor-httpd-error.log
+post = test ! -s $${buildout:directory}/var/run/monitor-httpd.pid || $${buildout:directory}/bin/slapos-kill --pidfile $${buildout:directory}/var/run/monitor-httpd.pid -s USR1
+
 [xnice-bin]
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
@@ -407,6 +413,7 @@ depends =
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
+  ${logrotate-entry-monitor-httpd:name}
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
