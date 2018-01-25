@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.4.4 (2018-01-25)
+------------------
+ * slap.initializeConnection: Cache master node's Hateoas URL
+ * slapos.grid: Declare connection_parameter_hash explicitly, UnboundLocalError may occur.
+ * slapos.grid: rework checkpromise method to utils so it can be reused
+
 1.4.3 (2017-11-08)
 -----------------
  * slapos.cli.grid: Allow definition of different pidfiles for each software subcommand in config file
