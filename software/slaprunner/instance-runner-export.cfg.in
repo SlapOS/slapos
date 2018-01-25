@@ -7,11 +7,13 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
+  logrotate-entry-nginx
   gunicorn-launcher
   gunicorn-graceful
   publish-connection-information
   slaprunner-promise
   apache-httpd-promise
+  logrotate-entry-apache-httpd
   slaprunner-supervisord-wrapper
   runner-sshd-add-authorized-key
   runner-sshd-graceful
@@ -30,6 +32,7 @@ parts +=
   bash-profile
   supervisord-wrapper
   supervisord-promise
+  logrotate-entry-supervisord
   httpd-graceful-wrapper
 ## Monitoring part
 ## Monitor for runner
