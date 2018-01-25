@@ -1,0 +1,22 @@
+#!/bin/bash -e
+# simple mergetool for buildout.hash.cfg - just update hash
+
+# suggested installation:
+#  git config merge.tool update-hash-mergetool
+#  git config mergetool.update-hash-mergetool.cmd './update-hash-mergetool "$BASE" "$LOCAL" "$REMOTE" "$MERGED"'
+#  git config mergetool.update-hash-mergetool.trustExitCode true
+
+
+BASE=$1
+LOCAL=$2
+REMOTE=$3
+MERGED=$4
+
+
+if echo "$MERGED" | grep -q "buildout.hash.cfg"; then
+    cp $REMOTE $MERGED
+    exec ./update-hash $MERGED
+else
+    echo "this mergetool only supports buildout.hash.cfg" 1>&2
+    exit 1
+fi
