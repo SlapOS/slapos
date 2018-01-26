@@ -51,16 +51,15 @@ config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | joi
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
-config-max-ram-hotplug-size = {{ dumps(kvm_parameter_dict.get('max-ram-hotplug-size', 0)) }}
-config-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('hotplug-slot-size', 512)) }}
-config-hotplugged-slot-amount = {{ dumps(kvm_parameter_dict.get('hotplugged-slot-amount', 0)) }}
+config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', '50G')) }}
+config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
+config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
-config-max-cpu-hotplug-count = {{ dumps(kvm_parameter_dict.get('max-cpu-hotplug-count', 1)) }}
-config-cpu-hotplug-amount = {{ dumps(kvm_parameter_dict.get('cpu-hotplug-amount', 0)) }}
+config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
-{{ setconfig('cpu-options', kvm_parameter_dict.get('cpu-options', '')) }}
+{{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
 {{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
 {{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
 
@@ -71,7 +70,7 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
-{{ setconfig('nat-rules', ' '.join(nat_rules_list)) }}
+{{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
