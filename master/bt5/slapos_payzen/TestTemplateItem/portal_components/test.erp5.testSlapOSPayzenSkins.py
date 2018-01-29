@@ -541,6 +541,85 @@ class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(SlapOSTestCaseMixinWithAb
     result = self.portal.Base_getPayzenServiceRelativeUrl()
     self.assertEquals(result, 'portal_secure_payments/slapos_payzen_test')
 
+class TestSlapOSPayzenAccountingTransaction_getPaymentState(
+                                                    SlapOSTestCaseMixinWithAbort):
+
+  def test_AccountingTransaction_getPaymentState_draft_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    self.assertEquals("Cancelled", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_deleted_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    invoice.delete()
+    self.assertEquals("Cancelled", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_cancelled_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    invoice.cancel()
+    self.assertEquals("Cancelled", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_planned_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    invoice.plan()
+    self.assertEquals("Ongoing", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_confirmed_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    invoice.setStartDate(DateTime())
+    invoice.confirm()
+    self.assertEquals("Ongoing", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_started_payment(self):
+    invoice = self.createSaleInvoiceTransaction()
+    invoice.start()
+    self.assertEquals("Ongoing", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_reversed_payment(self):
+    invoice =  self.createPayzenSaleInvoiceTransaction()
+    self.tic()
+    reversal = invoice.SaleInvoiceTransaction_createReversalPayzenTransaction()
+    self.tic()
+    self.assertEquals("Cancelled", invoice.AccountingTransaction_getPaymentState())
+    self.assertEquals(0, invoice.getTotalPrice() + reversal.getTotalPrice())
+
+  def test_AccountingTransaction_getPaymentState_free_payment(self):
+    invoice =  self.createPayzenSaleInvoiceTransaction(price=0)
+    self.tic()
+    self.assertEquals("Free!", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_unpaid_payment(self):
+    invoice =  self.createPayzenSaleInvoiceTransaction()
+    # If payment is not indexed or not started the state should be unpaid
+    self.assertEquals("Unpaid", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_paynow_payment(self):
+    person = self.makePerson()
+    invoice =  self.createPayzenSaleInvoiceTransaction(
+      destination_section=person.getRelativeUrl())
+    self.tic()
+    self.login(person.getUserId())
+    self.assertEquals("Pay now", invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_waiting_payment(self):
+    person = self.makePerson()
+    invoice =  self.createPayzenSaleInvoiceTransaction(
+      destination_section=person.getRelativeUrl())
+    self.tic()
+    payment = invoice.SaleInvoiceTransaction_getPayzenPaymentRelatedValue()
+    payment.PaymentTransaction_generatePayzenId()
+    self.login(person.getUserId())
+    self.assertEquals("Waiting for payment confirmation",
+                      invoice.AccountingTransaction_getPaymentState())
+
+  def test_AccountingTransaction_getPaymentState_paid_payment(self):
+    invoice =  self.createPayzenSaleInvoiceTransaction()
+    self.tic()
+    for line in invoice.getMovementList(self.portal.getPortalAccountingMovementTypeList()):
+      node_value = line.getSourceValue(portal_type='Account')
+      if node_value.getAccountType() == 'asset/receivable':
+        line.setGroupingReference("TEST%s" % self.new_id)
+    self.assertEquals("Paid", invoice.AccountingTransaction_getPaymentState())
+
 
 class TestSlapOSPayzenSaleInvoiceTransaction_getPayzenPaymentRelatedValue(
                                                     SlapOSTestCaseMixinWithAbort):
