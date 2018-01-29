@@ -1,0 +1,110 @@
+From efa86aa5ad5b89ec329b3cde288cb119efb21c89 Mon Sep 17 00:00:00 2001
+From: Kirill Smelkov <kirr@nexedi.com>
+Date: Thu, 06 Jul 2017 21:15:31 +0200
+Subject: [PATCH] asyncore: switch default to use poll instead of select
+
+Recently we started to get the following errors on a Wendelin production
+instance:
+
+      File ".../bin/runzope", line 211, in <module>
+        sys.exit(Zope2.Startup.run.run())
+      File ".../eggs/Zope2-2.13.24-py2.7.egg/Zope2/Startup/run.py", line 26, in run
+        starter.run()
+      File ".../eggs/Zope2-2.13.24-py2.7.egg/Zope2/Startup/__init__.py", line 111, in run
+        Lifetime.loop()
+      File ".../eggs/Zope2-2.13.24-py2.7.egg/Lifetime/__init__.py", line 43, in loop
+        lifetime_loop()
+      File ".../eggs/Zope2-2.13.24-py2.7.egg/Lifetime/__init__.py", line 53, in lifetime_loop
+        asyncore.poll(timeout, map)
+      File ".../parts/python2.7/lib/python2.7/asyncore.py", line 145, in poll
+        r, w, e = select.select(r, w, e, timeout)
+    ValueError: filedescriptor out of range in select()
+
+Initially we thought the reason here is that number of file descriptors this
+process uses goes beyond allowed limit (65K open files on that instance)
+because wendelin.core uses 1 fd per an array view (opening
+/dev/shm/ramh.XXXXX) but that turned out to be not strictly that case:
+
+The reason here is that select() has limit for how many #fd it can
+monitor at all. The limit is system-specific but on Linux it is usually
+1024 - http://man7.org/linux/man-pages/man2/select.2.html#BUGS :
+
+    $ cat s.c
+    #include <sys/select.h>
+    #include <stdio.h>
+
+    int main() {
+            printf("%d\n", FD_SETSIZE);
+            return 0;
+    }
+
+    $ tcc -run s.c
+    1024
+
+Also select() can monitor only file descriptors which are by itself
+"< FD_SETSIZE", e.g. it cannot monitor fd=1025 even if there are only 10
+opened file descriptors because 1025 is not < 1024.
+
+As was said above in wendelin.core every array view uses 1 file
+descriptor, so if we are using not so small amount of arrays, even
+though #fd does not go beyond process-specific ulimit, because of
+select() usage the total number of allowed opened file descriptors
+becomes essentially 1024.
+
+So let's switch from select() to poll() which does not have this 1024
+ #fd limit. Asyncore already support using poll() out of the box -
+either via passing use_pull=True to asyncore.loop()
+
+https://docs.python.org/2/library/asyncore.html#asyncore.loop
+
+or by using asyncore.poll2() instead of asyncore.poll()
+
+https://github.com/python/cpython/blob/2.7/Lib/asyncore.py#L170
+https://github.com/python/cpython/blob/2.7/Lib/asyncore.py#L125
+
+--------
+
+One option would be to switch asyncore.poll() -> asyncore.poll2() for only 1
+place in Zope - inside lifetime_loop(). There are however many such similar
+places in Zope (e.g. in medusa) and in other software.
+
+For this reason, for me, what makes sense to do is not to patch all such
+places, but instead change via runtime-patching asyncore.poll to be
+asyncore.poll2 - this way all software will automatically benefit from
+poll() usage instead of select.
+
+P.S.
+
+What might also make sense to do in the future is to actually let
+asyncore.poll to use epoll(), as both select() and poll() are doing all
+fd registration on _every_ call, so when #fd grows this preparation
+time grows too. For epoll() file descriptors are registered only once.
+For this to work asyncore.socket_map has to be patched also, since there
+are places in code which modify this fd registry directly (e.g. remove
+fd from there etc)
+
+Original patch & discussion: https://lab.nexedi.com/kirr/Zope/commit/c6addb05
+
+---
+ Lib/asyncore.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Lib/asyncore.py b/Lib/asyncore.py
+index 105982f..a3025a4 100644
+--- a/Lib/asyncore.py
++++ b/Lib/asyncore.py
+@@ -661,3 +661,12 @@ if os.name == 'posix':
+             self.socket = file_wrapper(fd)
+             self._fileno = self.socket.fileno()
+             self.add_channel()
++
++# monkeypatch to switch everyone's default to use poll instead of select
++# (select has 1024 fd limit)
++# TODO it is better to use epoll
++_poll_select = poll
++_poll_poll   = poll2
++poll = _poll_poll
++
++print >>sys.stderr, 'I(nxd): asyncore: using poll instead of select'
+-- 
+2.16.1.101.gde0f0111ea
