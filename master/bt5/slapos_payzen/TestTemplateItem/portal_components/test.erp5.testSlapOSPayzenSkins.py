@@ -620,6 +620,98 @@ class TestSlapOSPayzenAccountingTransaction_getPaymentState(
         line.setGroupingReference("TEST%s" % self.new_id)
     self.assertEquals("Paid", invoice.AccountingTransaction_getPaymentState())
 
+class TestSlapOSPayzenPaymentTransaction_redirectToManualPayzenPayment(
+                                                    SlapOSTestCaseMixinWithAbort):
+
+
+  def test_PaymentTransaction_redirectToManualPayzenPayment(self):
+    payment = self.createPaymentTransaction()
+    self.assertRaises(ValueError, payment.PaymentTransaction_redirectToManualPayzenPayment)
+
+  def _simulatePaymentTransaction_getVADSUrlDict(self):
+    script_name = 'PaymentTransaction_getVADSUrlDict'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""payment_transaction_url = context.getRelativeUrl()
+return dict(vads_url_already_registered="%s/already_registered" % (payment_transaction_url),
+  vads_url_cancel="%s/cancel" % (payment_transaction_url),
+  vads_url_error="%s/error" % (payment_transaction_url),
+  vads_url_referral="%s/referral" % (payment_transaction_url),
+  vads_url_refused="%s/refused" % (payment_transaction_url),
+  vads_url_success="%s/success" % (payment_transaction_url),
+  vads_url_return="%s/return" % (payment_transaction_url),
+)""")
+
+  def _dropPaymentTransaction_getVADSUrlDict(self):
+    script_name = 'PaymentTransaction_getVADSUrlDict'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+
+
+  def test_PaymentTransaction_redirectToManualPayzenPayment_unauthorzied(self):
+    payment = self.createPaymentTransaction()
+    self._simulatePaymentTransaction_getVADSUrlDict()
+    try:
+      self.assertRaises(Unauthorized, payment.PaymentTransaction_redirectToManualPayzenPayment)
+    finally:
+      self._dropPaymentTransaction_getVADSUrlDict()
+
+  def test_PaymentTransaction_redirectToManualPayzenPayment_redirect(self):
+    person = self.makePerson()
+    invoice =  self.createPayzenSaleInvoiceTransaction(
+      destination_section=person.getRelativeUrl())
+    self.tic()
+    payment = invoice.SaleInvoiceTransaction_getPayzenPaymentRelatedValue()
+    payment.setResourceValue(self.portal.currency_module.EUR)
+    self.tic()
+    self.login(person.getUserId())
+    self._simulatePaymentTransaction_getVADSUrlDict()
+    try:
+      text_content = payment.PaymentTransaction_redirectToManualPayzenPayment()
+    finally:
+      self._dropPaymentTransaction_getVADSUrlDict()
+
+    payment_transaction_url = payment.getRelativeUrl()
+    for item in ["vads_site_id",
+                 payment_transaction_url,
+                 "vads_url_cancel",
+                 "%s/cancel" % (payment_transaction_url),
+                 "vads_url_error",
+                 "%s/error" % (payment_transaction_url),
+                 "vads_url_referral",
+                 "%s/referral" % (payment_transaction_url),
+                 "vads_url_refused",
+                 "%s/refused" % (payment_transaction_url),
+                 "vads_url_success",
+                 "%s/success" % (payment_transaction_url),
+                 "vads_url_return",
+                 "%s/return" % (payment_transaction_url)]:
+      self.assertTrue(item in text_content,
+        "%s not in %s" % (item, text_content))
+
+
+  def test_PaymentTransaction_redirectToManualPayzenPayment_already_registered(self):
+    person = self.makePerson()
+    invoice =  self.createPayzenSaleInvoiceTransaction(
+      destination_section=person.getRelativeUrl())
+    self.tic()
+    payment = invoice.SaleInvoiceTransaction_getPayzenPaymentRelatedValue()
+    payment.setResourceValue(self.portal.currency_module.EUR)
+    payment.PaymentTransaction_generatePayzenId()
+    self.tic()
+    self.login(person.getUserId())
+    self._simulatePaymentTransaction_getVADSUrlDict()
+    try:
+      redirect = payment.PaymentTransaction_redirectToManualPayzenPayment()
+    finally:
+      self._dropPaymentTransaction_getVADSUrlDict()
+
+    self.assertEquals("%s/already_registered" % payment.getRelativeUrl(),
+                      redirect)
 
 class TestSlapOSPayzenSaleInvoiceTransaction_getPayzenPaymentRelatedValue(
                                                     SlapOSTestCaseMixinWithAbort):
