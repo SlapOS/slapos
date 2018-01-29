@@ -1,0 +1,30 @@
+From efa86aa5ad5b89ec329b3cde288cb119efb21c89 Mon Sep 17 00:00:00 2001
+From: Ivan Tyagov <ivan@nexedi.com>
+Date: Mon, 29 Jan 2018 15:48:54 +0200
+Subject: [PATCH] monkeypatch to switch everyone's default to use poll instead
+ of select (select has 1024 fd limit). TODO it is better to use epoll
+
+---
+ Lib/asyncore.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Lib/asyncore.py b/Lib/asyncore.py
+index 105982f..a3025a4 100644
+--- a/Lib/asyncore.py
++++ b/Lib/asyncore.py
+@@ -661,3 +661,12 @@ if os.name == 'posix':
+             self.socket = file_wrapper(fd)
+             self._fileno = self.socket.fileno()
+             self.add_channel()
++
++# monkeypatch to switch everyone's default to use poll instead of select
++# (select has 1024 fd limit)
++# TODO it is better to use epoll
++_poll_select = poll
++_poll_poll   = poll2
++poll = _poll_poll
++
++print >>sys.stderr, 'USING POLL INSTEAD OF SELECT'
+-- 
+2.7.4
+
