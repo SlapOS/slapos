@@ -428,16 +428,21 @@ def checkPromiseList(promise_dir, promise_timeout, uid=None, gid=None, cwd=None,
       for current_increment in range(0, increment_limit):
         if process_handler.poll() is None:
           if check_profile:
-            logger.debug(
-              "[t=%ss] CPU: %s%%, MEM: %s MB (%s%%), DISK: %s Read - %s Write" % (
-                current_increment * sleep_time,
-                psutil_process.cpu_percent(),
-                psutil_process.memory_info().rss / float(2 ** 20),
-                round(psutil_process.memory_percent(), 4),
-                psutil_process.io_counters().read_count,
-                psutil_process.io_counters().write_count
+            try:
+              io_counter = psutil_process.io_counters()
+              logger.debug(
+                "[t=%ss] CPU: %s%%, MEM: %s MB (%s%%), DISK: %s Read - %s Write" % (
+                  current_increment * sleep_time,
+                  psutil_process.cpu_percent(),
+                  psutil_process.memory_info().rss / float(2 ** 20),
+                  round(psutil_process.memory_percent(), 4),
+                  io_counter.read_count,
+                  io_counter.write_count
+                )
               )
-            )
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+              # defunct process will raise AccessDenied
+              pass
           time.sleep(sleep_time)
           continue
         result_dict["execution-time"] = current_increment * sleep_time

@@ -37,6 +37,7 @@ class TestGridUtils(unittest.TestCase):
     """
     script = """#!/bin/sh
 echo "%(name)s"
+sleep 0.1
 exit %(code)s
 """
     root_directory = tempfile.mkdtemp()
@@ -74,6 +75,7 @@ exit %(code)s
     """
     script = """#!/bin/sh
 echo "%(name)s"
+sleep 0.1
 exit %(code)s
 """
     root_directory = tempfile.mkdtemp()
@@ -104,6 +106,7 @@ exit %(code)s
     """
     script = """#!/bin/sh
 echo "%(name)s"
+sleep 0.1
 exit %(code)s
 """
     root_directory = tempfile.mkdtemp()
