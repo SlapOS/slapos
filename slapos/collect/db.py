@@ -48,6 +48,9 @@ class Database:
                         " io_cycles_counter real, date text, time text, " \
                         " reported integer NULL DEFAULT 0)"
 
+  CREATE_USER_PARTITION_DATE_TIME_INDEX = "CREATE INDEX user_partition_date_time ON"\
+                                          " user (partition, date, time)"
+
   CREATE_FOLDER_TABLE = "create table if not exists folder "\
                           "(partition text, disk_used real, date text, " \
                           " time text, reported integer NULL DEFAULT 0)" 
@@ -146,6 +149,7 @@ class Database:
     assert self.CREATE_USER_TABLE is not None
     self.connect()
     self._execute(self.CREATE_USER_TABLE)
+    self._execute(self.CREATE_USER_PARTITION_DATE_TIME_INDEX)
     self._execute(self.CREATE_FOLDER_TABLE)
     self._execute(self.CREATE_COMPUTER_TABLE)
     self._execute(self.CREATE_SYSTEM_TABLE)
