@@ -234,6 +234,7 @@ class TestSlapOSConfigurator(SlapOSTestCaseMixin):
       'erp5_simulation',
       'erp5_pdm',
       'erp5_trade',
+      'erp5_ui_test_core',
       'erp5_tiosafe_core',
       'erp5_item',
       'erp5_forge',
