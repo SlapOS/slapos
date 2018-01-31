@@ -88,6 +88,7 @@ promise-folder = ${directory:promises}
 monitor-promise-folder = ${monitor-directory:promises}
 promises-timeout-file = ${monitor-promise-timeout-file:file}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
+randomsleep = {{ bin_directory }}/randomsleep
 
 public-path-list = 
 private-path-list = 
@@ -270,14 +271,14 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-globalstate
 frequency = * * * * *
-command = ${monitor-globalstate-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 60 && ${monitor-globalstate-wrapper:wrapper-path}
 
 [monitor-configurator-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-configurator
 frequency = * * * * *
-command = ${monitor-configurator-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 60 && ${monitor-configurator-wrapper:wrapper-path}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
