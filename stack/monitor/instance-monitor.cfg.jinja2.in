@@ -42,6 +42,7 @@ services = ${directory:services}
 services-conf = ${directory:etc}/monitor.conf.d
 log = ${directory:log}/monitor
 monitor-var = ${directory:var}/monitor
+monitor-log = ${directory:monitor}/private/monitor-log
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
