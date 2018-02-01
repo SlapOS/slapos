@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+"""runTestSuite - run neotest under Nexedi testing infrastructure."""
+
+from erp5.util.taskdistribution import TaskDistributor
+from subprocess import Popen, PIPE
+from time import time, strftime, gmtime
+import os, sys, argparse, logging
+
+
+def main():
+    # testnode executes us giving URL to master results collecting instance and other details
+    # https://lab.nexedi.com/nexedi/erp5/blob/744f3fde/erp5/util/testnode/UnitTestRunner.py#L137
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--master_url', help='The URL of Master controling many suites')
+    parser.add_argument('--revision', help='The revision to test', default='dummy_revision')
+    parser.add_argument('--test_suite', help='The test suite name')
+    parser.add_argument('--test_suite_title', help='The test suite title')
+    parser.add_argument('--test_node_title', help='The test node title')
+    parser.add_argument('--project_title', help='The project title')
+
+    parser.add_argument('--verbose', action='store_true', help='increase output verbosity')
+
+    args = parser.parse_args()
+
+    # if verbose -> log to stderr
+    logger = None
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+        logger = logging.getLogger()
+
+    # connect to master and create 'test result' object with list of tests to run
+    tool = TaskDistributor(portal_url = args.master_url, logger = logger)
+    test_result = tool.createTestResult(
+                    revision        = args.revision,
+                    # XXX vvv info-local temp - for testing - to lower time to get first report from test.
+                    test_name_list  = ['info-local', 'bench-local'],
+                    node_title      = args.test_node_title,
+                    test_title      = args.test_suite_title or args.test_suite,
+                    project_title   = args.project_title)
+
+    if test_result is None:
+        # a test run for given name and revision has already been completed
+        return
+
+    # run the tests
+    devnull = open(os.devnull)
+    while 1:
+        # ask master for next test to run; stop if no more.
+        test_result_line = test_result.start()
+        if test_result_line is None:
+            break
+
+        # run `neotest <test-name>`
+        argv = ['neotest', test_result_line.name]
+        tstart = time()
+
+        try:
+            # NOTE runs with unchanged cwd. Instance wrapper cares to set cwd before running us.
+            p = Popen(argv, stdin=devnull, stdout=PIPE, stderr=PIPE)
+        except:
+            stdout, stderr = '', traceback.format_exc()
+            ok = False
+        else:
+            stdout, stderr = p.communicate()
+            ok = (p.returncode == 0)
+
+        tend = time()
+
+        # tee >stdout,stderr so we can also see in testnode logs
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+
+        # report result of test run back to master
+        test_result_line.stop(
+            command     = ' '.join(argv),
+            duration    = tend - tstart,
+            date        = strftime("%Y/%m/%d %H:%M:%S", gmtime(tend)),
+
+            stdout      = stdout,
+            stderr      = stderr,
+
+            test_count      = 1,
+            error_count     = (0 if ok else 1),
+            failure_count   = 0,
+            skip_count      = 0,
+            #html_test_result
+        )
+
+
+if __name__ == '__main__':
+    main()
