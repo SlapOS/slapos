@@ -912,10 +912,12 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       partition.software.setBuildout(BUILDOUT_RUN_CONTENT)
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      time.sleep(1)
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
                             ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
-                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay',
+                             'launched', 'crashed'])
       daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
       self.assertLogContent(daemon_log, 'Failing')
       self.assertIsNotCreated(self.watchdog_banged)
@@ -1867,14 +1869,16 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
         f.write(textwrap.dedent("""\
               #!/usr/bin/env sh
               touch "%s"
-              echo Error 1>&2
+              echo 'Error Promise 254554802' 1>&2
               exit 127""" % worked_file))
       os.chmod(succeed, 0o777)
       self.assertEqual(self.grid.processComputerPartitionList(),
                        slapos.grid.slapgrid.SLAPGRID_PROMISE_FAIL)
       self.assertTrue(os.path.isfile(worked_file))
 
-      self.assertEqual(instance.error_log[-5:], 'Error')
+      log_file = '%s/.slapgrid/log/instance.log' % instance.partition_path
+      with open(log_file) as f:
+        self.assertTrue('Error Promise 254554802' in f.read())
       self.assertTrue(instance.error)
       self.assertIsNone(instance.state)
 
@@ -1985,6 +1989,58 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
 
       self.assertEquals(instance.error, 1)
       self.assertNotEqual(instance.state, 'started')
+
+  def test_promise_run_if_partition_started_fail(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      instance = computer.instance_list[0]
+      instance.requested_state = 'started'
+      instance.software.setBuildout("""#!/bin/sh
+exit 1
+""")
+      self.assertEqual(self.grid.processComputerPartitionList(),
+                       slapos.grid.slapgrid.SLAPGRID_FAIL)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(instance.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'software_release',
+                             '.slapgrid-0-error.log'])
+
+      promise_file = os.path.join(instance.partition_path, 'promise_ran')
+      promise = textwrap.dedent("""\
+              #!/usr/bin/env sh
+              touch "%s"
+              exit 127""" % promise_file)
+      instance.setPromise('promise_script', promise)
+      self.assertEqual(self.grid.processComputerPartitionList(),
+                       slapos.grid.slapgrid.SLAPGRID_FAIL)
+      self.assertTrue(os.path.isfile(promise_file))
+      self.assertTrue(instance.error)
+
+  def test_promise_notrun_if_partition_stopped_fail(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      instance = computer.instance_list[0]
+      instance.requested_state = 'stopped'
+      instance.software.setBuildout("""#!/bin/sh
+exit 1
+""")
+      self.assertEqual(self.grid.processComputerPartitionList(),
+                       slapos.grid.slapgrid.SLAPGRID_FAIL)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(instance.partition_path),
+                            ['.slapgrid', 'buildout.cfg', 'software_release',
+                             '.slapgrid-0-error.log'])
+
+      promise_file = os.path.join(instance.partition_path, 'promise_ran')
+      promise = textwrap.dedent("""\
+              #!/usr/bin/env sh
+              touch "%s"
+              exit 127""" % promise_file)
+      instance.setPromise('promise_script', promise)
+      self.assertEqual(self.grid.processComputerPartitionList(),
+                       slapos.grid.slapgrid.SLAPGRID_FAIL)
+      self.assertFalse(os.path.exists(promise_file))
+      self.assertTrue(instance.error)
 
 class TestSlapgridDestructionLock(MasterMixin, unittest.TestCase):
   def test_retention_lock(self):

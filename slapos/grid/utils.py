@@ -192,7 +192,7 @@ def dropPrivileges(uid, gid, logger):
   if uid == 0 or gid == 0:
     raise OSError('Dropping privileges to uid = %r or '
                   'gid = %r is too dangerous' % (uid, gid))
-  if current_uid or current_gid:
+  if (current_uid or current_gid):
     logger.debug('Running as uid = %r, gid = %r, dropping '
                  'not needed and not possible' % (current_uid, current_gid))
     return

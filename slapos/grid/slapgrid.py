@@ -60,8 +60,9 @@ from slapos.grid.svcbackend import (launchSupervisord,
                                     createSupervisordConfiguration,
                                     _getSupervisordConfigurationDirectory,
                                     _getSupervisordSocketPath)
-from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen, updateFile,
-                               checkPromiseList, PromiseError)
+from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen, updateFile)
+from slapos.grid.promise import PromiseLauncher, PromiseError
+from slapos.grid.promise.generic import PROMISE_LOG_FOLDER_NAME
 from slapos.human import human2bytes
 import slapos.slap
 from netaddr import valid_ipv4, valid_ipv6
@@ -617,22 +618,39 @@ stderr_logfile_backups=1
       return SLAPGRID_FAIL
     return SLAPGRID_SUCCESS
 
-  def _checkPromiseList(self, computer_partition):
-    self.logger.info("Checking promises...")
-    instance_path = os.path.join(self.instance_root, computer_partition.getId())
+  def _checkPromiseList(self, partition, force=True, check_anomaly=False):
+    instance_path = os.path.join(self.instance_root, partition.partition_id)
+    promise_log_path = os.path.join(instance_path, PROMISE_LOG_FOLDER_NAME)
+    mkdir_p(promise_log_path)
 
+    self.logger.info("Checking %s promises..." % partition.partition_id)
     uid, gid = None, None
     stat_info = os.stat(instance_path)
 
     #stat sys call to get statistics informations
     uid = stat_info.st_uid
     gid = stat_info.st_gid
-    promise_dir = os.path.join(instance_path, 'etc', 'promise')
+    promise_dir = os.path.join(instance_path, 'etc', 'plugin')
+    legacy_promise_dir = os.path.join(instance_path, 'etc', 'promise')
+    promise_config = {
+      'promise-folder': promise_dir,
+      'legacy-promise-folder': legacy_promise_dir,
+      'promise-timeout': self.promise_timeout,
+      'uid': uid,
+      'gid': gid,
+      'partition-folder': instance_path,
+      'log-folder': promise_log_path,
+      'force': force,
+      'check-anomaly': check_anomaly,
+      'master-url': partition.server_url,
+      'partition-cert': partition.cert_file,
+      'partition-key': partition.key_file,
+      'partition-id': partition.partition_id,
+      'computer-id': self.computer_id,
+    }
 
-    if not checkPromiseList(promise_dir, self.promise_timeout, uid=uid, gid=gid,
-                            cwd=instance_path, logger=self.logger, profile=False,
-                            raise_on_failure=True):
-      self.logger.info("No promise.")
+    promise_checker = PromiseLauncher(config=promise_config, logger=self.logger)
+    return promise_checker.run()
 
   def _endInstallationTransaction(self, computer_partition):
     partition_id = computer_partition.getId()
@@ -777,7 +795,7 @@ stderr_logfile_backups=1
                     command, ip))
 
     return cmd_list
-  
+
   def _getFirewallRejectRules(self, ip, hosting_ip_list, source_ip_list, ip_type='ipv4'):
     """
     Generate rules for firewall based on list of IP that should not have access to `ip`
@@ -946,6 +964,7 @@ stderr_logfile_backups=1
       # Try to process it anyway, it may need to be deleted.
       software_path = None
 
+    computer_partition_state = computer_partition.getState()
     periodicity = self.maximum_periodicity
     if software_path:
       periodicity_path = os.path.join(software_path, 'periodicity')
@@ -996,7 +1015,14 @@ stderr_logfile_backups=1
             # Check periodicity, i.e if periodicity is one day, partition
             # should be processed at least every day.
             if int(time.time()) <= (last_runtime + periodicity) or periodicity < 0:
-              self.logger.debug('Partition already up-to-date, skipping.')
+              # check promises anomaly
+              if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
+                self.logger.debug('Partition already up-to-date.')
+                self._checkPromiseList(local_partition,
+                                       check_anomaly=True,
+                                       force=False)
+              else:
+                self.logger.debug('Partition already up-to-date. skipping.')
               return
             else:
               # Periodicity forced processing this partition. Removing
@@ -1028,8 +1054,6 @@ stderr_logfile_backups=1
       self.logger.info('  Software path: %s' % software_path)
       self.logger.info('  Instance path: %s' % instance_path)
 
-      computer_partition_state = computer_partition.getState()
-
       # XXX this line breaks 37 tests
       # self.logger.info('  Instance type: %s' % computer_partition.getType())
       self.logger.info('  Instance status: %s' % computer_partition_state)
@@ -1046,7 +1070,7 @@ stderr_logfile_backups=1
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
                                               partition_ip_list)
-        self._checkPromiseList(computer_partition)
+        self._checkPromiseList(local_partition)
         computer_partition.started()
         self._endInstallationTransaction(computer_partition)
       elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
@@ -1085,11 +1109,18 @@ stderr_logfile_backups=1
       with open(error_output_file, 'w') as error_file:
         # Write error message in a log file assible to computer partition user
         error_file.write(str(e))
-      raise
+      if not isinstance(e, PromiseError) and \
+          computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
+        try:
+          self._checkPromiseList(local_partition)
+        except PromiseError:
+          # updating promises state, no need to raise here
+          pass
+      raise e
     else:
       self.logger.removeHandler(partition_file_handler)
       if os.path.exists(error_output_file):
-        os.unlink(error_output_file)  
+        os.unlink(error_output_file)
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
