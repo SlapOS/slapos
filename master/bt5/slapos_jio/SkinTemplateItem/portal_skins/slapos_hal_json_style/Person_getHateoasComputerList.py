@@ -35,7 +35,7 @@ for sql_obj in context.getPortalObject().portal_catalog(
   obj = sql_obj.getObject()
   result_dict['_links']['content'].append({
     'href': '%s/ERP5Document_getHateoas' % obj.absolute_url(),
-    'title': sql_obj.title,
+    'title': obj.getTitle(),
   })
 
 response.setHeader('Content-Type', mime_type)

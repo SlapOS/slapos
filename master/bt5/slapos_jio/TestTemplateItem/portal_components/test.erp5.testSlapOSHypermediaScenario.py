@@ -388,6 +388,10 @@ class TestSlapOSHypermediaPersonScenario(SlapOSTestCaseMixin):
 
 class TestSlapOSHypermediaInstanceScenario(SlapOSTestCaseMixin):
 
+  def generateNewId(self):
+    return "%shype" % self.portal.portal_ids.generateNewId(
+        id_group=('slapos_core_test'))
+
   def generateNewSoftwareReleaseUrl(self):
     return 'http://example.org/test%s.cfg' % self.generateNewId()
 

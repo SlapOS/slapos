@@ -52,9 +52,9 @@
                 <string>W: 51,  8: Unused variable \'api_fragment\' (unused-variable)</string>
                 <string>W: 50, 38: Unused variable \'api_query\' (unused-variable)</string>
                 <string>W:386,  4: Unused variable \'software_hal\' (unused-variable)</string>
-                <string>W:412, 28: Unused variable \'api_path\' (unused-variable)</string>
-                <string>W:412, 38: Unused variable \'api_query\' (unused-variable)</string>
-                <string>W:413,  8: Unused variable \'api_fragment\' (unused-variable)</string>
+                <string>W:416, 28: Unused variable \'api_path\' (unused-variable)</string>
+                <string>W:416, 38: Unused variable \'api_query\' (unused-variable)</string>
+                <string>W:417,  8: Unused variable \'api_fragment\' (unused-variable)</string>
               </tuple>
             </value>
         </item>
