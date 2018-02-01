@@ -1,1 +1,29 @@
-# TODO instance which runs this test periodically automatically and ingests results to ERP5
+# NEO test instance: run neotest under Nexedi testing infrastructure
+[buildout]
+parts = runTestSuite
+
+# std stuff for slapos instance
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# software release we instantiate was supplied here
+[software]
+dir     = {{ buildout['directory'] }}
+bin     = {{ buildout['bin-directory'] }}
+
+# instance directories
+[directory]
+recipe  = slapos.cookbook:mkdirectory
+home    = ${buildout:directory}
+bin     = ${:home}/bin
+neotest = ${:home}/neotest
+
+# script to run the testsuite from inside <instance>/neotest/
+# located @ <instance>/bin/runTestSuite so testnode can see this as run tests entrypoint.
+[runTestSuite]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+command-line = /bin/bash -c 'cd ${directory:neotest} && ${software:bin}/neotest-runTestSuite "$@"' runTestSuite
+# vvv appends "$@" to argv ^^^ without shell-escaping
+parameters-extra = true
