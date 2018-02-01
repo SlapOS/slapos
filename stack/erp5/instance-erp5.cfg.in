@@ -289,6 +289,7 @@ config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configurat
 [request-frontend-base]
 {% if has_frontend -%}
 <= request-common
+recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
 {{ root_common.sla('frontend', True) }}
