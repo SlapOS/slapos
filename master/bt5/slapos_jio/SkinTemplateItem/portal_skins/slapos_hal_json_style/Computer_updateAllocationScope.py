@@ -1,3 +1,5 @@
+# This should be moved to interaction workflow
+
 portal = context.getPortalObject()
 computer = context
 

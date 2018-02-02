@@ -1,136 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
 from erp5.component.test.SlapOSTestCaseMixin import \
   SlapOSTestCaseMixinWithAbort, changeSkin, simulate
-from zExceptions import Unauthorized
-from unittest import skip
-
-from ZPublisher.HTTPRequest import HTTPRequest
-from ZPublisher.HTTPResponse import HTTPResponse
+from erp5.component.test.testHalJsonStyle import \
+  do_fake_request
 
 import json
-import StringIO
-
-def do_fake_request(request_method, headers={}):
-  __version__ = "0.1"
-  env={}
-  env['SERVER_NAME']='bobo.server'
-  env['SERVER_PORT']='80'
-  env['REQUEST_METHOD']=request_method
-  env['REMOTE_ADDR']='204.183.226.81 '
-  env['REMOTE_HOST']='bobo.remote.host'
-  env['HTTP_USER_AGENT']='Bobo/%s' % __version__
-  env['HTTP_HOST']='127.0.0.1'
-  env['SERVER_SOFTWARE']='Bobo/%s' % __version__
-  env['SERVER_PROTOCOL']='HTTP/1.0 '
-  env['HTTP_ACCEPT']='image/gif, image/x-xbitmap, image/jpeg, */* '
-  env['SERVER_HOSTNAME']='bobo.server.host'
-  env['GATEWAY_INTERFACE']='CGI/1.1 '
-  env['SCRIPT_NAME']='Main'
-  env.update(headers)
-  return HTTPRequest(StringIO.StringIO(), env, HTTPResponse())
-
-from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
-class ERP5HALJSONStyleSkinsMixin(ERP5TypeTestCase):
-  def afterSetUp(self):
-    self.login()
-    self.changeSkin('Hal')
-
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def test_getRequestHeader_REQUEST_disallowed(self):
-    self.changeSkin('Hal')
-    self.assertRaises(
-      Unauthorized,
-      self.portal.Base_getRequestHeader,
-      "foo",
-      REQUEST={})
-
-  def test_getRequestHeader_key_error(self):
-    self.changeSkin('Hal')
-    self.assertEquals(
-        self.portal.Base_getRequestHeader('foo'),
-        None
-        )
-
-  def test_getRequestHeader_default_value(self):
-    self.changeSkin('Hal')
-    self.assertEquals(
-        self.portal.Base_getRequestHeader('foo', default='bar'),
-        'bar'
-        )
-
-  @skip('TODO')
-  def test_getRequestHeader_matching_key(self):
-    pass
-
-# XXX to be migrated to erp5_hal_json_style bt
-class TestBase_getRequestUrl(ERP5HALJSONStyleSkinsMixin):
-  def test_getRequestUrl_REQUEST_disallowed(self):
-    self.changeSkin('Hal')
-    self.assertRaises(
-      Unauthorized,
-      self.portal.Base_getRequestUrl,
-      REQUEST={})
-
-  @skip('TODO')
-  def test_getRequestUrl_matching_key(self):
-    pass
-
-class TestBase_getRequestBody(ERP5HALJSONStyleSkinsMixin):
-  def test_getRequestBody_REQUEST_disallowed(self):
-    self.changeSkin('Hal')
-    self.assertRaises(
-      Unauthorized,
-      self.portal.Base_getRequestBody,
-      REQUEST={})
-
-  @skip('TODO')
-  def test_getRequestBody_matching_key(self):
-    pass
-
-class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
-  def test_handleAcceptHeader_REQUEST_disallowed(self):
-    self.changeSkin('Hal')
-    self.assertRaises(
-      Unauthorized,
-      self.portal.Base_handleAcceptHeader,
-      [],
-      REQUEST={})
-
-  @simulate('Base_getRequestHeader', '*args, **kwargs', 'return "*/*"')
-  @changeSkin('Hal')
-  def test_handleAcceptHeader_star_accept(self):
-    self.changeSkin('Hal')
-    self.assertEquals(
-        self.portal.Base_handleAcceptHeader(['application/vnd+test',
-                                             'application/vnd+test2']),
-        'application/vnd+test'
-        )
-
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/vnd+2test"')
-  @changeSkin('Hal')
-  def test_handleAcceptHeader_matching_type(self):
-    self.changeSkin('Hal')
-    self.assertEquals(
-        self.portal.Base_handleAcceptHeader(['application/vnd+test',
-                                             'application/vnd+2test']),
-        'application/vnd+2test'
-        )
-
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/vnd+2test"')
-  @changeSkin('Hal')
-  def test_handleAcceptHeader_non_matching_type(self):
-    self.changeSkin('Hal')
-    self.assertEquals(
-        self.portal.Base_handleAcceptHeader(['application/vnd+test']),
-        None
-        )
-
+from zExceptions import Unauthorized
 
 class TestSlapOSHypermediaMixin(SlapOSTestCaseMixinWithAbort):
   def afterSetUp(self):
@@ -173,7 +49,6 @@ class TestSlapOSHypermediaMixin(SlapOSTestCaseMixinWithAbort):
     return software_installation
 
 class TestSlapOSPersonERP5Document_getHateoas(TestSlapOSHypermediaMixin):
-  # XXX: currently for person, make it generic
 
   @simulate('Base_getRequestHeader', '*args, **kwargs',
             'return "application/vnd+bar"')
@@ -245,44 +120,22 @@ class TestSlapOSPersonERP5Document_getHateoas(TestSlapOSHypermediaMixin):
         u"title": u"requestHateoasHostingSubscription"
     })
 
-class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
 
-  @changeSkin('Hal')
-  def test_getHateoasMaster_REQUEST_mandatory(self):
-    self.assertRaises(
-      Unauthorized,
-      self.portal.Base_getHateoasMaster
-    )
 
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/vnd+bar"')
-  @changeSkin('Hal')
-  def test_getHateoasMaster_wrong_ACCEPT(self):
-    #self.changeSkin('Hal')
-    fake_request = do_fake_request("GET")
-    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
-    self.assertEquals(fake_request.RESPONSE.status, 406)
-    self.assertEquals(result, "")
-
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/hal+json"')
-  @changeSkin('Hal')
-  def test_getHateoasMaster_bad_method(self):
-    fake_request = do_fake_request("POST")
-    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
-    self.assertEquals(fake_request.RESPONSE.status, 405)
-    self.assertEquals(result, "")
+class TestSlapOSERP5Document_getHateoas_me(TestSlapOSHypermediaMixin):
+  """
+    Complementary tests to ensure "me" is present on the request.
+  """
 
   @simulate('Base_getRequestUrl', '*args, **kwargs',
       'return "http://example.org/bar"')
   @simulate('Base_getRequestHeader', '*args, **kwargs',
             'return "application/hal+json"')
   @changeSkin('Hal')
-  def test_getHateoasMaster_anonymous_result(self):
-    self.logout()
+  def _test_me(self, me=None):
     self.changeSkin('Hal')
     fake_request = do_fake_request("GET")
-    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
+    result = self.portal.ERP5Document_getHateoas(REQUEST=fake_request)
     self.assertEquals(fake_request.RESPONSE.status, 200)
     self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
       "application/hal+json"
@@ -291,54 +144,32 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
     self.assertEquals(result['_links']['self'],
         {"href": "http://example.org/bar"}
     )
-    self.assertEqual(result['_links'].get('me'), None)
+    self.assertEqual(result['_links'].get('me'), me)
 
-  @simulate('Base_getRequestUrl', '*args, **kwargs',
-      'return "http://example.org/bar"')
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/hal+json"')
-  @changeSkin('Hal')
-  def test_getHateoasMaster_person_result(self):
+  def test_me_annonymous(self):
+    self.logout()
+    self._test_me()
+
+  def test_me_person(self):
     person_user = self._makePerson()
     self.login(person_user.getUserId())
-    self.changeSkin('Hal')
-    fake_request = do_fake_request("GET")
-    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
-    self.assertEquals(fake_request.RESPONSE.status, 200)
-    self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
-      "application/hal+json"
-    )
-    result = json.loads(result)
-    self.assertEquals(result['_links']['me'],
-        {"href": "urn:jio:get:%s" % person_user.getRelativeUrl()}
-    )
-    self.assertEqual(result['_links']['self'],
-        {"href": "http://example.org/bar"}
-    )
+    self._test_me(
+      {"href": "urn:jio:get:%s" % person_user.getRelativeUrl()})
 
-  @simulate('Base_getRequestUrl', '*args, **kwargs',
-      'return "http://example.org/bar"')
-  @simulate('Base_getRequestHeader', '*args, **kwargs',
-            'return "application/hal+json"')
-  @changeSkin('Hal')
-  def test_getHateoasMaster_instance_result(self):
+  def test_me_instance(self):
     self._makeTree()
     self.login(self.software_instance.getUserId())
-    self.changeSkin('Hal')
-    fake_request = do_fake_request("GET")
-    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
-    self.assertEquals(fake_request.RESPONSE.status, 200)
-    self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
-      "application/hal+json"
-    )
-    result = json.loads(result)
-    self.assertEquals(result['_links']['me'],
-        {"href": "urn:jio:get:%s" % self.software_instance.getRelativeUrl()}
-    )
-    self.assertEqual(result['_links']['self'],
-        {"href": "http://example.org/bar"}
+    self._test_me(
+      {"href": "urn:jio:get:%s" % self.software_instance.getRelativeUrl()}
     )
 
+  def test_me_computer(self):
+    computer = self._makeComputer()
+    self.tic()
+    self.login(computer.getUserId())
+    self._test_me(
+      {"href": "urn:jio:get:%s" % computer.getRelativeUrl()}
+    )
 
 class TestSlapOSPerson_requestHateoasHostingSubscription(TestSlapOSHypermediaMixin):
 
