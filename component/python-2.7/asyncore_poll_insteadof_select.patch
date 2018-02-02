@@ -105,6 +105,6 @@ index 105982f..a3025a4 100644
 +_poll_poll   = poll2
 +poll = _poll_poll
 +
-+print >>sys.stderr, 'I(nxd): asyncore: using poll instead of select'
++#print >>sys.stderr, 'I(nxd): asyncore: using poll instead of select'
 -- 
 2.16.1.101.gde0f0111ea
