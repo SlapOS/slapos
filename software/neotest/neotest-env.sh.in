@@ -2,6 +2,7 @@
 
 . ${gowork:env.sh}
 
+PATH="${coreutils:location}/bin:$PATH"
 PATH="${ethtool:location}/sbin:$PATH"
 PATH="${ioping:location}/bin:$PATH"
 PATH="${lmbench:location}/bin:$PATH"
