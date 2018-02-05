@@ -280,7 +280,7 @@ context =
 # Generate after import script used by importer instance of webrunner
 < = jinja2-template-executable
 template = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
-rendered = ${directory:srv}/runner-import-restore
+rendered = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
