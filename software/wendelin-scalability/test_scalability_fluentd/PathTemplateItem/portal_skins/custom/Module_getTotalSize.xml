@@ -54,7 +54,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>DataStreamModule_getTotalSize</string> </value>
+            <value> <string>Module_getTotalSize</string> </value>
         </item>
       </dictionary>
     </pickle>
