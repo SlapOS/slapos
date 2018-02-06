@@ -201,6 +201,7 @@ environment =
   TZ={{ slapparameter_dict['timezone'] }}
   INSTANCE_HOME=${directory:instance}
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
+  LD_LIBRARY_PATH=/usr/local/cuda/lib64
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
