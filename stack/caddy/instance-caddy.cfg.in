@@ -116,19 +116,21 @@ mode = 0600
 recipe = slapos.cookbook:publish
 password = $${slap-parameter:password}
 user = $${slap-parameter:username}
-secure_access = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
+#secure_access = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port-ipv6}
+secure_access = https://[$${caddy-configuration:ipv6}]:$${slap-parameter:port}
 
 [slap-parameter]
 domain = caddy-test.erp5.net:9443
 key-content =
 cert-content =
 caddy-ca-certificate =
-port-ipv6 = 9443
-port-ipv4 = 4443
+#port-ipv6 = 9443
+#port-ipv4 = 4443
+port = 9443
 enable-quic = true
 enable-basic-auth =
 username = admin
 password = $${htpasswd:passwd}
-proxy = true
-zope = true
+proxy = false
+type = zope
 url = https://[2001:67c:1254:72::5d03]:2151

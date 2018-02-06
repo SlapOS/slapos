@@ -21,7 +21,7 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 
 {% if parameter_dict['proxy'] == 'true'  -%}
 
-  {% if parameter_dict['zope'] == 'true'  -%}
+  {% if parameter_dict['type'] == 'zope'  -%}
 
   proxy / {{parameter_dict['url']}}/VirtualHostBase/https/{{ parameter_dict['domain'] }}/VirtualHostRoot/ {
 
@@ -39,11 +39,9 @@ basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
 
 }
 
-bind {{caddy_configuration_dict['ipv6']}}
-
 {%- endif %}
 
-[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}} {
+[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port']}} {
 
   tls {{ custom_cert_dict['cert-file'] }} {{ custom_cert_dict['key-file'] }} {
 
@@ -55,21 +53,17 @@ bind {{caddy_configuration_dict['ipv6']}}
   
   errors {{caddy_configuration_dict['error_log']}}
 
-  errors {{caddy_configuration_dict['error_log']}}
-
   root {{ directory_dict['public_html'] }}
 
   {% if parameter_dict['enable-basic-auth'] == 'true'  -%}
   basicauth / {{ parameter_dict['username'] }} {{parameter_dict['password']}}
   {%- endif %}
   
-  bind {{caddy_configuration_dict['ipv6']}}
-
   {% if parameter_dict['proxy'] == 'true'  -%}
 
-  {% if parameter_dict['zope'] == 'true'  -%}
+  {% if parameter_dict['type'] == 'zope'  -%}
 
-  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port-ipv6']}}/VirtualHostRoot/ {
+  proxy / {{parameter_dict['url']}}/VirtualHostBase/https/[{{caddy_configuration_dict['ipv6']}}]:{{parameter_dict['port']}}/VirtualHostRoot/ {
 
   insecure_skip_verify
 
@@ -83,12 +77,10 @@ bind {{caddy_configuration_dict['ipv6']}}
   bind {{caddy_configuration_dict['ipv6']}}
 }
 
-[{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port-ipv4']}} {
+[{{caddy_configuration_dict['local_ip']}}]:{{parameter_dict['port']}} {
 
   log {{caddy_configuration_dict['access_log']}}
   
-  errors {{caddy_configuration_dict['error_log']}}
-
   errors {{caddy_configuration_dict['error_log']}}
 
   root {{ directory_dict['public_html'] }}
@@ -99,5 +91,4 @@ bind {{caddy_configuration_dict['ipv6']}}
   
   bind {{caddy_configuration_dict['local_ip']}}
 
-  bind {{caddy_configuration_dict['local_ip']}}
 }
