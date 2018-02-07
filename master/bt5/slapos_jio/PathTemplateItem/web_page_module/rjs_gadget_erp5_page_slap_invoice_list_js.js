@@ -24,7 +24,7 @@
                 allow_empty_time: 0,
                 ampm_time_style: 0,
                 css_class: "date_field",
-                date_only: 0,
+                date_only: 1,
                 description: "The Date",
                 editable: 0,
                 hidden: 0,
@@ -38,6 +38,13 @@
               };
             }
 
+            if (result.data.rows[i].value.hasOwnProperty("total_price")) {
+              value = window.parseFloat(result.data.rows[i].value.total_price);
+              // The field seemms not set precision to display
+              value = value.toFixed(2); // round on this case for 2 digits as
+                                       // float field is bugged.
+              result.data.rows[i].value.total_price = value;
+            }
             if (1 || (result.data.rows[i].hasOwnProperty("id"))) {
               value = result.data.rows[i].id;
               result.data.rows[i].value.translated_simulation_state_title = {
@@ -94,9 +101,9 @@
         })
         .push(function (form_list) {
           var column_list = [
-            ['title', 'Title'],
             ['start_date', 'Date'],
             ['total_price', 'Price'],
+            ['resource_reference', 'Currency'],
             ['translated_simulation_state_title', 'Payment'],
             ['download', 'Download']
           ];

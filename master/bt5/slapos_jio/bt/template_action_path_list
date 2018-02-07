@@ -17,6 +17,7 @@ Person | request_hateoas_hosting_subscription
 Person | slaposjs_view
 Project | slaposjs_view
 Regularisation Request | slaposjs_view
+Sale Invoice Transaction | slaposjs_view
 Slave Instance | get_hateoas_information
 Slave Instance | get_hateoas_news
 Slave Instance | get_hateoas_related_hosting_subscription

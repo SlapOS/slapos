@@ -57,20 +57,26 @@
           return gadget.getDeclaredGadget('form_view');
         })
         .push(function (form_gadget) {
-          var editable = gadget.state.editable;
+          var start_date = new Date(gadget.state.doc.start_date),
+              total_price = window.parseFloat(gadget.state.doc.total_price).toFixed(2);
           return form_gadget.render({
             erp5_document: {
               "_embedded": {"_view": {
-                "my_title": {
-                  "description": "",
-                  "title": "Title",
-                  "default": gadget.state.doc.title,
-                  "css_class": "",
-                  "required": 1,
+                "my_start_date": {
+                  "allow_empty_time": 0,
+                  "ampm_time_style": 0,
+                  "css_class": "date_field",
+                  "date_only": 1,
+                  "description": "The Date",
                   "editable": 0,
-                  "key": "title",
                   "hidden": 0,
-                  "type": "StringField"
+                  "hidden_day_is_last_day": 0,
+                  "default": start_date.toUTCString(),
+                  "key": "date",
+                  "required": 0,
+                  "timezone_style": 0,
+                  "title": "Date",
+                  "type": "DateTimeField"
                 },
                 "my_reference": {
                   "description": "",
@@ -83,6 +89,28 @@
                   "hidden": 0,
                   "type": "StringField"
                 },
+                "my_total_price": {
+                  "description": "",
+                  "title": "Total",
+                  "default": total_price,
+                  "css_class": "",
+                  "required": 1,
+                  "editable": 0,
+                  "key": "total_price",
+                  "hidden": 0,
+                  "type": "StringField"
+                },
+                "my_resource_title": {
+                  "description": "",
+                  "title": "Currency",
+                  "default": gadget.state.doc.resource_title,
+                  "css_class": "",
+                  "required": 1,
+                  "editable": 0,
+                  "key": "resource_title",
+                  "hidden": 0,
+                  "type": "StringField"
+                },
                 "my_payment_state": {
                   "description": "",
                   "title": "Payment State",
@@ -92,7 +120,7 @@
                   "editable": 0,
                   "url": "gadget_slapos_invoice_state.html",
                   "sandbox": "",
-                  "key": "monitoring_status",
+                  "key": "payment_state",
                   "hidden": 0,
                   "type": "GadgetField"
                 },
@@ -120,7 +148,8 @@
             form_definition: {
               group_list: [[
                 "left",
-                [["my_title"], ["my_reference"], ['my_payment_state'], ["my_download"]]
+                [["my_start_date"], ["my_reference"], ["my_total_price"],
+                 ["my_resource_title"], ['my_payment_state'], ["my_download"]]
               ]]
             }
           });
@@ -131,10 +160,8 @@
           ]);
         })
         .push(function (url_list) {
-          var header_dict = {
-            page_title: gadget.state.doc.title,
-            save_action: true
-          };
+          var start_date = new Date(gadget.state.doc.start_date),
+              header_dict = {page_title: "Invoice : " + start_date.toUTCString()};
           if (!gadget.state.editable) {
             header_dict.edit_content = url_list[0];
           }
