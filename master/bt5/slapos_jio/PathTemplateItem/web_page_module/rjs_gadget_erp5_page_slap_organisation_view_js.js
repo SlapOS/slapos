@@ -146,7 +146,7 @@
                 },
                 "my_monitoring_status": {
                   "description": "",
-                  "title": "Monitoring Status",
+                  "title": "Map",
                   "default": {jio_key: gadget.state.jio_key},
                   "css_class": "",
                   "required": 1,
