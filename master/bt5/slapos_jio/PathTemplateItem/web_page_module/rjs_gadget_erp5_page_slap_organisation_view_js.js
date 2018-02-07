@@ -228,7 +228,7 @@
         })
         .push(function (url_list) {
           var header_dict = {
-            page_title: gadget.state.doc.title,
+            page_title: "Site : " + gadget.state.doc.title,
             save_action: true
           };
           if (!gadget.state.editable) {
