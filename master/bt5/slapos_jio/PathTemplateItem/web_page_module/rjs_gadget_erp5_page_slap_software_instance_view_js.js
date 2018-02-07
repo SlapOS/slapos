@@ -215,8 +215,8 @@
         })
         .push(function (url_list) {
           var header_dict = {
-            page_title: gadget.state.doc.title,
-            save_action: true
+            page_title: gadget.state.doc.portal_type +
+              " : " + gadget.state.doc.title
           };
           if (!gadget.state.editable) {
             header_dict.edit_content = url_list[0];
