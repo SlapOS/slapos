@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>type=None, **kwargs</string> </value>
+            <value> <string>type=None, relative_url=None, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

@@ -7,6 +7,7 @@ for instance in context.getPredecessorValueList():
     break
 
 if found:
-  result = instance.SoftwareInstance_getConnectionParameterList(type)
+  result = instance.SoftwareInstance_getConnectionParameterList(type,
+                                 relative_url=context.getRelativeUrl())
 
 return result
