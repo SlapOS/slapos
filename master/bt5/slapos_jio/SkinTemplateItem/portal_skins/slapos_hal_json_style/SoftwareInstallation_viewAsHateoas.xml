@@ -102,6 +102,7 @@
                         <string>your_usage</string>
                         <string>my_reference</string>
                         <string>my_news</string>
+                        <string>my_aggregate</string>
                       </list>
                     </value>
                 </item>
