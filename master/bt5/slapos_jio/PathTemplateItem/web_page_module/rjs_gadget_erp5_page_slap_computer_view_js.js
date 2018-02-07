@@ -39,6 +39,16 @@
                 title: "Status",
                 type: "GadgetField"
               };
+              result.data.rows[i].value.software_release = {
+                css_class: "",
+                description: "Software Release Info",
+                hidden: 0,
+                "default": {jio_key: value},
+                key: "software_release",
+                url: "gadget_slapos_software_release_info.html",
+                title: "Software Release Info",
+                type: "GadgetField"
+              };
               result.data.rows[i].value["listbox_uid:list"] = {
                 key: "listbox_uid:list",
                 value: 2713
@@ -104,8 +114,8 @@
             form_gadget = results[0],
             computer_network_list = [["", ""]],
             column_list = [
-              ['software_title', 'Software Release'],
-              ['reference', 'Reference'],
+              ['software_release', 'Software Release'],
+              ['url_string', 'Url'],
               ['monitoring_status', 'Status']
             ],
             ticket_column_list = [
