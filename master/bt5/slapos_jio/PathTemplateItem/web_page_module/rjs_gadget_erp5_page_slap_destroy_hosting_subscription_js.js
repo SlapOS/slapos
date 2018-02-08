@@ -36,7 +36,7 @@
           return gadget.getSetting("hateoas_url")
             .push(function (url) {
               return gadget.jio_putAttachment(doc.relative_url,
-                url + doc.relative_url + "/HostingSubscription_requestPerson", {});
+                url + doc.relative_url + "/HostingSubscription_requestPerson", {state: "destroyed"});
             });
         })
         .push(function () {
