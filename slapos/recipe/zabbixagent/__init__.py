@@ -71,10 +71,10 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cron_d)
     self._createDirectory(crontabs)
     wrapper = zc.buildout.easy_install.scripts([('crond',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
+      'slapos.recipe.librecipe.execute', 'generic_exec')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=repr((
         self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
-        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+        '-t', timestamps, '-f', '-l', '5', '-M', catcher))[1:-1]
       )[0]
     self.path_list.append(wrapper)
     return cron_d
@@ -101,10 +101,10 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(zabbix_agentd_path)
 
     wrapper = zc.buildout.easy_install.scripts([('zabbixagentd',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-      self.bin_directory, arguments=[
+      'slapos.recipe.librecipe.execute', 'generic_exec')], self.ws,
+      sys.executable, self.bin_directory, arguments=repr((
         self.options['zabbix_agentd_binary'].strip(), '-c',
-        zabbix_agentd_path])[0]
+        zabbix_agentd_path))[1:-1])[0]
 
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('zabbixagentd', __name__ + '.svcdaemon', 'svcdaemon')],

@@ -25,7 +25,7 @@
 #
 ##############################################################################
 import os
-
+import sys
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
@@ -58,8 +58,8 @@ class Recipe(GenericBaseRecipe):
 
     redis = self.createPythonScript(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['server_bin'], config_file]
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((self.options['server_bin'], config_file),)
     )
     path_list.append(redis)
 
@@ -67,11 +67,20 @@ class Recipe(GenericBaseRecipe):
     if promise_script:
       promise = self.createPythonScript(
         promise_script,
-        '%s.promise.main' % __name__,
-        dict(host=self.options['ipv6'], port=self.options['port'],
-             unixsocket = self.options.get('unixsocket') )
+        __name__ + '.promise',
+        (self.options['ipv6'], int(self.options['port']),
+         self.options.get('unixsocket'))
       )
       path_list.append(promise)
 
     return path_list
 
+
+def promise(host, port, unixsocket):
+  from .MyRedis2410 import Redis
+  try:
+    r = Redis(host=host, port=port, unix_socket_path=unixsocket, db=0)
+    r.publish("Promise-Service","SlapOS Promise")
+    r.connection_pool.disconnect()
+  except Exception, e:
+    sys.exit(e)

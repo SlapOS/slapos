@@ -39,28 +39,16 @@ from slapos.recipe.notifier import Callback
 from slapos.recipe.librecipe import shlex
 
 
-def promise(args):
+def promise(ssh_client, user, host, port):
   # Redirect output to /dev/null
-  with open("/dev/null") as _dev_null:
+  with open(os.devnull) as _dev_null:
     ssh = subprocess.Popen(
-        [args['ssh_client'], '%(user)s@%(host)s' % args, '-p', '%(port)s' % args],
-        stdin=subprocess.PIPE, stdout=_dev_null, stderr=None
-    )
-
-  # Rdiff Backup protocol quit command
-  quitcommand = 'q' + chr(255) + chr(0) * 7
-
-  ssh.stdin.write(quitcommand)
-  ssh.stdin.flush()
-  ssh.stdin.close()
-  ssh.wait()
-
-  if ssh.poll() is None:
-    return 1
-  if ssh.returncode != 0:
+        (ssh_client, '%s@%s' % (user, host), '-p', str(port)),
+        stdin=subprocess.PIPE, stdout=_dev_null)
+  ssh.communicate('q' + chr(255) + chr(0) * 7)
+  if ssh.returncode:
     sys.stderr.write("SSH Connection failed\n")
   return ssh.returncode
-
 
 
 class Recipe(GenericSlapRecipe, Notify, Callback):
@@ -244,15 +232,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     print 'Processing PBS slave %s with type %s' % (slave_id, slave_type)
 
-    promise_path = os.path.join(self.options['promises-directory'], "ssh-to-%s" % slave_id)
-    promise_dict = dict(ssh_client=self.options['sshclient-binary'],
-                        user=parsed_url.username,
-                        host=parsed_url.hostname,
-                        port=parsed_url.port)
-    promise = self.createPythonScript(promise_path,
-                                      __name__ + '.promise',
-                                      promise_dict)
-    path_list.append(promise)
+    path_list.append(self.createPythonScript(
+      os.path.join(self.options['promises-directory'], "ssh-to-%s" % slave_id),
+      __name__ + '.promise',
+      (self.options['sshclient-binary'],
+       parsed_url.username, parsed_url.hostname, parsed_url.port)))
 
     # Create known_hosts file by default.
     # In some case, we don't want to create it (case where we share IP mong partitions)

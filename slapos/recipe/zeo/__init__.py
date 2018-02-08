@@ -91,8 +91,8 @@ class Recipe(GenericBaseRecipe):
     # Create running wrapper
     wrapper_path = self.createPythonScript(
       self.options['wrapper-path'],
-      'slapos.recipe.librecipe.execute.execute',
-      arguments=[self.options['binary-path'].strip(), '-C',
-        self.options['conf-path']],)
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((self.options['binary-path'].strip(),
+        '-C', self.options['conf-path']),))
 
     return [configuration_path, wrapper_path]

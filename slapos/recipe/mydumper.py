@@ -24,7 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import subprocess
+import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -58,14 +58,14 @@ def do_export(args):
 
   cmd.extend(['-o', args['directory']])
 
-  subprocess.check_call(cmd)
+  os.execv(cmd[0], cmd)
 
 
 def do_import(args):
   cmd = _mydumper_base_cmd(**args)
   cmd.append('--overwrite-tables')
   cmd.extend(['-d', args['directory']])
-  subprocess.check_call(cmd)
+  os.execv(cmd[0], cmd)
 
 
 class Recipe(GenericBaseRecipe):
@@ -95,9 +95,5 @@ class Recipe(GenericBaseRecipe):
       config['compression'] = self.optionIsTrue('compression', default=False)
       config['rows'] = self.options.get('rows')
 
-    wrapper = self.createPythonScript(name=self.options['wrapper'],
-                                      absolute_function = '%s.%s' % (__name__, function.func_name),
-                                      arguments=config)
-
-    return [wrapper]
-
+    return self.createPythonScript(self.options['wrapper'],
+      '%s.%s' % (function.__module__, function.__name__), (config,))

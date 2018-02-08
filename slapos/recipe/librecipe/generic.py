@@ -116,26 +116,28 @@ class GenericBaseRecipe(object):
       with io.open(filepath, 'w+', encoding=encoding) as f:
         f.write(u'\n'.join(lines))
 
-  def createPythonScript(self, name, absolute_function, arguments=''):
+  def createPythonScript(self, name, absolute_function, args=(), kw={}):
     """Create a python script using zc.buildout.easy_install.scripts
 
      * function should look like 'module.function', or only 'function'
        if it is a builtin function."""
-    absolute_function = tuple(absolute_function.rsplit('.', 1))
-    if len(absolute_function) == 1:
-      absolute_function = ('__builtin__',) + absolute_function
-    if len(absolute_function) != 2:
-      raise ValueError("A non valid function was given")
-
-    module, function = absolute_function
+    function = absolute_function.rsplit('.', 1)
+    if len(function) == 1:
+      module = '__builtin__'
+      function, = function
+    else:
+      module, function = function
     path, filename = os.path.split(os.path.abspath(name))
 
-    script = zc.buildout.easy_install.scripts(
-      [(filename, module, function)], self._ws, sys.executable,
-      path, arguments=arguments)[0]
-    return script
+    assert not isinstance(args, (basestring, dict)), args
+    args = map(repr, args)
+    args += map('%s=%r'.__mod__, kw.iteritems())
 
-  def createWrapper(self, name, command, parameters, comments=[],
+    return zc.buildout.easy_install.scripts(
+      [(filename, module, function)], self._ws, sys.executable,
+      path, arguments=', '.join(args))[0]
+
+  def createWrapper(self, name, command, parameters, comments=(),
       parameters_extra=False, environment=None,
       pidfile=None, reserve_cpu=False
   ):

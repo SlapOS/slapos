@@ -70,15 +70,15 @@ class Recipe(GenericBaseRecipe):
     self.path_list.append(
       self.createPythonScript(
         self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.executee',
-        [ # Executable
-          [ self.options['testnode'], '-l', self.options['log-file'],
-            configuration_file],
+        'slapos.recipe.librecipe.execute.generic_exec',
+        ( # Command
+          ( self.options['testnode'], '-l', self.options['log-file'],
+            configuration_file),
           # Environment
           {
             'GIT_SSL_NO_VERIFY': '1',
           }
-        ],
+        ),
       )
     )
     self.installApache()
@@ -107,8 +107,8 @@ class Recipe(GenericBaseRecipe):
     )
     self.path_list.append(config_file)
     wrapper = self.createPythonScript(self.options['httpd-wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'),))
     self.path_list.append(wrapper)
     # create empty html page to not allow listing of /
     page = open(os.path.join(self.options['log-directory'], "index.html"), "w")

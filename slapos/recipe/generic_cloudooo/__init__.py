@@ -118,5 +118,5 @@ class Recipe(GenericBaseRecipe):
     path_list.append(config_file)
     path_list.append(self.createPythonScript(self.options['wrapper'],
      'slapos.recipe.librecipe.execute.execute_with_signal_translation',
-      [self.options['ooo-paster'].strip(), 'serve', config_file]))
+      ((self.options['ooo-paster'].strip(), 'serve', config_file),)))
     return path_list

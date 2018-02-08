@@ -57,8 +57,6 @@ class KnownHostsFile(dict):
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    path_list = []
-
     dropbear_cmd = [self.options['dropbear-binary']]
     # Don't fork into background
     dropbear_cmd.append('-F')
@@ -95,19 +93,16 @@ class Recipe(GenericBaseRecipe):
     if 'shell' in self.options:
       env['DROPBEAR_OVERRIDE_SHELL'] = self.options['shell']
 
-    wrapper = self.createPythonScript(
+    return self.createPythonScript(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.executee',
-      (dropbear_cmd, env, )
+      'slapos.recipe.librecipe.execute.generic_exec',
+      (dropbear_cmd, env)
     )
-    path_list.append(wrapper)
-
-    return path_list
 
 class Client(GenericBaseRecipe):
 
   def install(self):
-    env = dict()
+    env = {}
 
     if 'home' in self.options:
       env['HOME'] = self.options['home']
@@ -120,13 +115,11 @@ class Client(GenericBaseRecipe):
     if 'identity-file' in self.options:
       dropbear_cmd.extend(['-i', self.options['identity-file']])
 
-    wrapper = self.createPythonScript(
+    return self.createPythonScript(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.executee',
-      (dropbear_cmd, env, )
+      'slapos.recipe.librecipe.execute.generic_exec',
+      (dropbear_cmd, env)
     )
-
-    return [wrapper]
 
 
 class AddAuthorizedKey(GenericBaseRecipe):

@@ -38,26 +38,18 @@ class Recipe(GenericSlapRecipe):
     """
 
     def _install(self):
-        path_list = []
-
         slap_connection = self.buildout['slap-connection']
 
-        takeover_wrapper = self.createPythonScript(
-            name=self.options['wrapper-takeover'],
-            absolute_function='slapos.recipe.addresiliency.takeover.run',
-            arguments={
+        return self.createPythonScript(
+            self.options['wrapper-takeover'],
+            __name__ + '.takeover.takeover',
+            kw={
                 'server_url': slap_connection['server-url'],
                 'key_file': slap_connection.get('key-file'),
                 'cert_file': slap_connection.get('cert-file'),
-                'computer_id': slap_connection['computer-id'],
+                'computer_guid': slap_connection['computer-id'],
                 'partition_id': slap_connection['partition-id'],
-                'software': slap_connection['software-release-url'],
+                'software_release': slap_connection['software-release-url'],
                 'namebase': self.parameter_dict['namebase'],
                 'takeover_triggered_file_path': self.options['takeover-triggered-file-path'],
             })
-
-        path_list.append(takeover_wrapper)
-
-        return path_list
-
-

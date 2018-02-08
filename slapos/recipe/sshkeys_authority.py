@@ -34,17 +34,14 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe.inotify import subfiles
 
 # This authority only works with dropbear or openssh sshkey generators
-def sshkeys_authority(args):
-  requests_directory = args['requests']
-  keygen_binary = args['sshkeygen']
-
+def sshkeys_authority(request_directory, keygen_binary):
   if 'openssh' in keygen_binary:
     authority_type = 'openssh'
   else:
     # Keep dropbear for compatibility
     authority_type = 'dropbear'
 
-  for request_filename in subfiles(requests_directory):
+  for request_filename in subfiles(request_directory):
 
     with open(request_filename) as request_file:
       request = json.load(request_file)
@@ -98,18 +95,13 @@ def sshkeys_authority(args):
         public_key_file.write(public_key_value)
 
 
-
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    args = dict(
-      requests=self.options['request-directory'],
-      sshkeygen=self.options['keygen-binary'],
-    )
-
-    wrapper = self.createPythonScript(self.options['wrapper'],
-      __name__ + '.sshkeys_authority', args)
-    return [wrapper]
+    return self.createPythonScript(self.options['wrapper'],
+      __name__ + '.sshkeys_authority',
+      (self.options['request-directory'],
+       self.options['keygen-binary']))
 
 class Request(GenericBaseRecipe):
 
@@ -162,9 +154,8 @@ class Request(GenericBaseRecipe):
 
     wrapper = self.createPythonScript(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute_wait',
-      [ [self.options['executable']],
-        [self.private_key, self.public_key] ])
-
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((self.options['executable'],),),
+      {'wait_list': (self.private_key, self.public_key)})
 
     return [request_file, wrapper, public_key_link, private_key_link]

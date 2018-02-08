@@ -29,9 +29,9 @@ import time
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-def log(args):
+def log(filename):
   prefix = time.strftime('%Y-%m-%d.%H:%M.%s:')
-  with open(args['filename'], 'aw') as logfile:
+  with open(filename, 'a') as logfile:
     for line in sys.stdin:
       print >> logfile, prefix, line,
     print >> logfile, prefix, '------------------------'
@@ -39,10 +39,7 @@ def log(args):
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    wrapper = self.options['wrapper']
-    log = self.options['log']
-
-    script = self.createPythonScript(wrapper,
-                                     __name__ + '.log',
-                                     arguments=dict(filename=log))
-    return [script]
+    return self.createPythonScript(
+      self.options['wrapper'],
+      __name__ + '.log',
+      (self.options['log'],))

@@ -125,10 +125,14 @@ class Recipe(GenericBaseRecipe):
     #Generate wrapper for php
     wrapperphp = os.path.join(self.home, 'bin/php')
     php_wrapper = self.createPythonScript(wrapperphp,
-        'slapos.recipe.librecipe.execute.executee',
-        ([self.phpbin, '-c', self.phpini], os.environ)
+        'slapos.recipe.librecipe.execute.generic_exec',
+        ((self.phpbin, '-c', self.phpini),)
     )
     path_list.append(php_wrapper)
+
+    mysql_dict = dict(db=self.database,
+        host=self.mysqlhost, port=self.mysqlport,
+        user=self.username, passwd=self.password)
 
     #Generate python script for MySQL database test (starting)
     file_status = os.path.join(self.home, '.boinc_config')
@@ -137,11 +141,7 @@ class Recipe(GenericBaseRecipe):
     mysql_wrapper = self.createPythonScript(
       os.path.join(self.wrapperdir, 'start_config'),
       '%s.configure.checkMysql' % __name__,
-      dict(mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
-          mysql_user=self.username, mysql_password=self.password,
-          database=self.database,
-          file_status=file_status, environment=environment
-      )
+      (environment, mysql_dict, file_status)
     )
 
     # Generate make project wrapper file
@@ -164,8 +164,7 @@ class Recipe(GenericBaseRecipe):
     install_wrapper = self.createPythonScript(
       os.path.join(self.wrapperdir, 'make_project'),
       '%s.configure.makeProject' % __name__,
-      dict(launch_args=launch_args, request_file=request_make_boinc,
-      make_sig=file_status, env=environment)
+      (file_status, launch_args, request_make_boinc, environment)
     )
     path_list.append(install_wrapper)
 
@@ -197,7 +196,7 @@ class Recipe(GenericBaseRecipe):
     )
     start_service = self.createPythonScript(
       os.path.join(self.wrapperdir, 'config_project'),
-      '%s.configure.services' % __name__, parameter
+      '%s.configure.services' % __name__, (parameter,)
     )
     path_list.append(start_service)
 
@@ -208,14 +207,12 @@ class Recipe(GenericBaseRecipe):
       os.unlink(start_boinc)
     boinc_parameter = dict(service_status=service_status,
         installroot=self.installroot, drop_install=drop_install,
-        mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
-        mysql_user=self.username, mysql_password=self.password,
-        database=self.database, environment=environment,
+        mysql_dict=mysql_dict, environment=environment,
         start_boinc=start_boinc)
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'start_boinc'),
         '%s.configure.restart_boinc' % __name__,
-        boinc_parameter
+        (boinc_parameter,)
     )
     path_list.append(start_wrapper)
 
@@ -362,7 +359,7 @@ class App(GenericBaseRecipe):
         )
         deploy_app = self.createPythonScript(
           os.path.join(wrapperdir, 'boinc_%s' % appname),
-          '%s.configure.deployApp' % __name__, parameter
+          '%s.configure.deployApp' % __name__, (parameter,)
         )
         path_list.append(deploy_app)
 
@@ -404,17 +401,16 @@ class Client(GenericBaseRecipe):
       cc_cmd = '--read_cc_config'
     cmd = self.createPythonScript(cmd_wrapper,
         '%s.configure.runCmd' % __name__,
-        dict(base_cmd=base_cmd, cc_cmd=cc_cmd, installdir=installdir,
-        project_url=url, key=key)
+        (base_cmd, cc_cmd, installdir, url, key)
     )
     path_list.append(cmd)
 
     #Generate BOINC client wrapper
     boinc = self.createPythonScript(boinc_wrapper,
-            'slapos.recipe.librecipe.execute.execute',
-            [boincbin, '--allow_multiple_clients', '--gui_rpc_port',
+            'slapos.recipe.librecipe.execute.generic_exec',
+            ((boincbin, '--allow_multiple_clients', '--gui_rpc_port',
               str(self.options['rpc-port']), '--allow_remote_gui_rpc',
-              '--dir', installdir, '--redirectio', '--check_all_logins']
+              '--dir', installdir, '--redirectio', '--check_all_logins'),)
     )
     path_list.append(boinc)
 

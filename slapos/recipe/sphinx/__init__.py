@@ -50,9 +50,9 @@ class Recipe(GenericBaseRecipe):
     # Create init script
     wrapper = self.createPythonScript(
         self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['sphinx-searchd-binary'].strip(), '-c',
-         sphinx_conf_path, '--nodetach'],
+        'slapos.recipe.librecipe.execute.generic_exec',
+        ((self.options['sphinx-searchd-binary'].strip(), '-c',
+          sphinx_conf_path, '--nodetach'),),
         )
 
     return [wrapper, sphinx_conf_path]

@@ -55,9 +55,9 @@ class Recipe(GenericBaseRecipe):
     socket = self.options['socket'],
     post_rotate = self.createPythonScript(
       self.options['logrotate-post'],
-      'slapos.recipe.librecipe.execute.execute',
-      [mysql_binary, '--no-defaults', '-B', '-u', 'root', '--socket=%s' % socket, '-e',
-       'FLUSH LOGS']
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((mysql_binary, '--no-defaults', '-B', '-u', 'root',
+        '--socket=%s' % socket, '-e', 'FLUSH LOGS'),)
     )
     path_list.append(post_rotate)
 
@@ -85,12 +85,12 @@ class Recipe(GenericBaseRecipe):
     mysql_update = self.createPythonScript(
       self.options['update-wrapper'],
       '%s.mysql.updateMysql' % __name__,
-      dict(
+      (dict(
         mysql_script=mysql_script,
         mysql_binary=mysql_binary,
         mysql_upgrade_binary=mysql_upgrade_binary,
         socket=socket,
-      )
+       ),)
     )
     path_list.append(mysql_update)
 
@@ -98,7 +98,7 @@ class Recipe(GenericBaseRecipe):
     mysqld = self.createPythonScript(
       self.options['wrapper'],
       '%s.mysql.runMysql' % __name__,
-      dict(
+      (dict(
         mysql_install_binary=self.options['mysql-install-binary'],
         mysqld_binary=mysqld_binary,
         data_directory=mysql_conf['data_directory'],
@@ -106,7 +106,7 @@ class Recipe(GenericBaseRecipe):
         socket=socket,
         configuration_file=mysql_conf_file,
         cwd=self.options['mysql-base-directory'],
-       )
+       ),)
     )
     path_list.append(mysqld)
 
@@ -115,12 +115,12 @@ class Recipe(GenericBaseRecipe):
       backup_script = self.createPythonScript(
         self.options['backup-script'],
         '%s.do_backup' % __name__,
-        dict(
+        (dict(
           mydumper_binary=self.options['mydumper-binary'],
           database=mysql_conf['mysql_database'],
           socket=mysql_conf['socket'],
           backup_directory=self.options['backup-directory']
-        ),
+         ),)
       )
       path_list.append(backup_script)
 
@@ -129,7 +129,7 @@ class Recipe(GenericBaseRecipe):
       recovering_script = self.createPythonScript(
         self.options['recovering-wrapper'],
         '%s.import_dump' % __name__,
-        {
+        ({
           'lock_file': os.path.join(self.work_directory,
                                     'import_done'),
           'database': mysql_conf['mysql_database'],
@@ -140,7 +140,7 @@ class Recipe(GenericBaseRecipe):
           'local_directory': self.mysql_backup_directory,
           'dump_name': dump_filename,
           'zcat_binary': self.options['zcat-binary'],
-        }
+        },)
       )
       path_list.append(recovering_script)
 

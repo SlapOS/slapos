@@ -205,9 +205,9 @@ Include conf/extra/httpd-autoindex.conf
 
     httpd_wrapper = self.createPythonScript(
       os.path.join(services_dir, 'httpd_wrapper'),
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['httpd_binary'], '-f', self.options['httpd_conf'],
-       '-DFOREGROUND']
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((self.options['httpd_binary'],
+        '-f', self.options['httpd_conf'], '-DFOREGROUND'),)
     )
     path_list.append(httpd_wrapper)
 
@@ -222,17 +222,17 @@ Include conf/extra/httpd-autoindex.conf
     mioga_conf_path = os.path.join(mioga_base, 'conf', 'Mioga.conf')
     notifier_wrapper = self.createPythonScript(
       os.path.join(services_dir, 'notifier'),
-      'slapos.recipe.librecipe.execute.execute',
-      [ os.path.join(site_perl_bin, 'notifier.pl'),
-        mioga_conf_path ]
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((os.path.join(site_perl_bin, 'notifier.pl'),
+        mioga_conf_path),)
     )
     path_list.append(notifier_wrapper)
 
     searchengine_wrapper = self.createPythonScript(
       os.path.join(services_dir, 'searchengine'),
-      'slapos.recipe.librecipe.execute.execute',
-      [ os.path.join(site_perl_bin, 'searchengine.pl'),
-        mioga_conf_path ]
+      'slapos.recipe.librecipe.execute.generic_exec',
+      ((os.path.join(site_perl_bin, 'searchengine.pl'),
+        mioga_conf_path),)
     )
     path_list.append(searchengine_wrapper)
 

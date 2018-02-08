@@ -178,12 +178,11 @@ class Recipe(GenericBaseRecipe):
       os.chmod(wrapper_location, 0744)
 
     #generate script for start condor
-    start_condor = os.path.join(self.wrapperdir, 'start_condor')
-    start_bin = os.path.join(self.wrapper_sbin, 'condor_master')
-    condor_reconfig = os.path.join(self.wrapper_sbin, 'condor_reconfig')
-    wrapper = self.createPythonScript(start_condor,
-        '%s.configure.condorStart' % __name__,
-        dict(start_bin=start_bin, condor_reconfig=condor_reconfig)
+    wrapper = self.createPythonScript(
+        os.path.join(self.wrapperdir, 'start_condor'),
+        __name__ + '.configure.condorStart',
+        (os.path.join(self.wrapper_sbin, 'condor_reconfig'),
+         os.path.join(self.wrapper_sbin, 'condor_master'))
     )
     path_list.append(wrapper)
     return path_list
@@ -276,13 +275,11 @@ class AppSubmit(GenericBaseRecipe):
           os.unlink(destination)
         os.symlink(app_list[appname]['files'][file], destination)
       #generate wrapper for submitting job
-      condor_submit = os.path.join(self.options['bin'].strip(), 'condor_submit')
-      parameter = dict(submit=condor_submit, sig_install=sig_install,
-                      submit_file='submit',
-                      appname=appname, appdir=appdir)
       submit_job = self.createPythonScript(
         os.path.join(self.options['wrapper-dir'].strip(), appname),
-        '%s.configure.submitJob' % __name__, parameter
+        __name__ + '.configure.submitJob',
+        (os.path.join(self.options['bin'].strip(), 'condor_submit'),
+         'submit', appdir, appname, sig_install)
       )
       path_list.append(submit_job)
     return path_list

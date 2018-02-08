@@ -63,12 +63,17 @@ class Recipe(GenericBaseRecipe):
 
         # More complex needs: create a Python script as wrapper
 
-        if wait_files is not None:
-            wait_files = [filename.strip() for filename in wait_files.split()
-                          if filename.strip()]
-        if environment is not None:
-            environment = dict((k.strip(), v.strip()) for k, v in [
-              line.split('=') for line in environment.splitlines() if line.strip() ])
+        extra_environ = {}
+        if environment:
+            for line in environment.splitlines():
+                line = line.strip()
+                if line:
+                    k, v = line.split('=')
+                    extra_environ[k.rstrip()] = v.lstrip()
+
+        args = [command_line, extra_environ]
+        if wait_files:
+            args.append(wait_files.split())
 
         # We create a python script and a wrapper around the python
         # script because the python script might have a too long #! line
@@ -81,7 +86,7 @@ class Recipe(GenericBaseRecipe):
         python_script = self.createPythonScript(
             base_script_path +'.py',
             'slapos.recipe.librecipe.execute.generic_exec',
-            (command_line, wait_files, environment,), )
+            args)
         return [python_script, self.createWrapper(
              name=wrapper_path,
              command=python_script,

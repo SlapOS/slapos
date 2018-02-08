@@ -162,7 +162,6 @@ class Recipe(GenericBaseRecipe):
     return hash_string
 
   def install(self):
-    path_list = []
     token_save_path = os.path.join(self.options['conf-dir'], 'token.json')
     token_list_path = self.options['token-dir']
 
@@ -190,20 +189,14 @@ class Recipe(GenericBaseRecipe):
 
     self.createFile(token_save_path, json.dumps(token_dict))
 
-    service_dict = dict(token_base_path=token_list_path,
-                        token_json=token_save_path,
-                        partition_id=self.computer_partition_id,
-                        computer_id=self.computer_id,
-                        registry_url=registry_url,
-                        server_url=self.server_url,
+    computer_dict = dict(partition_id=self.computer_partition_id,
+                        computer_guid=self.computer_id,
+                        master_url=self.server_url,
                         cert_file=self.cert_file,
                         key_file=self.key_file)
 
-    request_add = self.createPythonScript(
+    return self.createPythonScript(
         self.options['manager-wrapper'].strip(),
-        '%s.re6stnet.manage' % __name__, service_dict
+        __name__ + '.re6stnet.manage',
+        (registry_url, token_list_path, token_save_path, computer_dict)
       )
-    path_list.append(request_add)
-
-    return path_list
-

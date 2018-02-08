@@ -62,8 +62,8 @@ class Recipe(GenericBaseRecipe):
                       condor_wrapper_list=condor_wrapper_list,
                       boinc_wrapper_list=boinc_wrapper_list)
     bonjourGrid_wrapper = self.createPythonScript(grid_wrapper,
-        '%s.configure.launchScript' % __name__,
-        parameters
+        __name__ + '.configure.launchScript',
+        (parameters,)
     )
     path_list.append(bonjourGrid_wrapper)
 
@@ -74,15 +74,15 @@ class Recipe(GenericBaseRecipe):
     log = self.options['log_file'].strip()
     pid_file = self.options['pid_file'].strip()
     wrapper = self.createPythonScript(bg_wrapper,
-        'slapos.recipe.librecipe.execute.execute',
-        ([python, bonjourgrid_master, '--log_file', log,
+        'slapos.recipe.librecipe.execute.generic_exec',
+        ((python, bonjourgrid_master, '--log_file', log,
           '--pid_file', pid_file,
           '--master_wrapper', grid_wrapper,
           '--directory', self.options['work_dir'].strip(),
           '--server', self.options['redis-url'].strip(),
           '--port', self.options['redis-port'].strip(),
           '--num_workers', self.options['nworkers'].strip(),
-        ])
+         ),)
     )
     path_list.append(wrapper)
 
@@ -114,8 +114,8 @@ class Client(GenericBaseRecipe):
     log = self.options['log_file'].strip()
     pid_file = self.options['pid_file'].strip()
     wrapper = self.createPythonScript(bg_wrapper,
-        'slapos.recipe.librecipe.execute.execute',
-        ([python, bonjourgrid_client, '--log_file', log,
+        'slapos.recipe.librecipe.execute.generic_exec',
+        ((python, bonjourgrid_client, '--log_file', log,
           '--pid_file', pid_file,
           '--boinc_wrapper', boinc_script,
           '--condor_wrapper', condor_script,
@@ -123,7 +123,7 @@ class Client(GenericBaseRecipe):
           '--install_directory', self.options['install_dir'].strip(),
           '--server', self.options['redis-url'].strip(),
           '--port', self.options['redis-port'].strip(),
-        ])
+         ),)
     )
     path_list.append(wrapper)
 

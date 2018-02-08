@@ -298,9 +298,9 @@ class Request(BaseRecipe):
         'local_host': local_host, 'local_port': local_port,
       }))
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[
-        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      'slapos.recipe.librecipe.execute', 'generic_exec')], self.ws,
+      sys.executable, self.wrapper_directory, arguments='%r, %r'
+        % (self.options['stunnel_binary'].strip(), stunnel_conf_path)
       )[0]
     self.path_list.append(wrapper)
     return (local_host, local_port,)

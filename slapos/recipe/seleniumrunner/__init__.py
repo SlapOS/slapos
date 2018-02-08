@@ -25,23 +25,15 @@
 #
 #############################################################################
 
-import os
-import sys
-import zc.buildout
-from slapos.recipe.librecipe import BaseSlapRecipe
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-  def install(self):
 
-    runner = self.createPythonScript(
+  def install(self):
+    return self.createPythonScript(
       self.options['runner-path'],
       __name__+'.testrunner.run',
-      arguments=[self.options['suite-url'],
-                 self.options['report-url'],
-                 self.options['report-project'],
-                 self.options['browser'],
-                 ])
-
-    return [runner]
-
+      (self.options['suite-url'],
+       self.options['report-url'],
+       self.options['report-project'],
+       self.options['browser']))

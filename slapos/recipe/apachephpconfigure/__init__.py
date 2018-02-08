@@ -118,7 +118,7 @@ class Recipe(GenericBaseRecipe):
     configureinstall_wrapper_path = self.createPythonScript(
         self.options['configureinstall-location'],
         __name__ + '.runner.executeRunner',
-        [argument, delete, rename, chmod, data]
+        (argument, delete, rename, chmod, data)
     )
     
     #TODO finish to port this and remove upper one
