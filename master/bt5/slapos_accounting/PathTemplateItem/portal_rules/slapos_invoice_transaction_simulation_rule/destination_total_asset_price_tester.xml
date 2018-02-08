@@ -115,11 +115,7 @@
         </item>
         <item>
             <key> <string>tested_property</string> </key>
-            <value>
-              <tuple>
-                <string>destination_total_asset_price</string>
-              </tuple>
-            </value>
+            <value> <string>destination_total_asset_price</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
