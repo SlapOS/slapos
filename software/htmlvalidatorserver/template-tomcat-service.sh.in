@@ -1,0 +1,8 @@
+#!${dash-output:dash}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+export JRE_HOME=${java-re-8:location}
+export CATALINA_BASE=$${directory:catalina_base}
+
+exec ${tomcat7-output:catalina} run

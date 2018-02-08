@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="-1" shutdown="SHUTDOWN">
+  <Service name="Catalina">
+    <Connector
+      protocol="org.apache.coyote.http11.Http11Protocol"
+      address="$${tomcat-configuration:ip}" 
+      port="$${tomcat-configuration:port}"
+      maxThreads="10"
+      scheme="http"
+      secure="false"
+      clientAuth="false"
+    />
+    
+    <Engine name="Catalina" defaultHost="localhost">
+      <Valve className="org.apache.catalina.valves.AccessLogValve"
+             directory="logs" prefix="localhost_access_log." suffix=".log"
+             pattern="common" resolveHosts="false"/>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false">
+        <Context path="/" docBase="${vnu-output:war}" 
+           privileged="true">
+        </Context>
+      </Host>
+    </Engine>
+  </Service>
+</Server>
