@@ -6,11 +6,14 @@
       address="$${tomcat-configuration:ip}" 
       port="$${tomcat-configuration:port}"
       maxThreads="10"
-      scheme="http"
-      secure="false"
+      scheme="$${tomcat-configuration:scheme}"
+      secure="true"
       clientAuth="false"
+      SSLEnabled="true"
+      keystorePass="$${keystore:pass}"
+      keystoreFile="$${keystore:file}"
     />
-    
+
     <Engine name="Catalina" defaultHost="localhost">
       <Valve className="org.apache.catalina.valves.AccessLogValve"
              directory="logs" prefix="localhost_access_log." suffix=".log"
