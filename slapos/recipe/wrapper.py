@@ -26,7 +26,6 @@
 ##############################################################################
 
 import shlex
-import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -45,54 +44,36 @@ class Recipe(GenericBaseRecipe):
         command_line = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
-        environment = self.options.get('environment')
         parameters_extra = self.options.get('parameters-extra')
         pidfile = self.options.get('pidfile')
-        reserve_cpu = self.options.get('reserve-cpu', False)
 
-        if not wait_files and not environment:
-          # Create a simple wrapper as shell script
-          return [self.createWrapper(
-             name=wrapper_path,
-             command=command_line[0],
-             parameters=command_line[1:],
-             parameters_extra=parameters_extra,
-             pidfile=pidfile,
-             reserve_cpu=reserve_cpu
-          )]
+        environment = {}
+        for line in (self.options.get('environment') or '').splitlines():
+          line = line.strip()
+          if line:
+            k, v = line.split('=')
+            environment[k.rstrip()] = v.lstrip()
 
-        # More complex needs: create a Python script as wrapper
-
-        extra_environ = {}
-        if environment:
-            for line in environment.splitlines():
-                line = line.strip()
-                if line:
-                    k, v = line.split('=')
-                    extra_environ[k.rstrip()] = v.lstrip()
-
-        args = [command_line, extra_environ]
+        kw = {}
         if wait_files:
-            args.append(wait_files.split())
+          kw['wait_list'] = wait_files.split()
+        if pidfile:
+          kw['pidfile'] = pidfile
+        if self.isTrueValue(self.options.get('reserve-cpu')):
+          kw['reserve_cpu'] = True
 
-        # We create a python script and a wrapper around the python
-        # script because the python script might have a too long #! line
-        if os.path.exists(os.path.join(self.buildout['buildout']['directory'], "bin")): 
-          base_script_path = os.path.join(
-            self.buildout['buildout']['directory'], "bin/" + wrapper_path.split("/")[-1])
-        else:
-          base_script_path = os.path.join(
-            self.buildout['buildout']['directory'], wrapper_path.split("/")[-1])
-        python_script = self.createPythonScript(
-            base_script_path +'.py',
+        if kw:
+          # More complex needs: create a Python script as wrapper
+          args = [command_line]
+          if environment:
+            args.append(environment)
+
+          return self.createPythonScript(wrapper_path,
             'slapos.recipe.librecipe.execute.generic_exec',
-            args)
-        return [python_script, self.createWrapper(
-             name=wrapper_path,
-             command=python_script,
-             parameters=[],
-             parameters_extra=parameters_extra,
-             pidfile=pidfile,
-             reserve_cpu=reserve_cpu
-        )]
+            args, kw)
 
+        return self.createWrapper(wrapper_path,
+          command_line[0],
+          command_line[1:],
+          parameters_extra=self.isTrueValue(parameters_extra),
+          environment=environment)

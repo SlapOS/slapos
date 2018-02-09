@@ -33,7 +33,6 @@ import sys
 import inspect
 import re
 import shutil
-from textwrap import dedent
 import urllib
 import urlparse
 
@@ -139,57 +138,25 @@ class GenericBaseRecipe(object):
 
   def createWrapper(self, name, command, parameters, comments=(),
       parameters_extra=False, environment=None,
-      pidfile=None, reserve_cpu=False
   ):
     """
-    Creates a shell script for process replacement.
+    Creates a basic shell script for process replacement.
     Takes care of quoting.
-    Takes care of #! line limitation when the wrapped command is a script.
-    if pidfile parameter is specified, then it will make the wrapper a singleton,
-    accepting to run only if no other instance is running.
 
-    :param reserve_cpu: bool, try to reserve one core for the `command`
+    This must be kept minimal to avoid code duplication with generic_exec.
+    In particular, do not implement workaround for shebang size limitation here
+    (note that this can't be done correctly with a POSIX shell, because the
+    process can't be given a name).
     """
-
     lines = [ '#!/bin/sh' ]
 
     if comments:
       lines += '# ', '\n# '.join(comments), '\n'
 
-    lines.append('COMMAND=' + shlex.quote(command))
-
     for key in environment or ():
-      lines.append('export %s=%s' % (key, environment[key]))
+      lines.append('export %s=%s' % (key, shlex.quote(environment[key])))
 
-    if pidfile:
-      lines.append(dedent("""
-          # Check for other instances
-          pidfile=%s
-          if [ -s $pidfile ]; then
-            if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
-              echo "Already running with pid $pid."
-              exit 1
-            fi
-          fi
-          echo $$ > $pidfile""" % shlex.quote(pidfile)))
-
-    if reserve_cpu:
-      # if the CGROUPS cpuset is available (and prepared by slap format)
-      # request an exclusive CPU core for this process
-      lines.append(dedent("""
-        # put own PID into waiting list for exclusive CPU-core access
-        echo $$ >> ~/.slapos-cpu-exclusive
-        """))
-
-    lines.append(dedent('''
-    # If the wrapped command uses a shebang, execute the referenced
-    # executable passing the script path as first argument.
-    # This is to workaround the limitation of 127 characters in #!
-    [ ! -f "$COMMAND" ] || {
-      [ "`head -c2`" != "#!" ] || read -r EXE ARG
-    } < "$COMMAND"
-
-    exec $EXE ${ARG:+"$ARG"} "$COMMAND"'''))
+    lines.append('exec ' + shlex.quote(command))
 
     parameters = map(shlex.quote, parameters)
     if parameters_extra:

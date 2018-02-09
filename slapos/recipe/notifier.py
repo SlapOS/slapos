@@ -80,30 +80,34 @@ class Notify(GenericBaseRecipe):
       # Just a touch
       open(log, 'w').close()
 
-    parameters = [
+    cmd = [notifier_binary,
             '-l', log,
             '--title', title,
             '--feed', feed_url,
             '--max-run', str(max_run),
             '--notification-url',
             ]
-    parameters.extend(notification_url.split(' '))
-    parameters.extend(['--executable', executable])
+    cmd += notification_url.split(' ')
+    cmd += '--executable', executable
     # For a more verbose mode, writing feed items for any action
     instance_root_name = instance_root_name or self.options.get('instance-root-name', None)
     log_url = log_url or self.options.get('log-url', None)
     status_item_directory = status_item_directory or self.options.get('status-item-directory', None)
     if instance_root_name and log_url and status_item_directory:
-      parameters.extend([
+      cmd += (
         '--instance-root-name', instance_root_name,
         '--log-url', log_url,
         '--status-item-directory', status_item_directory,
-      ])
+      )
+
+    if pidfile:
+      return self.createPythonScript(wrapper,
+        'slapos.recipe.librecipe.execute.generic_exec',
+        (cmd,), {'pidfile': pidfile})
 
     return self.createWrapper(name=wrapper,
-                              command=notifier_binary,
-                              parameters=parameters,
-                              pidfile=pidfile,
+                              command=cmd[0],
+                              parameters=cmd[1:],
                               parameters_extra=True,
                               comments=[
                                   '',

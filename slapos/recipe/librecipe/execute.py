@@ -28,8 +28,36 @@ def _wait_files_creation(file_list):
         if event.name in directory:
           directory[event.name] = event.mask & (flags.CREATE | flags.MOVED_TO)
 
-def generic_exec(args, extra_environ=None, wait_list=None):
+def generic_exec(args, extra_environ=None, wait_list=None,
+                 pidfile=None, reserve_cpu=False,
+                 #shebang_workaround=False, # XXX: still needed ?
+                 ):
+  args = list(args)
+
+  if pidfile:
+    import psutil
+    try:
+      with open(pidfile) as f:
+        pid = int(f.read())
+      running = psutil.Process(pid).cmdline()
+    except Exception:
+      pass
+    else:
+      # With chained shebangs, several paths may be inserted at the beginning.
+      n = len(args)
+      for i in xrange(1+len(running)-n):
+        if args == running[i:n+i]:
+          sys.exit("Already running with pid %s." % pid)
+    with open(pidfile, 'w') as f:
+      f.write(str(os.getpid()))
+
   args += sys.argv[1:]
+
+  if reserve_cpu:
+    # If the CGROUPS cpuset is available (and prepared by slap format),
+    # request an exclusive CPU core for this process.
+    with open(os.path.expanduser('~/.slapos-cpu-exclusive'), 'a') as f:
+      f.write('%s\n' % os.getpid())
 
   if wait_list:
     _wait_files_creation(wait_list)
