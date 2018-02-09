@@ -77,8 +77,10 @@ path = ${directory:promise}/${:_buildout_section_name_}
 
 [influxdb]
 ipv6 = ${instance-parameter:ipv6-random}
+ipv4 = ${instance-parameter:ipv4-random}
 host = ${:ipv6}
-port = 8088
+local-host = ${:ipv4}
+rpc-port = 8088
 http-port = 8086
 url = https://[${:host}]:${:http-port}
 data-dir = ${directory:influxdb-data-dir}
@@ -108,8 +110,8 @@ username = influxdb
 
 [influxdb-listen-promise]
 <= check-port-listening-promise
-hostname= ${influxdb:ipv6}
-port = ${influxdb:port}
+hostname = ${influxdb:ipv6}
+port = ${influxdb:http-port}
 
 [influxdb-password-promise]
 recipe = slapos.cookbook:wrapper

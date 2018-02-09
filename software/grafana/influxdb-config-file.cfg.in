@@ -1,5 +1,5 @@
 reporting-disabled = false
-bind-address = "[{{ influxdb['host'] }}]:{{ influxdb['port'] }}"
+bind-address = "[{{ influxdb['local-host'] }}]:{{ influxdb['rpc-port'] }}"
 
 [meta]
   dir = "{{ influxdb['data-dir'] }}/meta"
