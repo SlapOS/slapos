@@ -37,6 +37,7 @@ class Recipe(GenericBaseRecipe):
 
     :param lines wait-for-files: list of files to wait for
     :param str pidfile: path to pidfile ensure exclusivity for the process
+    :param str private-dev-shm: size of private /dev/shm, using user namespaces
     :param bool reserve-cpu: command will ask for an exclusive CPU core
     """
     def install(self):
@@ -44,6 +45,7 @@ class Recipe(GenericBaseRecipe):
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
         pidfile = self.options.get('pidfile')
+        private_dev_shm = self.options.get('private-dev-shm')
 
         environment = {}
         for line in (self.options.get('environment') or '').splitlines():
@@ -57,6 +59,8 @@ class Recipe(GenericBaseRecipe):
           kw['wait_list'] = wait_files.split()
         if pidfile:
           kw['pidfile'] = pidfile
+        if private_dev_shm:
+          kw['private_dev_shm'] = private_dev_shm
         if self.isTrueValue(self.options.get('reserve-cpu')):
           kw['reserve_cpu'] = True
 

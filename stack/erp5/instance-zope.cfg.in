@@ -206,6 +206,7 @@ environment =
 {% endif %}
 parameters-extra = true
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+private-dev-shm = {{ slapparameter_dict['private-dev-shm'] }}
 
 [{{ section('zcml') }}]
 recipe = slapos.cookbook:copyfilelist

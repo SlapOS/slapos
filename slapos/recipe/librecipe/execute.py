@@ -28,8 +28,25 @@ def _wait_files_creation(file_list):
         if event.name in directory:
           directory[event.name] = event.mask & (flags.CREATE | flags.MOVED_TO)
 
+def _libc():
+  from ctypes import CDLL, get_errno, c_char_p, c_int, c_ulong, util
+  libc = CDLL(util.find_library('c'), use_errno=True)
+  libc_mount = libc.mount
+  libc_mount.argtypes = c_char_p, c_char_p, c_char_p, c_ulong, c_char_p
+  def mount(source, target, filesystemtype, mountflags, data):
+    if libc_mount(source, target, filesystemtype, mountflags, data):
+      e = get_errno()
+      raise OSError(e, os.strerror(e))
+  libc_unshare = libc.unshare
+  libc_unshare.argtypes = c_int,
+  def unshare(flags):
+    if libc_unshare(flags):
+      e = get_errno()
+      raise OSError(e, os.strerror(e))
+  return mount, unshare
+
 def generic_exec(args, extra_environ=None, wait_list=None,
-                 pidfile=None, reserve_cpu=False,
+                 pidfile=None, reserve_cpu=False, private_dev_shm=None,
                  #shebang_workaround=False, # XXX: still needed ?
                  ):
   args = list(args)
@@ -61,6 +78,18 @@ def generic_exec(args, extra_environ=None, wait_list=None,
 
   if wait_list:
     _wait_files_creation(wait_list)
+
+  if private_dev_shm:
+    mount, unshare = _libc()
+    CLONE_NEWNS   = 0x00020000
+    CLONE_NEWUSER = 0x10000000
+    uid = os.getuid()
+    gid = os.getgid()
+    unshare(CLONE_NEWUSER |CLONE_NEWNS)
+    with open('/proc/self/setgroups', 'wb') as f: f.write('deny')
+    with open('/proc/self/uid_map',   'wb') as f: f.write('%s %s 1' % (uid, uid))
+    with open('/proc/self/gid_map',   'wb') as f: f.write('%s %s 1' % (gid, gid))
+    mount('tmpfs', '/dev/shm', 'tmpfs', 0, 'size=' + private_dev_shm)
 
   if extra_environ:
     env = os.environ.copy()
