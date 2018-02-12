@@ -6,3 +6,4 @@ MemcachedToolServerConstraint
 GeographicOrganisation
 WebSiteModuleShacacheConstraint
 ShacacheSystemPreference
+OAuthToolDefaultSlapOSConnector

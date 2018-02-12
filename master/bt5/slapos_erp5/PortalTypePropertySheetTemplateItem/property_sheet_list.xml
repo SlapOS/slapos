@@ -8,6 +8,9 @@
  <portal_type id="Memcached Tool">
   <item>MemcachedToolServerConstraint</item>
  </portal_type>
+ <portal_type id="OAuth Tool">
+  <item>OAuthToolDefaultSlapOSConnector</item>
+ </portal_type>
  <portal_type id="Organisation">
   <item>GeographicOrganisation</item>
  </portal_type>
