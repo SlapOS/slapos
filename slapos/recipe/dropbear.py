@@ -93,11 +93,7 @@ class Recipe(GenericBaseRecipe):
     if 'shell' in self.options:
       env['DROPBEAR_OVERRIDE_SHELL'] = self.options['shell']
 
-    return self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      (dropbear_cmd, env)
-    )
+    return self.createWrapper(self.options['wrapper'], dropbear_cmd, env)
 
 class Client(GenericBaseRecipe):
 
@@ -115,11 +111,7 @@ class Client(GenericBaseRecipe):
     if 'identity-file' in self.options:
       dropbear_cmd.extend(['-i', self.options['identity-file']])
 
-    return self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      (dropbear_cmd, env)
-    )
+    return self.createWrapper(self.options['wrapper'], dropbear_cmd, env)
 
 
 class AddAuthorizedKey(GenericBaseRecipe):

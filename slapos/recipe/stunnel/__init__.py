@@ -79,10 +79,9 @@ class Recipe(GenericBaseRecipe):
       self.substituteTemplate(template, conf))
     path_list.append(conf_file)
 
-    wrapper = self.createPythonScript(
+    wrapper = self.createWrapper(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['stunnel-binary'], conf_file),)
+      (self.options['stunnel-binary'], conf_file),
     )
     path_list.append(wrapper)
 

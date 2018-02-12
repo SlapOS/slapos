@@ -320,12 +320,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     else:
       self.logger.info("Server mode")
 
-      wrapper = self.createWrapper(name=self.options['wrapper'],
-                                   command=self.options['rdiffbackup-binary'],
-                                   parameters=[
+      wrapper = self.createWrapper(self.options['wrapper'],
+                                   (self.options['rdiffbackup-binary'],
                                        '--restrict', self.options['path'],
                                        '--server'
-                                       ])
+                                       ))
       path_list.append(wrapper)
 
     return path_list

@@ -152,10 +152,9 @@ class Request(GenericBaseRecipe):
     os.symlink(self.private_key, private_key_link)
     # end-XXX
 
-    wrapper = self.createPythonScript(
+    wrapper = self.createWrapper(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['executable'],),),
-      {'wait_list': (self.private_key, self.public_key)})
+      (self.options['executable'],),
+      wait_list=(self.private_key, self.public_key))
 
     return [request_file, wrapper, public_key_link, private_key_link]

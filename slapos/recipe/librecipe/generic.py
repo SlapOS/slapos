@@ -136,34 +136,39 @@ class GenericBaseRecipe(object):
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=', '.join(args))[0]
 
-  def createWrapper(self, name, command, parameters, environment=None):
-    """
-    Creates a basic shell script for process replacement.
-    Takes care of quoting.
+  def createWrapper(self, path, args, env=None, **kw):
+    """Create a wrapper script for process replacement"""
+    assert args
+    if kw:
+      return self.createPythonScript(path,
+        'slapos.recipe.librecipe.execute.generic_exec',
+        (args, env) if env else (args,), kw)
 
-    This must be kept minimal to avoid code duplication with generic_exec.
-    In particular, do not implement workaround for shebang size limitation here
-    (note that this can't be done correctly with a POSIX shell, because the
-    process can't be given a name).
-    """
-    lines = [ '#!/bin/sh' ]
+    # Simple case: creates a basic shell script for process replacement.
+    # This must be kept minimal to avoid code duplication with generic_exec.
+    # In particular, do not implement workaround for shebang size limitation
+    # here (note that this can't be done correctly with a POSIX shell, because
+    # the process can't be given a name).
 
-    for key in environment or ():
-      lines.append('export %s=%s' % (key, shlex.quote(environment[key])))
+    lines = ['#!/bin/sh']
 
-    lines.append('exec ' + shlex.quote(command))
+    if env:
+      for k, v in sorted(env.iteritems()):
+        lines.append('export %s=%s' % (k, shlex.quote(v)))
 
-    parameters = map(shlex.quote, parameters)
-    parameters.append('"$@"')
-    for param in parameters:
+    lines.append('exec')
+
+    args = map(shlex.quote, args)
+    args.append('"$@"')
+    for arg in args:
       if len(lines[-1]) < 40:
-        lines[-1] += ' ' + param
+        lines[-1] += ' ' + arg
       else:
         lines[-1] += ' \\'
-        lines.append('\t' + param)
+        lines.append('\t' + arg)
 
     lines.append('')
-    return self.createFile(name, '\n'.join(lines), 0700)
+    return self.createFile(path, '\n'.join(lines), 0700)
 
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)

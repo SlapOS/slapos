@@ -165,15 +165,13 @@ class Recipe(GenericBaseRecipe):
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' % socket.strip(), '--user=root',
           '--ibbackup=%s'% self.options['xtrabackup-binary']]
-      innobackupex_incremental = self.createPythonScript(
+      innobackupex_incremental = self.createWrapper(
         self.options['innobackupex-incremental'],
-        'slapos.recipe.librecipe.execute.generic_exec',
-        (innobackupex_argument_list + ['--incremental'], environment))
+        innobackupex_argument_list + ['--incremental'], environment)
       path_list.append(innobackupex_incremental)
-      innobackupex_full = self.createPythonScript(
+      innobackupex_full = self.createWrapper(
         self.options['innobackupex-full'],
-        'slapos.recipe.librecipe.execute.generic_exec',
-        (innobackupex_argument_list, environment))
+        innobackupex_argument_list, environment)
       path_list.append(innobackupex_full)
       backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
       path_list.append(backup_controller)
@@ -221,10 +219,9 @@ class Recipe(GenericBaseRecipe):
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' % socket.strip(), '--user=root',
           ]
-      pt_exe = self.createPythonScript(
+      pt_exe = self.createWrapper(
         os.path.join(self.options['bin-directory'], pt_script_name),
-        'slapos.recipe.librecipe.execute.generic_exec',
-        (pt_argument_list, environment))
+        pt_argument_list, environment)
       path_list.append(pt_exe)
 
     return path_list

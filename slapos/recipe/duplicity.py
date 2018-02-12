@@ -46,5 +46,4 @@ class Recipe(GenericBaseRecipe):
       cmd.extend(options)
       cmd.extend([backup_directory, remote_url])
 
-    return self.createPythonScript(self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec', (cmd,))
+    return self.createWrapper(self.options['wrapper'], cmd)

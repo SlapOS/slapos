@@ -49,7 +49,4 @@ class Recipe(GenericBaseRecipe):
     cloud9_args = [self.node_executable, self.cloud9, '-l', self.ip, '-p',
         self.port, '-w', self.workdir]
 
-    return self.createPythonScript(self.wrapper,
-        'slapos.recipe.librecipe.execute.generic_exec',
-        (cloud9_args, environment)
-    )
+    return self.createWrapper(self.wrapper, cloud9_args, environment)

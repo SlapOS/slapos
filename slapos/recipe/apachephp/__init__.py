@@ -92,14 +92,13 @@ class Recipe(GenericBaseRecipe):
       )
       path_list.append(httpd_conf)
 
-    wrapper = self.createWrapper(name=self.options['wrapper'],
-                                 command=self.options['httpd-binary'],
-                                 parameters=[
+    wrapper = self.createWrapper(self.options['wrapper'],
+                                 (self.options['httpd-binary'],
                                      '-f',
                                      self.options['httpd-conf'],
                                      '-DFOREGROUND'
-                                     ],
-                                 environment=self.environ)
+                                     ),
+                                 self.environ)
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],

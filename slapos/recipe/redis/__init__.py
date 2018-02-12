@@ -56,10 +56,9 @@ class Recipe(GenericBaseRecipe):
       configuration))
     path_list.append(config)
 
-    redis = self.createPythonScript(
+    redis = self.createWrapper(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['server_bin'], config_file),)
+      (self.options['server_bin'], config_file),
     )
     path_list.append(redis)
 

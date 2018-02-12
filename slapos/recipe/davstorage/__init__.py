@@ -98,9 +98,8 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(config_file)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'),))
+    wrapper = self.createWrapper(self.options['wrapper'],
+      (self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'))
     path_list.append(wrapper)
 
     promise = self.createPythonScript(self.options['promise'],

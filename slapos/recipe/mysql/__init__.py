@@ -53,11 +53,10 @@ class Recipe(GenericBaseRecipe):
 
     mysql_binary = self.options['mysql-binary']
     socket = self.options['socket'],
-    post_rotate = self.createPythonScript(
+    post_rotate = self.createWrapper(
       self.options['logrotate-post'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((mysql_binary, '--no-defaults', '-B', '-u', 'root',
-        '--socket=%s' % socket, '-e', 'FLUSH LOGS'),)
+      (mysql_binary, '--no-defaults', '-B', '-u', 'root',
+        '--socket=%s' % socket, '-e', 'FLUSH LOGS'),
     )
     path_list.append(post_rotate)
 

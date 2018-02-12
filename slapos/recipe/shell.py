@@ -32,14 +32,11 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
     ps1 = self.options.get('ps1')
+    shell = self.options['shell']
     env = {
       'HOME': self.options['home'],
       'PATH': ':'.join(self.options['path'].split('\n')),
       'PS1': str(json.loads(ps1)) if ps1 else os.getenv('PS1', '> '),
-      'SHELL': self.options['shell'],
+      'SHELL': shell,
     }
-    return self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['shell'],), env),
-    )
+    return self.createWrapper(self.options['wrapper'], (shell,), env)

@@ -33,16 +33,14 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     options = self.options
     # Script that execute the callback(s) upon receiving a notification.
-    script = self.createWrapper(name=options['wrapper'],
-                                command=options['server-binary'],
-                                parameters=[
+    return self.createWrapper(options['wrapper'],
+                                (options['server-binary'],
                                    '--callbacks', options['callbacks'],
                                    '--feeds', options['feeds'],
                                    '--equeue-socket', options['equeue-socket'],
                                    options['host'], options['port']
-                                   ],
+                                   ),
                                 )
-    return [script]
 
 
 class Callback(GenericBaseRecipe):
@@ -98,16 +96,12 @@ class Notify(GenericBaseRecipe):
         '--status-item-directory', status_item_directory,
       )
 
+    kw = {}
     if pidfile:
-      return self.createPythonScript(wrapper,
-        'slapos.recipe.librecipe.execute.generic_exec',
-        (cmd,), {'pidfile': pidfile})
+      kw['pidfile'] = pidfile
 
     # Script that call an executable and send notification(s).
-    return self.createWrapper(name=wrapper,
-                              command=cmd[0],
-                              parameters=cmd[1:],
-                              )
+    return self.createWrapper(wrapper, cmd, **kw)
 
 
   def install(self):

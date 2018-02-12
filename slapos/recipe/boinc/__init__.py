@@ -124,9 +124,8 @@ class Recipe(GenericBaseRecipe):
 
     #Generate wrapper for php
     wrapperphp = os.path.join(self.home, 'bin/php')
-    php_wrapper = self.createPythonScript(wrapperphp,
-        'slapos.recipe.librecipe.execute.generic_exec',
-        ((self.phpbin, '-c', self.phpini),)
+    php_wrapper = self.createWrapper(wrapperphp,
+        (self.phpbin, '-c', self.phpini),
     )
     path_list.append(php_wrapper)
 
@@ -406,11 +405,10 @@ class Client(GenericBaseRecipe):
     path_list.append(cmd)
 
     #Generate BOINC client wrapper
-    boinc = self.createPythonScript(boinc_wrapper,
-            'slapos.recipe.librecipe.execute.generic_exec',
-            ((boincbin, '--allow_multiple_clients', '--gui_rpc_port',
+    boinc = self.createWrapper(boinc_wrapper,
+            (boincbin, '--allow_multiple_clients', '--gui_rpc_port',
               str(self.options['rpc-port']), '--allow_remote_gui_rpc',
-              '--dir', installdir, '--redirectio', '--check_all_logins'),)
+              '--dir', installdir, '--redirectio', '--check_all_logins'),
     )
     path_list.append(boinc)
 

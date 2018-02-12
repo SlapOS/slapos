@@ -137,11 +137,10 @@ class Request(Recipe):
 
     path_list = [key_file, cert_file]
     if request_needed:
-      wrapper = self.createPythonScript(
+      wrapper = self.createWrapper(
         self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.generic_exec',
-        ((self.options['executable'],),),
-        {'wait_list': (certificate, key)},
+        (self.options['executable'],),
+        wait_list=(certificate, key),
       )
       path_list.append(wrapper)
 

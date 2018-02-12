@@ -30,23 +30,20 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
-    parameters = [
+    args = [
+      self.options['equeue-binary'],
       '--database', self.options['database'],
       '--logfile', self.options['log'],
       '--lockfile', self.options['lockfile']
     ]
 
     if 'takeover-triggered-file-path' in self.options:
-      parameters.extend(['--takeover-triggered-file-path', self.options['takeover-triggered-file-path']])
+      args += ('--takeover-triggered-file-path',
+               self.options['takeover-triggered-file-path'])
 
     if 'loglevel' in self.options:
-      parameters.extend(['--loglevel', self.options['loglevel']])
+      args += '--loglevel', self.options['loglevel']
 
-    parameters.append(self.options['socket'])
+    args.append(self.options['socket'])
 
-    wrapper = self.createWrapper(name=self.options['wrapper'],
-                                 command=self.options['equeue-binary'],
-                                 parameters=parameters)
-
-    return [wrapper]
-
+    return self.createWrapper(self.options['wrapper'], args)

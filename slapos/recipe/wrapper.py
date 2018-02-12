@@ -40,7 +40,7 @@ class Recipe(GenericBaseRecipe):
     :param bool reserve-cpu: command will ask for an exclusive CPU core
     """
     def install(self):
-        command_line = shlex.split(self.options['command-line'])
+        args = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
         pidfile = self.options.get('pidfile')
@@ -60,17 +60,4 @@ class Recipe(GenericBaseRecipe):
         if self.isTrueValue(self.options.get('reserve-cpu')):
           kw['reserve_cpu'] = True
 
-        if kw:
-          # More complex needs: create a Python script as wrapper
-          args = [command_line]
-          if environment:
-            args.append(environment)
-
-          return self.createPythonScript(wrapper_path,
-            'slapos.recipe.librecipe.execute.generic_exec',
-            args, kw)
-
-        return self.createWrapper(wrapper_path,
-          command_line[0],
-          command_line[1:],
-          environment=environment)
+        return self.createWrapper(wrapper_path, args, environment, **kw)

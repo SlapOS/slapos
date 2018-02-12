@@ -36,19 +36,17 @@ class Recipe(GenericBaseRecipe):
     r = [configuration_file]
 
     wrapper = self.options.get('tidstorage-wrapper')
-    wrapper and r.append(self.createPythonScript(wrapper,
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['tidstoraged-binary'],
-        '--nofork', '--config', configuration_file),)))
+    wrapper and r.append(self.createWrapper(wrapper,
+      (self.options['tidstoraged-binary'],
+        '--nofork', '--config', configuration_file)))
 
-    r.append(self.createPythonScript(
+    r.append(self.createWrapper(
       self.options['repozo-wrapper'],
-      'slapos.recipe.librecipe.execute.generic_exec',
-      ((self.options['tidstorage-repozo-binary'],
+      (self.options['tidstorage-repozo-binary'],
         '--config', configuration_file,
         '--repozo', self.options['repozo-binary'],
         '--gzip',
         '--quick',
-       ),)))
+       )))
 
     return r
