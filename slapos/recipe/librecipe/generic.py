@@ -136,9 +136,7 @@ class GenericBaseRecipe(object):
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=', '.join(args))[0]
 
-  def createWrapper(self, name, command, parameters, comments=(),
-      environment=None,
-  ):
+  def createWrapper(self, name, command, parameters, environment=None):
     """
     Creates a basic shell script for process replacement.
     Takes care of quoting.
@@ -149,9 +147,6 @@ class GenericBaseRecipe(object):
     process can't be given a name).
     """
     lines = [ '#!/bin/sh' ]
-
-    if comments:
-      lines += '# ', '\n# '.join(comments), '\n'
 
     for key in environment or ():
       lines.append('export %s=%s' % (key, shlex.quote(environment[key])))

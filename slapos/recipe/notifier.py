@@ -32,6 +32,7 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
     options = self.options
+    # Script that execute the callback(s) upon receiving a notification.
     script = self.createWrapper(name=options['wrapper'],
                                 command=options['server-binary'],
                                 parameters=[
@@ -40,10 +41,7 @@ class Recipe(GenericBaseRecipe):
                                    '--equeue-socket', options['equeue-socket'],
                                    options['host'], options['port']
                                    ],
-                                comments=[
-                                    '',
-                                    'Upon receiving a notification, execute the callback(s).',
-                                    ''])
+                                )
     return [script]
 
 
@@ -105,13 +103,11 @@ class Notify(GenericBaseRecipe):
         'slapos.recipe.librecipe.execute.generic_exec',
         (cmd,), {'pidfile': pidfile})
 
+    # Script that call an executable and send notification(s).
     return self.createWrapper(name=wrapper,
                               command=cmd[0],
                               parameters=cmd[1:],
-                              comments=[
-                                  '',
-                                  'Call an executable and send notification(s).',
-                                  ''])
+                              )
 
 
   def install(self):
