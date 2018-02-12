@@ -37,14 +37,12 @@ class Recipe(GenericBaseRecipe):
 
     :param lines wait-for-files: list of files to wait for
     :param str pidfile: path to pidfile ensure exclusivity for the process
-    :param bool parameters-extra: whether wrapper parameters are passed onto command
     :param bool reserve-cpu: command will ask for an exclusive CPU core
     """
     def install(self):
         command_line = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
-        parameters_extra = self.options.get('parameters-extra')
         pidfile = self.options.get('pidfile')
 
         environment = {}
@@ -75,5 +73,4 @@ class Recipe(GenericBaseRecipe):
         return self.createWrapper(wrapper_path,
           command_line[0],
           command_line[1:],
-          parameters_extra=self.isTrueValue(parameters_extra),
           environment=environment)

@@ -108,7 +108,6 @@ class Notify(GenericBaseRecipe):
     return self.createWrapper(name=wrapper,
                               command=cmd[0],
                               parameters=cmd[1:],
-                              parameters_extra=True,
                               comments=[
                                   '',
                                   'Call an executable and send notification(s).',

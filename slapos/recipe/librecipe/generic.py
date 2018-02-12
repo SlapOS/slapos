@@ -137,7 +137,7 @@ class GenericBaseRecipe(object):
       path, arguments=', '.join(args))[0]
 
   def createWrapper(self, name, command, parameters, comments=(),
-      parameters_extra=False, environment=None,
+      environment=None,
   ):
     """
     Creates a basic shell script for process replacement.
@@ -159,9 +159,7 @@ class GenericBaseRecipe(object):
     lines.append('exec ' + shlex.quote(command))
 
     parameters = map(shlex.quote, parameters)
-    if parameters_extra:
-      # pass-through further parameters
-      parameters.append('"$@"')
+    parameters.append('"$@"')
     for param in parameters:
       if len(lines[-1]) < 40:
         lines[-1] += ' ' + param
