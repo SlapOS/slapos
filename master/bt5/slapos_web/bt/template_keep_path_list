@@ -5,3 +5,11 @@ portal_caches/google_server_auth_token_cache_factory
 portal_caches/google_server_auth_token_cache_factory/persistent_cache_plugin
 web_page_module/rjs_tv4_min_js
 web_page_module/rjs_vkbeautify_js
+portal_types/Certificate Authority Tool
+portal_types/Document Module
+portal_types/File
+portal_types/Image
+portal_types/Image Module
+portal_types/Organisation Module
+portal_types/Person Module
+portal_types/Query
