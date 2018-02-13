@@ -176,12 +176,12 @@
       "textarea": true,
       "type": "string"
     },
-    "http-port": {
+    "virtualhostroot-http-port": {
       "description": "Port where http requests to frontend will be redirected.",
       "default": 80,
       "type": "integer"
     },
-    "https-port": {
+    "virtualhostroot-https-port": {
       "description": "Port where https requests to frontend will be redirected.",
       "default": 443,
       "type": "integer"

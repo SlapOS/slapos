@@ -89,12 +89,12 @@
           "default": "RootSoftwareInstance",
           "type": "object"
         },
-	"http-port": {
+	"virtualhostroot-http-port": {
 	  "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
 	  "default": 80,
 	  "type": "integer"
 	},
-	"https-port": {
+	"virtualhostroot-https-port": {
 	  "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
 	  "default": 443,
 	  "type": "integer"
