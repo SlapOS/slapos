@@ -175,6 +175,16 @@
       "default": "",
       "textarea": true,
       "type": "string"
+    },
+    "http-port": {
+      "description": "Port where http requests to frontend will be redirected.",
+      "default": 80,
+      "type": "integer"
+    },
+    "https-port": {
+      "description": "Port where https requests to frontend will be redirected.",
+      "default": 443,
+      "type": "integer"
     }
   }
 }
