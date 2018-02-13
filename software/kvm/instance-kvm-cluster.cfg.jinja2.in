@@ -8,7 +8,7 @@
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
-{% set monitor_url_list = [] -%}
+{% set monitor_base_url_dict = {} -%}
 
 {% macro setconfig(name, value) -%}
 {# will set a config-name = value if value is not empty -#}
@@ -51,12 +51,15 @@ config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | joi
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
+config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', '50G')) }}
+config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
+config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
+config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
 {{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
-{{ setconfig('cpu-options', kvm_parameter_dict.get('cpu-options', '')) }}
 {{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
 {{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
 
@@ -67,7 +70,7 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
-{{ setconfig('nat-rules', ' '.join(nat_rules_list)) }}
+{{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
@@ -124,10 +127,10 @@ return =
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
-{% do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
+{% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
@@ -241,11 +244,12 @@ cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.of
 username = admin
 password = ${monitor-htpasswd:passwd}
 
-[monitor-conf-parameters]
-monitor-url-list +=
-{% for url in monitor_url_list -%}
-{{ '  ' ~ url }}
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
 {% endfor %}
+
+[monitor-conf-parameters]
 private-path-list += 
   ${directory:webroot}/
 

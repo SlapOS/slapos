@@ -189,13 +189,35 @@
               "default": "started",
               "enum": ["started", "stopped"]
             },
+            "enable-device-hotplug": {
+              "title": "Enable device hotplug mode",
+              "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
+              "type": "boolean",
+              "default": false
+            },
             "ram-size": {
               "title": "RAM size",
               "description": "RAM size, in MB.",
               "type": "integer",
               "default": 1024,
-              "minimum": 128,
-              "multipleOf": 128
+              "minimum": 1024,
+              "multipleOf": 512
+            },
+            "ram-max-size": {
+              "title": "Maximum RAM size, in MB",
+              "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512.",
+              "type": "integer",
+              "default": 51200,
+              "minimum": 1024,
+              "multipleOf": 512
+            },
+            "ram-hotplug-slot-size": {
+              "title": "Size of Hotpluggable RAM slot, in MB",
+              "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
+              "type": "integer",
+              "default": 512,
+              "minimum": 512,
+              "multipleOf": 512
             },
             "auto-ballooning": {
               "title": "Enable qemu auto ballooning.",
@@ -245,10 +267,13 @@
               "type": "integer",
               "minimum": 1
             },
-            "cpu-options": {
-              "title": "CPU Additional options: cores, threads, sockets, maxcpus.",
-              "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Set this option if you know what you're doing.",
-              "type": "string"
+            "cpu-max-count": {
+              "title": "Maximum CPU amount",
+              "description": "Specifies the maximum number of CPUs.",
+              "type": "integer",
+              "default": 24,
+              "minimum": 1,
+              "maximum": 64
             },
             "numa": {
               "title": "Simulate a multi node NUMA system.",

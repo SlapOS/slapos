@@ -6,40 +6,58 @@
 import socket
 import time
 import os
+from slapos.qemuqmpclient import QemuQMPWrapper, getInitialQemuResourceDict
 
 # XXX: to be factored with slapos.toolbox qemu qmp wrapper.
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
+pid_file = '{{ parameter_dict.get("pid-file") }}'
 vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
 status_path = '{{ parameter_dict.get("kvm-status-path") }}'
+cpu_amount = {{ parameter_dict.get("cpu-count") }}
+cpu_model = '{{ parameter_dict.get("cpu-model", "qemu64-x86_64-cpu") }}'
+slot_hotplug_size = {{ parameter_dict.get("ram-hotplug-slot-size", 512) }}
+ram_size = {{ parameter_dict.get("ram-size") }}
+enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
 
-if os.path.exists(status_path):
-  os.unlink(status_path)
+def write(message):
+  with open(status_path, 'w') as status_file:
+    status_file.write(message)
 
-# Connect to KVM qmp socket
-so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-connected = False
-while not connected:
+def update():
+
   try:
-    so.connect(socket_path)
-  except socket.error:
-    time.sleep(1)
-  else:
-    connected = True
-data = so.recv(1024)
+    init_dict = getInitialQemuResourceDict(pid_file)
+    init_ram_size = int(init_dict['ram'].split('M')[0])
+    if cpu_amount < 1:
+      raise ValueError("CPU should be at least equal to 1.")
+    hotplug_ram = ram_size - init_ram_size
+    if hotplug_ram < 0:
+      raise ValueError("RAM size cannot be less than the initial value %s MB" % init_ram_size)
+    if os.path.exists(status_path):
+      os.unlink(status_path)
 
-# Enable qmp
-so.send('{ "execute": "qmp_capabilities" }')
-data = so.recv(1024)
+    qemu_wrapper = QemuQMPWrapper(socket_path)
+    qemu_wrapper.setVNCPassword(vnc_password)
+    if enable_device_hotplug == 'true':
+      write("Qemu Controller is still running...")
+      qemu_wrapper.updateDevice({
+        'device': 'cpu',
+        'amount': cpu_amount,
+        'model': cpu_model
+      })
+      qemu_wrapper.updateDevice({
+        'device': 'memory',
+        'mem': hotplug_ram,
+        'slot': slot_hotplug_size,
+        'nslot': 128,
+        'canreboot': 1
+      })
+  except Exception, e:
+    write(str(e))
+    raise
 
-# Set VNC password
-so.send('{ "execute": "change", ' \
-        '"arguments": { "device": "vnc", "target": "password", ' \
-        '               "arg": "' + vnc_password + '" } }')
-data = so.recv(1024)
+  write("")
 
-# Finish
-so.close()
-
-with open(status_path, 'w') as status_file:
-  status_file.write("OK")
+if __name__ == "__main__":
+  update()

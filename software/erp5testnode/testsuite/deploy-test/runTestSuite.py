@@ -106,6 +106,7 @@ def waitForSite(partition_path):
       date=strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
       duration=end - start,
   )
+  print(try_info + 'status_dict %r' % (status_dict,))
   return status_dict
 
 

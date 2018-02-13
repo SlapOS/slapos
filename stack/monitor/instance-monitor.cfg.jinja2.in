@@ -42,6 +42,7 @@ services = ${directory:services}
 services-conf = ${directory:etc}/monitor.conf.d
 log = ${directory:log}/monitor
 monitor-var = ${directory:var}/monitor
+monitor-log = ${directory:monitor}/private/monitor-log
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -88,14 +89,11 @@ promise-folder = ${directory:promises}
 monitor-promise-folder = ${monitor-directory:promises}
 promises-timeout-file = ${monitor-promise-timeout-file:file}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
+randomsleep = {{ bin_directory }}/randomsleep
 
 public-path-list = 
-private-path-list = 
-    ${directory:log}
-# 
-monitor-url-list = 
-  ${monitor-instance-parameter:monitor-url-list}
-
+private-path-list = ${directory:log}
+monitor-url-list = ${monitor-instance-parameter:monitor-url-list}
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list = 
@@ -234,6 +232,12 @@ context =
     raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
+[logrotate-entry-monitor-httpd]
+<= logrotate-entry-base
+name = monitor-apache
+log = $${basedirectory:log}/monitor/monitor-httpd-error.log
+post = test ! -s $${buildout:directory}/var/run/monitor-httpd.pid || $${buildout:directory}/bin/slapos-kill --pidfile $${buildout:directory}/var/run/monitor-httpd.pid -s USR1
+
 [xnice-bin]
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
@@ -264,14 +268,14 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-globalstate
 frequency = * * * * *
-command = ${monitor-globalstate-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 60 && ${monitor-globalstate-wrapper:wrapper-path}
 
 [monitor-configurator-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-configurator
 frequency = * * * * *
-command = ${monitor-configurator-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 60 && ${monitor-configurator-wrapper:wrapper-path}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
@@ -407,6 +411,7 @@ depends =
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
+  ${logrotate-entry-monitor-httpd:name}
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}

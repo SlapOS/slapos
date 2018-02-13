@@ -117,7 +117,7 @@
             "timerserver-interval": {
               "description": "Timerserver tick perdiod, in seconds, or 0 to disable",
               "default": 5,
-              "type": "integer"
+              "type": "number"
             },
             "ssl-authentication": {
               "title": "Enable SSL Client authentication on this zope instance.",

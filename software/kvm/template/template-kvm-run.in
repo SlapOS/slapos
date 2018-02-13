@@ -39,13 +39,13 @@ tap_interface = '{{ parameter_dict.get("tap-interface") }}'
 listen_ip = '{{ parameter_dict.get("ipv4") }}'
 mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
-smp_count = '{{ parameter_dict.get("smp-count") }}'
-smp_options = '{{ parameter_dict.get("smp-options") }}'.strip()
-numa_list = '{{ parameter_dict.get("numa") }}'.split()
-ram_size = '{{ parameter_dict.get("ram-size") }}'
+numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
+ram_size = {{ parameter_dict.get("ram-size") }}
+ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
+init_ram_size = {{ parameter_dict.get("init-ram-size") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
-external_disk_size = '{{ parameter_dict.get("external-disk-size") }}'
+external_disk_size = {{ parameter_dict.get("external-disk-size") }}
 external_disk_format = '{{ parameter_dict.get("external-disk-format") }}'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
@@ -69,8 +69,12 @@ disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe",
 disk_aio = '{{ parameter_dict.get("disk-aio") }}'.strip()
 disk_aio = disk_aio if disk_aio in ["threads", "native"] and \
               disk_cache == "directsync" else "threads"
+smp_count = {{ parameter_dict.get("smp-count") }}
+smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
 cpu_model = '{{ parameter_dict.get("cpu-model", "") }}'.strip()
+
+enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
 
 logfile = '{{ parameter_dict.get("log-file") }}'
 
@@ -255,15 +259,14 @@ if use_tap == 'true':
             tap_interface, vhost),
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, tap_mac_address)]
 
-smp = smp_count
-if smp_options:
-  for option in smp_options.split(','):
-    key, val = option.split('=')
-    if key in ('cores', 'threads', 'sockets', 'maxcpus') and val.isdigit():
-      smp += ',%s=%s' % (key, val)
+if enable_device_hotplug != 'true':
+  smp = '%s,maxcpus=%s' % (smp_count, smp_max_count)
+  ram = '%sM,slots=128,maxmem=%s' % (ram_size, ram_max_size)
+else:
+  smp = '1,maxcpus=%s' % smp_max_count
+  ram = '%sM,slots=128,maxmem=%s' % (init_ram_size, ram_max_size)
 kvm_argument_list = [qemu_path,
-  '-enable-kvm', '-smp', smp, '-name', vm_name,
-  '-m', ram_size, '-vga', 'std',
+  '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
   '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',

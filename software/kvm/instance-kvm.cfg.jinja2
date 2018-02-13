@@ -5,6 +5,7 @@
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
+{% set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set frontend_software_type = 'default' -%}
@@ -62,10 +63,15 @@ storage-path = ${directory:srv}/passwd
 bytes = 8
 
 [kvm-controller-parameter-dict]
-python-path = {{ python_executable }}
+python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
 socket-path = ${directory:var}/qmp_socket
+pid-file = ${directory:run}/pid_file
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
+cpu-count = ${slap-parameter:cpu-count}
+ram-hotplug-slot-size = ${slap-parameter:ram-hotplug-slot-size}
+ram-size = ${slap-parameter:ram-size}
+enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
 
 [kvm-parameter-dict]
 python-path = {{ python_executable }}
@@ -87,13 +93,16 @@ disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
 
 
-pid-file-path = ${directory:run}/pid_file
+pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
-smp-count = ${slap-parameter:cpu-count}
-smp-options = ${slap-parameter:cpu-options}
-ram-size = ${slap-parameter:ram-size}
-numa = ${slap-parameter:numa}
+enable-device-hotplug = ${kvm-controller-parameter-dict:enable-device-hotplug}
+smp-count = ${kvm-controller-parameter-dict:cpu-count}
+smp-max-count = ${slap-parameter:cpu-max-count}
+
+ram-size = ${kvm-controller-parameter-dict:ram-size}
+ram-max-size = ${slap-parameter:ram-max-size}
+init-ram-size = 1024
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
 
@@ -143,7 +152,7 @@ disk-cache = ${slap-parameter:disk-cache}
 disk-aio = ${slap-parameter:disk-aio}
 auto-ballooning = ${slap-parameter:auto-ballooning}
 machine-options = ${slap-parameter:machine-options}
-cpu-options = ${slap-parameter:cpu-model}
+cpu-hotplug-slot-size = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
@@ -550,15 +559,15 @@ nbd-host =
 nbd2-port = 1024
 nbd2-host =
 
+enable-device-hotplug = False
 ram-size = 1024
+ram-max-size = 50G
+ram-hotplug-slot-size = 512
 disk-size = 10
 disk-type = virtio
 
 cpu-count = 1
-# cpu-option is a string: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]
-cpu-options = 
-# list of numa options separate by space: node,nodeid=1,cpus=9-15 node,nodeid=2,cpus=1,3,7
-numa = 
+cpu-max-count = 24
 disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
