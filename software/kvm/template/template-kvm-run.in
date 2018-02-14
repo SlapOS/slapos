@@ -261,7 +261,7 @@ if use_tap == 'true':
 
 if enable_device_hotplug != 'true':
   smp = '%s,maxcpus=%s' % (smp_count, smp_max_count)
-  ram = '%sM,slots=128,maxmem=%s' % (ram_size, ram_max_size)
+  ram = '%sM,slots=128,maxmem=%sM' % (ram_size, ram_max_size)
 else:
   smp = '1,maxcpus=%s' % smp_max_count
   ram = '%sM,slots=128,maxmem=%s' % (init_ram_size, ram_max_size)

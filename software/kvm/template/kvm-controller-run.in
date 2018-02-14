@@ -28,14 +28,18 @@ def update():
 
   try:
     init_dict = getInitialQemuResourceDict(pid_file)
+    if os.path.exists(status_path):
+      os.unlink(status_path)
+
+    if init_dict is None:
+      # qemu process is not OK
+      return
     init_ram_size = int(init_dict['ram'].split('M')[0])
     if cpu_amount < 1:
       raise ValueError("CPU should be at least equal to 1.")
     hotplug_ram = ram_size - init_ram_size
     if hotplug_ram < 0:
       raise ValueError("RAM size cannot be less than the initial value %s MB" % init_ram_size)
-    if os.path.exists(status_path):
-      os.unlink(status_path)
 
     qemu_wrapper = QemuQMPWrapper(socket_path)
     qemu_wrapper.setVNCPassword(vnc_password)
