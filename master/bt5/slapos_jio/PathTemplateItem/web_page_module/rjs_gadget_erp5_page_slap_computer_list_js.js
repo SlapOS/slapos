@@ -67,6 +67,7 @@
           var column_list = [
             ['title', 'Title'],
             ['reference', 'Reference'],
+            ['allocation_scope_title', 'Allocation Scope'],
             ['monitoring_status', 'Status']
           ];
           return form_list.render({

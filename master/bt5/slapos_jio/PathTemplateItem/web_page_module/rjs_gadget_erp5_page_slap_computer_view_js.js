@@ -204,7 +204,7 @@
                 },
                 "my_source": {
                   "description": "The name of a document in ERP5",
-                  "title": "Current Location",
+                  "title": "Current Site",
                   "default": gadget.state.doc.source_title,
                   "css_class": "",
                   "required": 1,
