@@ -93,7 +93,7 @@
 
       return new RSVP.Queue()
         .push(function () {
-          return gadget.getSetting("listbox_lines_limit", 100);
+          return gadget.getSetting("listbox_lines_limit", 20);
         })
         .push(function (listbox_lines_limit) {
           lines_limit = listbox_lines_limit;

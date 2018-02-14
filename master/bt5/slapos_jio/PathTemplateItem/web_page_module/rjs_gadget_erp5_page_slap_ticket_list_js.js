@@ -31,7 +31,7 @@
       return new RSVP.Queue()
         .push(function () {
           return RSVP.all([
-            gadget.getSetting("listbox_lines_limit", 100),
+            gadget.getSetting("listbox_lines_limit", 20),
             gadget.getSetting("me")
           ]);
         })
