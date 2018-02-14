@@ -84,7 +84,6 @@
             .push(function (result) {
               var i, destination_list, column_list = [
                 ['title', 'Title'],
-                ['reference', 'Reference'],
                 ['monitoring_status', 'Status']
               ];
               gadget.me_dict = result[1];
@@ -132,13 +131,9 @@
             });
         })
         .push(function () {
-          var lines_limit;
+          var lines_limit = 15;
           return new RSVP.Queue()
             .push(function () {
-              return gadget.getSetting("listbox_lines_limit", 100);
-            })
-            .push(function (listbox_lines_limit) {
-              lines_limit = listbox_lines_limit;
               return gadget.getDeclaredGadget('last');
             })
             .push(function (form_list) {
@@ -156,7 +151,7 @@
                       "default_params": {},
                       "editable": 0,
                       "editable_column_list": [],
-                      "key": "slap_site_listbox",
+                      "key": "slap_ticket_listbox",
                       "lines": lines_limit,
                       "list_method": "portal_catalog",
                       "query": "urn:jio:allDocs?query=portal_type%3A%20%28%22Support%20Request%22%2C%20%22Upgrade%20Decision%22%2C%20%22Regularisation%20Request%22%29%20AND%20destination_decision_reference%3A" +  gadget.me_dict.reference,
