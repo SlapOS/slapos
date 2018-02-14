@@ -1,7 +1,10 @@
-portal = context.getPortalObject()
-portal_type = 'Template Tool'
-tag = 'upgrade_upgrader_%s' % random.randint(0, 2000)
-method_kw = {'bt5_list':['erp5_forge', 'erp5_upgrader', 'slapos_upgrader'],
+template_tool = context.getPortalObject().portal_templates
+
+template_tool.updateRepositoryBusinessTemplateList(
+  template_tool.getRepositoryList())
+
+method_kw = {'bt5_list': ['erp5_forge', 'erp5_upgrader',
+                          'slapos_upgrader', 'slapos_configurator'],
              'deprecated_after_script_dict': None,
              'deprecated_reinstall_set': None,
              'dry_run': False,
@@ -10,8 +13,4 @@ method_kw = {'bt5_list':['erp5_forge', 'erp5_upgrader', 'slapos_upgrader'],
              'update_catalog': False}
 
 
-portal.portal_catalog.searchAndActivate(
-       portal_type=portal_type,
-       method_id='upgradeSite',
-       method_kw=method_kw,
-       activate_kw=dict(tag=tag, priority=2))
+template_tool.upgradeSite(**method_kw)
