@@ -1,4 +1,4 @@
-/*global window, rJS, RSVP */
+/*global window, rJS, RSVP, btoa */
 /*jslint nomen: true, indent: 2, maxerr: 3 */
 (function (window, rJS, RSVP) {
   "use strict";
@@ -66,7 +66,15 @@
           ]);
         })
         .push(function (result) {
-          var doc = result[1];
+          var doc = result[1],
+            parameter_dict = {
+              'parameter' : {
+                'json_url':  doc.url_string + ".json",
+                //'json_url': "https://lab.node.vifib.com/nexedi/slapos/raw/master/software/kvm/software.cfg.json",
+                'parameter_hash': btoa('<?xml version="1.0" encoding="utf-8" ?><instance></instance>'),
+                'restricted_softwaretype': false
+              }
+            };
           return result[0].render({
             erp5_document: {
               "_embedded": {"_view": {
@@ -77,7 +85,7 @@
                   "css_class": "",
                   "required": 0,
                   "editable": 0,
-                  "key": "title",
+                  "key": "url_string",
                   "hidden": 0,
                   "type": "StringField"
                 },
@@ -93,15 +101,17 @@
                   "type": "StringField"
                 },
                 "your_text_content": {
-                  "description": "The name of a document in ERP5",
+                  "description": "",
                   "title": "Instance Parameter",
-                  "default": "",
+                  "default": parameter_dict,
                   "css_class": "",
                   "required": 1,
                   "editable": 1,
+                  "url": "gadget_erp5_page_slap_parameter_form.html",
+                  "sandbox": "",
                   "key": "text_content",
                   "hidden": 0,
-                  "type": "TextAreaField"
+                  "type": "GadgetField"
                 },
                 "your_computer_guid": {
                   "description": "The name of a document in ERP5",
