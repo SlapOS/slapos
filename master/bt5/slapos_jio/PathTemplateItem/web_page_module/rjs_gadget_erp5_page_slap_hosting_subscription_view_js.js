@@ -194,7 +194,7 @@
                     },
                     "my_text_content": {
                       "description": "",
-                      "title": "Instance Parameter",
+                      "title": "Configuration Parameter",
                       "default": parameter_dict,
                       "css_class": "",
                       "required": 1,
