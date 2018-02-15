@@ -31,12 +31,18 @@ if person is None:
 if software_type in [None, ""]:
   software_type = "RootSoftwareInstance"
 
+if text_content == "":
+  text_content = """
+<?xml version="1.0" encoding="utf-8" ?>
+<instance>
+</instance>"""
+
 request_kw = {}
 request_kw.update(
   software_release=url,
   software_title=title,
   software_type=software_type,
-  instance_xml=instance_xml,
+  instance_xml=text_content,
   sla_xml="",
   shared=shared,
   state="started",

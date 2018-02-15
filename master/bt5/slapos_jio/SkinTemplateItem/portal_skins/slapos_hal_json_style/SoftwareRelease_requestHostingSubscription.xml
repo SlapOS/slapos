@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>title, instance_xml="", software_type=None, shared=False, computer_guid=None</string> </value>
+            <value> <string>title, text_content="", software_type=None, shared=False, computer_guid=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
