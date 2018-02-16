@@ -50,6 +50,11 @@ products {{ parameter_dict['instance-products'] }}
 </product-config>
 
 {% endif -%}
+
+{% if 'large-file-threshold' in parameter_dict -%}
+large-file-threshold {{ parameter_dict['large-file-threshold'] }}
+
+{% endif -%}
 {% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
   backend-ip {{ parameter_dict['tidstorage-ip'] }}

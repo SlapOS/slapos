@@ -144,6 +144,11 @@
               "default": 1,
               "type": "integer"
             },
+            "large-file-threshold": {
+              "description": "Requests bigger than this size get saved into a temporary file instead of being read completely into memory, in bytes",
+              "default": "512KB",
+              "type": "string"
+            },
             "port-base": {
               "allOf": [{
                 "$ref": "#/definitions/tcpv4port"
