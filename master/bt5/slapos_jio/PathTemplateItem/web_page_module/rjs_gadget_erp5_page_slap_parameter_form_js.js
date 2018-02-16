@@ -920,15 +920,11 @@
         .push(function (element) {
           var text_content = element.querySelector('textarea[name=text_content]');
           if (text_content !== null) {
-            return "SKIP";
+            return text_content.value;
           }
           return gadget.processValidation(gadget.options.value.parameter.json_url);
         })
         .push(function (xml_result) {
-          if (xml_result === "SKIP") {
-            /* The raw parameters are already on the request */
-            return {};
-          }
           return {"text_content": xml_result};
         })
         .fail(function (e) {
