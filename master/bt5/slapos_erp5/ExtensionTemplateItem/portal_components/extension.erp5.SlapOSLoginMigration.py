@@ -1,4 +1,3 @@
-
 def migrateInstanceToERP5Login(self):
   assert self.getPortalType() in ( 'Computer', 'Software Instance')
 
@@ -9,7 +8,6 @@ def migrateInstanceToERP5Login(self):
     return
   if not (self.hasUserId() or self.getUserId() == reference):
     self.setUserId(reference)
-    self.immediateReindexObject()
 
   if len(self.objectValues(portal_type=login_portal_type)):
     # already migrated
@@ -21,4 +19,3 @@ def migrateInstanceToERP5Login(self):
   )
 
   login.validate()
-  login.immediateReindexObject()
