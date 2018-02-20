@@ -11,6 +11,7 @@
     .declareAcquiredMethod("setSetting", "setSetting")
     .declareAcquiredMethod("getUrlFor", "getUrlFor")
     .declareAcquiredMethod("jio_allDocs", "jio_allDocs")
+    .declareAcquiredMethod("jio_get", "jio_get")
 
     .allowPublicAcquisition("jio_allDocs", function (param_list) {
       var gadget = this;
@@ -53,14 +54,19 @@
     })
     .declareMethod("render", function (options) {
       var gadget = this,
+        default_strict_allocation_scope_uid,
         lines_limit;
 
       return new RSVP.Queue()
         .push(function () {
-          return gadget.getSetting("listbox_lines_limit", 20);
+          return RSVP.all([
+            gadget.getSetting("listbox_lines_limit", 20),
+            gadget.jio_get("portal_categories/allocation_scope/close/forever")
+          ]);
         })
-        .push(function (listbox_lines_limit) {
-          lines_limit = listbox_lines_limit;
+        .push(function (result) {
+          lines_limit = result[0];
+          default_strict_allocation_scope_uid = result[1].uid;
           return gadget.getDeclaredGadget('form_list');
         })
         .push(function (form_list) {
@@ -82,9 +88,8 @@
                   "key": "slap_computer_listbox",
                   "lines": lines_limit,
                   "list_method": "portal_catalog",
-                  // XXX TODO Filter by   default_strict_allocation_scope_uid="!=%s" % context.getPortalObject().portal_categories.allocation_scope.close.forever.getUid(),
-                  "query": "urn:jio:allDocs?query=portal_type%3A%22" +
-                    "Computer" + "%22",
+                  "query": "urn:jio:allDocs?query=((portal_type%3A%22Computer%22)%20AND%20NOT%20(%20default_strict_allocation_scope_uid%3A%20%20" +
+                         default_strict_allocation_scope_uid + "%20))",
                   "portal_type": [],
                   "search_column_list": column_list,
                   "sort_column_list": column_list,
