@@ -97,7 +97,10 @@ def string_to_boolean(string):
     raise ValueError('%s is neither True nor False.' % string)
 
 
-def sqlite_connect(dburi):
-  conn = sqlite3.connect(dburi)
+def sqlite_connect(dburi, timeout=None):
+  connect_kw = {}
+  if timeout is not None:
+    connect_kw['timeout'] = timeout
+  conn = sqlite3.connect(dburi, **connect_kw)
   conn.text_factory = str       # allow 8-bit strings
   return conn

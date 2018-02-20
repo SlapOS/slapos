@@ -121,15 +121,17 @@ class Database:
             " date, time) values "\
             "( '%s', '%s', %s, %s, %s, %s, '%s', '%s' )"
 
-  def __init__(self, directory = None):
+  def __init__(self, directory = None, create = True, timeout=None):
     assert self.database_name is not None
     self.uri = os.path.join(directory, self.database_name)
     self.connection = None
     self.cursor = None
-    self._bootstrap()
+    self.timeout = timeout
+    if create:
+      self._bootstrap()
 
   def connect(self):
-    self.connection = sqlite_connect(self.uri)
+    self.connection = sqlite_connect(self.uri, timeout=self.timeout)
     self.cursor = self.connection.cursor()
 
   def commit(self):
