@@ -71,7 +71,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_erp5_page_slap_hosting_subscription_view.js</string> </value>
+            <value> <string>gadget_slapos_label_listbox_field.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -81,7 +81,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>rjs_gadget_erp5_page_slap_hosting_subscription_view_js</string> </value>
+            <value> <string>rjs_gadget_slapos_label_listbox_field_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -99,11 +99,11 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Gadget SlapOS Hosting Subscription View</string> </value>
+            <value> <string>Gadget SlapOS Site invoice State</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
-            <value> <string>003</string> </value>
+            <value> <string>001</string> </value>
         </item>
         <item>
             <key> <string>workflow_history</string> </key>
@@ -163,7 +163,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -185,7 +185,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1508779428.24</float>
+                        <float>1519139242.32</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -230,7 +230,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>965.40909.53540.32853</string> </value>
+                <value> <string>965.40908.63104.20514</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +248,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1519139506.49</float>
+                        <float>1519139430.27</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -275,7 +275,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -305,7 +305,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1508779404.08</float>
+                        <float>1519139078.95</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
