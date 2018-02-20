@@ -108,7 +108,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Mon, 15 Dec 2017 16:16:00 GMT+0200\n
+# generated on Mon, 20 Fev 2017 15:16:00 GMT+0200\n
 CACHE:\n
 favicon.ico\n
 font-awesome/font-awesome-webfont.eot?v=4.6.3\n
@@ -252,7 +252,7 @@ gadget_erp5_page_map.js\n
 gadget_erp5_page_slap_add_computer.html\n
 gadget_erp5_page_slap_add_computer.js\n
 gadget_erp5_page_slap_add_hosting_subscription.html\n
-#gadget_erp5_page_slap_add_hosting_subscription.js\n
+gadget_erp5_page_slap_add_hosting_subscription.js\n
 gadget_erp5_page_slap_add_network.html\n
 gadget_erp5_page_slap_add_network.js\n
 gadget_erp5_page_slap_add_organisation.html\n
@@ -287,6 +287,8 @@ gadget_erp5_page_slap_destroy_software_installation.html\n
 gadget_erp5_page_slap_destroy_software_installation.js\n
 gadget_erp5_page_slap_hosting_subscription_view.html\n
 gadget_erp5_page_slap_hosting_subscription_view.js\n
+gadget_erp5_page_slap_intent.html\n
+gadget_erp5_page_slap_intent.js\n
 gadget_erp5_page_slap_invoice_list.html\n
 gadget_erp5_page_slap_invoice_list.js\n
 gadget_erp5_page_slap_load_schema.html\n
@@ -298,6 +300,7 @@ gadget_erp5_page_slap_organisation_view.js\n
 gadget_erp5_page_slap_parameter_form.css\n
 gadget_erp5_page_slap_parameter_form.html\n
 gadget_erp5_page_slap_parameter_form.js\n
+gadget_erp5_page_slap_payment_result.html\n
 gadget_erp5_page_slap_person_get_token.html\n
 gadget_erp5_page_slap_person_get_token.js\n
 gadget_erp5_page_slap_person_request_certificate.html\n
@@ -314,6 +317,8 @@ gadget_erp5_page_slap_regularisation_request_view.html\n
 gadget_erp5_page_slap_regularisation_request_view.js\n
 gadget_erp5_page_slap_rss_ticket.html\n
 gadget_erp5_page_slap_rss_ticket.js\n
+gadget_erp5_page_slap_sale_invoice_transaction_view.html\n
+gadget_erp5_page_slap_sale_invoice_transaction_view.js\n
 gadget_erp5_page_slap_select_software_product.html\n
 gadget_erp5_page_slap_select_software_product.js\n
 gadget_erp5_page_slap_select_software_release.html\n
@@ -361,16 +366,27 @@ gadget_slapos_installation_status.html\n
 gadget_slapos_installation_status.js\n
 gadget_slapos_instance_status.html\n
 gadget_slapos_instance_status.js\n
+gadget_slapos_invoice_printout.html\n
+gadget_slapos_invoice_printout.js\n
+gadget_slapos_invoice_state.html\n
+gadget_slapos_invoice_state.js\n
+gadget_slapos_label_listbox_field.html\n
+gadget_slapos_label_listbox_field.js\n
 gadget_slapos_network_status.html\n
 gadget_slapos_network_status.js\n
 gadget_slapos_panel.html\n
 gadget_slapos_panel.js\n
+gadget_slapos_payment_result.js\n
 gadget_slapos_project_status.html\n
 gadget_slapos_project_status.js\n
 gadget_slapos_site_status.html\n
 gadget_slapos_site_status.js\n
+gadget_slapos_software_release_info.html\n
+gadget_slapos_software_release_info.js\n
 leaflet.css\n
 leaflet.js\n
+tv4.min.js\n
+vkbeautify.js\n
 NETWORK:\n
 *
 
@@ -495,7 +511,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -509,7 +525,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>964.9905.38510.59477</string> </value>
+                <value> <string>965.40966.21681.23671</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -527,7 +543,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1513350989.31</float>
+                        <float>1519142802.96</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
