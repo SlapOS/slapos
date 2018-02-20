@@ -134,7 +134,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.getAggregateReference(portal_type=\'Computer\')</string> </value>
+            <value> <string>python: context.getAggregate(portal_type=\'Computer\')</string> </value>
         </item>
       </dictionary>
     </pickle>
