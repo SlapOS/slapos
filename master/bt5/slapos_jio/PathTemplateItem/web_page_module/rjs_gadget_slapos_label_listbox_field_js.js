@@ -1,7 +1,7 @@
-/*globals console, window, rJS, RSVP, loopEventListener, i18n, Handlebars $*/
+/*globals console, window, document, rJS, RSVP, loopEventListener, i18n, Handlebars $*/
 /*jslint indent: 2, nomen: true, maxlen: 80*/
 
-(function (window, rJS, RSVP, Handlebars) {
+(function (window, document, rJS, RSVP, Handlebars) {
   "use strict";
   var gadget_klass = rJS(window);
 
@@ -15,11 +15,21 @@
       return {};
     })
     .declareMethod("render", function (options) {
-      var gadget = this;
+      var gadget = this, a, value;
       return gadget.getElement()
-         .push(function (element) {
-              element.innerHTML = options.value;
-              return element;
-            });
+        .push(function (element) {
+          value = options.value;
+          if (options.value &&
+              (options.value.startsWith("http://") ||
+                 options.value.startsWith("https://"))) {
+            a = document.createElement('a');
+            a.setAttribute("href", options.value);
+            a.setAttribute("target", "_blank");
+            a.innerText = options.value;
+            value = a.outerHTML;
+          }
+          element.innerHTML = value;
+          return element;
+        });
     });
-}(window, rJS, RSVP, Handlebars));
+}(window, document, rJS, RSVP, Handlebars));
