@@ -36,7 +36,7 @@
 .ui-btn-ok:active a,
 .ui-btn-ok:hover a {
   color: white !important;
-  background: #00884b !important;
+  background: green !important;
   cursor: default;
   text-align: center;
 }
@@ -48,7 +48,7 @@
 .ui-btn-warning:active a,
 .ui-btn-warning:hover a {
   color: white !important;
-  background: #FFCC00 !important;
+  background: #f0ad4e !important;
   cursor: default;
   text-align: center;
 }
@@ -60,7 +60,7 @@
 .ui-btn-error:active a,
 .ui-btn-error:hover a {
   color: white !important;
-  background: #bb0a00 !important;
+  background: red !important;
   cursor: default;
   text-align: center;
 }
