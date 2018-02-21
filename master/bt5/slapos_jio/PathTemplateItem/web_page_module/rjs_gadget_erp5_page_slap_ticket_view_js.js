@@ -27,7 +27,8 @@
       // This code can cause problems if it is used more them once per
       // page
       param_list[0].sort_on = [["modification_date", "ascending"]];
-      param_list[0].select_list = ["uid", "title", "text_content", "source_title", "modification_date"];
+      param_list[0].select_list = ["uid", "title", "text_content",
+                                   "source_title", "modification_date", "content_type"];
       return gadget.jio_allDocs(param_list[0])
         .push(function (result) {
           var i, len = result.data.total_rows;
@@ -40,6 +41,7 @@
                 "default": {doc: {title: result.data.rows[i].value.title,
                                   source: result.data.rows[i].value.source_title,
                                   modification_date: result.data.rows[i].value.modification_date,
+                                  content_type: result.data.rows[i].value.content_type,
                                   text_content: result.data.rows[i].value.text_content}},
                 key: "status",
                 url: "gadget_slapos_event_discussion_entry.html",
@@ -180,8 +182,8 @@
                         "(%22Web Message%22, %22Mail Message%22)" + " AND default_follow_up_reference%3A" +
                         gadget.state.doc.reference,
                       "portal_type": [],
-                      "search_column_list": column_list,
-                      "sort_column_list": column_list,
+                      "search_column_list": [],
+                      "sort_column_list": [],
                       "sort": [["text_content", "ascending"]],
                       "title": "",
                       "type": "ListBox"
