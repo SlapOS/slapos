@@ -43,6 +43,7 @@
                                   text_content: result.data.rows[i].value.text_content}},
                 key: "status",
                 url: "gadget_slapos_event_discussion_entry.html",
+                editable: 1,
                 title: "Status",
                 type: "GadgetField"
               };

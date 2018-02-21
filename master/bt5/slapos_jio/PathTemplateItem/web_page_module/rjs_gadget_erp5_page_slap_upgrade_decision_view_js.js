@@ -44,6 +44,7 @@
                 key: "status",
                 url: "gadget_slapos_event_discussion_entry.html",
                 title: "Status",
+                editable: 1,
                 type: "GadgetField"
               };
               result.data.rows[i].value["listbox_uid:list"] = {
