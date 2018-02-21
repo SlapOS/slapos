@@ -132,7 +132,7 @@
 
             template = inline_status_template;
 
-            monitor_url = 'https://monitor.app.officejs.com/#/?page=ojsm_dispatch&query=portal_type%3A%22Software%20Instance%22%20AND%20aggregate_reference%3A' + result.reference;
+            monitor_url = 'https://monitor.app.officejs.com/#/?page=ojsm_dispatch&query=portal_type%3A%22Software%20Instance%22%20AND%20aggregate_reference%3A%22' + result.reference + '%22';
             if (status_class === 'ui-btn-no-data') {
               status_style = "color: transparent !important;";
               //monitor_url = "";
@@ -148,7 +148,7 @@
               right_title: right_title,
               right_style: right_style
             });
-            return RSVP.delay(60000);
+            return RSVP.delay(300000);
           })
 
           .push(function () {

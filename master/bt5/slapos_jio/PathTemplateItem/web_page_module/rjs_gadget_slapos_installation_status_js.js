@@ -95,7 +95,7 @@
               status_style: status_style,
               middle_style: middle_style
             });
-            return RSVP.delay(60000);
+            return RSVP.delay(300000);
           })
 
           .push(function () {

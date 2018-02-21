@@ -198,7 +198,7 @@
               right_title: right_title,
               right_style: right_style
             });
-            return RSVP.delay(60000);
+            return RSVP.delay(300000);
           })
 
           .push(function () {
