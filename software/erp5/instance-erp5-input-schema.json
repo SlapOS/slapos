@@ -146,7 +146,7 @@
             },
             "large-file-threshold": {
               "description": "Requests bigger than this size get saved into a temporary file instead of being read completely into memory, in bytes",
-              "default": "512KB",
+              "default": "10M",
               "type": "string"
             },
             "port-base": {
