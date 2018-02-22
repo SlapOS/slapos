@@ -40,11 +40,11 @@
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Login</label>
               <div><input autofocus type="text" name="__ac_name" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Password</label>
               <div><input type="password" name="__ac_password" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label></label>
               <div tal:define="absolute_url python:context.absolute_url()">
