@@ -172,6 +172,28 @@
                       "hidden": 0,
                       "type": "StringField"
                     },
+                    "my_short_title": {
+                      "description": "",
+                      "title": "Short Title",
+                      "default": gadget.state.doc.short_title,
+                      "css_class": "",
+                      "required": 1,
+                      "editable": 1,
+                      "key": "short_title",
+                      "hidden": 0,
+                      "type": "StringField"
+                    },
+                    "my_description": {
+                      "description": "",
+                      "title": "Description",
+                      "default": gadget.state.doc.description,
+                      "css_class": "",
+                      "required": 1,
+                      "editable": 1,
+                      "key": "description",
+                      "hidden": 0,
+                      "type": "TextAreaField"
+                    },
                     "my_reference": {
                       "description": "",
                       "title": "Reference",
@@ -316,13 +338,14 @@
                 form_definition: {
                   group_list: [[
                     "left",
-                    [["my_title"], ["my_reference"], ['my_monitoring_status']]
+                    [["my_title"], ["my_reference"],["my_short_title"], ["my_description"]]
 
                   ], [
                     "right",
-                    [["my_slap_state_title"], ["my_source_reference"]]
+                    [["my_slap_state_title"],  ['my_monitoring_status']]
+
                   ], ["center",
-                      [["my_url_string"], ["my_text_content"]]
+                      [["my_source_reference"], ["my_url_string"], ["my_text_content"]]
                   ], [
                     "bottom",
                     [["connection_listbox"], ["listbox"], ["ticket_listbox"]]

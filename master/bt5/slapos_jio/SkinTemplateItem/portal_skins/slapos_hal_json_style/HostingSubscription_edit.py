@@ -1,5 +1,16 @@
 request = context.REQUEST
 
+edit_kw = {}
+
+if short_title != context.getShortTitle():
+  edit_kw["short_title"] = short_title
+
+if description != context.getDescription():
+  edit_kw["description"] = description
+
+if edit_kw.keys():
+  context.edit(**edit_kw)
+
 def isSoftwareTypeChanged(software_type):
   base_type = ['RootSoftwareInstance', 'default']
   current_software_type = context.getSourceReference()

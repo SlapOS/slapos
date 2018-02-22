@@ -101,6 +101,8 @@
                         <string>my_slap_state</string>
                         <string>my_slap_state_title</string>
                         <string>my_news</string>
+                        <string>my_short_title</string>
+                        <string>my_description</string>
                       </list>
                     </value>
                 </item>
