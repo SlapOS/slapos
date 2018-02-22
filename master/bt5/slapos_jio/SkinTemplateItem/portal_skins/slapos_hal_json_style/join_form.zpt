@@ -7,6 +7,7 @@
   </head>
 
   <body tal:define="form_action string:WebSection_newCredentialRequest;">
+  <div data-role='page'>
 
     <div data-gadget-scope='header'>
       <div class="ui-header">
@@ -37,52 +38,56 @@
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >First Name</label>
               <div><input autofocus type="text" name="first_name" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Last Name</label>
               <div><input autofocus type="text" name="last_name" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Email</label>
               <div><input autofocus type="email" name="default_email_text" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >User Login</label>
               <div><input autofocus type="text" name="reference" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Password</label>
               <div><input autofocus type="password" name="password" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Password Confirmation</label>
               <div><input type="password" name="password_confirmation" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" ></label>
-            </div>
+            </div><br/>
             </div>
             <div class="right" style="width:49% !important">
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Organisation</label>
-              <div><input type="text" name="career_subordination_title" value="" required=""></div>
-            </div>
+              <div><input type="text" name="career_subordination_title" value=""></div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Telephone</label>
               <div><input type="text" name="default_telefone_text" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Address</label>
               <div><input type="text" name="default_address_street_address" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >Postal Code</label>
               <div><input type="text" name="default_address_zip_code" value="" required=""></div>
-            </div>
+            </div><br/>
             <div class="ui-field-contain">
               <label i18n:domain="ui" i18n:translate="" >City</label>
               <div><input type="text" name="default_address_city" value="" required=""></div>
-            </div>
+            </div><br/>
+            <div class="ui-field-contain">
+              <label i18n:domain="ui" i18n:translate="" >Country</label>
+              <div><input type="text" name="default_address_country" value="" required=""></div>
+            </div><br/>
             </div>
             <div class="bottom">
               <div class="ui-field-contain">
@@ -92,7 +97,7 @@
               <div class="ui-field-contain">
                 <label></label>
                 <div><input type="submit" value='Request User' i18n:attributes="value" i18n:domain="ui"  tal:attributes="name python: '%s:method' % (form_action, )"/></div>
-              </div>
+              </div><br/>
             <input type="hidden" name="url" tal:attributes="value python: context.absolute_url()" />
             <input tal:condition="exists: request/came_from"
                    type="hidden" name="came_from"
@@ -103,5 +108,6 @@
          </section>
       </article>
     </div>
+   </div>
   </body>
 </html>
