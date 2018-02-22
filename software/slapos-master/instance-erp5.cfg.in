@@ -211,7 +211,7 @@ config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
-config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', '10M')) }}
+config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', '10MB')) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 {% endfor -%}
