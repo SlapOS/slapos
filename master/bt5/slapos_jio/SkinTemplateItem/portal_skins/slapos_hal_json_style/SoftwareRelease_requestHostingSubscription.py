@@ -7,9 +7,12 @@ if shared == "true":
 if shared in ["false", "", None]:
   shared = False
 
-
 if not title:
   raise ValueError("Service Title is mandatory!")
+
+if "{uid}" in title:
+  uid_ = portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1)
+  title = title.replace("{uid}", str(uid_))
 
 hosting_subscription = portal.portal_catalog.getResultValue(
   portal_type='Hosting Subscription',
@@ -31,9 +34,8 @@ if person is None:
 if software_type in [None, ""]:
   software_type = "RootSoftwareInstance"
 
-if text_content == "":
-  text_content = """
-<?xml version="1.0" encoding="utf-8" ?>
+if text_content in ["", None]:
+  text_content = """<?xml version='1.0' encoding='utf-8' ?>
 <instance>
 </instance>"""
 
@@ -47,8 +49,6 @@ request_kw.update(
   shared=shared,
   state="started",
 )
-
-sla_xml = ""
 
 for sla_category_id, sla_category in [
   ('computer_guid', computer_guid),

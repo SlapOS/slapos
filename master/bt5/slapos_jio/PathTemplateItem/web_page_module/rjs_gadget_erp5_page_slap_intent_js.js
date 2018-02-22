@@ -19,8 +19,6 @@
     .declareAcquiredMethod("notifySubmitting", "notifySubmitting")
     .declareAcquiredMethod("notifySubmitted", 'notifySubmitted')
 
-
-
     /////////////////////////////////////////////////////////////////
     // declared methods
     /////////////////////////////////////////////////////////////////
@@ -93,18 +91,37 @@
         })
         .push(function (result) {
           var software_release = result[1],
-              url = result[2],
-              title = options.software_title ? options.software_title: "Instance ",
-              doc = {};
-
-          doc.url_string = software_release.url_string;
-          doc.title = title;
-          doc.text_content = "";
-          doc.relative_url = options.jio_key;
+            url = result[2],
+            doc = {
+              url_string: software_release.url_string,
+              title: options.software_title ? options.software_title: "Instance {uid}",
+              relative_url: options.jio_key
+          };
+          if (options.software_type) {
+            doc.software_type = options.software_type;
+          }
+          if (options.text_content) {
+            doc.text_content = options.text_content;
+          }
+          if (options.shared) {
+            doc.shared = options.shared;
+          }
           return gadget.notifySubmitting()
             .push(function () {
-              return gadget.jio_putAttachment(doc.relative_url,
-                    url + doc.relative_url + "/SoftwareRelease_requestHostingSubscription", doc);
+              var query = [];
+              query.push("title=" + encodeURIComponent(doc.title));
+
+              if (doc.software_type) {
+                query.push("software_type=" + encodeURIComponent(doc.software_type));
+              }
+              if (doc.shared) {
+                query.push("shared=" + encodeURIComponent(doc.shared));
+              }
+              if (doc.text_content) {
+                query.push("text_content=" + encodeURIComponent(doc.text_content));
+              }
+              return gadget.jio_getAttachment(doc.relative_url,
+                url + doc.relative_url + "/SoftwareRelease_requestHostingSubscription?" + query.join("&"));
             })
             .push(function (key) {
               return gadget.notifySubmitted({message: 'New service created.', status: 'success'})
