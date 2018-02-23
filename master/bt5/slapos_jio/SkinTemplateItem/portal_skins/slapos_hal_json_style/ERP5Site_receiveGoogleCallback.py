@@ -33,7 +33,13 @@ elif code is not None:
     method = getattr(context, "ERP5Site_createGoogleUserToOAuth", None)
     if method is not None:
       method(user_reference, user_dict)
-    return context.REQUEST.RESPONSE.redirect(
-      context.REQUEST.get("came_from") or context.absolute_url())
 
-return handleError('')
+    person_relative_url = context.ERP5Site_getPersonFromGoogleLogin(user_reference)
+
+    came_from = context.absolute_url() + "/#!login?n.me=%s" % person_relative_url
+
+    context.REQUEST.RESPONSE.setHeader('Location', came_from)
+    context.REQUEST.RESPONSE.setStatus(303)
+
+else:
+  return handleError('')
