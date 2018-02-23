@@ -14,22 +14,26 @@
 
     .allowPublicAcquisition("jio_allDocs", function (param_list) {
       var gadget = this;
+      param_list[0].select_list = ["uid", "title", "short_title",
+                                   "root_slave"];
       return gadget.jio_allDocs(param_list[0])
         .push(function (result) {
           var i, value, len = result.data.total_rows;
           for (i = 0; i < len; i += 1) {
-            if (1 || (result.data.rows[i].hasOwnProperty("id"))) {
-              value = result.data.rows[i].id;
-              result.data.rows[i].value.monitoring_status = {
-                css_class: "",
-                description: "The Status",
-                hidden: 0,
-                "default": {jio_key: value},
-                key: "status",
-                url: "gadget_slapos_hosting_subscription_status.html",
-                title: "Status",
-                type: "GadgetField"
-              };
+            if (1 || (result.data.rows[i].value.hasOwnProperty("root_slave"))) {
+              if (result.data.rows[i].value.root_slave !== 1) {
+                value = result.data.rows[i].id;
+                result.data.rows[i].value.monitoring_status = {
+                  css_class: "",
+                  description: "The Status",
+                  hidden: 0,
+                  "default": {jio_key: value},
+                  key: "status",
+                  url: "gadget_slapos_hosting_subscription_status.html",
+                  title: "Status",
+                  type: "GadgetField"
+                };
+              }
               result.data.rows[i].value["listbox_uid:list"] = {
                 key: "listbox_uid:list",
                 value: 2713

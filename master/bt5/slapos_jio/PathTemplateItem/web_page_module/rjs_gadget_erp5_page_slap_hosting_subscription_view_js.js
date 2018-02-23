@@ -150,7 +150,7 @@
                 'json_url': gadget.state.doc.url_string + ".json",
                 //'json_url': "https://lab.node.vifib.com/nexedi/slapos/raw/master/software/kvm/software.cfg.json",
                 'parameter_hash': btoa('<?xml version="1.0" encoding="utf-8" ?><instance></instance>'),
-                'restricted_softwaretype': false
+                'restricted_softwaretype': true
               }
             };
           if (gadget.state.doc.text_content !== undefined) {
@@ -258,12 +258,12 @@
                       "title": "Monitoring Status",
                       "default": {jio_key: gadget.state.jio_key},
                       "css_class": "",
-                      "required": 1,
+                      "required": 0,
                       "editable": 0,
                       "url": "gadget_slapos_hosting_subscription_status.html",
                       "sandbox": "",
                       "key": "monitoring_status",
-                      "hidden": 0,
+                      "hidden": gadget.state.doc.root_slave === 1,
                       "type": "GadgetField"
                     },
                     "connection_listbox": {

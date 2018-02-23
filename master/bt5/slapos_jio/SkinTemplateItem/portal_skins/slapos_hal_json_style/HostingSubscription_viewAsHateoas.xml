@@ -103,6 +103,7 @@
                         <string>my_news</string>
                         <string>my_short_title</string>
                         <string>my_description</string>
+                        <string>my_root_slave</string>
                       </list>
                     </value>
                 </item>
