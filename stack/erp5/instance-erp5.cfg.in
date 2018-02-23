@@ -301,6 +301,12 @@ slave = true
 {%   if frontend_dict.get('domain') -%}
 {%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
 {%   endif -%}
+{%   if frontend_dict.get('virtualhostroot-http-port') -%}
+{%     do config_dict.__setitem__('virtualhostroot-http-port', frontend_dict['virtualhostroot-http-port']) -%}
+{%   endif -%}
+{%   if frontend_dict.get('virtualhostroot-https-port') -%}
+{%     do config_dict.__setitem__('virtualhostroot-https-port', frontend_dict['virtualhostroot-https-port']) -%}
+{%   endif -%}
 {%   for name, value in config_dict.items() -%}
 config-{{ name }} = {{ value }}
 {%   endfor -%}
