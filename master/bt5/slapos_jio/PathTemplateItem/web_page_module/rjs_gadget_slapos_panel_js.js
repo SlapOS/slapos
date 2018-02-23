@@ -127,13 +127,13 @@
           .push(function (my_translated_or_plain_html) {
             tmp_element = document.createElement('div');
             tmp_element.innerHTML = my_translated_or_plain_html;
-            return context.declareGadget('gadget_erp5_searchfield.html', {
-              scope: "erp5_searchfield",
-              element: tmp_element.querySelector('[data-gadget-scope="erp5_searchfield"]')
+            return context.declareGadget('gadget_erp5_panel_shortcut.html', {
+              scope: "gadget_erp5_panel_shortcut",
+              element: tmp_element.querySelector('[data-gadget-scope="erp5_panel_shortcut"]')
             });
           })
-          .push(function (search_gadget) {
-            return search_gadget.render({
+          .push(function (panel_shortcut) {
+            return panel_shortcut.render({
               focus: false
             });
           })

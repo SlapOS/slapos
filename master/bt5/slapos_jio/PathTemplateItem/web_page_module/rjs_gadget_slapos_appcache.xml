@@ -108,7 +108,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Mon, 20 Fev 2017 15:16:00 GMT+0200\n
+# generated on Mon, 23 Fev 2017 12:00:00 GMT+0200\n
 CACHE:\n
 favicon.ico\n
 font-awesome/font-awesome-webfont.eot?v=4.6.3\n
@@ -348,6 +348,8 @@ gadget_erp5_page_slapos.css\n
 gadget_erp5_page_slapos.html\n
 gadget_erp5_page_slapos.js\n
 gadget_erp5_page_slapos_request_form.html\n
+gadget_erp5_panel_shortcut.html\n
+gadget_erp5_panel_shortcut.js\n
 gadget_erp5_pt_form_slapos_index.html\n
 gadget_erp5_pt_form_slapos_index.js\n
 gadget_slapos_computer_map.html\n
@@ -376,6 +378,7 @@ gadget_slapos_network_status.html\n
 gadget_slapos_network_status.js\n
 gadget_slapos_panel.html\n
 gadget_slapos_panel.js\n
+gadget_slapos_panel.png\n
 gadget_slapos_payment_result.js\n
 gadget_slapos_project_status.html\n
 gadget_slapos_project_status.js\n
@@ -525,7 +528,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>965.40966.21681.23671</string> </value>
+                <value> <string>965.45213.38458.27084</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -543,7 +546,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1519142802.96</float>
+                        <float>1519397663.08</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

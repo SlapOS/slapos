@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Web Page" module="erp5.portal_type"/>
+      <global name="Web Script" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -70,12 +70,8 @@
             </value>
         </item>
         <item>
-            <key> <string>content_type</string> </key>
-            <value> <string>text/html</string> </value>
-        </item>
-        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_slapos_panel.html</string> </value>
+            <value> <string>gadget_erp5_panel_shortcut.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -85,7 +81,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>rjs_gadget_slapos_panel_html</string> </value>
+            <value> <string>rjs_gadget_erp5_panel_shortcut_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -93,7 +89,7 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Web Page</string> </value>
+            <value> <string>Web Script</string> </value>
         </item>
         <item>
             <key> <string>short_title</string> </key>
@@ -103,7 +99,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Gadget SlapOS Panel</string> </value>
+            <value> <string>Gadget ERP5 Panel Short Cuts</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -167,7 +163,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -189,7 +185,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1502372299.04</float>
+                        <float>1519396711.44</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -234,7 +230,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>965.45193.17797.6212</string> </value>
+                <value> <string>965.45198.48787.5256</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -252,7 +248,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1519396467.53</float>
+                        <float>1519396879.56</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -279,7 +275,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -309,7 +305,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1502372218.53</float>
+                        <float>1519396690.04</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
