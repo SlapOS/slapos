@@ -65,7 +65,7 @@
         .push(function (form_list) {
           var column_list = [
             ['title', 'Title'],
-            ['reference', 'Reference'],
+            ['short_title', 'Short Title'],
             ['monitoring_status', 'Status']
           ];
           return form_list.render({
