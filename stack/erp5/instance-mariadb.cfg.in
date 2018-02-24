@@ -128,6 +128,7 @@ port = {{ port }}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:mariadb-data}
 tmp-directory = ${directory:tmp}
+etc-directory = ${directory:etc}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
@@ -185,10 +186,21 @@ template = inline:#!{{ dash }}
     --skip-name-resolve \
     --datadir='${my-cnf-parameters:data-directory}' \
     --basedir='{{ parameter_dict['mariadb-location'] }}' \
-  && exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
+  && ODBCSYSINI='${my-cnf-parameters:etc-directory}' exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
     --defaults-file='${my-cnf:rendered}' \
     "$@"
 rendered = ${directory:services}/mariadb
+
+[odbc-ini-text]
+text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
+
+[{{ section('odbc-ini') }}]
+< = jinja2-template-base
+rendered = ${directory:etc}/odbc.ini
+template = inline:{% raw -%}
+  {{ parameter_dict['text'].decode('base64') }}
+  {%- endraw %}
+context = section parameter_dict odbc-ini-text
 
 [{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
