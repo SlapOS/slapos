@@ -5,6 +5,9 @@
 cd {{ workdir }}
 export PATH={{- path }}
 export SHELL={{- shell }}
+{%- if instance_name %}
+export PROMPT_COMMAND='echo -en "\033]0;{{-instance_name}}\a"'
+{% endif %}
 export PS1="$ "
 
 if [ -f "$HOME/.bashrc" ] ; then
