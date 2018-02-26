@@ -5,7 +5,7 @@
 cd {{ workdir }}
 export PATH={{- path }}
 export SHELL={{- shell }}
-export PS1="$ "
+export PS1="{{- instance_name ~ '\\n' if instance_name else ''}}$ "
 
 if [ -f "$HOME/.bashrc" ] ; then
   source $HOME/.bashrc
