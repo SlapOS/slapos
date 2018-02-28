@@ -915,17 +915,23 @@
     })
 
     .declareMethod('getContent', function () {
-      var gadget = this;
+      var gadget = this,
+          content_dict = {};
       return gadget.getElement()
         .push(function (element) {
-          var text_content = element.querySelector('textarea[name=text_content]');
+          var text_content = element.querySelector('textarea[name=text_content]'),
+              software_type = element.querySelector('select[name=software_type]');
+          if (software_type !== null) {
+            content_dict.software_type = software_type.value;
+          }
           if (text_content !== null) {
             return text_content.value;
           }
           return gadget.processValidation(gadget.options.value.parameter.json_url);
         })
         .push(function (xml_result) {
-          return {"text_content": xml_result};
+          content_dict.text_content = xml_result;
+          return content_dict;
         })
         .fail(function (e) {
           return {};
