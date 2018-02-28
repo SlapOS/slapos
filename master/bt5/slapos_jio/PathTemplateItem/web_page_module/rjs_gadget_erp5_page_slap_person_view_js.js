@@ -113,7 +113,8 @@
             gadget.getUrlFor({command: "change", options: {editable: true}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_person_revoke_certificate"}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_person_request_certificate"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_person_get_token"}})
+            gadget.getUrlFor({command: "change", options: {page: "slap_person_get_token"}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
@@ -122,7 +123,8 @@
             save_action: true,
             request_certificate_url: url_list[2],
             revoke_certificate_url: url_list[1],
-            token_url: url_list[3]
+            token_url: url_list[3],
+            selection_url: url_list[4]
           };
           if (!gadget.state.editable) {
             header_dict.edit_content = url_list[0];

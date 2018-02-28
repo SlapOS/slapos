@@ -214,14 +214,15 @@
         .push(function () {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {editable: true}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_add_related_event", editable: true}})
-
+            gadget.getUrlFor({command: "change", options: {page: "slap_add_related_event", editable: true}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
           var header_dict = {
-            page_title: "Upgrade Decision : " + gadget.state.doc.title,
-            add_url: url_list[1]
+            page_title: "Regularisation Request : " + gadget.state.doc.title,
+            add_url: url_list[1],
+            selection_url: url_list[2]
           };
           return gadget.updateHeader(header_dict);
         });

@@ -172,11 +172,13 @@
         })
         .push(function () {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {editable: true}})
+            gadget.getUrlFor({command: "change", options: {editable: true}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
           var header_dict = {
+            selection_url: url_list[1],
             page_title: gadget.state.doc.title,
             save_action: true
           };

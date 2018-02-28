@@ -148,6 +148,8 @@
             ], parameter_dict = {
               'parameter' : {
                 'json_url': gadget.state.doc.url_string + ".json",
+                'softwaretype': gadget.state.doc.source_reference,
+                'shared': gadget.state.doc.root_slave ? 1: 0,
                 //'json_url': "https://lab.node.vifib.com/nexedi/slapos/raw/master/software/kvm/software.cfg.json",
                 'parameter_hash': btoa('<?xml version="1.0" encoding="utf-8" ?><instance></instance>'),
                 'restricted_softwaretype': true
@@ -361,8 +363,8 @@
             gadget.getUrlFor({command: "change", options: {"page": "slap_start_hosting_subscription"}}),
             gadget.getUrlFor({command: "change", options: {"page": "slap_stop_hosting_subscription"}}),
             gadget.getUrlFor({command: "change", options: {"page": "slap_destroy_hosting_subscription"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_rss_ticket"}})
-
+            gadget.getUrlFor({command: "change", options: {page: "slap_rss_ticket"}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
@@ -371,6 +373,7 @@
             ticket_url: url_list[1],
             destroy_url: url_list[4],
             rss_url: url_list[5],
+            selection_url: url_list[6],
             save_action: true
           };
           if (gadget.state.doc.slap_state === "start_requested") {

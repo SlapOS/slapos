@@ -156,12 +156,16 @@
         })
         .push(function () {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {editable: true}})
+            gadget.getUrlFor({command: "change", options: {editable: true}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
           var start_date = new Date(gadget.state.doc.start_date),
-              header_dict = {page_title: "Invoice : " + start_date.toUTCString()};
+            header_dict = {
+              selection_url: url_list[1],
+              page_title: "Invoice : " + start_date.toUTCString()
+            };
           if (!gadget.state.editable) {
             header_dict.edit_content = url_list[0];
           }

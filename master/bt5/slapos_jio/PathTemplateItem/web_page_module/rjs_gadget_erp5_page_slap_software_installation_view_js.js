@@ -172,12 +172,16 @@
           });
         })
         .push(function () {
-          return gadget.getUrlFor({command: "change", options: {"page": "slap_destroy_software_installation"}});
+          return RSVP.all([
+            gadget.getUrlFor({command: "change", options: {"page": "slap_destroy_software_installation"}}),
+            gadget.getUrlFor({command: 'history_previous'})
+          ]);
         })
-        .push(function (url) {
+        .push(function (url_list) {
           var header_dict = {
+            selection_url: url_list[1],
             page_title: "Software Installation : " + gadget.state.doc.software_release_title,
-            destroy_url: url
+            destroy_url: url_list[0]
           };
           return gadget.updateHeader(header_dict);
         });

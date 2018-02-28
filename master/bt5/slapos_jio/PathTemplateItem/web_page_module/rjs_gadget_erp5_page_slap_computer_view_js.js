@@ -306,7 +306,8 @@
             gadget.getUrlFor({command: "change", options: {page: "slap_computer_request_certificate"}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_computer_revoke_certificate"}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_rss_ticket"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_transfer_computer"}})
+            gadget.getUrlFor({command: "change", options: {page: "slap_transfer_computer"}}),
+            gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
@@ -318,6 +319,7 @@
             revoke_certificate_url: url_list[4],
             rss_url: url_list[5],
             transfer_url: url_list[6],
+            selection_url: url_list[7],
             save_action: true
           };
           if (!gadget.state.editable) {
