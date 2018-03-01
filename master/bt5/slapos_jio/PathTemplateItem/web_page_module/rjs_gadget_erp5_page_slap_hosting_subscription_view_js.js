@@ -315,7 +315,7 @@
                       "editable": 1,
                       "editable_column_list": [],
                       "key": "slap_project_computer_listbox",
-                      "lines": 10,
+                      "lines": 20,
                       "list_method": "portal_catalog",
                       "query": "urn:jio:allDocs?query=%28portal_type%3A%28%22" +
                         "Slave Instance" + "%22%2C%20%22" +
