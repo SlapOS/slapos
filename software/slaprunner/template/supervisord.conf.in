@@ -10,6 +10,9 @@ port = {{ supervisord['server'] }}
 [supervisord]
 logfile = {{ supervisord['logfile'] }}
 pidfile = {{ supervisord['pidfile'] }}
+#raise soft limit of N(ofile) so we can use > 1024 fds
+#needed for example for wendelin.core arrays + connections
+minfds = 65536
 
 [rpcinterface:supervisor]
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
