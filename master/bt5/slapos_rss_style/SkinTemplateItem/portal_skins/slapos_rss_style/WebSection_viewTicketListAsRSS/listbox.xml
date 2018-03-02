@@ -135,6 +135,10 @@
                           <string>description</string>
                           <string>Description</string>
                         </tuple>
+                        <tuple>
+                          <string>Base_getTicketUrl</string>
+                          <string>link</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
