@@ -1,13 +1,8 @@
-from zExceptions import Unauthorized
-
 portal = context.getPortalObject()
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
 
 if getattr(context, "PaymentTransaction_getVADSUrlDict", None) is None:
   raise ValueError("PaymentTransaction_getVADSUrlDict is missing on this site")
-
-if person is None:
-  raise Unauthorized("Error")
 
 def wrapWithShadow(payment_transaction, person_relative_url):
 
@@ -29,6 +24,9 @@ def wrapWithShadow(payment_transaction, person_relative_url):
 
   return system_event.contentValues(
     portal_type="Payzen Event Message")[0].getTextContent()
+
+if person is None:
+  return wrapWithShadow(context, context.getDestinationSection())
 
 return person.Person_restrictMethodAsShadowUser(
   shadow_document=person,
