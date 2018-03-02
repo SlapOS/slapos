@@ -3,7 +3,7 @@ error_list = []
 
 
 for connector in portal_oauth.searchFolder(portal_type="Facebook Connector"):
-  if connector.gerReference() == "default":
+  if connector.getReference() == "default":
     return []
 
 if fixit:
