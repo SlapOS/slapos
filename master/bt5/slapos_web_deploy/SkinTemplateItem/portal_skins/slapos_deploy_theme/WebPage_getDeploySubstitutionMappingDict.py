@@ -1,18 +1,21 @@
 mapping_dict = {}
 
-map = {"function_common_content": "deploy-Function.Common", 
-       "base_setup_content": "deploy-Base.Setup",
-       "slapos_install_content": "deploy-Vifib.Channel",
-       "slapos_testing_content": "deploy-Testing.Channel",
-       "slapos_unstable_content": "deploy-Unstable.Channel"}
+url_map = {"deploy-Function.Common" : "function_common_content",
+       "deploy-Base.Setup": "base_setup_content",
+       "deploy-Vifib.Channel": "slapos_install_content",
+       "deploy-Testing.Channel": "slapos_testing_content",
+       "deploy-Unstable.Channel": "slapos_unstable_content"}
 
 portal = context.getPortalObject()
 
-for m, reference in map.iteritems():
-  doc = portal.portal_catalog.getResultValue(reference=reference,
+from DateTime import DateTime
+i = DateTime()
+
+for doc in portal.portal_catalog(reference=url_map.keys(),
                                     portal_type="Web Page",
-                                    validation_state="published")
+                                    validation_state="published"):
 
-  mapping_dict[m] = doc.getTextContent()
+  mapping_dict[url_map[doc.getReference()]] = doc.getTextContent()
 
+context.log((DateTime() - i)*3600*24)
 return mapping_dict
