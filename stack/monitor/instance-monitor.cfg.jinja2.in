@@ -21,28 +21,20 @@ log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 promises = ${:etc}/promise
+plugins = ${:etc}/plugins
 monitor = ${:srv}/monitor
-monitor-promise = ${:etc}/monitor-promise
-monitor-report = ${:etc}/monitor-report
 
 [monitor-directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${directory:bin}
 etc = ${directory:etc}
-run = ${directory:monitor}/run
-#run = ${directory:scripts}
-promises = ${directory:monitor-promise}
-reports = ${directory:monitor-report}
+reports = ${directory:etc}/monitor-report
 pids = ${directory:run}/monitor
-cgi-bin = ${directory:monitor}/cgi-bin
 webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
 private = ${directory:monitor}/private
-services = ${directory:services}
-services-conf = ${directory:etc}/monitor.conf.d
 log = ${directory:log}/monitor
-monitor-var = ${directory:var}/monitor
-monitor-log = ${directory:monitor}/private/monitor-log
+log-backup = ${logrotate-directory:backup}/monitor
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -58,7 +50,7 @@ recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_executable_location }}
 ca-dir = ${ca-directory:root}
 requests-directory = ${ca-directory:requests}
-wrapper = ${monitor-directory:services}/certificate_authority
+wrapper = ${directory:services}/certificate_authority
 ca-private = ${ca-directory:private}
 ca-certs = ${ca-directory:certs}
 ca-newcerts = ${ca-directory:newcerts}
@@ -78,16 +70,13 @@ root-title = ${monitor-instance-parameter:root-instance-title}
 public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 webdav-folder = ${monitor-directory:webdav}
-report-folder = ${monitor-directory:reports}
 base-url = ${monitor-instance-parameter:monitor-base-url}
-monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
 logrotate-folder = ${logrotate-directory:logrotate-entries}
 promise-runner = {{ monitor_runpromise }}
-promise-folder = ${directory:promises}
-monitor-promise-folder = ${monitor-directory:promises}
-promises-timeout-file = ${monitor-promise-timeout-file:file}
+log-folder = ${monitor-directory:log}
+log-backup-folder = ${monitor-directory:log-backup}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 randomsleep = {{ bin_directory }}/randomsleep
 
@@ -112,6 +101,24 @@ nice-cmd = ${xnice-bin:output}
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
+[monitor-promise-conf]
+output-folder = ${monitor-directory:public}
+history-folder = ${monitor-directory:public}
+pid-path = ${monitor-directory:pids}/runpromise.pid
+partition-folder = ${buildout:directory}
+promise-folder = ${directory:plugins}
+old-promise-folder = ${directory:promises}
+master-url = ${slap-connection:server-url}
+partition-cert = ${slap-connection:cert-file}
+partition-key = ${slap-connection:key-file}
+partition-id = ${slap-connection:partition-id}
+computer-id = ${slap-connection:computer-id}
+promises-timeout-file = ${monitor-promise-timeout-file:file}
+ipv4 = ${slap-configuration:ipv4-random}
+ipv6 = ${slap-configuration:ipv6-random}
+software-release = ${slap-connection:software-release-url}
+software-type = ${slap-configuration:slap-software-type}
+
 [monitor-promise-timeout-file]
 recipe = plone.recipe.command
 file = ${directory:etc}/promise_timeout
@@ -128,26 +135,9 @@ recipe = slapos.recipe.template:jinja2
 template = {{ monitor_conf_template }}
 rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
-context = section parameter_dict monitor-conf-parameters
-          section monitor_base_urls monitor-base-url-dict
-
-[instance-info-parameters]
-name = ${monitor-instance-parameter:monitor-title}
-root-name = ${monitor-instance-parameter:root-instance-title}
-computer-id = ${slap-connection:computer-id}
-ipv4 = ${slap-configuration:ipv4-random}
-ipv6 = ${slap-configuration:ipv6-random}
-software-release = ${slap-connection:software-release-url}
-software-type = ${slap-configuration:slap-software-type}
-partition-id = ${slap-connection:partition-id}
-
-[monitor-instance-info]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_instance_info }}
-rendered = ${directory:etc}/${:filename}
-filename = instance-info.conf
-context = 
-  section instance_dict instance-info-parameters
+context = section parameter_dict           monitor-conf-parameters
+          section promise_parameter_dict  monitor-promise-conf
+          section monitor_base_urls        monitor-base-url-dict
 
 [python-symlink]
 recipe = plone.recipe.command
@@ -157,7 +147,7 @@ update-command = ${:command}
 
 [start-monitor]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
+command-line = {{ python_executable }} {{ monitor_bin }} -c ${monitor-conf:rendered}
 name = bootstrap-monitor
 wrapper-path = ${directory:scripts}/${:name}
 environment = 
@@ -187,8 +177,8 @@ password = ${monitor-instance-parameter:password}
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 port = ${monitor-instance-parameter:monitor-httpd-port}
 pid-file = ${directory:run}/monitor-httpd.pid
-access-log = ${monitor-directory:log}/monitor-httpd-access.log
-error-log = ${monitor-directory:log}/monitor-httpd-error.log
+access-log = ${directory:log}/monitor-httpd-access.log
+error-log = ${directory:log}/monitor-httpd-error.log
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
@@ -235,8 +225,8 @@ command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 [logrotate-entry-monitor-httpd]
 <= logrotate-entry-base
 name = monitor-apache
-log = $${basedirectory:log}/monitor/monitor-httpd-error.log
-post = test ! -s $${buildout:directory}/var/run/monitor-httpd.pid || $${buildout:directory}/bin/slapos-kill --pidfile $${buildout:directory}/var/run/monitor-httpd.pid -s USR1
+log = ${directory:log}/monitor-httpd-*.log
+post = test ! -s ${monitor-httpd-conf-parameter:pid-file} || {{ bin_directory }}/slapos-kill --pidfile ${monitor-httpd-conf-parameter:pid-file} -s USR1
 
 [xnice-bin]
 recipe = collective.recipe.template
@@ -254,7 +244,7 @@ parameters-extra = true
 
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
+command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:rendered}'
 wrapper-path = ${directory:bin}/monitor-globalstate
 
 [monitor-configurator-wrapper]
@@ -268,14 +258,14 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-globalstate
 frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 60 && ${monitor-globalstate-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 15 && ${monitor-globalstate-wrapper:wrapper-path}
 
 [monitor-configurator-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-configurator
 frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 60 && ${monitor-configurator-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 15 && ${monitor-configurator-wrapper:wrapper-path}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
@@ -302,7 +292,7 @@ monitor-base-url = ${monitor-frontend-promise:url}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-cors-domains = monitor.app.officejs.com
+icors-domains = monitor.app.officejs.com
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
@@ -339,51 +329,26 @@ check-secure = 1
 [monitor-bootstrap-promise]
 recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
-error-log-file = ${buildout:directory}/.${slap-connection:partition-id}_${start-monitor:name}.log
-input = inline:#!{{ dash_executable_location }}
-  pidfile=${monitor-conf-parameters:pid-file}
-  if [ -s $pidfile ]; then
-    COUNTER=0
-    # Wait until max 20 seconds, the limit promise timeout
-    while [ $COUNTER -lt 40 ]; do
-      if [ -n "$(ps -p $(cat $pidfile) -o pid=)" ]; then
-        ((COUNTER=COUNTER+1))
-        sleep 0.5
-      else
-        break
-      fi
-    done
-  fi
-  if [ ! -f "${:file}" ]; then
-    echo "Monitor bootstrap exited with error."
-    log_file="${:error-log-file}"
-    if [ -s "$log_file" ]; then
-      echo " ---- Latest monitor-boostrap.log ----"
-      echo ""
-      tail -n 3 $log_file
-    fi
-    exit 2
-  else
-    echo "Bootstrap OK";
-  fi
-output = ${directory:promises}/monitor-bootstrap-status
-mode = 700
+input = inline:from slapos.promise.plugin.monitor_bootstrap_status import RunPromise
+  from slapos.promise.plugin import monitor_bootstrap_status
+
+  monitor_bootstrap_status.PROCESS_PID_FILE = "${monitor-conf-parameters:pid-file}"
+  monitor_bootstrap_status.PROCESS_NAME = "${start-monitor:name}"
+  monitor_bootstrap_status.STATUS_FILE = "${:file}"
+
+output = ${directory:plugins}/monitor-bootstrap-status.py
+mode = 600
 
 [promise-check-slapgrid]
 recipe = collective.recipe.template
-error-log-file = ${buildout:directory}/.slapgrid-${slap-connection:partition-id}-error.log
-input = inline:#!/bin/sh
-  if [ -f "${:error-log-file}" ]; then
-    >&2 cat ${:error-log-file}
-    exit 1
-  fi
-output = ${monitor-directory:promises}/buildout-${slap-connection:partition-id}-status
-mode = 700
+output = ${directory:plugins}/buildout-${slap-connection:partition-id}-status.py
+mode = 600
+input = inline:from slapos.promise.plugin.check_partition_deployment_state import RunPromise
 
 [promise-check-free-disk-space]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_check_disk_space }}
-rendered = ${monitor-directory:promises}/check-free-disk-space
+rendered = ${directory:promises}/check-free-disk-space
 mode = 0700
 context =
     key config_file :config-file
@@ -409,7 +374,7 @@ depends =
   ${ca-monitor-httpd:wrapper}
   ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
-  ${promise-check-slapgrid:output}
+  ${promise-check-slapgrid:recipe}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
   ${logrotate-entry-monitor-httpd:name}
 
