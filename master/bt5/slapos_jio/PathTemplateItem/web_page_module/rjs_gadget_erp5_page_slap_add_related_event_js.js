@@ -12,6 +12,7 @@
     .declareAcquiredMethod("getUrlFor", "getUrlFor")
     .declareAcquiredMethod("redirect", "redirect")
     .declareAcquiredMethod("jio_post", "jio_post")
+    .declareAcquiredMethod("jio_putAttachment", "jio_putAttachment")
     .declareAcquiredMethod("jio_get", "jio_get")
 
 
@@ -31,10 +32,17 @@
         .push(function (doc) {
           return gadget.jio_post(doc);
         })
-        .push(function () {
-          return gadget.redirect({"command": "change",
+        .push(function (key) {
+          return gadget.getSetting('hateoas_url')
+            .push(function (hateoas_url) {
+              return gadget.jio_putAttachment(key,
+               hateoas_url + key + "/WebMessage_stop", {});
+            })
+            .push(function () {
+              return gadget.redirect({"command": "change",
                                   "options": {"jio_key": gadget.state.jio_key,
                                               "page": "slap_controller"}});
+            });
         });
     })
 
@@ -166,7 +174,7 @@
         })
         .push(function () {
           return gadget.updateHeader({
-            page_title: "New Ticket",
+            page_title: "New Message",
             submit_action: true
           });
         });
