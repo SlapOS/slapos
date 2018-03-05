@@ -12,6 +12,7 @@
     .declareAcquiredMethod("getUrlFor", "getUrlFor")
     .declareAcquiredMethod("redirect", "redirect")
     .declareAcquiredMethod("jio_post", "jio_post")
+    .declareAcquiredMethod("jio_get", "jio_get")
     .declareAcquiredMethod("jio_putAttachment", "jio_putAttachment")
     .declareAcquiredMethod("notifySubmitting", "notifySubmitting")
     .declareAcquiredMethod("notifySubmitted", 'notifySubmitted')
@@ -58,13 +59,26 @@
       return RSVP.Queue()
         .push(function () {
           return RSVP.all([
-            gadget.getDeclaredGadget('form_view')
+            gadget.getDeclaredGadget('form_view'),
+            gadget.jio_get(options.jio_key)
           ]);
         })
         .push(function (result) {
+          options.doc = result[1];
           return result[0].render({
             erp5_document: {
               "_embedded": {"_view": {
+                "my_title": {
+                  "description": "",
+                  "title": "Instance to be removed: ",
+                  "default": options.doc.title,
+                  "css_class": "",
+                  "required": 1,
+                  "editable": 0,
+                  "key": "title_label",
+                  "hidden": 0,
+                  "type": "StringField"
+                },
                 "my_relative_url": {
                   "description": "",
                   "title": "Parent Relative Url",
@@ -88,13 +102,16 @@
               group_list: [[
                 "left",
                 [["my_relative_url"]]
+              ], [
+                "center",
+                [["my_title"]]
               ]]
             }
           });
         })
         .push(function () {
           return gadget.updateHeader({
-            page_title: "Destroy Hosting Subscription",
+            page_title: "Destroy Hosting Subscription: " + options.doc.title,
             submit_action: true
           });
         });
