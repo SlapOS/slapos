@@ -62,7 +62,7 @@
         return partition_class;
       }
     }
-    if (options.computer_partition === {}) {
+    if (total_amount === 0) {
       return 'ui-btn-no-data';
     }
 
