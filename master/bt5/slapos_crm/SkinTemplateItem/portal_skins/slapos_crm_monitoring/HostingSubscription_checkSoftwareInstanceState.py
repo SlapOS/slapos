@@ -10,7 +10,7 @@ if portal.ERP5Site_isSupportRequestCreationClosed():
 
 date_check_limit = addToDate(DateTime(), to_add={'hour': -1})
 
-if (date_check_limit - hosting_subscription.getCreationDate()) < 0:
+if (date_check_limit - hosting_subscription.Base_getCachedCreationDate()) < 0:
   # Too early to check
   return
 
@@ -29,7 +29,7 @@ for instance in software_instance_list:
   if instance.getSlapState() not in ["start_requested", "stop_requested"]:
     continue
 
-  if (date_check_limit - instance.getCreationDate()) < 0:
+  if (date_check_limit - instance.Base_getCachedCreationDate()) < 0:
     continue
 
   computer_partition = instance.getAggregateValue()
