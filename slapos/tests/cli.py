@@ -28,11 +28,16 @@
 import logging
 import pprint
 import unittest
+import tempfile
+import StringIO
+import sys
 
 from mock import patch, create_autospec
 
-import slapos.cli.list
+import slapos.cli.console
+import slapos.cli.entry
 import slapos.cli.info
+import slapos.cli.list
 import slapos.cli.supervisorctl
 from slapos.client import ClientConfig
 import slapos.grid.svcbackend
@@ -150,4 +155,56 @@ class TestCliSupervisorctl(CliMixin):
     with patch.object(slapos.grid.svcbackend, 'launchSupervisord') as launchSupervisord:
       slapos.cli.supervisorctl.do_supervisorctl(self.logger, instance_root, ['status'], True)
       self.assertFalse(launchSupervisord.called)
+
+
+class TestCliConsole(unittest.TestCase):
+  def setUp(self):
+    cp = slapos.slap.ComputerPartition('computer_id', 'partition_id')
+    cp._parameter_dict = {'parameter_name': 'parameter_value'}
+
+    request_patch = patch.object(slapos.slap.OpenOrder, 'request', return_value = cp)
+    self.mock_request = request_patch.start()
+
+    self.config_file = tempfile.NamedTemporaryFile()
+    self.config_file.write('''[slapos]
+master_url=null
+''')
+    self.config_file.flush()
+
+  def tearDown(self):
+    self.mock_request.stop()
+    self.config_file.close()
+
+  def test_console_interactive(self):
+      app = slapos.cli.entry.SlapOSApp()
+      saved_stdin = sys.stdin
+      saved_stdout = sys.stdout
+      try:
+        sys.stdin = app_stdin = StringIO.StringIO(
+            """print request('software_release', 'instance').getInstanceParameterDict()['parameter_name']\n""")
+        sys.stdout = app_stdout = StringIO.StringIO()
+        app.run(('console', '--cfg', self.config_file.name))
+      finally:
+        sys.sdin = saved_stdin
+        sys.stdout = saved_stdout
+
+      self.mock_request.assert_called_once_with('software_release', 'instance')
+      self.assertIn('parameter_value', app_stdout.getvalue())
+
+  def test_console_script(self):
+    with tempfile.NamedTemporaryFile() as script:
+      script.write(
+        """print request('software_release', 'instance').getInstanceParameterDict()['parameter_name']\n""")
+      script.flush()
+
+      app = slapos.cli.entry.SlapOSApp()
+      saved_stdout = sys.stdout
+      try:
+        sys.stdout = app_stdout = StringIO.StringIO()
+        app.run(('console', '--cfg', self.config_file.name, script.name))
+      finally:
+        sys.stdout = saved_stdout
+
+      self.mock_request.assert_called_once_with('software_release', 'instance')
+      self.assertIn('parameter_value', app_stdout.getvalue())
 

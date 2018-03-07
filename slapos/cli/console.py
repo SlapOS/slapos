@@ -79,12 +79,18 @@ class ConsoleCommand(ClientConfigCommand):
                            action='store_true',
                            help='Use plain Python shell')
 
+        shell.add_argument('script_file', nargs='?',
+                          help='Script to run')
+
         return ap
 
     def take_action(self, args):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
         local = init(conf, self.app.log)
+
+        if args.script_file:
+            return execfile(args.script_file, globals(), local)
 
         if not any([args.python, args.ipython, args.bpython]):
             args.ipython = True
