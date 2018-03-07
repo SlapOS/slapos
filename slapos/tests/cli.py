@@ -191,3 +191,20 @@ master_url=null
       self.mock_request.assert_called_once_with('software_release', 'instance')
       self.assertIn('parameter_value', app_stdout.getvalue())
 
+  def test_console_script(self):
+    with tempfile.NamedTemporaryFile() as script:
+      script.write(
+        """print request('software_release', 'instance').getInstanceParameterDict()['parameter_name']\n""")
+      script.flush()
+
+      app = slapos.cli.entry.SlapOSApp()
+      saved_stdout = sys.stdout
+      try:
+        sys.stdout = app_stdout = StringIO.StringIO()
+        app.run(('console', '--cfg', self.config_file.name, script.name))
+      finally:
+        sys.stdout = saved_stdout
+
+      self.mock_request.assert_called_once_with('software_release', 'instance')
+      self.assertIn('parameter_value', app_stdout.getvalue())
+
