@@ -116,10 +116,10 @@ class TestSlap(SlapMixin):
   def test_slap_initialisation_hostname(self):
     # XXX this really opens a connection !
     slap_instance = slapos.slap.slap()
-    slap_instance.initializeConnection("http://foo.com:5000/foo/")
+    slap_instance.initializeConnection("http://example.com:80/foo/")
     self.assertEqual(
         slap_instance._connection_helper.slapgrid_uri,
-        "http://foo.com:5000/foo/"
+        "http://example.com:80/foo/"
     )
 
   def test_registerComputer_with_new_guid(self):
