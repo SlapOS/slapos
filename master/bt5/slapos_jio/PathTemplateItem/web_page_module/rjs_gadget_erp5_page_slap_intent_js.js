@@ -96,7 +96,7 @@
               url_string: software_release.url_string,
               title: options.software_title ? options.software_title: "Instance {uid}",
               relative_url: options.jio_key
-          };
+            };
           if (options.software_type) {
             doc.software_type = options.software_type;
           }
@@ -105,6 +105,9 @@
           }
           if (options.shared) {
             doc.shared = options.shared;
+          }
+          if (options.sla_xml) {
+            doc.sla_xml = options.sla_xml;
           }
           return gadget.notifySubmitting()
             .push(function () {
@@ -115,10 +118,13 @@
                 query.push("software_type=" + encodeURIComponent(doc.software_type));
               }
               if (doc.shared) {
-                query.push("shared=" + encodeURIComponent(doc.shared));
+                query.push("shared:int=" + encodeURIComponent(doc.shared));
               }
               if (doc.text_content) {
                 query.push("text_content=" + encodeURIComponent(doc.text_content));
+              }
+              if (doc.sla_xml) {
+                query.push("sla_xml=" + encodeURIComponent(doc.sla_xml));
               }
               return gadget.jio_getAttachment(doc.relative_url,
                 url + doc.relative_url + "/SoftwareRelease_requestHostingSubscription?" + query.join("&"));
@@ -128,7 +134,7 @@
                 .push(function () {
                   // Workaround, find a way to open document without break gadget.
                   return gadget.redirect({"command": "change",
-                                  "options": {"jio_key": "/", "page": "slap_service_list"}});
+                                  "options": {"jio_key": key, "page": "slap_controller"}});
                 });
             });
         });
