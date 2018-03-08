@@ -44,7 +44,7 @@
           return gadget.jio_post(doc);
         })
         .push(function (key) {
-          return gadget.notifySubmitted({message: 'New Ticket created.', status: 'success'})
+          return gadget.notifySubmitted({message: 'New Site created.', status: 'success'})
             .push(function () {
               // Workaround, find a way to open document without break gadget.
               return gadget.redirect({"command": "change",
