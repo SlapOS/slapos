@@ -81,8 +81,8 @@
  * @static
  */
 
-$([jupyter.events]).on('notebook_loaded.Notebook', function(){
-  var kernelname = jupyter.notebook.kernel_selector.current_selection;
+$([Jupyter.events]).on('notebook_loaded.Notebook', function(){
+  var kernelname = Jupyter.notebook.kernel_selector.current_selection;
   var display_text="<div class='output_subarea output_text output_result'>\
   <pre>Follow these steps to customize your notebook with ERP5 kernel :-</br>\
   1. Make sure you have 'erp5_data_notebook' business template installed in your ERP5</br>\
