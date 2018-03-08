@@ -16,6 +16,7 @@ CREATE TABLE `item` (
   PRIMARY KEY (`uid`, `aggregate_uid`,`order_id`),
   KEY `section_uid` (`section_uid`),
   KEY `resource_uid` (`resource_uid`),
+  KEY `project_uid` (`project_uid`),
   KEY `variation_text` (`variation_text`),
   KEY `aggregate_simulation_state_date` (`aggregate_uid`,`simulation_state`,`date`),
   KEY `node_simulation_state_date` (`node_uid`,`simulation_state`,`date`)

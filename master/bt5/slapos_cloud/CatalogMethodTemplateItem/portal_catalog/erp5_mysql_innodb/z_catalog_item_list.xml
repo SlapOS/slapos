@@ -8,9 +8,7 @@
       <dictionary>
         <item>
             <key> <string>allow_simple_one_argument_traversal</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>arguments_src</string> </key>
@@ -33,11 +31,15 @@ getMovedItemUidList</string> </value>
         </item>
         <item>
             <key> <string>class_file_</string> </key>
-            <value> <string></string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>class_name_</string> </key>
-            <value> <string></string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>connection_hook</string> </key>
@@ -51,7 +53,7 @@ getMovedItemUidList</string> </value>
         </item>
         <item>
             <key> <string>expression</string> </key>
-            <value> <string>python: context.providesIMovement()</string> </value>
+            <value> <string>python: context.getPortalType() in ["Internal Packing List Line", "Internal Packing List Cell"]</string> </value>
         </item>
         <item>
             <key> <string>expression_cache_key</string> </key>
@@ -89,7 +91,7 @@ getMovedItemUidList</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>z_catalog_item_list</string> </value>
         </item>
         <item>
             <key> <string>type</string> </key>
