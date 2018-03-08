@@ -64,14 +64,30 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>contributor/person_module/1</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>content_md5</string> </key>
             <value>
               <none/>
             </value>
         </item>
         <item>
+            <key> <string>creators</string> </key>
+            <value>
+              <tuple>
+                <string>cedric.le.ninivin</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_erp5_page_slap_project_view.js</string> </value>
+            <value> <string>gadget_erp5_page_slap_delete_project.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -81,11 +97,32 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>rjs_gadget_erp5_page_slap_project_view_js</string> </value>
+            <value> <string>rjs_gadget_erp5_page_slap_delete_project_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
-            <value> <string>en</string> </value>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1455284351.49</float>
+                    <string>UTC</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -99,11 +136,17 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Gadget SlapOS Project View</string> </value>
+            <value> <string>SlapOS Delete Project JS</string> </value>
+        </item>
+        <item>
+            <key> <string>url_string</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>version</string> </key>
-            <value> <string>003</string> </value>
+            <value> <string>001</string> </value>
         </item>
         <item>
             <key> <string>workflow_history</string> </key>
@@ -185,7 +228,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1508500380.51</float>
+                        <float>1520445426.51</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -230,7 +273,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>966.1465.5891.38400</string> </value>
+                <value> <string>966.1507.43744.63266</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +291,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1520445845.37</float>
+                        <float>1520532906.01</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -305,7 +348,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1508500334.78</float>
+                        <float>1520445216.8</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

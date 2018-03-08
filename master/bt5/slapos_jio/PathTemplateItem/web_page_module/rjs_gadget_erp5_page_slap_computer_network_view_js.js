@@ -173,13 +173,16 @@
         .push(function () {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {editable: true}}),
-            gadget.getUrlFor({command: 'history_previous'})
+            gadget.getUrlFor({command: 'history_previous'}),
+            gadget.getUrlFor({command: "change", options: {page: "slap_delete_network"}})
+
           ]);
         })
         .push(function (url_list) {
           var header_dict = {
             selection_url: url_list[1],
-            page_title: gadget.state.doc.title,
+            page_title: "Computer Network :" + gadget.state.doc.title,
+            delete_url: url_list[2],
             save_action: true
           };
           if (!gadget.state.editable) {

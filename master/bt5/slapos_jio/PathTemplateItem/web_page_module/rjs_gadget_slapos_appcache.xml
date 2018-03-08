@@ -281,6 +281,12 @@ gadget_erp5_page_slap_computer_view.html\n
 gadget_erp5_page_slap_computer_view.js\n
 gadget_erp5_page_slap_controller.html\n
 gadget_erp5_page_slap_controller.js\n
+gadget_erp5_page_slap_delete_network.html\n
+gadget_erp5_page_slap_delete_network.js\n
+gadget_erp5_page_slap_delete_organisation.html\n
+gadget_erp5_page_slap_delete_organisation.js\n
+gadget_erp5_page_slap_delete_project.html\n
+gadget_erp5_page_slap_delete_project.js\n
 gadget_erp5_page_slap_destroy_hosting_subscription.html\n
 gadget_erp5_page_slap_destroy_hosting_subscription.js\n
 gadget_erp5_page_slap_destroy_software_installation.html\n
@@ -528,7 +534,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>965.45297.23136.9335</string> </value>
+                <value> <string>966.2885.21812.19797</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -546,7 +552,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1520530879.9</float>
+                        <float>1520544707.03</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
