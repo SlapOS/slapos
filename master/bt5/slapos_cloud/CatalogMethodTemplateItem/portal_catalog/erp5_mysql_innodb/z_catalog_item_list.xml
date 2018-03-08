@@ -53,7 +53,7 @@ getMovedItemUidList</string> </value>
         </item>
         <item>
             <key> <string>expression</string> </key>
-            <value> <string>python: context.getPortalType() in ["Internal Packing List Line", "Internal Packing List Cell"]</string> </value>
+            <value> <string>python: context.providesIMovement()</string> </value>
         </item>
         <item>
             <key> <string>expression_cache_key</string> </key>
