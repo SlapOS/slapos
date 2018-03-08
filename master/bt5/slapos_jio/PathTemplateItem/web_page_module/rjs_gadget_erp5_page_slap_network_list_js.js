@@ -82,7 +82,7 @@
                   "list_method": "portal_catalog",
                   // Filter by My Own networks
                   "query": "urn:jio:allDocs?query=portal_type%3A%22" +
-                    "Computer Network%22",
+                    "Computer Network%22%20AND%20validation_state%3Avalidated",
                   "portal_type": [],
                   "search_column_list": column_list,
                   "sort_column_list": column_list,
