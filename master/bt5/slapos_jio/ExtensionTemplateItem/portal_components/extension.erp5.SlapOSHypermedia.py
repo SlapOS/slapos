@@ -25,11 +25,15 @@
 #
 ##############################################################################
 
-from Products.SlapOS.SlapOSMachineAuthenticationPlugin import getUserByLogin
+from zExceptions import Unauthorized
 
-def getUserDocument(self, username):
-  portal = self.getPortalObject()
-  user_document = getUserByLogin(portal, str(username))
-  if len(user_document) != 1:
-    return
-  return user_document[0]
+def unrestrictedSearchMessage(self, key, REQUEST=None):
+  if REQUEST is not None:
+    raise Unauthorized
+
+  message =  self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+    portal_type="Mail Message", reference=key, limit=1)
+
+  if len(message):
+    return message[0].getObject()
+  return
