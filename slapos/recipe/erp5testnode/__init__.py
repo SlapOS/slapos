@@ -69,13 +69,8 @@ class Recipe(GenericBaseRecipe):
     self.path_list.append(configuration_file)
     self.path_list.append(
       self.createWrapper(self.options['wrapper'],
-          # Command
           ( self.options['testnode'], '-l', self.options['log-file'],
-            configuration_file),
-          # Environment
-          {
-            'GIT_SSL_NO_VERIFY': '1',
-          }
+            configuration_file)
       )
     )
     self.installApache()
