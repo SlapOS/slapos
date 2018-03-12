@@ -69,8 +69,11 @@ class TestGenericCloudooo(unittest.TestCase):
     ]), data)
     self.assertIn("\n".join([
       "",
+      "  application/x-asc-presentation application/vnd.oasis.opendocument.presentation x2t",
       "  application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t",
+      "  application/x-asc-spreadsheet application/vnd.oasis.opendocument.spreadsheet x2t",
       "  application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t",
+      "  application/x-asc-text application/vnd.oasis.opendocument.text x2t",
       "  application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t",
       "",
     ]), data)
