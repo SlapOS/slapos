@@ -83,7 +83,7 @@
 
 $([Jupyter.events]).on('notebook_loaded.Notebook', function(){
   var kernelname = Jupyter.notebook.kernel_selector.current_selection;
-  var display_text="<div class='output_subarea output_text output_result'>\
+  var display_text_erp5="<div class='output_subarea output_text output_result'>\
   <pre>Follow these steps to customize your notebook with ERP5 kernel :-</br>\
   1. Make sure you have 'erp5_data_notebook' business template installed in your ERP5</br>\
   2. <b>%erp5_user &lt;your_erp5_username&gt;</b></br>\
@@ -114,8 +114,18 @@ $([Jupyter.events]).on('notebook_loaded.Notebook', function(){
   <b>WARNING:</b> it is not recommended to have too many setup functions in the environment, </br>\
   because they will be executed in every code cell and can cause a substantial slow down.\
   </pre></div>";
+  var display_text_erp5_cluster="<div class='output_subarea output_text output_result'>\
+  <pre>Follow these steps to setup your notebook with ERP5 cluster kernel :-</br>\
+  1. Make sure you have 'erp5_data_notebook' business template installed in your ERP5</br>\
+  2. <b>%erp5_user &lt;your_erp5_username&gt;</b></br>\
+  3. <b>%erp5_password &lt;your_erp5_password&gt;</b></br>\
+  Then you can start using the kernel.</br>\
+  </div>";
   if (kernelname=="erp5"){
-  $('div#notebook-container').prepend(display_text);
+  $('div#notebook-container').prepend(display_text_erp5);
+  }
+  if (kernelname=="erp5cluster"){
+  $('div#notebook-container').prepend(display_text_erp5_cluster);
   }
   });
-  
+
