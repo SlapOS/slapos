@@ -64,7 +64,7 @@ def waitForSite(partition_path):
           finished = False
           status_dict['stdout'] = try_info + 'Build not yet successful.'
           print(try_info + '%r: Found not yet finished run.' % (result_file,))
-        elif "\"msg\": \"[u'Build successful, connect to:', u'" in result:
+        elif "Build successful, connect to:" in result:
           # success
           status_dict.update(
               success=True
