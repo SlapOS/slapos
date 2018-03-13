@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.0.57 (UNRELEASED)
+1.0.58 (UNRELEASED)
 -------------------
 
 * generic.mysql: unregister UDFs before (re)adding UDFs
@@ -9,7 +9,13 @@ Changes
 * neoppod: add support for new --dedup storage option.
 * Use inotify-simple instead of inotifyx.
 * erp5.test: remove duplicated code.
-* librecipe: bugfixes found by pylint, performance improvements.
+* librecipe: bugfixes found by pylint, performance improvements, and major
+  refactoring of executable wrappers.
+* GenericBaseRecipe.createWrapper: remove 'comments' parameter.
+* Drop the 'parameters-extra' option and always forward extra parameters.
+* wrapper: new 'private-dev-shm' option (useful for wendelin.core).
+* generic.cloudooo: OnlyOffice converter support odf.
+* erp5testnode: don't tell git to ignore SSL errors.
 
 1.0.53 (2017-09-13)
 -------------------
