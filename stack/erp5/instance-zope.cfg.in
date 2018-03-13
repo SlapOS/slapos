@@ -30,11 +30,21 @@ memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
 cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
 test-instance-path = ${directory:unit-test-path}
 prepend-path = ${buildout:bin-directory}
-run-unit-test = ${buildout:bin-directory}/runUnitTest
-run-test-suite = ${buildout:bin-directory}/runTestSuite
+run-unit-test = ${buildout:bin-directory}/runUnitTest.real
+run-test-suite = ${buildout:bin-directory}/runTestSuite.real
 openssl-binary = ${test-certificate-authority:openssl-binary}
 run-unit-test-binary = {{ parameter_dict['bin-directory'] }}/runUnitTest
 run-test-suite-binary = {{ parameter_dict['bin-directory'] }}/runTestSuite
+
+[{{ section('run-unit-test-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${test-runner:run-unit-test}
+wrapper-path = ${buildout:bin-directory}/runUnitTest
+
+[{{ section('run-test-suite-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${test-runner:run-test-suite}
+wrapper-path = ${buildout:bin-directory}/runTestSuite
 
 [test-certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -168,6 +178,14 @@ template = inline: {{ '
 rendered = ${directory:etc}/hosts
 context = key host_dict hosts-parameter:host-dict
 
+[userhosts-wrapper-base]
+recipe = slapos.cookbook:wrapper
+environment =
+  HOSTALIASES=${hostaliases:rendered}
+  HOSTS=${hosts:rendered}
+parameters-extra = true
+command-line = '{{ parameter_dict['userhosts'] }}' ${:wrapped-command-line}
+
 {# Hack to deploy SSL certs via instance parameters -#}
 {% for zodb in zodb_dict.itervalues() -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
@@ -190,10 +208,8 @@ pem = {{dumps(storage_dict.pop(k))}}
 {# endhack -#}
 
 [runzope-base]
-recipe = slapos.cookbook:wrapper
-environment =
-  HOSTALIASES=${hostaliases:rendered}
-  HOSTS=${hosts:rendered}
+<= userhosts-wrapper-base
+environment +=
   TMP=${directory:tmp}
   TMPDIR=${directory:tmp}
   HOME=${buildout:directory}
@@ -204,8 +220,7 @@ environment =
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
-parameters-extra = true
-command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 private-dev-shm = {{ slapparameter_dict['private-dev-shm'] }}
 
 [{{ section('zcml') }}]
