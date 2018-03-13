@@ -1,10 +1,20 @@
 Changes
 =======
 
+1.0.57 (UNRELEASED)
+-------------------
+
+  * generic.mysql: unregister UDFs before (re)adding UDFs
+  * Remove obsolete/unused recipes.
+  * neoppod: add support for new --dedup storage option.
+  * Use inotify-simple instead of inotifyx.
+  * erp5.test: remove duplicated code.
+  * librecipe: bugfixes found by pylint, performance improvements.
+
 1.0.53 (2017-09-13)
 -------------------
 
-  * check_port_listening: workaround for sheband limitation, reduce to a single file
+  * check_port_listening: workaround for shebang limitation, reduce to a single file
   * erp5.test: pass new --conversion_server_url option to runUnitTest
 
 1.0.52 (2017-07-04)
