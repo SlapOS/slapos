@@ -5,7 +5,7 @@ from random import lognormvariate
 
 bigfile_chunk_size = 65536
 
-def simulateFluentdIngestion(self, reference, mu, sigma,
+def simulateFluentdIngestion(self, id, mu, sigma,
                              chunks_per_transaction=128):
   from time import time
   import transaction
@@ -13,9 +13,9 @@ def simulateFluentdIngestion(self, reference, mu, sigma,
           + '/ingest')
   module = self['data_stream_module']
   try:
-    data_stream = module[reference]
+    data_stream = module[id]
   except KeyError:
-    data_stream = module.newContent(reference, 'Data Stream')
+    data_stream = module.newContent(id, 'Data Stream')
     transaction.commit()
 
   pack = struct.Struct('!d').pack

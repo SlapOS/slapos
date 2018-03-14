@@ -1,6 +1,7 @@
 import os
 import glob
-def controller(args):
+def controller(innobackupex_incremental, innobackupex_full,
+               full_backup, incremental_backup):
   """Creates full or incremental backup
 
   If no full backup is done, it is created
@@ -9,8 +10,6 @@ def controller(args):
 
   base is the newest (according to date) full or incremental backup
   """
-  innobackupex_incremental, innobackupex_full, full_backup, incremental_backup \
-      = args
   if len(os.listdir(full_backup)) == 0:
     print 'Doing full backup in %r' % full_backup
     os.execv(innobackupex_full, [innobackupex_full, full_backup])

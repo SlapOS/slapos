@@ -67,7 +67,7 @@ class Recipe(GenericBaseRecipe):
         openssl_binary=self.options['openssl-binary'],
         test_ca_path=self.options['certificate-authority-path'],
     )
-    common_list = [
+    common_list = (
       '--conversion_server_url=' + cloudooo_url,
       # BBB: We still have test suites that only accept the following 2 options.
       '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
@@ -76,19 +76,19 @@ class Recipe(GenericBaseRecipe):
       '--volatile_memcached_server_port=%s' % memcached_parsed.port,
       '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
       '--persistent_memcached_server_port=%s' % kumofs_parsed.port,
-    ]
+    )
     path_list.append(self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-unit-test-binary'],
+        __name__ + '.test.runUnitTest',
+        ((self.options['run-unit-test-binary'],
           '--erp5_sql_connection_string', mysql_connection_string,
           '--extra_sql_connection_string_list', ','.join(
             mysql_connection_string_list),
-          ] + common_list, **common_dict)]))
+          ) + common_list, common_dict)))
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runTestSuite', [dict(
-        call_list=[self.options['run-test-suite-binary'],
+        __name__ + '.test.runTestSuite',
+        ((self.options['run-test-suite-binary'],
           '--db_list', ','.join(mysql_connection_string_list),
-          ] + common_list, **common_dict)]))
+          ) + common_list, common_dict)))
 
     return path_list
 
@@ -98,20 +98,18 @@ class CloudoooRecipe(GenericBaseRecipe):
     common_dict = dict(
         prepend_path=self.options['prepend-path'],
     )
-    common_list = [
+    common_list = (
            "--paster_path", self.options['ooo-paster'],
            self.options['configuration-file']
-          ]
-    run_unit_test_path = self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-unit-test-binary'],
-          ] + common_list, **common_dict)])
-
-    path_list.append(run_unit_test_path)
+          )
+    path_list.append(self.createPythonScript(self.options['run-unit-test'],
+        __name__ + '.test.runUnitTest',
+        ((self.options['run-unit-test-binary'],
+          ) + common_list, common_dict)))
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runTestSuite', [dict(
-        call_list=[self.options['run-test-suite-binary'],
-          ], **common_dict)]))
+        __name__ + '.test.runTestSuite',
+        ((self.options['run-test-suite-binary'],
+          ), common_dict)))
 
     return path_list
 
@@ -121,32 +119,20 @@ class EggTestRecipe(GenericBaseRecipe):
   off a list of Python eggs.
   """
   def install(self):
-    path_list = []
     test_list = self.options['test-list'].strip().replace('\n', ',')
-    common_dict = {}
 
-    environment_dict = {}
+    common_dict = {}
     if self.options.get('environment'):
       environment_part = self.buildout.get(self.options['environment'])
       if environment_part:
-        for key, value in environment_part.iteritems():
-          environment_dict[key] = value
+        common_dict['environment'] = dict(environment_part)
 
-    common_list = [ "--source_code_path_list", test_list]
-
-    argument_dict = dict(
-        call_list=[self.options['run-test-suite-binary'],] + common_list,
-        environment=environment_dict,
-        **common_dict
-    )
     if 'prepend-path' in self.options:
-      argument_dict['prepend_path'] = self.options['prepend-path']
+      common_dict['prepend_path'] = self.options['prepend-path']
 
-    run_test_suite_script = self.createPythonScript(
+    return self.createPythonScript(
         self.options['run-test-suite'], __name__ + '.test.runTestSuite',
-        [argument_dict]
+        ((self.options['run-test-suite-binary'],
+          "--source_code_path_list", test_list),
+         common_dict)
     )
-
-    path_list.append(run_test_suite_script)
-
-    return path_list

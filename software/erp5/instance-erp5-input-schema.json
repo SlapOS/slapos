@@ -88,7 +88,17 @@
           "description": "Request a front-end slave instance of this software type.",
           "default": "RootSoftwareInstance",
           "type": "object"
-        }
+        },
+	"virtualhostroot-http-port": {
+	  "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
+	  "default": 80,
+	  "type": "integer"
+	},
+	"virtualhostroot-https-port": {
+	  "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
+	  "default": 443,
+	  "type": "integer"
+	}
       },
       "type": "object"
     },
@@ -119,6 +129,10 @@
               "default": 5,
               "type": "number"
             },
+            "private-dev-shm": {
+              "description": "Size of private /dev/shm for wendelin.core. If sysctl kernel.unprivileged_userns_clone exists, it must be set to 1.",
+              "type": "string"
+            },
             "ssl-authentication": {
               "title": "Enable SSL Client authentication on this zope instance.",
               "description": "If set to true, will set SSL Client verification to required on apache VirtualHost which allow to access this zope instance.",
@@ -139,6 +153,11 @@
               "description": "Transaction duration after which LongRequestLogger will start logging its stack trace, in seconds",
               "default": 1,
               "type": "integer"
+            },
+            "large-file-threshold": {
+              "description": "Requests bigger than this size get saved into a temporary file instead of being read completely into memory, in bytes",
+              "default": "10MB",
+              "type": "string"
             },
             "port-base": {
               "allOf": [{

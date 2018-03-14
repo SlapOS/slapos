@@ -205,10 +205,12 @@ name = {{ partition_name }}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
+config-private-dev-shm = {{ zope_parameter_dict.get('private-dev-shm', '') }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
+config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 {% endfor -%}
@@ -289,6 +291,7 @@ config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configurat
 [request-frontend-base]
 {% if has_frontend -%}
 <= request-common
+recipe = slapos.cookbook:request
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
 {{ root_common.sla('frontend', True) }}
@@ -298,6 +301,12 @@ slave = true
 } -%}
 {%   if frontend_dict.get('domain') -%}
 {%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
+{%   endif -%}
+{%   if frontend_dict.get('virtualhostroot-http-port') -%}
+{%     do config_dict.__setitem__('virtualhostroot-http-port', frontend_dict['virtualhostroot-http-port']) -%}
+{%   endif -%}
+{%   if frontend_dict.get('virtualhostroot-https-port') -%}
+{%     do config_dict.__setitem__('virtualhostroot-https-port', frontend_dict['virtualhostroot-https-port']) -%}
 {%   endif -%}
 {%   for name, value in config_dict.items() -%}
 config-{{ name }} = {{ value }}

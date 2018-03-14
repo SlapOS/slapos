@@ -78,14 +78,3 @@ def takeover(server_url, key_file, cert_file, computer_guid,
   # Create "lock" file preventing equeue to run import scripts
   # XXX hardcoded
   open(takeover_triggered_file_path, 'w').write('')
-
-def run(args):
-  slapos.recipe.addresiliency.takeover.takeover(server_url = args.pop('server_url'),
-                                                key_file = args.pop('key_file'),
-                                                cert_file = args.pop('cert_file'),
-                                                computer_guid = args.pop('computer_id'),
-                                                partition_id = args.pop('partition_id'),
-                                                software_release = args.pop('software'),
-                                                namebase = args.pop('namebase'),
-                                                takeover_triggered_file_path = args.pop('takeover_triggered_file_path'))
-

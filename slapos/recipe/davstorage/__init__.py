@@ -98,26 +98,19 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(config_file)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
+    wrapper = self.createWrapper(self.options['wrapper'],
+      (self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'))
     path_list.append(wrapper)
 
     promise = self.createPythonScript(self.options['promise'],
       __name__ + '.promise',
-      dict(host=self.options['ip'], port=int(self.options['port_webdav']),
-           user=self.options['user'], password=self.options['password'])
-                                     )
+      (self.options['ip'], int(self.options['port_webdav']),
+       self.options['user'], self.options['password']))
     path_list.append(promise)
 
     return path_list
 
-def promise(args):
-  host = args['host']
-  port = args['port']
-  user = args['user']
-  password = args['password']
-
+def promise(host, port, user, password):
   connection = httplib.HTTPSConnection(host, port)
   auth = base64.b64encode('%s:%s' % (user, password))
   connection.request('OPTIONS', '/',

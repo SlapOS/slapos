@@ -31,27 +31,12 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    env = os.environ.copy()
-
-    path_list = self.options['path'].split('\n')
-    env.update(PATH=':'.join(path_list))
-    env.update(SHELL=self.options['shell'])
-    env.update(HOME=self.options['home'])
-
     ps1 = self.options.get('ps1')
-    if ps1 is not None:
-      env.update(PS1=str(json.loads(ps1)))
-    else:
-      env.update(PS1=env.get('PS1', '> '))
-
-    wrapper = self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.executee',
-      [ # Executable
-        [self.options['shell']],
-        # Environment
-        env
-      ]
-    )
-
-    return [wrapper]
+    shell = self.options['shell']
+    env = {
+      'HOME': self.options['home'],
+      'PATH': ':'.join(self.options['path'].split('\n')),
+      'PS1': str(json.loads(ps1)) if ps1 else os.getenv('PS1', '> '),
+      'SHELL': shell,
+    }
+    return self.createWrapper(self.options['wrapper'], (shell,), env)

@@ -30,13 +30,16 @@ import errno
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-def post_rotate(args):
-  pid_file = args['pid_file']
-
-  if os.path.exist(pid_file):
-    with open(pid_file, 'r') as file_:
-      pid = file_.read().strip()
-    os.kill(pid, signal.SIGUSR1)
+def kill(pid_file, sig=signal.SIGUSR1):
+  if os.path.exists(pid_file):
+    with open(pid_file) as f:
+      pid = int(f.read().strip())
+    try:
+      os.kill(pid, sig)
+    except OSError, e:
+      if e.errno != errno.ESRCH: # No such process
+        raise e
+      os.unlink(pid_file)
 
 class Recipe(GenericBaseRecipe):
 
@@ -76,28 +79,18 @@ class Recipe(GenericBaseRecipe):
       self.substituteTemplate(template, conf))
     path_list.append(conf_file)
 
-    wrapper = self.createPythonScript(
+    wrapper = self.createWrapper(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['stunnel-binary'], conf_file]
+      (self.options['stunnel-binary'], conf_file),
     )
     path_list.append(wrapper)
 
-    if os.path.exists(pid_file):
-      with open(pid_file, 'r') as file_:
-        pid = file_.read().strip()
-      # Reload configuration
-      try:
-        os.kill(int(pid, 10), signal.SIGHUP)
-      except OSError, e:
-        if e.errno == errno.ESRCH: # No such process
-          os.unlink(pid_file)
-        else:
-          raise e
+    # Reload configuration
+    kill(pid_file, signal.SIGHUP)
 
     if 'post-rotate-script' in self.options:
-      self.createPythonScript(self.options['post-rotate-script'],
-                              __name__ + 'post_rotate',
-                              dict(pid_file=pid_file))
+      path_list.append(self.createPythonScript(
+        self.options['post-rotate-script'],
+        __name__ + '.kill', (pid_file,)))
 
     return path_list

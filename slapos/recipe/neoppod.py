@@ -42,7 +42,8 @@ class NeoBaseRecipe(GenericBaseRecipe):
       # Only then can this recipe start succeeding and actually doing anything
       # useful, as per NEO deploying constraints.
       raise UserError('"masters" parameter is mandatory')
-    option_list = [
+    args = [
+      options['binary'],
       # Keep the -l option first, as expected by logrotate snippets.
       '-l', options['logfile'],
       '-m', options['masters'],
@@ -53,17 +54,13 @@ class NeoBaseRecipe(GenericBaseRecipe):
     ]
     if options['ssl']:
       etc = os.path.join(self.buildout['buildout']['directory'], 'etc', '')
-      option_list += (
+      args += (
         '--ca', etc + 'ca.crt',
         '--cert', etc + 'neo.crt',
         '--key', etc + 'neo.key',
         )
-    option_list.extend(self._getOptionList())
-    return [self.createWrapper(
-      options['wrapper'],
-      options['binary'],
-      option_list
-    )]
+    args += self._getOptionList()
+    return self.createWrapper(options['wrapper'], args)
 
   def _getBindingAddress(self):
     options = self.options

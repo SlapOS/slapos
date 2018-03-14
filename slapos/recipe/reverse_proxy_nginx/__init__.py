@@ -70,14 +70,12 @@ class Recipe(GenericSlapRecipe):
     path_list.append(nginx_configuration_file)
     
     # Generate Nginx wrapper
-    wrapper = self.createWrapper(
-        name=self.options['wrapper'],
-        command=self.options['nginx-executable'],
-        parameters=[
+    path_list.append(self.createWrapper(
+        self.options['wrapper'],
+        (self.options['nginx-executable'],
             '-c', self.options['configuration-file'],
             '-p', self.options['home-directory']
-        ]
-    )
+        )))
 
     # TODO: reload configuration or have feature like apache_map
 

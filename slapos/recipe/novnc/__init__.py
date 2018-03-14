@@ -35,10 +35,9 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-    runner_path = self.createPythonScript(
+    return self.createWrapper(
       self.options['path'],
-      'slapos.recipe.librecipe.execute.execute_wait',
-      [[
+      (
         self.options['websockify-path'],
         '--web',
         self.options['novnc-location'],
@@ -47,8 +46,7 @@ class Recipe(GenericBaseRecipe):
         '--ssl-only',
         '%s:%s' % (self.options['ip'], self.options['port']),
         '%s:%s' % (self.options['vnc-ip'], self.options['vnc-port']),
-      ],
-      [self.options['ssl-key-path'], self.options['ssl-cert-path']]],
+       ),
+      wait_list=(self.options['ssl-key-path'],
+                 self.options['ssl-cert-path']),
     )
-
-    return [runner_path]

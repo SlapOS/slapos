@@ -91,8 +91,8 @@ class Recipe(GenericSlapRecipe):
 
     # Generate wrapper
     wrapper_location = self.createPythonScript(self.options['accords-wrapper'],
-        '%s.accords.runAccords' % __name__,
-        parameter_dict)
+        __name__ + '.accords.runAccords',
+        (parameter_dict,))
     path_list.append(wrapper_location)
 
     # Generate helper for debug

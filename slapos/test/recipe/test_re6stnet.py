@@ -79,15 +79,14 @@ class Re6stnetTest(unittest.TestCase):
     token_file = os.path.join(self.options['conf-dir'], 'token.json')
     with open(path, 'r') as f:
         content = f.read()
-    self.assertIn("'token_json': '%s'" % token_file, content)
+    self.assertIn("('http://%s:%s/', %r, %r," % (
+      self.options['ipv4'], self.options['port'], self.token_dir, token_file),
+      content)
     self.assertIn("'partition_id': 'slappart0'", content)
-    self.assertIn("'computer_id': 'comp-test'", content)
+    self.assertIn("'computer_guid': 'comp-test'", content)
     self.assertIn("'key_file': '/path/to/key'", content)
     self.assertIn("'cert_file': '/path/to/cert'", content)
-    self.assertIn("'server_url': 'http://server.com'", content)
-    self.assertIn("'token_base_path': '%s'" % self.token_dir, content)
-    self.assertIn("'registry_url': 'http://%s:%s/'" % (self.options['ipv4'],
-                                                self.options['port']), content)
+    self.assertIn("'master_url': 'http://server.com'", content)
   
   def fake_generateCertificates(self):
     return

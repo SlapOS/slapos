@@ -33,25 +33,15 @@ import shlex
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-def login_shell(args):
-  password_file = args['password-file']
+def login_shell(password_file, shell):
   if password_file:
     with open(password_file, 'r') as password_file:
       password = password_file.read()
 
-    if (password != ''):
-      entered_password = getpass()
-    else:
-      entered_password = ''
-
-    if not hmac.compare_digest(entered_password, password):
-      return 1
-    else:
-      commandline = shlex.split(args['shell'])
-      path = commandline[0]
-      os.execv(path, commandline)
-  else:
-    return 1
+    if not password or hmac.compare_digest(getpass(), password):
+      commandline = shlex.split(shell)
+      os.execv(commandline[0], commandline)
+  return 1
 
 def shellinabox(args):
   certificate_dir = args['certificate_dir']
@@ -95,22 +85,16 @@ def shellinabox(args):
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    path_list = []
-
-    login_shell = self.createPythonScript(
+    login_shell_wrapper = self.createPythonScript(
       self.options['login-shell'],
-      '%s.login_shell' % __name__,
-      {
-        'password-file': self.options['password-file'],
-        'shell': self.options['shell']
-      }
+      __name__ + '.login_shell',
+      (self.options['password-file'], self.options['shell'])
     )
-    path_list.append(login_shell)
 
-    wrapper = self.createPythonScript(
+    shellinabox_wrapper = self.createPythonScript(
       self.options['wrapper'],
-      '%s.shellinabox' % __name__,
-      dict(
+      __name__ + '.shellinabox',
+      (dict(
         certificate_dir=self.options['certificate-directory'],
         ssl_key=self.options['key-file'],
         ssl_certificate=self.options['cert-file'],
@@ -118,9 +102,8 @@ class Recipe(GenericBaseRecipe):
         directory=self.options['directory'],
         ipv6=self.options['ipv6'],
         port=self.options['port'],
-        login_shell=login_shell,
-      )
+        login_shell=login_shell_wrapper,
+       ),)
     )
-    path_list.append(wrapper)
 
-    return [wrapper]
+    return login_shell_wrapper, shellinabox_wrapper

@@ -40,13 +40,10 @@ class Recipe(GenericBaseRecipe):
     self.ca_private = self.options['ca-private']
     self.ca_certs = self.options['ca-certs']
     self.ca_newcerts = self.options['ca-newcerts']
-    self.ca_crl = self.options['ca-crl']
     self.ca_key_ext = '.key'
     self.ca_crt_ext = '.crt'
 
   def install(self):
-    path_list = []
-
     ca_country_code = self.options.get('country-code', 'XX')
     ca_email = self.options.get('email', 'xx@example.com')
     # XXX-BBB: State by mistake has been configured as string "('State',)"
@@ -77,21 +74,15 @@ class Recipe(GenericBaseRecipe):
     self.createFile(openssl_configuration, self.substituteTemplate(
       self.getTemplateFilename('openssl.cnf.ca.in'), config))
 
-    ca_wrapper = self.createPythonScript(
+    return self.createPythonScript(
       self.options['wrapper'],
-      '%s.certificate_authority.runCertificateAuthority' % __name__,
-      dict(
-        openssl_configuration=openssl_configuration,
-        openssl_binary=self.options['openssl-binary'],
-        certificate=os.path.join(self.ca_dir, 'cacert.pem'),
-        key=os.path.join(self.ca_private, 'cakey.pem'),
-        crl=self.ca_crl,
-        request_dir=self.request_directory
-      )
+      __name__ + '.certificate_authority.runCertificateAuthority',
+      (os.path.join(self.ca_private, 'cakey.pem'),
+       os.path.join(self.ca_dir, 'cacert.pem'),
+       self.options['openssl-binary'],
+       openssl_configuration,
+       self.request_directory)
     )
-    path_list.append(ca_wrapper)
-
-    return path_list
 
 class Request(Recipe):
 
@@ -146,11 +137,10 @@ class Request(Recipe):
 
     path_list = [key_file, cert_file]
     if request_needed:
-      wrapper = self.createPythonScript(
+      wrapper = self.createWrapper(
         self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute_wait',
-        [ [self.options['executable']],
-          [certificate, key] ],
+        (self.options['executable'],),
+        wait_list=(certificate, key),
       )
       path_list.append(wrapper)
 

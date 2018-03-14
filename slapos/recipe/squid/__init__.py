@@ -78,21 +78,15 @@ class Recipe(GenericBaseRecipe):
       self.substituteTemplate(template_filename, config))
 
     # Prepare directories
-    prepare_path = self.createPythonScript(
+    prepare_path = self.createWrapper(
       self.options['prepare-path'],
-      'slapos.recipe.librecipe.execute.execute',
-      arguments=[self.options['binary-path'].strip(), 
-                 '-z',
-                 '-f', configuration_path,
-                 ],)
+      (self.options['binary-path'].strip(),
+        '-z', '-f', configuration_path))
 
     # Create running wrapper
-    wrapper_path = self.createPythonScript(
+    wrapper_path = self.createWrapper(
       self.options['wrapper-path'],
-      'slapos.recipe.librecipe.execute.execute',
-      arguments=[self.options['binary-path'].strip(), 
-                 '-N',
-                 '-f', configuration_path,
-                 ],)
+      (self.options['binary-path'].strip(),
+        '-N', '-f', configuration_path))
 
     return [configuration_path, wrapper_path, prepare_path]

@@ -206,6 +206,7 @@ environment =
 {% endif %}
 parameters-extra = true
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+private-dev-shm = {{ slapparameter_dict['private-dev-shm'] }}
 
 [{{ section('zcml') }}]
 recipe = slapos.cookbook:copyfilelist
@@ -268,6 +269,7 @@ tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
 tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% endif -%}
 {% set thread_amount = slapparameter_dict['thread-amount'] -%}
+{% set large_file_threshold = slapparameter_dict['large-file-threshold']  -%}
 thread-amount = {{ thread_amount }}
 {% set webdav = slapparameter_dict['webdav'] -%}
 webdav = {{ dumps(webdav) }}
@@ -314,6 +316,7 @@ node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
 zodb-dict = {{ dumps(zodb_dict) }}
+large-file-threshold = {{ large_file_threshold }} 
 {% if longrequest_logger_interval > 0 -%}
 longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
 longrequest-logger-timeout = {{ longrequest_logger_timeout }}

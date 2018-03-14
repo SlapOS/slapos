@@ -76,6 +76,12 @@ default_mimetype_entry_list = [
   "application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t",
   "application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t",
   "application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t",
+  "application/vnd.oasis.opendocument.text application/x-asc-text x2t",
+  "application/vnd.oasis.opendocument.spreadsheet application/x-asc-spreadsheet x2t",
+  "application/vnd.oasis.opendocument.presentation application/x-asc-presentation x2t",
+  "application/x-asc-text application/vnd.oasis.opendocument.text x2t",
+  "application/x-asc-spreadsheet application/vnd.oasis.opendocument.spreadsheet x2t",
+  "application/x-asc-presentation application/vnd.oasis.opendocument.presentation x2t",
 ]
 
 class Recipe(GenericBaseRecipe):
@@ -118,5 +124,5 @@ class Recipe(GenericBaseRecipe):
     path_list.append(config_file)
     path_list.append(self.createPythonScript(self.options['wrapper'],
      'slapos.recipe.librecipe.execute.execute_with_signal_translation',
-      [self.options['ooo-paster'].strip(), 'serve', config_file]))
+      ((self.options['ooo-paster'].strip(), 'serve', config_file),)))
     return path_list

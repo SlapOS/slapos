@@ -64,11 +64,21 @@ function add_log ()
   done
 }
 
+function add_checks ()
+{
+  LOG_FILE=$1
+  echo 'lsof -Pni' >> $LOG_FILE 2>&1
+  lsof -Pni >> $LOG_FILE 2>&1
+  echo 'iptables-save' >> $LOG_FILE 2>&1
+  iptables-save >> $LOG_FILE 2>&1
+  for f in /tmp/playbook-* ; do echo $f ; cat $f; echo; done >> $LOG_FILE 2>&1
+}
 function upload ()
 {
   try=$1
   LOG_FILE=$2
   add_log $LOG_FILE
+  add_checks $LOG_FILE
   t=`date '+%Y%m%d%H%S'`
   mv $LOG_FILE ${LOG_FILE}.$t
   # just to be sure flush all disk operations before uploading

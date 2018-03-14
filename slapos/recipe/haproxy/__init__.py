@@ -120,12 +120,11 @@ class Recipe(GenericBaseRecipe):
          'server_text': server_snippet},
       )
     )
-    wrapper_path = self.createPythonScript(
+    wrapper_path = self.createWrapper(
       self.options['wrapper-path'],
-      'slapos.recipe.librecipe.execute.execute',
-      arguments=[self.options['binary-path'].strip(), '-f', configuration_path],)
+      (self.options['binary-path'].strip(), '-f', configuration_path))
     ctl_path = self.createPythonScript(
       self.options['ctl-path'],
-      '%s.haproxy.haproxyctl' % __name__,
-      {'socket_path':self.options['socket-path']})
+      __name__ + '.haproxy.haproxyctl',
+      (self.options['socket-path'],))
     return [configuration_path, wrapper_path, ctl_path]

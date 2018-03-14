@@ -32,19 +32,15 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
     options = self.options
-    script = self.createWrapper(name=options['wrapper'],
-                                command=options['server-binary'],
-                                parameters=[
+    # Script that execute the callback(s) upon receiving a notification.
+    return self.createWrapper(options['wrapper'],
+                                (options['server-binary'],
                                    '--callbacks', options['callbacks'],
                                    '--feeds', options['feeds'],
                                    '--equeue-socket', options['equeue-socket'],
                                    options['host'], options['port']
-                                   ],
-                                comments=[
-                                    '',
-                                    'Upon receiving a notification, execute the callback(s).',
-                                    ''])
-    return [script]
+                                   ),
+                                )
 
 
 class Callback(GenericBaseRecipe):
@@ -80,35 +76,32 @@ class Notify(GenericBaseRecipe):
       # Just a touch
       open(log, 'w').close()
 
-    parameters = [
+    cmd = [notifier_binary,
             '-l', log,
             '--title', title,
             '--feed', feed_url,
             '--max-run', str(max_run),
             '--notification-url',
             ]
-    parameters.extend(notification_url.split(' '))
-    parameters.extend(['--executable', executable])
+    cmd += notification_url.split(' ')
+    cmd += '--executable', executable
     # For a more verbose mode, writing feed items for any action
     instance_root_name = instance_root_name or self.options.get('instance-root-name', None)
     log_url = log_url or self.options.get('log-url', None)
     status_item_directory = status_item_directory or self.options.get('status-item-directory', None)
     if instance_root_name and log_url and status_item_directory:
-      parameters.extend([
+      cmd += (
         '--instance-root-name', instance_root_name,
         '--log-url', log_url,
         '--status-item-directory', status_item_directory,
-      ])
+      )
 
-    return self.createWrapper(name=wrapper,
-                              command=notifier_binary,
-                              parameters=parameters,
-                              pidfile=pidfile,
-                              parameters_extra=True,
-                              comments=[
-                                  '',
-                                  'Call an executable and send notification(s).',
-                                  ''])
+    kw = {}
+    if pidfile:
+      kw['pidfile'] = pidfile
+
+    # Script that call an executable and send notification(s).
+    return self.createWrapper(wrapper, cmd, **kw)
 
 
   def install(self):

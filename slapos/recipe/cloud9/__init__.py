@@ -42,8 +42,6 @@ class Recipe(GenericBaseRecipe):
     options['access-url'] = 'http://[%s]:%s' % (self.ip, self.port)
 
   def install(self):
-    path_list = []
-
     environment = {
         'PATH': os.path.dirname(self.git) + ':' + os.environ['PATH'],
     }
@@ -51,10 +49,4 @@ class Recipe(GenericBaseRecipe):
     cloud9_args = [self.node_executable, self.cloud9, '-l', self.ip, '-p',
         self.port, '-w', self.workdir]
 
-    wrapper = self.createPythonScript(self.wrapper,
-        'slapos.recipe.librecipe.execute.executee',
-        (cloud9_args, environment)
-    )
-    path_list.append(wrapper)
-
-    return path_list
+    return self.createWrapper(self.wrapper, cloud9_args, environment)

@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.54.dev0'
+version = '1.0.58'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -72,7 +72,6 @@ setup(name=name,
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
           'accords = slapos.recipe.accords:Recipe',
-          'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
@@ -118,14 +117,11 @@ setup(name=name,
           'generic.mysql.wrap_update_mysql = slapos.recipe.generic_mysql:WrapUpdateMySQL',
           'generic.mysql.wrap_mysqld = slapos.recipe.generic_mysql:WrapMySQLd',
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
-          'generic.zope = slapos.recipe.generic_zope:Recipe',
-          'generic.zope.zeo.client = slapos.recipe.generic_zope_zeo_client:Recipe',
           'gitinit = slapos.recipe.gitinit:Recipe',
           'haproxy = slapos.recipe.haproxy:Recipe',
           'ipv4toipv6 = slapos.recipe.6tunnel:FourToSix',
           'ipv6toipv4 = slapos.recipe.6tunnel:SixToFour',
           'jsondump = slapos.recipe.jsondump:Recipe',
-          'kumofs = slapos.recipe.kumofs:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
           'lamp = slapos.recipe.lamp:Request',
           'lamp.generic = slapos.recipe.lampgeneric:Recipe',
@@ -136,7 +132,6 @@ setup(name=name,
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
           'logrotate.d = slapos.recipe.logrotate:Part',
-          'memcached = slapos.recipe.memcached:Recipe',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
           'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
           'mydumper = slapos.recipe.mydumper:Recipe',
@@ -196,7 +191,6 @@ setup(name=name,
           'urlparse = slapos.recipe._urlparse:Recipe',
           'uuid = slapos.recipe._uuid:Recipe',
           'userinfo = slapos.recipe.userinfo:Recipe',
-          'waitfor = slapos.recipe.waitfor:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
           'xvfb = slapos.recipe.xvfb:Recipe',

@@ -35,15 +35,14 @@ class Recipe(GenericBaseRecipe):
     self.logger.info("Installing dcron...")
 
     options = self.options
-    script = self.createWrapper(name=options['binary'],
-                                command=options['dcrond-binary'].strip(),
-                                parameters=[
+    script = self.createWrapper(options['binary'],
+                                (options['dcrond-binary'].strip(),
                                     '-s', options['cron-entries'],
                                     '-c', options['crontabs'],
                                     '-t', options['cronstamps'],
                                     '-f', '-l', '5',
                                     '-M', options['catcher']
-                                    ])
+                                    ))
 
     self.logger.debug('Main cron executable created at : %r', script)
 

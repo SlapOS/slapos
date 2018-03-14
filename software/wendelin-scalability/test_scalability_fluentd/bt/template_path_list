@@ -1,4 +1,5 @@
 portal_ingestion_policies/scalability_test_*
-portal_skins/custom/DataStreamModule_getTotalSize
+portal_skins/custom/ERP5Site_dummyZBigArrayProcessing
 portal_skins/custom/ERP5Site_handleRawDataFluentdIngestion
 portal_skins/custom/ERP5Site_simulateFluentdIngestion
+portal_skins/custom/Module_getTotalSize

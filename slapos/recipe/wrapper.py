@@ -26,7 +26,6 @@
 ##############################################################################
 
 import shlex
-import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -38,56 +37,31 @@ class Recipe(GenericBaseRecipe):
 
     :param lines wait-for-files: list of files to wait for
     :param str pidfile: path to pidfile ensure exclusivity for the process
-    :param bool parameters-extra: whether wrapper parameters are passed onto command
+    :param str private-dev-shm: size of private /dev/shm, using user namespaces
     :param bool reserve-cpu: command will ask for an exclusive CPU core
     """
     def install(self):
-        command_line = shlex.split(self.options['command-line'])
+        args = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
-        environment = self.options.get('environment')
-        parameters_extra = self.options.get('parameters-extra')
         pidfile = self.options.get('pidfile')
-        reserve_cpu = self.options.get('reserve-cpu', False)
+        private_dev_shm = self.options.get('private-dev-shm')
 
-        if not wait_files and not environment:
-          # Create a simple wrapper as shell script
-          return [self.createWrapper(
-             name=wrapper_path,
-             command=command_line[0],
-             parameters=command_line[1:],
-             parameters_extra=parameters_extra,
-             pidfile=pidfile,
-             reserve_cpu=reserve_cpu
-          )]
+        environment = {}
+        for line in (self.options.get('environment') or '').splitlines():
+          line = line.strip()
+          if line:
+            k, v = line.split('=')
+            environment[k.rstrip()] = v.lstrip()
 
-        # More complex needs: create a Python script as wrapper
+        kw = {}
+        if wait_files:
+          kw['wait_list'] = wait_files.split()
+        if pidfile:
+          kw['pidfile'] = pidfile
+        if private_dev_shm:
+          kw['private_dev_shm'] = private_dev_shm
+        if self.isTrueValue(self.options.get('reserve-cpu')):
+          kw['reserve_cpu'] = True
 
-        if wait_files is not None:
-            wait_files = [filename.strip() for filename in wait_files.split()
-                          if filename.strip()]
-        if environment is not None:
-            environment = dict((k.strip(), v.strip()) for k, v in [
-              line.split('=') for line in environment.splitlines() if line.strip() ])
-
-        # We create a python script and a wrapper around the python
-        # script because the python script might have a too long #! line
-        if os.path.exists(os.path.join(self.buildout['buildout']['directory'], "bin")): 
-          base_script_path = os.path.join(
-            self.buildout['buildout']['directory'], "bin/" + wrapper_path.split("/")[-1])
-        else:
-          base_script_path = os.path.join(
-            self.buildout['buildout']['directory'], wrapper_path.split("/")[-1])
-        python_script = self.createPythonScript(
-            base_script_path +'.py',
-            'slapos.recipe.librecipe.execute.generic_exec',
-            (command_line, wait_files, environment,), )
-        return [python_script, self.createWrapper(
-             name=wrapper_path,
-             command=python_script,
-             parameters=[],
-             parameters_extra=parameters_extra,
-             pidfile=pidfile,
-             reserve_cpu=reserve_cpu
-        )]
-
+        return self.createWrapper(wrapper_path, args, environment, **kw)

@@ -57,10 +57,9 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(httpd_conf)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
+    wrapper = self.createWrapper(self.options['wrapper'],
+        (self.options['httpd-binary'], '-f', self.options['httpd-conf'],
+          '-DFOREGROUND'),
     )
     path_list.append(wrapper)
 

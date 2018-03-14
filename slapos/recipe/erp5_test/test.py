@@ -26,9 +26,9 @@
 ##############################################################################
 import os
 import sys
-def runTestSuite(args):
+
+def runTestSuite(args, d):
   env = os.environ.copy()
-  d = args[0]
   if 'openssl_binary' in d:
     env['OPENSSL_BINARY'] = d['openssl_binary']
   if 'test_ca_path' in d:
@@ -47,17 +47,15 @@ def runTestSuite(args):
     env.update(d['environment'])
 
   # Deal with Shebang size limitation
-  executable_filepath = d['call_list'][0]
-  file_object = open(executable_filepath, 'r')
-  line = file_object.readline()
-  file_object.close()
+  executable_filepath = args[0]
+  with open(executable_filepath, 'r') as f:
+    line = f.readline()
   argument_list = []
   if line[:2] == '#!':
     executable_filepath = line[2:].strip()
     argument_list.append(executable_filepath)
-  argument_list.extend(d['call_list'])
-  argument_list.extend(sys.argv[1:])
-  argument_list.append(env)
-  os.execle(executable_filepath, *argument_list)
+  argument_list += args
+  argument_list += sys.argv[1:]
+  os.execve(executable_filepath, argument_list, env)
 
 runUnitTest = runTestSuite

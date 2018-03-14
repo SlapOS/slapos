@@ -33,7 +33,6 @@ import sys
 import inspect
 import re
 import shutil
-from textwrap import dedent
 import urllib
 import urlparse
 
@@ -116,92 +115,60 @@ class GenericBaseRecipe(object):
       with io.open(filepath, 'w+', encoding=encoding) as f:
         f.write(u'\n'.join(lines))
 
-  def createPythonScript(self, name, absolute_function, arguments=''):
+  def createPythonScript(self, name, absolute_function, args=(), kw={}):
     """Create a python script using zc.buildout.easy_install.scripts
 
      * function should look like 'module.function', or only 'function'
        if it is a builtin function."""
-    absolute_function = tuple(absolute_function.rsplit('.', 1))
-    if len(absolute_function) == 1:
-      absolute_function = ('__builtin__',) + absolute_function
-    if len(absolute_function) != 2:
-      raise ValueError("A non valid function was given")
-
-    module, function = absolute_function
+    function = absolute_function.rsplit('.', 1)
+    if len(function) == 1:
+      module = '__builtin__'
+      function, = function
+    else:
+      module, function = function
     path, filename = os.path.split(os.path.abspath(name))
 
-    script = zc.buildout.easy_install.scripts(
+    assert not isinstance(args, (basestring, dict)), args
+    args = map(repr, args)
+    args += map('%s=%r'.__mod__, kw.iteritems())
+
+    return zc.buildout.easy_install.scripts(
       [(filename, module, function)], self._ws, sys.executable,
-      path, arguments=arguments)[0]
-    return script
+      path, arguments=', '.join(args))[0]
 
-  def createWrapper(self, name, command, parameters, comments=[],
-      parameters_extra=False, environment=None,
-      pidfile=None, reserve_cpu=False
-  ):
-    """
-    Creates a shell script for process replacement.
-    Takes care of quoting.
-    Takes care of #! line limitation when the wrapped command is a script.
-    if pidfile parameter is specified, then it will make the wrapper a singleton,
-    accepting to run only if no other instance is running.
+  def createWrapper(self, path, args, env=None, **kw):
+    """Create a wrapper script for process replacement"""
+    assert args
+    if kw:
+      return self.createPythonScript(path,
+        'slapos.recipe.librecipe.execute.generic_exec',
+        (args, env) if env else (args,), kw)
 
-    :param reserve_cpu: bool, try to reserve one core for the `command`
-    """
+    # Simple case: creates a basic shell script for process replacement.
+    # This must be kept minimal to avoid code duplication with generic_exec.
+    # In particular, do not implement workaround for shebang size limitation
+    # here (note that this can't be done correctly with a POSIX shell, because
+    # the process can't be given a name).
 
-    lines = [ '#!/bin/sh' ]
+    lines = ['#!/bin/sh']
 
-    if comments:
-      lines += '# ', '\n# '.join(comments), '\n'
+    if env:
+      for k, v in sorted(env.iteritems()):
+        lines.append('export %s=%s' % (k, shlex.quote(v)))
 
-    lines.append('COMMAND=' + shlex.quote(command))
+    lines.append('exec')
 
-    for key in environment or ():
-      lines.append('export %s=%s' % (key, environment[key]))
-
-    if pidfile:
-      lines.append(dedent("""
-          # Check for other instances
-          pidfile=%s
-          if [ -s $pidfile ]; then
-            if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
-              echo "Already running with pid $pid."
-              exit 1
-            fi
-          fi
-          echo $$ > $pidfile""" % shlex.quote(pidfile)))
-
-    if reserve_cpu:
-      # if the CGROUPS cpuset is available (and prepared by slap format)
-      # request an exclusive CPU core for this process
-      lines.append(dedent("""
-        # put own PID into waiting list for exclusive CPU-core access
-        echo $$ >> ~/.slapos-cpu-exclusive
-        """))
-
-    lines.append(dedent('''
-    # If the wrapped command uses a shebang, execute the referenced
-    # executable passing the script path as first argument.
-    # This is to workaround the limitation of 127 characters in #!
-    [ ! -f "$COMMAND" ] || {
-      [ "`head -c2`" != "#!" ] || read -r EXE ARG
-    } < "$COMMAND"
-
-    exec $EXE ${ARG:+"$ARG"} "$COMMAND"'''))
-
-    parameters = map(shlex.quote, parameters)
-    if parameters_extra:
-      # pass-through further parameters
-      parameters.append('"$@"')
-    for param in parameters:
+    args = map(shlex.quote, args)
+    args.append('"$@"')
+    for arg in args:
       if len(lines[-1]) < 40:
-        lines[-1] += ' ' + param
+        lines[-1] += ' ' + arg
       else:
         lines[-1] += ' \\'
-        lines.append('\t' + param)
+        lines.append('\t' + arg)
 
     lines.append('')
-    return self.createFile(name, '\n'.join(lines), 0700)
+    return self.createFile(path, '\n'.join(lines), 0700)
 
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)

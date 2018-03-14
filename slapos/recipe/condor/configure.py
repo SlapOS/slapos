@@ -29,27 +29,25 @@ import os
 import subprocess
 import time
 
-def submitJob(args):
+def submitJob(submit, submit_file, appdir, appname, sig_install):
   """Run condor_submit (if needed) for job deployment"""
   time.sleep(10)
-  print "Check if needed to submit %s job's" % args['appname']
-  if not os.path.exists(args['sig_install']):
+  print "Check if needed to submit %s job's" % appname
+  if not os.path.exists(sig_install):
     print "Nothing for install or update...Exited"
     return
   # '-a', "log = out.log", '-a', "error = error.log",
-  launch_args = [args['submit'], '-verbose', args['submit_file']]
+  launch_args = submit, '-verbose', submit_file
   process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
-              stderr=subprocess.STDOUT, cwd=args['appdir'])
+              stderr=subprocess.STDOUT, cwd=appdir)
   result = process.communicate()[0]
   if process.returncode is None or process.returncode != 0:
     print "Failed to execute condor_submit.\nThe error was: %s" % result
   else:
-    os.unlink(args['sig_install'])
+    os.unlink(sig_install)
 
-def condorStart(args):
+def condorStart(condor_reconfig, start_bin):
   """Start Condor if deamons is currently stopped"""
-  result = os.system(args['condor_reconfig'])
-  if result != 0:
+  if subprocess.call(condor_reconfig):
     #process failled to reconfig condor that mean that condor deamons is not curently started
-    os.system(args['start_bin'])
-  
+    subprocess.call(start_bin)

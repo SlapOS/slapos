@@ -68,9 +68,8 @@ class Recipe(GenericBaseRecipe):
       'root-dir': self.options['root-dir']
     }
 
-    server = self.createPythonScript(
+    return self.createPythonScript(
         self.options['wrapper'].strip(),
-        '%s.simplehttpserver.run' % __name__, parameters
+        __name__ + '.simplehttpserver.run',
+        (parameters,)
       )
-
-    return [server]

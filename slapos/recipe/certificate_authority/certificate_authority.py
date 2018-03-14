@@ -102,10 +102,8 @@ class CertificateAuthority:
             'certificate_file')):
         print 'Created certificate %r' % parser.get('certificate', 'name')
 
-def runCertificateAuthority(ca_conf):
-  ca = CertificateAuthority(ca_conf['key'], ca_conf['certificate'],
-      ca_conf['openssl_binary'], ca_conf['openssl_configuration'],
-      ca_conf['request_dir'])
+def runCertificateAuthority(*args):
+  ca = CertificateAuthority(*args)
   while True:
     ca.checkAuthority()
     ca.checkRequestDir()

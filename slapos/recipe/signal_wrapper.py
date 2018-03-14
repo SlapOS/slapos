@@ -32,6 +32,6 @@ class Recipe(GenericBaseRecipe):
       self.createPythonScript(
         self.options['wrapper-path'],
         'slapos.recipe.librecipe.execute.execute_with_signal_translation',
-        [self.options['wrapped-path']]
+        ((self.options['wrapped-path'],),)
       )
     ]

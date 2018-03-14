@@ -46,10 +46,10 @@ class Recipe(GenericBaseRecipe):
 
     state_file = self.options['state-file']
 
-    logrotate = self.createPythonScript(
+    logrotate = self.createWrapper(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['logrotate-binary'], '-s', state_file, logrotate_conf_file, ]
+      (self.options['logrotate-binary'],
+        '-s', state_file, logrotate_conf_file),
     )
 
     return [logrotate, logrotate_conf_file]

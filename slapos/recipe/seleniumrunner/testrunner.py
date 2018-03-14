@@ -36,12 +36,7 @@ import urlparse
 from subprocess import Popen, PIPE
 import signal
 
-def run(args):
-  suite_url = args[0]
-  report_url = args[1]
-  project = args[2]
-  browser_binary = args[3]
-
+def run(suite_url, report_url, project, browser_binary):
   suite_parsed = urlparse.urlparse(suite_url)
 
   config = {
