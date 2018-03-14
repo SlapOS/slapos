@@ -37,9 +37,6 @@ import stat
 import subprocess
 import sys
 import logging
-import time
-import psutil
-from datetime import datetime
 
 from slapos.grid.exception import BuildoutFailedError, WrongPermissionError
 
@@ -89,10 +86,6 @@ LOCALE_ENVIRONMENT_REMOVE_LIST = [
   'LC_TELEPHONE',
   'LC_TIME',
 ]
-
-
-class PromiseError(Exception):
-  pass
 
 class SlapPopen(subprocess.Popen):
   """
@@ -365,117 +358,3 @@ def createPrivateDirectory(path):
     raise WrongPermissionError('Wrong permissions in %s: '
                                'is 0%o, should be 0700'
                                % (path, permission))
-
-def checkPromiseList(promise_dir, promise_timeout, uid=None, gid=None, cwd=None,
-                  logger=None, profile=False, raise_on_failure=True):
-  """
-    Check a promise list and return the result or raise in case of failure
-    if `raise_on_failure` is set to True
-    When `profile` is set to True, log each promise resource usage.
-  """
-  if logger is None:
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-
-  promise_result_list = []
-  if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
-    kw = {}
-    if uid is not None and gid is not None:
-      kw["preexec_fn"] = lambda: dropPrivileges(uid, gid, logger=logger)
-    if cwd is not None:
-      kw["cwd"] = cwd
-    for promise in os.listdir(promise_dir):
-
-      command = [os.path.join(promise_dir, promise)]
-
-      promise = os.path.basename(command[0])
-      logger.info("Checking promise '%s'.", promise)
-      if not os.path.isfile(command[0]) or not os.access(command[0], os.X_OK):
-        # Not executable file
-        logger.warning("Promise script '%s' is not executable.", promise)
-        continue
-
-      result_dict = {
-        "returncode": -1,
-        "title": promise,
-        "start-date" : datetime.utcnow(),
-        "execution-time": 0,
-        "message": ""
-      }
-      process_handler = subprocess.Popen(command,
-                                         env=None if sys.platform == 'cygwin' else {},
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         stdin=subprocess.PIPE,
-                                         **kw)
-      process_handler.stdin.flush()
-      process_handler.stdin.close()
-      process_handler.stdin = None
-
-      # Check if the promise finished every tenth of second,
-      # but timeout after promise_timeout.
-      sleep_time = 0.1
-      check_profile = False
-      if profile:
-        try:
-          psutil_process = psutil.Process(process_handler.pid)
-          check_profile = True
-        except psutil.NoSuchProcess:
-          # process is gone
-          pass
-      increment_limit = int(promise_timeout / sleep_time)
-      for current_increment in range(0, increment_limit):
-        if process_handler.poll() is None:
-          if check_profile:
-            try:
-              io_counter = psutil_process.io_counters()
-              logger.debug(
-                "[t=%ss] CPU: %s%%, MEM: %s MB (%s%%), DISK: %s Read - %s Write" % (
-                  current_increment * sleep_time,
-                  psutil_process.cpu_percent(),
-                  psutil_process.memory_info().rss / float(2 ** 20),
-                  round(psutil_process.memory_percent(), 4),
-                  io_counter.read_count,
-                  io_counter.write_count
-                )
-              )
-            except (psutil.AccessDenied, psutil.NoSuchProcess):
-              # defunct process will raise AccessDenied
-              pass
-          time.sleep(sleep_time)
-          continue
-        result_dict["execution-time"] = current_increment * sleep_time
-        result_dict["returncode"] = process_handler.poll()
-        if result_dict["returncode"] == 0:
-          # Success!
-          result_dict["message"] = process_handler.communicate()[0]
-        else:
-          stdout, stderr = process_handler.communicate()
-          if raise_on_failure:
-            if stderr is None:
-              stderr = "No error output from '%s'." % promise
-            else:
-              stderr = "Promise '%s':" % promise + stderr
-            raise PromiseError(stderr)
-          if not stderr:
-            result_dict["message"] = stdout or ""
-          else:
-            result_dict["message"] = stderr
-        break
-      else:
-        process_handler.terminate()
-        if raise_on_failure:
-          raise PromiseError("The promise '%s' timed out" % promise)
-        message = process_handler.stderr.read()
-        if message is None:
-          message = process_handler.stdout.read() or ""
-        message += '\nPROMISE TIMED OUT AFTER %s SECONDS' % promise_timeout
-        result_dict["message"] = message
-        result_dict["execution-time"] = current_increment * sleep_time
-
-      promise_result_list.append(result_dict)
-      logger.info("Finished promise %r in %s second(s)." % (
-                  promise, result_dict["execution-time"]))
-
-  return promise_result_list
