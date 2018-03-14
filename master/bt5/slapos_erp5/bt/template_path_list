@@ -5,3 +5,5 @@ portal_alarms/slapos_erp5_cleanup_business_template
 portal_caches/erp5_session_cache/distributed_ram_cache
 software_product_module/frontend
 software_product_module/re6st
+software_release_module/frontend
+software_release_module/re6st
