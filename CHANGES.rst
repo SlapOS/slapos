@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.0.58 (UNRELEASED)
+1.0.58 (2018-03-14)
 -------------------
 
 * generic.mysql: unregister UDFs before (re)adding UDFs
