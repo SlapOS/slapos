@@ -16,7 +16,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_layout_user_input_list</string> </value>
+            <value> <string>my_user_input_list</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>

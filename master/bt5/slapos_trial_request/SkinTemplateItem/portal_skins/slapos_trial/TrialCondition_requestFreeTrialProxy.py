@@ -1,28 +1,22 @@
 from zExceptions import Unauthorized
-from AccessControl import getSecurityManager
 from DateTime import DateTime
+import json
 if REQUEST is not None:
   raise Unauthorized
 
-request = context.REQUEST
 portal = context.getPortalObject()
 
-web_section = context.getWebSectionValue()
-
-def _get(layout_property):
-  return web_section.getLayoutProperty("layout_" + layout_property) 
-
 trial_configuration = {
-    "instance_xml": _get("instance_xml"),
-    "base_software_title": _get("base_software_title"),
-    "software_type": _get("software_type"),
-    "url":_get("software_release_url"),
-    "shared": _get("is_slave"),
-    "subject_list": _get("subject_list"),
-    "sla_xml": _get("sla_xml")
+    "instance_xml": context.getTextContent(),
+    "title": "%s for %s" % (context.getTitle(), email),
+    "software_type": context.getSourceReference(),
+    "url": context.getUrlString(),
+    "shared": context.getRootSlave(),
+    "subject_list": context.getSubjectList(),
+    "sla_xml": context.getSlaXml()
 }
 
-software_title = trial_configuration["base_software_title"] % (email)
+software_title = trial_configuration["title"]
 
 trial_request = portal.portal_catalog.getResultValue(
               portal_type='Trial Request',
@@ -31,7 +25,7 @@ trial_request = portal.portal_catalog.getResultValue(
 )
 
 if trial_request is not None:
-  return context.Base_redirect("slapos-Free.Trial.AlreadyRequested.Message")
+  return json.dumps("already-requested")
 
 trial_request_list = portal.portal_catalog(
               portal_type='Trial Request',
@@ -41,8 +35,7 @@ trial_request_list = portal.portal_catalog(
 )
 
 if len(trial_request_list) >= 10:
-  return context.Base_redirect("slapos-Free.Trial.ExceedLimit.Message")
-
+  return json.dumps("exceed-limit")
 
 now = DateTime()
 
@@ -51,7 +44,7 @@ trial = context.trial_request_module.newContent(
   title=software_title,
   url_string=trial_configuration["url"],
   text_content=trial_configuration["instance_xml"] % user_input_dict,
-  start_date=now, 
+  start_date=now,
   stop_date=now + 30,
   root_slave=trial_configuration["shared"],
   subject_list=trial_configuration["subject_list"]
@@ -62,4 +55,4 @@ trial.setDefaultEmailText(email)
 if batch_mode:
   return trial
 
-return context.Base_redirect("slapos-Free.Trial.Thankyou.Message")
+return json.dumps("thank-you")

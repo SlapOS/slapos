@@ -1,3 +1,6 @@
+Trial Condition Module | business_application
+Trial Condition | aggregate
+Trial Condition | follow_up
 Trial Request Module | business_application
 Trial Request | aggregate
 Trial Request | causality

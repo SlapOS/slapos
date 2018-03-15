@@ -50,11 +50,19 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>software_release=None, default_email_text=None, default_input0=None, default_input1=None, REQUEST=None</string> </value>
+            <value> <string>email, user_input_dict={}, batch_mode=True, REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSite_requestFreeTrial</string> </value>
+            <value> <string>TrialCondition_requestFreeTrialProxy</string> </value>
         </item>
       </dictionary>
     </pickle>

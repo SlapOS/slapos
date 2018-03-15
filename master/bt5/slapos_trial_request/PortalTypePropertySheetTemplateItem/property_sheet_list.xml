@@ -1,4 +1,11 @@
 <property_sheet_list>
+ <portal_type id="Trial Condition">
+  <item>HostingSubscription</item>
+  <item>SoftwareInstance</item>
+  <item>TextDocument</item>
+  <item>TrialCondition</item>
+  <item>Url</item>
+ </portal_type>
  <portal_type id="Trial Request">
   <item>HostingSubscription</item>
   <item>Organisation</item>

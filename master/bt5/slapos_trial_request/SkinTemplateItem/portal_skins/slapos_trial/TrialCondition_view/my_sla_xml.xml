@@ -16,7 +16,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_layout_is_slave</string> </value>
+            <value> <string>my_sla_xml</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -73,7 +73,7 @@
               <dictionary>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_checkbox</string> </value>
+                    <value> <string>my_text_area_field</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
@@ -85,7 +85,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Shared</string> </value>
+                    <value> <string>Root SLA XML</string> </value>
                 </item>
               </dictionary>
             </value>

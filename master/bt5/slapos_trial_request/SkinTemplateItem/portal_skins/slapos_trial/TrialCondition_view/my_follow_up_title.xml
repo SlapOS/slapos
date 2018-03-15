@@ -10,13 +10,14 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
+                <string>portal_type</string>
                 <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_layout_software_type</string> </value>
+            <value> <string>my_follow_up_title</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -73,11 +74,22 @@
               <dictionary>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_string_field</string> </value>
+                    <value> <string>my_relation_field</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
-                    <value> <string>Base_viewWebFieldLibrary</string> </value>
+                    <value> <string>Base_viewFieldLibrary</string> </value>
+                </item>
+                <item>
+                    <key> <string>portal_type</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>Web Page</string>
+                          <string>Web Page</string>
+                        </tuple>
+                      </list>
+                    </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -85,7 +97,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Software Type</string> </value>
+                    <value> <string>Product Description</string> </value>
                 </item>
               </dictionary>
             </value>
