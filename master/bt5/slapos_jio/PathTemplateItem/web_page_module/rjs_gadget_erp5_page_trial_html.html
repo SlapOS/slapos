@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<!--
+  data-i18n=Slapos
+-->
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <title>SlapOS Page</title>
+
+    <!-- renderjs -->
+    <script src="rsvp.js" type="text/javascript"></script>
+    <script src="handlebars.js"></script>
+    <script src="renderjs.js" type="text/javascript"></script>
+
+    <!-- custom script -->
+    <script src="gadget_erp5_page_trial.js" type="text/javascript"></script>
+    <link href="gadget_erp5_page_trial.css" rel="stylesheet" type="text/css"/>
+
+
+
+    <script id="offer-template" type="text/x-handlebars-template">
+      <li>
+        <span class="theoffer">
+          <span class="top">
+            <a class="explanation" href="{{url}}">
+              <span class="system">
+                {{header}}
+              </span>
+              <span class="offername">
+                 {{name}}
+              </span>
+              <span class="terms">
+                {{footer}}
+              </span>
+            </a>
+          </span>
+          <a class="conditions" href="{{url}}">
+            <strong>
+              {{ price }}
+            </strong>
+            <span class="desc">
+              Order now
+            </span>
+          </a>
+        </span>
+      </li>
+    </script>
+
+  </head>
+  <body>
+    <form>
+
+
+               <div class="offer">
+                   	<ul>
+                   	</ul>
+                   	<div class="clear"></div>
+                </div>
+    </form>
+  </body>
+</html>
