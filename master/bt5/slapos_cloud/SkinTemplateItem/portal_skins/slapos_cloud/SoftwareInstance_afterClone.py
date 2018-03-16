@@ -4,7 +4,7 @@ We want to reset reference, which is the user login in ERP5Security.
 One exception is when a person object is installed from business template.
 """
 # Slave Instance don't have user id to be set.
-if context.getPortalType() == "Slave Instance":
+if context.getPortalType() in ["Slave Instance", "Trial Request", "Trial Condition"]:
   return
 
 context.setUserId(None)
