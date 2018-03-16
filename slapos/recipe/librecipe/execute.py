@@ -116,7 +116,7 @@ def execute_with_signal_translation(args):
   child = subprocess.Popen(args, close_fds=True, preexec_fn=os.setsid)
   child_pg = child.pid
   try:
-    print 'Process %r started' % args
+    print 'Process %r started' % (args, )
     signal.pause()
   finally:
     os.killpg(child_pg, signal.SIGHUP)
