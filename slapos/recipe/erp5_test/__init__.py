@@ -113,26 +113,3 @@ class CloudoooRecipe(GenericBaseRecipe):
 
     return path_list
 
-class EggTestRecipe(GenericBaseRecipe):
-  """
-  Recipe used to create wrapper used to run test suite (python setup.py test)
-  off a list of Python eggs.
-  """
-  def install(self):
-    test_list = self.options['test-list'].strip().replace('\n', ',')
-
-    common_dict = {}
-    if self.options.get('environment'):
-      environment_part = self.buildout.get(self.options['environment'])
-      if environment_part:
-        common_dict['environment'] = dict(environment_part)
-
-    if 'prepend-path' in self.options:
-      common_dict['prepend_path'] = self.options['prepend-path']
-
-    return self.createPythonScript(
-        self.options['run-test-suite'], __name__ + '.test.runTestSuite',
-        ((self.options['run-test-suite-binary'],
-          "--source_code_path_list", test_list),
-         common_dict)
-    )
