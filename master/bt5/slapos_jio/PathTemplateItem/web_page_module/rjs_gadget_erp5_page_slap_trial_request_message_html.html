@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<!--
+  data-i18n=Slapos
+-->
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <title>Site List</title>
+
+    <!-- renderjs -->
+    <script src="rsvp.js" type="text/javascript"></script>
+    <script src="handlebars.js"></script>
+    <script src="renderjs.js" type="text/javascript"></script>
+
+    <!-- custom script -->
+    <script src="gadget_erp5_page_slap_trial_request_message.js" type="text/javascript"></script>
+
+    <script id="thank-you-template" type="text/x-handlebars-template">
+    <h1> Thank you!</h1>
+
+    <p> Your <strong>token</strong> is under preparation, one email is going to be send to you in about <strong>10 minutes</strong> with your token and instructions on how to use! </p>
+
+    <p> Remember your token is only valid for the next 30 days and it will be automatically expired in after this day.</p>
+    <br/>
+    <p> <a href={{return_url}}>Return </a></p>
+    </script>
+    <script id="exceed-limit-template" type="text/x-handlebars-template">
+      <h1> Sorry, You exceeded the limit of Trial Requests</h1>
+
+      <p> Your email already has more them 30 active trial requests, so you exceeded the limit. </p>
+
+      <p> Please use another email address or wait few days until some the activity tickets expire. </p>
+      <br/>
+      <p> <a href={{return_url}}>Return </a></p>
+    </script>
+    <script id="already-requested-template" type="text/x-handlebars-template">
+      <h1> Sorry, You already has one trial under deployment.</h1>
+      <br />
+      <p> You already requested for a trial and it was not deployed yet. Please be patient and wait a little longer for a mail with your token. </p>
+      <br />
+      <p> In case the problem persists for more them 1 hour, please do not hesitate to contact us. </p>
+       <br/>
+      <p> <a href={{return_url}}>Return </a></p>
+    </script>
+  </head>
+  <body>
+      <div> </div>
+  </body>
+</html>
+
