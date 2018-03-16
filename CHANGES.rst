@@ -1,6 +1,10 @@
 Changes
 =======
 
+1.0.59 (2018-03-15)
+-------------------
+* librecipe.execute: fix convert process arguments to string formatting.
+
 1.0.58 (2018-03-14)
 -------------------
 
