@@ -254,7 +254,6 @@ home = $${basedirectory:ssh-home}
 identity-file = $${:home}/id_rsa
 command-line = ${openssh:location}/bin/ssh -T -o "UserKnownHostsFile $${pbs:known-hosts}" -i $${:identity-file}
 wrapper-path = $${rootdirectory:bin}/ssh
-parameters-extra = true
 
 
 #----------------

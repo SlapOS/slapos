@@ -99,7 +99,6 @@ recipe = slapos.cookbook:wrapper
 command-line = 
   ${monitor-directory:bin}/python {{ monitor_collect_csv_dump }} --output_folder ${monitor-directory:fluentd-log}/consumption/
 wrapper-path = ${monitor-directory:reports}/monitor-collect-csv-dump  
-parameters-extra = true
 
 [monitor-check-cpu-usage]
 recipe = slapos.cookbook:wrapper

@@ -250,7 +250,6 @@ mode = 700
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/is-process-older-than-dependency-set ${monitor-httpd-conf-parameter:pid-file} 
 wrapper-path = ${directory:promises}/promise-monitor-httpd-is-process-older-than-dependency-set
-parameters-extra = true
 
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper

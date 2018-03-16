@@ -57,7 +57,6 @@ wrapper-path = ${directory:bin}/request-base-certificate
 cert-file = ${ca-nginx-ssl-config:cert}
 key-file = ${ca-nginx-ssl-config:key}
 ca-cert = ${directory:ssl}/cacert.pem
-parameters-extra = true
 command-line = {{ certificate_request_bin }}
   --crt-file ${:cert-file}
   --key-file ${:key-file}

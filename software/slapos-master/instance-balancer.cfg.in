@@ -41,7 +41,6 @@ mode = {{ mode }}
 [certificate-request-base]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/request-instance-certificate
-parameters-extra = true
 command-line = {{ parameter_dict['bin-directory'] }}/caucase-cliweb
   --crt-file ${apache-conf-ssl:cert}
   --key-file ${apache-conf-ssl:key}
