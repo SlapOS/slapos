@@ -67,7 +67,6 @@ recipe = slapos.cookbook:wrapper
 command-line = 
   {{ wget_bin }} --no-check-certificate -l1 -r -nd --timestamp  
 wrapper-path = ${monitor-directory:bin}/log-crawler
-parameters-extra = true
 
 [buildout]
 extends = {{ instance_base_monitor }}

@@ -33,7 +33,6 @@ wrapper-path = ${directory:bin}/request-instance-certificate
 cert-file = ${directory:ssl}/instance.cert.pem
 key-file = ${directory:ssl}/instance.key.pem
 ca-cert = ${directory:ssl}/cacert.pem
-parameters-extra = true
 command-line = {{ certificate_request_bin }}
   --crt-file ${:cert-file}
   --key-file ${:key-file}

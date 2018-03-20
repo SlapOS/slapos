@@ -223,7 +223,6 @@ recipe = slapos.cookbook:wrapper
 # will reject it.
 command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:rendered}"
 wrapper-path = ${directory:bin}/${:command}
-parameters-extra = true
 
 [binary-wrap-mysql]
 < = binary-wrap-base
@@ -329,7 +328,6 @@ command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
 wrapper-path = ${directory:promise}/mariadb
-parameters-extra = true
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}

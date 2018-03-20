@@ -61,7 +61,6 @@ var-spool-postfix-trace = ${:var-spool-postfix}/trace
 {%   set socket = 'inet:' ~ ip ~ ':' ~ milter_port -%}
 [{{ section('divert-milter') }}]
 recipe = slapos.cookbook:wrapper
-parameters-extra = true
 command-line =
   '{{ parameter_dict['buildout-bin-directory'] }}/munnel'
   --listen '{{ socket }}'
@@ -183,7 +182,6 @@ update-command = ${:command}
 
 [wrapper-postfix-saslpasswd2]
 recipe = slapos.cookbook:wrapper
-parameters-extra = true
 command-line = '{{ parameter_dict['cyrus-sasl-location'] }}/sbin/saslpasswd2' -f '${configuration:cyrus-sasldb}'
 wrapper-path = ${directory:bin}/saslpasswd2
 
@@ -192,7 +190,6 @@ recipe = slapos.cookbook:wrapper
 environment =
   MAIL_CONFIG=${directory:etc-postfix}
   SASL_CONF_PATH=${directory:etc-cyrus}
-parameters-extra = true
 
 [base-bin-wrapper]
 < = base-wrapper

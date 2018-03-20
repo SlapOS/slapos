@@ -114,9 +114,11 @@ SSLVerifyClient optional
 RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
 RequestHeader set SSL_CLIENT_SERIAL "%{SSL_CLIENT_M_SERIAL}s"
 SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
-{%   if parameter_dict['crl'] -%}
+{%   if not parameter_dict['shared-ca-cert'] %}
+{%     if parameter_dict['crl'] -%}
 SSLCARevocationCheck chain
 SSLCARevocationFile {{ parameter_dict['crl'] }}
+{%-     endif %}
 {%-   endif %}
 {%- endif %}
 

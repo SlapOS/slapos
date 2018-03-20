@@ -277,7 +277,6 @@ context-extra =
 [gitlab-bin]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
-parameters-extra = true
 # NOTE $HOME needed to pick gitconfig
 environment  =
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
@@ -285,8 +284,6 @@ environment  =
     RAILS_ENV = production
     SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}
 
-# NOTE sys.argv[1:] implicitly appended
-# (by slapos.recipe.librecipe.execute.generic_exec() at runtime)
 command-line =
     {{ bundler_4gitlab }} exec sh -c
     'cd ${gitlab-work:location} && ${:prog} "$@"' ${:prog}

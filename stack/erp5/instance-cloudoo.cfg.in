@@ -149,4 +149,3 @@ environment =
   DISPLAY=:0
   TMPDIR=${directory:run}
 command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
-parameters-extra = true

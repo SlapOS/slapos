@@ -69,7 +69,6 @@ command-line =
   --notebook-dir=${instance-parameter:notebook_dir}
   --log-level="DEBUG"
 wrapper-path = ${directory:service}/jupyter-lab
-parameters-extra = true
 environment =
   JUPYTER_PATH=${directory:jupyter_dir}
   JUPYTER_CONFIG_DIR=${directory:jupyter_config_dir}

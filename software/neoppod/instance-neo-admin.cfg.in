@@ -36,5 +36,4 @@ command-line =
     --cert ${directory:etc}/neo.crt
     --key ${directory:etc}/neo.key
 {%- endif %}
-parameters-extra = True
 wrapper-path = ${directory:bin}/neoctl
