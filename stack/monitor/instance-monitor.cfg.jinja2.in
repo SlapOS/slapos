@@ -21,7 +21,7 @@ log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 promises = ${:etc}/promise
-plugins = ${:etc}/plugins
+plugins = ${:etc}/plugin
 monitor = ${:srv}/monitor
 
 [monitor-directory]
@@ -33,6 +33,7 @@ pids = ${directory:run}/monitor
 webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
 private = ${directory:monitor}/private
+documents = ${:private}/documents
 log = ${directory:log}/monitor
 log-backup = ${logrotate-directory:backup}/monitor
 
@@ -73,12 +74,9 @@ webdav-folder = ${monitor-directory:webdav}
 base-url = ${monitor-instance-parameter:monitor-base-url}
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
-logrotate-folder = ${logrotate-directory:logrotate-entries}
-promise-runner = {{ monitor_runpromise }}
 log-folder = ${monitor-directory:log}
-log-backup-folder = ${monitor-directory:log-backup}
+document-folder = ${monitor-directory:documents}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
-randomsleep = {{ bin_directory }}/randomsleep
 
 public-path-list = 
 private-path-list = ${directory:log}
@@ -88,44 +86,28 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 parameter-list = 
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
-  file promise-timeout ${monitor-promise-timeout-file:file}
   file min-free-disk-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
-collector-db = ${monitor-instance-parameter:collector-db}
-collect-script = {{ monitor_collect }}
-statistic-script = {{ monitor_statistic }}
-python = {{ python_with_eggs }}
-nice-cmd = ${xnice-bin:output}
-
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
 [monitor-promise-conf]
-output-folder = ${monitor-directory:public}
+output-folder = ${monitor-directory:public}/promise
 history-folder = ${monitor-directory:public}
+promise-folder = ${directory:plugins}
+legacy-promise-folder = ${directory:promises}
 pid-path = ${monitor-directory:pids}/runpromise.pid
 partition-folder = ${buildout:directory}
-promise-folder = ${directory:plugins}
-old-promise-folder = ${directory:promises}
 master-url = ${slap-connection:server-url}
 partition-cert = ${slap-connection:cert-file}
 partition-key = ${slap-connection:key-file}
 partition-id = ${slap-connection:partition-id}
 computer-id = ${slap-connection:computer-id}
-promises-timeout-file = ${monitor-promise-timeout-file:file}
 ipv4 = ${slap-configuration:ipv4-random}
 ipv6 = ${slap-configuration:ipv6-random}
 software-release = ${slap-connection:software-release-url}
 software-type = ${slap-configuration:slap-software-type}
-
-[monitor-promise-timeout-file]
-recipe = plone.recipe.command
-file = ${directory:etc}/promise_timeout
-command = 
-  if [ ! -s "${:file}" ]; then
-    echo "20" > ${:file}
-  fi
 
 [monitor-base-url-dict]
 # place holder to be used to collect erp5 monitor urls
@@ -172,6 +154,12 @@ command =
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
+
+[monitor-symlink]
+recipe = cns.recipe.symlink
+symlink =
+  ${buildout:directory}/.slapgrid/promise/result = ${monitor-directory:public}/promise
+  ${buildout:directory}/.slapgrid/promise/log = ${monitor-directory:log}/promise
 
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
@@ -249,22 +237,68 @@ wrapper-path = ${directory:bin}/monitor-globalstate
 [monitor-configurator-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard coded path
-command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd' --monitor_https_cors {{ monitor_https_cors }}
+command-line = ${xnice-bin:output} {{ monitor_configwrite }}
+              --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents'
+              --output_cfg_file '${monitor-instance-parameter:configuration-file-path}'
+              --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
+              --monitor_https_cors {{ monitor_https_cors }}
 wrapper-path = ${directory:bin}/monitor-configurator
+
+[monitor-collect-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = ${xnice-bin:output} {{ monitor_collect }}
+               --output_folder ${monitor-directory:documents}
+               --collector_db ${monitor-instance-parameter:collector-db}
+               --pid_file ${monitor-directory:pids}/monitor-collect.pid
+wrapper-path = ${directory:bin}/monitor-collect
 
 [monitor-globalstate-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-globalstate
-frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 15 && ${monitor-globalstate-wrapper:wrapper-path}
+frequency = */2 * * * *
+command = {{ bin_directory }}/randomsleep 20 && ${monitor-globalstate-wrapper:wrapper-path}
 
 [monitor-configurator-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-configurator
 frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 15 && ${monitor-configurator-wrapper:wrapper-path}
+command = {{ bin_directory }}/randomsleep 10 && ${monitor-configurator-wrapper:wrapper-path}
+
+[monitor-collect-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = monitor_collect
+frequency = * * * * *
+command = {{ bin_directory }}/randomsleep 40 && ${monitor-collect-wrapper:wrapper-path}
+
+[logrotate-entry-monitor-data]
+recipe = collective.recipe.template
+name = monitor.data
+log = ${monitor-directory:private}/*.data.json ${monitor-directory:documents}/*.data.json
+input = inline:${:log} {
+    weekly
+    nocreate
+    olddir ${monitor-directory:documents}
+    rotate 104
+    nocompress
+    missingok
+    extension .json
+    dateext
+    dateformat -%Y-%m-%d
+    notifempty
+  }
+output = ${logrotate-directory:logrotate-entries}/${:name}
+mode = 600
+
+[logrotate-entry-monitor-promise-history]
+<= logrotate-entry-base
+name = monitor.service.status
+log = ${monitor-directory:public}/*.history.json
+rotate-num = 0
+frequency = weekly
+pre = {{ monitor_statistic }} --history_folder ${monitor-directory:public}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
@@ -291,7 +325,7 @@ monitor-base-url = ${monitor-frontend-promise:url}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-icors-domains = monitor.app.officejs.com
+cors-domains = monitor.app.officejs.com
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
@@ -343,16 +377,17 @@ recipe = collective.recipe.template
 output = ${directory:plugins}/buildout-${slap-connection:partition-id}-status.py
 mode = 600
 input = inline:from slapos.promise.plugin.check_partition_deployment_state import RunPromise
+  from slapos.promise.plugin import check_partition_deployment_state
+
+  check_partition_deployment_state.MONITOR_URL = "${monitor-instance-parameter:monitor-base-url}"
 
 [promise-check-free-disk-space]
-recipe = slapos.recipe.template:jinja2
-template = {{ template_check_disk_space }}
-rendered = ${directory:promises}/check-free-disk-space
-mode = 0700
-context =
-    key config_file :config-file
-    raw home_path ${buildout:directory}
-    raw python_bin {{ python_with_eggs }}
+recipe = slapos.cookbook:wrapper
+command-line = {{ check_disk_space }}
+               --collectordb ${monitor-instance-parameter:collector-db}
+               --home_path ${buildout:directory}
+               --config ${:config-file}
+wrapper-path = ${directory:promises}/check-free-disk-space
 config-file = ${directory:etc}/min-free-disk-size
 
 
@@ -365,6 +400,7 @@ base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
   ${monitor-configurator-cron-entry:name}
+  ${monitor-collect-cron-entry:name}
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
   ${certificate-authority:wrapper}
@@ -373,9 +409,12 @@ depends =
   ${ca-monitor-httpd:wrapper}
   ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
+  ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
   ${logrotate-entry-monitor-httpd:name}
+  ${logrotate-entry-monitor-data:name}
+  ${logrotate-entry-monitor-promise-history:name}
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
