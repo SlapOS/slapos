@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.4.5 (2018-03-22)
+------------------
+ * slapos.collect.db: Create an index on user table to speed up monitor collect query.
+ * slapos.cli.console: support new `slapos console script.py` invocation
+ * slapos.grid.promise: implement a new promise design and promise launcher in slapgrid
+ * slapos.collect: allow connect without call boostrap, set timeout option
+
 1.4.4 (2018-01-25)
 ------------------
  * slap.initializeConnection: Cache master node's Hateoas URL
