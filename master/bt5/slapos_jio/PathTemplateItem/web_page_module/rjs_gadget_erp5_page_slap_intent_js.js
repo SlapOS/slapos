@@ -70,9 +70,11 @@
         .push(function () {
           return gadget.getSetting("hateoas_url")
             .push(function (url) {
-              return gadget.jio_getAttachment("/",
-                url + "/SoftwareProduct_getSoftwareReleaseAsHateoas?software_release=" + options.software_release
-                   );
+              var get_attachement_url = url + "/SoftwareProduct_getSoftwareReleaseAsHateoas?software_release=" + options.software_release;
+              if (options.strict === "True") {
+                get_attachement_url = get_attachement_url + "&strict:int=1";
+              }
+              return gadget.jio_getAttachment("/", get_attachement_url);
             });
         })
         .push(function (jio_key) {

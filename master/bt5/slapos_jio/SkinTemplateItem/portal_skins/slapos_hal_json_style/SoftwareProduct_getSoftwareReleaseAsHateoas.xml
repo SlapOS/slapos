@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>software_release</string> </value>
+            <value> <string>software_release, strict=False</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
