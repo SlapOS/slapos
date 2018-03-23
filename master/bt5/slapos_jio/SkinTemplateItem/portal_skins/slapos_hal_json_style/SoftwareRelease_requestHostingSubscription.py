@@ -1,7 +1,7 @@
 import json
 portal = context.getPortalObject()
 
-if shared == ["true", "1", 1]:
+if shared in ["true", "1", 1]:
   shared = True
 
 if shared in ["false", "", 0, "0", None]:
