@@ -295,7 +295,7 @@
           input.name = path + "/" + key;
           input.setAttribute("class", "slapos-parameter");
           div_input.appendChild(input);
-        
+
           default_used_list.push(key);
           span_info = document.createElement("span");
           span_info.textContent = '(Not part of the schema)';
@@ -700,8 +700,8 @@
 
                 option['data-shared'] = json['software-type'][option_index].shared;
 
-                if ((option_index === option_selected) &&
-                  (options.value.parameter.shared === json['software-type'][option_index].shared)) {
+                if ((option.value === option_selected) &&
+                  (options.value.parameter.shared == json['software-type'][option_index].shared)) {
                   option.selected = "selected";
                   if (json['software-type'][option_index].shared === true) {
                     parameter_shared.value = true;
@@ -712,7 +712,7 @@
 
                 if (restricted_softwaretype === true) {
                   if (option.value === options.value.parameter.softwaretype) {
-                    if (options.value.parameter.shared === json['software-type'][option_index].shared) {
+                    if (options.value.parameter.shared == json['software-type'][option_index].shared) {
                       input.appendChild(option);
                     }
                   }
@@ -920,9 +920,13 @@
       return gadget.getElement()
         .push(function (element) {
           var text_content = element.querySelector('textarea[name=text_content]'),
-              software_type = element.querySelector('select[name=software_type]');
+              software_type = element.querySelector('select[name=software_type]'),
+              shared = element.querySelector('input[name=shared]');
           if (software_type !== null) {
             content_dict.software_type = software_type.value;
+          }
+          if ((shared  !== null) && (shared.value === "true")) {
+            content_dict.shared = 1;
           }
           if (text_content !== null) {
             return text_content.value;
