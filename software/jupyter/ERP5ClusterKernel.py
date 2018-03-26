@@ -1,12 +1,13 @@
 from ipykernel.kernelbase import Kernel
 from ipykernel.kernelapp import IPKernelApp
+import cPickle
 import requests
 import uritemplate
 import sys
 import time
 
 REQUEST_TIMEOUT = 60
-TIMEOUT = 60
+PROCESS_TIMEOUT = 600
 
 erp5_url = None
 if len(sys.argv) > 1:
@@ -229,9 +230,9 @@ class ERP5ClusterKernel(Kernel):
         status = 'error'
         self.display_response(executed_view['_embedded']['_view']['my_result']['default'])
         break
-      if time.time() - t > TIMEOUT:
+      if time.time() - t > PROCESS_TIMEOUT:
         status = 'error'
-        self.display_response('Timeout after %is' % (TIMEOUT,))
+        self.display_response('Timeout after %is' % (PROCESS_TIMEOUT,))
         break
       time.sleep(0.5)
     return status
