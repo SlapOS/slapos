@@ -654,7 +654,8 @@
         .push(function (json) {
           var option_index,
             option,
-            option_selected = options.value.parameter.softwaretypeindex,
+            option_selected = options.value.parameter.softwaretype,
+            option_selected_index = options.value.parameter.softwaretypeindex,
             restricted_softwaretype = options.value.parameter.restricted_softwaretype,
             input = gadget.element.querySelector('select.slapos-software-type'),
             parameter_shared = gadget.element.querySelector('input.parameter_shared'),
@@ -682,7 +683,8 @@
                 }
 
                 if (option_selected === undefined) {
-                  option_selected = option_index;
+                  option_selected = option.value;
+                  option_selected_index = option_index;
                   if (json['software-type'][option_index].shared === true) {
                     parameter_shared.value = true;
                   } else {
@@ -703,6 +705,7 @@
                 if ((option.value === option_selected) &&
                   (options.value.parameter.shared == json['software-type'][option_index].shared)) {
                   option.selected = "selected";
+                  option_selected_index = option_index;
                   if (json['software-type'][option_index].shared === true) {
                     parameter_shared.value = true;
                   } else {
@@ -732,19 +735,19 @@
             }
             throw new Error("The software type is not part of the json (" + softwaretype + ")");
           }
-          if (json['software-type'][softwaretype] === undefined) {
+          if (json['software-type'][option_selected_index] === undefined) {
             throw new Error("The sotware type is not part of the json (" + softwaretype + ")");
           }
 
-          if (json['software-type'][softwaretype].serialisation !== undefined) {
-            s_input.value = json['software-type'][softwaretype].serialisation;
-            options.serialisation = json['software-type'][softwaretype].serialisation;
+          if (json['software-type'][option_selected_index].serialisation !== undefined) {
+            s_input.value = json['software-type'][option_selected_index].serialisation;
+            options.serialisation = json['software-type'][option_selected_index].serialisation;
           } else {
             s_input.value = json.serialisation;
             options.serialisation = json.serialisation;
           }
 
-          return json['software-type'][softwaretype].request;
+          return json['software-type'][option_selected_index].request;
         })
         .push(function (parameter_json_schema_url) {
           var parameter_dict = {}, json_url_uri, prefix, parameter_entry;
