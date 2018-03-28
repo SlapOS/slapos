@@ -443,7 +443,7 @@ class RunPromise(GenericPromise):
     # run promise will fail when promise fail (usefull for slapgrid)
     with self.assertRaises(PromiseError) as exc:
       self.launcher.run()
-    self.assertEquals(exc.exception.message, 'Promise(s) has failed.')
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
 
     if "my_second_promise" in sys.modules:
       # force to reload the module without rerun python
@@ -618,7 +618,7 @@ exit 1
     state_file = os.path.join(self.partition_dir, PROMISE_STATE_FOLDER_NAME)
     with self.assertRaises(PromiseError) as exc:
       self.launcher.run()
-    self.assertEquals(exc.exception.message, 'Promise(s) has failed.')
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % promise_name)
 
   def test_runpromise_wrapped_mixed(self):
     self.called = 0

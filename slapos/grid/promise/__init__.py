@@ -352,7 +352,7 @@ class PromiseLauncher(object):
       Run all promises
     """
     promise_list = []
-    promise_failed = False
+    failed_promise_name = ""
     base_config = {
       'log-folder': self.log_folder,
       'partition-folder': self.partition_folder,
@@ -399,8 +399,8 @@ class PromiseLauncher(object):
           module = reload(module)
 
         config.update(base_config)
-        if self._launchPromise(name, config, module) and not promise_failed:
-          promise_failed = True
+        if self._launchPromise(name, config, module) and not failed_promise_name:
+          failed_promise_name = name
 
     if not self.run_only_promise_list and os.path.exists(self.legacy_promise_folder) \
         and os.path.isdir(self.legacy_promise_folder):
@@ -418,11 +418,11 @@ class PromiseLauncher(object):
         }
         config.update(base_config)
         # We will use promise wrapper to run this
-        if self._launchPromise(promise_name, config) and not promise_failed:
-          promise_failed = True
+        if self._launchPromise(promise_name, config) and not failed_promise_name:
+          failed_promise_name = promise_name
 
     stat_info = os.stat(self.partition_folder)
     chownDirectory(self.partition_folder, stat_info.st_uid, stat_info.st_gid)
 
-    if promise_failed:
-      raise PromiseError("Promise(s) has failed.")
+    if failed_promise_name:
+      raise PromiseError("Promise %r failed." % failed_promise_name)
