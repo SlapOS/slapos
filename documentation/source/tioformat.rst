@@ -7,6 +7,9 @@ What is TioFormat?
 TIO is a data format used to provide informations about consumption, invoicing
 and state history.
 
+This innformation is used by SlapOS Master to generated invoices and/or utilisation 
+reports.
+
 XSD
 ---
 

@@ -85,7 +85,11 @@ Examples
 * Request a kvm instance specifying the full URL, with default settings::
 
     $ slapos request mykvm \
-        http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
+        https://lab.node.vifib.com/nexedi/slapos/raw/1.0.56/software/kvm/software.cfg
+
+* Request a kvm instance specifying an alias from SlapOS Master, with default settings::
+
+    $ slapos request mykvm product.kvm
 
 ..
   XXX update me
@@ -135,11 +139,16 @@ Nodes will then be ready to accept instances of specified software.
 
 Examples
 
-* Ask installation of wordpress Software Release on COMP-12345::
+* Ask installation of kvm Software Release on COMP-12345::
 
-    $ slapos supply wordpress COMP-12345
+    $ slapos supply kvm COMP-12345
 
-In this example, ``wordpress`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
+* Ask installation of kvm Software Relase on COMP-12345, using alias from SlapOS Master::
+
+    $ slapos supply product.kvm COMP-12345
+
+
+In this example, ``kvm`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
 
 remove
 ~~~~~~
@@ -153,11 +162,11 @@ Ask removal of a software from a specific node or group of nodes. Existing insta
 
 Examples
 
-* Ask installation of wordpress Software Release on COMP-12345::
+* Ask installation of kvm Software Release on COMP-12345::
 
-    $ slapos supply wordpress COMP-12345
+    $ slapos supply kvm COMP-12345
 
-In this example, ``wordpress`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
+In this example, ``kvm`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
 
 ..
   autosupply
@@ -218,13 +227,8 @@ This will register the current node, and generate the SlapOS configuration file.
 
 The command requires an authentication token, either provided as an argument,
 or given at the interactive prompt.
-Go to the SlapOS Master web page, click ``My Space``, then ``My Account``, then
-``Generate a computer security token``.
+Go to the SlapOS Master web page, click ``Servers`` and them ``Token``.
 A token is valid for a single ``node register`` command and will expire after one day.
-
-The deprecated ``--login`` and ``--password`` options can be used with old SlapOS servers
-that have no support for the token.
-
 
 ..
   XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
@@ -296,6 +300,19 @@ Return values:
 * 0    Everything went fine.
 * 1    At least one instance was not correctly processed.
 * 2    At least one promise has failed.
+
+
+node collect
+~~~~~~~~~~~~~
+
+.. program-output:: python slapos help node collect
+
+
+Return values:
+**************
+
+* 0    Everything went fine.
+* 1    Fail to collect computer information.
 
 
 node report
@@ -386,8 +403,7 @@ from the SlapOS Master. They will be used for all the "slapos client" commands.
 The command requires an authentication token, either provided as an argument,
 or given at the interactive prompt.
 
-Go to the SlapOS Master web page, click ``My Space``, then ``My Account``, then
-``Generate a credential security token``.
+Go to the SlapOS Master web page, click ``Account``, then ``Token``.
 A token is valid for a single ``configure client`` command and will expire after one day.
 
 
