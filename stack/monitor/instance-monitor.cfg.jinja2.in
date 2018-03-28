@@ -36,6 +36,8 @@ public = ${directory:monitor}/public
 private = ${directory:monitor}/private
 documents = ${:private}/documents
 log = ${directory:log}/monitor
+promise-result = ${buildout:directory}/.slapgrid/promise/result
+promise-log = ${buildout:directory}/.slapgrid/promise/log
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -121,19 +123,11 @@ context = section parameter_dict           monitor-conf-parameters
           section promise_parameter_dict  monitor-promise-conf
           section monitor_base_urls        monitor-base-url-dict
 
-[python-symlink]
-recipe = plone.recipe.command
-target = ${directory:bin}
-command = ln -sf {{ python_with_eggs }} ${:target}/python
-update-command = ${:command}
-
 [start-monitor]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_executable }} {{ monitor_bin }} -c ${monitor-conf:rendered}
+command-line = {{ monitor_bin }} -c ${monitor-conf:rendered}
 name = bootstrap-monitor
 wrapper-path = ${directory:scripts}/${:name}
-environment = 
-  PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
 [monitor-htpasswd]
 recipe = slapos.cookbook:generate.password
@@ -158,8 +152,8 @@ password = ${monitor-instance-parameter:password}
 [monitor-symlink]
 recipe = cns.recipe.symlink
 symlink =
-  ${buildout:directory}/.slapgrid/promise/result = ${monitor-directory:public}/promise
-  ${buildout:directory}/.slapgrid/promise/log = ${monitor-directory:log}/promise
+  ${monitor-directory:promise-result} = ${monitor-directory:public}/promise
+  ${monitor-directory:promise-result} = ${monitor-directory:log}/promise
 
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
