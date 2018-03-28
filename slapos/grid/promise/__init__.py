@@ -421,9 +421,8 @@ class PromiseLauncher(object):
         if self._launchPromise(promise_name, config) and not promise_failed:
           promise_failed = True
 
-    state_dir = os.path.join(self.partition_folder, PROMISE_STATE_FOLDER_NAME)
-    stat_info = os.stat(state_dir)
-    chownDirectory(state_dir, stat_info.st_uid, stat_info.st_gid)
+    stat_info = os.stat(self.partition_folder)
+    chownDirectory(self.partition_folder, stat_info.st_uid, stat_info.st_gid)
 
     if promise_failed:
       raise PromiseError("Promise(s) has failed.")
