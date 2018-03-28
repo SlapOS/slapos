@@ -564,6 +564,10 @@ class ComputerPartition(SlapRequester):
       raise ResourceNotReady()
     return self._requested_state
 
+  def getAccessStatus(self):
+    """Get latest computer partition Access message state"""
+    return getattr(self, '_access_status', None)
+
   def getType(self):
     """
     return the Software Type of the instance.

@@ -906,6 +906,23 @@ stderr_logfile_backups=1
       self._checkAddFirewallRules(computer_partition.getId(),
                                   cmd_list, add=add_rules)
 
+  def _checkPromiseAnomaly(self, local_partition, computer_partition):
+    partition_access_status = computer_partition.getAccessStatus()
+    status_error = False
+    if partition_access_status and partition_access_status.startswith("#error"):
+      status_error = True
+    try:
+      self._checkPromiseList(local_partition,
+                             check_anomaly=True,
+                             force=False)
+    except PromiseError, e:
+      if not status_error:
+        self.logger.error(e)
+        computer_partition.error(e, logger=self.logger)
+    else:
+      if status_error:
+        computer_partition.started()
+
   def processComputerPartition(self, computer_partition):
     """
     Process a Computer Partition, depending on its state
@@ -1018,9 +1035,7 @@ stderr_logfile_backups=1
               # check promises anomaly
               if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
                 self.logger.debug('Partition already up-to-date.')
-                self._checkPromiseList(local_partition,
-                                       check_anomaly=True,
-                                       force=False)
+                self._checkPromiseAnomaly(local_partition, computer_partition)
               else:
                 self.logger.debug('Partition already up-to-date. skipping.')
               return

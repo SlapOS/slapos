@@ -227,6 +227,9 @@ class IComputerPartition(IBuildoutController, IRequester):
     The result can be: started, stopped, destroyed
     """
 
+  def getAccessStatus():
+    """Get latest computer partition Access message state"""
+
   def getSoftwareRelease():
     """
     Returns the software release associate to the computer partition.
