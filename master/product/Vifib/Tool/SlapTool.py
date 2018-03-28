@@ -958,6 +958,8 @@ class SlapTool(BaseTool):
         slap_partition._requested_state = 'stopped'
       if state == "start_requested":
         slap_partition._requested_state = 'started'
+      slap_partition._access_status = self._getTextAccessStatus(
+            software_instance.getReference())
 
       slap_partition._software_release_document = SoftwareRelease(
             software_release=software_instance.getUrlString().decode("UTF-8"),
@@ -1117,14 +1119,30 @@ class SlapTool(BaseTool):
       self._storeLastData(key, str(int(software_instance.getModificationDate())))
     return "OK"
 
-  def _getAccessStatus(self, context_reference):
+  def _getCachedAccessInfo(self, context_reference):
     memcached_dict = self._getMemcachedDict()
     try:
       if context_reference is None:
         raise KeyError
       else:
-        d = memcached_dict[context_reference]
+        data = memcached_dict[context_reference]
     except KeyError:
+      return None
+    return data
+
+  def _getTextAccessStatus(self, context_reference):
+    status_string = self._getCachedAccessInfo(context_reference)
+    access_status = "#error no data found!"
+    if status_string is not None:
+      try:
+        access_status = json.loads(status_string)['text']
+      except ValueError:
+        pass
+    return access_status
+
+  def _getAccessStatus(self, context_reference):
+    d = self._getCachedAccessInfo(context_reference)
+    if d is None:
       if context_reference is None:
         d = {
           "user": "SlapOS Master",
@@ -1571,6 +1589,7 @@ class SlapTool(BaseTool):
       'instance_guid': software_instance.getReference().decode("UTF-8"),
       'instance_title': software_instance.getTitle().decode("UTF-8"),
       'root_instance_title': hosting_subscription.getTitle().decode("UTF-8"),
+      'root_instance_short_title': hosting_subscription.getShortTitle().decode("UTF-8"),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
       'filter_xml': software_instance.getSlaXml(),
