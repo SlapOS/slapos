@@ -6,8 +6,6 @@ import tempfile
 import unittest
 from slapos.slap.slap import NotFoundError, ConnectionError
 
-from slapos.recipe import re6stnet
-
 
 class Re6stnetTest(unittest.TestCase):
 
@@ -47,31 +45,21 @@ class Re6stnetTest(unittest.TestCase):
         shutil.rmtree(path)
     
   def new_recipe(self):
-      buildout = {
-              'buildout': {
-                  'bin-directory': '',
-                  'find-links': '',
-                  'allow-hosts': '',
-                  'develop-eggs-directory': '',
-                  'eggs-directory': '',
-                  'python': 'testpython',
-                  },
-               'testpython': {
-                   'executable': sys.executable,
-                   },
-               'slap-connection': {
+      from slapos.recipe import re6stnet
+      from slapos.test.utils import makeRecipe
+      return makeRecipe(
+            re6stnet.Recipe,
+            options=self.options,
+            slap_connection={
                    'computer-id': 'comp-test',
                    'partition-id': 'slappart0',
                    'server-url': 'http://server.com',
                    'software-release-url': 'http://software.com',
                    'key-file': '/path/to/key',
                    'cert-file': '/path/to/cert'
-                   }
-              }
+            },
+            name='re6stnet')
 
-      options = self.options
-
-      return re6stnet.Recipe(buildout=buildout, name='re6stnet', options=options)
 
   def checkWrapper(self, path):
     self.assertTrue(os.path.exists(path))
