@@ -129,6 +129,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <unicode>partition3</unicode>
           </tuple>
           <dictionary id='i8'>
+            <string>_access_status</string>
+            <string>%(access_status)s</string>
             <string>_computer_id</string>
             <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
@@ -157,6 +159,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_3_param)s</unicode>
+              <string>root_instance_short_title</string>
+              <unicode/>
               <string>root_instance_title</string>
               <unicode>%(partition_3_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
@@ -201,6 +205,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <unicode>partition2</unicode>
           </tuple>
           <dictionary id='i19'>
+            <string>_access_status</string>
+            <string>%(access_status)s</string>
             <string>_computer_id</string>
             <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
@@ -229,6 +235,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_2_param)s</unicode>
+              <string>root_instance_short_title</string>
+              <unicode/>
               <string>root_instance_title</string>
               <unicode>%(partition_2_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
@@ -273,6 +281,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <unicode>partition1</unicode>
           </tuple>
           <dictionary id='i30'>
+            <string>_access_status</string>
+            <string>%(access_status)s</string>
             <string>_computer_id</string>
             <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
@@ -301,6 +311,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_1_param)s</unicode>
+              <string>root_instance_short_title</string>
+              <unicode/>
               <string>root_instance_title</string>
               <unicode>%(partition_1_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
@@ -422,7 +434,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
-  start_requested_url=self.start_requested_software_installation.getUrlString()
+  start_requested_url=self.start_requested_software_installation.getUrlString(),
+  access_status="#error no data found!",
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
@@ -961,6 +974,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <unicode>partition1</unicode>
           </tuple>
           <dictionary id='i6'>
+            <string>_access_status</string>
+            <string>%(access_status)s</string>
             <string>_computer_id</string>
             <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
@@ -989,6 +1004,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(param)s</unicode>
+              <string>root_instance_short_title</string>
+              <unicode/>
               <string>root_instance_title</string>
               <unicode>%(root_instance_title)s</unicode>
               <string>slap_computer_id</string>
@@ -1060,6 +1077,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
     slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
     slave_1_title=self.start_requested_slave_instance.getTitle(),
+    access_status="#error no data found!",
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
@@ -1209,6 +1227,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
+        <string>root_instance_short_title</string>
+        <unicode/>
         <string>root_instance_title</string>
         <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
@@ -1341,6 +1361,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
+        <string>root_instance_short_title</string>
+        <unicode/>
         <string>root_instance_title</string>
         <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
@@ -2423,6 +2445,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
+        <string>root_instance_short_title</string>
+        <unicode/>
         <string>root_instance_title</string>
         <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
@@ -2555,6 +2579,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
+        <string>root_instance_short_title</string>
+        <unicode/>
         <string>root_instance_title</string>
         <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
@@ -2812,6 +2838,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
           <unicode>%(ip)s</unicode>
         </tuple>
       </list>
+      <string>root_instance_short_title</string>
+      <unicode/>
       <string>root_instance_title</string>
       <unicode>%(root_instance_title)s</unicode>
       <string>slap_computer_id</string>
