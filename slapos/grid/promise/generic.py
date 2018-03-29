@@ -54,8 +54,8 @@ class BaseResult(object):
   def hasFailed(self):
     return self.__problem
 
-  @property
-  def type(self):
+  @staticmethod
+  def type():
     return "Base Result"
 
   @property
@@ -68,19 +68,20 @@ class BaseResult(object):
 
 class TestResult(BaseResult):
 
-  @property
-  def type(self):
+  @staticmethod
+  def type():
     return "Test Result"
 
 class AnomalyResult(BaseResult):
 
-  @property
-  def type(self):
+  @staticmethod
+  def type():
     return "Anomaly Result"
 
 class PromiseQueueResult(object):
 
-  def __init__(self, path, name, title, item, execution_time=0):
+  def __init__(self, path=None, name=None, title=None,
+               item=None, execution_time=0):
     self.path = path
     self.name = name
     self.item = item
@@ -94,12 +95,31 @@ class PromiseQueueResult(object):
       'path': self.path,
       'execution-time': self.execution_time,
       'result': {
-        'type': self.item.type,
+        'type': self.item.type(),
         'failed': self.item.hasFailed(),
         'date': self.item.date.strftime('%Y-%m-%dT%H:%M:%S'),
         'message': self.item.message
       }
     }
+
+  def load(self, data):
+    if data['result']['type'] == AnomalyResult.type():
+      self.item = AnomalyResult(
+        problem=data['result']['failed'],
+        message=data['result']['message'],
+        date=datetime.strptime(data['result']['date'], '%Y-%m-%dT%H:%M:%S'))
+    elif data['result']['type'] == TestResult.type():
+      self.item = TestResult(
+        problem=data['result']['failed'],
+        message=data['result']['message'],
+        date=datetime.strptime(data['result']['date'], '%Y-%m-%dT%H:%M:%S'))
+    else:
+      raise ValueError('Unknown result type: %r' % data['result']['type'])
+
+    self.title = data['title']
+    self.name = data['name']
+    self.path = data['path']
+    self.execution_time = data['execution-time']
 
 class GenericPromise(object):
 

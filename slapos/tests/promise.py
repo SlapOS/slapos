@@ -533,6 +533,112 @@ class RunPromise(GenericPromise):
     self.launcher.run()
     self.assertEquals(self.counter, 2)
 
+  def test_runpromise_with_periodicity_result_failed(self):
+    first_promise = 'my_first_promise.py'
+    second_promise = 'my_second_promise.py'
+    first_state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME,
+                                    'my_first_promise.status.json')
+    second_state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME,
+                                     'my_second_promise.status.json')
+
+    self.configureLauncher()
+    # ~2 seconds
+    self.generatePromiseScript(first_promise, success=True, periodicity=0.03)
+    # ~3 seconds
+    self.generatePromiseScript(second_promise, success=False, periodicity=0.05)
+
+    with self.assertRaises(PromiseError) as exc:
+      self.launcher.run()
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
+
+    self.assertTrue(os.path.exists(first_state_file))
+    self.assertTrue(os.path.exists(second_state_file))
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertEquals(first_result['name'], first_promise)
+    self.assertEquals(second_result['name'], second_promise)
+    first_date = first_result['result']['date']
+    second_date = second_result['result']['date']
+
+    self.configureLauncher()
+    time.sleep(2)
+    with self.assertRaises(PromiseError) as exc:
+      self.launcher.run() # only my_first_promise will run but second_promise still failing
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
+
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertNotEquals(first_result['result']['date'], first_date)
+    self.assertEquals(second_result['result']['date'], second_date)
+    first_date = first_result['result']['date']
+
+    time.sleep(3)
+    self.configureLauncher()
+    with self.assertRaises(PromiseError) as exc:
+      self.launcher.run()
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
+
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertNotEquals(first_result['result']['date'], first_date)
+    self.assertNotEquals(second_result['result']['date'], second_date)
+
+  def test_runpromise_with_periodicity_result_failed_and_ok(self):
+    first_promise = 'my_first_promise.py'
+    second_promise = 'my_second_promise.py'
+    first_state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME,
+                                    'my_first_promise.status.json')
+    second_state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME,
+                                     'my_second_promise.status.json')
+
+    self.configureLauncher()
+    # ~2 seconds
+    self.generatePromiseScript(first_promise, success=True, periodicity=0.03)
+    # ~3 seconds
+    self.generatePromiseScript(second_promise, success=False, periodicity=0.05)
+
+    with self.assertRaises(PromiseError) as exc:
+      self.launcher.run()
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
+
+    self.assertTrue(os.path.exists(first_state_file))
+    self.assertTrue(os.path.exists(second_state_file))
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertEquals(first_result['name'], first_promise)
+    self.assertEquals(second_result['name'], second_promise)
+    first_date = first_result['result']['date']
+    second_date = second_result['result']['date']
+
+    self.configureLauncher()
+    time.sleep(2)
+    with self.assertRaises(PromiseError) as exc:
+      self.launcher.run() # only my_first_promise will run but second_promise still failing
+    self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
+
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertNotEquals(first_result['result']['date'], first_date)
+    self.assertEquals(second_result['result']['date'], second_date)
+    first_date = first_result['result']['date']
+    second_date = second_result['result']['date']
+
+    time.sleep(4)
+    if "my_second_promise" in sys.modules:
+      # force to reload the module without rerun python
+      os.system('rm %s/*.pyc' % self.plugin_dir)
+      del sys.modules["my_second_promise"]
+
+    # second_promise is now success
+    self.generatePromiseScript(second_promise, success=True, periodicity=0.05)
+    self.configureLauncher()
+    self.launcher.run() # now all succeed
+
+    first_result = json.load(open(first_state_file))
+    second_result = json.load(open(second_state_file))
+    self.assertNotEquals(first_result['result']['date'], first_date)
+    self.assertNotEquals(second_result['result']['date'], second_date)
+
   def test_runpromise_force(self):
     first_promise = 'my_first_promise.py'
     second_promise = 'my_second_promise.py'

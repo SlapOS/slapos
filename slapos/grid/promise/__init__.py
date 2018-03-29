@@ -44,8 +44,7 @@ from slapos.grid.utils import dropPrivileges
 from slapos.grid.promise import interface
 from slapos.grid.promise.generic import (GenericPromise, PromiseQueueResult,
                                          AnomalyResult, TestResult,
-                                         PROMISE_RESULT_FOLDER_NAME,
-                                         PROMISE_STATE_FOLDER_NAME)
+                                         PROMISE_RESULT_FOLDER_NAME)
 from slapos.grid.promise.wrapper import WrapPromise
 
 
@@ -183,6 +182,13 @@ class PromiseLauncher(object):
     self.queue_result = MQueue()
     self.bang_called = False
 
+    self.promise_output_dir = os.path.join(
+      self.partition_folder,
+      PROMISE_RESULT_FOLDER_NAME
+    )
+    if not os.path.exists(self.promise_output_dir):
+      mkdir_p(self.promise_output_dir)
+
   def _loadPromiseModule(self, promise_name):
     """Load a promise from promises directory."""
 
@@ -222,34 +228,55 @@ class PromiseLauncher(object):
       self.logger.error('Bad result: %s is not type of PromiseQueueResult...' % result)
       return
 
-    promise_output_dir = os.path.join(
-      self.partition_folder,
-      PROMISE_RESULT_FOLDER_NAME
-    )
     promise_output_file = os.path.join(
-      promise_output_dir,
+      self.promise_output_dir,
       "%s.status.json" % result.title
     )
     promise_tmp_file = '%s.tmp' % promise_output_file
-
-    if not os.path.exists(promise_output_dir):
-      mkdir_p(promise_output_dir)
 
     with open(promise_tmp_file, "w") as outputfile:
       json.dump(result.serialize(), outputfile)
     os.rename(promise_tmp_file, promise_output_file)
 
+  def _loadPromiseResult(self, promise_title):
+    promise_output_file = os.path.join(
+      self.promise_output_dir,
+      "%s.status.json" % promise_title
+    )
+    result = None
+    if os.path.exists(promise_output_file):
+      with open(promise_output_file) as f:
+        try:
+          result = PromiseQueueResult()
+          result.load(json.loads(f.read()))
+        except ValueError, e:
+          result = None
+          self.logger.warn('Bad promise JSON result at %r: %s' % (
+            promise_output_file,
+            e
+          ))
+    return result
+
   def _launchPromise(self, promise_name, argument_dict, promise_module=None):
     """
-      Launch the promise and save the result if `self.save_method` is not None
-        If no save method is set, raise PromiseError in case of failure
+      Launch the promise and save the result. If promise_module is None,
+      the promise will be run with the promise process wap module.
+
+      If the promise periodicity doesn't match, the previous promise result is
+      checked.
     """
+    self.logger.info("Checking promise %s..." % promise_name)
     try:
       if promise_module is None:
         promise_instance = WrapPromise(argument_dict)
       else:
         promise_instance = promise_module.RunPromise(argument_dict)
       if not self.force and not promise_instance.isPeriodicityMatch():
+        result = self._loadPromiseResult(promise_instance.getTitle())
+        if result is not None:
+          if result.item.hasFailed():
+            self.logger.error(result.item.message)
+            return True
         return False
       promise_instance.setPromiseRunTimestamp()
     except Exception:
@@ -268,7 +295,6 @@ class PromiseLauncher(object):
       logger=self.logger
     )
 
-    self.logger.info("Checking promise %s..." % promise_name)
     # set deamon to True, so promise process will be terminated if parent exit
     promise_process.daemon = True
     promise_process.start()
