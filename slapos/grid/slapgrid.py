@@ -916,11 +916,11 @@ stderr_logfile_backups=1
                              check_anomaly=True,
                              force=False)
     except PromiseError, e:
-      if not status_error:
-        self.logger.error(e)
+      self.logger.error(e)
+      if partition_access_status is None or not status_error:
         computer_partition.error(e, logger=self.logger)
     else:
-      if status_error:
+      if partition_access_status is None or status_error:
         computer_partition.started()
 
   def processComputerPartition(self, computer_partition):
