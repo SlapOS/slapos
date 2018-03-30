@@ -148,9 +148,11 @@ def main():
 
   revision = args.revision
   test_suite_title = args.test_suite_title or args.test_suite
-  os.environ['SOURCE_CODE_TO_TEST'] = args.test_location
   suite = testsuite.EggTestSuite(
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
+      egg_test_path_dict={
+          os.path.basename(os.path.normpath(path)): path
+          for path in args.test_location.split(',')},
       revision=revision)
   access_url_http = None
   access_url_https = None
