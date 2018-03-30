@@ -264,7 +264,7 @@ if enable_device_hotplug != 'true':
   ram = '%sM,slots=128,maxmem=%sM' % (ram_size, ram_max_size)
 else:
   smp = '1,maxcpus=%s' % smp_max_count
-  ram = '%sM,slots=128,maxmem=%s' % (init_ram_size, ram_max_size)
+  ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
   '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),

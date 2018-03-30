@@ -381,8 +381,8 @@ interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://moni
 <= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-url}/vnc.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'eth0' -%}
