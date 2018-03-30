@@ -5,37 +5,19 @@ import sys
 import tempfile
 import unittest
 
-from slapos.recipe import pbs
-
 
 class PBSTest(unittest.TestCase):
 
     def new_recipe(self):
-        buildout = {
-                'buildout': {
-                    'bin-directory': '',
-                    'find-links': '',
-                    'allow-hosts': '',
-                    'develop-eggs-directory': '',
-                    'eggs-directory': '',
-                    'python': 'testpython',
-                    },
-                 'testpython': {
-                     'executable': sys.executable,
-                     },
-                 'slap-connection': {
-                     'computer-id': '',
-                     'partition-id': '',
-                     'server-url': '',
-                     'software-release-url': '',
-                     }
-                }
-
+        from slapos.recipe import pbs
+        from slapos.test.utils import makeRecipe
         options = {
-                'rdiffbackup-binary': ''
-                }
-
-        return pbs.Recipe(buildout=buildout, name='pbs', options=options)
+            'rdiffbackup-binary': ''
+        }
+        return makeRecipe(
+            pbs.Recipe,
+            options=options,
+            name='pbs')
 
     def test_push(self):
         recipe = self.new_recipe()

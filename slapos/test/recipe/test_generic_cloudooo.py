@@ -4,30 +4,15 @@ import unittest
 
 from tempfile import mkdtemp
 from shutil import rmtree
-from slapos.recipe import generic_cloudooo
 
 class TestGenericCloudooo(unittest.TestCase):
   def new_recipe(self, options):
-    buildout = {
-      'buildout': {
-        'bin-directory': '',
-        'find-links': '',
-        'allow-hosts': '',
-        'develop-eggs-directory': '',
-        'eggs-directory': '',
-        'python': 'testpython',
-      },
-      'testpython': {
-        'executable': sys.executable,
-      },
-      'slap-connection': {
-         'computer-id': '',
-         'partition-id': '',
-         'server-url': '',
-         'software-release-url': '',
-      }
-    }
-    return generic_cloudooo.Recipe(buildout=buildout, name='generic_cloudooo', options=options)
+    from slapos.recipe import generic_cloudooo
+    from slapos.test.utils import makeRecipe
+    return makeRecipe(
+        generic_cloudooo.Recipe,
+        options=options,
+        name='generic_cloudooo')
 
   def setUp(self):
     self.test_dir = mkdtemp()
