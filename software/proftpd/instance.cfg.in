@@ -1,0 +1,133 @@
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# apache-frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+log = ${:var}/log
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+proftpd-dir = ${:srv}/proftpd/
+ssh-authorized-keys-dir = ${:etc}/authorized_keys/
+
+[config-file]
+recipe = slapos.recipe.template:jinja2
+template = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
+mode = 0644
+extensions = jinja2.ext.do
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+
+[proftpd-environment]
+recipe = collective.recipe.environment
+# This component depends on https://nexedi.erp5.net/bug_module/20180402-716ACB/ being fixed
+
+[proftpd-grp]
+recipe = collective.recipe.grp
+
+[proftpd-password]
+recipe = slapos.cookbook:generate.password
+username = proftpd
+bytes = 12
+
+[proftpd]
+ipv6 = ${instance-parameter:ipv6-random}
+ipv4 = ${instance-parameter:ipv4-random}
+host = ${:ipv6}
+sftp-port = 8022
+url = sftp://[${:host}]:${:sftp-port}
+data-dir = ${directory:proftpd-dir}
+user=${proftpd-environment:USER}
+group=${proftpd-grp:GROUP}
+sftp-log=${directory:log}/proftpd-sftp.log
+xfer-log=${directory:log}/proftpd-xfer.log
+ban-log=${directory:log}/proftpd-ban.log
+ssh-host-rsa-key=${ssh-host-rsa-key:output}
+ssh-host-dsa-key=${ssh-host-dsa-key:output}
+ssh-host-ecdsa-key=${ssh-host-ecdsa-key:output}
+ssh-authorized-keys-dir = ${directory:ssh-authorized-keys-dir}
+ban-table=${directory:srv}/proftpd-ban-table
+auth-user-file=${auth-user-file:output}
+
+recipe = slapos.cookbook:wrapper
+command-line =
+   {{ proftpd_bin }} --nodaemon --config ${proftpd-config-file:rendered}
+wrapper-path = ${directory:service}/proftpd
+
+[proftpd-listen-promise]
+<= check-port-listening-promise
+hostname = ${proftpd:ipv6}
+port = ${proftpd:sftp-port}
+
+
+[auth-user-file]
+recipe = plone.recipe.command
+output = ${directory:etc}/ftpd.passwd
+command =
+  echo ${proftpd-password:passwd} | {{ ftpasswd_bin }} --stdin --passwd --name=${proftpd-password:username} --home=${proftpd:data-dir} --shell=/bin/false --uid=`id -u` --gid=`id -g` --file ${:output}
+update-command = ${:command}
+
+
+[ssh-keygen-base]
+recipe = plone.recipe.command
+output = ${directory:etc}/${:_buildout_section_name_}
+command = {{ ssh_keygen_bin }} -f ${:output} -N '' ${:extra-args}
+
+[ssh-host-rsa-key]
+<=ssh-keygen-base
+extra-args=-t rsa
+[ssh-host-dsa-key]
+<=ssh-keygen-base
+extra-args=-t dsa
+[ssh-host-ecdsa-key]
+<=ssh-keygen-base
+extra-args=-t ecdsa -b 521
+
+
+[proftpd-config-file]
+<= config-file
+context =
+  section proftpd proftpd
+  key slapparameter_dict slap-configuration:configuration
+
+[promises]
+recipe =
+instance-promises =
+  ${proftpd-listen-promise:path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${proftpd:url}
+user = ${proftpd-password:username}
+password = ${proftpd-password:passwd}

@@ -1,0 +1,65 @@
+ServerName "ProFTPD SlapOS"
+ServerType standalone
+DefaultServer on
+MaxInstances  30
+DefaultAddress {{ proftpd['ipv6'] }} {{ proftpd['ipv4']}}
+Port {{ proftpd['sftp-port'] }}
+
+User {{ proftpd['user'] }}
+Group {{ proftpd['group'] }}
+
+Umask 022
+AllowOverwrite on
+
+# SFTP
+SFTPEngine on
+SFTPHostKey {{ proftpd['ssh-host-rsa-key'] }}
+SFTPHostKey {{ proftpd['ssh-host-dsa-key'] }}
+SFTPHostKey {{ proftpd['ssh-host-ecdsa-key'] }}
+#SFTPAuthorizedUserKeys file:{{ proftpd['ssh-authorized-keys-dir'] }}%u
+
+
+# Logging
+TransferLog {{ proftpd['xfer-log'] }}
+SFTPLog {{ proftpd['sftp-log'] }}
+BanLog {{ proftpd['ban-log'] }}
+
+
+# Virtual users
+RequireValidShell off
+AuthUserFile {{ proftpd['auth-user-file'] }}
+
+
+# Prevent partially uploaded files to be visible
+HiddenStores on
+DeleteAbortedStores on
+
+
+# Limitations of running as non-root user
+WtmpLog off
+# ( we cannot use DefaultRoot ~ )
+
+# Prevent user for escaping their home
+<Directory />
+  <Limit ALL>
+    DenyAll
+  </Limit>
+</Directory>
+
+<Directory {{ proftpd['data-dir'] }}>
+  <Limit ALL>
+    AllowAll
+  </Limit>
+</Directory>
+
+
+
+# Ban failed logins
+MaxLoginAttempts 1
+BanEngine on
+BanTable {{ proftpd['ban-table'] }}
+# 5 failed login attemps in 5 minutes -> ban for 20 minutes
+BanOnEvent MaxLoginAttempts 5/00:05:00 00:20:00 "Too many Failed Login Attempts"
+BanControlsACLs all allow user {{ proftpd['user'] }}
+
+
