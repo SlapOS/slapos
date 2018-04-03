@@ -2683,4 +2683,52 @@ exit 0
       # Assert partition directory is empty
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path), [])
-      
+
+
+# test that slapgrid commands, like e.g. 'slapos node software' do not leak
+# file descriptors besides stdin, stdout, stderr to spawned processes.
+class TestSlapgridNoFDLeak(MasterMixin, unittest.TestCase):
+
+  def test_no_fd_leak(self):
+    filev = []
+    try:
+      # open some file descriptors
+      for i in range(4):
+        f = open(os.devnull)
+        filev.append(f)
+        self.assertGreater(f.fileno(), 2)
+
+      # 'node software' with check that buildout does not see opened files
+      self._test_no_fd_leak()
+
+    finally:
+      for f in filev:
+        f.close()
+
+  def _test_no_fd_leak(self):
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    with httmock.HTTMock(computer.request_handler):
+      software = computer.software_list[0]
+
+      software.setBuildout("""#!/bin/bash
+fdleak() {
+  echo "file descriptors: leaked:" "$@"
+  exit 1
+}
+
+# https://unix.stackexchange.com/a/206848
+: >&3 && fdleak 3
+: >&4 && fdleak 4
+: >&5 && fdleak 5
+: >&6 && fdleak 6
+
+echo "file descriptors: ok"
+exit 1  # do not proceed trying to use this software
+""")
+
+      self.launchSlapgridSoftware()
+
+      self.assertEqual(software.sequence,
+                       ['/buildingSoftwareRelease', '/softwareReleaseError'])
+      self.assertNotIn("file descriptors: leaked", software.error_log)
+      self.assertIn("file descriptors: ok", software.error_log)

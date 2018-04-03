@@ -97,6 +97,10 @@ class SlapPopen(subprocess.Popen):
     kwargs.update(stdin=subprocess.PIPE)
     if sys.platform == 'cygwin' and kwargs.get('env') == {}:
       kwargs['env'] = None
+
+    # don't leak log & co. filedescriptors to child process
+    kwargs.setdefault('close_fds', True)
+
     subprocess.Popen.__init__(self, *args, **kwargs)
     self.stdin.flush()
     self.stdin.close()
