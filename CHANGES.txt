@@ -1,6 +1,10 @@
 Changes
 =======
 
+(unreleased)
+------------
+ * grid: do not hide `$USER` when running buildout
+
 1.4.6 (2018-03-29)
 ------------------
  * grid.promise: use previous promise execution result if the promise is skipped because of periodicity.
