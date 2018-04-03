@@ -222,7 +222,7 @@
           var header_dict = {
             page_title: "Support Request : " + gadget.state.doc.title,
             add_url: url_list[1],
-            selection_url: url_list[6]
+            selection_url: url_list[2]
           };
           return gadget.updateHeader(header_dict);
         });
