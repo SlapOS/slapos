@@ -1,0 +1,88 @@
+<source>
+  @type dummy
+  tag dummy
+  dummy {"message":"yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay"}
+</source>
+
+
+# HTTP input
+# http://localhost:8888/<tag>?json=<json>
+<source>
+  @type http
+  @id http_input
+  port 8888
+</source>
+
+
+## output tag=sensor.** to Wendelin
+<match dummy.**>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri    http://10.0.46.242:4443
+  # TODO ^^^ do not check peer's certificate
+  user      zope
+  password  dbguylpn
+
+
+  # all parameters of BufferedOutput & Output classes are supported too, e.g.
+  # `buffer_type`, `flush_interval`, `num_threads`, `log_level`, etc - see
+  # their code near:
+  #
+  #   https://github.com/fluent/fluentd/blob/master/lib/fluent/output.rb#L182
+  #
+  # logging setup description:
+  #
+  #   http://docs.fluentd.org/articles/logging
+
+  buffer_type       memory
+  buffer_chunk_limit 1MB
+  #buffer_path       "#{ENV['HOME']/var}"
+  flush_interval    1s
+</match>
+
+
+
+# ---- monitoring & debugging ----
+
+
+# Listen HTTP for monitoring
+# http://localhost:24220/api/plugins
+# http://localhost:24220/api/plugins?type=TYPE
+# http://localhost:24220/api/plugins?tag=MYTAG
+<source>
+  @type monitor_agent
+  @id monitor_agent_input
+
+  port 24220
+</source>
+
+# Listen DRb for debug
+<source>
+  @type debug_agent
+  @id debug_agent_input
+
+  bind 127.0.0.1
+  port 24230
+</source>
+
+
+## match tag=debug.** and dump to console
+<match debug.**>
+  @type stdout
+  @id stdout_output
+</match>
+
+
+## match fluent's internal events
+#<match fluent.**>
+#  @type null
+#</match>
+
+## match not matched logs and write to file
+#<match **>
+#  @type file
+#  path /var/log/fluent/else
+#  compress gz
+#</match>
+

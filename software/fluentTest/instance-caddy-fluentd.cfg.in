@@ -1,0 +1,83 @@
+[buildout]
+parts =
+  directory
+  runTestSuite-instance
+  fluentd-service
+  caddy-service
+  publish-connection-information
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+run = $${:var}/run
+log = $${:var}/log
+scripts = $${:etc}/run
+services = $${:etc}/service
+promise = $${:etc}/promise/
+www = $${:srv}/www
+home = $${:etc}/home
+ssl = $${:etc}/ssl
+
+[runTestSuite-instance]
+recipe = slapos.recipe.template
+url = ${template-runTestSuite:output}
+output = $${directory:bin}/runTestSuite
+buildout-directory = $${buildout:directory}
+mode = 0700
+
+
+#################################
+# fluentd service
+#################################
+
+[fluentd-service]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/fluentd-service
+command-line    =  ${fluentd:location}/bin/fluentd
+    -v
+    -c ${template-fluentdConfig:output}
+environment =
+  GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
+output = $${:wrapper-path}  
+
+#################################
+# caddy service
+#################################
+
+[caddy-service]
+recipe = slapos.recipe.template:jinja2
+template = ${template-caddy-service:output}
+rendered = $${directory:services}/caddy
+mode = 0700
+context =
+  key caddy_exec caddy-exec-dict:caddy-exec-file
+  key caddy_file caddy-configuration:rendered
+
+[caddy-exec-dict]
+caddy-exec-file = ${gowork:bin}/caddy
+  
+[caddy-configuration]
+recipe = slapos.recipe.template:jinja2
+template = ${template-caddyfile:location}/${template-caddyfile:filename}
+rendered = $${directory:etc}/Caddyfile
+mode = 0600
+access_log = $${directory:log}/caddy-access.log
+error_log = $${directory:log}/caddy-error.log
+local_ip = $${slap-network-information:local-ipv4}
+context = 
+  key local_ip caddy-configuration:local_ip
+
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+secure_access = http://$${caddy-configuration:local_ip}:4443}
+
+
+

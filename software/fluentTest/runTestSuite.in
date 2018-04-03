@@ -1,0 +1,118 @@
+#!${buildout:directory}/bin/${eggs:interpreter}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+import argparse, os, re, shutil, subprocess, sys, traceback
+import SimpleHTTPServer
+import SocketServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from erp5.util import taskdistribution
+from erp5.util.testsuite import TestSuite as BaseTestSuite
+
+
+
+
+#class Server(BaseHTTPRequestHandler):
+#    def _set_headers(self):
+#        self.send_response(200)
+#        self.send_header('Content-type', 'text/html')
+#        self.end_headers()
+
+#    def do_GET(self):
+#        self._set_headers()
+#        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+
+#    def do_HEAD(self):
+#        self._set_headers()
+        
+#    def do_POST(self):
+       
+ #       content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+#        post_data = self.rfile.read(content_length) # <--- Gets the data itself
+       # print(post_data)
+#        self._set_headers()
+#        self.wfile.write(post_data)
+        
+
+#def run(server_class=HTTPServer, handler_class=Server, port=9443):
+#    
+#    test_list = ["testIntestion.py"]
+    
+    
+#    server_address = ('', port)
+#    httpd = server_class(server_address, handler_class)
+#    print 'Starting http...'
+#    httpd.serve_forever()
+
+
+class TestSuite(BaseTestSuite):
+
+  def run(self, test):
+    return self.runUnitTest(test)
+
+  def runUnitTest(self, *args, **kw):
+    try:
+      runUnitTest = os.environ.get('RUN_UNIT_TEST',
+                                   'runUnitTest')
+      args = tuple(shlex.split(runUnitTest)) + args
+      status_dict = self.spawn(*args, **kw)
+    except SubprocessError, e:
+      status_dict = e.status_dict
+    test_log = status_dict['stderr']
+    search = self.RUN_RE.search(test_log)
+    if search:
+      groupdict = search.groupdict()
+      status_dict.update(duration=float(groupdict['seconds']),
+                         test_count=int(groupdict['all_tests']))
+    search = self.STATUS_RE.search(test_log)
+    if search:
+      groupdict = search.groupdict()
+      status_dict.update(
+        error_count=int(groupdict['errors'] or 0),
+        failure_count=int(groupdict['failures'] or 0)
+                     +int(groupdict['unexpected_successes'] or 0),
+        skip_count=int(groupdict['skips'] or 0)
+                  +int(groupdict['expected_failures'] or 0))
+    return status_dict
+
+
+def run():
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title',
+                      default=None)
+  parser.add_argument('--test_node_title', help='The test node title',
+                      default=None)
+  parser.add_argument('--project_title', help='The project title',
+                      default=None)
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='Number of parallel tests to run',
+                      default=1, type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites',
+                      default=None)
+
+  testList=["testIngestion.py"]
+
+  args = parser.parse_args()
+  master = taskdistribution.TaskDistributionTool(args.master_url)
+  test_suite_title = args.test_suite_title or args.test_suite
+  revision = args.revision
+  suite = TestSuite(1, test_suite=args.test_suite,
+                    node_quantity=args.node_quantity,
+                    revision=revision)
+
+  test_result = master.createTestResult(revision, testList,
+    args.test_node_title, suite.allow_restart, test_suite_title,
+    args.project_title)
+  if test_result is not None:
+    assert revision == test_result.revision, (revision, test_result.revision)
+    while suite.acquire():
+      test = test_result.start(suite.running.keys())
+      if test is not None:
+        suite.start(test.name, lambda status_dict, __test=test:
+          __test.stop(**status_dict))
+      elif not suite.running:
+        break
+
