@@ -108,13 +108,15 @@
         })
         .push(function (result) {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {"page": "slap_add_network"}})
+            gadget.getUrlFor({command: "change", options: {"page": "slap_add_network"}}),
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
           ]);
         })
         .push(function (result) {
           return gadget.updateHeader({
             page_title: "Networks",
             filter_action: true,
+            selection_url: result[1],
             add_url: result[0]
           });
         });

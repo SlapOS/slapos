@@ -120,13 +120,15 @@
         })
         .push(function (result) {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {"page": "slap_add_project"}})
+            gadget.getUrlFor({command: "change", options: {"page": "slap_add_project"}}),
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
           ]);
         })
         .push(function (result) {
           return gadget.updateHeader({
             page_title: "Projects",
             filter_action: true,
+            selection_url: result[1],
             add_url: result[0]
           });
         });

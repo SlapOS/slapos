@@ -116,7 +116,8 @@
         .push(function (result) {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {"page": "slap_add_computer"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_computer_get_token"}})
+            gadget.getUrlFor({command: "change", options: {page: "slap_computer_get_token"}}),
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
 
           ]);
         })
@@ -124,6 +125,7 @@
           return gadget.updateHeader({
             page_title: "Servers",
             token_url: result[1],
+            selection_url: result[2],
             filter_action: true,
             add_url: result[0]
           });

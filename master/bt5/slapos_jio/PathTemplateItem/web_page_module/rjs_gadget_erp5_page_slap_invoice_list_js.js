@@ -145,8 +145,14 @@
           });
         })
         .push(function (result) {
+          return RSVP.all([
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
+          ]);
+        })
+        .push(function (result) {
           return gadget.updateHeader({
             page_title: "Invoices",
+            selection_url: result[0],
             filter_action: true
           });
         });

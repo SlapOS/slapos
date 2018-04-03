@@ -112,14 +112,17 @@
         })
         .push(function (result) {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {"page": "slap_select_software_product"}})
+            gadget.getUrlFor({command: "change", options: {"page": "slap_select_software_product"}}),
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
+
           ]);
         })
         .push(function (result) {
           return gadget.updateHeader({
             page_title: "Services",
             filter_action: true,
-            add_url: result[0]
+            add_url: result[0],
+            selection_url: result[1]
           });
         });
     });

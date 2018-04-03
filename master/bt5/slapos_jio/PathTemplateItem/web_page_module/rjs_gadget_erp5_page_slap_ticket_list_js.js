@@ -87,13 +87,15 @@
         .push(function (result) {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {"page": "slap_add_ticket"}}),
-            gadget.getUrlFor({command: "change", options: {"page": "slap_rss_ticket"}})
+            gadget.getUrlFor({command: "change", options: {"page": "slap_rss_ticket"}}),
+            gadget.getUrlFor({command: "change", options: {"page": "slapos"}})
           ]);
         })
         .push(function (result) {
           return gadget.updateHeader({
             page_title: "Tickets",
             filter_action: true,
+            selection_url: result[2],
             add_url: result[0],
             rss_url: result[1]
           });
