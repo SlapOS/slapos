@@ -50,10 +50,12 @@
       return RSVP.Queue()
         .push(function () {
           return RSVP.all([
-            gadget.getDeclaredGadget('form_view')
+            gadget.getDeclaredGadget('form_view'),
+            gadget.jio_get(options.jio_key)
           ]);
         })
         .push(function (result) {
+          options.doc = result[1];
           return result[0].render({
             erp5_document: {
               "_embedded": {"_view": {
