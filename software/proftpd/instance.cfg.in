@@ -1,0 +1,39 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[instance-template]
+recipe = slapos.recipe.template:jinja2
+filename = ${:_buildout_section_name_}.cfg
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+mode = 0644
+extensions = jinja2.ext.do
+context =
+  key slapparameter_dict slap-configuration:configuration
+  raw software_parts_directory {{ buildout['parts-directory'] }}
+  raw proftpd_bin {{ proftpd_bin }}
+  raw ftpasswd_bin {{ ftpasswd_bin }}
+  raw ftpdctl_bin {{ ftpdctl_bin }}
+  raw ssh_keygen_bin {{ ssh_keygen_bin }}
+  raw perl_bin {{ perl_bin }}
+
+[instance-default]
+<= instance-template
+template = {{ instance_default }}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+# XXX Jerome: what is this override for ?
+override = {{ dumps(override_switch_softwaretype |default) }}
+default = instance-default:rendered
+# BBB
+RootSoftwareInstance = ${:default}
