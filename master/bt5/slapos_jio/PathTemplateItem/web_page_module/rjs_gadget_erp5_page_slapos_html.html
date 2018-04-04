@@ -10,12 +10,22 @@
 
     <!-- renderjs -->
     <script src="rsvp.js" type="text/javascript"></script>
+    <script src="handlebars.js"></script>
     <script src="renderjs.js" type="text/javascript"></script>
 
     <!-- custom script -->
     <script src="gadget_erp5_page_slapos.js" type="text/javascript"></script>
     <link href="gadget_erp5_page_slapos.css" rel="stylesheet" type="text/css"/>
 
+    <script id="ticket-link-control-template" type="text/x-handlebars-template">
+        <div class="slapos-control-front">
+          <center>
+            <a class="ui-btn ui-first-child ui-btn-white-front  ui-btn-icon-left ui-icon-sort-alpha-asc" href={{ show_all_url }} data-i18n="Show All Tickets" > Show All Tickets</a>
+            <a class="ui-btn ui-first-child ui-btn-white-front  ui-btn-icon-left ui-icon-rss" href={{ rss_all_url }} data-i18n="RSS (all)" > RSS </a>
+            <a class="ui-btn ui-first-child ui-btn-white-front  ui-btn-icon-left ui-icon-rss" href={{ rss_critical_url }} data-i18n="RSS Critical" > Critical </a>
+          </center>
+        </div>
+    </script>
 
   </head>
   <body>
@@ -24,11 +34,11 @@
         <div class="map-gadget"></div>
       </div>
       <div class="box-gadget-right">
-        <div data-gadget-url="gadget_erp5_pt_form_list.html"
+        <div data-gadget-url="gadget_erp5_pt_form_view.html"
              data-gadget-scope="right"></div>
       </div>
       <div class="box-gadget-bottom">
-        <div data-gadget-url="gadget_erp5_pt_form_list.html"
+        <div data-gadget-url="gadget_erp5_pt_form_view.html"
            data-gadget-scope="last"></div>
       </div>
     </form>

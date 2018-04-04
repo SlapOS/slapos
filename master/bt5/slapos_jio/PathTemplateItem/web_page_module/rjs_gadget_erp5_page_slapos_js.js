@@ -1,9 +1,14 @@
-/*global document, window, Option, rJS, RSVP, Chart, UriTemplate*/
+/*global document, window, Option, rJS, RSVP, Chart, UriTemplate, Handlebars*/
 /*jslint nomen: true, indent: 2, maxerr: 3 */
-(function (window, rJS, RSVP) {
+(function (window, rJS, RSVP, Handlebars) {
   "use strict";
+  var gadget_klass = rJS(window),
+    ticket_control_source = gadget_klass.__template_element
+                         .getElementById("ticket-link-control-template")
+                         .innerHTML,
+    ticket_control_template = Handlebars.compile(ticket_control_source);
 
-  rJS(window)
+  gadget_klass
     .ready(function (gadget) {
       gadget.property_dict = {};
       return gadget.getElement()
@@ -29,7 +34,7 @@
       var gadget = this;
       return gadget.jio_allDocs(param_list[0])
         .push(function (result) {
-          var i, value, len = result.data.total_rows;
+          var i, value, date, len = result.data.total_rows;
           for (i = 0; i < len; i += 1) {
             if (1 || (result.data.rows[i].hasOwnProperty("id"))) {
               value = result.data.rows[i].id;
@@ -46,6 +51,25 @@
               result.data.rows[i].value["listbox_uid:list"] = {
                 key: "listbox_uid:list",
                 value: 2713
+              };
+            }
+            if (result.data.rows[i].value.hasOwnProperty("modification_date")) {
+              date = new Date(result.data.rows[i].value.modification_date);
+              result.data.rows[i].value.modification_date = {
+                allow_empty_time: 0,
+                ampm_time_style: 0,
+                css_class: "date_field",
+                date_only: 0,
+                description: "The Date",
+                editable: 0,
+                hidden: 0,
+                hidden_day_is_last_day: 0,
+                "default": date.toUTCString(),
+                key: "modification_date",
+                required: 0,
+                timezone_style: 0,
+                title: "Modification Date",
+                type: "DateTimeField"
               };
             }
           }
@@ -134,17 +158,39 @@
           var lines_limit = 15;
           return new RSVP.Queue()
             .push(function () {
-              return gadget.getDeclaredGadget('last');
+              return RSVP.all([
+                gadget.getDeclaredGadget('last'),
+                gadget.getUrlFor({command: 'change', options: {page: "slap_ticket_list"}}),
+                gadget.getUrlFor({command: 'change', options: {page: "slap_rss_ticket"}}),
+                gadget.getUrlFor({command: 'change', options: {page: "slap_rss_critical_ticket"}})
+              ]);
             })
-            .push(function (form_list) {
-              var column_list = [
+            .push(function (result) {
+              var form_list = result[0],
+                  column_list = [
                 ['title', 'Title'],
-                ['reference', 'Reference'],
+                ['modification_date', 'Modification Date'],
                 ['translated_simulation_state_title', 'State']
               ];
+
               return form_list.render({
                 erp5_document: {
                   "_embedded": {"_view": {
+                    "control": {
+                      "description": "",
+                      "title": "Link Control",
+                      "default": ticket_control_template({
+                        show_all_url: result[1],
+                        rss_all_url: result[2],
+                        rss_critical_url: result[3]
+                      }),
+                      "css_class": "",
+                      "required": 1,
+                      "editable": 0,
+                      "key": "control",
+                      "hidden": 0,
+                      "type": "EditorField"
+                    },
                     "listbox": {
                       "column_list": column_list,
                       "show_anchor": 0,
@@ -154,12 +200,13 @@
                       "key": "slap_ticket_listbox",
                       "lines": lines_limit,
                       "list_method": "portal_catalog",
-                      "query": "urn:jio:allDocs?query=portal_type%3A%20%28%22Support%20Request%22%2C%20%22Upgrade%20Decision%22%2C%20%22Regularisation%20Request%22%29%20AND%20destination_decision_reference%3A" +  gadget.me_dict.reference,
+                      "query": "urn:jio:allDocs?query=portal_type%3A%20%28%22Support%20Request%22%2C%20%22Upgrade%20Decision%22%2C%20%22Regularisation%20Request%22%29%20AND%20" +
+                        "destination_decision_reference%3A" +  gadget.me_dict.reference + "%20AND%20simulation_state%3A%20%28%22suspended%22%2C%20%22validated%22%2C%20%22confirmed%22%29",
                       "portal_type": [],
                       "search_column_list": column_list,
                       "sort_column_list": column_list,
                       "sort": [["modification_date", "Descending"]],
-                      "title": "Tickets",
+                      "title": "Pending Tickets to Process",
                       "type": "ListBox"
                     }
                   }},
@@ -173,7 +220,7 @@
                 form_definition: {
                   group_list: [[
                     "bottom",
-                    [["listbox"]]
+                    [["control"], ["listbox"]]
                   ]]
                 }
               });
@@ -231,4 +278,4 @@
             });
         });
     });
-}(window, rJS, RSVP));
+}(window, rJS, RSVP, Handlebars));

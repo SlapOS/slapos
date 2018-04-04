@@ -10,5 +10,18 @@
 .box-gadget-bottom {
   float: left;
   width: 100%;
+  padding-top: 17px;
+}
 
+.ui-btn-white-front,
+.ui-btn-white-front:active,
+.ui-btn-white-front:hover {
+  background: white !important;
+  cursor: default;
+  text-align: center;
+  color: black;
+  padding: 3pt;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 0.325em;
+  margin-right: 6pt;
 }
