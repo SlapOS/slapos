@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2018 Vifib SARL and Contributors. All Rights Reserved.
@@ -31,13 +32,15 @@ import sys
 import time
 import json
 import random
+import logging
 from datetime import datetime, timedelta
 import Queue
 from zope import interface as zope_interface
-from slapos.grid.promise import interface, PromiseLauncher, PromiseError
+from slapos.grid.promise import interface, PromiseLauncher, PromiseProcess, PromiseError
 from slapos.grid.promise.generic import (GenericPromise, TestResult, AnomalyResult,
                                          PromiseQueueResult, PROMISE_STATE_FOLDER_NAME,
-                                         PROMISE_RESULT_FOLDER_NAME)
+                                         PROMISE_RESULT_FOLDER_NAME,
+                                         PROMISE_PARAMETER_NAME)
 
 class TestSlapOSPromiseMixin(unittest.TestCase):
 
@@ -96,6 +99,35 @@ class TestSlapOSPromiseMixin(unittest.TestCase):
     if save_method:
       self.launcher._savePromiseResult = save_method
 
+  def genPromiseConfigDict(self, promise_name):
+    return {
+      'log-folder': None,
+      'partition-folder': self.partition_dir,
+      'master-url': "https://master.url.com",
+      'partition-cert': "",
+      'partition-key': "",
+      'partition-id': self.partition_id,
+      'computer-id': self.computer_id,
+      'debug': False,
+      'name': promise_name,
+      'path': os.path.join(self.plugin_dir, promise_name),
+      'queue': Queue.Queue(),
+    }
+
+  def createPromiseProcess(self, promise_name, check_anomaly=False, wrap=False):
+
+    logging.basicConfig()
+    promise_path = os.path.join(self.plugin_dir, promise_name)
+    return PromiseProcess(
+      self.partition_dir,
+      promise_name,
+      promise_path,
+      logger=logging.getLogger('grid.promise'),
+      argument_dict=self.genPromiseConfigDict(promise_name),
+      check_anomaly=check_anomaly,
+      wrap=wrap,
+    )
+
   def writeFile(self, path, content, mode=0644):
     with open(path, 'w') as f:
       f.write(content)
@@ -140,20 +172,21 @@ class TestSlapOSPromiseLauncher(TestSlapOSPromiseMixin):
 
   def test_promise_match_interface(self):
     promise_name = 'my_promise.py'
-    self.configureLauncher()
-    self.generatePromiseScript(promise_name)
     self.writeInit()
+    self.generatePromiseScript(promise_name)
+    promise_process = self.createPromiseProcess(promise_name)
 
-    promise_module = self.launcher._loadPromiseModule(promise_name)
+    promise_module = promise_process._loadPromiseModule()
 
   def test_promise_match_interface_bad_name(self):
     promise_name = 'my_promise_no_py'
-    self.configureLauncher()
-    self.generatePromiseScript(promise_name)
     self.writeInit()
+    self.generatePromiseScript(promise_name)
+    promise_process = self.createPromiseProcess(promise_name)
 
-    with self.assertRaises(ImportError):
-      promise_module = self.launcher._loadPromiseModule(promise_name)
+    with self.assertRaises(ImportError) as exc:
+      promise_module = promise_process._loadPromiseModule()
+    self.assertEquals(exc.exception.message, 'No module named my_promise_no_py')
 
   def test_promise_match_interface_no_implement(self):
     promise_name = 'my_promise_noimplement.py'
@@ -169,12 +202,15 @@ class RunPromise(GenericPromise):
     
 """
     promise_path = os.path.join(self.plugin_dir, promise_name)
-    self.configureLauncher()
-    self.writeInit()
     self.writeFile(promise_path, promise_content)
+    self.writeInit()
+    promise_process = self.createPromiseProcess(promise_name)
 
-    with self.assertRaises(RuntimeError):
-      promise_module = self.launcher._loadPromiseModule(promise_name)
+    with self.assertRaises(RuntimeError) as exc:
+      promise_module = promise_process._loadPromiseModule()
+    message = "RunPromise class in my_promise_noimplement.py must implements" \
+      " 'IPromise' interface. zope_interface.implements(interface.IPromise) is missing ?"
+    self.assertEquals(exc.exception.message, message)
 
   def test_promise_match_interface_no_generic(self):
     promise_name = 'my_promise_nogeneric.py'
@@ -193,12 +229,14 @@ class RunPromise(object):
     
 """
     promise_path = os.path.join(self.plugin_dir, promise_name)
-    self.configureLauncher()
-    self.writeInit()
     self.writeFile(promise_path, promise_content)
+    self.writeInit()
+    promise_process = self.createPromiseProcess(promise_name)
 
-    with self.assertRaises(RuntimeError):
-      promise_module = self.launcher._loadPromiseModule(promise_name)
+    with self.assertRaises(RuntimeError) as exc:
+      promise_module = promise_process._loadPromiseModule()
+
+    self.assertEquals(exc.exception.message, 'RunPromise class is not a subclass of GenericPromise class.')
 
   def test_promise_match_interface_no_sense(self):
     promise_name = 'my_promise_nosense.py'
@@ -218,13 +256,72 @@ class RunPromise(GenericPromise):
     
 """
     promise_path = os.path.join(self.plugin_dir, promise_name)
-    self.configureLauncher()
-    self.writeInit()
     self.writeFile(promise_path, promise_content)
+    self.writeInit()
+    promise_process = self.createPromiseProcess(promise_name)
 
-    with self.assertRaises(TypeError):
-      promise_module = self.launcher._loadPromiseModule(promise_name)
+    with self.assertRaises(TypeError) as exc:
+      promise_module = promise_process._loadPromiseModule()
       promise = promise_module.RunPromise({})
+    self.assertEquals(exc.exception.message,
+      "Can't instantiate abstract class RunPromise with abstract methods sense")
+
+  def test_promise_extra_config(self):
+    promise_name = 'my_promise_extra.py'
+    config_dict = {'foo': 'bar', 'my-config': 4522111,
+                   'text': 'developers \ninformation, sample\n\ner'}
+    promise_content = """from zope import interface as zope_interface
+from slapos.grid.promise import interface
+from slapos.grid.promise import GenericPromise
+
+%(config_name)s = %(config_content)s
+
+class RunPromise(GenericPromise):
+
+  zope_interface.implements(interface.IPromise)
+
+  def sense(self):
+    pass
+    
+""" % {'config_name': PROMISE_PARAMETER_NAME,
+       'config_content': config_dict}
+    promise_path = os.path.join(self.plugin_dir, promise_name)
+    self.writeFile(promise_path, promise_content)
+    self.writeInit()
+    promise_process = self.createPromiseProcess(promise_name)
+    promise_module = promise_process._loadPromiseModule()
+    promise = promise_module.RunPromise(promise_process.argument_dict)
+
+    self.assertEquals(promise.getConfig('foo'), 'bar')
+    self.assertEquals(promise.getConfig('my-config'), 4522111)
+    self.assertEquals(promise.getConfig('text'), config_dict['text'])
+
+  def test_promise_extra_config_reserved_name(self):
+    promise_name = 'my_promise_extra.py'
+    config_dict = {'name': 'bar', 'my-config': 4522111}
+    promise_content = """from zope import interface as zope_interface
+from slapos.grid.promise import interface
+from slapos.grid.promise import GenericPromise
+
+%(config_name)s = %(config_content)s
+
+class RunPromise(GenericPromise):
+
+  zope_interface.implements(interface.IPromise)
+
+  def sense(self):
+    pass
+    
+""" % {'config_name': PROMISE_PARAMETER_NAME,
+       'config_content': config_dict}
+    promise_path = os.path.join(self.plugin_dir, promise_name)
+    self.writeFile(promise_path, promise_content)
+    self.writeInit()
+    promise_process = self.createPromiseProcess(promise_name)
+
+    with self.assertRaises(ValueError) as exc:
+      promise_module = promise_process._loadPromiseModule()
+    self.assertEquals(exc.exception.message, "Extra parameter name 'name' cannot be used.\n%s" % config_dict)
 
   def test_runpromise(self):
     promise_name = 'my_promise.py'
@@ -445,11 +542,8 @@ class RunPromise(GenericPromise):
       self.launcher.run()
     self.assertEquals(exc.exception.message, 'Promise %r failed.' % second_promise)
 
-    if "my_second_promise" in sys.modules:
-      # force to reload the module without rerun python
-      os.system('rm %s/*.pyc' % self.plugin_dir)
-      del sys.modules["my_second_promise"]
-
+    # force to reload the module without rerun python
+    os.system('rm %s/*.pyc' % self.plugin_dir)
     self.generatePromiseScript(second_promise, success=True)
     # wait next periodicity
     time.sleep(2)
@@ -624,10 +718,8 @@ class RunPromise(GenericPromise):
     second_date = second_result['result']['date']
 
     time.sleep(4)
-    if "my_second_promise" in sys.modules:
-      # force to reload the module without rerun python
-      os.system('rm %s/*.pyc' % self.plugin_dir)
-      del sys.modules["my_second_promise"]
+    # force to reload the module without rerun python
+    os.system('rm %s/*.pyc' % self.plugin_dir)
 
     # second_promise is now success
     self.generatePromiseScript(second_promise, success=True, periodicity=0.05)
@@ -856,7 +948,6 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
       'partition-folder': self.partition_dir,
       'promise-timeout': timeout,
       'debug': False,
-      'slapgrid-mode': False,
       'check-anomaly': True,
       'master-url': "https://master.url.com",
       'partition-cert': '',
@@ -868,10 +959,23 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
       'name': self.promise_name
     }
 
+  def createPromiseProcess(self, check_anomaly=False, wrap=False):
+
+    logging.basicConfig()
+    return PromiseProcess(
+      self.partition_dir,
+      self.promise_name,
+      self.promise_path,
+      logger=logging.getLogger('grid.promise'),
+      argument_dict=self.promise_config,
+      check_anomaly=check_anomaly,
+      wrap=wrap,
+    )
+
   def test_create_simple_promise(self):
     self.initialisePromise()
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
     self.assertEquals(promise.getPeriodicity(), 1)
     self.assertEquals(promise.getName(), self.promise_name)
@@ -899,11 +1003,9 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_anomaly_disabled(self):
     self.initialisePromise()
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
-    # disable anomaly call, enable test call
-    promise.setConfig("check-anomaly", False)
 
     promise.run()
     result = self.queue.get(True, 1)
@@ -919,8 +1021,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_with_raise(self):
     promise_content = "raise ValueError('Bad Promise raised')"
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # no raise
@@ -934,8 +1036,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_no_return(self):
     promise_content = "return"
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # no raise
@@ -949,8 +1051,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_resultfromlog(self):
     promise_content = "self.logger.info('Promise is running...')"
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     date = datetime.now()
@@ -969,8 +1071,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_resultfromlog_error(self):
     promise_content = 'self.logger.error("Promise is running...\\nmessage in new line")'
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     date = datetime.now()
@@ -991,8 +1093,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
     self.log_dir = None
     promise_content = "self.logger.info('Promise is running...')"
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     date = datetime.now()
@@ -1013,8 +1115,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_resultfromlog_latest_minutes(self):
     self.initialisePromise(timeout=60)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # write some random logs
@@ -1046,8 +1148,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_resultfromlog_latest_minutes_multilog(self):
     self.initialisePromise(timeout=60)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # write some random logs
@@ -1091,8 +1193,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_resultfromlog_result_count(self):
     self.initialisePromise()
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # write some random logs
@@ -1133,8 +1235,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_resultfromlog_result_count_many(self):
     self.initialisePromise()
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     # write some random logs
@@ -1182,8 +1284,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_defaulttest(self):
     promise_content = 'self.logger.info("Promise is running...\\nmessage in new line")'
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     promise.sense()
@@ -1195,8 +1297,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_defaulttest_failure(self):
     self.initialisePromise(success=False)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     promise.sense()
@@ -1208,8 +1310,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def test_promise_defaulttest_error_if_two_fail(self):
     self.initialisePromise(success=False, timeout=1)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     promise.sense()
@@ -1221,6 +1323,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
     self.assertEquals(result.hasFailed(), False)
 
     self.initialisePromise(success=False, timeout=1)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
     promise.sense()
     result = promise._test(result_count=2, failure_amount=2)
@@ -1229,6 +1333,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
     # will continue to fail
     self.initialisePromise(success=False, timeout=1)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
     promise.sense()
     result = promise._test(result_count=2, failure_amount=2)
@@ -1238,8 +1344,8 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
   def test_promise_defaulttest_anomaly(self):
     promise_content = 'self.logger.info("Promise is running...\\nmessage in new line")'
     self.initialisePromise(promise_content)
-    promise_module = self.launcher._loadPromiseModule(self.promise_name)
-    reload(promise_module)
+    promise_process = self.createPromiseProcess()
+    promise_module = promise_process._loadPromiseModule()
     promise = promise_module.RunPromise(self.promise_config)
 
     promise.sense()

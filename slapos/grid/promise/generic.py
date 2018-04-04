@@ -43,6 +43,9 @@ PROMISE_STATE_FOLDER_NAME = '.slapgrid/promise'
 PROMISE_RESULT_FOLDER_NAME = '.slapgrid/promise/result'
 PROMISE_LOG_FOLDER_NAME = '.slapgrid/promise/log'
 
+PROMISE_PARAMETER_NAME = 'extra_config_dict'
+PROMISE_PERIOD_FILE_NAME = '%s.periodicity'
+
 class BaseResult(object):
   def __init__(self, problem=False, message=None, date=None):
     self.__problem = problem
@@ -131,23 +134,21 @@ class GenericPromise(object):
 
     self.__log_folder = self.__config.pop('log-folder', None)
     self.__partition_folder = self.__config.pop('partition-folder', None)
-    self.__periodicity = self.__config.pop('periodicity', 2)
     self.__debug = self.__config.pop('debug', True)
     self.__name = self.__config.pop('name', None)
     self.__promise_path = self.__config.pop('path', None)
     self.__queue = self.__config.pop('queue', None)
     self.__logger_buffer = None
+    self.__periodicity_file = os.path.join(
+      self.__partition_folder,
+      PROMISE_STATE_FOLDER_NAME,
+      PROMISE_PERIOD_FILE_NAME % self.__name)
+    self.setPeriodicity(self.__config.pop('periodicity', 2))
 
     self.__transaction_id = '%s-%s' % (int(time.time()), random.randint(100, 999))
 
     self._validateConf()
     self._configureLogger()
-    for key, value in config.items():
-      setattr(self, key.replace('-', '_'), value)
-
-    self.__timestamp_file = os.path.join(self.__partition_folder,
-                                         PROMISE_STATE_FOLDER_NAME,
-                                         self.__name)
 
   def _configureLogger(self):
     self.logger = logging.getLogger(self.__name)
@@ -213,40 +214,11 @@ class GenericPromise(object):
     if minute <= 0:
       raise ValueError("Cannot set promise periodicity to a value less than 1")
     self.__periodicity = minute
+    with open(self.__periodicity_file, 'w') as f:
+      f.write('%s' % minute)
 
   def getPeriodicity(self):
     return self.__periodicity
-
-  def isPeriodicityMatch(self):
-    """
-      Return True if promise should be run now, considering given the execution
-        periodicity in minutes
-    """
-    if os.path.exists(self.__timestamp_file) and \
-        os.stat(self.__timestamp_file).st_size:
-      with open(self.__timestamp_file) as f:
-        try:
-          latest_timestamp = float(f.read())
-          current_timediff = (time.time() - latest_timestamp) / 60.0
-          if current_timediff >= self.__periodicity:
-            return True
-          self.logger.debug("Skip Promise %r. periodicity=%s, time_diff=%s" % (
-              self.__name, self.__periodicity, current_timediff))
-        except ValueError:
-          # if the file is broken, run the promise and regenerate it
-          return True
-        else:
-          return False
-    return True
-
-  def setPromiseRunTimestamp(self):
-    """
-      Save the promise execution timestamp
-    """
-    state_directory = os.path.dirname(self.__timestamp_file)
-    mkdir_p(state_directory)
-    with open(self.__timestamp_file, 'w') as f:
-      f.write(str(time.time()))
 
   def __bang(self, message):
     """

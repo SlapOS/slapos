@@ -44,49 +44,174 @@ from slapos.grid.utils import dropPrivileges
 from slapos.grid.promise import interface
 from slapos.grid.promise.generic import (GenericPromise, PromiseQueueResult,
                                          AnomalyResult, TestResult,
-                                         PROMISE_RESULT_FOLDER_NAME)
+                                         PROMISE_STATE_FOLDER_NAME,
+                                         PROMISE_RESULT_FOLDER_NAME,
+                                         PROMISE_PARAMETER_NAME,
+                                         PROMISE_PERIOD_FILE_NAME)
 from slapos.grid.promise.wrapper import WrapPromise
-
 
 class PromiseError(Exception):
   pass
 
-class PromiseRunner(Process):
+class PromiseProcess(Process):
 
   """
     Run a promise in a new Process
   """
 
-  def __init__(self, promise_instance, logger=None, allow_bang=True, uid=None,
-      gid=None, cwd=None, check_anomaly=False):
+  def __init__(self, partition_folder, promise_name, promise_path, argument_dict,
+      logger, allow_bang=True, uid=None, gid=None, wrap=False, 
+      check_anomaly=False):
     """
       Initialise Promise Runner
 
-      @param promise_instance: Promise instance from GenericPromise class
+      @param promise_name: The name of the promise to run
+      @param promise_path: path of the promise
+      @param argument_dict: all promise parameters in a dictionary
       @param allow_bang: Bolean saying if bang should be called in case of
         anomaly failure.
+      @param check_anomaly: Bolean saying if promise anomaly should be run.
+      @param wrap: say if the promise should be wrapped in a subprocess using
+        WrapPromise class
     """
     Process.__init__(self)
-    self.promise = promise_instance
+    # set deamon to True, so promise process will be terminated if parent exit
+    self.daemon = True
+    self.name = promise_name
+    self.promise_path = promise_path
     self.logger = logger
     self.allow_bang = allow_bang
     self.check_anomaly = check_anomaly
+    self.argument_dict = argument_dict
     self.uid = uid
     self.gid = gid
-    self.cwd = cwd
+    self.partition_folder = partition_folder
+    self.wrap_promise = wrap
+    self._periodicity = None
+    self._timestamp_file = os.path.join(partition_folder,
+                                        PROMISE_STATE_FOLDER_NAME,
+                                        '%s.timestamp' % promise_name)
+    periodicity_file = os.path.join(partition_folder,
+                                    PROMISE_STATE_FOLDER_NAME,
+                                    PROMISE_PERIOD_FILE_NAME % promise_name)
+    if os.path.exists(periodicity_file) and os.stat(periodicity_file).st_size:
+      with open(periodicity_file) as f:
+        try:
+          self._periodicity = float(f.read())
+        except ValueError:
+          # set to None, run the promise and regenerate the file
+          pass
+
+  def isPeriodicityMatch(self):
+    """
+      Return True if promise should be run now, considering the promise
+        periodicity in minutes
+    """
+    if self._periodicity is not None and \
+        os.path.exists(self._timestamp_file) and \
+        os.stat(self._timestamp_file).st_size:
+      with open(self._timestamp_file) as f:
+        try:
+          latest_timestamp = float(f.read())
+          current_timediff = (time.time() - latest_timestamp) / 60.0
+          if current_timediff >= self._periodicity:
+            return True
+          #self.logger.debug("Skip Promise %r. periodicity=%s, time_diff=%s" % (
+          #    self.name, self._periodicity, current_timediff))
+        except ValueError:
+          # if the file is broken, run the promise and regenerate it
+          return True
+        else:
+          return False
+    return True
+
+  def setPromiseStartTimestamp(self):
+    """
+      Save the promise execution timestamp
+    """
+    state_directory = os.path.dirname(self._timestamp_file)
+    mkdir_p(state_directory)
+    with open(self._timestamp_file, 'w') as f:
+      f.write(str(time.time()))
+
+  def getPromiseTitle(self):
+    return os.path.splitext(self.name)[0]
 
   def run(self):
-    if self.uid and self.gid:
-      dropPrivileges(self.uid, self.gid, logger=self.logger)
-    if self.cwd is not None:
-      os.chdir(self.cwd)
+    """
+      Run the promise
+      
+      This will first load the promise module (which will update process sys.path)
+    """
     try:
-      self.promise.run(self.check_anomaly, self.allow_bang)
-    except Exception, e:
-      if self.logger:
-        self.logger.error(str(e))
+      os.chdir(self.partition_folder)
+      self.setPromiseStartTimestamp()
+      if self.uid and self.gid:
+        dropPrivileges(self.uid, self.gid, logger=self.logger)
+
+      if self.wrap_promise:
+        promise_instance = WrapPromise(self.argument_dict)
+      else:
+        self._createInitFile()
+        promise_module = self._loadPromiseModule()
+        promise_instance = promise_module.RunPromise(self.argument_dict)
+
+      promise_instance.run(self.check_anomaly, self.allow_bang)
+    except Exception:
+      self.logger.error(traceback.format_exc())
       raise
 
+  def _createInitFile(self):
+    promise_folder = os.path.dirname(self.promise_path)
+    # if there is no __init__ file, add it
+    init_file = os.path.join(promise_folder, '__init__.py')
+    if not os.path.exists(init_file):
+      with open(init_file, 'w') as f:
+        f.write("")
+      os.chmod(init_file, 0644)
+    # add promise folder to sys.path so we can import promise script
+    if sys.path[0] != promise_folder:
+      sys.path[0:0] = [promise_folder]
+
+  def _loadPromiseModule(self):
+    """Load a promise from promises directory."""
+
+    if re.match(r'[a-zA-Z_]', self.name) is None:
+      raise ValueError("Promise plugin name %r is not valid" % self.name)
+
+    promise_module = importlib.import_module(os.path.splitext(self.name)[0])
+    if not hasattr(promise_module, "RunPromise"):
+      raise AttributeError("Class RunPromise not found in promise" \
+        "%s" % self.name)
+    if not interface.IPromise.implementedBy(promise_module.RunPromise):
+      raise RuntimeError("RunPromise class in %s must implements 'IPromise'" \
+        " interface. zope_interface.implements(interface.IPromise) is" \
+        " missing ?" % self.name)
+
+    from slapos.grid.promise.generic import GenericPromise
+    if not issubclass(promise_module.RunPromise, GenericPromise):
+      raise RuntimeError("RunPromise class is not a subclass of " \
+        "GenericPromise class.")
+
+    if promise_module.__file__ != self.promise_path:
+      # cached module need to be updated
+      promise_module = reload(promise_module)
+    # load extra parameters
+    self._loadPromiseParameterDict(promise_module)
+
+    return promise_module
+
+  def _loadPromiseParameterDict(self, promise_module):
+    """Load a promise parameters."""
+    if hasattr(promise_module, PROMISE_PARAMETER_NAME):
+      extra_dict = getattr(promise_module, PROMISE_PARAMETER_NAME)
+      if not isinstance(extra_dict, dict):
+        raise ValueError("Extra parameter is not a dict")
+      for key in extra_dict:
+        if self.argument_dict.has_key(key):
+          raise ValueError("Extra parameter name %r cannot be used.\n%s" % (
+                           key, extra_dict))
+        self.argument_dict[key] = extra_dict[key]
 
 class PromiseLauncher(object):
 
@@ -189,27 +314,7 @@ class PromiseLauncher(object):
     if not os.path.exists(self.promise_output_dir):
       mkdir_p(self.promise_output_dir)
 
-  def _loadPromiseModule(self, promise_name):
-    """Load a promise from promises directory."""
-
-    if re.match(r'[a-zA-Z_]', promise_name) is None:
-      self.logger.error("Promise plugin name %r is not valid" % promise_name)
-
-    promise_module = importlib.import_module(os.path.splitext(promise_name)[0])
-    if not hasattr(promise_module, "RunPromise"):
-      raise AttributeError("Class RunPromise not found in promise" \
-        "%s" % promise_name)
-    if not interface.IPromise.implementedBy(promise_module.RunPromise):
-      raise RuntimeError("RunPromise class in %s must implements 'IPromise'" \
-        " interface. zope_interface.implements(interface.IPromise) is" \
-        " missing ?" % promise_name)
-    if not issubclass(promise_module.RunPromise, GenericPromise):
-      raise RuntimeError("RunPromise class is not a subclass of" \
-        "GenericPromise class.")
-
-    return promise_module
-
-  def _getErrorPromiseResult(self, promise_instance, promise_name, message,
+  def _getErrorPromiseResult(self, promise_process, promise_name, message,
       execution_time=0):
     if self.check_anomaly:
       result = AnomalyResult(problem=True, message=message)
@@ -219,7 +324,7 @@ class PromiseLauncher(object):
       item=result,
       path=os.path.join(self.promise_folder, promise_name),
       name=promise_name,
-      title=promise_instance.getTitle(),
+      title=promise_process.getPromiseTitle(),
       execution_time=execution_time
     )
 
@@ -257,7 +362,8 @@ class PromiseLauncher(object):
           ))
     return result
 
-  def _launchPromise(self, promise_name, argument_dict, promise_module=None):
+  def _launchPromise(self, promise_name, promise_path, argument_dict,
+      wrap_process=False):
     """
       Launch the promise and save the result. If promise_module is None,
       the promise will be run with the promise process wap module.
@@ -267,37 +373,33 @@ class PromiseLauncher(object):
     """
     self.logger.info("Checking promise %s..." % promise_name)
     try:
-      if promise_module is None:
-        promise_instance = WrapPromise(argument_dict)
-      else:
-        promise_instance = promise_module.RunPromise(argument_dict)
-      if not self.force and not promise_instance.isPeriodicityMatch():
-        result = self._loadPromiseResult(promise_instance.getTitle())
+      promise_process = PromiseProcess(
+        self.partition_folder,
+        promise_name,
+        promise_path,
+        argument_dict,
+        logger=self.logger,
+        check_anomaly=self.check_anomaly,
+        allow_bang=not (self.bang_called or self.dry_run) and self.check_anomaly,
+        uid=self.uid,
+        gid=self.gid,
+        wrap=wrap_process,
+      )
+
+      if not self.force and not promise_process.isPeriodicityMatch():
+        # we won't start the promise process, just get the latest result
+        result = self._loadPromiseResult(promise_process.getPromiseTitle())
         if result is not None:
           if result.item.hasFailed():
             self.logger.error(result.item.message)
             return True
         return False
-      promise_instance.setPromiseRunTimestamp()
+      promise_process.start()
     except Exception:
       # only print traceback to not prevent run other promises
       self.logger.error(traceback.format_exc())
       self.logger.warning("Promise %s skipped." % promise_name)
       return True
-
-    promise_process = PromiseRunner(
-      promise_instance,
-      check_anomaly=self.check_anomaly,
-      allow_bang=not (self.bang_called or self.dry_run) and self.check_anomaly,
-      uid=self.uid,
-      gid=self.gid,
-      cwd=self.partition_folder,
-      logger=self.logger
-    )
-
-    # set deamon to True, so promise process will be terminated if parent exit
-    promise_process.daemon = True
-    promise_process.start()
 
     queue_item = None
     sleep_time = 0.1
@@ -345,7 +447,7 @@ class PromiseLauncher(object):
       promise_process.join() # wait for process to terminate
       message = 'Promise timed out after %s seconds' % self.promise_timeout
       queue_item = self._getErrorPromiseResult(
-        promise_instance,
+        promise_process,
         promise_name=promise_name,
         message=message,
         execution_time=execution_time
@@ -353,7 +455,7 @@ class PromiseLauncher(object):
 
     if queue_item is None:
       queue_item = self._getErrorPromiseResult(
-        promise_instance,
+        promise_process,
         promise_name=promise_name,
         message="No output returned by the promise",
         execution_time=execution_time
@@ -393,40 +495,25 @@ class PromiseLauncher(object):
     }
 
     if os.path.exists(self.promise_folder) and os.path.isdir(self.promise_folder):
-      # if there is no __init__ file, add it
-      init_file = os.path.join(self.promise_folder, '__init__.py')
-      if not os.path.exists(init_file):
-        with open(init_file, 'w') as f:
-          f.write("")
-        os.chmod(init_file, 0644)
-      if sys.path[0] != self.promise_folder:
-        sys.path[0:0] = [self.promise_folder]
-
-      promise_list = []
-      # load all promises so we can catch import errors before launch them
       for promise_name in os.listdir(self.promise_folder):
         if promise_name.startswith('__init__') or \
             not promise_name.endswith('.py'):
           continue
+
         if self.run_only_promise_list is not None and not \
             promise_name in self.run_only_promise_list:
           continue
-        promise_list.append((promise_name,
-                             self._loadPromiseModule(promise_name)))
 
-      for name, module in promise_list:
-        promise_path = os.path.join(self.promise_folder, name)
+        promise_path = os.path.join(self.promise_folder, promise_name)
         config = {
           'path': promise_path,
-          'name': name
+          'name': promise_name
         }
-        if module.__file__ != promise_path:
-          # cached module need to be updated
-          module = reload(module)
 
         config.update(base_config)
-        if self._launchPromise(name, config, module) and not failed_promise_name:
-          failed_promise_name = name
+        if self._launchPromise(promise_name, promise_path, config) and \
+            not failed_promise_name:
+          failed_promise_name = promise_name
 
     if not self.run_only_promise_list and os.path.exists(self.legacy_promise_folder) \
         and os.path.isdir(self.legacy_promise_folder):
@@ -444,7 +531,11 @@ class PromiseLauncher(object):
         }
         config.update(base_config)
         # We will use promise wrapper to run this
-        if self._launchPromise(promise_name, config) and not failed_promise_name:
+        result_state = self._launchPromise(promise_name,
+                                           promise_path,
+                                           config,
+                                           wrap_process=True)
+        if result_state and not failed_promise_name:
           failed_promise_name = promise_name
 
     stat_info = os.stat(self.partition_folder)
