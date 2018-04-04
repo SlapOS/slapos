@@ -91,6 +91,22 @@ To learn how to write a promise in SlapOS, please read this document:
 Writing a promise consists of defining a class called RunPromise which inherits from GenericPromise class and defining methods: anomaly(), sense() and test(). Python promises should be placed into the folder etc/plugin of the computer partition.
 New promises should be placed into the folder etc/plugin, legacy promise are into the folder etc/promise. Legacy promises are bash or other executable promises script which does not use GenericPromise class.
 
+You will use slapos.cookbook:promise.plugin to generate your promise script into `etc/plugin` directory. Add promise will look like this:
+
+    [promise-check-site]
+    recipe = slapos.cookbook:promise.plugin
+    eggs =
+      slapos.toolbox
+    output = ${directory:plugins}/promise-check-mysite-status.py
+    content = 
+      from slapos.promise.plugin.check_site_state import RunPromise
+    config-site-url = ${publish:site-url}
+    config-connection-timeout = 20
+    config-foo = bar
+    mode = 600
+
+Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
+
 Slapgrid will run each promise every time a partition is processed (every minutes in theory), if the partition is up to date, slapgrid will only run promises anomaly check and save the result in a json file. Here is an exemple of promise result:
 
     {"result": {"date": "2018-03-22T15:35:07", "failed": false, "message": "buildout is OK", "type": "Test Result"}, "path": "PARTITION_DIRECTORY/etc/plugin/buildout-slappart0-status.py", "name": "buildout-slappart0-status.py", "execution-time": 0.1, "title": "buildout-slappart0-status"}
