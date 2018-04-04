@@ -114,7 +114,7 @@
             gadget.getUrlFor({command: "change", options: {page: "slap_person_revoke_certificate"}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_person_request_certificate"}}),
             gadget.getUrlFor({command: "change", options: {page: "slap_person_get_token"}}),
-            gadget.getUrlFor({command: 'history_previous'})
+            gadget.getUrlFor({command: "change", options: {page: "slapos"}})
           ]);
         })
         .push(function (url_list) {

@@ -87,8 +87,14 @@
           });
         })
         .push(function () {
+          return RSVP.all([
+            gadget.getUrlFor({command: 'change', options: {page: "slap_ticket_list"}})
+          ]);
+        })
+        .push(function (url_list) {
           var header_dict = {
-            page_title: "Your RSS Feed Link"
+            page_title: "Your RSS Feed Link",
+            selection_url: url_list[0]
           };
           return gadget.updateHeader(header_dict);
         });
