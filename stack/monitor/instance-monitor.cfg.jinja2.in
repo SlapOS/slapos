@@ -354,26 +354,27 @@ curl_path = {{ curl_executable_location }}
 check-secure = 1
 
 [monitor-bootstrap-promise]
-recipe = collective.recipe.template
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
 file = ${monitor-conf-parameters:promise-output-file}
-input = inline:from slapos.promise.plugin.monitor_bootstrap_status import RunPromise
-  from slapos.promise.plugin import monitor_bootstrap_status
-
-  monitor_bootstrap_status.PROCESS_PID_FILE = "${monitor-conf-parameters:pid-file}"
-  monitor_bootstrap_status.PROCESS_NAME = "${start-monitor:name}"
-  monitor_bootstrap_status.STATUS_FILE = "${:file}"
-
+content = 
+  from slapos.promise.plugin.monitor_bootstrap_status import RunPromise
 output = ${directory:plugins}/monitor-bootstrap-status.py
 mode = 600
+config-process-pid-file = ${monitor-conf-parameters:pid-file}
+config-process-name = ${start-monitor:name}
+config-status-file = ${:file}
 
 [promise-check-slapgrid]
-recipe = collective.recipe.template
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
 output = ${directory:plugins}/buildout-${slap-connection:partition-id}-status.py
+content = 
+  from slapos.promise.plugin.check_partition_deployment_state import RunPromise
+config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 mode = 600
-input = inline:from slapos.promise.plugin.check_partition_deployment_state import RunPromise
-  from slapos.promise.plugin import check_partition_deployment_state
-
-  check_partition_deployment_state.MONITOR_URL = "${monitor-instance-parameter:monitor-base-url}"
 
 [promise-check-free-disk-space]
 recipe = slapos.cookbook:wrapper
