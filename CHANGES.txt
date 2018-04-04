@@ -4,6 +4,7 @@ Changes
 (unreleased)
 ------------
  * grid: do not hide `$USER` when running buildout
+ * grid: do not leak file descriptors to subprocesses when running e.g. 'node software'.
 
 1.4.6 (2018-03-29)
 ------------------
