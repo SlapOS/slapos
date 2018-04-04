@@ -65,6 +65,7 @@
       ['request_certificate_url', 'Request Certificate', 'certificate'],
       ['revoke_certificate_url', 'Revoke Certificate', 'ban'],
       ['rss_url', 'RSS', 'rss'],
+      ['critical_url', 'Critical RSS', 'exclamation-triangle'],
       ['start_url', 'Start', 'play'],
       ['stop_url', 'Stop', 'stop'],
       ['destroy_url', 'Destroy', 'times'],

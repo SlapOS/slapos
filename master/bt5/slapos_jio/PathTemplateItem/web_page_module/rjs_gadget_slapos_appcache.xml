@@ -108,7 +108,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Mon, 23 Fev 2017 12:00:00 GMT+0200\n
+# generated on Wed, 4 Apr 2018 12:00:00 GMT+0200\n
 CACHE:\n
 favicon.ico\n
 font-awesome/font-awesome-webfont.eot?v=4.6.3\n
@@ -321,6 +321,10 @@ gadget_erp5_page_slap_project_view.html\n
 gadget_erp5_page_slap_project_view.js\n
 gadget_erp5_page_slap_regularisation_request_view.html\n
 gadget_erp5_page_slap_regularisation_request_view.js\n
+gadget_erp5_page_slap_request_trial.html\n
+gadget_erp5_page_slap_request_trial.js\n
+gadget_erp5_page_slap_rss_critical_ticket.html\n
+gadget_erp5_page_slap_rss_critical_ticket.js\n
 gadget_erp5_page_slap_rss_ticket.html\n
 gadget_erp5_page_slap_rss_ticket.js\n
 gadget_erp5_page_slap_sale_invoice_transaction_view.html\n
@@ -348,12 +352,17 @@ gadget_erp5_page_slap_ticket_list.js\n
 gadget_erp5_page_slap_ticket_view.js\n
 gadget_erp5_page_slap_transfer_computer.html\n
 gadget_erp5_page_slap_transfer_computer.js\n
+gadget_erp5_page_slap_trial_request_message.html\n
+gadget_erp5_page_slap_trial_request_message.js\n
 gadget_erp5_page_slap_upgrade_decision_view.html\n
 gadget_erp5_page_slap_upgrade_decision_view.js\n
 gadget_erp5_page_slapos.css\n
 gadget_erp5_page_slapos.html\n
 gadget_erp5_page_slapos.js\n
 gadget_erp5_page_slapos_request_form.html\n
+gadget_erp5_page_trial.css\n
+gadget_erp5_page_trial.html\n
+gadget_erp5_page_trial.js\n
 gadget_erp5_panel_shortcut.html\n
 gadget_erp5_panel_shortcut.js\n
 gadget_erp5_pt_form_slapos_index.html\n
@@ -384,7 +393,7 @@ gadget_slapos_network_status.html\n
 gadget_slapos_network_status.js\n
 gadget_slapos_panel.html\n
 gadget_slapos_panel.js\n
-gadget_slapos_panel.png?format=png\n
+gadget_slapos_panel.png?format=\n
 gadget_slapos_payment_result.js\n
 gadget_slapos_project_status.html\n
 gadget_slapos_project_status.js\n
@@ -392,6 +401,8 @@ gadget_slapos_site_status.html\n
 gadget_slapos_site_status.js\n
 gadget_slapos_software_release_info.html\n
 gadget_slapos_software_release_info.js\n
+gadget_trial_panel.html\n
+gadget_trial_panel.js\n
 leaflet.css\n
 leaflet.js\n
 tv4.min.js\n
@@ -534,7 +545,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>966.2885.21812.19797</string> </value>
+                <value> <string>966.41530.11723.48674</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -552,7 +563,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1520544707.03</float>
+                        <float>1522849619.08</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

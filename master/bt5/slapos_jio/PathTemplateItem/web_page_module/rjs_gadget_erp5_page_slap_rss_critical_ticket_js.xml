@@ -64,14 +64,30 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>contributor/person_module/1</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>content_md5</string> </key>
             <value>
               <none/>
             </value>
         </item>
         <item>
+            <key> <string>creators</string> </key>
+            <value>
+              <tuple>
+                <string>cedric.le.ninivin</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_slapos_header.js</string> </value>
+            <value> <string>gadget_erp5_page_slap_rss_critical_ticket.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -81,11 +97,32 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>rjs_gadget_slapos_header_js</string> </value>
+            <value> <string>rjs_gadget_erp5_page_slap_rss_critical_ticket_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
-            <value> <string>en</string> </value>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1455284351.49</float>
+                    <string>UTC</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -99,7 +136,13 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Gadget Slapos Header JS</string> </value>
+            <value> <string>Slap Get Critical RSS Link</string> </value>
+        </item>
+        <item>
+            <key> <string>url_string</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -185,7 +228,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1505835101.37</float>
+                        <float>1522845717.28</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -230,7 +273,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>964.5728.60924.22476</string> </value>
+                <value> <string>966.41467.22253.2508</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +291,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1522857600.68</float>
+                        <float>1522846217.71</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -305,7 +348,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1505834969.46</float>
+                        <float>1522845703.18</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
