@@ -10,8 +10,6 @@ from erp5.util import taskdistribution
 from erp5.util.testsuite import TestSuite as BaseTestSuite
 
 
-
-
 #class Server(BaseHTTPRequestHandler):
 #    def _set_headers(self):
 #        self.send_response(200)
@@ -27,15 +25,15 @@ from erp5.util.testsuite import TestSuite as BaseTestSuite
         
 #    def do_POST(self):
        
- #       content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+#        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
 #        post_data = self.rfile.read(content_length) # <--- Gets the data itself
        # print(post_data)
 #        self._set_headers()
 #        self.wfile.write(post_data)
         
 
-#def run(server_class=HTTPServer, handler_class=Server, port=9443):
-#    
+#def runServer(server_class=HTTPServer, handler_class=Server, port=9443):
+    
 #    test_list = ["testIntestion.py"]
     
     
@@ -76,7 +74,7 @@ class TestSuite(BaseTestSuite):
     return status_dict
 
 
-def run():
+def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
   parser.add_argument('--test_suite', help='The test suite name')
   parser.add_argument('--test_suite_title', help='The test suite title',
@@ -93,8 +91,8 @@ def run():
                       help='The Url of Master controling many suites',
                       default=None)
 
-  testList=["testIngestion.py"]
-
+  testList=["/srv/slapgrid/slappart0/srv/runner/project/slapos/software/fluentTest/testIngestion.py"]
+  
   args = parser.parse_args()
   master = taskdistribution.TaskDistributionTool(args.master_url)
   test_suite_title = args.test_suite_title or args.test_suite
@@ -106,6 +104,7 @@ def run():
   test_result = master.createTestResult(revision, testList,
     args.test_node_title, suite.allow_restart, test_suite_title,
     args.project_title)
+  
   if test_result is not None:
     assert revision == test_result.revision, (revision, test_result.revision)
     while suite.acquire():
@@ -116,3 +115,6 @@ def run():
       elif not suite.running:
         break
 
+if __name__ == "__main__":
+  
+  main()  
