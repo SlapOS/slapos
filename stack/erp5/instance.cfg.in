@@ -150,6 +150,7 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
+    import socket socket
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
