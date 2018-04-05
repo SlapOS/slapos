@@ -19,6 +19,16 @@
   <td></td>
 </tr>
 <tr>
+  <td>openAndWait</td>
+  <td>${base_url}/ERP5Site_setupDummyMailHost</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>True</td>
+  <td></td>
+</tr>
+<tr>
   <td>open</td>
   <td>${base_url}/ERP5Site_removeTestUserList</td>
   <td></td>
@@ -55,10 +65,16 @@
   <td></td>
 </tr>
 
+<!-- Logout  -->
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_site_module/hostingjs/WebSite_logout</td>
+  <td></td>
+</tr>
 <!-- Initialize -->
 <tr>
   <td>open</td>
-  <td>${base_url}/web_site_module/hostingjs/#!display?n.me=</td>
+  <td>${base_url}/web_site_module/hostingjs/</td>
   <td></td>
 </tr>
 <tr>
@@ -82,19 +98,47 @@
   <td></td>
 </tr>
 <tr>
-  <td>click</td>
+  <td>clickAndWait</td>
   <td>//input[@value="Login"]</td>
   <td></td>
 </tr>
 
-<!-- Basic Menu Navigation -->
+<!-- Dashboard -->
 <tr>
   <td>waitForElementPresent</td>
+  <td>//span[@data-i18n='Dashboard']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Sites']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Pending Tickets to Process']</td>
+  <td></td>
+</tr>
+<!-- Check if map is ok -->
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@class='leaflet-control-zoom-out']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>5000</td>
+  <td>5000</td>
+</tr>
+
+<!-- Access Menu -->
+<tr>
+  <td>click</td>
   <td>//button[@data-i18n='Menu']</td>
   <td></td>
 </tr>
 <tr>
-  <td>click</td>
+  <td>waitForElementPresent</td>
   <td>//button[@data-i18n='Menu']</td>
   <td></td>
 </tr>
@@ -150,66 +194,6 @@
   <td></td>
 </tr>
 
-<!-- Dashboard -->
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Dashboard']</td>
-  <td></td>
-</tr>
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//h1[@data-i18n='Sites']</td>
-  <td></td>
-</tr>
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//h1[@data-i18n='Tickets']</td>
-  <td></td>
-</tr>
-<!-- Check if map is ok -->
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//a[@class='leaflet-control-zoom-out']</td>
-  <td></td>
-</tr>
-<tr>
-  <td>click</td>
-  <td>//button[@data-i18n='Menu']</td>
-  <td></td>
-</tr>
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//button[@data-i18n='Menu']</td>
-  <td></td>
-</tr>
-
-<!-- Account -->
-<tr>
-  <td>click</td>
-  <td>//a[@data-i18n="Account"]</td>
-  <td></td>
-</tr>
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Your Account : Demo User Functional']</td>
-  <td></td>
-</tr>
-
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//label[@for="first_name"]</td>
-  <td></td>
-</tr>
-<tr>
-  <td>click</td>
-  <td>//button[@data-i18n='Menu']</td>
-  <td></td>
-</tr>
-<tr>
-  <td>waitForElementPresent</td>
-  <td>//button[@data-i18n='Menu']</td>
-  <td></td>
-</tr>
 
 <!-- Tickets -->
 <tr>
@@ -219,7 +203,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Tickets']</td>
+  <td>//a[@data-i18n='Tickets']</td>
   <td></td>
 </tr>
 <tr>
@@ -247,7 +231,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Sites']</td>
+  <td>//a[@data-i18n='Sites']</td>
   <td></td>
 </tr>
 <tr>
@@ -275,7 +259,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Projects']</td>
+  <td>//a[@data-i18n='Projects']</td>
   <td></td>
 </tr>
 
@@ -305,7 +289,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Invoices']</td>
+  <td>//a[@data-i18n='Invoices']</td>
   <td></td>
 </tr>
 
@@ -334,7 +318,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Invoices']</td>
+  <td>//a[@data-i18n='Invoices']</td>
   <td></td>
 </tr>
 
@@ -363,7 +347,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Services']</td>
+  <td>//a[@data-i18n='Services']</td>
   <td></td>
 </tr>
 
@@ -392,7 +376,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Servers']</td>
+  <td>//a[@data-i18n='Servers']</td>
   <td></td>
 </tr>
 
@@ -421,13 +405,13 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//span[@data-i18n='Networks']</td>
+  <td>//a[@data-i18n='Networks']</td>
   <td></td>
 </tr>
 
 <tr>
-  <td>verifyElementPresent</td>
-  <td>//h1[@data-i18n='Networks']</td>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Network']</td>
   <td></td>
 </tr>
 
@@ -439,6 +423,23 @@
 <tr>
   <td>waitForElementPresent</td>
   <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n="Account"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n='Your Account : Demo User Functional']</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//label[@for="first_name"]</td>
   <td></td>
 </tr>
 
