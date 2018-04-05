@@ -40,6 +40,17 @@
             </value>
         </item>
         <item>
+            <key> <string>_Copy_or_Move_Permission</string> </key>
+            <value>
+              <list>
+                <string>Manager</string>
+                <string>Authenticated</string>
+                <string>Developer</string>
+                <string>Owner</string>
+              </list>
+            </value>
+        </item>
+        <item>
             <key> <string>_Modify_portal_content_Permission</string> </key>
             <value>
               <tuple>
@@ -216,7 +227,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>ERP5TypeTestCase</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -230,7 +241,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>963.11755.3689.23091</string> </value>
+                <value> <string>966.43122.58529.31436</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +259,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1519840315.92</float>
+                        <float>1522945214.2</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

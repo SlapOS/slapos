@@ -10,6 +10,8 @@
     .declareAcquiredMethod("updateHeader", "updateHeader")
     .declareAcquiredMethod("getUrlParameter", "getUrlParameter")
     .declareAcquiredMethod("getUrlFor", "getUrlFor")
+    .declareAcquiredMethod("jio_get", "jio_get")
+    .declareAcquiredMethod("getSetting", "getSetting")
     .declareAcquiredMethod("updateDocument", "updateDocument")
     .declareAcquiredMethod("jio_getAttachment", "jio_getAttachment")
     .declareAcquiredMethod("jio_putAttachment", "jio_putAttachment")
@@ -20,11 +22,25 @@
     /////////////////////////////////////////////////////////////////
 
     .declareMethod("render", function (options) {
-      return this.changeState({
-        jio_key: options.jio_key,
-        doc: options.doc,
-        editable: 1
-      });
+      var gadget = this,
+        jio_key;
+
+      return new RSVP.Queue()
+        .push(function () {
+          return gadget.getSetting("me");
+        })
+        .push(function (me) {
+          jio_key = me;
+          return gadget.jio_get(me);
+        })
+        .push(function (doc) {
+          options.doc = doc;
+          return gadget.changeState({
+            jio_key: jio_key,
+            doc: doc,
+            editable: 1
+          });
+        });
     })
 
     .onEvent('submit', function () {

@@ -90,9 +90,6 @@
       if (modification_dict.hasOwnProperty("global")) {
         queue
           .push(function () {
-            return context.getSetting('me');
-          })
-          .push(function (me) {
             return RSVP.all([
               context.getUrlFor({command: 'display', options: {page: "logout"}}),
               context.getUrlFor({command: 'display', options: {page: "search", editable: true}}),
@@ -103,7 +100,7 @@
               context.getUrlFor({command: 'display', options: {page: "slap_computer_list", editable: true}}),
               context.getUrlFor({command: 'display', options: {page: "slap_network_list", editable: true}}),
               context.getUrlFor({command: 'display', options: {page: "slap_project_list", editable: true}}),
-              context.getUrlFor({command: 'display', options: {jio_key: me, page: "slap_controller", editable: true}})
+              context.getUrlFor({command: 'display', options: {page: "slap_person_view", editable: true}})
             ]);
           })
           .push(function (result_list) {
