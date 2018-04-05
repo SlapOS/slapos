@@ -94,7 +94,7 @@ def main():
                       help='The Url of Master controling many suites',
                       default=None)
 
-  testList=["/srv/slapgrid/slappart0/srv/runner/project/slapos/software/fluentTest/testIngestion.py"]
+  testList=["estIngestion.py"]
   
   args = parser.parse_args()
   master = taskdistribution.TaskDistributor(args.master_url)
