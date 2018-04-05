@@ -8,6 +8,9 @@ import SocketServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from erp5.util import taskdistribution
 from erp5.util.testsuite import TestSuite as BaseTestSuite
+from erp5.util.testsuite import SubprocessError
+import shlex
+
 
 
 #class Server(BaseHTTPRequestHandler):
@@ -94,7 +97,7 @@ def main():
   testList=["/srv/slapgrid/slappart0/srv/runner/project/slapos/software/fluentTest/testIngestion.py"]
   
   args = parser.parse_args()
-  master = taskdistribution.TaskDistributionTool(args.master_url)
+  master = taskdistribution.TaskDistributor(args.master_url)
   test_suite_title = args.test_suite_title or args.test_suite
   revision = args.revision
   suite = TestSuite(1, test_suite=args.test_suite,
