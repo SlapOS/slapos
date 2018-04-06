@@ -7,11 +7,10 @@ import SimpleHTTPServer
 import SocketServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from erp5.util import taskdistribution
-from erp5.util.testsuite import TestSuite as BaseTestSuite
-from erp5.util.testsuite import SubprocessError
-import shlex
-import glob
-
+#from erp5.util.testsuite import TestSuite as BaseTestSuite
+#from erp5.util.testsuite import SubprocessError
+#import shlex
+#import glob
 
 
 #class Server(BaseHTTPRequestHandler):
@@ -47,86 +46,86 @@ import glob
 #    httpd.serve_forever()
 
 
-class TestSuite(BaseTestSuite):
-
-  def run(self, test):
-    return self.runUnitTest(test)
-
-  def runUnitTest(self, *args, **kw):
-    try:
-      runUnitTest = os.environ.get('RUN_UNIT_TEST',
-                                   'runUnitTest')
-      args = tuple(shlex.split(runUnitTest)) + args
-      status_dict = self.spawn(*args, **kw)
-    except SubprocessError, e:
-      status_dict = e.status_dict
-    test_log = status_dict['stderr']
-    search = self.RUN_RE.search(test_log)
-    if search:
-      groupdict = search.groupdict()
-      status_dict.update(duration=float(groupdict['seconds']),
-                         test_count=int(groupdict['all_tests']))
-    search = self.STATUS_RE.search(test_log)
-    if search:
-      groupdict = search.groupdict()
-      status_dict.update(
-        error_count=int(groupdict['errors'] or 0),
-        failure_count=int(groupdict['failures'] or 0)
-                     +int(groupdict['unexpected_successes'] or 0),
-        skip_count=int(groupdict['skips'] or 0)
-                  +int(groupdict['expected_failures'] or 0))
-    return status_dict
-
-  def getTestList(self):
-    test_list = []
-    for test_path in glob.glob('test*.py'):
-      test_case = test_path.split(os.sep)[-1][:-3] # remove .py
-      # testOooMonitorRequest is making testsuite stall.
-      test_list.append(test_case)
-    return test_list
-
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
   parser.add_argument('--test_suite', help='The test suite name')
-  parser.add_argument('--test_suite_title', help='The test suite title',
-                      default=None)
-  parser.add_argument('--test_node_title', help='The test node title',
-                      default=None)
-  parser.add_argument('--project_title', help='The project title',
-                      default=None)
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
   parser.add_argument('--revision', help='The revision to test',
                       default='dummy_revision')
-  parser.add_argument('--node_quantity', help='Number of parallel tests to run',
-                      default=1, type=int)
+  parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
-                      help='The Url of Master controling many suites',
-                      default=None)
+                      help='The Url of Master controling many suites')
+  parser.add_argument('--frontend_url',
+                      help='The url of frontend of the test suite')
+  parser.add_argument('--target',
+                      help='Target OS to run tests on',
+                      type=str)
+  parser.add_argument('--target_version',
+                      help='Target OS version to use',
+                      type=str,)
+  parser.add_argument('--target_browser',
+                      help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
+                      type=str,)
+  parser.add_argument('--target_device',
+                      help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
+                      type=str,)
+  parser.add_argument('--appium_server_auth',
+                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
+                      type=str)
 
-  #testList=["testIngestion.py"]
-  
   args = parser.parse_args()
-  master = taskdistribution.TaskDistributor(args.master_url)
-  test_suite_title = args.test_suite_title or args.test_suite
-  revision = args.revision
-  suite = TestSuite(1, test_suite=args.test_suite,
-                    node_quantity=args.node_quantity,
-                    revision=revision)
 
-  print(suite.getTestList())
-  test_result = master.createTestResult(revision, suite.getTestList(),
-    args.test_node_title, suite.allow_restart, test_suite_title,
-    args.project_title)
   
-  if test_result is not None:
-    assert revision == test_result.revision, (revision, test_result.revision)
-    while suite.acquire():
-      test = test_result.start(suite.running.keys())
-      if test is not None:
-        suite.start(test.name, lambda status_dict, __test=test:
-          __test.stop(**status_dict))
-      elif not suite.running:
+
+  is_browser_running = False
+  try:
+    test_suite_title = args.test_suite_title or args.test_suite
+    test_suite = args.test_suite
+    revision = args.revision
+
+    test_line_dict = {}
+
+    result =  os.system("python testIngestion.py")
+    #print(result)
+    ##########################
+    # Run all tests
+    ##########################
+    #print(testIngestion)
+    test_suite = "testIngestion.py"
+    
+    tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
+    test_result = tool.createTestResult(revision = revision,
+                                        test_name_list = test_line_dict.keys(),
+                                        node_title = args.test_node_title,
+                                        test_title = test_suite_title,
+                                        project_title = args.project_title)
+    if test_result is None or not hasattr(args, 'master_url'):
+      return
+    # report test results
+    while 1:
+      test_result_line = test_result.start()
+      if not test_result_line:
+        print 'No test result anymore.'
         break
 
-if __name__ == "__main__":
+      print 'Submitting: "%s"' % test_result_line.name
+      # report status back to Nexedi ERP5
+      test_result_line.stop(**test_line_dict[test_result_line.name])
+
+  except:
+    # Catch any exception here, to warn user instead of being silent,
+    # by generating fake error result
+    print traceback.format_exc()
+    result = dict(status_code=-1,
+                  command=url,
+                  stderr=traceback.format_exc(),
+                  stdout='')
+    # XXX: inform test node master of error
+    raise EnvironmentError(result)
   
-  main()  
+  
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,6 @@
 import unittest
 import requests
+from StringIO import StringIO
 
 
 class TestPost(unittest.TestCase):
@@ -23,6 +24,15 @@ class TestPost(unittest.TestCase):
 
 if __name__ == "__main__":
     print("in test")
-    unittest.main()
+    #unittest.main()
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestPost)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+    #result = unittest.TextTestRunner(verbosity=2).run(suite)
+    
+    stream = StringIO()
+    runner = unittest.TextTestRunner(stream=stream)
+    result = runner.run(unittest.makeSuite(TestPost))
+    print 'Tests run ', result.testsRun
+    print 'Errors ', result.errors
+    print(result.failures)
+    stream.seek(0)
+    print 'Test output\n', stream.read()
