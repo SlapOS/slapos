@@ -35,6 +35,11 @@
   <td>Done.</td>
   <td></td>
 </tr>
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_site_module/hostingjs/WebSite_logout</td>
+  <td></td>
+</tr>
 
 <!-- Initialize -->
 <tr>
@@ -49,12 +54,12 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//a[text()=' Subscribe ']</td>
+  <td>//a[text()=' Create New Account ']</td>
   <td></td>
 </tr>
 <tr>
   <td>clickAndWait</td>
-  <td>//a[text()=' Subscribe ']</td>
+  <td>//a[text()=' Create New Account ']</td>
   <td></td>
 </tr>
 <tr>
