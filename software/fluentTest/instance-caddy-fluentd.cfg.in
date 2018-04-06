@@ -5,6 +5,7 @@ parts =
   fluentd-service
   caddy-service
   publish-connection-information
+  runTest-instance
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -29,6 +30,14 @@ ssl = $${:etc}/ssl
 recipe = slapos.recipe.template
 url = ${template-runTestSuite:output}
 output = $${directory:bin}/runTestSuite
+buildout-directory = $${buildout:directory}
+mode = 0700
+
+
+[runTest-instance]
+recipe = slapos.recipe.template:jinja2
+template = ${template-test:output}
+rendered = $${directory:bin}/testIngestion.py
 buildout-directory = $${buildout:directory}
 mode = 0700
 

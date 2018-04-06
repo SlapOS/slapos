@@ -12,39 +12,29 @@ from erp5.util import taskdistribution
 #import shlex
 #import glob
 
+import threading
 
-#class Server(BaseHTTPRequestHandler):
-#    def _set_headers(self):
-#        self.send_response(200)
-#        self.send_header('Content-type', 'text/html')
-#        self.end_headers()
+class Server(BaseHTTPRequestHandler):
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
 
-#    def do_GET(self):
-#        self._set_headers()
-#        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+    def do_GET(self):
+        self._set_headers()
+        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
 
-#    def do_HEAD(self):
-#        self._set_headers()
-        
-#    def do_POST(self):
+    def do_HEAD(self):
+        self._set_headers()
+      
+    def do_POST(self):
        
-#        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
-#        post_data = self.rfile.read(content_length) # <--- Gets the data itself
-       # print(post_data)
-#        self._set_headers()
-#        self.wfile.write(post_data)
+        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+        post_data = self.rfile.read(content_length) # <--- Gets the data itself
+     # print(post_data)
+        self._set_headers()
+        self.wfile.write(post_data)
         
-
-#def runServer(server_class=HTTPServer, handler_class=Server, port=9443):
-    
-#    test_list = ["testIntestion.py"]
-    
-    
-#    server_address = ('', port)
-#    httpd = server_class(server_address, handler_class)
-#    print 'Starting http...'
-#    httpd.serve_forever()
-
 
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -77,23 +67,40 @@ def main():
 
   args = parser.parse_args()
 
+  server_class=HTTPServer
+  handler_class=Server
+  port=9443
+  server_address = ('', port)
+  httpd = server_class(server_address, handler_class)
+  thread = threading.Thread(target=httpd.serve_forever)
+  thread.start()
+  print 'Starting http...'
+    #httpd.serve_forever()
   
-
-  is_browser_running = False
+  
   try:
     test_suite_title = args.test_suite_title or args.test_suite
     test_suite = args.test_suite
     revision = args.revision
 
     test_line_dict = {}
+    
+    test_path = '$${runTest-instance:buildout-directory}/bin/testIngestion.py'
 
-    result =  os.system("python testIngestion.py")
-    #print(result)
-    ##########################
-    # Run all tests
-    ##########################
-    #print(testIngestion)
-    test_suite = "testIngestion.py"
+    result =  os.popen(test_path).read()
+    #result =  os.popen("python testIngestion.py").read()
+  #  print("result =")
+    print(result)
+    
+    test_line_dict["testIngestion"] = {
+        'test_count': 0,
+        'error_count': 0,
+        'failure_count': 0,
+        'skip_count': 0,
+        'stdout': result,
+        'stderr': ''
+      }
+   
     
     tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
@@ -101,7 +108,11 @@ def main():
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
+                                        
+  
+    
     if test_result is None or not hasattr(args, 'master_url'):
+      print("test_result is NONE")
       return
     # report test results
     while 1:
@@ -125,7 +136,7 @@ def main():
     # XXX: inform test node master of error
     raise EnvironmentError(result)
   
-  
+  httpd.shutdown()
 
 if __name__ == "__main__":
     main()
