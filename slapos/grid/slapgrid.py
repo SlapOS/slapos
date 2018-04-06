@@ -1073,6 +1073,9 @@ stderr_logfile_backups=1
       # self.logger.info('  Instance type: %s' % computer_partition.getType())
       self.logger.info('  Instance status: %s' % computer_partition_state)
 
+      if os.path.exists(error_output_file):
+        os.unlink(error_output_file)
+
       partition_ip_list = full_hosting_ip_list = []
       if self.firewall_conf:
         partition_ip_list = parameter_dict['ip_list'] + parameter_dict.get(
@@ -1121,21 +1124,19 @@ stderr_logfile_backups=1
         computer_partition.error(error_string, logger=self.logger)
         raise NotImplementedError(error_string)
     except Exception, e:
-      with open(error_output_file, 'w') as error_file:
-        # Write error message in a log file assible to computer partition user
-        error_file.write(str(e))
-      if not isinstance(e, PromiseError) and \
-          computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
-        try:
-          self._checkPromiseList(local_partition)
-        except PromiseError:
-          # updating promises state, no need to raise here
-          pass
+      if not isinstance(e, PromiseError):
+        with open(error_output_file, 'w') as error_file:
+          # Write error message in a log file assible to computer partition user
+          error_file.write(str(e))
+        if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
+          try:
+            self._checkPromiseList(local_partition)
+          except PromiseError:
+            # updating promises state, no need to raise here
+            pass
       raise e
     else:
       self.logger.removeHandler(partition_file_handler)
-      if os.path.exists(error_output_file):
-        os.unlink(error_output_file)
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
