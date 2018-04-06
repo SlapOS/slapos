@@ -87,7 +87,7 @@
                   "search_column_list": column_list,
                   "sort_column_list": column_list,
                   "sort": [["reference", "ascending"]],
-                  "title": "Network",
+                  "title": "Networks",
                   "type": "ListBox"
                 }
               }},

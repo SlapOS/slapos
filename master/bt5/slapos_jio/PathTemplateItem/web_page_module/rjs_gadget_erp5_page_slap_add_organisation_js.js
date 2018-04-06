@@ -137,7 +137,7 @@
         .push(function () {
           return gadget.updateHeader({
             page_title: "New Organisation",
-            save_action: true
+            submit_action: true
           });
         });
     });

@@ -112,7 +112,7 @@
         .push(function () {
           return gadget.updateHeader({
             page_title: "New Network",
-            save_action: true
+            submit_action: true
           });
         });
     });

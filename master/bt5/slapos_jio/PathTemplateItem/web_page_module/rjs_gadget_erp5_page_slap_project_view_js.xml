@@ -40,6 +40,17 @@
             </value>
         </item>
         <item>
+            <key> <string>_Copy_or_Move_Permission</string> </key>
+            <value>
+              <list>
+                <string>Manager</string>
+                <string>Authenticated</string>
+                <string>Developer</string>
+                <string>Owner</string>
+              </list>
+            </value>
+        </item>
+        <item>
             <key> <string>_Modify_portal_content_Permission</string> </key>
             <value>
               <tuple>
@@ -230,7 +241,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>966.1465.5891.38400</string> </value>
+                <value> <string>966.41526.6603.40089</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +259,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1520445845.37</float>
+                        <float>1523034296.43</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

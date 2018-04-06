@@ -77,7 +77,7 @@
               "_embedded": {"_view": {
                 "my_title": {
                   "description": "",
-                  "title": "Organisation to be removed: ",
+                  "title": "Network to be removed: ",
                   "default": options.doc.title,
                   "css_class": "",
                   "required": 1,

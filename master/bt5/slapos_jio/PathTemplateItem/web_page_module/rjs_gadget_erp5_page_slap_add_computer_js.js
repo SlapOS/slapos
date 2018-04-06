@@ -160,7 +160,7 @@
         .push(function (document_title) {
           return gadget.updateHeader({
             page_title: "New Computer",
-            save_action: true
+            submit_action: true
           });
         });
     });
