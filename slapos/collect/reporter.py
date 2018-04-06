@@ -199,7 +199,7 @@ class ConsumptionReport(ConsumptionReportBase):
     self.db = database
     self.user_list = user_list
     self.location = location
-    ConsumptionReportBase.__init__(self.db)
+    ConsumptionReportBase.__init__(self, self.db)
 
   def buildXMLReport(self, date_scope):
 
@@ -257,7 +257,7 @@ class ConsumptionReport(ConsumptionReportBase):
                            category="")
 
      for user in self.user_list:
-       partition_cpu_load_percent = self._getPartitionCPULoadAverage(user, date_scope)
+       partition_cpu_load_percent = self.getPartitionCPULoadAverage(user, date_scope)
        if partition_cpu_load_percent is not None:
          journal.newMovement(transaction,
                              resource="service_module/cpu_load_percent",
@@ -268,7 +268,7 @@ class ConsumptionReport(ConsumptionReportBase):
 
      mb = float(2 ** 20)
      for user in self.user_list:
-       partition_memory_used = self._getPartitionUsedMemoryAverage(user, date_scope)
+       partition_memory_used = self.getPartitionUsedMemoryAverage(user, date_scope)
        if partition_memory_used is not None:
          journal.newMovement(transaction,
                              resource="service_module/memory_used",
@@ -278,7 +278,7 @@ class ConsumptionReport(ConsumptionReportBase):
                              category="")
 
      for user in self.user_list:
-       partition_disk_used = self._getPartitionDiskUsedAverage(user, date_scope)
+       partition_disk_used = self.getPartitionDiskUsedAverage(user, date_scope)
        if partition_disk_used is not None:
          journal.newMovement(transaction,
                            resource="service_module/disk_used",
