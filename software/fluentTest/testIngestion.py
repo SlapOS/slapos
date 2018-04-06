@@ -22,6 +22,7 @@ class TestPost(unittest.TestCase):
         
 
 if __name__ == "__main__":
+    print("in test")
     unittest.main()
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestPost)
     #unittest.TextTestRunner(verbosity=2).run(suite)
