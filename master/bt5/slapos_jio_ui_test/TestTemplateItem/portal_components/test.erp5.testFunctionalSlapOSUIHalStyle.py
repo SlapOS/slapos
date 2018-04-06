@@ -33,9 +33,9 @@ class TestSlapOSUIHalStyle(SlapOSTestCaseMixin, ERP5TypeFunctionalTestCase):
   foreground = 0
   run_only = "slaposjs_zuite"
 
-  def afterSetup(self):
-    ERP5TypeFunctionalTestCase.afterSetup(self)
-    SlapOSTestCaseMixin.afterSetup(self)
+  def afterSetUp(self):
+    ERP5TypeFunctionalTestCase.afterSetUp(self)
+    SlapOSTestCaseMixin.afterSetUp(self)
 
 def test_suite():
   suite = unittest.TestSuite()
