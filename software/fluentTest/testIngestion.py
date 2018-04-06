@@ -23,7 +23,7 @@ class TestPost(unittest.TestCase):
         
 
 if __name__ == "__main__":
-    print("in test")
+   # print("in test")
     #unittest.main()
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestPost)
     #result = unittest.TextTestRunner(verbosity=2).run(suite)
@@ -35,4 +35,4 @@ if __name__ == "__main__":
     print 'Errors ', result.errors
     print(result.failures)
     stream.seek(0)
-    print 'Test output\n', stream.read()
+    print 'Test output\n', stream.read() 
