@@ -48,7 +48,7 @@ class Database:
                         " io_cycles_counter real, date text, time text, " \
                         " reported integer NULL DEFAULT 0)"
 
-  CREATE_USER_PARTITION_DATE_TIME_INDEX = "CREATE INDEX user_partition_date_time ON"\
+  CREATE_USER_PARTITION_DATE_TIME_INDEX = "CREATE INDEX IF NOT EXISTS user_partition_date_time ON"\
                                           " user (partition, date, time)"
 
   CREATE_FOLDER_TABLE = "create table if not exists folder "\
