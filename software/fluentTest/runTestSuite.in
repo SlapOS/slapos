@@ -47,11 +47,13 @@ def main():
 
     test_line_dict = {}
     
-   # test_path = '$${runTest-instance:buildout-directory}/bin/testIngestion.py'
+    ######!!!!!!!!!!!!!! uncomment this !!!!!!!!
+    test_path = '$${runTest-instance:buildout-directory}/bin/testIngestion.py'
 
-    #result =  os.popen(test_path).read()
-    result =  os.popen("python testIngestion.py").read()
-  #  print("result =")
+    result =  os.popen(test_path).read()
+   
+    #result =  os.popen("python testIngestion.py").read()
+  
     print(result)
     
     test_line_dict["testIngestion"] = {

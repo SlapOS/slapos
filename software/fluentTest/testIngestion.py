@@ -9,6 +9,7 @@ from StringIO import StringIO
 import SimpleHTTPServer
 import SocketServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import os
 
 import threading
 
@@ -57,12 +58,14 @@ class TestPost(unittest.TestCase):
 
 def start_fluentd():
     
-    os.environ("GEM_PATH=$${fluentd-service:path}/lib/ruby/gems/1.8/")
+    os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     fluentd_exec_comand = '$${fluentd-service:path}/bin/fluentd -v -c $${fluentd-service:conf-path}'
     os.system(fluentd_exec_comand)
 
 
 if __name__ == "__main__":
+  
+   # start_fluentd()
   
     server_class=HTTPServer
     handler_class=Server
@@ -86,7 +89,6 @@ if __name__ == "__main__":
     print 'Test output\n', stream.read() 
     
     httpd.shutdown()
-    
     
     
     
