@@ -6,6 +6,35 @@ import unittest
 import requests
 from StringIO import StringIO
 
+import SimpleHTTPServer
+import SocketServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+import threading
+
+class Server(BaseHTTPRequestHandler):
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
+    def do_GET(self):
+        self._set_headers()
+        self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+
+    def do_HEAD(self):
+        self._set_headers()
+      
+    def do_POST(self):
+       
+        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+        post_data = self.rfile.read(content_length) # <--- Gets the data itself
+     # print(post_data)
+        self._set_headers()
+        self.wfile.write(post_data)
+
+
+
 class TestPost(unittest.TestCase):
   
     def test_get(self):
@@ -24,7 +53,26 @@ class TestPost(unittest.TestCase):
         self.assertEqual(value_request, value_response)
         
 
+
+
+def start_fluentd():
+    
+    os.environ("GEM_PATH=$${fluentd-service:path}/lib/ruby/gems/1.8/")
+    fluentd_exec_comand = '$${fluentd-service:path}/bin/fluentd -v -c $${fluentd-service:conf-path}'
+    os.system(fluentd_exec_comand)
+
+
 if __name__ == "__main__":
+  
+    server_class=HTTPServer
+    handler_class=Server
+    port=9443
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    thread = threading.Thread(target=httpd.serve_forever)
+    thread.start()
+    print 'Starting http...'
+    #httpd.serve_forever()
   
     stream = StringIO()
     runner = unittest.TextTestRunner(stream=stream)
@@ -36,3 +84,9 @@ if __name__ == "__main__":
     print "Failures ", result.failures
     stream.seek(0)
     print 'Test output\n', stream.read() 
+    
+    httpd.shutdown()
+    
+    
+    
+    

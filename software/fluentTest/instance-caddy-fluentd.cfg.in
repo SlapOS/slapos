@@ -35,9 +35,9 @@ mode = 0700
 
 
 [runTest-instance]
-recipe = slapos.recipe.template:jinja2
-template = ${template-test:output}
-rendered = $${directory:bin}/testIngestion.py
+recipe = slapos.recipe.template
+url = ${template-test:output}
+output = $${directory:bin}/testIngestion.py
 buildout-directory = $${buildout:directory}
 mode = 0700
 
@@ -49,6 +49,8 @@ mode = 0700
 [fluentd-service]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/fluentd-service
+path = ${fluentd:location}
+conf-path = ${template-fluentdConfig:output}
 command-line    =  ${fluentd:location}/bin/fluentd
     -v
     -c ${template-fluentdConfig:output}
