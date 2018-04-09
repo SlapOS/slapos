@@ -34,12 +34,13 @@ class Server(BaseHTTPRequestHandler):
         self._set_headers()
         self.wfile.write(post_data)
 
-
+url = "$${caddy-configuration:local_ip}:4443"
+#url += ":4443"
 
 class TestPost(unittest.TestCase):
   
     def test_get(self):
-        resp = requests.get('http://10.0.46.242:4443')
+        resp = requests.get(url)
         self.assertEqual(resp.status_code, 200)
         print (resp.status_code)
     
@@ -47,7 +48,7 @@ class TestPost(unittest.TestCase):
     def test_post(self):
         var_name_request = 'var1'
         value_request = test_mssg
-        req = requests.post('http://10.0.46.242:4443',data={var_name_request: value_request})
+        req = requests.post(url, data={var_name_request: value_request})
         var_name_response = req.text.split('=')[0]
         value_response = req.text.split('=')[1]
         self.assertEqual(var_name_request, var_name_response)
