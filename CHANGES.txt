@@ -1,8 +1,11 @@
 Changes
 =======
 
-(unreleased)
-------------
+1.4.7 (2018-04-08)
+------------------
+ * grid.promise: loadModule is now done in PromiseProcess class
+ * collect: fix minors bugs on collect.db and collet.reporter
+ * grid: fix using shutil.rmtree to delete file instead of directory 
  * grid: do not hide `$USER` when running buildout
  * grid: do not leak file descriptors to subprocesses when running e.g. 'node software'.
 
