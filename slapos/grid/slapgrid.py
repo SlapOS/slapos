@@ -1172,7 +1172,11 @@ stderr_logfile_backups=1
           file_list = os.listdir(computer_partition_path)
           for garbage_file in [".slapgrid", ".timestamp"]:
             if garbage_file in file_list:
-              shutil.rmtree("/".join([computer_partition_path, garbage_file]))
+              garbage_path = "/".join([computer_partition_path, garbage_file])
+              if os.path.isfile(garbage_path):
+                os.unlink(garbage_path)
+              else:
+                shutil.rmtree(garbage_path)
 
           if os.listdir(computer_partition_path) != []:
             self.logger.warning("Free partition %s contains file(s) in %s." % (
