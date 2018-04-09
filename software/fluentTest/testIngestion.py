@@ -46,26 +46,36 @@ class TestPost(unittest.TestCase):
     
     def test_post(self):
         var_name_request = 'var1'
-        value_request = "dummydummydummy123"
+        value_request = test_mssg
         req = requests.post('http://10.0.46.242:4443',data={var_name_request: value_request})
         var_name_response = req.text.split('=')[0]
         value_response = req.text.split('=')[1]
         self.assertEqual(var_name_request, var_name_response)
         self.assertEqual(value_request, value_response)
         
+    #def test_ingest(self):
+    #    var_name_request = 'var1'
+    #    value_request = test_mssg
+    #    # stex petqa fluentd kancvi 
+    #    req = requests.post('http://10.0.46.242:4443',data={var_name_request: value_request})
+    #    var_name_response = req.text.split('=')[0]
+    #    value_response = req.text.split('=')[1]
+    #    self.assertEqual(var_name_request, var_name_response)
+    #    self.assertEqual(value_request, value_response)
 
-
+test_mssg = "testtesttesttesttesttesttest"
 
 def start_fluentd():
     
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
-    fluentd_exec_comand = '$${fluentd-service:path}/bin/fluentd -v -c $${fluentd-service:conf-path}'
-    os.system(fluentd_exec_comand)
+    
+    fluentd_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
+    os.system("echo + " + test_mssg + " | " + fluentd_exec_comand)
 
 
 if __name__ == "__main__":
   
-   # start_fluentd()
+  #  start_fluentd()
   
     server_class=HTTPServer
     handler_class=Server
