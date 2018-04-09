@@ -155,11 +155,14 @@
           });
         })
         .push(function () {
-          return gadget.getSetting('document_title');
+          return RSVP.all([
+            gadget.getUrlFor({command: 'change', options: {page: "slap_computer_list"}})
+          ]);
         })
-        .push(function (document_title) {
+        .push(function (url_list) {
           return gadget.updateHeader({
             page_title: "New Computer",
+            selection_url: url_list[0],
             submit_action: true
           });
         });

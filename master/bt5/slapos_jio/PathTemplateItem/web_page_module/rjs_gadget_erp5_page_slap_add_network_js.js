@@ -110,8 +110,14 @@
           });
         })
         .push(function () {
+          return RSVP.all([
+            gadget.getUrlFor({command: 'change', options: {page: "slap_network_list"}})
+          ]);
+        })
+        .push(function (url_list) {
           return gadget.updateHeader({
             page_title: "New Network",
+            selection_url: url_list[0],
             submit_action: true
           });
         });

@@ -172,9 +172,15 @@
             }
           });
         })
-        .push(function () {
+       .push(function () {
+          return RSVP.all([
+            gadget.getUrlFor({command: 'history_previous'})
+          ]);
+        })
+        .push(function (url_list) {
           return gadget.updateHeader({
             page_title: "New Message",
+            selection_url: url_list[0],
             submit_action: true
           });
         });

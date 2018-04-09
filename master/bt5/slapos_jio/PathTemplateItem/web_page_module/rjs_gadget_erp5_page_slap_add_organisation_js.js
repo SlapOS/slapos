@@ -131,12 +131,13 @@
         })
         .push(function (result) {
           return RSVP.all([
-            gadget.getUrlFor({command: "change", options: {"page": "slap_add_organisation"}})
+            gadget.getUrlFor({command: 'change', options: {page: "slap_site_list"}})
           ]);
         })
-        .push(function () {
+        .push(function (url_list) {
           return gadget.updateHeader({
-            page_title: "New Organisation",
+            page_title: "New Site",
+            selection_url: url_list[0],
             submit_action: true
           });
         });
