@@ -42,7 +42,7 @@ class TestPost(unittest.TestCase):
   
     def test_get(self):
         resp = requests.get(url)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 20000000)
         print (resp.status_code)
     
     
