@@ -90,7 +90,7 @@ def main():
     #httpd.serve_forever()
   
     stream = StringIO()
-     runner = unittest.TextTestRunner(stream=stream)
+    runner = unittest.TextTestRunner(stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
  
     
