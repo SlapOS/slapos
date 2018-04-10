@@ -47,6 +47,9 @@ class TestPost(unittest.TestCase):
     
     
     def test_post(self):
+        
+        start_fluentd_cat()
+      
         var_name_request = 'var1'
         value_request = test_mssg
         req = requests.post(url, data={var_name_request: value_request})
@@ -75,7 +78,7 @@ def start_fluentd_cat():
     os.system("echo + " + test_mssg + " | " + fluentd_exec_comand)
 
 def main():
-     #  start_fluentd()
+     #  start_fluentd_cat()
   #  thread = threading.Thread(target=start_fluentd_cat())
   #  thread.start()
   

@@ -58,15 +58,6 @@ def main():
     num_of_tests, errors, failures, stdout = testIngestion.main()
     result = testIngestion.main()
     
-    print("num_of_tests = ")
-    print(num_of_tests)
-    print("errors = ")
-    print(errors)
-    print("failures = ")
-    print(failures)
-    print("stdout = ")
-    print(stdout)
-    
     test_line_dict["testIngestion"] = {
         'test_count': num_of_tests,
         'error_count': len(errors),
