@@ -5,6 +5,12 @@
 import argparse, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 
+import sys
+
+test_path = '$${runTest-instance:buildout-directory}/bin/'
+
+sys.path.append(test_path)
+import testIngestion
 
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -48,21 +54,26 @@ def main():
     test_line_dict = {}
     
     ######!!!!!!!!!!!!!! uncomment this !!!!!!!!
-    test_path = '$${runTest-instance:buildout-directory}/bin/testIngestion.py'
-
-    result =  os.popen(test_path).read()
-   
-    #result =  os.popen("python testIngestion.py").read()
-  
-    print(result)
+    # result.errors, result.failures, stream.read()
+    num_of_tests, errors, failures, stdout = testIngestion.main()
+    result = testIngestion.main()
+    
+    print("num_of_tests = ")
+    print(num_of_tests)
+    print("errors = ")
+    print(errors)
+    print("failures = ")
+    print(failures)
+    print("stdout = ")
+    print(stdout)
     
     test_line_dict["testIngestion"] = {
-        'test_count': 0,
-        'error_count': 0,
-        'failure_count': 0,
+        'test_count': num_of_tests,
+        'error_count': len(errors),
+        'failure_count': len(failures),
         'skip_count': 0,
-        'stdout': result,
-        'stderr': ''
+        'stdout': stdout,
+        'stderr': errors
       }
    
     

@@ -12,6 +12,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import os
 
 import threading
+import time
 
 class Server(BaseHTTPRequestHandler):
     def _set_headers(self):
@@ -66,17 +67,17 @@ class TestPost(unittest.TestCase):
 
 test_mssg = "testtesttesttesttesttesttest"
 
-def start_fluentd():
+def start_fluentd_cat():
     
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     
     fluentd_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
     os.system("echo + " + test_mssg + " | " + fluentd_exec_comand)
 
-
-if __name__ == "__main__":
-  
-  #  start_fluentd()
+def main():
+     #  start_fluentd()
+  #  thread = threading.Thread(target=start_fluentd_cat())
+  #  thread.start()
   
     server_class=HTTPServer
     handler_class=Server
@@ -93,13 +94,19 @@ if __name__ == "__main__":
     result = runner.run(unittest.makeSuite(TestPost))
  
     
-    print 'Tests run ', result.testsRun
-    print 'Errors ', result.errors
-    print "Failures ", result.failures
+    #print 'Tests run ', result.testsRun
+    #print 'Errors ', result.errors
+    #print "Failures ", result.failures
     stream.seek(0)
-    print 'Test output\n', stream.read() 
+    #print 'Test output\n', stream.read() 
+    
+  #  time.sleep(60)
     
     httpd.shutdown()
+    return result.testsRun, result.errors, result.failures, stream.read()
     
     
-    
+  
+if __name__ == "__main__":
+  
+    main()
