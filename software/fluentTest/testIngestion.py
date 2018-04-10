@@ -103,7 +103,7 @@ def main():
     stream.seek(0)
     #print 'Test output\n', stream.read() 
     
-  #  time.sleep(60)
+    time.sleep(60)
     
     httpd.shutdown()
     return result.testsRun, result.errors, result.failures, stream.read()
