@@ -1,0 +1,208 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Test SlapJS UI</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Test RenderJS UI</td></tr>
+</thead><tbody>
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_init" />
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_login" />
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_front_page" />
+
+<!-- Sites -->
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n="Services" and @accesskey="l"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n='Services' and @accesskey="u"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Services']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="No records"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n="Add"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n="Add"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Software Products']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Software Releases']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="Request Service: Frontend"]</td>
+  <td></td>
+</tr>
+
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@id="title"]</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>type</td>
+  <td>//input[@id="title"]</td>
+  <td>TEST-SLAPOSJS-SERVICE-FRONTEND 0</td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//input[@name="//public-ipv4"]</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>type</td>
+  <td>//input[@name="//public-ipv4"]</td>
+  <td>http://www.erp5.com</td>
+</tr>
+
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n="Proceed"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@type="submit" and text()="New service created."]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>5000</td>
+  <td>5000</td>
+</tr>
+
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n="Services" and @accesskey="l"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n='Services' and @accesskey="u"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n='Services']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="1 Records"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[text()="TEST-SLAPOSJS-SERVICE-FRONTEND 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[text()="TEST-SLAPOSJS-SERVICE-FRONTEND 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n="Hosting Subscription: TEST-SLAPOSJS-SERVICE-FRONTEND 0"]</td>
+  <td></td>
+</tr>
+
+<!-- Update Parameters -->
+<!-- Update Add Ticket -->
+<!-- Update Stop -->
+<!-- Update Start -->
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n="Destroy"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@data-i18n="Destroy"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n="Destroy Hosting Subscription: TEST-SLAPOSJS-SERVICE-FRONTEND 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@data-i18n="Proceed"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n="Proceed"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@type="submit" and text()="Service is Destroyed."]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="No records"]</td>
+  <td></td>
+</tr>
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_logout" />
+-->
+
+</tbody></table>
+</body>
+</html>
