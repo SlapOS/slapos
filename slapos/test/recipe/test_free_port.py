@@ -4,8 +4,6 @@ import unittest
 
 from mock import patch
 
-from slapos.recipe import free_port
-
 class SocketMock():
   def __init__(self, *args, **kw):
     self.args = args
@@ -28,31 +26,16 @@ class FreePortTest(unittest.TestCase):
     SocketMock.bind = SocketMock.close = SocketMock.nothing_happen
 
   def new_recipe(self, **kw):
-    buildout = {
-      'buildout': {
-        'bin-directory': '',
-        'find-links': '',
-        'allow-hosts': '',
-        'develop-eggs-directory': '',
-        'eggs-directory': '',
-        'python': 'testpython',
-        'installed': '.installed.cfg',
-        },
-       'testpython': {
-         'executable': sys.executable,
-       },
-       'slap-connection': {
-         'computer-id': '',
-         'partition-id': '',
-         'server-url': '',
-         'software-release-url': '',
-       }
-    }
+    from slapos.recipe import free_port
+    from slapos.test.utils import makeRecipe
     options = {
       'ip': '127.0.0.1',
     }
     options.update(kw)
-    return free_port.Recipe(buildout=buildout, name='free_port', options=options)
+    return makeRecipe(
+        free_port.Recipe,
+        options=options,
+        name='free_port')
 
   @useMock
   def test_ifNoBusyPortThenMinPortIsAlwaysReturned(self):

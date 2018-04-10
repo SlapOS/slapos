@@ -70,8 +70,8 @@ You don't need to define all parameters, you can only set what is required to be
 If you have sub-instances, you should collect the base monitor url from all instances with monitor and send it to monitor-url-list or you can override "monitor-base-url-dict" section and add all the urls as key/value pairs in the root instance.
 
     [monitor-base-url-list]
-    monitor1-url = https://[xxxx:xxx:xxxx:e:11::1fb1]:4200 
-    monitor2-url = https://[xxxx:xxx:xxxx:e:22::2fb2]:4200 
+    monitor1-url = https://[xxxx:xxx:xxxx:e:11::1fb1]:4200
+    monitor2-url = https://[xxxx:xxx:xxxx:e:22::2fb2]:4200
     ..
     ..
 
@@ -84,66 +84,42 @@ NB: You should use double $ (ex: $${monitor-template:rendered}) instead of one $
 Add a promise
 -------------
 
-Monitor stack will include slapos promise directory etc/promise to promise folder. All files in that directory will be considered as a promise.
-This mean that all slapos promises will be checked frequently by monitor.
+To learn how to write a promise in SlapOS, please read this document:
+
+    https://www.erp5.com/slapos-TechnicalNote.General.SlapOS.Monitoring.Specifications
+
+Writing a promise consists of defining a class called RunPromise which inherits from GenericPromise class and defining methods: anomaly(), sense() and test(). Python promises should be placed into the folder etc/plugin of the computer partition.
+New promises should be placed into the folder etc/plugin, legacy promise are into the folder etc/promise. Legacy promises are bash or other executable promises script which does not use GenericPromise class.
+
+You will use slapos.cookbook:promise.plugin to generate your promise script into `etc/plugin` directory. Add promise will look like this:
+
+    [promise-check-site]
+    recipe = slapos.cookbook:promise.plugin
+    eggs =
+      slapos.toolbox
+    output = ${directory:plugins}/promise-check-mysite-status.py
+    content = 
+      from slapos.promise.plugin.check_site_state import RunPromise
+    config-site-url = ${publish:site-url}
+    config-connection-timeout = 20
+    config-foo = bar
+    mode = 600
+
+Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
+
+In your promise code, you will be able to call `self.getConfig('site-url')`, `self.getConfig('connection-timeout')` and `self.getConfig('foo')`. The
+returned value is `None` if the config parameter is not set.
+
+Slapgrid will run each promise every time a partition is processed (every minutes in theory), if the partition is up to date, slapgrid will only run promises anomaly check and save the result in a json file. Here is an exemple of promise result:
+
+    {"result": {"date": "2018-03-22T15:35:07", "failed": false, "message": "buildout is OK", "type": "Test Result"}, "path": "PARTITION_DIRECTORY/etc/plugin/buildout-slappart0-status.py", "name": "buildout-slappart0-status.py", "execution-time": 0.1, "title": "buildout-slappart0-status"}
+
+The promise execution time should be short, by default promise-timeout in slapgrid is to 20 seconds. If a promise runs in more than the defined promise-timeout, the process is killed and a "promise timed out" message is returned.
+JSON in the folder `PARTITION_DIRECTORY/.slapgrid/promise/result`, and promise logs are in `PARTITION_DIRECTORY/.slapgrid/promise/log`.
 
 
-    [monitor-conf-parameters]
-    ...
-    promise-folder = ${directory:promises}
-    ...
-
-
-Monitor will run each promise every minutes and save the result in a json file. Here is an exemple of promise result:
-
-    {"status": "ERROR", "change-time": 1466415901.53, "hosting_subscription": "XXXX", "title": "vnc_promise", "start-date": "2016-06-21 10:47:01", "instance": "XXXX-title", "_links": {"monitor": {"href": "MONITOR_PRIVATE_URL"}}, "message": "PROMISE_OUPT_MESSAGE", "type": "status"}
-
-A promise will be ran during a short time and report the status: ERROR or OK, plus an ouput message which says what was good or bad.
-The promise should not run for more that 20 seconds, else it will be interrupted because of time out. However this value can be modified from monitoring web interface, see parameter "promise-timeout" of your hosting subscription.
-On slapos, the default timeout value is also 20 seconds, if the value is modified on monitor (ex: to 50 seconds), it will still fails when slapgrid will process instance if the promise execution exceed 20 seconds.
-
-Promises result are published in web public folder, access URL is: MONITOR_BASE_URL/private/PROMISE_NAME.status.json
-Everytime monitor will run a promise an history of result will be also updated. The promise history will be updated during one day, after that a new history will be created.
-To access promise history file as JSON, use URL MONITOR_BASE_URL/private/PROMISE_NAME.history.json
-
-Add a promise: monitor promise
-------------------------------
-
-Monitor promise is also a promise like normal promise script but it will be placed into the folder ${monitor-directory:promises}:
-
-    [monitor-promise-xxxxx]
-    recipe = slapos.recipe.template:jinja2
-    rendered = ${monitor-directory:promises}/my-custom-monitor-promise
-
-Theses promises will be executed only by monitor (not slapos) every minutes and will report same infor as default promises. This is another way to 
-add more custom promises to check if server is overloaded, or if network start to be slow, etc...
-
-
-Add custom scripts to monitor
------------------------------
-
-Custom script will be automatically run by the monitor and result will be reported in monitor private folder. To add your custom script in ${monitor-directory:reports} folder. Here is an example:
-
-    [monitor-check-webrunner-internal-instance]
-    recipe = slapos.recipe.template:jinja2
-    template = ${monitor-check-webrunner-internal-instance:location}/${monitor-check-webrunner-internal-instance:filename}
-    rendered = $${monitor-directory:reports}/$${:filename}
-    filename = monitor-check-webrunner-internal-instance
-    mode = 0744
-
-The script will be executed every minutes by default. To change, put periodicity in script name:
-  - monitor-check-webrunner-internal-instance_every_1_minute
-  - monitor-check-webrunner-internal-instance_every_25_minute
-  - monitor-check-webrunner-internal-instance_every_1_hour
-  - monitor-check-webrunner-internal-instance_every_3_hour
-  - ...
-
-the script name should end with _every_XX_hour or _every_XX_minute. With this, we can set filename as:
-
-    filename = monitor-check-webrunner-internal-instance_every_2_minute
-
-You can get custom script results files at MONITOR_BASE_URL/private/FILE_NAME.
-
+Monitor will expose promise JSON result in web public folder, access URL is: `MONITOR_BASE_URL/public/promise/PROMISE_TITLE.status.json`. Log files are exposed in monitor private web folder,
+access URL is: `MONITOR_BASE_URL/private/log/monitor/promise`
 
 Add custom file or directory to monitor
 ---------------------------------------
@@ -158,20 +134,22 @@ Log or others files can be added in monitor public or private directory:
       ${directory:log}
       ...
 
-files in public directory are accessible at MONITOR_BASE_URL/public, and for private directory: MONITOR_BASE_URL/private.
+files in public directory are accessible at `MONITOR_BASE_URL/public`, and for private directory: `MONITOR_BASE_URL/private`.
 
 
-Monitor RSS and OPML Feed
--------------------------
+Monitor promise history, RSS and OPML Feed
+------------------------------------------
 
-Monitor generate rss containing latest result for all promises, this feed will be upaded every minutes. The Rss fee URL is
-MONITOR_BASE_URL/public/feed
+Monitor read every minutes JSON promises result files to build Rss and full instance state. The Rss feed URL is
+`MONITOR_BASE_URL/public/feed`
 
 OPML Feed is used to aggregate many feed URL, this is used on monitor to link many single monitor instances. For example, a resilient
-webrunner has 5 instances at least, each instance has a monitor which leads to 5 monitor instances too. One main instance (usally the root instance)
-will collect rss feeds of all others monitor's in a single OPML file. This file is published and used to configure a monitor backend to the web interface.
-The URL of OPML feed is: MONITOR_BASE_URL/public/feeds
+webrunner has 3 instances at least, each instance has a monitor which leads to 3 monitor instances too. One main instance (usally the root instance)
+will collect rss feed of all others monitor's in a single OPML file. This file is published and used to configure a monitor backend to the web interface.
+The URL of OPML feed is: `MONITOR_BASE_URL/public/feeds`
 
+Everytime monitor will also produce history of for each promise in a single JSON file.
+To access promise history file as JSON, use URL `MONITOR_BASE_URL/public/PROMISE_TITLE.history.json`
 
 Monitor Base web directory tree
 -------------------------------
@@ -184,16 +162,13 @@ Monitor Base web directory tree
             (webdav)        X             Y 
                 |
         ---------------------------------
-        |       |          |            |
-      public  private  jio_public  jio_private
-        X       Y          |            |
-                    .jio_documents  .jio_documents
-                           X            Y
+        |       |       
+      public  private 
+        X       Y     
 
 
 MONITOR_BASE_URL/public or private is for normal HTTPS.
 MONITOR_BASE_URL/share is the webdav URL. public/ and private/ are linked to public and private directories.
-  webdav also has jio_public/.jio_documents and jio_private/.jio_documents which are linked to public and private directory and they works with jio webdav pluging.
 
 
 Access to Monitor

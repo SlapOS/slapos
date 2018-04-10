@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.60.dev0'
+version = '1.0.62'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -99,7 +99,6 @@ setup(name=name,
           'dropbear.add_authorized_key = slapos.recipe.dropbear:AddAuthorizedKey',
           'dropbear.client = slapos.recipe.dropbear:Client',
           'duplicity = slapos.recipe.duplicity:Recipe',
-          'egg_test = slapos.recipe.erp5_test:EggTestRecipe',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
           'erp5.test = slapos.recipe.erp5_test:Recipe',
@@ -151,6 +150,7 @@ setup(name=name,
           'postgres.export = slapos.recipe.postgres.backup:ExportRecipe',
           'postgres.import = slapos.recipe.postgres.backup:ImportRecipe',
           'proactive = slapos.recipe.proactive:Recipe',
+          'promise.plugin= slapos.recipe.promise_plugin:Recipe',
           'publish = slapos.recipe.publish:Recipe',
           'publish.serialised = slapos.recipe.publish:Serialised',
           'publish-early = slapos.recipe.publish_early:Recipe',

@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.62 (2018-04-10)
+-------------------
+
+* promise.plugin: new recipe for python promises plugin script generation
+
 1.0.59 (2018-03-15)
 -------------------
 * librecipe.execute: fix convert process arguments to string formatting.

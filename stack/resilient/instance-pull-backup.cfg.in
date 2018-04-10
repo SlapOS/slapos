@@ -136,13 +136,13 @@ notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
 ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
 # To get a verbose feed about PBS state
-instance-root-name = $${instance-info-parameters:root-name}
+instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
-command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
+command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${monitor-instance-parameter:root-instance-title}-PBS" --link $${pbs:log-url}
 feed-path = $${directory:monitor-resilient}/pbs-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 

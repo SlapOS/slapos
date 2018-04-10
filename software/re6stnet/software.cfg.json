@@ -10,11 +10,13 @@
             "response": "instance-re6stnet-output-schema.json",
             "index": 0
         },
-        "registry": {
-            "title": "registry",
+        "default-slave": {
+            "title": "Re6st Token",
             "description": "Re6st registry",
-            "request": "instance-re6stnet-resilient-input-schema.json",
+            "software-type": "default",
+            "request": "instance-re6stnet-slave-input-schema.json",
             "response": "instance-re6stnet-output-schema.json",
+            "shared": true,
             "index": 1
         }
     }
