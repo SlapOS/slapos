@@ -35,7 +35,7 @@ class Server(BaseHTTPRequestHandler):
         self.wfile.write(post_data)
 
 url = "http://$${caddy-configuration:local_ip}:4443"
-#url += ":4443"
+
 
 class TestPost(unittest.TestCase):
   
