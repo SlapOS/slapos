@@ -42,7 +42,7 @@ class TestPost(unittest.TestCase):
   
     def test_get(self):
         resp = requests.get(url)
-        self.assertEqual(resp.status_code, 20000000)
+        self.assertEqual(resp.status_code, 200)
         print (resp.status_code)
     
     
@@ -90,7 +90,7 @@ def main():
     #httpd.serve_forever()
   
     stream = StringIO()
-    runner = unittest.TextTestRunner(stream=stream)
+     runner = unittest.TextTestRunner(stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
  
     
