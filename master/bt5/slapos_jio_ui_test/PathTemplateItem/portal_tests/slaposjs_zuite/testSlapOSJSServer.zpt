@@ -146,6 +146,99 @@
   <td>//a[@data-i18n="Computer: TEST-SLAPOSJS-COMPUTER 0"]</td>
   <td></td>
 </tr>
+
+<!-- Supply -->
+<tr>
+  <td>click</td>
+  <td>//a[text()="Supply"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="Select one Software"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n="Software Products"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//span[@data-i18n="Select one Release"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@data-i18n="Software Releases"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//td/a[text()="Frontend"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//h1[@class="ui-title"]/span</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//label[text()="Software Release to be Installed"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//label[text()="Target Computer Title"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>verifyTextPresent</td>
+  <td>//p[text()="TEST-SLAPOSJS-COMPUTER 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n="Proceed"]</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@type="submit" and text()="New Software Installation created."]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[text()="TEST-SLAPOSJS-COMPUTER 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[text()="TEST-SLAPOSJS-COMPUTER 0"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//a[@data-i18n="Computer: TEST-SLAPOSJS-COMPUTER 0"]</td>
+  <td></td>
+</tr>
 <tr>
   <td>waitForElementPresent</td>
   <td>//select[@id="allocation_scope"]</td>
