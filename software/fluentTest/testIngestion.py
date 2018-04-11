@@ -14,7 +14,30 @@ import os
 import threading
 import time
 
-class Server(BaseHTTPRequestHandler):
+message_distributor = None
+test_msg = "testtesttesttesttesttesttest"
+
+
+class MessageProxy:
+  
+  def __init__(self):
+    self.callback = None
+    
+  def subscribe(self, callback):
+    self.callback = callback
+    
+  def send(self, message):
+    self.callback(message)
+
+
+class TestServerHandler(BaseHTTPRequestHandler):
+  
+    #def __init__(self):
+    #    self.forwarding_callback = None
+    #    
+    #def setForwardingCallback(callback):
+    #    self.forwarding_callback = callback
+  
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -24,16 +47,20 @@ class Server(BaseHTTPRequestHandler):
         self._set_headers()
         self.wfile.write("<html><body><h1>hi!</h1></body></html>")
 
+
     def do_HEAD(self):
         self._set_headers()
       
     def do_POST(self):
-       
+        global message_distributor
         content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         post_data = self.rfile.read(content_length) # <--- Gets the data itself
      # print(post_data)
         self._set_headers()
         self.wfile.write(post_data)
+        #if self.forwarding_callback:
+        #  self.forwarding_callback(post_data)
+        message_distributor.send(post_data)
 
 url = "http://$${caddy-configuration:local_ip}:4443"
 
@@ -47,16 +74,25 @@ class TestPost(unittest.TestCase):
     
     
     def test_post(self):
+        #global test_server
+        #def my_callback(message):
+        #  self.assertEqual(test_msg, message)
+        #test_server.setForwardingCallback(my_callback)
         
+        global message_distributor
+        def my_callback(message):
+          print("it worked with: " + message)
+        #  self.assertEqual(test_msg, message)
+        message_distributor.subscribe(my_callback)
         start_fluentd_cat()
       
-        var_name_request = 'var1'
-        value_request = test_mssg
-        req = requests.post(url, data={var_name_request: value_request})
-        var_name_response = req.text.split('=')[0]
-        value_response = req.text.split('=')[1]
-        self.assertEqual(var_name_request, var_name_response)
-        self.assertEqual(value_request, value_response)
+        #var_name_request = 'var1'
+        #value_request = test_mssg
+        #req = requests.post(url, data={var_name_request: value_request})
+        #var_name_response = req.text.split('=')[0]
+        #value_response = req.text.split('=')[1]
+        #self.assertEqual(var_name_request, var_name_response)
+        #self.assertEqual(value_request, value_response)
         
     #def test_ingest(self):
     #    var_name_request = 'var1'
@@ -68,7 +104,7 @@ class TestPost(unittest.TestCase):
     #    self.assertEqual(var_name_request, var_name_response)
     #    self.assertEqual(value_request, value_response)
 
-test_mssg = "testtesttesttesttesttesttest"
+
 
 def start_fluentd_cat():
     
@@ -78,15 +114,21 @@ def start_fluentd_cat():
     os.system("echo + " + test_mssg + " | " + fluentd_exec_comand)
 
 def main():
+    #global test_server
      #  start_fluentd_cat()
   #  thread = threading.Thread(target=start_fluentd_cat())
   #  thread.start()
   
-    server_class=HTTPServer
-    handler_class=Server
+    #test_server = TestServerHandler()
+
+    global message_distributor
+    message_distributor = MessageProxy()
+
+    #server_class=HTTPServer
+  #  handler_class=Server
     port=9443
     server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
+    httpd = HTTPServer(server_address, TestServerHandler)
     thread = threading.Thread(target=httpd.serve_forever)
     thread.start()
     print 'Starting http...'
@@ -103,7 +145,7 @@ def main():
     stream.seek(0)
     #print 'Test output\n', stream.read() 
     
-    time.sleep(60)
+    time.sleep(10)
     
     httpd.shutdown()
     return result.testsRun, result.errors, result.failures, stream.read()
