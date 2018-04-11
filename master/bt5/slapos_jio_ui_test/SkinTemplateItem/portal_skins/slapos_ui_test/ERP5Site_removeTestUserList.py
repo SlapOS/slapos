@@ -3,7 +3,8 @@ portal = context.getPortalObject()
 for cr in portal.portal_catalog(reference=["testSlapOSJSSubscribeUser", "demo_functional_user"],
                                portal_type="Credential Request"):
   related_person = cr.getDestinationDecisionValue()
-  portal.person_module.manage_delObjects(ids=[related_person.getId()])
+  if related_person is not None:
+    portal.person_module.manage_delObjects(ids=[related_person.getId()])
   event_list = cr.getFollowUpRelatedValueList()
   if len(event_list):
     portal.event_module.manage_delObjects(ids=[e.getId() for e in event_list])
