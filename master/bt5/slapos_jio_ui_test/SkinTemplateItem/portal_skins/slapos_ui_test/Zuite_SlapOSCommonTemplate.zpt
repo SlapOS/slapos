@@ -13,6 +13,16 @@
     </tr>
     <tr>
       <td>openAndWait</td>
+      <td>${base_url}/ERP5Site_initSlapOSUITest</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>assertTextPresent</td>
+      <td>Done.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>openAndWait</td>
       <td>${base_url}/ERP5Site_setupDummyMailHost</td>
       <td></td>
     </tr>
