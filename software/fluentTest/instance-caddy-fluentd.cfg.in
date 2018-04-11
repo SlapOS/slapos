@@ -53,7 +53,7 @@ path = ${fluentd:location}
 conf-path = ${template-fluentdConfig:output}
 command-line    =  ${fluentd:location}/bin/fluentd
     -vv
-    -c ${template-fluentdConfig:output}
+    -c ${template-fluentdConfig:output} -o $${directory:log}/fluent.log
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
 output = $${:wrapper-path}  
