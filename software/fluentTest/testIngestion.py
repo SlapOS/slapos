@@ -74,58 +74,37 @@ class TestPost(unittest.TestCase):
     
     
     def test_post(self):
-        #global test_server
-        #def my_callback(message):
-        #  self.assertEqual(test_msg, message)
-        #test_server.setForwardingCallback(my_callback)
+        var_name_request = 'var1'
+        value_request = "simple POST test message"
+        req = requests.post(url, data={var_name_request: value_request})
+        var_name_response = req.text.split('=')[0]
+        value_response = req.text.split('=')[1]
+        self.assertEqual(var_name_request, var_name_response)
+        self.assertEqual(value_request, value_response)
         
+    def test_ingest(self):
         global message_distributor
+        
         def my_callback(message):
           print("it worked with: " + message)
-        #  self.assertEqual(test_msg, message)
+          self.assertEqual(test_msg, message)
+        
         message_distributor.subscribe(my_callback)
         start_fluentd_cat()
-      
-        #var_name_request = 'var1'
-        #value_request = test_mssg
-        #req = requests.post(url, data={var_name_request: value_request})
-        #var_name_response = req.text.split('=')[0]
-        #value_response = req.text.split('=')[1]
-        #self.assertEqual(var_name_request, var_name_response)
-        #self.assertEqual(value_request, value_response)
         
-    #def test_ingest(self):
-    #    var_name_request = 'var1'
-    #    value_request = test_mssg
-    #    # stex petqa fluentd kancvi 
-    #    req = requests.post('http://10.0.46.242:4443',data={var_name_request: value_request})
-    #    var_name_response = req.text.split('=')[0]
-    #    value_response = req.text.split('=')[1]
-    #    self.assertEqual(var_name_request, var_name_response)
-    #    self.assertEqual(value_request, value_response)
-
-
 
 def start_fluentd_cat():
     
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     
     fluentd_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
-    os.system("echo + " + test_mssg + " | " + fluentd_exec_comand)
+    os.system("echo + " + test_msg + " | " + fluentd_exec_comand)
 
 def main():
-    #global test_server
-     #  start_fluentd_cat()
-  #  thread = threading.Thread(target=start_fluentd_cat())
-  #  thread.start()
   
-    #test_server = TestServerHandler()
-
     global message_distributor
     message_distributor = MessageProxy()
 
-    #server_class=HTTPServer
-  #  handler_class=Server
     port=9443
     server_address = ('', port)
     httpd = HTTPServer(server_address, TestServerHandler)
@@ -139,15 +118,15 @@ def main():
     result = runner.run(unittest.makeSuite(TestPost))
  
     
-    #print 'Tests run ', result.testsRun
-    #print 'Errors ', result.errors
-    #print "Failures ", result.failures
+  #  print 'Tests run ', result.testsRun
+  #  print 'Errors ', result.errors
+  #  print "Failures ", result.failures
     stream.seek(0)
-    #print 'Test output\n', stream.read() 
+  #  print 'Test output\n', stream.read() 
     
     time.sleep(10)
-    
     httpd.shutdown()
+    
     return result.testsRun, result.errors, result.failures, stream.read()
     
     
