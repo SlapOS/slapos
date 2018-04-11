@@ -83,7 +83,7 @@ def main():
     print 'Starting http...'
     #httpd.serve_forever()
     
-    time.sleep(5)
+    time.sleep(10)
     stream = StringIO()
     runner = unittest.TextTestRunner(stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
@@ -95,9 +95,9 @@ def main():
     stream.seek(0)
     print 'Test output\n', stream.read() 
     
-    time.sleep(10)
+    time.sleep(60)
     httpd.shutdown()
-    
+    print(posted_data)
     return result.testsRun, result.errors, result.failures, stream.read(), posted_data
 
 if __name__ == "__main__":
