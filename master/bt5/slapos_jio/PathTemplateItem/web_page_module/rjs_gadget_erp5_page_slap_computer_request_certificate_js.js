@@ -121,10 +121,16 @@
             }
           });
         })
-        .push(function () {
+        .push(function (result) {
+          return RSVP.all([
+            gadget.getUrlFor({command: 'history_previous'})
+          ]);
+        })
+        .push(function (url_list) {
           var header_dict = {
             page_title: "Request New Certificate",
-            submit_action: true
+            submit_action: true,
+            selection_url: url_list[0]
           };
           return gadget.updateHeader(header_dict);
         });

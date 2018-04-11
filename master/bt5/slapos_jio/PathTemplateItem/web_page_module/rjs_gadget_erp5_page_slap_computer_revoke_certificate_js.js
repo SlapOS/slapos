@@ -98,10 +98,16 @@
             }
           });
         })
-        .push(function () {
+        .push(function (result) {
+          return RSVP.all([
+            gadget.getUrlFor({command: 'history_previous'})
+          ]);
+        })
+        .push(function (url_list) {
           return gadget.updateHeader({
             page_title: "Revoke Computer Certificate",
-            submit_action: true
+            submit_action: true,
+            selection_url: url_list[0]
           });
         });
     });

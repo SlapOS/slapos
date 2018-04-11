@@ -15,11 +15,29 @@
     .declareAcquiredMethod("updateDocument", "updateDocument")
     .declareAcquiredMethod("jio_getAttachment", "jio_getAttachment")
     .declareAcquiredMethod("jio_putAttachment", "jio_putAttachment")
+    .declareAcquiredMethod("jio_put", "jio_put")
     .declareAcquiredMethod("notifySubmitting", "notifySubmitting")
     .declareAcquiredMethod("notifySubmitted", 'notifySubmitted')
     /////////////////////////////////////////////////////////////////
     // declared methods
     /////////////////////////////////////////////////////////////////
+
+
+    .declareMethod('updateDocument', function (content) {
+      var gadget = this, property, doc = {};
+      for (property in content) {
+        if ((content.hasOwnProperty(property)) &&
+            // Remove undefined keys added by Gadget fields
+            (property !== "undefined") &&
+            // Remove listboxes UIs
+            (property !== "listbox_uid:list") &&
+            // Remove default_*:int keys added by ListField
+            !(property.endsWith(":int") && property.startsWith("default_"))) {
+          doc[property] = content[property];
+        }
+      }
+      return gadget.jio_put(gadget.state.jio_key, doc);
+    })
 
     .declareMethod("render", function (options) {
       var gadget = this,
@@ -53,7 +71,12 @@
           return form_gadget.getContent();
         })
         .push(function (content) {
-          return gadget.updateDocument(content);
+          return gadget.updateDocument(content)
+            .push(function () {
+              return gadget.updateHeader({
+                page_title: "Your Account : " + content.first_name + " " + content.last_name
+              });
+            });
         })
         .push(function () {
           return gadget.notifySubmitted({message: 'Data Updated', status: 'success'});
@@ -125,11 +148,14 @@
           });
         })
         .push(function () {
+          return gadget.getSetting("me");
+        })
+        .push(function (me) {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {editable: true}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_person_revoke_certificate"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_person_request_certificate"}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_person_get_token"}}),
+            gadget.getUrlFor({command: "change", options: {jio_key: me, page: "slap_person_revoke_certificate"}}),
+            gadget.getUrlFor({command: "change", options: {jio_key: me, page: "slap_person_request_certificate"}}),
+            gadget.getUrlFor({command: "change", options: {jio_key: me, page: "slap_person_get_token"}}),
             gadget.getUrlFor({command: "change", options: {page: "slapos"}})
           ]);
         })
