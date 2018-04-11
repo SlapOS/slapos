@@ -57,9 +57,9 @@ class TestPost(unittest.TestCase):
     
 
     def test_ingest(self):
-        self.assertEqual(test_msg, posted_data)
-        print("from test = ")
-        print(posted_data)
+        self.assertEqual(test_msg, posted_data.split(" ")[1])
+       # print("from test = ")
+      #  print(posted_data)
         
 
 def start_fluentd_cat():
