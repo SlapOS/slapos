@@ -98,7 +98,7 @@ def main():
     time.sleep(10)
     httpd.shutdown()
     
-    return result.testsRun, result.errors, result.failures, stream.read()
+    return result.testsRun, result.errors, result.failures, stream.read(), posted_data
 
 if __name__ == "__main__":
   
