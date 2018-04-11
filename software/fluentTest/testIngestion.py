@@ -100,6 +100,10 @@ def main():
     time.sleep(60)
     httpd.shutdown()
     print(posted_data)
+    
+    with open("$${directory:log}/fluent.log", 'r') as f:
+      print(f.read())
+    
     return result.testsRun, result.errors, result.failures, stream.read(), posted_data
 
 if __name__ == "__main__":
