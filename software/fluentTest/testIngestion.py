@@ -45,6 +45,8 @@ class TestServerHandler(BaseHTTPRequestHandler):
         
         global posted_data
         posted_data = post_data
+        print("post data from do_POST")
+        print posted_data
      
 class TestPost(unittest.TestCase):
   
