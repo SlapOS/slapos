@@ -73,14 +73,14 @@ class TestPost(unittest.TestCase):
         print (resp.status_code)
     
     
-    def test_post(self):
-        var_name_request = 'var1'
-        value_request = "simple POST test message"
-        req = requests.post(url, data={var_name_request: value_request})
-        var_name_response = req.text.split('=')[0]
-        value_response = req.text.split('=')[1]
-        self.assertEqual(var_name_request, var_name_response)
-        self.assertEqual(value_request, value_response)
+   # def test_post(self):
+  #      var_name_request = 'var1'
+  #      value_request = "simple POST test message"
+  #      req = requests.post(url, data={var_name_request: value_request})
+  #      var_name_response = req.text.split('=')[0]
+  #      value_response = req.text.split('=')[1]
+  #      self.assertEqual(var_name_request, var_name_response)
+  #      self.assertEqual(value_request, value_response)
         
     def test_ingest(self):
         global message_distributor
