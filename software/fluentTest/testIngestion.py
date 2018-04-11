@@ -57,10 +57,12 @@ class TestPost(unittest.TestCase):
     
 
     def test_ingest(self):
+      if posted_data:
+        print(posted_data)
         self.assertEqual(test_msg, posted_data.split(" ")[1])
-       # print("from test = ")
-      #  print(posted_data)
-        
+      else:
+        self.assertEqual(test_msg, posted_data)
+      
 
 def start_fluentd_cat():
     
@@ -97,9 +99,7 @@ def main():
     httpd.shutdown()
     
     return result.testsRun, result.errors, result.failures, stream.read()
-    
-    
-  
+
 if __name__ == "__main__":
   
     main()
