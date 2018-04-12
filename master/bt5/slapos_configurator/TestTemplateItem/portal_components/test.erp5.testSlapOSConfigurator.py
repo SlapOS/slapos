@@ -299,11 +299,13 @@ class TestSlapOSConfigurator(SlapOSTestCaseMixin):
       'slapos_cloud',
       'slapos_slap_tool',
       'slapos_category',
+      'slapos_rss_style',
       'slapos_pdm',
       'slapos_crm',
       'slapos_accounting',
       'slapos_payzen',
       'slapos_web',
+      'slapos_web_deploy',
       'slapos_erp5',
     ]
     self.assertSameSet(expected_business_template_list,
