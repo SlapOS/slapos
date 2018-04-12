@@ -1,3 +1,4 @@
+from zExceptions import Unauthorized
 portal = context.getPortalObject()
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
 
@@ -26,7 +27,9 @@ def wrapWithShadow(payment_transaction, person_relative_url):
     portal_type="Payzen Event Message")[0].getTextContent()
 
 if person is None:
-  return wrapWithShadow(context, context.getDestinationSection())
+  if not portal.portal_membership.isAnonymousUser():
+    return wrapWithShadow(context, context.getDestinationSection())
+  raise Unauthorized("You must be logged in")
 
 return person.Person_restrictMethodAsShadowUser(
   shadow_document=person,

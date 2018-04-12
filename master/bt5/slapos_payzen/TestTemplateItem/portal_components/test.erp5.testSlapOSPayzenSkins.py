@@ -655,9 +655,11 @@ return dict(vads_url_already_registered="%s/already_registered" % (payment_trans
   def test_PaymentTransaction_redirectToManualPayzenPayment_unauthorzied(self):
     payment = self.createPaymentTransaction()
     self._simulatePaymentTransaction_getVADSUrlDict()
+    self.logout()
     try:
       self.assertRaises(Unauthorized, payment.PaymentTransaction_redirectToManualPayzenPayment)
     finally:
+      self.login()
       self._dropPaymentTransaction_getVADSUrlDict()
 
   def test_PaymentTransaction_redirectToManualPayzenPayment_redirect(self):
