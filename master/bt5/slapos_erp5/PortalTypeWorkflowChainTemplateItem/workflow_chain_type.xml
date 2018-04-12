@@ -5,7 +5,7 @@
  </chain>
  <chain>
   <type>Computer</type>
-  <workflow>local_permission_slapos_interaction_workflow</workflow>
+  <workflow>local_permission_slapos_interaction_workflow, slapos_erp5_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Computer Model</type>
