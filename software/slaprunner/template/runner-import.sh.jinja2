@@ -14,7 +14,7 @@ exec 2>&1
 echo -e "\n\n$0 run at : $(date)"
 
 srv_directory='{{ directory["srv"] }}'
-backup_directory='{{ directory["backup"] }}/../'
+backup_directory='{{ directory["backup"] }}'
 etc_directory='{{ directory["etc"] }}'
 
 RESTORE_EXIT_CODE_FILE='{{ restore_exit_code_file }}'
