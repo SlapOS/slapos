@@ -15,7 +15,7 @@ import threading
 import time
 
 
-test_msg = "testtesttesttesttesttesttest"
+test_msg = "dummyInputPassedByFluentCAT"
 url = "http://$${caddy-configuration:local_ip}:4443"
 
 posted_data = None
