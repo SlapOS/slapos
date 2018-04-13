@@ -612,13 +612,6 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
 
   @changeSkin('RJS')
   def usePayzenManually(self, web_site, user_reference):
-		# No more acknowledgment
-    #acknowledgement_json = \
-    #  web_site.AcknowledgementTool_getUserUnreadAcknowledgementJSON()
-    #acknowledgement_dict = json.loads(acknowledgement_json)
-    #self.assertTrue('result' in acknowledgement_dict, "%s" % acknowledgement_dict)
-    #message_list = acknowledgement_dict['result']
-    #self.assertEquals(len(message_list), 0, "%s" % message_list)
 
     # User received an email for payment
     email = '%s@example.com' % user_reference
@@ -1088,7 +1081,7 @@ class TestSlapOSDefaultCRMEscalation(DefaultScenarioMixin):
   def test_crm_escalation(self):
     # some preparation
     self.logout()
-    self.web_site = self.portal.web_site_module.hosting
+    self.web_site = self.portal.web_site_module.hostingjs
 
     # join as the another visitor and request software instance on public
     # computer
