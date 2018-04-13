@@ -104,7 +104,7 @@ def main():
   #  with open("$${directory:log}/fluent.log", 'r') as f:
   #    print(f.read())
     
-    return result.testsRun, result.errors, result.failures, stream.read(), posted_data
+    return result.testsRun, result.errors, result.failures, stream.read()
 
 if __name__ == "__main__":
   
