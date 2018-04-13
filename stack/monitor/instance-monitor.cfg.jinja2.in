@@ -153,7 +153,7 @@ password = ${monitor-instance-parameter:password}
 recipe = cns.recipe.symlink
 symlink =
   ${monitor-directory:promise-result} = ${monitor-directory:public}/promise
-  ${monitor-directory:promise-result} = ${monitor-directory:log}/promise
+  ${monitor-directory:promise-log} = ${monitor-directory:log}/promise
 
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
