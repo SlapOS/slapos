@@ -70,13 +70,13 @@ def start_fluentd_cat():
     
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     
-    fluentd_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
-    os.system("echo + " + test_msg + " | " + fluentd_exec_comand)
+    fluentd_cat_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
+    os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
 
 def main():
   
     start_fluentd_cat()
-
+    
     port=9443
     server_address = ('', port)
     httpd = HTTPServer(server_address, TestServerHandler)
@@ -85,7 +85,7 @@ def main():
     print 'Starting http...'
     #httpd.serve_forever()
     
-    time.sleep(20)
+    time.sleep(15)
     stream = StringIO()
     runner = unittest.TextTestRunner(stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
@@ -97,12 +97,12 @@ def main():
     stream.seek(0)
     print 'Test output\n', stream.read() 
     
-    time.sleep(60)
+    time.sleep(30)
     httpd.shutdown()
     print(posted_data)
     
-    with open("$${directory:log}/fluent.log", 'r') as f:
-      print(f.read())
+  #  with open("$${directory:log}/fluent.log", 'r') as f:
+  #    print(f.read())
     
     return result.testsRun, result.errors, result.failures, stream.read(), posted_data
 

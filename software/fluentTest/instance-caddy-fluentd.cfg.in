@@ -52,7 +52,7 @@ wrapper-path = $${directory:services}/fluentd-service
 path = ${fluentd:location}
 conf-path = ${template-fluentdConfig:output}
 command-line    =  ${fluentd:location}/bin/fluentd
-    -vv
+    -v
     -c ${template-fluentdConfig:output} -o $${directory:log}/fluent.log
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
