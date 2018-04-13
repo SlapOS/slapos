@@ -64,7 +64,7 @@ def main():
         'failure_count': len(failures),
         'skip_count': 0,
         'stdout': stdout,
-        'stderr': errors
+        'stderr': failures
       }
    
     
