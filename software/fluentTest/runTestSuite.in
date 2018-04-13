@@ -55,7 +55,7 @@ def main():
     
     ######!!!!!!!!!!!!!! uncomment this !!!!!!!!
     # result.errors, result.failures, stream.read()
-    num_of_tests, errors, failures, stdout = testIngestion.main()
+    num_of_tests, errors, failures, stdout, log = testIngestion.main()
     result = testIngestion.main()
     
     test_line_dict["testIngestion"] = {
@@ -63,8 +63,8 @@ def main():
         'error_count': len(errors),
         'failure_count': len(failures),
         'skip_count': 0,
-        'stdout': stdout,
-        'stderr': str(failures)
+        'stdout': str(failures),
+        'stderr': log
       }
    
     print(test_line_dict)
