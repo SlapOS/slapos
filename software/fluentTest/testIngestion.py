@@ -105,7 +105,7 @@ def main():
     #  log = f.read()
     #print(s)
     
-    return result.testsRun, result.errors, result.failures, stream.read()
+    return result.testsRun, result.errors, result.failures, stream.getvalue()
 
 if __name__ == "__main__":
   
