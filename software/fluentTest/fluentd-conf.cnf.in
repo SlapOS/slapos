@@ -23,7 +23,7 @@
   @type wendelin
   @id wendelin_out
 
-  streamtool_uri    {{local_ip}}:4443
+  streamtool_uri http://{{local_ip}}:4443
  
 
 

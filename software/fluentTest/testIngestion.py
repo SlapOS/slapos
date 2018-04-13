@@ -78,7 +78,7 @@ def main():
     start_fluentd_cat()
     
     port=9443
-    server_address = ('', port)
+    server_address = ('0.0.0.0', port)
     httpd = HTTPServer(server_address, TestServerHandler)
     thread = threading.Thread(target=httpd.serve_forever)
     thread.start()
