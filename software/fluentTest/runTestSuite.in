@@ -64,10 +64,10 @@ def main():
         'failure_count': len(failures),
         'skip_count': 0,
         'stdout': stdout,
-        'stderr': failures
+        'stderr': str(failures)
       }
    
-    
+    print(test_line_dict)
     tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),
