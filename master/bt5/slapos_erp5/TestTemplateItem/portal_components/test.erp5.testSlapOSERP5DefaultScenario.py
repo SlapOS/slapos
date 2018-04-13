@@ -14,30 +14,47 @@ from AccessControl.SecurityManagement import getSecurityManager, \
 from DateTime import DateTime
 import json
 
-class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
+class DefaultScenarioMixin(TestSlapOSSecurityMixin):
+
+  def afterSetUp(self):
+    TestSlapOSSecurityMixin.afterSetUp(self)
+    preference = self.portal.portal_preferences.getActiveSystemPreference()
+
+    preference.edit(
+      preferred_credential_alarm_automatic_call=0,
+      preferred_credential_recovery_automatic_approval=0,
+      preferred_credential_request_automatic_approval=1
+    )
+
+  @changeSkin('Hal')
   def joinSlapOS(self, web_site, reference):
     def findMessage(email, body):
       for candidate in reversed(self.portal.MailHost.getMessageList()):
         if [q for q in candidate[1] if email in q] and body in candidate[2]:
           return candidate[2]
 
-    credential_request_form = self.web_site.ERP5Site_viewCredentialRequestForm()
+    credential_request_form = self.web_site.hateoas.connection.join_form()
 
-    #expected_message = 'Vifib Cloud is a distributed cloud around the'
-    #self.assertTrue(expected_message in credential_request_form,
-    #  '%s not in %s' % (expected_message, credential_request_form))
+    expected_message = 'You will receive a confirmation email to activate your account.'
+    self.assertTrue(expected_message in credential_request_form,
+      '%s not in %s' % (expected_message, credential_request_form))
 
     email = '%s@example.com' % reference
 
-    request = web_site.ERP5Site_newCredentialRequest(
+    request = self.web_site.hateoas.connection.WebSection_newCredentialRequest(
       reference=reference,
-      first_name='Joe',
+      default_email_text=email,
+      first_name="Joe",
       last_name=reference,
-      default_email_text=email
+      password="demo_functional_user",
+      default_telephone_text="12345678",
+      corporate_name="Nexedi",
+      default_address_city="Campos",
+      default_address_street_address="Av Pelinca",
+      default_address_zip_code="28480",
     )
 
-    self.assertTrue('Thanks%20for%20your%20registration.%20You%20will%20be%2'
-        '0receive%20an%20email%20to%20activate%20your%20account.' in request)
+    self.assertTrue('Thanks for your registration. You will be receive an email to activate your account.' in request, request)
 
     self.tic()
 
@@ -50,13 +67,26 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertTrue('ERP5Site_activeLogin' in to_click_url)
 
     join_key = to_click_url.split('=')[-1]
-
+    self.assertNotEqual(join_key, None)
     web_site.ERP5Site_activeLogin(key=join_key)
 
     self.tic()
 
     welcome_message = findMessage(email, "the creation of you new ERP5 account")
     self.assertNotEqual(None, welcome_message)
+
+  def _getCurrentHostingSubscriptionList(self):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+
+    if person is not None:
+      return self.portal.portal_catalog(
+        portal_type="Hosting Subscription",
+        default_destination_section_uid=person.getUid(),
+        validation_state='validated')
+
+    return []
+
+class TestSlapOSDefaultScenario(DefaultScenarioMixin):
 
   def requestComputer(self, title):
     requestXml = self.portal.portal_slap.requestComputer(title)
@@ -83,38 +113,44 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     else:
       self.assertEqual('destroy_requested', software_installation.getSlapState())
 
-  @changeSkin('Hosting')
+  @changeSkin('RJS')
   def setServerOpenPublic(self, server):
-    server.Computer_updateAllocationScope(
-        allocation_scope='open/public', subject_list=[])
+    server.edit(
+        allocation_scope='open/public')
     self.assertEqual('open/public', server.getAllocationScope())
     self.assertEqual('close', server.getCapacityScope())
     server.edit(capacity_scope='open')
     self.tic()
 
-  @changeSkin('Hosting')
+  @changeSkin('RJS')
   def setServerOpenPersonal(self, server):
-    server.Computer_updateAllocationScope(
+    server.edit(
         allocation_scope='open/personal', subject_list=[])
     self.assertEqual('open/personal', server.getAllocationScope())
     self.assertEqual('open', server.getCapacityScope())
     self.tic()
 
-  @changeSkin('Hosting')
+  @changeSkin('RJS')
   def setServerOpenFriend(self, server, friend_list=None):
     if friend_list is None:
       friend_list = []
-    server.Computer_updateAllocationScope(
+    server.edit(
         allocation_scope='open/friend', subject_list=friend_list)
     self.assertEqual('open/friend', server.getAllocationScope())
     self.assertEqual('open', server.getCapacityScope())
     self.assertSameSet(friend_list, server.getSubjectList())
     self.tic()
 
-  @changeSkin('Hosting')
-  def WebSection_getCurrentHostingSubscriptionList(self):
-    return self.web_site.hosting.myspace.my_services\
-        .WebSection_getCurrentHostingSubscriptionList()
+  def _getCurrentHostingSubscriptionList(self):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+
+    if person is not None:
+      return self.portal.portal_catalog(
+        portal_type="Hosting Subscription",
+        default_destination_section_uid=person.getUid(),
+        validation_state='validated')
+
+    return []
 
   def formatComputer(self, computer, partition_count=10):
     computer_dict = dict(
@@ -287,7 +323,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # let's find instances of user and check connection strings
     hosting_subscription_list = [q.getObject() for q in
-        self.WebSection_getCurrentHostingSubscriptionList()
+        self._getCurrentHostingSubscriptionList()
         if q.getTitle() == instance_title]
     self.assertEqual(1, len(hosting_subscription_list))
     hosting_subscription = hosting_subscription_list[0]
@@ -320,7 +356,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # let's find instances of user and check connection strings
     hosting_subscription_list = [q.getObject() for q in
-        self.WebSection_getCurrentHostingSubscriptionList()
+        self._getCurrentHostingSubscriptionList()
         if q.getTitle() == instance_title]
 
     self.assertEqual(0, len(hosting_subscription_list))
@@ -342,7 +378,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # let's find instances of user and check connection strings
     hosting_subscription_list = [q.getObject() for q in
-        self.WebSection_getCurrentHostingSubscriptionList()
+        self._getCurrentHostingSubscriptionList()
         if q.getTitle() == instance_title]
     self.assertEqual(0, len(hosting_subscription_list))
 
@@ -446,7 +482,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # let's find instances of user and check connection strings
     hosting_subscription_list = [q.getObject() for q in
-        self.WebSection_getCurrentHostingSubscriptionList()
+        self._getCurrentHostingSubscriptionList()
         if q.getTitle() == instance_title]
     self.assertEqual(1, len(hosting_subscription_list))
     hosting_subscription = hosting_subscription_list[0]
@@ -469,6 +505,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     # is covered by unit tests
     packing_list_line_list = subscription.getAggregateRelatedValueList(
         portal_type='Sale Packing List Line')
+    if len(packing_list_line_list) < 2:
+      raise ValueError(subscription)
     self.assertTrue(len(packing_list_line_list) >= 2)
     for packing_list_line in packing_list_line_list:
       packing_list = packing_list_line.getParentValue()
@@ -572,15 +610,15 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         portal_type='Open Sale Order Line')
     self.assertEqual(len(line_list), 0)
 
-  @changeSkin('Hosting')
+  @changeSkin('RJS')
   def usePayzenManually(self, web_site, user_reference):
 		# No more acknowledgment
-    acknowledgement_json = \
-      web_site.AcknowledgementTool_getUserUnreadAcknowledgementJSON()
-    acknowledgement_dict = json.loads(acknowledgement_json)
-    self.assertTrue('result' in acknowledgement_dict, "%s" % acknowledgement_dict)
-    message_list = acknowledgement_dict['result']
-    self.assertEquals(len(message_list), 0, "%s" % message_list)
+    #acknowledgement_json = \
+    #  web_site.AcknowledgementTool_getUserUnreadAcknowledgementJSON()
+    #acknowledgement_dict = json.loads(acknowledgement_json)
+    #self.assertTrue('result' in acknowledgement_dict, "%s" % acknowledgement_dict)
+    #message_list = acknowledgement_dict['result']
+    #self.assertEquals(len(message_list), 0, "%s" % message_list)
 
     # User received an email for payment
     email = '%s@example.com' % user_reference
@@ -603,7 +641,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
   def test_default_scenario(self):
     # some preparation
     self.logout()
-    self.web_site = self.portal.web_site_module.hosting
+    self.web_site = self.portal.web_site_module.hostingjs
 
     # lets join as owner, which will own few computers
     owner_reference = 'owner-%s' % self.generateNewId()
@@ -652,6 +690,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.formatComputer(public_server)
     self.formatComputer(personal_server)
     self.formatComputer(friend_server)
+
 
     # join as the another visitor and request software instance on public
     # computer
@@ -762,7 +801,6 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertOpenSaleOrderCoverage(public_reference)
 
     # generate simulation for open order
-
     self.stepCallUpdateOpenOrderSimulationAlarm()
     self.tic()
 
@@ -858,53 +896,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.login(friend_person.getUserId())
     self.usePayzenManually(self.web_site, friend_reference)
 
-class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
-  def joinSlapOS(self, web_site, reference):
-    def findMessage(email, body):
-      for candidate in reversed(self.portal.MailHost.getMessageList()):
-        if [q for q in candidate[1] if email in q] and body in candidate[2]:
-          return candidate[2]
+class TestSlapOSDefaultCRMEscalation(DefaultScenarioMixin):
 
-    credential_request_form = self.web_site.ERP5Site_viewCredentialRequestForm()
-
-    #self.assertTrue('Vifib Cloud is a distributed cloud around the'
-    #    in credential_request_form)
-
-    email = '%s@example.com' % reference
-
-    request = web_site.ERP5Site_newCredentialRequest(
-      reference=reference,
-      first_name='Joe',
-      last_name=reference,
-      default_email_text=email
-    )
-
-    self.assertTrue('Thanks%20for%20your%20registration.%20You%20will%20be%2'
-        '0receive%20an%20email%20to%20activate%20your%20account.' in request)
-
-    self.tic()
-
-    to_click_message = findMessage(email, 'You have requested one user')
-
-    self.assertNotEqual(None, to_click_message)
-
-    to_click_url = re.search('href="(.+?)"', to_click_message).group(1)
-
-    self.assertTrue('ERP5Site_activeLogin' in to_click_url)
-
-    join_key = to_click_url.split('=')[-1]
-
-    web_site.ERP5Site_activeLogin(key=join_key)
-
-    self.tic()
-
-    welcome_message = findMessage(email, "the creation of you new ERP5 account")
-    self.assertNotEqual(None, welcome_message)
-
-  @changeSkin('Hosting')
-  def WebSection_getCurrentHostingSubscriptionList(self):
-    return self.web_site.hosting.myspace.my_services\
-        .WebSection_getCurrentHostingSubscriptionList()
 
   def personRequestInstanceNotReady(self, **kw):
     response = self.portal.portal_slap.requestComputerPartition(**kw)
