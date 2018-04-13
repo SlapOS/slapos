@@ -87,7 +87,7 @@ def main():
     
     time.sleep(15)
     stream = StringIO()
-    runner = unittest.TextTestRunner(stream=stream)
+    runner = unittest.TextTestRunner(verbosity=2, stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
  
     
