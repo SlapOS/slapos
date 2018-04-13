@@ -189,10 +189,13 @@ class SlapOSTestCaseMixin(testSlapOSMixin):
     reference = 'TESTCOMP-%s' % self.generateNewId()
     self.computer.edit(
         allocation_scope='open/public',
-        capacity_scope='open',
         reference=reference,
         title=reference
         )
+    # The edit above will update capacity scope due the interaction workflow
+    # The line above force capacity scope to be open, keeping the previous
+    # behaviour.
+    self.computer.edit(capacity_scope='open')
     self.computer.validate()
     reference = 'TESTPART-%s' % self.generateNewId()
     self.partition = self.computer.newContent(portal_type='Computer Partition',

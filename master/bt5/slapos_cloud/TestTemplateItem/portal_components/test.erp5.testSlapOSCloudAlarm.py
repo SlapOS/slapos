@@ -415,6 +415,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self._makeTree()
 
     self._makeComputer()
+    self.assertEquals(self.computer.getAllocationScope(), "open/public")
+    self.assertEquals(self.computer.getCapacityScope(), "open")
+
     self._installSoftware(self.computer,
         self.software_instance.getUrlString())
 
@@ -821,7 +824,12 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self._makeTree()
 
     self._makeComputer()
+    self.assertEquals(self.computer.getAllocationScope(), "open/public")
+    self.assertEquals(self.computer.getCapacityScope(), "open")
     self.computer.edit(**{base_category: computer_category})
+    self.assertEquals(self.computer.getAllocationScope(), "open/public")
+    self.assertEquals(self.computer.getCapacityScope(), "open")
+    
     self._installSoftware(self.computer,
         self.software_instance.getUrlString())
 
@@ -852,6 +860,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         <parameter id='%s'>%s</parameter>
         </instance>""" % (base_category, computer_category))
     self.software_instance.SoftwareInstance_tryToAllocatePartition()
+
+    if self.software_instance.getAggregate(portal_type='Computer Partition') is None:
+      raise ValueError(self.software_instance)
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
@@ -1350,9 +1361,9 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(SlapOSTestCaseMixin):
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
         allocation_scope='open/public',
-        capacity_scope='open',
         reference='TESTC-%s' % self.generateNewId(),
     )
+    self.computer.edit(capacity_scope='open')
     self.computer.validate()
     memcached_dict = self.portal.portal_memcached.getMemcachedDict(
         key_prefix='slap_tool',
