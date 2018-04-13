@@ -62,7 +62,6 @@ recipe  = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/fluentd-service
 path = ${fluentd:location}
 command-line    =  ${fluentd:location}/bin/fluentd
-    -vv
     -c $${directory:etc}/fluentd-conf.cnf -o $${directory:log}/fluent_new.log
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
