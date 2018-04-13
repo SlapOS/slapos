@@ -2,6 +2,7 @@
 parts =
   directory
   runTestSuite-instance
+  fluentdConfig
   fluentd-service
   caddy-service
   publish-connection-information
@@ -46,14 +47,23 @@ mode = 0700
 # fluentd service
 #################################
 
+
+[fluentdConfig]
+recipe = slapos.recipe.template:jinja2
+template = ${template-fluentdConfig:location}/${template-fluentdConfig:filename}
+rendered = $${directory:etc}/fluentd-conf.cnf
+mode = 0600
+context = 
+  key local_ip caddy-configuration:local_ip
+
+
 [fluentd-service]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/fluentd-service
 path = ${fluentd:location}
-conf-path = ${template-fluentdConfig:output}
 command-line    =  ${fluentd:location}/bin/fluentd
     -vv
-    -c ${template-fluentdConfig:output} -o $${directory:log}/fluent_new.log
+    -c $${directory:etc}/fluentd-conf.cnf -o $${directory:log}/fluent_new.log
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
 output = $${:wrapper-path}  

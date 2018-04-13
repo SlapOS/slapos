@@ -55,7 +55,7 @@ def main():
     
     ######!!!!!!!!!!!!!! uncomment this !!!!!!!!
     # result.errors, result.failures, stream.read()
-    num_of_tests, errors, failures, stdout, log = testIngestion.main()
+    num_of_tests, errors, failures, stdout = testIngestion.main()
     result = testIngestion.main()
     
     test_line_dict["testIngestion"] = {
@@ -64,10 +64,10 @@ def main():
         'failure_count': len(failures),
         'skip_count': 0,
         'stdout': str(failures),
-        'stderr': log
+        'stderr': errors
       }
    
-    print(test_line_dict)
+   
     tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),

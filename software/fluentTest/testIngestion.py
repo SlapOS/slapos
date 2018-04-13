@@ -101,11 +101,11 @@ def main():
     httpd.shutdown()
     print(posted_data)
     
-    with open("$${directory:log}/fluent_new.log", 'r') as f:
-      log = f.read()
+    #with open("$${directory:log}/fluent_new.log", 'r') as f:
+    #  log = f.read()
     #print(s)
     
-    return result.testsRun, result.errors, result.failures, stream.read(), log
+    return result.testsRun, result.errors, result.failures, stream.read()
 
 if __name__ == "__main__":
   
