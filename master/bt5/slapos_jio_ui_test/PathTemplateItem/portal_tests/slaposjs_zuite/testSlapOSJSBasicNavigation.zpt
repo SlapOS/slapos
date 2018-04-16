@@ -297,7 +297,7 @@
 
 <tr>
   <td>waitForElementPresent</td>
-  <td>//h1[@data-i18n='Network']</td>
+  <td>//h1[@data-i18n='Networks']</td>
   <td></td>
 </tr>
 

@@ -9,9 +9,7 @@
 <thead>
 <tr><td rowspan="1" colspan="3">Test RenderJS UI</td></tr>
 </thead><tbody>
-<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/init" />
-
-<tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/wait_for_activities" />
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_init" />
 
 <tr>
   <td>assertTextPresent</td>
@@ -74,7 +72,7 @@
 </tr>
 <tr>
   <td>waitForElementPresent</td>
-  <td>//input[@value='Request User']</td>
+  <td>//input[@value='Register']</td>
   <td></td>
 </tr>
 <tr>
@@ -133,13 +131,18 @@
   <td>Paris</td>
 </tr>
 <tr>
+  <td>type</td>
+  <td>//input[@name='default_address_country']</td>
+  <td>France</td>
+</tr>
+<tr>
   <td>assertTextPresent</td>
-  <td>One email will be send to you to confirm your email.</td>
+  <td>You will receive a confirmation email to activate your account.</td>
   <td></td>
 </tr>
 <tr>
   <td>clickAndWait</td>
-  <td>//input[@value='Request User']</td>
+  <td>//input[@value='Register']</td>
   <td></td>
 </tr>
 <tr>
