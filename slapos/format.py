@@ -1279,7 +1279,8 @@ def parse_computer_definition(conf, definition_path):
       ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
       tap_gateway_interface=conf.tap_gateway_interface,
-      conf=conf
+      software_root=conf.software_root,
+      instance_root=conf.instance_root
   )
   partition_list = []
   for partition_number in range(int(conf.partition_amount)):
