@@ -52,27 +52,46 @@ class TestPost(unittest.TestCase):
   
     posted_data = ""
   
-    def test_get(self):
-        resp = requests.get(url)
-        self.assertEqual(resp.status_code, 200)
-        print (resp.status_code)
+    def test_1_get(self):
+      print("############## TEST 1 ##############")
+      resp = requests.get(url)
+      self.assertEqual(resp.status_code, 200)
+      print (resp.status_code)
     
 
-    def test_ingest(self):
+    def test_2_ingest(self):
+      print("############## TEST 2 ##############")
+      start_fluentd_cat(test_msg)
+      time.sleep(15)
       if posted_data:
         print(posted_data)
         self.assertEqual(test_msg, posted_data.split(" ")[1])
+        print("IN IF")
       else:
         self.assertEqual(test_msg, posted_data)
+        print("IN ELSE")
     
-    def test_keepAlive_on(self):
+    def test_3_keepAlive_on(self):
+      print("############## TEST 3 ##############")
       s = requests.session()
       print("check connection type ")
       print(s.headers['Connection'])
-      self.assertEqual('keep-alive', s.headers['Connection'])    
+      self.assertEqual('keep-alive', s.headers['Connection'])
+      
+      
+    def test_4_delay_15_mins(self):
+      print("############## TEST 4 ##############")
+      time.sleep(900)
+      start_fluentd_cat("otherDummyMsgForFluentCat")
+      time.sleep(15)
+      if posted_data:
+        print(posted_data)
+        self.assertEqual("otherDummyMsgForFluentCat", posted_data.split(" ")[1])
+      else:
+        self.assertEqual(test_msg, posted_data)     
       
 
-def start_fluentd_cat():
+def start_fluentd_cat(test_msg):
     
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     
@@ -81,7 +100,7 @@ def start_fluentd_cat():
 
 def main():
   
-    start_fluentd_cat()
+   # start_fluentd_cat()
     
     port=9443
     server_address = ('0.0.0.0', port)
@@ -91,7 +110,7 @@ def main():
     print 'Starting http...'
     #httpd.serve_forever()
     
-    time.sleep(15)
+  #  time.sleep(15)
 
     stream = StringIO()
     runner = unittest.TextTestRunner(verbosity=2, stream=stream)

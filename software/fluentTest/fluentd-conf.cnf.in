@@ -11,11 +11,11 @@
 
 # HTTP input
 # http://localhost:8888/<tag>?json=<json>
-<source>
-  @type http
-  @id http_input
-  port 8888
-</source>
+#<source>
+#  @type http
+#  @id http_input
+#  port 8888
+#</source>
 
 
 ## output tag=sensor.** to Wendelin
