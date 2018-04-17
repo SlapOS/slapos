@@ -1,0 +1,2 @@
+TestMasterRequestDomain-0/var/run/monitor-httpd.pid
+TestMasterRequestDomain-0/var/run/monitor/monitor-bootstrap.pid

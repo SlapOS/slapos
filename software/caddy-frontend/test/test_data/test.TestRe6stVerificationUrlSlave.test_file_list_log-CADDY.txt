@@ -1,0 +1,9 @@
+TestRe6stVerificationUrlSlave-0/var/log/monitor-httpd-error.log
+TestRe6stVerificationUrlSlave-1/var/log/frontend-access.log
+TestRe6stVerificationUrlSlave-1/var/log/frontend-error.log
+TestRe6stVerificationUrlSlave-1/var/log/httpd/_default_access_log
+TestRe6stVerificationUrlSlave-1/var/log/httpd/_default_error_log
+TestRe6stVerificationUrlSlave-1/var/log/monitor-httpd-error.log
+TestRe6stVerificationUrlSlave-1/var/log/nginx-error.log
+TestRe6stVerificationUrlSlave-1/var/log/trafficserver/manager.log
+TestRe6stVerificationUrlSlave-1/var/log/trafficserver/traffic.out

@@ -1,0 +1,8 @@
+TestReplicateSlave-0/var/run/monitor-httpd.pid
+TestReplicateSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestReplicateSlave-1/var/run/caddy_configuration.signature
+TestReplicateSlave-1/var/run/httpd.pid
+TestReplicateSlave-1/var/run/monitor-httpd.pid
+TestReplicateSlave-1/var/run/monitor/monitor-bootstrap.pid
+TestReplicateSlave-1/var/run/ncaddy_configuration.signature
+TestReplicateSlave-1/var/run/nginx.pid

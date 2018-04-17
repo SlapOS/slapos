@@ -1,0 +1,8 @@
+TestEnableHttp2ByDefaultDefaultSlave-0/var/run/monitor-httpd.pid
+TestEnableHttp2ByDefaultDefaultSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/caddy_configuration.signature
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/httpd.pid
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/monitor-httpd.pid
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/monitor/monitor-bootstrap.pid
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/ncaddy_configuration.signature
+TestEnableHttp2ByDefaultDefaultSlave-1/var/run/nginx.pid

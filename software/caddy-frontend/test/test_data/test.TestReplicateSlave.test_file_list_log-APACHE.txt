@@ -1,0 +1,10 @@
+TestReplicateSlave-1/var/log/frontend-apache-access.log
+TestReplicateSlave-1/var/log/frontend-apache-error.log
+TestReplicateSlave-1/var/log/httpd/_replicate_access_log
+TestReplicateSlave-1/var/log/httpd/_replicate_error_log
+TestReplicateSlave-1/var/log/monitor-httpd-error.log
+TestReplicateSlave-1/var/log/nginx-access.log
+TestReplicateSlave-1/var/log/nginx-error.log
+TestReplicateSlave-1/var/log/trafficserver/diags.log
+TestReplicateSlave-1/var/log/trafficserver/manager.log
+TestReplicateSlave-1/var/log/trafficserver/traffic.out
