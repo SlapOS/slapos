@@ -64,6 +64,12 @@ class TestPost(unittest.TestCase):
         self.assertEqual(test_msg, posted_data.split(" ")[1])
       else:
         self.assertEqual(test_msg, posted_data)
+    
+    def test_keepAlive_on(self):
+      s = requests.session()
+      print("check connection type ")
+      print(s.headers['Connection'])
+      self.assertEqual('keep-alive', s.headers['Connection'])    
       
 
 def start_fluentd_cat():
@@ -86,6 +92,7 @@ def main():
     #httpd.serve_forever()
     
     time.sleep(15)
+
     stream = StringIO()
     runner = unittest.TextTestRunner(verbosity=2, stream=stream)
     result = runner.run(unittest.makeSuite(TestPost))
