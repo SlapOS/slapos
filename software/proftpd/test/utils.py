@@ -55,7 +55,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     raise NotImplementedError()
 
   @classmethod
-  def getInstanceParmeterDict(cls):
+  def getInstanceParameterDict(cls):
     """Return instance parameters
 
     To be defined by subclasses if they need to request instance with specific

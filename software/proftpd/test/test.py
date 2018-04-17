@@ -193,7 +193,7 @@ class TestBan(ProFTPdTestCase):
 
 class TestInstanceParameterPort(ProFTPdTestCase):
   @classmethod
-  def getInstanceParmeterDict(cls):
+  def getInstanceParameterDict(cls):
     cls.free_port = utils.findFreeTCPPort(cls.config['ipv4_address'])
     return {'port': cls.free_port}
 
