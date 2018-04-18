@@ -16,7 +16,7 @@ import time
 
 
 test_msg = "dummyInputSimpleIngest"
-url = "http://$${caddy-configuration:local_ip}:4443"
+url = "http://$${caddy-configuration:local_ip}:8443"
 
 caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 
