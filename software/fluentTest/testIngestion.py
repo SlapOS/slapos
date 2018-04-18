@@ -15,10 +15,11 @@ import threading
 import time
 
 
-test_msg = "dummyInputPassedByFluentCAT"
+test_msg = "dummyInputSimpleIngest"
 url = "http://$${caddy-configuration:local_ip}:4443"
 
 posted_data = None
+all_data = []
 
 class TestServerHandler(BaseHTTPRequestHandler):
   
@@ -47,6 +48,8 @@ class TestServerHandler(BaseHTTPRequestHandler):
         posted_data = post_data
         print("post data from do_POST")
         print posted_data
+        global all_data
+        all_data.append(post_data.split(" ")[1])
      
 class TestPost(unittest.TestCase):
   
@@ -81,15 +84,31 @@ class TestPost(unittest.TestCase):
       
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
-      time.sleep(900)
-      start_fluentd_cat("otherDummyMsgForFluentCat")
+      time.sleep(30)
+      start_fluentd_cat("dummyInputDelay")
       time.sleep(15)
       if posted_data:
         print(posted_data)
-        self.assertEqual("otherDummyMsgForFluentCat", posted_data.split(" ")[1])
+        self.assertEqual("dummyInputDelay", posted_data.split(" ")[1])
       else:
-        self.assertEqual(test_msg, posted_data)     
-      
+        self.assertEqual("dummyInputDelay", posted_data)     
+  
+    def test_5_caddy_restart(self):
+      print("############## TEST 5 ##############")
+      time.sleep(10)
+      start_fluentd_cat("dummyInputCaddyRestart1")
+      time.sleep(10)
+      start_fluentd_cat("dummyInputCaddyRestart2")
+      time.sleep(15)
+      if posted_data:
+        print(posted_data)
+        self.assertTrue("dummyInputCaddyRestart1" in all_data)
+        self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        print("IN IF")
+      else:
+        self.assertTrue("dummyInputCaddyRestart1" in all_data)
+        self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        print("IN ELSE")  
 
 def start_fluentd_cat(test_msg):
     

@@ -40,7 +40,7 @@
   buffer_type       memory
   buffer_chunk_limit 1MB
   #buffer_path       "#{ENV['HOME']/var}"
-  flush_interval    10s
+  flush_interval    1s
 </match>
 
 
