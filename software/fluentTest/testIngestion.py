@@ -18,6 +18,8 @@ import time
 test_msg = "dummyInputSimpleIngest"
 url = "http://$${caddy-configuration:local_ip}:4443"
 
+caddy_pidfile = "$${directory:etc}/caddy_pidfile"
+
 posted_data = None
 all_data = []
 
@@ -84,7 +86,7 @@ class TestPost(unittest.TestCase):
       
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
-      time.sleep(30)
+      time.sleep(900)
       start_fluentd_cat("dummyInputDelay")
       time.sleep(15)
       if posted_data:
@@ -95,19 +97,37 @@ class TestPost(unittest.TestCase):
   
     def test_5_caddy_restart(self):
       print("############## TEST 5 ##############")
+      
+      with open(caddy_pidfile) as f:
+        caddy_pid = f.readline()
+      
       time.sleep(10)
       start_fluentd_cat("dummyInputCaddyRestart1")
       time.sleep(10)
+      
+      kill_caddy(caddy_pid)
+      time.sleep(10)
+      
       start_fluentd_cat("dummyInputCaddyRestart2")
+      start_fluentd_cat("dummyInputCaddyRestart3")
+      start_fluentd_cat("dummyInputCaddyRestart4")
+      time.sleep(130)
+      
+      start_caddy(caddy_pid)
       time.sleep(15)
+      
       if posted_data:
         print(posted_data)
         self.assertTrue("dummyInputCaddyRestart1" in all_data)
         self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        self.assertTrue("dummyInputCaddyRestart3" in all_data)
+        self.assertTrue("dummyInputCaddyRestart4" in all_data)
         print("IN IF")
       else:
         self.assertTrue("dummyInputCaddyRestart1" in all_data)
         self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        self.assertTrue("dummyInputCaddyRestart3" in all_data)
+        self.assertTrue("dummyInputCaddyRestart4" in all_data)
         print("IN ELSE")  
 
 def start_fluentd_cat(test_msg):
@@ -116,6 +136,19 @@ def start_fluentd_cat(test_msg):
     
     fluentd_cat_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
     os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
+
+def kill_caddy(caddy_pid):
+    
+    print("caddy pid = ")
+    print(caddy_pid)
+    
+    kill_caddy_cmd = "kill -TSTP " + caddy_pid
+    os.system(kill_caddy_cmd)
+
+def start_caddy(caddy_pid):
+    
+    start_caddy_cmd = "kill -CONT " + caddy_pid
+    os.system(start_caddy_cmd)
 
 def main():
   
@@ -127,9 +160,8 @@ def main():
     thread = threading.Thread(target=httpd.serve_forever)
     thread.start()
     print 'Starting http...'
-    #httpd.serve_forever()
-    
-  #  time.sleep(15)
+  
+    time.sleep(15)
 
     stream = StringIO()
     runner = unittest.TextTestRunner(verbosity=2, stream=stream)

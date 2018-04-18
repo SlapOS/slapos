@@ -79,13 +79,14 @@ mode = 0700
 context =
   key caddy_exec caddy-exec-dict:caddy-exec-file
   key caddy_file caddy-configuration:rendered
+  key pidfile_dir directory:etc
 
 [caddy-exec-dict]
 caddy-exec-file = ${gowork:bin}/caddy
   
 [caddy-configuration]
 recipe = slapos.recipe.template:jinja2
-template = ${template-caddyfile:location}/${template-caddyfile:filename}
+template = ${template-caddyfile:output}
 rendered = $${directory:etc}/Caddyfile
 mode = 0600
 access_log = $${directory:log}/caddy-access.log
@@ -93,7 +94,7 @@ error_log = $${directory:log}/caddy-error.log
 local_ip = $${slap-network-information:local-ipv4}
 context = 
   key local_ip caddy-configuration:local_ip
-
+  
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
