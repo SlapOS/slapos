@@ -109,7 +109,9 @@ class TestPost(unittest.TestCase):
       time.sleep(10)
       
       start_fluentd_cat("dummyInputCaddyRestart2 ")
+      time.sleep(10)
       start_fluentd_cat("dummyInputCaddyRestart3 ")
+      time.sleep(10)
       start_fluentd_cat("dummyInputCaddyRestart4 ")
       time.sleep(130)
       
