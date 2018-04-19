@@ -64,18 +64,18 @@ class TestPost(unittest.TestCase):
       print (resp.status_code)
     
 
-  #  def test_2_ingest(self):
-  #    print("############## TEST 2 ##############")
-  #    start_fluentd_cat(test_msg)
-  #    time.sleep(15)
-  #    if posted_data:
-  #      print(posted_data)
-  #      self.assertEqual(test_msg, posted_data.split(" ")[1])
-  #      print("IN IF")
-  #    else:
-  #      self.assertEqual(test_msg, posted_data)
-  #      print("IN ELSE")
-  #  
+    def test_2_ingest(self):
+      print("############## TEST 2 ##############")
+      start_fluentd_cat(test_msg)
+      time.sleep(15)
+      if posted_data:
+        print(posted_data)
+        self.assertEqual(test_msg, posted_data.split(" ")[1])
+        print("IN IF")
+      else:
+        self.assertEqual(test_msg, posted_data)
+        print("IN ELSE")
+    
   #  def test_3_keepAlive_on(self):
   #    print("############## TEST 3 ##############")
   #    s = requests.session()
