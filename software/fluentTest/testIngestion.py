@@ -105,7 +105,7 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputCaddyRestart1")
       time.sleep(10)
       
-      kill_caddy(caddy_pid)
+     # kill_caddy(caddy_pid)
       time.sleep(10)
       
       start_fluentd_cat("dummyInputCaddyRestart2")
@@ -113,7 +113,7 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputCaddyRestart4")
       time.sleep(130)
       
-      start_caddy(caddy_pid)
+      #start_caddy(caddy_pid)
       time.sleep(15)
       
       if posted_data:
