@@ -76,24 +76,24 @@ class TestPost(unittest.TestCase):
         self.assertEqual(test_msg, posted_data)
         print("IN ELSE")
     
-  #  def test_3_keepAlive_on(self):
-  #    print("############## TEST 3 ##############")
-  #    s = requests.session()
-  #    print("check connection type ")
-  #    print(s.headers['Connection'])
-  #    self.assertEqual('keep-alive', s.headers['Connection'])
+    def test_3_keepAlive_on(self):
+      print("############## TEST 3 ##############")
+      s = requests.session()
+      print("check connection type ")
+      print(s.headers['Connection'])
+      self.assertEqual('keep-alive', s.headers['Connection'])
       
       
-  #  def test_4_delay_15_mins(self):
-  #    print("############## TEST 4 ##############")
-  #    time.sleep(900)
-  #    start_fluentd_cat("dummyInputDelay ")
-  #    time.sleep(15)
-  #    if posted_data:
-  #      print(posted_data)
-  #      self.assertEqual("dummyInputDelay ", posted_data.split(" ")[1])
-  #    else:
-  #      self.assertEqual("dummyInputDelay ", posted_data)     
+    def test_4_delay_15_mins(self):
+      print("############## TEST 4 ##############")
+      time.sleep(900)
+      start_fluentd_cat("dummyInputDelay ")
+      time.sleep(15)
+      if posted_data:
+        print(posted_data)
+        self.assertEqual("dummyInputDelay ", posted_data.split(" ")[1])
+      else:
+        self.assertEqual("dummyInputDelay ", posted_data)     
   
     def test_5_caddy_restart(self):
       print("############## TEST 5 ##############")
