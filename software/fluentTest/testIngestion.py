@@ -118,16 +118,20 @@ class TestPost(unittest.TestCase):
       
       if posted_data:
         print(posted_data)
-        self.assertTrue("dummyInputCaddyRestart1 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart2 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart3 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart4 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart1" in all_data)
+        print("pass 1")
+        self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        print("pass 2")
+        self.assertTrue("dummyInputCaddyRestart3" in all_data)
+        print("pass 3")
+        self.assertTrue("dummyInputCaddyRestart4" in all_data)
+        print("pass 4")
         print("IN IF")
       else:
-        self.assertTrue("dummyInputCaddyRestart1 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart2 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart3 " in all_data)
-        self.assertTrue("dummyInputCaddyRestart4 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart1" in all_data)
+        self.assertTrue("dummyInputCaddyRestart2" in all_data)
+        self.assertTrue("dummyInputCaddyRestart3" in all_data)
+        self.assertTrue("dummyInputCaddyRestart4" in all_data)
         print("IN ELSE")  
 
 def start_fluentd_cat(test_msg):
