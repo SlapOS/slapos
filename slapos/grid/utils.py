@@ -37,6 +37,8 @@ import stat
 import subprocess
 import sys
 import logging
+import psutil
+import time
 
 from slapos.grid.exception import BuildoutFailedError, WrongPermissionError
 
@@ -361,3 +363,33 @@ def createPrivateDirectory(path):
     raise WrongPermissionError('Wrong permissions in %s: '
                                'is 0%o, should be 0700'
                                % (path, permission))
+
+def killProcessTree(pid, logger):
+  """
+  kill all process Tree
+  We first suspend processes to prevent them from reacting to signals
+  """
+  try:
+    process = psutil.Process(pid)
+    process.suspend()
+  except psutil.Error:
+    return
+
+  process_list = [process]
+  running_process_list = process.children(recursive=True)
+  while running_process_list:
+    process_list += running_process_list
+    for child in running_process_list:
+      try:
+        child.suspend()
+      except psutil.Error, e:
+        logger.debug(str(e))
+
+    time.sleep(0.2)
+    running_process_list = set(process.children(recursive=True)).difference(process_list)
+
+  for process in process_list:
+    try:
+      process.kill()
+    except psutil.Error, e:
+      logger.debug("Process kill: %s" % e)

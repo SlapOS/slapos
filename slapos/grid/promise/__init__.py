@@ -40,7 +40,7 @@ import psutil
 from multiprocessing import Process, Queue as MQueue
 import Queue
 from slapos.util import mkdir_p, chownDirectory
-from slapos.grid.utils import dropPrivileges
+from slapos.grid.utils import dropPrivileges, killProcessTree
 from slapos.grid.promise import interface
 from slapos.grid.promise.generic import (GenericPromise, PromiseQueueResult,
                                          AnomalyResult, TestResult,
@@ -314,15 +314,15 @@ class PromiseLauncher(object):
     if not os.path.exists(self.promise_output_dir):
       mkdir_p(self.promise_output_dir)
 
-  def _getErrorPromiseResult(self, promise_process, promise_name, message,
-      execution_time=0):
+  def _getErrorPromiseResult(self, promise_process, promise_name, promise_path,
+      message, execution_time=0):
     if self.check_anomaly:
       result = AnomalyResult(problem=True, message=message)
     else:
       result = TestResult(problem=True, message=message)
     return PromiseQueueResult(
       item=result,
-      path=os.path.join(self.promise_folder, promise_name),
+      path=promise_path,
       name=promise_name,
       title=promise_process.getPromiseTitle(),
       execution_time=execution_time
@@ -362,6 +362,14 @@ class PromiseLauncher(object):
           ))
     return result
 
+  def _emptyQueue(self):
+    """Remove all entries from queue until it's empty"""
+    while True:
+      try:
+        self.queue_result.get_nowait()
+      except Queue.Empty:
+        return
+
   def _launchPromise(self, promise_name, promise_path, argument_dict,
       wrap_process=False):
     """
@@ -394,6 +402,9 @@ class PromiseLauncher(object):
             self.logger.error(result.item.message)
             return True
         return False
+      # we can do this because we run processes one by one
+      # we cleanup queue in case previous result was written by a killed process
+      self._emptyQueue()
       promise_process.start()
     except Exception:
       # only print traceback to not prevent run other promises
@@ -444,11 +455,16 @@ class PromiseLauncher(object):
       execution_time = (current_increment + 1) * sleep_time
     else:
       promise_process.terminate()
-      promise_process.join() # wait for process to terminate
+      promise_process.join(1) # wait for process to terminate
+      # if the process is still alive after 1 seconds, we kill it
+      if promise_process.is_alive():
+        self.logger.info("Killing process %s..." % promise_name)
+        killProcessTree(promise_process.pid, self.logger)
       message = 'Promise timed out after %s seconds' % self.promise_timeout
       queue_item = self._getErrorPromiseResult(
         promise_process,
         promise_name=promise_name,
+        promise_path=promise_path,
         message=message,
         execution_time=execution_time
       )
@@ -457,6 +473,7 @@ class PromiseLauncher(object):
       queue_item = self._getErrorPromiseResult(
         promise_process,
         promise_name=promise_name,
+        promise_path=promise_path,
         message="No output returned by the promise",
         execution_time=execution_time
       )

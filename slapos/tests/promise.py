@@ -69,7 +69,7 @@ class TestSlapOSPromiseMixin(unittest.TestCase):
     if sys.path[0] == self.plugin_dir:
       del sys.path[0]
 
-  def configureLauncher(self, save_method=None, timeout=0.5, master_url="", debug=False,
+  def configureLauncher(self, save_method=None, timeout=1, master_url="", debug=False,
       run_list=[], uid=None, gid=None, enable_anomaly=False, force=False,
       logdir=True, dry_run=False):
     parameter_dict = {
@@ -927,8 +927,37 @@ exit 0
 
     self.configureLauncher(save_method=test_method, enable_anomaly=True, timeout=1)
     self.generatePromiseScript(promise_name, success=True, content="""import time
-    time.sleep(5)""")
+    time.sleep(20)""")
 
+    # run promise will timeout
+    with self.assertRaises(PromiseError):
+      self.launcher.run()
+    self.assertTrue(self.called)
+
+  def test_runpromise_wrapped_will_timeout(self):
+    promise_name = "my_bash_promise"
+    promise_path = os.path.join(self.legacy_promise_dir, promise_name)
+    self.called = False
+    with open(promise_path, 'w') as f:
+      f.write("""#!/bin/bash
+sleep 20
+echo "success"
+""")
+    os.chmod(promise_path, 0744)
+
+    def test_method(result):
+      self.called = True
+      self.assertTrue(isinstance(result, PromiseQueueResult))
+      self.assertTrue(isinstance(result.item, TestResult))
+      self.assertTrue(result.execution_time >= 1)
+      self.assertEquals(result.title, promise_name)
+      self.assertEquals(result.name, promise_name)
+      self.assertEquals(result.path, promise_path)
+      self.assertTrue("Promise timed out after" in result.item.message)
+      self.assertEquals(result.item.hasFailed(), True)
+      self.assertTrue(isinstance(result.item.date, datetime))
+
+    self.configureLauncher(save_method=test_method, timeout=1)
     # run promise will timeout
     with self.assertRaises(PromiseError):
       self.launcher.run()
