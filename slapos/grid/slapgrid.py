@@ -621,7 +621,6 @@ stderr_logfile_backups=1
   def _checkPromiseList(self, partition, force=True, check_anomaly=False):
     instance_path = os.path.join(self.instance_root, partition.partition_id)
     promise_log_path = os.path.join(instance_path, PROMISE_LOG_FOLDER_NAME)
-    mkdir_p(promise_log_path)
 
     self.logger.info("Checking %s promises..." % partition.partition_id)
     uid, gid = None, None

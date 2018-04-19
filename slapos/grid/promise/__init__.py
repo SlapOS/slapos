@@ -539,7 +539,7 @@ class PromiseLauncher(object):
           failed_promise_name = promise_name
 
     stat_info = os.stat(self.partition_folder)
-    chownDirectory(self.partition_folder, stat_info.st_uid, stat_info.st_gid)
+    chownDirectory(self.promise_output_dir, stat_info.st_uid, stat_info.st_gid)
 
     if failed_promise_name:
       raise PromiseError("Promise %r failed." % failed_promise_name)

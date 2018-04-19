@@ -161,6 +161,7 @@ class GenericPromise(object):
       logger_handler = logging.StreamHandler(self.__logger_buffer)
       self.__log_file = None
     else:
+      mkdir_p(self.__log_folder)
       self.__log_file = os.path.join(
         self.__log_folder,
         '%s.log' % self.__title
