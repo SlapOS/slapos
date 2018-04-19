@@ -15,7 +15,7 @@ import threading
 import time
 
 
-test_msg = "dummyInputSimpleIngest"
+test_msg = "dummyInputSimpleIngest "
 url = "http://$${caddy-configuration:local_ip}:4443"
 
 caddy_pidfile = "$${directory:etc}/caddy_pidfile"
@@ -87,13 +87,13 @@ class TestPost(unittest.TestCase):
   #  def test_4_delay_15_mins(self):
   #    print("############## TEST 4 ##############")
   #    time.sleep(900)
-  #    start_fluentd_cat("dummyInputDelay")
+  #    start_fluentd_cat("dummyInputDelay ")
   #    time.sleep(15)
   #    if posted_data:
   #      print(posted_data)
-  #      self.assertEqual("dummyInputDelay", posted_data.split(" ")[1])
+  #      self.assertEqual("dummyInputDelay ", posted_data.split(" ")[1])
   #    else:
-  #      self.assertEqual("dummyInputDelay", posted_data)     
+  #      self.assertEqual("dummyInputDelay ", posted_data)     
   
     def test_5_caddy_restart(self):
       print("############## TEST 5 ##############")
@@ -108,9 +108,9 @@ class TestPost(unittest.TestCase):
      # kill_caddy(caddy_pid)
       time.sleep(10)
       
-      start_fluentd_cat("dummyInputCaddyRestart2")
-      start_fluentd_cat("dummyInputCaddyRestart3")
-      start_fluentd_cat("dummyInputCaddyRestart4")
+      start_fluentd_cat("dummyInputCaddyRestart2 ")
+      start_fluentd_cat("dummyInputCaddyRestart3 ")
+      start_fluentd_cat("dummyInputCaddyRestart4 ")
       time.sleep(130)
       
       #start_caddy(caddy_pid)
@@ -118,16 +118,16 @@ class TestPost(unittest.TestCase):
       
       if posted_data:
         print(posted_data)
-        self.assertTrue("dummyInputCaddyRestart1" in all_data)
-        self.assertTrue("dummyInputCaddyRestart2" in all_data)
-        self.assertTrue("dummyInputCaddyRestart3" in all_data)
-        self.assertTrue("dummyInputCaddyRestart4" in all_data)
+        self.assertTrue("dummyInputCaddyRestart1 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart2 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart3 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart4 " in all_data)
         print("IN IF")
       else:
-        self.assertTrue("dummyInputCaddyRestart1" in all_data)
-        self.assertTrue("dummyInputCaddyRestart2" in all_data)
-        self.assertTrue("dummyInputCaddyRestart3" in all_data)
-        self.assertTrue("dummyInputCaddyRestart4" in all_data)
+        self.assertTrue("dummyInputCaddyRestart1 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart2 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart3 " in all_data)
+        self.assertTrue("dummyInputCaddyRestart4 " in all_data)
         print("IN ELSE")  
 
 def start_fluentd_cat(test_msg):
