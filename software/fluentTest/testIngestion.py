@@ -171,6 +171,9 @@ def start_caddy(caddy_pid):
     start_caddy_cmd = "kill -CONT " + caddy_pid
     os.system(start_caddy_cmd)
 
+def find_tag(s, start, end):
+  return (s.split(start))[1].split(end)[0]
+
 def main():
   
     port=9443
