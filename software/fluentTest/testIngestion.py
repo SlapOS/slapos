@@ -22,6 +22,7 @@ caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 
 posted_data = None
 all_data = []
+request_tag = ""
 
 class TestServerHandler(BaseHTTPRequestHandler):
 
@@ -39,7 +40,6 @@ class TestServerHandler(BaseHTTPRequestHandler):
         self._set_headers()
 
     def do_POST(self):
-        global message_distributor
         content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         post_data = self.rfile.read(content_length) # <--- Gets the data itself
 
@@ -52,6 +52,9 @@ class TestServerHandler(BaseHTTPRequestHandler):
         print posted_data
         global all_data
         all_data.append(post_data.split(" ")[1])
+        
+        global request_tag
+        request_tag = find_tag(self.requestline,"=", " ")
 
 class TestPost(unittest.TestCase):
 
@@ -66,12 +69,11 @@ class TestPost(unittest.TestCase):
 
     def test_2_ingest(self):
       print("############## TEST 2 ##############")
-      start_fluentd_cat(test_msg)
+      start_fluentd_cat(test_msg, "tag_test_2")
       time.sleep(15)
       if posted_data:
         print(posted_data)
         self.assertEqual(test_msg, posted_data.split(" ")[1])
-        print("IN IF")
       else:
         self.assertEqual(test_msg, posted_data)
         print("No posted data")
@@ -87,7 +89,7 @@ class TestPost(unittest.TestCase):
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
       time.sleep(900)
-      start_fluentd_cat("dummyInputDelay")
+      start_fluentd_cat("dummyInputDelay", "tag_test_4")
       time.sleep(15)
       if posted_data:
         print(posted_data)
@@ -102,17 +104,17 @@ class TestPost(unittest.TestCase):
         caddy_pid = f.readline()
 
       time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart1")
+      start_fluentd_cat("dummyInputCaddyRestart1", "tag_test_5")
       time.sleep(10)
 
       kill_caddy(caddy_pid)
       time.sleep(10)
 
-      start_fluentd_cat("dummyInputCaddyRestart2 ")
+      start_fluentd_cat("dummyInputCaddyRestart2 ", "tag_test_5")
       time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart3 ")
+      start_fluentd_cat("dummyInputCaddyRestart3 ", "tag_test_5")
       time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart4 ")
+      start_fluentd_cat("dummyInputCaddyRestart4 ", "tag_test_5")
       time.sleep(130)
 
       start_caddy(caddy_pid)
@@ -131,12 +133,29 @@ class TestPost(unittest.TestCase):
       else:
         self.assertTrue("dummyInputCaddyRestart1" in all_data)
         print("No posted data")
-
-def start_fluentd_cat(test_msg):
+        
+    def test_6_check_diff_tags(self):
+      print("############## TEST 6 ##############")
+      
+      start_fluentd_cat("dummyInputTags", "test_Tag_1")
+      time.sleep(10)
+      self.assertEqual("test_Tag_1", request_tag)
+    
+      
+      start_fluentd_cat("dummyInputTags", "test_Tag_2")
+      time.sleep(10)
+      self.assertEqual("test_Tag_2", request_tag)
+    
+      
+      start_fluentd_cat("dummyInputTags", "test_Tag_3")
+      time.sleep(10)
+      self.assertEqual("test_Tag_3", request_tag)
+      
+def start_fluentd_cat(test_msg, tag):
 
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
     
-    fluentd_cat_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none wendelin_out'
+    fluentd_cat_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none ' + tag
     os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
 
 def kill_caddy(caddy_pid):
@@ -154,8 +173,6 @@ def start_caddy(caddy_pid):
 
 def main():
   
-   # start_fluentd_cat()
-    
     port=9443
     server_address = ('0.0.0.0', port)
     httpd = HTTPServer(server_address, TestServerHandler)
@@ -182,11 +199,7 @@ def main():
     
     print("all posted data : ")
     print(all_data)
-    #with open("$${directory:log}/fluent_new.log", 'r') as f:
-    #  log = f.read()
-    #print(s)
-    
-    
+
     return result.testsRun, result.errors, result.failures, stream.getvalue()
 
 if __name__ == "__main__":
