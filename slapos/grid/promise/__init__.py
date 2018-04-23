@@ -313,6 +313,7 @@ class PromiseLauncher(object):
     )
     if not os.path.exists(self.promise_output_dir):
       mkdir_p(self.promise_output_dir)
+      self._updateFolderOwner()
 
   def _getErrorPromiseResult(self, promise_process, promise_name, promise_path,
       message, execution_time=0):
@@ -369,6 +370,13 @@ class PromiseLauncher(object):
         self.queue_result.get_nowait()
       except Queue.Empty:
         return
+
+  def _updateFolderOwner(self, folder_path=None):
+    stat_info = os.stat(self.partition_folder)
+    if folder_path is None:
+      folder_path = os.path.join(self.partition_folder,
+                                 PROMISE_STATE_FOLDER_NAME)
+    chownDirectory(folder_path, stat_info.st_uid, stat_info.st_gid)
 
   def _launchPromise(self, promise_name, promise_path, argument_dict,
       wrap_process=False):
@@ -460,6 +468,7 @@ class PromiseLauncher(object):
       if promise_process.is_alive():
         self.logger.info("Killing process %s..." % promise_name)
         killProcessTree(promise_process.pid, self.logger)
+
       message = 'Promise timed out after %s seconds' % self.promise_timeout
       queue_item = self._getErrorPromiseResult(
         promise_process,
@@ -555,8 +564,7 @@ class PromiseLauncher(object):
         if result_state and not failed_promise_name:
           failed_promise_name = promise_name
 
-    stat_info = os.stat(self.partition_folder)
-    chownDirectory(self.promise_output_dir, stat_info.st_uid, stat_info.st_gid)
+    self._updateFolderOwner(self.promise_output_dir)
 
     if failed_promise_name:
       raise PromiseError("Promise %r failed." % failed_promise_name)
