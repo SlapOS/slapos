@@ -49,7 +49,7 @@ class WrapPromise(GenericPromise):
 
   @staticmethod
   def terminate(name, logger, process, signum, frame):
-    if signum in [signal.SIGINT, signal.SIGTERM] and process:
+    if signum in [signal.SIGINT, signal.SIGTERM] and process.poll() is None:
       logger.info("Terminating promise process %r" % name)
       try:
         # make sure we kill the process on timeout

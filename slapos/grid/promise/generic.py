@@ -49,6 +49,11 @@ PROMISE_PERIOD_FILE_NAME = '%s.periodicity'
 class BaseResult(object):
   def __init__(self, problem=False, message=None, date=None):
     self.__problem = problem
+    # The promise message should be very short,
+    # a huge message size can freeze the process Pipe
+    # XXX this is important to prevent process deadlock
+    if len(message) > 5000:
+      message = '...%s' % message[-5000:]
     self.__message = message
     self.__date = date
     if self.__date is None:
@@ -398,6 +403,19 @@ class GenericPromise(object):
       return module(problem=False, message=message)
     return module(problem=True, message=message)
 
+  def __sendResult(self, result_item, retry_amount=3):
+    """Send result to queue, retry if error (non blocking)"""
+    error = None
+    for i in range(0, retry_amount):
+      try:
+        self.__queue.put_nowait(result_item)
+        break
+      except Queue.Full, e:
+        error = e
+        time.sleep(0.5)
+    if error:
+      raise error
+
   def _test(self, result_count=1, failure_amount=1, latest_minute=0):
     """
       Default promise test method
@@ -471,9 +489,9 @@ class GenericPromise(object):
       self.__logger_buffer.close()
 
     # send the result of this promise
-    self.__queue.put(PromiseQueueResult(
-        path=self.__promise_path,
-        name=self.__name,
-        title=self.__title,
-        item=result
-      ), True)
+    self.__sendResult(PromiseQueueResult(
+      path=self.__promise_path,
+      name=self.__name,
+      title=self.__title,
+      item=result
+    ))

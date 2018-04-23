@@ -963,6 +963,29 @@ echo "success"
       self.launcher.run()
     self.assertTrue(self.called)
 
+  def test_runpromise_wrapped_will_timeout_two(self):
+    first_promise = "my_bash_promise"
+    first_promise_path = os.path.join(self.legacy_promise_dir, first_promise)
+    second_promise = "my_second_bash_promise"
+    second_promise_path = os.path.join(self.legacy_promise_dir, second_promise)
+
+    def createPromise(promise_path):
+      with open(promise_path, 'w') as f:
+        f.write("""#!/bin/bash
+echo "some data from promise"
+sleep 20
+echo "success"
+exit 1
+""")
+      os.chmod(promise_path, 0744)
+
+    createPromise(first_promise_path)
+    createPromise(second_promise_path)
+    self.configureLauncher(timeout=0.5)
+    # run promise will timeout
+    with self.assertRaises(PromiseError):
+      self.launcher.run()
+
 class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
   def initialisePromise(self, promise_content="", success=True, timeout=60):
