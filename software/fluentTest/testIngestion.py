@@ -137,17 +137,17 @@ class TestPost(unittest.TestCase):
     def test_6_check_diff_tags(self):
       print("############## TEST 6 ##############")
       
-      start_fluentd_cat("dummyInputTags", "test_Tag_6_1")
+      start_fluentd_cat("dummyInputTags_6_1", "test_Tag_6_1")
       time.sleep(2)
       self.assertEqual("test_Tag_6_1", request_tag)
     
       
-      start_fluentd_cat("dummyInputTags", "test_Tag_6_2")
+      start_fluentd_cat("dummyInputTags_6_2", "test_Tag_6_2")
       time.sleep(2)
       self.assertEqual("test_Tag_6_2", request_tag)
     
       
-      start_fluentd_cat("dummyInputTags", "test_Tag_6_3")
+      start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
       time.sleep(2)
       self.assertEqual("test_Tag_6_3", request_tag)
       
