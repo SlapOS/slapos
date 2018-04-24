@@ -73,12 +73,8 @@ class TestPost(unittest.TestCase):
       print("############## TEST 2 ##############")
       start_fluentd_cat(test_msg, "tag_test_2")
       time.sleep(15)
-      if posted_data:
-        print(posted_data)
-        self.assertEqual(test_msg, posted_data.split(" ")[1])
-      else:
-        self.assertEqual(test_msg, posted_data)
-        print("No posted data")
+      self.assertEqual(test_msg, posted_data.split(" ")[1])
+  
 
     def test_3_keepAlive_on(self):
       print("############## TEST 3 ##############")
@@ -87,17 +83,12 @@ class TestPost(unittest.TestCase):
       print(s.headers['Connection'])
       self.assertEqual('keep-alive', s.headers['Connection'])
 
-
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
       time.sleep(900)
       start_fluentd_cat("dummyInputDelay", "tag_test_4")
       time.sleep(15)
-      if posted_data:
-        print(posted_data)
-        self.assertEqual("dummyInputDelay", posted_data.split(" ")[1])
-      else:
-        self.assertEqual("dummyInputDelay", posted_data)
+      self.assertEqual("dummyInputDelay", posted_data.split(" ")[1])
 
     def test_5_caddy_restart(self):
       print("############## TEST 5 ##############")
@@ -122,32 +113,21 @@ class TestPost(unittest.TestCase):
       start_caddy(caddy_pid)
       time.sleep(15)
 
-      if posted_data:
-        print(posted_data)
-        self.assertTrue("dummyInputCaddyRestart1" in all_data)
-        print("pass 1")
-        self.assertTrue("dummyInputCaddyRestart2" in all_data)
-        print("pass 2")
-        self.assertTrue("dummyInputCaddyRestart3" in all_data)
-        print("pass 3")
-        self.assertTrue("dummyInputCaddyRestart4" in all_data)
-        print("pass 4")
-      else:
-        self.assertTrue("dummyInputCaddyRestart1" in all_data)
-        print("No posted data")
-        
+      self.assertTrue("dummyInputCaddyRestart1" in all_data)
+      self.assertTrue("dummyInputCaddyRestart2" in all_data)
+      self.assertTrue("dummyInputCaddyRestart3" in all_data)
+      self.assertTrue("dummyInputCaddyRestart4" in all_data)
+      
     def test_6_check_diff_tags(self):
       print("############## TEST 6 ##############")
       
       start_fluentd_cat("dummyInputTags_6_1", "test_Tag_6_1")
       time.sleep(2)
       self.assertEqual("test_Tag_6_1", request_tag)
-    
       
       start_fluentd_cat("dummyInputTags_6_2", "test_Tag_6_2")
       time.sleep(2)
       self.assertEqual("test_Tag_6_2", request_tag)
-    
       
       start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
       time.sleep(2)
@@ -169,14 +149,7 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputCaddyIsKilled4 ", "tag_test_7_4")
       time.sleep(130)
 
-      if posted_data:
-        print(posted_data)
-        self.assertTrue("dummyInputKillCaddy1" in all_data)
-        print("pass 1")
-        
-      else:
-        self.assertTrue("dummyInputKillCaddy1" in all_data)
-        print("No posted data")    
+      self.assertTrue("dummyInputKillCaddy1" in all_data)
         
     def test_8_start_caddy(self):
       print("############## TEST 8 ##############")
@@ -187,18 +160,12 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputStartCaddy1", "tag_test_8_1")
       time.sleep(10)
 
-      if posted_data:
-        self.assertTrue("dummyInputStartCaddy1" in all_data)
-        self.assertTrue("dummyInputCaddyIsKilled2" in all_data)
-        print("pass 2")
-        self.assertTrue("dummyInputCaddyIsKilled3" in all_data)
-        print("pass 3")
-        self.assertTrue("dummyInputCaddyIsKilled4" in all_data)
-        print("pass 4")
-      else:
-        self.assertTrue("dummyInputStartCaddy1" in all_data)
-        print("No posted data")          
-      
+      self.assertTrue("dummyInputStartCaddy1" in all_data)
+      self.assertTrue("dummyInputCaddyIsKilled2" in all_data)
+      self.assertTrue("dummyInputCaddyIsKilled3" in all_data)
+      self.assertTrue("dummyInputCaddyIsKilled4" in all_data)
+
+
 def start_fluentd_cat(test_msg, tag):
 
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
