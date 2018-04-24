@@ -23,6 +23,8 @@ caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 posted_data = None
 all_data = []
 request_tag = ""
+with open(caddy_pidfile) as f:
+  caddy_pid = f.readline()
 
 class TestServerHandler(BaseHTTPRequestHandler):
 
@@ -150,6 +152,52 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
       time.sleep(2)
       self.assertEqual("test_Tag_6_3", request_tag)
+      
+    def test_7_kill_caddy(self):
+      print("############## TEST 7 ##############")
+
+      start_fluentd_cat("dummyInputKillCaddy1", "tag_test_7_1")
+      time.sleep(10)
+
+      kill_caddy(caddy_pid)
+      time.sleep(10)
+
+      start_fluentd_cat("dummyInputCaddyIsKilled2 ", "tag_test_7_2")
+      time.sleep(10)
+      start_fluentd_cat("dummyInputCaddyIsKilled3 ", "tag_test_7_3")
+      time.sleep(10)
+      start_fluentd_cat("dummyInputCaddyIsKilled4 ", "tag_test_7_4")
+      time.sleep(130)
+
+      if posted_data:
+        print(posted_data)
+        self.assertTrue("dummyInputKillCaddy1" in all_data)
+        print("pass 1")
+        
+      else:
+        self.assertTrue("dummyInputKillCaddy1" in all_data)
+        print("No posted data")    
+        
+    def test_8_start_caddy(self):
+      print("############## TEST 8 ##############")
+
+      start_caddy(caddy_pid)
+      
+      time.sleep(10)
+      start_fluentd_cat("dummyInputStartCaddy1", "tag_test_8_1")
+      time.sleep(10)
+
+      if posted_data:
+        self.assertTrue("dummyInputStartCaddy1" in all_data)
+        self.assertTrue("dummyInputCaddyIsKilled2" in all_data)
+        print("pass 2")
+        self.assertTrue("dummyInputCaddyIsKilled3" in all_data)
+        print("pass 3")
+        self.assertTrue("dummyInputCaddyIsKilled4" in all_data)
+        print("pass 4")
+      else:
+        self.assertTrue("dummyInputStartCaddy1" in all_data)
+        print("No posted data")          
       
 def start_fluentd_cat(test_msg, tag):
 
