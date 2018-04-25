@@ -10,13 +10,13 @@ class Recipe(object):
     def __init__(self, buildout, name, options):
         pinfo = pwd.getpwuid(os.getuid())
         options['pw-name'] = pinfo.pw_name
-        options['pw-uid'] = pinfo.pw_uid
-        options['pw-gid'] = pinfo.pw_gid
+        options['pw-uid'] = str(pinfo.pw_uid)
+        options['pw-gid'] = str(pinfo.pw_gid)
         options['pw-dir'] = pinfo.pw_dir
         options['pw-shell'] = pinfo.pw_shell
 
         ginfo = grp.getgrgid(os.getgid())
         options['gr-name'] = ginfo.gr_name
-        options['gr-gid'] = ginfo.gr_gid
+        options['gr-gid'] = str(ginfo.gr_gid)
 
     install = update = lambda self: []
