@@ -72,10 +72,12 @@ class TestPost(unittest.TestCase):
     def test_2_ingest(self):
       print("############## TEST 2 ##############")
       start_fluentd_cat(test_msg, "tag_test_2")
-      time.sleep(15)
-      self.assertEqual(test_msg, posted_data.split(" ")[1])
-  
-
+      time.sleep(3)
+      if posted_data:
+        self.assertEqual(test_msg, posted_data.split(" ")[1])
+      else:
+        self.assertEqual(test_msg, posted_data)
+      
     def test_3_keepAlive_on(self):
       print("############## TEST 3 ##############")
       s = requests.session()
