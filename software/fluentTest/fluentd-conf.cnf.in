@@ -23,7 +23,7 @@
   @type wendelin
   @id wendelin_out
 
-  streamtool_uri http://{{local_ip}}:4443
+  streamtool_uri http://{{local_ip}}:8443
  
 
 
@@ -41,6 +41,7 @@
   buffer_chunk_limit 1MB
   #buffer_path       "#{ENV['HOME']/var}"
   flush_interval    1s
+  num_threads 8
 </match>
 
 

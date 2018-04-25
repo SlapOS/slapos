@@ -133,39 +133,6 @@ class TestPost(unittest.TestCase):
       time.sleep(2)
       self.assertEqual("test_Tag_6_3", request_tag)
       
-    def test_7_kill_caddy(self):
-      print("############## TEST 7 ##############")
-
-      start_fluentd_cat("dummyInputKillCaddy1", "tag_test_7_1")
-      time.sleep(10)
-
-      kill_caddy(caddy_pid)
-      time.sleep(10)
-
-      start_fluentd_cat("dummyInputCaddyIsKilled2 ", "tag_test_7_2")
-      time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyIsKilled3 ", "tag_test_7_3")
-      time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyIsKilled4 ", "tag_test_7_4")
-      time.sleep(130)
-
-      self.assertTrue("dummyInputKillCaddy1" in all_data)
-        
-    def test_8_start_caddy(self):
-      print("############## TEST 8 ##############")
-
-      start_caddy(caddy_pid)
-      
-      time.sleep(10)
-      start_fluentd_cat("dummyInputStartCaddy1", "tag_test_8_1")
-      time.sleep(10)
-
-      self.assertTrue("dummyInputStartCaddy1" in all_data)
-      self.assertTrue("dummyInputCaddyIsKilled2" in all_data)
-      self.assertTrue("dummyInputCaddyIsKilled3" in all_data)
-      self.assertTrue("dummyInputCaddyIsKilled4" in all_data)
-
-
 def start_fluentd_cat(test_msg, tag):
 
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
