@@ -393,7 +393,7 @@ class TestSlap(SlapMixin):
                 }
 
     with httmock.HTTMock(handler):
-      self.slap.initializeConnection('http://bar')
+      self.slap.initializeConnection('http://%s' % self.id())
     self.assertEqual(
         self.slap._hateoas_navigator.slapos_master_hateoas_uri,
         hateoas_url
@@ -411,7 +411,7 @@ class TestSlap(SlapMixin):
         self.fail('slap should not have contacted master to get Hateoas URL.')
 
     with httmock.HTTMock(handler):
-      self.slap.initializeConnection('http://bar', slapgrid_rest_uri=hateoas_url)
+      self.slap.initializeConnection('http://%s' % self.id(), slapgrid_rest_uri=hateoas_url)
     self.assertEqual(
         self.slap._hateoas_navigator.slapos_master_hateoas_uri,
         hateoas_url
@@ -431,8 +431,9 @@ class TestSlap(SlapMixin):
                 }
 
     with httmock.HTTMock(handler):
-      self.slap.initializeConnection('http://bar')
+      self.slap.initializeConnection('http://%s' % self.id())
     self.assertEqual(None, getattr(self.slap, '_hateoas_navigator', None))
+
 
 class TestComputer(SlapMixin):
   """
