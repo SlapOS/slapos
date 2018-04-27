@@ -152,7 +152,7 @@ def kill_caddy(caddy_pid):
     
     kill_caddy_cmd = "kill -TSTP " + caddy_pid
     os.system(kill_caddy_cmd)
-    print("Caddy is killed")
+    print("Caddy is stopped")
 
 def start_caddy(caddy_pid):
     
