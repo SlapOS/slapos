@@ -114,19 +114,13 @@ sla-{{ parameter }} = {{ value }}
 
 
 [publish-information]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_list | length }}
 rejected-slave-list = {{ json_module.dumps(rejected_slave_list) }}
-monitor-base-url = ${monitor-conf-parameters:base-url}
-monitor-url = ${:monitor-base-url}/public/feeds
-monitor-user = ${monitor-instance-parameter:username}
-monitor-password = ${monitor-instance-parameter:password}
-{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${:monitor-url}
-
 
 #----------------------------
 #--
