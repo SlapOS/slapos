@@ -1,7 +1,7 @@
 [buildout]
 parts =
+  slapos-test-runner
   directory
-  runTestSuite-instance
   fluentdConfig
   fluentd-service
   caddy-service
@@ -26,43 +26,34 @@ promise = $${:etc}/promise/
 www = $${:srv}/www
 home = $${:etc}/home
 ssl = $${:etc}/ssl
-
-[runTestSuite-instance]
-recipe = slapos.recipe.template
-url = ${template-runTestSuite:output}
-output = $${directory:bin}/runTestSuite
-buildout-directory = $${buildout:directory}
-mode = 0700
+working-dir = $${buildout:directory}/tmp/
 
 
 [runTest-instance]
 recipe = slapos.recipe.template
 url = ${template-test:output}
-output = $${directory:bin}/testIngestion.py
+output = $${directory:bin}/test.py
 buildout-directory = $${buildout:directory}
 mode = 0700
-
 
 #################################
 # fluentd service
 #################################
 
-
 [fluentdConfig]
 recipe = slapos.recipe.template:jinja2
-template = ${template-fluentdConfig:location}/${template-fluentdConfig:filename}
+template = ${template-fluentdConfig:output}
 rendered = $${directory:etc}/fluentd-conf.cnf
 mode = 0600
-context = 
+context =
   key local_ip caddy-configuration:local_ip
-
 
 [fluentd-service]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/fluentd-service
 path = ${fluentd:location}
-command-line    =  ${fluentd:location}/bin/fluentd 
-    -c $${directory:etc}/fluentd-conf.cnf  -p ${fluentd-plugin-dev-repository:location}/lib/fluent/plugin/ 
+command-line    =  ${fluentd:location}/bin/fluentd -vv
+    -c $${directory:etc}/fluentd-conf.cnf  -p ${fluentd-plugin-dev-repository:location}/lib/fluent/plugin/ -o $${directory:etc}/fluent.log
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
 output = $${:wrapper-path}  
@@ -94,11 +85,36 @@ error_log = $${directory:log}/caddy-error.log
 local_ip = $${slap-network-information:local-ipv4}
 context = 
   key local_ip caddy-configuration:local_ip
-  
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 secure_access = http://$${caddy-configuration:local_ip}:4443}
 
 
+[download-source]
+recipe = slapos.recipe.build:gitclone
+git-executable = ${git:location}/bin/git
 
+[slapos]
+<= download-source
+repository = ${slapos-repository:location}
+
+[create-directory]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+
+[slapos-test-runner]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/runTestSuite
+command-line =
+  ${buildout:bin-directory}/runTestSuite
+  --python_interpreter=${buildout:bin-directory}/${eggs:interpreter}
+  --source_code_path_list=$${slapos:location}/software/erp5testnode/testsuite/fluentTest/tests/
+environment =
+  PATH=${buildout:bin-directory}:/usr/bin/:/bin/
+  LOCAL_IPV4=$${slap-network-information:local-ipv4}
+  GLOBAL_IPV6=$${slap-network-information:global-ipv6}
+  FLUENT_SERVICE = $${fluentd-service:path}
+  SLAPOS_TEST_WORKING_DIR=$${directory:working-dir}
+  CADDY_DIR = $${directory:etc}/caddy_pidfile
+  DEBUG=1

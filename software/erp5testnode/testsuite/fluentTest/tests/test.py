@@ -11,20 +11,30 @@ import SocketServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import os
 
-import threading
 import time
-
+import utils
+import threading
 
 test_msg = "dummyInputSimpleIngest"
-url = "http://$${caddy-configuration:local_ip}:4443"
+#url = "http://$${caddy-configuration:local_ip}:8443"
 
-caddy_pidfile = "$${directory:etc}/caddy_pidfile"
-
+url = "http://" + os.environ.get('LOCAL_IPV4') + ":4443"
+#caddy_pidfile = "$${directory:etc}/caddy_pidfile"
+caddy_pidfile = os.environ.get('CADDY_DIR')
 posted_data = None
 all_data = []
 request_tag = ""
-with open(caddy_pidfile) as f:
-  caddy_pid = f.readline()
+
+if os.environ.get('DEBUG'):
+  import logging
+  logging.basicConfig(level=logging.DEBUG)
+  import unittest
+  unittest.installHandler()
+
+class FluentdPluginTestCase(utils.SlapOSInstanceTestCase):
+  @classmethod
+  def getSoftwareURLList(cls):
+    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
 class TestServerHandler(BaseHTTPRequestHandler):
 
@@ -58,17 +68,47 @@ class TestServerHandler(BaseHTTPRequestHandler):
         global request_tag
         request_tag = find_tag(self.requestline,"=", " ")
 
-class TestPost(unittest.TestCase):
+class TestIngestion(FluentdPluginTestCase):
 
-    posted_data = ""
+    @classmethod
+    def startServer(cls):
+      port=9443
+      server_address = (os.environ.get('LOCAL_IPV4'), port)
+      cls.server = HTTPServer(server_address, TestServerHandler)
+      cls.thread = threading.Thread(target=cls.server.serve_forever)
+      cls.thread.start()
+      time.sleep(10)
+      print("server start")
+      
+
+    @classmethod
+    def stopServer(cls):
+      cls.server.shutdown()
+      cls.server.server_close()
+      print("serever shutdown")
+      time.sleep(10)
+    
+  #  def setUp(self):
+  #    self.startServer()
+
+  #  def tearDown(self):
+  #    #self.stopServer()
+   #   time.sleep(10)
 
     def test_1_get(self):
+      
+      self.startServer()
+      time.sleep(10)
+      print("start server")
+      
       print("############## TEST 1 ##############")
       resp = requests.get(url)
       self.assertEqual(resp.status_code, 200)
       print (resp.status_code)
 
     def test_2_ingest(self):
+      
+      time.sleep(10)
       print("############## TEST 2 ##############")
       start_fluentd_cat(test_msg, "tag_test_2")
       time.sleep(10)
@@ -79,8 +119,8 @@ class TestPost(unittest.TestCase):
       else:
         self.assertEqual(test_msg, posted_data)
       time.sleep(10)
-      self.assertEqual(test_msg, posted_data.split(" ")[1])
-  
+      
+
     def test_3_keepAlive_on(self):
       print("############## TEST 3 ##############")
       s = requests.session()
@@ -90,6 +130,8 @@ class TestPost(unittest.TestCase):
 
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
+      # sleep 15mins to test that connections doesn't break after long delay
+      # and data is ingested correctly after the delay.
       time.sleep(900)
       start_fluentd_cat("dummyInputDelay", "tag_test_4")
       time.sleep(15)
@@ -122,7 +164,7 @@ class TestPost(unittest.TestCase):
       self.assertTrue("dummyInputCaddyRestart2" in all_data)
       self.assertTrue("dummyInputCaddyRestart3" in all_data)
       self.assertTrue("dummyInputCaddyRestart4" in all_data)
-      
+
     def test_6_check_diff_tags(self):
       print("############## TEST 6 ##############")
       
@@ -137,63 +179,27 @@ class TestPost(unittest.TestCase):
       start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
       time.sleep(2)
       self.assertEqual("test_Tag_6_3", request_tag)
-      
+      self.stopServer()
+      time.sleep(10)
+    
 def start_fluentd_cat(test_msg, tag):
 
-    os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
-    
-    fluentd_cat_exec_comand = '$${fluentd-service:path}/bin/fluent-cat --none ' + tag
+    fluent_service = os.environ.get('FLUENT_SERVICE')
+    os.environ["GEM_PATH"] = fluent_service + "/lib/ruby/gems/1.8/"
+    fluentd_cat_exec_comand = fluent_service + '/bin/fluent-cat --none ' + tag + " -p 5438 "
     os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
+    print("Fluent-cat path")
+    print(fluentd_cat_exec_comand)
 
 def kill_caddy(caddy_pid):
     
-    print("caddy pid = ")
-    print(caddy_pid)
-    
-    kill_caddy_cmd = "kill -TSTP " + caddy_pid
-    os.system(kill_caddy_cmd)
-    print("Caddy is killed")
+    os.system("kill -TSTP %s" % caddy_pid)
+    print("Caddy is stopped.")
 
 def start_caddy(caddy_pid):
     
-    start_caddy_cmd = "kill -CONT " + caddy_pid
-    os.system(start_caddy_cmd)
-    print("Caddy is restarted")
+    os.system("kill -CONT %s" % caddy_pid)
+    print("Caddy is restarted.")
 
 def find_tag(s, start, end):
   return (s.split(start))[1].split(end)[0]
-
-def main():
-  
-    port=9443
-    server_address = ('0.0.0.0', port)
-    httpd = HTTPServer(server_address, TestServerHandler)
-    thread = threading.Thread(target=httpd.serve_forever)
-    thread.start()
-    print 'Starting http...'
-  
-    time.sleep(15)
-
-    stream = StringIO()
-    runner = unittest.TextTestRunner(verbosity=2, stream=stream)
-    result = runner.run(unittest.makeSuite(TestPost))
- 
-    
-    print 'Tests run ', result.testsRun
-    print 'Errors ', result.errors
-    print "Failures ", result.failures
-    stream.seek(0)
-    print 'Test output\n', stream.read() 
-    
-    time.sleep(30)
-    httpd.shutdown()
-    print(posted_data)
-    
-    print("all posted data : ")
-    print(all_data)
-
-    return result.testsRun, result.errors, result.failures, stream.getvalue()
-
-if __name__ == "__main__":
-  
-    main()

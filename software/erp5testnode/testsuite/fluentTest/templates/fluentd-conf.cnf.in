@@ -1,5 +1,6 @@
 <source>
   @type forward
+  port 5438
 </source>
 
 #<source>
@@ -19,7 +20,7 @@
 
 
 ## output tag=sensor.** to Wendelin
-<match **>
+<match tag_*>
   @type wendelin
   @id wendelin_out
 
@@ -57,7 +58,7 @@
   @type monitor_agent
   @id monitor_agent_input
 
-  port 24220
+  port 5440
 </source>
 
 # Listen DRb for debug
@@ -65,8 +66,8 @@
   @type debug_agent
   @id debug_agent_input
 
-  bind 127.0.0.1
-  port 24230
+  bind {{local_ip}}
+  port 5443
 </source>
 
 
