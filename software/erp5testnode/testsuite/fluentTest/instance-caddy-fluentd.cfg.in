@@ -34,7 +34,6 @@ output = $${directory:bin}/runTestSuite
 buildout-directory = $${buildout:directory}
 mode = 0700
 
-
 [runTest-instance]
 recipe = slapos.recipe.template
 url = ${template-test:output}
@@ -42,27 +41,24 @@ output = $${directory:bin}/testIngestion.py
 buildout-directory = $${buildout:directory}
 mode = 0700
 
-
 #################################
 # fluentd service
 #################################
-
 
 [fluentdConfig]
 recipe = slapos.recipe.template:jinja2
 template = ${template-fluentdConfig:location}/${template-fluentdConfig:filename}
 rendered = $${directory:etc}/fluentd-conf.cnf
 mode = 0600
-context = 
+context =
   key local_ip caddy-configuration:local_ip
-
 
 [fluentd-service]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/fluentd-service
 path = ${fluentd:location}
 command-line    =  ${fluentd:location}/bin/fluentd 
-    -c $${directory:etc}/fluentd-conf.cnf  -p ${fluentd-plugin-dev-repository:location}/lib/fluent/plugin/ 
+    -c $${directory:etc}/fluentd-conf.cnf  -p ${fluentd-plugin-dev-repository:location}/lib/fluent/plugin/
 environment =
   GEM_PATH= ${fluentd:location}/lib/ruby/gems/1.8/
 output = $${:wrapper-path}  
@@ -94,11 +90,7 @@ error_log = $${directory:log}/caddy-error.log
 local_ip = $${slap-network-information:local-ipv4}
 context = 
   key local_ip caddy-configuration:local_ip
-  
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 secure_access = http://$${caddy-configuration:local_ip}:4443}
-
-
-

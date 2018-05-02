@@ -65,7 +65,7 @@
   @type debug_agent
   @id debug_agent_input
 
-  bind 127.0.0.1
+  bind {{local_ip}}
   port 24230
 </source>
 

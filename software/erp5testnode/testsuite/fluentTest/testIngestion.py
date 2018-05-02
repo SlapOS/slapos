@@ -23,8 +23,6 @@ caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 posted_data = None
 all_data = []
 request_tag = ""
-with open(caddy_pidfile) as f:
-  caddy_pid = f.readline()
 
 class TestServerHandler(BaseHTTPRequestHandler):
 
@@ -60,8 +58,6 @@ class TestServerHandler(BaseHTTPRequestHandler):
 
 class TestPost(unittest.TestCase):
 
-    posted_data = ""
-
     def test_1_get(self):
       print("############## TEST 1 ##############")
       resp = requests.get(url)
@@ -90,6 +86,8 @@ class TestPost(unittest.TestCase):
 
     def test_4_delay_15_mins(self):
       print("############## TEST 4 ##############")
+      # sleep 15mins to test that connections doesn't break after long delay
+      # and data is ingested correctly after the delay.
       time.sleep(900)
       start_fluentd_cat("dummyInputDelay", "tag_test_4")
       time.sleep(15)
@@ -147,18 +145,13 @@ def start_fluentd_cat(test_msg, tag):
 
 def kill_caddy(caddy_pid):
     
-    print("caddy pid = ")
-    print(caddy_pid)
-    
-    kill_caddy_cmd = "kill -TSTP " + caddy_pid
-    os.system(kill_caddy_cmd)
-    print("Caddy is stopped")
+    os.system("kill -TSTP %s" % caddy_pid)
+    print("Caddy is stopped.")
 
 def start_caddy(caddy_pid):
     
-    start_caddy_cmd = "kill -CONT " + caddy_pid
-    os.system(start_caddy_cmd)
-    print("Caddy is restarted")
+    os.system("kill -CONT %s" % caddy_pid)
+    print("Caddy is restarted.")
 
 def find_tag(s, start, end):
   return (s.split(start))[1].split(end)[0]
@@ -166,7 +159,7 @@ def find_tag(s, start, end):
 def main():
   
     port=9443
-    server_address = ('0.0.0.0', port)
+    server_address = ('$${slap-network-information:local-ipv4}', port)
     httpd = HTTPServer(server_address, TestServerHandler)
     thread = threading.Thread(target=httpd.serve_forever)
     thread.start()

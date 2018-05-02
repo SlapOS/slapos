@@ -53,8 +53,6 @@ def main():
 
     test_line_dict = {}
     
-    ######!!!!!!!!!!!!!! uncomment this !!!!!!!!
-    # result.errors, result.failures, stream.read()
     num_of_tests, errors, failures, stdout = testIngestion.main()
     result = testIngestion.main()
     

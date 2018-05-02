@@ -1,4 +1,4 @@
 {{local_ip}}:4443
 
-  proxy / 0.0.0.0:9443
+  proxy / {{local_ip}}:9443
 
