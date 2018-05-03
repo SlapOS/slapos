@@ -13,6 +13,7 @@ import os
 
 import threading
 import time
+import utils
 
 
 test_msg = "dummyInputSimpleIngest"
@@ -23,6 +24,15 @@ caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 posted_data = None
 all_data = []
 request_tag = ""
+
+###################################################
+
+class FluentdPluginTestCase(utils.SlapOSInstanceTestCase):
+  @classmethod
+  def getSoftwareURLList(cls):
+    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+
+###################################################
 
 class TestServerHandler(BaseHTTPRequestHandler):
 
@@ -56,7 +66,24 @@ class TestServerHandler(BaseHTTPRequestHandler):
         global request_tag
         request_tag = find_tag(self.requestline,"=", " ")
 
-class TestPost(unittest.TestCase):
+class TestIngestion(FluentdPluginTestCase):
+
+    def setUp(self):
+      
+      port=9443
+      server_address = ('$${slap-network-information:local-ipv4}', port)
+      httpd = HTTPServer(server_address, TestServerHandler)
+      thread = threading.Thread(target=httpd.serve_forever)
+      thread.start()
+      print 'Starting http...'
+      time.sleep(15)
+
+    def tearDown(self):
+      
+      httpd.shutdown()
+      print("all posted data : ")
+      print(all_data)
+    
 
     def test_1_get(self):
       print("############## TEST 1 ##############")
@@ -156,6 +183,8 @@ def start_caddy(caddy_pid):
 def find_tag(s, start, end):
   return (s.split(start))[1].split(end)[0]
 
+
+'''
 def main():
   
     port=9443
@@ -190,3 +219,4 @@ def main():
 if __name__ == "__main__":
   
     main()
+'''    

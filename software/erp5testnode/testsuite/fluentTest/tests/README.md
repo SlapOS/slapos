@@ -1,0 +1,1 @@
+Test for fluentd wendelin plugin with keep-alive connection and caddy. 

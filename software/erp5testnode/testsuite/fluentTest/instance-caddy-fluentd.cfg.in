@@ -1,7 +1,7 @@
 [buildout]
 parts =
+  slapos-test-runner
   directory
-  runTestSuite-instance
   fluentdConfig
   fluentd-service
   caddy-service
@@ -27,17 +27,11 @@ www = $${:srv}/www
 home = $${:etc}/home
 ssl = $${:etc}/ssl
 
-[runTestSuite-instance]
-recipe = slapos.recipe.template
-url = ${template-runTestSuite:output}
-output = $${directory:bin}/runTestSuite
-buildout-directory = $${buildout:directory}
-mode = 0700
 
 [runTest-instance]
 recipe = slapos.recipe.template
 url = ${template-test:output}
-output = $${directory:bin}/testIngestion.py
+output = $${directory:bin}/test.py
 buildout-directory = $${buildout:directory}
 mode = 0700
 
@@ -94,3 +88,25 @@ context =
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 secure_access = http://$${caddy-configuration:local_ip}:4443}
+
+
+[download-source]
+recipe = slapos.recipe.build:gitclone
+git-executable = ${git:location}/bin/git
+
+[slapos]
+<= download-source
+repository = ${slapos-repository:location}
+
+[create-directory]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+
+[slapos-test-runner]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/runTestSuite
+command-line =
+  ${buildout:bin-directory}/runTestSuite
+  --python_interpreter=${buildout:bin-directory}/${eggs:interpreter}
+  --source_code_path_list=$${slapos:location}/software/erp5testnode/testsuite/fluentTest/tests/
+####################################################
