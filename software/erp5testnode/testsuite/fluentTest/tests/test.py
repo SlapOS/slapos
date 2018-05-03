@@ -103,7 +103,7 @@ class TestIngestion(FluentdPluginTestCase):
         self.assertEqual(test_msg, posted_data)
       time.sleep(10)
       self.assertEqual(test_msg, posted_data.split(" ")[1])
- ''' 
+''' 
     def test_3_keepAlive_on(self):
       print("############## TEST 3 ##############")
       s = requests.session()
@@ -162,7 +162,7 @@ class TestIngestion(FluentdPluginTestCase):
       start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
       time.sleep(2)
       self.assertEqual("test_Tag_6_3", request_tag)
-  '''    
+'''    
 def start_fluentd_cat(test_msg, tag):
 
     os.environ["GEM_PATH"] ="$${fluentd-service:path}/lib/ruby/gems/1.8/"
