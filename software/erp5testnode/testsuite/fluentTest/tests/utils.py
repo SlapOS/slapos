@@ -76,8 +76,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # AF_UNIX path too long This `working_directory` should not be too deep.
     # Socket path is 108 char max on linux
     # https://github.com/torvalds/linux/blob/3848ec5/net/unix/af_unix.c#L234-L238
-    if len(working_directory + '/inst/supervisord.socket') > 108:
-      raise RuntimeError('working directory too deep, try setting SLAPOS_TEST_WORKING_DIR')
+  # if len(working_directory + '/inst/supervisord.socket') > 108:
+  #    raise RuntimeError('working directory too deep, try setting SLAPOS_TEST_WORKING_DIR')
 
     if not os.path.exists(working_directory):
       os.mkdir(working_directory)
@@ -95,7 +95,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     # Some tests are expecting that local IP is not set to 127.0.0.1
     ipv4_address = os.environ.get('LOCAL_IPV4', '127.0.1.1')
-    ipv6_address = os.environ['GLOBAL_IPV6']
+    #ipv6_address = os.environ['GLOBAL_IPV6']
+    ipv6_address = ''
 
     config['proxy_host'] = config['ipv4_address'] = ipv4_address
     config['ipv6_address'] = ipv6_address
@@ -155,7 +156,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         config['working_directory'],
         'inst',
         cls.computer_partition.getId())
-
+  
 
   @classmethod
   def tearDownClass(cls):
