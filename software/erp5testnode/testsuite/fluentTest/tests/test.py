@@ -11,13 +11,14 @@ import SocketServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import os
 
-import threading
 import time
 import utils
-
+import multiprocessing
 
 test_msg = "dummyInputSimpleIngest"
-url = "http://$${caddy-configuration:local_ip}:8443"
+#url = "http://$${caddy-configuration:local_ip}:8443"
+
+url = "http://10.0.46.242:8443"
 
 caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 
@@ -68,23 +69,37 @@ class TestServerHandler(BaseHTTPRequestHandler):
 
 class TestIngestion(FluentdPluginTestCase):
 
-    def setUp(self):
-      
+    @classmethod
+    def startServer(cls):
       port=9443
-      server_address = ('$${slap-network-information:local-ipv4}', port)
-      httpd = HTTPServer(server_address, TestServerHandler)
-      thread = threading.Thread(target=httpd.serve_forever)
-      thread.start()
-      print 'Starting http...'
-      time.sleep(15)
+      #server_address = ('$${slap-network-information:local-ipv4}', port)
+      server_address = ('0.0.0.0', port)
+      #ip = os.environ.get('LOCAL_IPV4', '127.0.1.1')
+      server = HTTPServer(server_address, TestServerHandler)
+      cls.server_process = multiprocessing.Process(target=server.serve_forever)
+      cls.server_process.start()
+
+    @classmethod
+    def stopServer(cls):
+      cls.server_process.terminate()
+    
+    def setUp(self):
+      self.startServer()
+    #  port=9443
+    #  server_address = ('$${slap-network-information:local-ipv4}', port)
+    #  httpd = HTTPServer(server_address, TestServerHandler)
+    #  thread = threading.Thread(target=httpd.serve_forever)
+    #  thread.start()
+    #  print 'Starting http...'
+    #  time.sleep(15)
 
     def tearDown(self):
-      
-      httpd.shutdown()
-      print("all posted data : ")
-      print(all_data)
+      self.stopServer()
+      time.sleep(10)
+    #  httpd.shutdown()
+    #  print("all posted data : ")
+    #  print(all_data)
     
-
     def test_1_get(self):
       print("############## TEST 1 ##############")
       resp = requests.get(url)

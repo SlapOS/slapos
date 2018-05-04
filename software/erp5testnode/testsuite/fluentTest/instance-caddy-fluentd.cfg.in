@@ -109,4 +109,8 @@ command-line =
   ${buildout:bin-directory}/runTestSuite
   --python_interpreter=${buildout:bin-directory}/${eggs:interpreter}
   --source_code_path_list=$${slapos:location}/software/erp5testnode/testsuite/fluentTest/tests/
-####################################################
+
+environment =
+  PATH=${buildout:bin-directory}:/usr/bin/:/bin/
+  LOCAL_IPV4=$${slap-network-information:local-ipv4}
+  GLOBAL_IPV6=$${slap-network-information:global-ipv6}

@@ -95,8 +95,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     # Some tests are expecting that local IP is not set to 127.0.0.1
     ipv4_address = os.environ.get('LOCAL_IPV4', '127.0.1.1')
-    #ipv6_address = os.environ['GLOBAL_IPV6']
-    ipv6_address = ''
+    ipv6_address = os.environ['GLOBAL_IPV6']
+    #ipv6_address = ''
 
     config['proxy_host'] = config['ipv4_address'] = ipv4_address
     config['ipv6_address'] = ipv6_address
