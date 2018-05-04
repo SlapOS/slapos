@@ -78,6 +78,11 @@ class TestIngestion(FluentdPluginTestCase):
       server = HTTPServer(server_address, TestServerHandler)
       cls.server_process = multiprocessing.Process(target=server.serve_forever)
       cls.server_process.start()
+      print("Server started...")
+      print("local ipv4 = ")
+      print(os.environ.get('LOCAL_IPV4'))
+      print("passed local ip")
+      print({{local_ip}})
 
     @classmethod
     def stopServer(cls):
