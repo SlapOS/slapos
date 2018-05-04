@@ -129,7 +129,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # TODO: log more details in this case
     assert software_status_dict['status_code'] == 0
 
-    instance_parameter_dict = cls.getInstanceParmeterDict()
+    instance_parameter_dict = cls.getInstanceParameterDict()
     instance_status_dict = slapos_controler.runComputerPartition(
         config,
         cluster_configuration=instance_parameter_dict,
