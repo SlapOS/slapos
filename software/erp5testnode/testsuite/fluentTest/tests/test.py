@@ -96,6 +96,7 @@ class TestIngestion(FluentdPluginTestCase):
     #  thread.start()
     #  print 'Starting http...'
     #  time.sleep(15)
+      print("for fake commit")
 
     def tearDown(self):
       self.stopServer()
