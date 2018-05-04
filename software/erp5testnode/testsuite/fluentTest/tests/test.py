@@ -81,8 +81,7 @@ class TestIngestion(FluentdPluginTestCase):
       print("Server started...")
       print("local ipv4 = ")
       print(os.environ.get('LOCAL_IPV4'))
-      print("passed local ip")
-      print({{local_ip}})
+      
 
     @classmethod
     def stopServer(cls):

@@ -114,5 +114,3 @@ environment =
   PATH=${buildout:bin-directory}:/usr/bin/:/bin/
   LOCAL_IPV4=$${slap-network-information:local-ipv4}
   GLOBAL_IPV6=$${slap-network-information:global-ipv6}
-context = 
-  key local_ip caddy-configuration:local_ip  
