@@ -68,7 +68,14 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    try:
+      cls._setUpClass()
+    except:
+      cls.stopSlapOSProcesses()
+      raise
 
+  @classmethod
+  def _setUpClass(cls):
     working_directory = os.environ.get(
         'SLAPOS_TEST_WORKING_DIR',
         os.path.join(os.path.dirname(__file__), '.slapos'))
@@ -158,7 +165,10 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
 
   @classmethod
-  def tearDownClass(cls):
-    # FIXME: if setUpClass fail, this is not called and leaks zombie processes
-    cls._process_manager.killPreviousRun()
+  def stopSlapOSProcesses(cls):
+    if hasattr(cls, '_process_manager'):
+      cls._process_manager.killPreviousRun()
 
+  @classmethod
+  def tearDownClass(cls):
+    cls.stopSlapOSProcesses()
