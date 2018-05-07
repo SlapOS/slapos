@@ -139,7 +139,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # TODO: log more details in this case
     assert software_status_dict['status_code'] == 0
 
-    instance_parameter_dict = cls.getInstanceParmeterDict()
+    instance_parameter_dict = cls.getInstanceParameterDict()
     instance_status_dict = slapos_controler.runComputerPartition(
         config,
         cluster_configuration=instance_parameter_dict,
@@ -158,7 +158,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
           partition_parameter_kw=instance_parameter_dict))
 
     # expose some class attributes so that tests can use them:
-    # the ComputerPartition instances, to getInstanceParmeterDict
+    # the ComputerPartition instances, to getInstanceParameterDict
     cls.computer_partition = computer_partition_list[0]
 
     # the path of the instance on the filesystem, for low level inspection
