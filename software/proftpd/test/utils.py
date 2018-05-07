@@ -83,8 +83,11 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # AF_UNIX path too long This `working_directory` should not be too deep.
     # Socket path is 108 char max on linux
     # https://github.com/torvalds/linux/blob/3848ec5/net/unix/af_unix.c#L234-L238
-    if len(working_directory + '/inst/supervisord.socket') > 108:
-      raise RuntimeError('working directory too deep, try setting SLAPOS_TEST_WORKING_DIR')
+    # Supervisord socket name contains the pid number, which is why we add
+    # .xxxxxxx in this check.
+    if len(working_directory + '/inst/supervisord.socket.xxxxxxx') > 108:
+      raise RuntimeError('working directory ( {} ) is too deep, try setting '
+              'SLAPOS_TEST_WORKING_DIR'.format(working_directory))
 
     if not os.path.exists(working_directory):
       os.mkdir(working_directory)
