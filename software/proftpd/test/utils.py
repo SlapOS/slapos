@@ -68,7 +68,14 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    try:
+      cls._setUpClass()
+    except:
+      cls.stopSlapOSProcesses()
+      raise
 
+  @classmethod
+  def _setUpClass(cls):
     working_directory = os.environ.get(
         'SLAPOS_TEST_WORKING_DIR',
         os.path.join(os.path.dirname(__file__), '.slapos'))
@@ -76,8 +83,11 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # AF_UNIX path too long This `working_directory` should not be too deep.
     # Socket path is 108 char max on linux
     # https://github.com/torvalds/linux/blob/3848ec5/net/unix/af_unix.c#L234-L238
-    if len(working_directory + '/inst/supervisord.socket') > 108:
-      raise RuntimeError('working directory too deep, try setting SLAPOS_TEST_WORKING_DIR')
+    # Supervisord socket name contains the pid number, which is why we add
+    # .xxxxxxx in this check.
+    if len(working_directory + '/inst/supervisord.socket.xxxxxxx') > 108:
+      raise RuntimeError('working directory ( {} ) is too deep, try setting '
+              'SLAPOS_TEST_WORKING_DIR'.format(working_directory))
 
     if not os.path.exists(working_directory):
       os.mkdir(working_directory)
@@ -128,7 +138,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # TODO: log more details in this case
     assert software_status_dict['status_code'] == 0
 
-    instance_parameter_dict = cls.getInstanceParmeterDict()
+    instance_parameter_dict = cls.getInstanceParameterDict()
     instance_status_dict = slapos_controler.runComputerPartition(
         config,
         cluster_configuration=instance_parameter_dict,
@@ -147,7 +157,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
           partition_parameter_kw=instance_parameter_dict))
 
     # expose some class attributes so that tests can use them:
-    # the ComputerPartition instances, to getInstanceParmeterDict
+    # the ComputerPartition instances, to getInstanceParameterDict
     cls.computer_partition = computer_partition_list[0]
 
     # the path of the instance on the filesystem, for low level inspection
@@ -158,7 +168,10 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
 
   @classmethod
-  def tearDownClass(cls):
-    # FIXME: if setUpClass fail, this is not called and leaks zombie processes
-    cls._process_manager.killPreviousRun()
+  def stopSlapOSProcesses(cls):
+    if hasattr(cls, '_process_manager'):
+      cls._process_manager.killPreviousRun()
 
+  @classmethod
+  def tearDownClass(cls):
+    cls.stopSlapOSProcesses()
