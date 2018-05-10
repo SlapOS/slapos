@@ -9,7 +9,7 @@
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] -%}
-{% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
+{% set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
 {% set slave_log_dict = {} -%}
 {% if extra_slave_instance_list -%}
 {%   set slave_instance_information_list = [] -%}
@@ -47,7 +47,6 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {# Loop throught slave list to set up slaves #}
 {% for slave_instance in slave_instance_list -%}
-{#   # Do all set and do upper, so it makes easy to read the file later #} 
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_type = slave_instance.get('type', '') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
@@ -57,10 +56,9 @@ crl = {{ custom_ssl_directory }}/crl/
 {%   set slave_logrotate_section = slave_reference + "-logs" -%}
 {%   set slave_password_section = slave_reference + "-password" -%}
 {%   set slave_ln_section = slave_reference + "-ln" -%}
-{%   set slave_htaccess_section = slave_reference + '-htaccess' %}
 
 {#   extend parts #}
-{%   do part_list.extend([slave_htaccess_section, slave_ln_section]) -%}
+{%   do part_list.extend([slave_ln_section]) -%}
 {%   do part_list.extend([slave_logrotate_section, slave_section_title]) -%}
 
 {%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" -%}
@@ -74,7 +72,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {#   Add slave log directory to the slave log access dict #}
 {%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
 
-{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('apache-ipv6') + ']:' + frontend_configuration.get('apache-https-port') + '/' + slave_reference.lower() + '/' %}
+{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
 {%   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
@@ -101,15 +99,18 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%   endif -%}
 
-{%   if not slave_instance.has_key('apache_custom_http') %}
+{%   if not slave_instance.has_key('apache_custom_http') and not slave_instance.has_key('apache_custom_https') %}
 {%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) -%}
 {%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) -%}
 {%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) -%}
 {%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
 {%   endif -%}
 
-[slave-log-directories]
+[slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
+
+[slave-password]
+{{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
 
 {# Set slave logrotate entry #}
 [{{slave_logrotate_section}}]
@@ -130,13 +131,6 @@ command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}
 recipe = slapos.cookbook:generate.password
 storage-path = {{apache_configuration_directory}}/.{{slave_reference}}.passwd
 bytes = 8
-
-{# Set up htaccess file for slave #}
-[{{slave_htaccess_section}}]
-recipe = plone.recipe.command
-stop-on-error = true
-htaccess-path = {{apache_configuration_directory}}/.{{slave_reference}}.htaccess
-command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${:htaccess-path} {{ slave_reference }} {{ '${' + slave_password_section + ':passwd}' }}
 
 {# ################################################## #}
 {# Set Slave Certificates if needed                   #}
@@ -162,6 +156,13 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%     endif -%}
 {%   endfor -%}
 
+{#-   Set Up Certs #}
+{%-   do slave_instance.__setitem__('login_certificate', login_certificate) %}
+{%-   do slave_instance.__setitem__('login_key', login_key) %}
+{%-   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
+{%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
+{%-   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
+{%-   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance -%}
 {%     set cert_title = '%s-crt' % (slave_reference) -%}
 {%     set key_title = '%s-key' % (slave_reference) -%}
@@ -320,6 +321,7 @@ extra-context =
 {% endfor %}
 
 [slave-log-directories]
+<= slave-log-directory-dict
 recipe = slapos.cookbook:mkdirectory
 
 {# Define log access #}
@@ -328,9 +330,19 @@ recipe = slapos.cookbook:mkdirectory
 template = {{frontend_configuration.get('template-log-access')}}
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 extra-context =
-    section slave_log_directory slave-log-directories
+    section slave_log_directory slave-log-directory-dict
+    section slave_password slave-password
     raw apache_log_directory {{apache_log_directory}}
     raw apache_configuration_directory {{apache_configuration_directory}}
+    raw local_ipv4 {{ local_ipv4 }}
+    raw local_ipv6 {{ local_ipv6 }}
+    raw https_port {{ https_port }}
+    raw http_port {{ http_port }}
+    raw global_ipv6 {{ global_ipv6 }}
+    raw login_certificate {{ login_certificate }}
+    raw login_key {{ login_key }}
+    raw access_log {{ access_log }}
+    raw error_log {{ error_log }}
 
 {# Publish information for the instance #}
 [publish-apache-information]

@@ -1,0 +1,95 @@
+# Automatically generated
+
+# As backend is trusting REMOTE_USER header unset it always
+# TODO-Caddy RequestHeader unset REMOTE_USER
+
+# TODO-Caddy <Directory {{ document_root }}>
+# TODO-Caddy   Require all granted
+# TODO-Caddy   Options -Indexes
+# TODO-Caddy   ErrorDocument 404 /notfound.html
+# TODO-Caddy   RewriteEngine on
+# TODO-Caddy   RewriteRule ^/?$ notfound.html [R=404,L]
+# TODO-Caddy </Directory>
+
+# The following directives modify normal HTTP response behavior to
+# handle known problems with browser implementations.
+# TODO-Caddy BrowserMatch "Mozilla/2" nokeepalive
+# TODO-Caddy BrowserMatch ".*MSIE.*" nokeepalive ssl-unclean-shutdown \
+# TODO-Caddy                         downgrade-1.0 force-response-1.0
+# TODO-Caddy BrowserMatch "RealPlayer 4\.0" force-response-1.0
+# TODO-Caddy BrowserMatch "Java/1\.0" force-response-1.0
+# TODO-Caddy BrowserMatch "JDK/1\.0" force-response-1.0
+# The following directive disables redirects on non-GET requests for
+# a directory that does not include the trailing slash.  This fixes a
+# problem with Microsoft WebFolders which does not appropriately handle
+# redirects for folders with DAV methods.
+# Same deal with Apple's DAV filesystem and Gnome VFS support for DAV.
+# TODO-Caddy BrowserMatch "Microsoft Data Access Internet Publishing Provider" redirect-carefully
+# TODO-Caddy BrowserMatch "MS FrontPage" redirect-carefully
+# TODO-Caddy BrowserMatch "^WebDrive" redirect-carefully
+# TODO-Caddy BrowserMatch "^WebDAVFS/1.[0123]" redirect-carefully
+# TODO-Caddy BrowserMatch "^gnome-vfs" redirect-carefully
+# TODO-Caddy BrowserMatch "^XML Spy" redirect-carefully
+# TODO-Caddy BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
+
+
+# Deflate
+# TODO-Caddy AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
+# TODO-Caddy BrowserMatch ^Mozilla/4 gzip-only-text/html
+# TODO-Caddy BrowserMatch ^Mozilla/4\.0[678] no-gzip
+# TODO-Caddy BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+
+# SSL Configuration
+# TODO-Caddy {% if slapparameter_dict.get('apache-ca-certificate') %}
+# TODO-Caddy SSLCACertificateFile {{ login_ca_crt }}
+# TODO-Caddy {% endif %}
+# TODO-Caddy SSLProtocol all -SSLv2 -SSLv3
+# TODO-Caddy SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+# TODO-Caddy SSLHonorCipherOrder on
+# TODO-Caddy <FilesMatch "\.(cgi|shtml|phtml|php)$">
+# TODO-Caddy       SSLOptions +StdEnvVars
+# TODO-Caddy </FilesMatch>
+# Accept proxy to sites using self-signed SSL certificates
+# TODO-Caddy SSLProxyCheckPeerCN off
+# TODO-Caddy SSLProxyCheckPeerExpire off
+
+import {{frontend_configuration.get('log-access-configuration')}}
+import {{ slave_configuration_directory }}/*.conf
+import {{ slave_with_cache_configuration_directory }}/*.conf
+
+https://[{{ global_ipv6 }}]:{{ https_port }}/, https://{{ local_ipv4 }}:{{ https_port }}/ {
+  tls {{ login_certificate }} {{ login_key }}
+  bind {{ local_ipv4 }}
+  status 404 /
+# TODO-Caddy   LogLevel notice
+# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  log / {{ access_log }} {combined}
+  errors {{ error_log }}
+}
+
+https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
+  tls {{ login_certificate }} {{ login_key }}
+  bind {{ local_ipv4 }}
+  basicauth "{{ username }}" {{ password }} {
+    "Server Status"
+    /
+  }
+  expvar
+  pprof
+# TODO-Caddy   LogLevel notice
+# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  log / {{ access_log }} {combined}
+  errors {{ error_log }}
+}
+
+http://[{{ global_ipv6 }}]:{{ http_port }}/, http://{{ local_ipv4 }}:{{ http_port }}/ {
+  bind {{ local_ipv4 }}
+  status 404 /
+# TODO-Caddy   LogLevel notice
+# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  log / {{ access_log }} {combined}
+  errors {{ error_log }}
+}
+
+# TODO-Caddy ErrorDocument 404 /notfound.html
+# TODO-Caddy RewriteRule (.*) /notfound.html [R=404,L]
