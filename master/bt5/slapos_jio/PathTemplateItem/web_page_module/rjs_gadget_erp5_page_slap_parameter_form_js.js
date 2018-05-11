@@ -259,6 +259,7 @@
         div_input = document.createElement("div");
         div_input.setAttribute("class", "input");
         if (json_field.properties[key].type === 'object') {
+           label.setAttribute("class", "slapos-parameter-dict-key");
           div_input = render_subform(json_field.properties[key],
             default_dict[key],
             div_input,
