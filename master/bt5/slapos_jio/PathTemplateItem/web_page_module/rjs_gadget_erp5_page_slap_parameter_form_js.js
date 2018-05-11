@@ -168,6 +168,8 @@
 
     if (json_field.type === "integer") {
       input.type = "number";
+    } else if (json_field.type === "number") {
+      input.type = "number";
     } else {
       input.type = "text";
     }
@@ -372,6 +374,7 @@
     } else {
       $(element).addClass("slapos-parameter-dict-key-colapse");
     }
+    console.log("COLLAPSED");
     return element;
   }
 
@@ -426,6 +429,7 @@
     }
 
     for (i = 0; i < label_list.length; i = i + 1) {
+      console.log(i);
       promise_list.push(loopEventListener(
         label_list[i],
         'click',
@@ -783,7 +787,7 @@
           var i, div_list = gadget.element.querySelectorAll('.slapos-parameter-dict-key > div'),
             label_list = gadget.element.querySelectorAll('label.slapos-parameter-dict-key');
 
-          console.log("Collapse paramaters");
+          // console.log("Collapse paramaters");
 
           for (i = 0; i < div_list.length; i = i + 1) {
             $(div_list[i]).hide();
@@ -794,9 +798,9 @@
           }
           return gadget;
         })
-        .push(function () {
-          console.log("FINISHED TO RENDER, RETURNING THE GADGET");
-          return gadget;
+        .push(function (gadget) {
+          /* console.log("FINISHED TO RENDER, RETURNING THE GADGET"); */
+          return loadEventList(gadget);
         })
 
         .fail(function (error) {
@@ -808,7 +812,7 @@
           return gadget.renderFailoverTextArea(parameter_xml, error.toString())
             .push(function () {
               error = undefined;
-              return gadget;
+              return loadEventList(gadget);
             });
         });
     })
