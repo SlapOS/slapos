@@ -80,8 +80,10 @@
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   }
-{% elif slave_type ==  'redirect' -%}
-# TODO-Caddy   RewriteRule  (.*)  {{ slave_parameter.get('https-url', slave_parameter.get('url', ''))}}$1 [R,L]
+{% elif slave_type ==  'redirect' and backend_url %}
+  redir 302 {
+    /  {{ backend_url }}{uri}
+  }
 {% else -%}
   {% if 'default-path' in slave_parameter %}
   redir 301 {
@@ -148,8 +150,10 @@
 
 {%- if https_only %}
   redir / https://{host}{uri}
-{% elif slave_type ==  'redirect' -%}
-# TODO-Caddy   RewriteRule     (.*)  {{slave_parameter.get('url', '')}}$1 [R,L]
+{% elif slave_type ==  'redirect' and slave_parameter.get('url', '') %}
+  redir 302 {
+    /  {{ slave_parameter.get('url', '') }}{uri}
+  }
 {% elif slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
     transparent
