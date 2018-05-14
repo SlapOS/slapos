@@ -26,6 +26,11 @@
 {%- if slave_parameter.get('path_to_ssl_ca_crt') %}
     clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
 {%- endif %}
+{%- if enable_h2 %}
+    alpn h2 http/1.1
+{%- else %}
+    alpn http/1.1
+{%- endif %}
   }
 # TODO-Caddy   # One Slave two logs
 # TODO-Caddy   LogLevel notice
@@ -36,10 +41,6 @@
 # TODO-Caddy   SSLProtocol all -SSLv2 -SSLv3
 # TODO-Caddy   SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
 # TODO-Caddy   SSLHonorCipherOrder on
-
-{% if enable_h2 %}
-# TODO-Caddy   Protocols h2 http/1.1
-{% endif -%}
 
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
@@ -129,10 +130,6 @@
 
 # TODO-Caddy   # Remove "Secure" from cookies, as backend may be https
 # TODO-Caddy   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
-{% if enable_h2 %}
-# TODO-Caddy   Protocols h2 http/1.1
-{% endif -%}
 
 {% if disable_no_cache_header %}
 # TODO-Caddy   RequestHeader unset Cache-Control
