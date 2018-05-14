@@ -19,6 +19,9 @@
 {{ https_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
 # TODO-Caddy  bind {{ local_ipv6 }}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+    status 501 /
+{%- endif %}
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
 {%- if slave_parameter.get('path_to_ssl_ca_crt') %}
     clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
@@ -30,14 +33,6 @@
   log / {{ slave_parameter.get('access_log') }} {combined}
   errors {{ slave_parameter.get('error_log') }}
 
-{% if ssl_proxy_verify -%}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter -%}
-# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
-{%   endif %}
-# TODO-Caddy   SSLProxyVerify require
-# TODO-Caddy   #SSLProxyCheckPeerCN on
-# TODO-Caddy   SSLProxyCheckPeerExpire on
-{% endif %}
 # TODO-Caddy   SSLProtocol all -SSLv2 -SSLv3
 # TODO-Caddy   SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
 # TODO-Caddy   SSLHonorCipherOrder on
@@ -67,6 +62,14 @@
   proxy / {{ backend_url }} {
     transparent
     timeout 600s
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
+{%-   endif %}
+{%- else %}
+    insecure_skip_verify
+{%- endif %}
   }
   {% if 'default-path' in slave_parameter %}
   redir 301 {
@@ -94,9 +97,14 @@
   proxy / {{ backend_url }} {
     transparent
     timeout 600s
-{%- if not ssl_proxy_verify %}
-    insecure_skip_verify
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
 {%-   endif %}
+{%- else %}
+    insecure_skip_verify
+{%- endif %}
   }
   {%-   endif %}
 {% endif -%}
@@ -105,18 +113,12 @@
 {{ http_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
 # TODO-Caddy  bind {{ local_ipv6 }}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+    status 501 /
+{%- endif %}
 
   log / {{ slave_parameter.get('access_log') }} {combined}
   errors {{ slave_parameter.get('error_log') }}
-
-{% if ssl_proxy_verify -%}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter -%}
-# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
-{%   endif %}
-# TODO-Caddy   SSLProxyVerify require
-# TODO-Caddy   #SSLProxyCheckPeerCN on
-# TODO-Caddy   SSLProxyCheckPeerExpire on
-{% endif %}
 
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
@@ -155,6 +157,14 @@
   proxy / {{ backend_url }} {
     transparent
     timeout 600s
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
+{%-   endif %}
+{%- else %}
+    insecure_skip_verify
+{%- endif %}
   }
   {% if 'default-path' in slave_parameter %}
   redir 301 {
@@ -177,9 +187,14 @@
   proxy / {{ slave_parameter.get('url', '') }} {
     transparent
     timeout 600s
-{%- if not ssl_proxy_verify %}
-    insecure_skip_verify
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
 {%-   endif %}
+{%- else %}
+    insecure_skip_verify
+{%- endif %}
   }
 {% endif -%}
 {% endif -%}
