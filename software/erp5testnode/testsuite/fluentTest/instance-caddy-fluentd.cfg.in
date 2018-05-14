@@ -28,7 +28,6 @@ home = $${:etc}/home
 ssl = $${:etc}/ssl
 working-dir = $${buildout:directory}/tmp/
 
-
 [runTest-instance]
 recipe = slapos.recipe.template
 url = ${template-test:output}
@@ -90,7 +89,6 @@ context =
 recipe = slapos.cookbook:publish
 secure_access = http://$${caddy-configuration:local_ip}:4443}
 
-
 [download-source]
 recipe = slapos.recipe.build:gitclone
 git-executable = ${git:location}/bin/git
@@ -117,4 +115,3 @@ environment =
   FLUENT_SERVICE = $${fluentd-service:path}
   SLAPOS_TEST_WORKING_DIR=$${directory:working-dir}
   CADDY_DIR = $${directory:etc}/caddy_pidfile
-  DEBUG=1

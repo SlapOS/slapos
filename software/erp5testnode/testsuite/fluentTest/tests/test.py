@@ -16,10 +16,7 @@ import utils
 import threading
 
 test_msg = "dummyInputSimpleIngest"
-#url = "http://$${caddy-configuration:local_ip}:8443"
-
 url = "http://" + os.environ.get('LOCAL_IPV4') + ":4443"
-#caddy_pidfile = "$${directory:etc}/caddy_pidfile"
 caddy_pidfile = os.environ.get('CADDY_DIR')
 posted_data = None
 all_data = []
@@ -47,7 +44,6 @@ class TestServerHandler(BaseHTTPRequestHandler):
         self._set_headers()
         self.wfile.write("<html><body><h1>hi!</h1></body></html>")
 
-
     def do_HEAD(self):
         self._set_headers()
 
@@ -60,8 +56,7 @@ class TestServerHandler(BaseHTTPRequestHandler):
 
         global posted_data
         posted_data = post_data
-        print("post data from do_POST")
-        print(posted_data)
+
         global all_data
         all_data.append(post_data.split(" ")[1])
         
@@ -80,26 +75,17 @@ class TestIngestion(FluentdPluginTestCase):
       time.sleep(10)
       print("server start")
       
-
     @classmethod
     def stopServer(cls):
       cls.server.shutdown()
       cls.server.server_close()
       print("serever shutdown")
       time.sleep(10)
-    
-  #  def setUp(self):
-  #    self.startServer()
-
-  #  def tearDown(self):
-  #    #self.stopServer()
-   #   time.sleep(10)
 
     def test_1_get(self):
       
       self.startServer()
       time.sleep(10)
-      print("start server")
       
       print("############## TEST 1 ##############")
       resp = requests.get(url)
@@ -112,15 +98,13 @@ class TestIngestion(FluentdPluginTestCase):
       print("############## TEST 2 ##############")
       start_fluentd_cat(test_msg, "tag_test_2")
       time.sleep(10)
-      print("posted data from test 2")
-      print(posted_data)
+      
       if posted_data:
         self.assertEqual(test_msg, posted_data.split(" ")[1])
       else:
         self.assertEqual(test_msg, posted_data)
       time.sleep(10)
       
-
     def test_3_keepAlive_on(self):
       print("############## TEST 3 ##############")
       s = requests.session()
@@ -168,17 +152,17 @@ class TestIngestion(FluentdPluginTestCase):
     def test_6_check_diff_tags(self):
       print("############## TEST 6 ##############")
       
-      start_fluentd_cat("dummyInputTags_6_1", "test_Tag_6_1")
-      time.sleep(2)
-      self.assertEqual("test_Tag_6_1", request_tag)
+      start_fluentd_cat("dummyInputTags_6_1", "tag_Test_6_1")
+      time.sleep(10)
+      self.assertEqual("tag_Test_6_1", request_tag)
       
-      start_fluentd_cat("dummyInputTags_6_2", "test_Tag_6_2")
+      start_fluentd_cat("dummyInputTags_6_2", "tag_Test_6_2")
       time.sleep(2)
-      self.assertEqual("test_Tag_6_2", request_tag)
+      self.assertEqual("tag_Test_6_2", request_tag)
       
-      start_fluentd_cat("dummyInputTags_6_3", "test_Tag_6_3")
+      start_fluentd_cat("dummyInputTags_6_3", "tag_Test_6_3")
       time.sleep(2)
-      self.assertEqual("test_Tag_6_3", request_tag)
+      self.assertEqual("tag_Test_6_3", request_tag)
       self.stopServer()
       time.sleep(10)
     
@@ -188,8 +172,6 @@ def start_fluentd_cat(test_msg, tag):
     os.environ["GEM_PATH"] = fluent_service + "/lib/ruby/gems/1.8/"
     fluentd_cat_exec_comand = fluent_service + '/bin/fluent-cat --none ' + tag + " -p 5438 "
     os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
-    print("Fluent-cat path")
-    print(fluentd_cat_exec_comand)
 
 def kill_caddy(caddy_pid):
     
