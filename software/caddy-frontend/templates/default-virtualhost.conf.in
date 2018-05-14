@@ -47,9 +47,7 @@
 {% endif -%}
 
 # TODO-Caddy   # Rewrite part
-# TODO-Caddy   ProxyPreserveHost On
 # TODO-Caddy   ProxyTimeout 600
-# TODO-Caddy   RewriteEngine On
 
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
@@ -68,14 +66,20 @@
 # TODO-Caddy   RequestHeader edit Accept-Encoding "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)" "gzip"
 {% endif %}
 
-{% if slave_type ==  'zope' -%}
+{% if slave_type ==  'zope' and backend_url %}
+  proxy / {{ backend_url }} {
+    transparent
+  }
   {% if 'default-path' in slave_parameter %}
-# TODO-Caddy   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  redir 301 {
+    if {path} is /
+    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+  }
   {% endif -%}
-  # First, we check if we have a zope backend server
-  # If so, let's use Virtual Host Monster rewrite
-  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-# TODO-Caddy   RewriteRule ^/(.*)$ {{ slave_parameter.get('https-url', slave_parameter.get('url', '')) }}/VirtualHostBase/https//%{SERVER_NAME}:{{ slave_parameter.get('virtualhostroot-https-port', '443') }}/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+  rewrite {
+    regexp (.*)
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
+  }
 {% elif slave_type ==  'redirect' -%}
 # TODO-Caddy   RewriteRule  (.*)  {{ slave_parameter.get('https-url', slave_parameter.get('url', ''))}}$1 [R,L]
 {% else -%}
@@ -113,14 +117,11 @@
 # TODO-Caddy   SSLProxyCheckPeerExpire on
 {% endif %}
 # TODO-Caddy   # Rewrite part
-# TODO-Caddy   ProxyPreserveHost On
 # TODO-Caddy   ProxyTimeout 600
 
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
 {% endif -%}
-# TODO-Caddy   RewriteEngine On
-
 # TODO-Caddy   # One Slave two logs
 # TODO-Caddy   LogLevel notice
 # TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
@@ -149,14 +150,20 @@
   redir / https://{host}{uri}
 {% elif slave_type ==  'redirect' -%}
 # TODO-Caddy   RewriteRule     (.*)  {{slave_parameter.get('url', '')}}$1 [R,L]
-{% elif slave_type ==  'zope' -%}
+{% elif slave_type ==  'zope' and backend_url %}
+  proxy / {{ backend_url }} {
+    transparent
+  }
   {% if 'default-path' in slave_parameter %}
-# TODO-Caddy   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  redir 301 {
+    if {path} is /
+    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+  }
   {% endif -%}
-  # First, we check if we have a zope backend server
-  # If so, let's use Virtual Host Daemon rewrite
-  # We suppose that Apache listens to 80 (even indirectly thanks to things like iptables)
-# TODO-Caddy   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/http/%{SERVER_NAME}:{{ slave_parameter.get('virtualhostroot-http-port', '80') }}/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+  rewrite {
+    regexp (.*)
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
+  }
 {% else -%}
   {% if 'default-path' in slave_parameter %}
   redir 301 {
