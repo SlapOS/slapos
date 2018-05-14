@@ -46,9 +46,6 @@
 # TODO-Caddy   Protocols h2 http/1.1
 {% endif -%}
 
-# TODO-Caddy   # Rewrite part
-# TODO-Caddy   ProxyTimeout 600
-
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
 {% endif -%}
@@ -69,6 +66,7 @@
 {% if slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
     transparent
+    timeout 600s
   }
   {% if 'default-path' in slave_parameter %}
   redir 301 {
@@ -95,6 +93,7 @@
 
   proxy / {{ backend_url }} {
     transparent
+    timeout 600s
 {%- if not ssl_proxy_verify %}
     insecure_skip_verify
 {%-   endif %}
@@ -118,8 +117,6 @@
 # TODO-Caddy   #SSLProxyCheckPeerCN on
 # TODO-Caddy   SSLProxyCheckPeerExpire on
 {% endif %}
-# TODO-Caddy   # Rewrite part
-# TODO-Caddy   ProxyTimeout 600
 
 {% if disable_via_header %}
 # TODO-Caddy   Header unset Via
@@ -157,6 +154,7 @@
 {% elif slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
     transparent
+    timeout 600s
   }
   {% if 'default-path' in slave_parameter %}
   redir 301 {
@@ -178,6 +176,7 @@
   {%- if slave_parameter.get('url', '') %}
   proxy / {{ slave_parameter.get('url', '') }} {
     transparent
+    timeout 600s
 {%- if not ssl_proxy_verify %}
     insecure_skip_verify
 {%-   endif %}
