@@ -2,11 +2,10 @@
 parts =
   slapos-test-runner
   directory
-  fluentdConfig
+  fluentd-config
   fluentd-service
   caddy-service
   publish-connection-information
-  runTest-instance
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -28,20 +27,13 @@ home = $${:etc}/home
 ssl = $${:etc}/ssl
 working-dir = $${buildout:directory}/tmp/
 
-[runTest-instance]
-recipe = slapos.recipe.template
-url = ${template-test:output}
-output = $${directory:bin}/test.py
-buildout-directory = $${buildout:directory}
-mode = 0700
-
 #################################
 # fluentd service
 #################################
 
-[fluentdConfig]
+[fluentd-config]
 recipe = slapos.recipe.template:jinja2
-template = ${template-fluentdConfig:output}
+template = ${template-fluentd-config:output}
 rendered = $${directory:etc}/fluentd-conf.cnf
 mode = 0600
 context =
@@ -87,7 +79,7 @@ context =
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-secure_access = http://$${caddy-configuration:local_ip}:4443}
+url = http://$${caddy-configuration:local_ip}:4443
 
 [download-source]
 recipe = slapos.recipe.build:gitclone

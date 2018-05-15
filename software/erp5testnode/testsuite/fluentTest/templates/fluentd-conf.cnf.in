@@ -3,13 +3,6 @@
   port 5438
 </source>
 
-#<source>
-#  @type dummy
-#  tag dummy
-#  dummy {"message":"yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay"}
-#</source>
-
-
 # HTTP input
 # http://localhost:8888/<tag>?json=<json>
 #<source>

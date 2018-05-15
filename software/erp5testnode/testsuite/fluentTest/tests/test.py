@@ -1,7 +1,3 @@
-#!${buildout:directory}/bin/${eggs:interpreter}
-# BEWARE: This file is operated by slapgrid
-# BEWARE: It will be overwritten automatically
-
 import unittest
 import requests
 from StringIO import StringIO
@@ -14,13 +10,10 @@ import os
 import time
 import utils
 import threading
+import subprocess
 
 test_msg = "dummyInputSimpleIngest"
-url = "http://" + os.environ.get('LOCAL_IPV4') + ":4443"
 caddy_pidfile = os.environ.get('CADDY_DIR')
-posted_data = None
-all_data = []
-request_tag = ""
 
 if os.environ.get('DEBUG'):
   import logging
@@ -34,6 +27,10 @@ class FluentdPluginTestCase(utils.SlapOSInstanceTestCase):
     return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
 class TestServerHandler(BaseHTTPRequestHandler):
+  
+    posted_data = None
+    all_data = []
+    request_tag = ""
 
     def _set_headers(self):
         self.send_response(200)
@@ -54,25 +51,21 @@ class TestServerHandler(BaseHTTPRequestHandler):
         self._set_headers()
         self.wfile.write(post_data)
 
-        global posted_data
-        posted_data = post_data
+        TestServerHandler.posted_data = post_data.split(" ")[1]
 
-        global all_data
-        all_data.append(post_data.split(" ")[1])
+        TestServerHandler.all_data.append(post_data.split(" ")[1])
         
-        global request_tag
-        request_tag = find_tag(self.requestline,"=", " ")
+        TestServerHandler.request_tag = find_tag(self.requestline,"=", " ")
 
 class TestIngestion(FluentdPluginTestCase):
-
+    
     @classmethod
     def startServer(cls):
       port=9443
-      server_address = (os.environ.get('LOCAL_IPV4'), port)
+      server_address = (os.environ['LOCAL_IPV4'], port)
       cls.server = HTTPServer(server_address, TestServerHandler)
       cls.thread = threading.Thread(target=cls.server.serve_forever)
       cls.thread.start()
-      time.sleep(10)
       print("server start")
       
     @classmethod
@@ -80,98 +73,118 @@ class TestIngestion(FluentdPluginTestCase):
       cls.server.shutdown()
       cls.server.server_close()
       print("serever shutdown")
-      time.sleep(10)
-
-    def test_1_get(self):
-      
+    
+    def setUp(self):
       self.startServer()
-      time.sleep(10)
+
+    def tearDown(self):
+      self.stopServer()
       
+    def test_get_request_responds_with_200(self):
+      '''
+        simple get request to be sure that server is up
+      '''
       print("############## TEST 1 ##############")
+      url  = self.computer_partition.getConnectionParameterDict()['url']
       resp = requests.get(url)
       self.assertEqual(resp.status_code, 200)
       print (resp.status_code)
 
-    def test_2_ingest(self):
+    def test_simple_ingest(self):
       
-      time.sleep(10)
       print("############## TEST 2 ##############")
-      start_fluentd_cat(test_msg, "tag_test_2")
+      start_fluentd_cat(self, test_msg, "tag_test_2")
       time.sleep(10)
+      self.assertEqual(test_msg, TestServerHandler.posted_data)
       
-      if posted_data:
-        self.assertEqual(test_msg, posted_data.split(" ")[1])
-      else:
-        self.assertEqual(test_msg, posted_data)
-      time.sleep(10)
-      
-    def test_3_keepAlive_on(self):
+    def test_keepAlive_on(self):
       print("############## TEST 3 ##############")
       s = requests.session()
       print("check connection type ")
       print(s.headers['Connection'])
       self.assertEqual('keep-alive', s.headers['Connection'])
 
-    def test_4_delay_15_mins(self):
+    def test_ingest_with_15mins_delay(self):
+      '''
+        sleep 15mins to test that connections doesn't break after long delay
+        and data is ingested correctly after the delay.
+      '''
       print("############## TEST 4 ##############")
-      # sleep 15mins to test that connections doesn't break after long delay
-      # and data is ingested correctly after the delay.
+      
       time.sleep(900)
-      start_fluentd_cat("dummyInputDelay", "tag_test_4")
+      start_fluentd_cat(self, "dummyInputDelay", "tag_test_4")
       time.sleep(15)
-      self.assertEqual("dummyInputDelay", posted_data.split(" ")[1])
+      self.assertEqual("dummyInputDelay", TestServerHandler.posted_data)
 
-    def test_5_caddy_restart(self):
+    def test_ingest_while_server_breakage(self):
+      '''
+         stop and then start caddy again to check that
+         fluentd plugin keeps message in a local buffer
+         and correctly sends them when caddy is back online
+      '''
       print("############## TEST 5 ##############")
 
       with open(caddy_pidfile) as f:
         caddy_pid = f.readline()
 
-      time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart1", "tag_test_5_1")
+      start_fluentd_cat(self, "dummyInputCaddyRestart1", "tag_test_5_1")
       time.sleep(10)
 
       kill_caddy(caddy_pid)
       time.sleep(10)
 
-      start_fluentd_cat("dummyInputCaddyRestart2 ", "tag_test_5_2")
+      start_fluentd_cat(self, "dummyInputCaddyRestart2 ", "tag_test_5_2")
       time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart3 ", "tag_test_5_3")
+      start_fluentd_cat(self, "dummyInputCaddyRestart3 ", "tag_test_5_3")
       time.sleep(10)
-      start_fluentd_cat("dummyInputCaddyRestart4 ", "tag_test_5_4")
+      start_fluentd_cat(self, "dummyInputCaddyRestart4 ", "tag_test_5_4")
       time.sleep(130)
 
       start_caddy(caddy_pid)
       time.sleep(15)
 
-      self.assertTrue("dummyInputCaddyRestart1" in all_data)
-      self.assertTrue("dummyInputCaddyRestart2" in all_data)
-      self.assertTrue("dummyInputCaddyRestart3" in all_data)
-      self.assertTrue("dummyInputCaddyRestart4" in all_data)
+      self.assertTrue("dummyInputCaddyRestart1" in TestServerHandler.all_data)
+      self.assertTrue("dummyInputCaddyRestart2" in TestServerHandler.all_data)
+      self.assertTrue("dummyInputCaddyRestart3" in TestServerHandler.all_data)
+      self.assertTrue("dummyInputCaddyRestart4" in TestServerHandler.all_data)
 
-    def test_6_check_diff_tags(self):
+    def test_ingest_with_diff_tags(self):
+      '''
+        ingest data with different tags
+      '''
       print("############## TEST 6 ##############")
       
-      start_fluentd_cat("dummyInputTags_6_1", "tag_Test_6_1")
+      start_fluentd_cat(self, "dummyInputTags_6_1", "tag_Test_6_1")
       time.sleep(10)
-      self.assertEqual("tag_Test_6_1", request_tag)
+      self.assertEqual("tag_Test_6_1", TestServerHandler.request_tag)
       
-      start_fluentd_cat("dummyInputTags_6_2", "tag_Test_6_2")
-      time.sleep(2)
-      self.assertEqual("tag_Test_6_2", request_tag)
-      
-      start_fluentd_cat("dummyInputTags_6_3", "tag_Test_6_3")
-      time.sleep(2)
-      self.assertEqual("tag_Test_6_3", request_tag)
-      self.stopServer()
+      start_fluentd_cat(self, "dummyInputTags_6_2", "tag_Test_6_2")
       time.sleep(10)
-    
-def start_fluentd_cat(test_msg, tag):
-
-    fluent_service = os.environ.get('FLUENT_SERVICE')
-    os.environ["GEM_PATH"] = fluent_service + "/lib/ruby/gems/1.8/"
-    fluentd_cat_exec_comand = fluent_service + '/bin/fluent-cat --none ' + tag + " -p 5438 "
-    os.system("echo + " + test_msg + " | " + fluentd_cat_exec_comand)
+      self.assertEqual("tag_Test_6_2", TestServerHandler.request_tag)
+      
+      start_fluentd_cat(self, "dummyInputTags_6_3", "tag_Test_6_3")
+      time.sleep(10)
+      self.assertEqual("tag_Test_6_3", TestServerHandler.request_tag)
+      
+def start_fluentd_cat(self, test_msg, tag):
+  """Feeds `test_msg` with `tag` to fluentd.
+  """ 
+  fluent_service = os.environ.get('FLUENT_SERVICE')
+  proc = subprocess.Popen(
+    [fluent_service + '/bin/fluent-cat',
+    '--none',
+     tag,
+    '-p',
+    '5438',
+    ],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    env={"GEM_PATH": fluent_service + "/lib/ruby/gems/1.8/" })
+  stdout, stderr = proc.communicate("+ " + test_msg)
+  self.assertEqual(0, proc.wait())
+  self.assertEqual('', stdout)
+  self.assertEqual('', stderr)
 
 def kill_caddy(caddy_pid):
     
