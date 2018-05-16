@@ -28,6 +28,7 @@ mysql-url-list = {{ dumps(slapparameter_dict['mysql-test-url-list']) }}
 kumofs-url = {{ dumps(slapparameter_dict['kumofs-url']) }}
 memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
 cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
+cloudooo-retry-count = {{ slapparameter_dict['cloudooo-retry-count'] }}
 test-instance-path = ${directory:unit-test-path}
 prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest.real

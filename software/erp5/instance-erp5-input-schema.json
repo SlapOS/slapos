@@ -194,6 +194,11 @@
       },
       "type": "object"
     },
+    "cloudooo-retry-count": {
+      "description": "Define retry count for cloudooo in network error case in test",
+      "type": "integer",
+      "default": 2
+    },
     "smtp": {
       "description": "Mail queuing and relay service",
       "additionalProperties": {
