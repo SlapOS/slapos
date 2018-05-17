@@ -187,12 +187,10 @@
       },
       "type": "object"
     },
-    "cloudooo": {
-      "description": "Format conversion service",
-      "additionalProperties": {
-        "$ref": "./instance-cloudooo-schema.json#/properties"
-      },
-      "type": "object"
+    "cloudooo-url": {
+      "description": "Format conversion service URL",
+      "pattern": "^https?://",
+      "type": "string"
     },
     "cloudooo-retry-count": {
       "description": "Define retry count for cloudooo in network error case in test",

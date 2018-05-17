@@ -3,8 +3,12 @@ Available ``software-type`` values
 
 - ``default``
 
-  Recommended for developemnt and production use. Automatic creation of
-  erp5-site.
+  Recommended for production use.
+
+- ``create-erp5-site``
+
+  Automated creation of ERP5Site instance, for easy deployment.
+  Usage in production discouraged due to the increased risk of data loss.
 
 Notes
 =====
@@ -14,9 +18,8 @@ front-end instance which is expected to contains the RewriteRules_ (or
 equivalent) needed to relocate Zope's urls via its VirtualHostMonster_. See the
 ``frontend`` erp5 instance parameter.
 
-Included cloudooo partition is **deprecated**. It is not recommended for
-intensive usage. See the ``cloudooo`` Software Release to setup a cloudooo
-cluster, more suitable for intensive usage.
+ERP5 defaults connect to the public cloudooo on https://cloudooo.erp5.net/.
+See the ``cloudooo`` Software Release to setup a cloudooo cluster if necessary.
 
 Replication
 ===========
@@ -84,7 +87,6 @@ This software release assigns the following port ranges by default:
   ====================  ==========
   memcached-persistent  2000-2009
   memcached-volatile    2010-2019
-  cloudooo              2020-2024
   smtp                  2025-2029
   neo (admin & master)  2050-2051
   mariadb               2099
