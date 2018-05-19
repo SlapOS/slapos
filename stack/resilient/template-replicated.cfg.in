@@ -140,8 +140,8 @@ takeover-{{namebase}}-{{id}}-password = ${request-{{namebase}}-pseudo-replicatin
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
 # XXX: don't use system executable
-input = inline:#!/bin/sh
-  PUBLIC_KEY_CONTENT="${request-{{namebase}}:connection-ssh-public-key})"
+input = inline:#!/bin/bash
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}:connection-ssh-public-key}"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
@@ -155,8 +155,8 @@ mode = 700
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
 # XXX: don't use system executable
-input = inline:#!/bin/sh
-  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key})"
+input = inline:#!/bin/bash
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key}"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
@@ -217,8 +217,8 @@ sla-{{ key }} = {{ value }}
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
 # XXX: don't use system executable
-input = inline:#!/bin/sh
-  PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}:connection-ssh-key})"
+input = inline:#!/bin/bash
+  PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi

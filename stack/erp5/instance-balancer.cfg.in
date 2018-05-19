@@ -161,6 +161,7 @@ extensions = jinja2.ext.do
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
+hash-files = ${haproxy-cfg:rendered}
 
 {# TODO: build socat and wrap it as "${directory:bin}/haproxy-ctl" to connect to "${haproxy-cfg-parameter-dict:socket-path}" #}
 

@@ -306,7 +306,7 @@ apachedex = ${monitor-directory:private}/apachedex
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
-command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --config "${apachedex-parameters:configuration}"
+command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration "${apachedex-parameters:configuration}"
 command = apachedex_every_23_hour
 
 [apachedex-parameters]

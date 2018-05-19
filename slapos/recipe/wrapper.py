@@ -36,6 +36,7 @@ class Recipe(GenericBaseRecipe):
     :param str wrapper-path: absolute path to file's destination
 
     :param lines wait-for-files: list of files to wait for
+    :param lines hash-files: list of files to be checked by hash
     :param str pidfile: path to pidfile ensure exclusivity for the process
     :param str private-dev-shm: size of private /dev/shm, using user namespaces
     :param bool reserve-cpu: command will ask for an exclusive CPU core
@@ -44,6 +45,7 @@ class Recipe(GenericBaseRecipe):
         args = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
+        hash_files = self.options.get('hash-files')
         pidfile = self.options.get('pidfile')
         private_dev_shm = self.options.get('private-dev-shm')
 
@@ -63,5 +65,20 @@ class Recipe(GenericBaseRecipe):
           kw['private_dev_shm'] = private_dev_shm
         if self.isTrueValue(self.options.get('reserve-cpu')):
           kw['reserve_cpu'] = True
+        if hash_files:
+          hash_file_list = hash_files.split()
+          hash = self.generateHashFromFiles(hash_file_list)
+          wrapper_path = "%s-%s" % (wrapper_path, hash)
 
         return self.createWrapper(wrapper_path, args, environment, **kw)
+
+    def generateHashFromFiles(self, file_list):
+      import hashlib
+      hasher = hashlib.md5()
+      for path in file_list:
+        with open(path, 'r') as afile:
+          buf = afile.read()
+        hasher.update("%s\n" % len(buf))
+        hasher.update(buf)
+      hash = hasher.hexdigest()
+      return hash

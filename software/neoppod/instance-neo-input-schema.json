@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Parameters to instantiate a NEO cluster. See https://lab.nexedi.com/nexedi/neoppod/blob/master/neo.conf for more information.",
   "additionalProperties": false,
-  "required": ["cluster"],
+  "require": ["cluster"],
   "properties": {
     "cluster": {
       "description": "Cluster unique identifier. Your last line of defense against mixing up NEO clusters and corrupting your data. Choose a unique value for each of your cluster.",
