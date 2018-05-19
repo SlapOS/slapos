@@ -12,7 +12,6 @@ import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 from DateTime import DateTime
-import json
 
 class DefaultScenarioMixin(TestSlapOSSecurityMixin):
 
@@ -25,6 +24,17 @@ class DefaultScenarioMixin(TestSlapOSSecurityMixin):
       preferred_credential_recovery_automatic_approval=0,
       preferred_credential_request_automatic_approval=1
     )
+
+    # Enable alarms for regularisation request
+    self.portal.portal_alarms.slapos_crm_create_regularisation_request.setEnabled(True)
+    self.portal.portal_alarms.slapos_crm_invalidate_suspended_regularisation_request.setEnabled(True)
+    self.portal.portal_alarms.slapos_crm_trigger_stop_reminder_escalation.setEnabled(True)
+    self.portal.portal_alarms.slapos_crm_trigger_stop_acknowledgment_escalation.setEnabled(True)
+    self.portal.portal_alarms.slapos_crm_trigger_delete_reminder_escalation.setEnabled(True)
+    self.portal.portal_alarms.slapos_crm_trigger_acknowledgment_escalation.setEnabled(True)
+
+    # Create akarls steps
+    self.createAlarmStep()
 
   @changeSkin('Hal')
   def joinSlapOS(self, web_site, reference):
