@@ -1,60 +1,12 @@
-
-div.subfield {
-  margin-left: 15px;
-}
-
-
-fieldset > .subfield { padding-left: 0}
-
-.subfield {
-  padding-left: 20px;
-}
-
-label.slapos-parameter-dict-key::before {
-  content: "\25BC  Parameter Entry: ";
-}
-
-label.slapos-parameter-dict-key-colapse::before {
-  content: "\25BA   Parameter Entry: ";
-}
-
-label.slapos-parameter-dict-key {
-  text-transform: capitalize;
-  /* display: block !important; */
-  width: 99%;
-  padding: 5px;
-  font-size: 110%;
-  line-height: 20px;
-  color: rgb(93, 128, 125) !important;
-  cursor: pointer;
-}
-
-div.slapos-parameter-dict-key {
-  margin-top: 10px;
-  background: rgb(239, 252, 249);
-  border: 1px solid rgb(233, 247, 253);
-  padding: 5px;
-}
-
-div.slapos-parameter-dict-key .subfield:last-child {
-  padding: 5px 5px 10px 20px;
-}
-
 #software-type {padding: 10px 0 0;}
 #software-type  .field[title='serialisation_type'] .input { padding-top: 0; }
 .subfield, #software-type .input{
   padding-top: 10px;
 }
 
-.subfield label, #software-type label {
-  display: inline-block;
-  margin-bottom: 1px;
-  color: rgb(124, 134, 149)
-}
-fieldset > .subfield > label { 
-  font-size: 113%;
-  color: rgb(112, 125, 136);
-}
+
+
+
 .subfield span {
   font-weight: normal;
   font-style: italic;
@@ -70,41 +22,11 @@ fieldset > .subfield > label {
   font-weight: 700;
 }
 
-.subfield input {
-  font-size: 100%;
-  width: 240px;
-}
+
 
 .input button {margin-left: 10px;}
 
-.add-sub-form {
-  background: #3498db;
-  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
-  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
-  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
-  background-image: -o-linear-gradient(top, #3498db, #2980b9);
-  background-image: linear-gradient(to bottom, #3498db, #2980b9);
-  -webkit-border-radius: 4;
-  -moz-border-radius: 4;
-  border-radius: 4px;
-  border: 1px solid #3498db;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: bold;
-  padding: 6px 20px;
-  text-decoration: none;
-  cursor: pointer;
-}
 
-.add-sub-form:hover {
-  background: #3cb0fd;
-  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
-  text-decoration: none;
-}
 
 .bt_close, .subfield .slapos-parameter-dict-key span.bt_close{
   padding: 0 6px;
@@ -146,15 +68,12 @@ margin: 5px 0 10px; max-height: 250px; width: 80%;}
 
 .subfield {
   padding-left: 20px;
-} 
+}
 
 label.slapos-parameter-dict-key::before {
   content: "Parameter Entry: ";
 }
 
-label.slapos-parameter-dict-key {
-  font-color: "red";
-}
 
 div.slapos-parameter-dict-key {
   margin-top: 10px;
@@ -164,7 +83,6 @@ div.slapos-parameter-dict-key {
 .subfield {
   padding-top: 3px;
 }
-
 textarea.slapos-parameter {
   width: 400px;
   height: 100px;
@@ -173,30 +91,107 @@ textarea.slapos-parameter {
 button.hidden-button {
   display: none;
 }
-
-.add-sub-form {
-  background: #3498db;
-  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
-  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
-  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
-  background-image: -o-linear-gradient(top, #3498db, #2980b9);
-  background-image: linear-gradient(to bottom, #3498db, #2980b9);
-  -webkit-border-radius: 28;
-  -moz-border-radius: 28;
-  border-radius: 28px;
-  font-family: Arial;
-  color: #ffffff;
-  font-size: 12px;
-  padding: 5px 20px 5px 20px;
-  text-decoration: none;
+label.slapos-parameter-dict-key::before {
+  content: "\25BC  Parameter Entry: ";
+}
+label.slapos-parameter-dict-key-colapse::before {
+  content: "\25BA   Parameter Entry: ";
+}
+div.slapos-parameter-dict-key {
+  margin-top: 10px;
+  background: rgb(239, 252, 249);
+  border: 1px solid rgb(233, 247, 253);
+  padding: 5px;
 }
 
-.add-sub-form:hover {
-  background: #3cb0fd;
-  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
-  text-decoration: none;
+/* cleanup */
+fieldset > .subfield > label:not(.slapos-parameter-dict-key) {
+  font-size: 113%;
+  color: rgb(112, 125, 136);
 }
+fieldset > div.subfield {
+  padding-left: 15px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.field input ~ span,
+.subfield input ~ span {
+  position: relative;
+  top: -30px;
+  pointer-events: none;
+  cursor: text;
+}
+.field input:not(:placeholder-shown) ~ span:not(.error),
+.subfield input:not(:placeholder-shown) ~ span:not(.error) {
+  visibility: hidden;
+}
+.field input ~ span:not(.error),
+.subfield input ~ span:not(.error) {
+  opacity: .7;
+}
+.field input:focus ~ span,
+.subfield input:focus ~ span {
+  visibility: hidden;
+}
+.subfield .input {
+  margin-bottom: -20px;
+}
+.subfield .error {
+  float: right;
+  margin-right: 30px;
+}
+.subfield .input textarea {
+  margin-bottom: 16px;
+}
+
+.slapos-show-raw-parameter,
+.slapos-parameter-dict-key,
+.slapos-show-form {
+  cursor: pointer;
+  font-style: italic;
+  font-size: 14px;
+  color: #000;
+}
+.slapos-show-form,
+.slapos-show-raw-parameter {
+  margin: 4px auto;
+  padding-left: 24px; /* add an icon? */
+}
+label.slapos-parameter-dict-key {
+  text-transform: capitalize;
+}
+label.slapos-parameter-dict-key ~ div.input label {
+  font-size: 113%;
+  color: rgb(112, 125, 136);
+}
+.slapos-parameter-dict-key label {
+  color: rgb(112, 125, 136);
+}
+/* add button */
+.slapos-parameter-dict-key ~ .subfield .input {
+  position: relative;
+  margin-bottom: 0;
+}
+.input .add-sub-form {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  text-decoration: none;
+  cursor: pointer;
+  color: #fff;
+  margin: 0;
+}
+.add-sub-form:before {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><path fill='#000' d='m6,17.16589l12.55862,0l0,-15.274l12.88276,0l0,15.274l12.55862,0l0,15.66822l-12.55862,0l0,15.274l-12.88276,0l0,-15.274l-12.55862,0l0,-15.66822z' fill-opacity='0.5'/></svg>");
+  background-size: contain;
+  content: "";
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  background-repeat: no-repeat;
+  top: 8px;
+  left: 4px;
+}
+

@@ -268,6 +268,7 @@
           input = render_field(json_field.properties[key], default_dict[key]);
           input.name = path + "/" + key;
           input.setAttribute("class", "slapos-parameter");
+          input.setAttribute("placeholder", " ");
           div_input.appendChild(input);
         }
         default_used_list.push(key);
@@ -297,6 +298,7 @@
           input = render_field({"type": "string"}, default_dict[key]);
           input.name = path + "/" + key;
           input.setAttribute("class", "slapos-parameter");
+          input.setAttribute("placeholder", " ");
           div_input.appendChild(input);
 
           default_used_list.push(key);
