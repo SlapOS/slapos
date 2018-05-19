@@ -126,7 +126,7 @@
         </item>
         <item>
             <key> <string>url_string</string> </key>
-            <value> <string>https://lab.node.vifib.com/nexedi/slapos/raw/1.0.56.1/software/re6stnet/software.cfg</string> </value>
+            <value> <string>https://lab.node.vifib.com/nexedi/slapos/raw/1.0.64/software/re6stnet/software.cfg</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -528,6 +528,51 @@
                     <state>
                       <tuple>
                         <float>1523893699.27</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>966.58932.21095.27750</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="4.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1526744862.92</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
