@@ -31,6 +31,8 @@ import socket
 from contextlib import closing
 import logging
 
+import xmlrpclib
+import supervisor.xmlrpc
 from erp5.util.testnode.SlapOSControler import SlapOSControler
 from erp5.util.testnode.ProcessManager import ProcessManager
 import slapos
@@ -175,3 +177,18 @@ class SlapOSInstanceTestCase(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     cls.stopSlapOSProcesses()
+
+  # utility methods
+  def getSupervisorRPCServer(self):
+    """Returns a XML-RPC connection to the supervisor used by slapos node
+
+    Refer to http://supervisord.org/api.html for details of available methods.
+    """
+    # xmlrpc over unix socket https://stackoverflow.com/a/11746051/7294664
+    return xmlrpclib.ServerProxy(
+       'http://slapos-supervisor',
+       transport=supervisor.xmlrpc.SupervisorTransport(
+           None,
+           None,
+           # XXX hardcoded socket path
+           serverurl="unix://{working_directory}/inst/supervisord.socket".format(**self.config)))
