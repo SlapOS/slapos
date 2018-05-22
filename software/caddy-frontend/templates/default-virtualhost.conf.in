@@ -42,15 +42,6 @@
 # TODO-Caddy   SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
 # TODO-Caddy   SSLHonorCipherOrder on
 
-{% if disable_via_header %}
-# TODO-Caddy   Header unset Via
-{% endif -%}
-
-{% if disable_no_cache_header %}
-# TODO-Caddy   RequestHeader unset Cache-Control
-# TODO-Caddy   RequestHeader unset Pragma
-{% endif -%}
-
 {%- for disabled_cookie in disabled_cookie_list %}
 # TODO-Caddy {{'  RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
 {% endfor -%}
@@ -61,6 +52,14 @@
 
 {% if slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
+{% if disable_via_header %}
+    header_downstream -Via
+{% endif -%}
+
+{% if disable_no_cache_header %}
+    header_upstream -Cache-Control
+    header_upstream -Pragma
+{% endif -%}
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
@@ -96,6 +95,14 @@
   {%- if backend_url %}
 
   proxy / {{ backend_url }} {
+{% if disable_via_header %}
+    header_downstream -Via
+{% endif -%}
+
+{% if disable_no_cache_header %}
+    header_upstream -Cache-Control
+    header_upstream -Pragma
+{% endif -%}
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
@@ -121,20 +128,12 @@
   log / {{ slave_parameter.get('access_log') }} {combined}
   errors {{ slave_parameter.get('error_log') }}
 
-{% if disable_via_header %}
-# TODO-Caddy   Header unset Via
-{% endif -%}
 # TODO-Caddy   # One Slave two logs
 # TODO-Caddy   LogLevel notice
 # TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
 # TODO-Caddy   # Remove "Secure" from cookies, as backend may be https
 # TODO-Caddy   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
-{% if disable_no_cache_header %}
-# TODO-Caddy   RequestHeader unset Cache-Control
-# TODO-Caddy   RequestHeader unset Pragma
-{% endif -%}
 
 {%- for disabled_cookie in disabled_cookie_list %}
 # TODO-Caddy {{'  RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
@@ -152,6 +151,14 @@
   }
 {% elif slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
+{% if disable_via_header %}
+    header_downstream -Via
+{% endif -%}
+
+{% if disable_no_cache_header %}
+    header_upstream -Cache-Control
+    header_upstream -Pragma
+{% endif -%}
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
@@ -182,6 +189,14 @@
   {% endif -%}
   {%- if slave_parameter.get('url', '') %}
   proxy / {{ slave_parameter.get('url', '') }} {
+{% if disable_via_header %}
+    header_downstream -Via
+{% endif -%}
+
+{% if disable_no_cache_header %}
+    header_upstream -Cache-Control
+    header_upstream -Pragma
+{% endif -%}
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}

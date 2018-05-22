@@ -317,6 +317,8 @@ extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
     raw cached_port {{ cached_port }}
     raw ssl_cached_port {{ ssl_cached_port }}
+    raw local_ipv4 {{ local_ipv4 }}
+    raw local_ipv6 {{ local_ipv6 }}
 {{ '\n' }}
 {% endfor %}
 
