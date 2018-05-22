@@ -9,6 +9,9 @@ Port {{ proftpd['sftp-port'] }}
 User {{ proftpd['user'] }}
 Group {{ proftpd['group'] }}
 
+ScoreboardFile {{ proftpd['scoreboard-file'] }}
+PidFile {{ proftpd['pid-file'] }}
+
 Umask 022
 AllowOverwrite on
 
@@ -63,5 +66,6 @@ BanTable {{ proftpd['ban-table'] }}
 # 5 failed login attemps in 5 minutes -> ban for 20 minutes
 BanOnEvent MaxLoginAttempts 5/00:05:00 00:20:00 "Too many Failed Login Attempts"
 BanControlsACLs all allow user {{ proftpd['user'] }}
-
-
+# This depends on a control socket
+ControlsSocket {{ proftpd['control-socket'] }}
+ControlsSocketOwner {{ proftpd['user'] }} {{ proftpd['group'] }}

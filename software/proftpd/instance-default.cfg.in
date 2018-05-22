@@ -62,6 +62,8 @@ url = sftp://[${:host}]:${:sftp-port}
 data-dir = ${directory:proftpd-dir}
 user=${proftpd-userinfo:pw-name}
 group=${proftpd-userinfo:gr-name}
+scoreboard-file=${directory:var}/proftpd.scoreboard
+pid-file=${directory:var}/proftpd.pid
 sftp-log=${directory:log}/proftpd-sftp.log
 xfer-log=${directory:log}/proftpd-xfer.log
 ban-log=${directory:log}/proftpd-ban.log
@@ -70,6 +72,7 @@ ssh-host-dsa-key=${ssh-host-dsa-key:output}
 ssh-host-ecdsa-key=${ssh-host-ecdsa-key:output}
 ssh-authorized-keys-dir = ${directory:ssh-authorized-keys-dir}
 ban-table=${directory:srv}/proftpd-ban-table
+control-socket=${directory:var}/proftpd.sock
 auth-user-file=${auth-user-file:output}
 
 recipe = slapos.cookbook:wrapper
