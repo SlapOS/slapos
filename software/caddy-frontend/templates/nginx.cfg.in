@@ -2,7 +2,6 @@
 https://www.example.org:$${nginx-configuration:port} {
   tls $${nginx-configuration:ssl_certificate} $${nginx-configuration:ssl_key}
   bind $${nginx-configuration:local_ip}
-# TODO-Caddy  bind {{ ipv6_addr }}
 # Serve an error 204 (No Content) for favicon.ico
 status 204 /favicon.ico
 status 404 /
@@ -10,7 +9,6 @@ status 404 /
 
 http://www.example.org:$${nginx-configuration:plain_port} {
   bind $${nginx-configuration:local_ip}
-# TODO-Caddy  bind {{ ipv6_addr }}
 # Serve an error 204 (No Content) for favicon.ico
 status 204 /favicon.ico
 status 404 /

@@ -18,7 +18,6 @@
 {%- endfor %}
 {{ https_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-# TODO-Caddy  bind {{ local_ipv6 }}
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
 {%- endif %}
@@ -120,7 +119,6 @@
 
 {{ http_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-# TODO-Caddy  bind {{ local_ipv6 }}
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
 {%- endif %}

@@ -225,7 +225,6 @@ filename = {{ '%s.conf' % slave_reference }}
 extra-context =
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
-    raw global_ipv6 {{ global_ipv6 }}
     raw local_ipv4 {{ local_ipv4 }}
     raw nginx_http_port {{ nginx_http_port }} 
     raw nginx_https_port {{ nginx_https_port }}
@@ -318,13 +317,50 @@ extra-context =
     raw cached_port {{ cached_port }}
     raw ssl_cached_port {{ ssl_cached_port }}
     raw local_ipv4 {{ local_ipv4 }}
-    raw local_ipv6 {{ local_ipv6 }}
 {{ '\n' }}
 {% endfor %}
 
 [slave-log-directories]
 <= slave-log-directory-dict
 recipe = slapos.cookbook:mkdirectory
+
+{#- Define IPv6 to IPV4 tunneling #}
+[tunnel-6to4-base]
+recipe = slapos.cookbook:wrapper
+ipv4 = ${slap-network-information:local-ipv4}
+ipv6 = ${slap-network-information:global-ipv6}
+wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
+command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+
+[tunnel-6to4-base-http_port]
+<= tunnel-6to4-base
+ipv4-port = {{ http_port }}
+ipv6-port = {{ http_port }}
+
+[tunnel-6to4-base-https_port]
+<= tunnel-6to4-base
+ipv4-port = {{ https_port }}
+ipv6-port = {{ https_port }}
+
+[tunnel-6to4-base-cached_port]
+<= tunnel-6to4-base
+ipv4-port = {{ cached_port }}
+ipv6-port = {{ cached_port }}
+
+[tunnel-6to4-base-ssl_cached_port]
+<= tunnel-6to4-base
+ipv4-port = {{ ssl_cached_port }}
+ipv6-port = {{ ssl_cached_port }}
+
+[tunnel-6to4-base-nginx_http_port]
+<= tunnel-6to4-base
+ipv4-port = {{ nginx_http_port }}
+ipv6-port = {{ nginx_http_port }}
+
+[tunnel-6to4-base-nginx_https_port]
+<= tunnel-6to4-base
+ipv4-port = {{ nginx_https_port }}
+ipv6-port = {{ nginx_https_port }}
 
 {# Define log access #}
 [apache-log-access]
@@ -337,10 +373,9 @@ extra-context =
     raw apache_log_directory {{apache_log_directory}}
     raw apache_configuration_directory {{apache_configuration_directory}}
     raw local_ipv4 {{ local_ipv4 }}
-    raw local_ipv6 {{ local_ipv6 }}
+    raw global_ipv6 {{ global_ipv6 }}
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
-    raw global_ipv6 {{ global_ipv6 }}
     raw login_certificate {{ login_certificate }}
     raw login_key {{ login_key }}
     raw access_log {{ access_log }}
@@ -364,6 +399,12 @@ parts +=
 {% endfor %}
     publish-apache-information
     apache-log-access
+    tunnel-6to4-base-http_port
+    tunnel-6to4-base-https_port
+    tunnel-6to4-base-cached_port
+    tunnel-6to4-base-ssl_cached_port
+    tunnel-6to4-base-nginx_http_port
+    tunnel-6to4-base-nginx_https_port
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
