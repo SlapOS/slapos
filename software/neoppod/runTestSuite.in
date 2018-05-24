@@ -12,6 +12,9 @@ SUMMARY_RE = re.compile(
   r' (.*) (?P<expected_count>\d+|\.) (.*) (?P<skip_count>\d+|\.)'
   r' (.*) (?P<duration>\d+(\.\d*)?|\.\d+)s', re.MULTILINE)
 
+PATH = os.environ['PATH']
+PATH = '{{ prepend_path }}' + (PATH and ':' + PATH)
+
 # NEO specific environment
 TEMP_DIRECTORY  = '{{directory.tmp}}'
 NEO_DB_SOCKET = '{{my_cnf_parameters.socket}}'
@@ -90,7 +93,8 @@ def main():
 
     args = [RUN_NEO_TESTS_COMMAND, '-ufz']
     command = ' '.join(args)
-    env = {'TEMP': temp,
+    env = {'PATH': PATH,
+           'TEMP': temp,
            'NEO_TESTS_ADAPTER': adapter,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
            'NEO_DB_USER': 'root'}
