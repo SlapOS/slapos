@@ -142,7 +142,7 @@ context =
     section directory         directory
     section my_cnf_parameters my-cnf-parameters
     raw     bin_directory     {{ bin_directory }}
-    raw     prepend_path      {{ ${mysqld:mysql-base-directory}/bin }}
+    raw     prepend_path      ${mysqld:mysql-base-directory}/bin
 {% endif -%}
 
 [buildout]
