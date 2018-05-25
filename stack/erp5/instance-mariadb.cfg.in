@@ -186,7 +186,12 @@ template = inline:#!{{ dash }}
     --skip-name-resolve \
     --datadir='${my-cnf-parameters:data-directory}' \
     --basedir='{{ parameter_dict['mariadb-location'] }}' \
-  && ODBCSYSINI='${my-cnf-parameters:etc-directory}' exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
+    && ODBCSYSINI='${my-cnf-parameters:etc-directory}' \
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ parameter_dict['unixodbc-location'] }}/lib \
+    {% for variable in slapparameter_dict.get('environment-variables', ()) %}
+    {{ variable }} \
+    {% endfor %}
+    exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
     --defaults-file='${my-cnf:rendered}' \
     "$@"
 rendered = ${directory:services}/mariadb

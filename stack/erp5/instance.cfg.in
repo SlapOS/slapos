@@ -139,6 +139,7 @@ mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 template-monitor = {{ template_monitor }}
+unixodbc-location = {{ unixodbc_location }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
