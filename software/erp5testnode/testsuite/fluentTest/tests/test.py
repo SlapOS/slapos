@@ -11,6 +11,7 @@ import time
 import utils
 import threading
 import subprocess
+import psutil
 
 test_msg = "dummyInputSimpleIngest"
 caddy_pidfile = os.environ.get('CADDY_DIR')
