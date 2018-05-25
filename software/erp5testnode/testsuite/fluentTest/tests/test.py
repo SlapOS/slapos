@@ -14,6 +14,8 @@ import subprocess
 
 test_msg = "dummyInputSimpleIngest"
 caddy_pidfile = os.environ.get('CADDY_DIR')
+with open(caddy_pidfile) as f:
+  caddy_pid = f.readline()
 
 if os.environ.get('DEBUG'):
   import logging
@@ -96,13 +98,20 @@ class TestIngestion(FluentdPluginTestCase):
       start_fluentd_cat(self, test_msg, "tag_test_2")
       time.sleep(10)
       self.assertEqual(test_msg, TestServerHandler.posted_data)
-      
+    
+    
     def test_keepAlive_on(self):
       print("############## TEST 3 ##############")
-      s = requests.session()
-      print("check connection type ")
-      print(s.headers['Connection'])
-      self.assertEqual('keep-alive', s.headers['Connection'])
+      
+      caddy_process = psutil.Process(int(caddy_pid)) 
+      port=9443
+    
+      start_fluentd_cat(self, "dummyInputDelayCheckKeepAlive", "tag_test_3")
+      time.sleep(10)
+
+      for conn in caddy_process.connections('inet'):
+        if len(conn.raddr) > 1 and  conn.laddr.port == 4443:
+          self.assertEqual('ESTABLISHED', conn.status) #conn.status == 'ESTABLISHED' :
 
     def test_ingest_with_15mins_delay(self):
       '''
@@ -123,9 +132,6 @@ class TestIngestion(FluentdPluginTestCase):
          and correctly sends them when caddy is back online
       '''
       print("############## TEST 5 ##############")
-
-      with open(caddy_pidfile) as f:
-        caddy_pid = f.readline()
 
       start_fluentd_cat(self, "dummyInputCaddyRestart1", "tag_test_5_1")
       time.sleep(10)
