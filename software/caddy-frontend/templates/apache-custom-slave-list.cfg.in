@@ -2,9 +2,9 @@
 
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
-{% set cache_port = apache_configuration.get('cache-port') %}
-{% set cached_port = apache_configuration.get('cache-through-port') %}
-{% set ssl_cached_port = apache_configuration.get('ssl-cache-through-port') %}
+{% set cache_port = caddy_configuration.get('cache-port') %}
+{% set cached_port = caddy_configuration.get('cache-through-port') %}
+{% set ssl_cached_port = caddy_configuration.get('ssl-cache-through-port') %}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
@@ -64,8 +64,8 @@ crl = {{ custom_ssl_directory }}/crl/
 {%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" -%}
 
 {#   Set Up log files #}
-{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([apache_log_directory, '%s_access_log' % slave_reference])) -%}
-{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([apache_log_directory, '%s_error_log' % slave_reference])) -%}
+{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) -%}
+{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) -%}
 {%   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) -%}
 {%   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) -%}
 
@@ -124,12 +124,12 @@ backup = {{ slave_log_folder }}
 [{{slave_ln_section}}]
 recipe = plone.recipe.command
 stop-on-error = false
-command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/apache-error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/apache-access.log
+command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log
 
 {# Set password for slave #}
 [{{slave_password_section}}]
 recipe = slapos.cookbook:generate.password
-storage-path = {{apache_configuration_directory}}/.{{slave_reference}}.passwd
+storage-path = {{caddy_configuration_directory}}/.{{slave_reference}}.passwd
 bytes = 8
 
 {# ################################################## #}
@@ -207,7 +207,7 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {%   if slave_type in NGINX_TYPE_LIST %}
 rendered = {{ nginx_configuration_directory }}/${:filename}
 {%   else %}
-rendered = {{ apache_configuration_directory }}/${:filename}
+rendered = {{ caddy_configuration_directory }}/${:filename}
 {%   endif %}
 
 
@@ -236,7 +236,7 @@ extra-context =
 {%   do part_list.append(check_error_log_section_title) -%}
 [{{ check_error_log_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600 
+command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600
 filename = {{ check_error_log_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 
@@ -310,7 +310,7 @@ recipe = slapos.cookbook:publish
 < = jinja2-template-base
 template = {{ template_cached_slave_configuration }}
 filename = {{ '%s.conf' % slave_reference }}
-rendered = {{ apache_cached_configuration_directory }}/${:filename}
+rendered = {{ caddy_cached_configuration_directory }}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
@@ -363,15 +363,15 @@ ipv4-port = {{ nginx_https_port }}
 ipv6-port = {{ nginx_https_port }}
 
 {# Define log access #}
-[apache-log-access]
+[caddy-log-access]
 < = jinja2-template-base
 template = {{frontend_configuration.get('template-log-access')}}
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
-    raw apache_log_directory {{apache_log_directory}}
-    raw apache_configuration_directory {{apache_configuration_directory}}
+    raw caddy_log_directory {{caddy_log_directory}}
+    raw caddy_configuration_directory {{caddy_configuration_directory}}
     raw local_ipv4 {{ local_ipv4 }}
     raw global_ipv6 {{ global_ipv6 }}
     raw https_port {{ https_port }}
@@ -382,7 +382,7 @@ extra-context =
     raw error_log {{ error_log }}
 
 {# Publish information for the instance #}
-[publish-apache-information]
+[publish-caddy-information]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
@@ -397,8 +397,8 @@ parts +=
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor %}
-    publish-apache-information
-    apache-log-access
+    publish-caddy-information
+    caddy-log-access
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
     tunnel-6to4-base-cached_port
