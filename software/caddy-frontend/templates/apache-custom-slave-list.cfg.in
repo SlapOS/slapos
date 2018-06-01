@@ -380,6 +380,7 @@ extra-context =
     raw login_key {{ login_key }}
     raw access_log {{ access_log }}
     raw error_log {{ error_log }}
+    raw not_found_file {{ not_found_file }}
 
 {# Publish information for the instance #}
 [publish-caddy-information]

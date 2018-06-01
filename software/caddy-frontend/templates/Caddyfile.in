@@ -1,16 +1,5 @@
 # Automatically generated
 
-# As backend is trusting REMOTE_USER header unset it always
-# TODO-Caddy RequestHeader unset REMOTE_USER
-
-# TODO-Caddy <Directory {{ document_root }}>
-# TODO-Caddy   Require all granted
-# TODO-Caddy   Options -Indexes
-# TODO-Caddy   ErrorDocument 404 /notfound.html
-# TODO-Caddy   RewriteEngine on
-# TODO-Caddy   RewriteRule ^/?$ notfound.html [R=404,L]
-# TODO-Caddy </Directory>
-
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
 # TODO-Caddy BrowserMatch "Mozilla/2" nokeepalive
@@ -57,14 +46,16 @@ import {{frontend_configuration.get('log-access-configuration')}}
 import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
-https://[{{ global_ipv6 }}]:{{ https_port }}/, https://{{ local_ipv4 }}:{{ https_port }}/ {
+:{{ https_port }} {
   tls {{ login_certificate }} {{ login_key }}
   bind {{ local_ipv4 }}
   status 404 /
 # TODO-Caddy   LogLevel notice
 # TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   log / {{ access_log }} {combined}
-  errors {{ error_log }}
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
 }
 
 https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
@@ -79,17 +70,16 @@ https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv
 # TODO-Caddy   LogLevel notice
 # TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   log / {{ access_log }} {combined}
-  errors {{ error_log }}
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
 }
 
-http://[{{ global_ipv6 }}]:{{ http_port }}/, http://{{ local_ipv4 }}:{{ http_port }}/ {
+:{{ http_port }} {
   bind {{ local_ipv4 }}
   status 404 /
-# TODO-Caddy   LogLevel notice
-# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
-  log / {{ access_log }} {combined}
-  errors {{ error_log }}
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
 }
-
-# TODO-Caddy ErrorDocument 404 /notfound.html
-# TODO-Caddy RewriteRule (.*) /notfound.html [R=404,L]
