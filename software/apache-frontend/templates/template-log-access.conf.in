@@ -9,8 +9,8 @@ Alias /{{slave}}/ {{directory}}/
   </Files>
   AuthType Basic
   AuthName "Log Access {{slave}}"
-  AuthUserFile "{{ apache_configuration_directory + '/.' + slave.upper() + '.htaccess'}}"
-  Require user {{slave.upper()}}
+  AuthUserFile "{{ apache_configuration_directory + '/.' + slave + '.htaccess'}}"
+  Require user {{slave}}
   Options Indexes FollowSymLinks
   Satisfy all
 </Directory>
