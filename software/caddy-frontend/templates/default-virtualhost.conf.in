@@ -31,10 +31,7 @@
     alpn http/1.1
 {%- endif %}
   }
-# TODO-Caddy   # One Slave two logs
-# TODO-Caddy   LogLevel notice
-# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
-  log / {{ slave_parameter.get('access_log') }} {combined}
+  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
 # TODO-Caddy   SSLProtocol all -SSLv2 -SSLv3
@@ -123,12 +120,8 @@
     status 501 /
 {%- endif %}
 
-  log / {{ slave_parameter.get('access_log') }} {combined}
+  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
-
-# TODO-Caddy   # One Slave two logs
-# TODO-Caddy   LogLevel notice
-# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
 # TODO-Caddy   # Remove "Secure" from cookies, as backend may be https
 # TODO-Caddy   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"

@@ -8,9 +8,7 @@ https://[{{ global_ipv6 }}]:{{ https_port }}/{{ slave }}, https://{{ local_ipv4 
     "Log Access {{ slave }}"
     /
   }
-# TODO-Caddy   LogLevel notice
-# TODO-Caddy   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
-  log / {{ access_log }} {combined}
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }
