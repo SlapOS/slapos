@@ -47,7 +47,6 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {# Loop throught slave list to set up slaves #}
 {% for slave_instance in slave_instance_list -%}
-{#   # Do all set and do upper, so it makes easy to read the file later #} 
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_type = slave_instance.get('type', '') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
