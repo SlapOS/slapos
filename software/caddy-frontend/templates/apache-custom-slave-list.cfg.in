@@ -45,7 +45,7 @@ certs = {{ custom_ssl_directory }}/certs/
 newcerts = {{ custom_ssl_directory }}/newcerts/
 crl = {{ custom_ssl_directory }}/crl/
 
-{# Loop throught slave list to set up slaves #}
+{# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list -%}
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_type = slave_instance.get('type', '') -%}

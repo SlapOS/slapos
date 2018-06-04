@@ -33,7 +33,7 @@ context =
 {%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') -%}
 {% endif -%}
 
-# Here we request individualy each frontend.
+# Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, frontend_quantity + 1) -%}
 {%   set frontend_name = "%s-%s" % (namebase, i) -%}
@@ -169,7 +169,7 @@ offline = true
 
 
 [slap_connection]
-# Kept for backward compatiblity
+# Kept for backward compatibility
 computer_id = ${slap-connection:computer-id}
 partition_id = ${slap-connection:partition-id}
 server_url = ${slap-connection:server-url}
