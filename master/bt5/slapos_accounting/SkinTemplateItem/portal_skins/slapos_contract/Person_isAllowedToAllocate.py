@@ -1,4 +1,7 @@
 portal = context.getPortalObject()
+if not portal.portal_preferences.getPreferredCloudContractEnabled():
+  return True
+
 person = context
 contract_portal_type = "Cloud Contract"
 
