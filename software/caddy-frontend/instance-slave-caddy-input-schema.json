@@ -1,0 +1,203 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "properties": {
+        "apache_custom_http": {
+            "default": "",
+            "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
+            "textarea": true,
+            "title": "HTTP configuration",
+            "type": "string"
+        },
+        "apache_custom_https": {
+            "default": "",
+            "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
+            "textarea": true,
+            "title": "HTTPS configuration",
+            "type": "string"
+        },
+        "custom_domain": {
+            "description": "Custom Domain to use for the website",
+            "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+            "title": "Custom Domain",
+            "type": "string"
+        },
+        "default-path": {
+            "default": "",
+            "description": "Provide default path to redirect user to when user access / (the site root)",
+            "title": "type:zope Default Path",
+            "type": "string"
+        },
+        "disable-no-cache-request": {
+            "default": "false",
+            "description": "If set to true, Cache-Control and Pragma requests headers will not be sent to cache and backend servers. This prevents clients from bypassing cache when enable_cache is true",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "enable_cache: Disable 'no-cache' requests",
+            "type": "string"
+        },
+        "disable-via-header": {
+            "default": "false",
+            "description": "If set to true, Via response headers will not be sent to client",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "enable_cache: Disable 'Via' headers from cache",
+            "type": "string"
+        },
+        "disabled-cookie-list": {
+            "default": "",
+            "description": "[NOT Implemented] List of Cookies separated by space that will not be sent to cache and backend servers. This is especially useful to discard analytics tracking cookies when using Vary: Cookie cache headers",
+            "title": "[NOT Implemented] Disabled Cookies",
+            "type": "string"
+        },
+        "enable-http2": {
+            "default": "true",
+            "description": "Use HTTP2 Protocol for the site",
+            "enum": [
+                "true",
+                "false"
+            ],
+            "title": "Enable HTTP2 Protocol",
+            "type": "string"
+        },
+        "enable_cache": {
+            "default": "false",
+            "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend Caddy and backend",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "Enable Cache",
+            "type": "string"
+        },
+        "https-only": {
+            "default": "false",
+            "description": "If set to true, http requests will be redirected to https",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "HTTPS Only",
+            "type": "string"
+        },
+        "https-url": {
+            "description": "HTTPS Url of the backend if it is diferent from url parameter",
+            "pattern": "^(http|https|ftp)://",
+            "title": "HTTPS Backend URL",
+            "type": "string"
+        },
+        "monitor-ipv4-test": {
+            "default": "",
+            "description": "IPv4 Address for the frontend keep monitoring with ping",
+            "title": "IPv4 Address to Monitor Packet Lost",
+            "type": "string"
+        },
+        "monitor-ipv6-test": {
+            "default": "",
+            "description": "IPv6 Address for the frontend keep monitoring with ping6 (without brackets)",
+            "title": "IPv6 Address to Monitor Packet Lost",
+            "type": "string"
+        },
+        "path": {
+            "default": "",
+            "description": "Path to proxy to in the backend",
+            "title": "type:zope Backend Path",
+            "type": "string"
+        },
+        "prefer-gzip-encoding-to-backend": {
+            "default": "false",
+            "description": "[NOT Implemented] If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "[NOT Implemented] Prefer gzip Encoding for Backend",
+            "type": "string"
+        },
+        "re6st-optimal-test": {
+            "default": "",
+            "description": "IPv6 and IPv6 Address for the frontend test if re6st is on the optimal status (use ipv6,ipv4)",
+            "title": "IPv6 and IPv4 Address to test Re6st",
+            "type": "string"
+        },
+        "server-alias": {
+            "default": "",
+            "description": "Server Alias List separated by space",
+            "title": "Server Alias",
+            "type": "string"
+        },
+        "ssl-proxy-verify": {
+            "default": "false",
+            "description": "[NOT Implemented] If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+            "enum": [
+                "false",
+                "true"
+            ],
+            "title": "[NOT Implemented] Verify Backend Certificates",
+            "type": "string"
+        },
+        "ssl_ca_crt": {
+            "default": "",
+            "description": "[NOT Implemented] Content of the CA certificate file",
+            "textarea": true,
+            "title": "[NOT Implemented] SSL Certificate Authority's Certificate",
+            "type": "string"
+        },
+        "ssl_crt": {
+            "default": "",
+            "description": "Content of the SSL Certificate file",
+            "textarea": true,
+            "title": "SSL Certificate",
+            "type": "string"
+        },
+        "ssl_key": {
+            "default": "",
+            "description": "Content of the SSL Key file",
+            "textarea": true,
+            "title": "SSL Key",
+            "type": "string"
+        },
+        "ssl_proxy_ca_crt": {
+            "default": "",
+            "description": "[NOT Implemented] Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
+            "title": "[NOT Implemented] SSL Backend Authority's Certificate",
+            "type": "string"
+        },
+        "type": {
+            "default": "",
+            "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope and redirect, not implemneted are notebook and eventsource.",
+            "enum": [
+                "",
+                "zope",
+                "redirect",
+                "notebook",
+                "eventsource"
+            ],
+            "title": "Backend Type",
+            "type": "string"
+        },
+        "url": {
+            "description": "Url of the backend",
+            "pattern": "^(http|https|ftp)://",
+            "title": "Backend URL",
+            "type": "string"
+        },
+        "virtualhostroot-http-port": {
+            "default": 80,
+            "description": "Port where http requests to frontend will be redirected.",
+            "title": "type:zope virtualhostroot-http-port",
+            "type": "integer"
+        },
+        "virtualhostroot-https-port": {
+            "default": 443,
+            "description": "Port where https requests to frontend will be redirected.",
+            "title": "type:zope virtualhostroot-https-port",
+            "type": "integer"
+        }
+    },
+    "title": "Input Parameters",
+    "type": "object"
+}
