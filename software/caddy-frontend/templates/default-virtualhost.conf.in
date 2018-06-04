@@ -48,6 +48,9 @@
 
 {% if slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
+
 {% if disable_via_header %}
     header_downstream -Via
 {% endif -%}
@@ -91,6 +94,9 @@
   {%- if backend_url %}
 
   proxy / {{ backend_url }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
+
 {% if disable_via_header %}
     header_downstream -Via
 {% endif -%}
@@ -142,6 +148,9 @@
   }
 {% elif slave_type ==  'zope' and backend_url %}
   proxy / {{ backend_url }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
+
 {% if disable_via_header %}
     header_downstream -Via
 {% endif -%}
@@ -180,6 +189,9 @@
   {% endif -%}
   {%- if slave_parameter.get('url', '') %}
   proxy / {{ slave_parameter.get('url', '') }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
+
 {% if disable_via_header %}
     header_downstream -Via
 {% endif -%}

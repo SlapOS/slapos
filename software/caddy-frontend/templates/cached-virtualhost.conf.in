@@ -17,6 +17,9 @@
 {%- endif %}
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
+
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
@@ -37,6 +40,8 @@
 {%- endif %}
 ##  tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }}
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
+    # As backend is trusting REMOTE_USER header unset it always
+    header_upstream -REMOTE_USER
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
