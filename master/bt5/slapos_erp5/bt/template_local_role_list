@@ -74,6 +74,7 @@ service_module/slapos_crm_stop_reminder
 service_module/slapos_crm_upgrade
 service_module/slapos_discount
 service_module/slapos_instance_cleanup
+service_module/slapos_instance_hosting
 service_module/slapos_instance_setup
 service_module/slapos_instance_subscription
 service_module/slapos_instance_update
