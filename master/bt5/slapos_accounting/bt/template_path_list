@@ -79,6 +79,7 @@ service_module/memory_used
 service_module/slapos_account_validation
 service_module/slapos_discount
 service_module/slapos_instance_cleanup
+service_module/slapos_instance_hosting
 service_module/slapos_instance_setup
 service_module/slapos_instance_subscription
 service_module/slapos_instance_subscription/default_ssl
