@@ -33,6 +33,7 @@ import StringIO
 import subprocess
 
 import pysftp
+import psutil
 from paramiko.ssh_exception import SSHException
 from paramiko.ssh_exception import AuthenticationException
 
@@ -203,4 +204,30 @@ class TestInstanceParameterPort(ProFTPdTestCase):
     self.assertEqual(self.free_port, sftp_url.port)
     self.assertTrue(self._getConnection())
 
+
+class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
+  """Make sure the instance only have files and socket in software dir.
+  """
+  def setUp(self):
+    """sets `self.proftpdProcess` to `psutil.Process` for the running proftpd in the instance.
+    """
+    all_process_info = self.getSupervisorRPCServer().supervisor.getAllProcessInfo()
+    # there is only one process in this instance
+    process_info, = [p for p in all_process_info if p['name'] != 'watchdog']
+    process = psutil.Process(process_info['pid'])
+    self.assertEqual('proftpd', process.name()) # sanity check
+    self.proftpdProcess = process
+
+  def test_only_write_file_in_instance_dir(self):
+    self.assertEqual(
+        [],
+        [f for f in self.proftpdProcess.open_files()
+         if f.mode != 'r'
+         if not f.path.startswith(self.computer_partition_root_path)])
+
+  def test_only_unix_socket_in_instance_dir(self):
+    self.assertEqual(
+        [],
+        [s for s in self.proftpdProcess.connections('unix')
+         if not s.laddr.startswith(self.computer_partition_root_path)])
 

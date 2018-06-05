@@ -25,6 +25,7 @@ repository = ${slapos-repository:location}
 [create-directory]
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
+working-dir = $${buildout:directory}/tmp/
 
 [slapos-test-runner]
 recipe = slapos.cookbook:wrapper
@@ -40,3 +41,4 @@ environment =
   PATH=${buildout:bin-directory}:/usr/bin/:/bin/
   LOCAL_IPV4=$${slap-configuration:ipv4-random}
   GLOBAL_IPV6=$${slap-configuration:ipv6-random}
+  SLAPOS_TEST_WORKING_DIR=$${create-directory:working-dir}

@@ -356,7 +356,7 @@ for hashfunction in md5sum sha1sum sha256sum sha512sum; do
 done
 
 for file in $(ls *.img); do
-  gzip -9 ${file}
+  gzip -9 -f ${file}
 done
 
 exit 0

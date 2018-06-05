@@ -127,6 +127,13 @@
       "description": "Contents of odbc.ini file, see unixodbc document",
       "default": "",
       "type": "string"
+    },
+    "environment-variables": {
+      "description": "Extra environment variables for mysqld may be required to use third party ODBC libraries for CONNECT storage engine.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     }
 
   }
