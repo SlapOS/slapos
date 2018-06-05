@@ -7,6 +7,7 @@ parts =
   cron-network-bench
   symlink-re6st-logs
   symlink-collected-logs
+  python-symlink
   monitor-collect-csv-wrapper
   monitor-base
   monitor-check-memory-usage
@@ -76,6 +77,11 @@ context =
   section monitor_rewrite_rule monitor-rewrite-rule
   section slave_information slap-configuration
   key monitor_private_hash slap-configuration:private-hash  
+
+[python-symlink]
+recipe = plone.recipe.command
+command = ln -sf {{ buildout_bin }}/pythonwitheggs ${monitor-directory:bin}/python
+update-command = ${:command}
 
 [monitor-collect-csv-wrapper]
 recipe = slapos.cookbook:wrapper
