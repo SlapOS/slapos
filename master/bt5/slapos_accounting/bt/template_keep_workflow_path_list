@@ -26,3 +26,4 @@ portal_rules/slapos_delivery_root_simulation_rule
 portal_rules/slapos_invoice_root_simulation_rule
 service_module/cpu_load_percent
 service_module/memory_used
+service_module/disk_used
