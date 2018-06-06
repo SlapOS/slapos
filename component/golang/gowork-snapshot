@@ -18,20 +18,20 @@ gogit_list() {
         importpath=${importpath%/.git}
         echo -ne "${importpath}\t"
         echo -ne "`git_upstream_url $repo`\t"
-        git -C $repo describe --long --always --abbrev=10
+        git --git-dir $repo describe --long --always --abbrev=10
     done
 }
 
 # git_upstream_url <repo>   - show current branch upstream URL
 git_upstream_url() {
     repo=$1
-    head="`git -C $repo symbolic-ref -q --short HEAD`"            # current branch - e.g. "master"
+    head="`git --git-dir $repo symbolic-ref -q --short HEAD`"            # current branch - e.g. "master"
     if [ -z $head ] ; then
         remote="origin" # If we are in detached HEAD, assume the upstream name is origin
     else
-        remote="`git -C $repo config --get branch.$head.remote`"  # upstream name, e.g. "origin"
+        remote="`git --git-dir $repo config --get branch.$head.remote`"  # upstream name, e.g. "origin"
     fi
-    url="`git -C $repo config --get remote.$remote.url`"          # upstream URL
+    url="`git --git-dir $repo config --get remote.$remote.url`"          # upstream URL
     if [ -z $url ] ; then
         echo "ERROR: Failed to guess upstream url from $repo" 1>&2
     fi
