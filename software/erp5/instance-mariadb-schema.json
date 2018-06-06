@@ -100,25 +100,16 @@
       "description": "Enable and define SSL support for network connections",
       "default": {},
       "properties": {
-        "ca-crt": {
-          "description": "Certificate Authority's certificate, in PEM format",
-          "type": "string"
+        "caucase-url":{
+          "title": "Caucase URL",
+          "description": "URL of caucase service to use. If not set, global setting will be used.",
+          "tyoe": "string"
         },
-        "crt": {
-          "description": "Server's certificate, in PEM format (mandatory to enable SSL support)",
-          "type": "string"
-        },
-        "key": {
-          "description": "Server's key, in PEM format (mandatory to enable SSL support)",
-          "type": "string"
-        },
-        "crl": {
-          "description": "Server's certificate revocation list, in PEM format",
-          "type": "string"
-        },
-        "cipher": {
-          "description": "Permissible cipher specifications, separated by colons",
-          "type": "string"
+        "max-crl-update-delay": {
+          "title": "Periodicity of CRL update (days)",
+          "description": "CRL will be updated from caucase as least this often.",
+          "type": "number",
+          "default": 1.0
         }
       },
       "type": "object"
