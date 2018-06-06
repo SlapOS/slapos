@@ -912,9 +912,54 @@ exit 0
     self.launcher.run()
     self.assertEquals(self.counter, 2)
 
+  def writeLatestPromiseResult(self):
+    state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME, 'my_promise.status.json')
+    result_string = """{
+  "result": {
+    "failed": true,
+    "message": "error",
+    "date": "%s",
+    "type": "Test Result"
+  },
+  "path": "%s/my_promise.py",
+  "name": "my_promise.py",
+  "execution-time": 0.1,
+  "title": "my_promise"
+}""" % (datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'), self.plugin_dir)
+
+    if not os.path.exists(os.path.dirname(state_file)):
+      os.makedirs(os.path.dirname(state_file))
+    with open(state_file, 'w') as f:
+      f.write(result_string)
+
+  def writeLatestBashPromiseResult(self, name="my_bash_promise"):
+    state_file = os.path.join(self.partition_dir, PROMISE_RESULT_FOLDER_NAME,
+                              '%s.status.json' % name)
+    result_string = """{
+  "result": {
+    "failed": true,
+    "message": "error",
+    "date": "%(date)s",
+    "type": "Test Result"
+  },
+  "path": "%(folder)s/%(name)s",
+  "name": "%(name)s",
+  "execution-time": 0.1,
+  "title": "%(name)s"
+}""" % {'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'),
+        'folder': self.legacy_promise_dir,
+        'name': name}
+
+    if not os.path.exists(os.path.dirname(state_file)):
+      os.makedirs(os.path.dirname(state_file))
+    with open(state_file, 'w') as f:
+      f.write(result_string)
+
   def test_runpromise_will_timeout(self):
     self.called = False
     promise_name = 'my_promise.py'
+    self.writeLatestPromiseResult()
+
     def test_method(result):
       self.called = True
       self.assertTrue(isinstance(result, PromiseQueueResult))
@@ -937,6 +982,7 @@ exit 0
   def test_runpromise_wrapped_will_timeout(self):
     promise_name = "my_bash_promise"
     promise_path = os.path.join(self.legacy_promise_dir, promise_name)
+    self.writeLatestBashPromiseResult()
     self.called = False
     with open(promise_path, 'w') as f:
       f.write("""#!/bin/bash
@@ -968,6 +1014,8 @@ echo "success"
     first_promise_path = os.path.join(self.legacy_promise_dir, first_promise)
     second_promise = "my_second_bash_promise"
     second_promise_path = os.path.join(self.legacy_promise_dir, second_promise)
+    self.writeLatestBashPromiseResult(first_promise)
+    self.writeLatestBashPromiseResult(second_promise)
 
     def createPromise(promise_path):
       with open(promise_path, 'w') as f:
@@ -983,6 +1031,37 @@ exit 1
     createPromise(second_promise_path)
     self.configureLauncher(timeout=0.5)
     # run promise will timeout
+    with self.assertRaises(PromiseError):
+      self.launcher.run()
+
+  def test_runpromise_timeout_fail_if_test(self):
+    promise_name = 'my_promise.py'
+
+    self.configureLauncher(timeout=1, enable_anomaly=False)
+    self.generatePromiseScript(promise_name, success=True, content="""import time
+    time.sleep(20)""", periodicity=0.01)
+
+    # timeout for the first time and raise
+    with self.assertRaises(PromiseError):
+      self.launcher.run()
+
+  def test_runpromise_fail_if_timeout_twice(self):
+    promise_name = 'my_promise.py'
+
+    self.configureLauncher(timeout=1, enable_anomaly=True)
+    self.generatePromiseScript(promise_name, success=True, content="""import time
+    time.sleep(20)""", periodicity=0.01)
+
+    # timeout for the first time, no raise
+    self.launcher.run()
+
+    # run promise will timeout and raise
+    time.sleep(1)
+    with self.assertRaises(PromiseError):
+      self.launcher.run()
+
+    # run promise will continue to raise
+    time.sleep(1)
     with self.assertRaises(PromiseError):
       self.launcher.run()
 
@@ -1410,3 +1489,4 @@ class TestSlapOSGenericPromise(TestSlapOSPromiseMixin):
 
 if __name__ == '__main__':
   unittest.main()
+

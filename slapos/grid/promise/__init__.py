@@ -315,10 +315,17 @@ class PromiseLauncher(object):
       mkdir_p(self.promise_output_dir)
       self._updateFolderOwner()
 
-  def _getErrorPromiseResult(self, promise_process, promise_name, promise_path,
+  def _generatePromiseResult(self, promise_process, promise_name, promise_path,
       message, execution_time=0):
     if self.check_anomaly:
-      result = AnomalyResult(problem=True, message=message)
+      problem = False
+      promise_result = self._loadPromiseResult(promise_process.getPromiseTitle())
+      if promise_result is not None and (promise_result.item.hasFailed() or
+          'error:' in promise_result.item.message.lower()):
+        # generate failure if latest promise result was error
+        # If a promise timeout it will return failure if the timeout occur again
+        problem = True
+      result = AnomalyResult(problem=problem, message=message)
     else:
       result = TestResult(problem=True, message=message)
     return PromiseQueueResult(
@@ -469,8 +476,8 @@ class PromiseLauncher(object):
         self.logger.info("Killing process %s..." % promise_name)
         killProcessTree(promise_process.pid, self.logger)
 
-      message = 'Promise timed out after %s seconds' % self.promise_timeout
-      queue_item = self._getErrorPromiseResult(
+      message = 'Error: Promise timed out after %s seconds' % self.promise_timeout
+      queue_item = self._generatePromiseResult(
         promise_process,
         promise_name=promise_name,
         promise_path=promise_path,
@@ -479,11 +486,11 @@ class PromiseLauncher(object):
       )
 
     if queue_item is None:
-      queue_item = self._getErrorPromiseResult(
+      queue_item = self._generatePromiseResult(
         promise_process,
         promise_name=promise_name,
         promise_path=promise_path,
-        message="No output returned by the promise",
+        message="Error: No output returned by the promise",
         execution_time=execution_time
       )
 
