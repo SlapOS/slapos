@@ -65,6 +65,7 @@ path = ${directory:promises}/zeo-{{ family }}
 {%   set known_tid_storage_identifier_dict = () %}
 {%   set tidstorage_repozo_path = '' -%}
 {% else -%}
+
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) }}
@@ -101,19 +102,6 @@ cron-entries = ${cron:cron-entries}
 name = tidstorage
 time = {{ dumps(backup_periodicity) }}
 command = ${tidstorage:repozo-wrapper}
-{% endif -%}
-
-[publish]
-recipe = slapos.cookbook:publish.serialised
-storage-dict = {{ dumps(storage_dict) }}
-{% if len(known_tid_storage_identifier_dict) > 1 -%}
-tidstorage-ip = ${tidstorage:ip}
-tidstorage-port = ${tidstorage:port}
-{% else -%}
-tidstorage-ip =
-tidstorage-port =
-{% endif -%}
-monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
@@ -167,6 +155,20 @@ input = inline: #!/bin/sh
   exit $EXIT_CODE
 output = ${directory:srv}/runner-import-restore
 mode = 755
+
+{% endif -%}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+storage-dict = {{ dumps(storage_dict) }}
+{% if len(known_tid_storage_identifier_dict) > 1 -%}
+tidstorage-ip = ${tidstorage:ip}
+tidstorage-port = ${tidstorage:port}
+{% else -%}
+tidstorage-ip =
+tidstorage-port =
+{% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
