@@ -246,6 +246,7 @@ class Software(object):
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
       self._set_ownership(self.software_path)
+      os.chmod(self.software_path, 0o755)
 
     extends_cache = tempfile.mkdtemp()
     self._set_ownership(extends_cache)
