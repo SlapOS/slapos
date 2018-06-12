@@ -14,7 +14,9 @@ logfile_maxbytes = %(supervisord_logfile_maxbytes)s
 nodaemon = %(supervisord_nodaemon)s
 pidfile = %(supervisord_pidfile)s
 logfile-backups = %(supervisord_logfile_backups)s
-minfds = %(supervisord_minfds)s
+# Do not set minfds. select() does not support file descriptors
+# greater than 1023.
+# minfds = 
 
 [unix_http_server]
 file=%(supervisord_socket)s
