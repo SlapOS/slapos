@@ -101,6 +101,7 @@ def createSupervisordConfiguration(instance_root, watchdog_command=''):
           'supervisord_pidfile': os.path.abspath(
               os.path.join(instance_root, 'var', 'run', 'supervisord.pid')),
           'supervisord_logfile_backups': '10',
+          'supervisord_minfds': '4096',
           'watchdog_command': watchdog_command,
       }
   )
