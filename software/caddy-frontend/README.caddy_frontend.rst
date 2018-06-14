@@ -355,9 +355,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
   ProxyTimeout 600
   RewriteEngine On
 
-  # Remove "Secure" from cookies, as backend may be https
-  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
   # Not using HTTPS? Ask that guy over there.
   # Dummy redirection to https. Note: will work only if https listens
   # on standard port (443).
@@ -432,8 +429,6 @@ the proxy::
   LogLevel info
   LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
   CustomLog "%(access_log)s" combined
-  # Remove "Secure" from cookies, as backend may be https
-  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
   # Not using HTTPS? Ask that guy over there.
   # Dummy redirection to https. Note: will work only if https listens
   # on standard port (443).

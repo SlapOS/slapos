@@ -129,9 +129,6 @@
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-# TODO-Caddy   # Remove "Secure" from cookies, as backend may be https
-# TODO-Caddy   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
 {%- for disabled_cookie in disabled_cookie_list %}
 # TODO-Caddy {{'  RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
 {% endfor -%}
