@@ -668,6 +668,9 @@ class Computer(object):
         except IndexError:
           pass
 
+      for manager in self._manager_list:
+        manager.formatTearDown(self)
+
 
 class Partition(object):
   """Represent a computer partition."""

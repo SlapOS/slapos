@@ -36,6 +36,10 @@ class Manager(object):
     """We don't need to mingle with software."""
     pass
 
+  def softwareTearDown(self, software):
+    """We don't need to mingle with software."""
+    pass
+
   def format(self, computer):
     """Create cgroup folder per-CPU with exclusive access to the CPU.
 
@@ -54,6 +58,9 @@ class Manager(object):
         fx.write("1")  # manages it exclusively
       with open(cpu_path + "/cpuset.mems", "wt") as fx:
         fx.write("0")  # it doesn't work without that
+
+  def formatTearDown(self, computer):
+    pass
 
   def instance(self, partition):
     """Control runtime state of the computer."""
@@ -134,6 +141,9 @@ class Manager(object):
         # if no exclusive CPU was assigned - write the PID back and try other time
         with open(request_file, "at") as fo:
           fo.write(str(request_pid) + "\n")
+
+  def instanceTearDown(self):
+    pass
 
   def _cpu_folder_list(self):
     """Return list of folders for exclusive cpu cores."""

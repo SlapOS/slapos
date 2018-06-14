@@ -580,6 +580,10 @@ stderr_logfile_backups=1
             self.logger.info('Destroying %r...' % software_release_uri)
             software.destroy()
             self.logger.info('Destroyed %r.' % software_release_uri)
+
+        # call manager for every software release
+        for manager in self._manager_list:
+          manager.softwareTearDown(software)
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
         software_release.error(traceback.format_exc(), logger=self.logger)
@@ -1037,6 +1041,11 @@ stderr_logfile_backups=1
                 self._checkPromiseAnomaly(local_partition, computer_partition)
               else:
                 self.logger.debug('Partition already up-to-date. skipping.')
+
+              # Run manager tear down
+              for manager in self._manager_list:
+                manager.instanceTearDown(local_partition)
+
               return
             else:
               # Periodicity forced processing this partition. Removing
@@ -1136,6 +1145,10 @@ stderr_logfile_backups=1
       raise e
     else:
       self.logger.removeHandler(partition_file_handler)
+
+    # Run manager tear down
+    for manager in self._manager_list:
+      manager.instanceTearDown(local_partition)
 
     # If partition has been successfully processed, write timestamp
     if timestamp:

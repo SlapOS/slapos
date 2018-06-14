@@ -25,13 +25,34 @@ class Manager(object):
     """
     pass
 
+  def formatTearDown(self, computer):
+    """Method called after `slapos node format` phase.
+
+    :param computer: slapos.format.Computer, formatted computer
+    """
+    pass
+
   def software(self, software):
     """Method called at `slapos node software` phase.
     """
     pass
 
+  def softwareTearDown(self, software):
+    """Method called after `slapos node software` phase.
+
+    :param computer: slapos.grid.SlapObject.Software, processed software
+    """
+    pass
+
   def instance(self, partition):
     """Method called at `slapos node instance` phase.
+    """
+    pass
+
+  def instanceTearDown(self, partition):
+    """Method  called after `slapos node instance` phase.
+
+    :param partition: slapos.grid.SlapObject.Partition, processed partition
     """
     pass
 
