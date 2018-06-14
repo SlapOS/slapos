@@ -438,34 +438,52 @@ class Partition(object):
     gid = stat_info.st_gid
     return (uid, gid)
 
+  def addProgramToGroup(self, partition_id, program_id, name, command,
+                        as_user=True):
+    if as_user:
+      uid, gid = self.getUserGroupId()
+    else:
+      uid, gid = 0, 0
+    self.partition_supervisor_configuration += '\n' + \
+      PROGRAM_PARTITION_TEMPLATE % {
+        'program_id': '{}_{}'.format(partition_id, program_id),
+        'program_directory': self.instance_path,
+        'program_command': command,
+        'program_name': name,
+        'instance_path': self.instance_path,
+        'user_id': uid,
+        'group_id': gid,
+        # As supervisord has no environment to inherit, setup a minimalistic one
+        'HOME': pwd.getpwuid(uid).pw_dir,
+        'USER': pwd.getpwuid(uid).pw_name,
+      }
+
+  def addCustomGroup(self, group_suffix, partition_id, program_list):
+    group_partition_template = pkg_resources.resource_stream(__name__,
+      'templates/group_partition_supervisord.conf.in').read()
+    group_id = '{}-{}'.format(partition_id, group_suffix)
+
+    self.supervisor_configuration_group += group_partition_template % {
+      'instance_id': group_id,
+      'program_list': ','.join(['{}_{}'.format(group_id, program_id)
+                                for program_id in program_list]),
+    }
+
+    return group_id
+
   def addServiceToGroup(self, partition_id, runner_list, path, extension=''):
-    uid, gid = self.getUserGroupId()
     for runner in runner_list:
-      self.partition_supervisor_configuration += '\n' + \
-          PROGRAM_PARTITION_TEMPLATE % {
-              'program_id': '_'.join([partition_id, runner]),
-              'program_directory': self.instance_path,
-              'program_command': os.path.join(path, runner),
-              'program_name': runner + extension,
-              'instance_path': self.instance_path,
-              'user_id': uid,
-              'group_id': gid,
-              # As supervisord has no environment to inherit, setup a minimalistic one
-              'HOME': pwd.getpwuid(uid).pw_dir,
-              'USER': pwd.getpwuid(uid).pw_name,
-          }
+      program_id = runner
+      program_name = runner + extension
+      program_command = os.path.join(path, runner)
+      self.addProgramToGroup(partition_id, program_id, program_name,
+                             program_command)
 
   def addServiceToCustomGroup(self, group_suffix, partition_id, runner_list,
       path, extension=''):
     """Add new services to supervisord that belong to specific group"""
-    group_partition_template = pkg_resources.resource_stream(__name__,
-      'templates/group_partition_supervisord.conf.in').read()
-    group_id = '-'.join([partition_id, group_suffix])
-    self.supervisor_configuration_group += group_partition_template % {
-        'instance_id': group_id,
-        'program_list': ','.join(['_'.join([group_id, runner])
-                                  for runner in runner_list])
-    }
+    group_id = self.addCustomGroup(group_suffix, partition_id,
+                                   runner_list)
     return self.addServiceToGroup(group_id, runner_list, path, extension)
 
   def updateSymlink(self, sr_symlink, software_path):
