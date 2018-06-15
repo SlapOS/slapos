@@ -2735,15 +2735,26 @@ exit 1  # do not proceed trying to use this software
 
 class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
 
-  def test_partition_instance_with_port_redirection(self):
+  def setUp(self):
+    MasterMixin.setUp(self)
     manager_list = slapmanager.from_config({'manager_list': 'portredir'})
     self.grid._manager_list = manager_list
 
-    computer = ComputerForTest(self.software_root, self.instance_root)
-    with httmock.HTTMock(computer.request_handler):
-      partition = computer.instance_list[0]
+    self.computer = ComputerForTest(self.software_root, self.instance_root)
+    self.partition = self.computer.instance_list[0]
+    self.instance_supervisord_config_path = os.path.join(
+      self.instance_root, 'etc/supervisord.conf.d/0.conf')
 
-      port_redirect_path = os.path.join(partition.partition_path,
+  def _mock_requests(self):
+    return httmock.HTTMock(self.computer.request_handler)
+
+  def _read_instance_supervisord_config(self):
+    with open(self.instance_supervisord_config_path) as f:
+      return f.read()
+
+  def test_partition_instance_with_port_redirection(self):
+    with self._mock_requests():
+      port_redirect_path = os.path.join(self.partition.partition_path,
                                         slapmanager.portredir.Manager.port_redirect_filename)
       with open(port_redirect_path, 'w+') as f:
         port_redirects = [
@@ -2755,19 +2766,63 @@ class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
         ]
         json.dump(port_redirects, f)
 
-      partition.requested_state = 'started'
-      partition.software.setBuildout(WRAPPER_CONTENT)
+      self.partition.requested_state = 'started'
+      self.partition.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
 
-      self.assertEqual(computer.sequence,
+      self.assertEqual(self.computer.sequence,
                        ['/getFullComputerInformation', '/availableComputerPartition',
                         '/startedComputerPartition'])
-      self.assertEqual(partition.state, 'started')
+      self.assertEqual(self.partition.state, 'started')
 
       # Check the socat command
-      partition_supervisord_config_path = os.path.join(self.instance_root,
-                                                       'etc/supervisord.conf.d/0.conf')
-      with open(partition_supervisord_config_path) as f:
-        partition_supervisord_config = f.read()
-      self.assertTrue('socat-{}'.format(1234) in partition_supervisord_config)
-      self.assertTrue('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321' in partition_supervisord_config)
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertIn('socat-{}'.format(1234), partition_supervisord_config)
+      self.assertIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
+
+  def test_partition_instance_change_portredir_config(self):
+    # We want the partition to just get updated, not recreated
+    self.partition.timestamp = str(int(time.time()))
+
+    with self._mock_requests():
+      port_redirect_path = os.path.join(self.partition.partition_path,
+                                        slapmanager.portredir.Manager.port_redirect_filename)
+      with open(port_redirect_path, 'w+') as f:
+        port_redirects = [
+          {
+            'srcPort': 1234,
+            'destPort': 4321,
+            'destAddress': '127.0.0.1',
+          },
+        ]
+        json.dump(port_redirects, f)
+
+      self.partition.requested_state = 'started'
+      self.partition.software.setBuildout(WRAPPER_CONTENT)
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+
+      self.assertEqual(self.computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition'])
+      self.assertEqual(self.partition.state, 'started')
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertIn('socat-{}'.format(1234), partition_supervisord_config)
+      self.assertIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
+
+      # Remove the port binding from config
+      with open(port_redirect_path, 'w+') as f:
+        json.dump([], f)
+
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+
+      self.assertEqual(self.computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition', '/startedComputerPartition'])
+      self.assertEqual(self.partition.state, 'started')
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-{}'.format(1234), partition_supervisord_config)
+      self.assertNotIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
