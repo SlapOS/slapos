@@ -1,14 +1,14 @@
 # Dummy site for starting Caddy correctly
-https://www.example.org:$${nginx-configuration:port} {
-  tls $${nginx-configuration:ssl_certificate} $${nginx-configuration:ssl_key}
-  bind $${nginx-configuration:local_ip}
+https://www.example.org:{{ port }} {
+  tls {{ ssl_certificate }} {{ ssl_key }}
+  bind {{ local_ip }}
 # Serve an error 204 (No Content) for favicon.ico
 status 204 /favicon.ico
 status 404 /
 }
 
-http://www.example.org:$${nginx-configuration:plain_port} {
-  bind $${nginx-configuration:local_ip}
+http://www.example.org:{{ plain_port }} {
+  bind {{ local_ip }}
 # Serve an error 204 (No Content) for favicon.ico
 status 204 /favicon.ico
 status 404 /
@@ -70,4 +70,4 @@ status 404 /
 # TODO-Caddy   proxy_temp_path $${directory:varnginx} 1 2;
 # TODO-Caddy }
 
-import $${nginx-configuration:slave-configuration-directory}/*.conf
+import {{ slave_configuration_directory }}/*.conf
