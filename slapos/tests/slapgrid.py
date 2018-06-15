@@ -2732,3 +2732,42 @@ exit 1  # do not proceed trying to use this software
                        ['/buildingSoftwareRelease', '/softwareReleaseError'])
       self.assertNotIn("file descriptors: leaked", software.error_log)
       self.assertIn("file descriptors: ok", software.error_log)
+
+class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
+
+  def test_partition_instance_with_port_redirection(self):
+    manager_list = slapmanager.from_config({'manager_list': 'portredir'})
+    self.grid._manager_list = manager_list
+
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+
+      port_redirect_path = os.path.join(partition.partition_path,
+                                        slapmanager.portredir.Manager.port_redirect_filename)
+      with open(port_redirect_path, 'w+') as f:
+        port_redirects = [
+          {
+            'srcPort': 1234,
+            'destPort': 4321,
+            'destAddress': '127.0.0.1',
+          },
+        ]
+        json.dump(port_redirects, f)
+
+      partition.requested_state = 'started'
+      partition.software.setBuildout(WRAPPER_CONTENT)
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+
+      self.assertEqual(computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition'])
+      self.assertEqual(partition.state, 'started')
+
+      # Check the socat command
+      partition_supervisord_config_path = os.path.join(self.instance_root,
+                                                       'etc/supervisord.conf.d/0.conf')
+      with open(partition_supervisord_config_path) as f:
+        partition_supervisord_config = f.read()
+      self.assertTrue('socat-{}'.format(1234) in partition_supervisord_config)
+      self.assertTrue('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321' in partition_supervisord_config)
