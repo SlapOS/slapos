@@ -103,7 +103,11 @@ class Manager(object):
       socat_dest = '{}:{}:{}'.format(socat_dest_type, dest_addr, dest_port)
       command.append(socat_dest)
 
+      # If source port >= 1024, we don't need to run as root
+      as_user = source_port >= 1024
+
       socat_programs.append({
+        'as_user': as_user,
         'command': ' '.join(command),
         'name': 'socat-{}'.format(source_port),
       })
@@ -116,7 +120,8 @@ class Manager(object):
                                          for program in socat_programs])
     for program in socat_programs:
       partition.addProgramToGroup(group_id, program['name'], program['name'],
-                                  program['command'], as_user=False)
+                                  program['command'],
+                                  as_user=program['as_user'])
 
     partition.writeSupervisorConfigurationFile()
 
