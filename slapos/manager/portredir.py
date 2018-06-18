@@ -78,6 +78,8 @@ class Manager(object):
     # Generate socat commands to run with supervisord
     socat_programs = []
     for port_redirect in port_redirects:
+      redir_type = port_redirect.get('type', 'tcp')
+
       source_port = port_redirect['srcPort']
       source_addr = port_redirect.get('srcAddress')
 
@@ -92,14 +94,16 @@ class Manager(object):
 
       command = ['socat']
 
-      socat_source_type = 'TCP4-LISTEN' if source_is_ipv4 else 'TCP6-LISTEN'
+      socat_source_version = 4 if source_is_ipv4 else 6
+      socat_source_type = '{rtype}{version}-LISTEN'.format(rtype=redir_type.upper(), version=socat_source_version)
       socat_source = '{}:{}'.format(socat_source_type, source_port)
       if source_addr is not None:
         socat_source += ',bind={}'.format(source_addr)
       socat_source += ',fork'
       command.append(socat_source)
 
-      socat_dest_type = 'TCP6' if dest_is_ipv6 else 'TCP4'
+      socat_dest_version = 6 if dest_is_ipv6 else 4
+      socat_dest_type = '{rtype}{version}'.format(rtype=redir_type.upper(), version=socat_dest_version)
       socat_dest = '{}:{}:{}'.format(socat_dest_type, dest_addr, dest_port)
       command.append(socat_dest)
 
@@ -109,7 +113,7 @@ class Manager(object):
       socat_programs.append({
         'as_user': as_user,
         'command': ' '.join(command),
-        'name': 'socat-{}'.format(source_port),
+        'name': 'socat-{}-{}'.format(redir_type.lower(), source_port),
       })
 
     # Generate supervisord configuration with socat processes added
