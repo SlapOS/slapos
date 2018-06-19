@@ -1,0 +1,10 @@
+[
+  {
+    "srcPort": 80,
+    "destPort": {{ http_port }}
+  },
+  {
+    "srcPort": 443,
+    "destPort": {{ https_port }}
+  }
+]
