@@ -1,0 +1,6 @@
+[
+  {
+    "srcPort": 53,
+    "destPort": {{ pdns['port'] }}
+  }
+]
