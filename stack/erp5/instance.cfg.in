@@ -148,6 +148,20 @@ filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
 
+# Keep cloudooo section for backward compatibility
+# Once the section is removed, ghost instances will keep failing until
+# garbage collection be implemented.
+[dynamic-template-cloudooo-legacy]
+recipe = collective.recipe.template
+input = inline:[buildout]
+  eggs-directory = ${buildout:eggs-directory}
+  develop-eggs-directory = ${buildout:develop-eggs-directory}
+  offline = true
+  parts =
+
+output = ${directory:directory/instance-cloudoo-legacy.cfg
+mode = 644
+
 # we need this value to be present in a section,
 # for slapos.cookbook:switch-softwaretype to work
 [dynamic-template-jupyter]
@@ -171,3 +185,6 @@ zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo-storage-mysql:rendered
 zope = dynamic-template-zope:rendered
 jupyter = dynamic-template-jupyter:rendered
+
+# Keep cloudooo backward compatibility
+cloudooo = dynamic-template-cloudooo-legacy:output
