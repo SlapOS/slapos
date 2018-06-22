@@ -12,3 +12,12 @@ Generally things to be done with ``caddy-frontend``:
  * simplify Jijna2 syntax and drop whitespace control, as it is not needed
  * make beautiful (eg. with whitespaces and nice comments) generated files (mostly Jinja2)
  * have ``caddy-frontend`` specific parameters, with backward compatibility to ``apache-frontend`` ones (like ``apache_custom_http`` --> ``caddy_custom_http``)
+ * change ``switch-softwaretype`` to way how ``software/erp5`` does, which will help with dropping jinja2 template for ``caddy-wrapper``, which is workaround for current situation https://lab.nexedi.com/nexedi/slapos/merge_requests/312#note_62678
+ * use `slapos!326 <https://lab.nexedi.com/nexedi/slapos/merge_requests/326>`_ instead of self-developed graceful restart scripts
+ * move out `test/utils.py` and use it from shared python distribution
+
+Things which can't be implemented:
+
+ * use certificates valid forever in tests using `cryptography <https://pypi.org/project/cryptography/>`_, with `available example <https://lab.nexedi.com/nexedi/caucase/blob/1c9b9b6dfb062551549566d9792a1608f5e0c2d9/caucase/ca.py#L460-552>`_
+
+   * **REASON**: it is impossible to generate certificate without `Not Valid After`, even with `cryptography <https://pypi.org/project/cryptography/>`_
