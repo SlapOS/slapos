@@ -69,7 +69,7 @@ class Recipe(GenericBaseRecipe):
     )
     common_list = (
       '--conversion_server_url=' + cloudooo_url,
-      '--conversion_server_retry_count=%s' % self.options['cloudooo-retry-count'],
+      '--conversion_server_retry_count=%s' % self.options.get('cloudooo-retry-count', 2),
       # BBB: We still have test suites that only accept the following 2 options.
       '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
       '--conversion_server_port=%s' % cloudooo_parsed.port,

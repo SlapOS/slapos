@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.65 (2018-06-22)
+-------------------
+
+* Automatic restart of services when configuration changes
+* erp5_test: define cloudooo-retry-count value in test
+* userinfo: expose values as string
+
 1.0.62 (2018-04-10)
 -------------------
 

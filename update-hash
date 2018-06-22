@@ -79,7 +79,7 @@ def main():
                                         open(
                                             os.path.join(
                                                 infile_dirname,
-                                                hash_file_path,
+                                                *hash_file_path.split('/')
                                             )
                                         ).read()
                                     ).hexdigest(),
