@@ -162,6 +162,22 @@ log_message "Building newest Software Release..."
 "$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
 "$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
 (tail -n 200 "$SLAPGRIDSRLOG" && false)
+
+contain_instance=0
+for folder in $srv_directory/runner/instance/slappart*/; do
+  if [ -f "$folder/buildout.cfg" ]; then
+    contain_instance=1
+  fi
+done
+
+# If instance do not contains template.cfg it means the user contains no instance.
+# so it is safer to assume that he is using slaprunner for develop buildout rather them slapos.
+if [ $contain_instance -eq 0 ]; then
+  log_message "None Instance were deployed with this software release, so skip to continue..."
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
+
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm "$srv_directory"/runner/instance/slappart*/srv/runner-import-restore || true
 log_message "Fixing Instances as needed after import..."
