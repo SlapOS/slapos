@@ -37,6 +37,7 @@ for instance in software_instance_list:
     has_newest_allocated_instance = True
     if instance.getPortalType() == "Software Instance" and \
         computer_partition.getParentValue().getAllocationScope() in ["open/friend", "open/public"] and \
+        instance.getSlapState() == "start_requested" and \
         instance.SoftwareInstance_hasReportedError():
       return context.HostingSubscription_createSupportRequestEvent(
         instance, 'slapos-crm-hosting-subscription-instance-state.notification')

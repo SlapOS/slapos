@@ -55,17 +55,18 @@ if aggregate_portal_type == "Hosting Subscription":
     if instance.getSlapState() not in ["start_requested", "stop_requested"]:
       continue
 
-    if instance.getAggregateValue() is not None:
+    if instance.getAggregate() is not None:
       has_newest_allocated_instance = True
       computer = instance.getAggregateValue().getParentValue()
       if instance.getPortalType() == "Software Instance" and \
           computer.getAllocationScope() in ["open/public", "open/friend"] and \
+          instance.getSlapState() == "start_requested" and \
           instance.SoftwareInstance_hasReportedError():
         message_list.append("%s has error (%s, %s at %s scope %s)" % (instance.getReference(), instance.getTitle(), 
                                                                       instance.getUrlString(), computer.getReference(),
                                                                       computer.getAllocationScope()))
       if instance.getPortalType() == "Software Instance" and \
-          instance.getAggregateValue().getParentValue().getAllocationScope() in ["closed/outdated", "open/personal"]: 
+          computer.getAllocationScope() in ["closed/outdated", "open/personal"]: 
         message_list.append("%s on a %s computer" % (instance, computer.getAllocationScope()) )
     else:
       message_list.append("%s is not allocated" % instance)
