@@ -2832,3 +2832,80 @@ class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
       partition_supervisord_config = self._read_instance_supervisord_config()
       self.assertNotIn('socat-tcp-{}'.format(1234), partition_supervisord_config)
       self.assertNotIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
+
+  def test_port_redirection_config_bad_source_port(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'srcPort': 'bad',
+          'destPort': 4321,
+          'destAddress': '127.0.0.1',
+        },
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-tcp-bad', partition_supervisord_config)
+      self.assertNotIn('socat TCP4-LISTEN:bad,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
+
+  def test_port_redirection_config_bad_dest_port(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'srcPort': 1234,
+          'destPort': 'wolf',
+          'destAddress': '127.0.0.1',
+        },
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-tcp-1234', partition_supervisord_config)
+      self.assertNotIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:wolf', partition_supervisord_config)
+
+  def test_port_redirection_config_bad_source_address(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'srcPort': 1234,
+          'srcAddress': 'bad',
+          'destPort': 4321,
+          'destAddress': '127.0.0.1',
+        },
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-tcp-1234', partition_supervisord_config)
+      self.assertNotIn('socat TCP4-LISTEN:1234,bind=bad,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
+
+  def test_port_redirection_config_bad_dest_address(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'srcPort': 1234,
+          'destPort': 4321,
+          'destAddress': 'wolf',
+        },
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-tcp-1234', partition_supervisord_config)
+      self.assertNotIn('socat TCP4-LISTEN:1234,fork TCP4:wolf:4321', partition_supervisord_config)
+
+  def test_port_redirection_config_bad_redir_type(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'type': 'htcpcp',
+          'srcPort': 1234,
+          'destPort': 4321,
+          'destAddress': '127.0.0.1',
+        },
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertNotIn('socat-htcpcp-1234', partition_supervisord_config)
+      self.assertNotIn('socat HTCPCP4-LISTEN:1234,fork HTCPCP4:127.0.0.1:4321', partition_supervisord_config)
