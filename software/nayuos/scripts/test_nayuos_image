@@ -12,8 +12,6 @@ BOARD=$1
 MOUNTPOINT="/tmp/${BOARD}"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
-GIT_CORE="usr/local/libexec/git-core/"
-GIT_EXPECTED_EXPORT="export GIT_EXEC_PATH=/usr/local/libexec/git-core"
 VIRTUALENV_BIN="usr/local/bin/virtualenv"
 CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
 
@@ -37,8 +35,6 @@ install -d "${MOUNTPOINT}"
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
-  gitcore=$(ls "${MOUNTPOINT}/${GIT_CORE}")
-  gitexport=$(grep "${GIT_EXPECTED_EXPORT}" "${MOUNTPOINT}/${BASHRC}")
   virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
   chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
 
@@ -66,19 +62,7 @@ else
 
   echo "* test if git core directory is not empty"
 
-  if [[ "${gitcore}" == "" ]] ; then
-    print_result ${FAILURE} "No git file in ${MOUNTPOINT}/${GIT_CORE}."
-  else
-    print_result ${SUCCESS} "git core directory exists and is not empty."
-  fi
-
   echo "* test bashrc changes for git paths quick fix"
-
-  if [[ "${gitexport}" == ""  ]] ; then
-    print_result ${FAILURE} "Expected alias for git command not in ${MOUNTPOINT}/${BASHRC}. There should be: ${GIT_EXPECTED_EXPORT}"
-  else
-    print_result ${SUCCESS} "git alias is correct."
-  fi
 
   echo "* test if virtualenv binary exists"
 
