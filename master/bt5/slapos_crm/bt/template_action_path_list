@@ -11,4 +11,5 @@ Regularisation Request | new_event
 Regularisation Request | view
 Support Request Module | rss_view
 Support Request Module | slapos_support_request_activity_report
+Support Request Module | support_request_monitor_link
 Support Request | view_monitoring
