@@ -45,7 +45,9 @@
         <item>
             <key> <string>text_content_warning_message</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>W:  6,  0: Unused import transaction (unused-import)</string>
+              </tuple>
             </value>
         </item>
         <item>

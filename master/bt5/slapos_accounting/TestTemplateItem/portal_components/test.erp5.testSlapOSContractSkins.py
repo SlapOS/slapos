@@ -3,6 +3,7 @@ from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 
 from zExceptions import Unauthorized
 from DateTime import DateTime
+import transaction
 
 class TestSlapOSSoftwareInstance_requestValidationPayment(SlapOSTestCaseMixinWithAbort):
 
@@ -262,36 +263,89 @@ class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
       )
 
   def test_not_allowed_by_default(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
     person = self.createPerson()
+    preference.setPreferredCloudContractEnabled(True)
+    result = person.Person_isAllowedToAllocate()
+    self.assertEquals(result, False)
+
+  def test_not_allowed_by_default_with_disabled_preference(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    person = self.createPerson()
+    preference.setPreferredCloudContractEnabled(False)
     result = person.Person_isAllowedToAllocate()
     self.assertEquals(result, False)
 
   def test_allowed_if_has_a_validated_contract(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
     person = self.createPerson()
     contract = self.createCloudContract()
     contract.edit(
       destination_section_value=person
     )
     self.portal.portal_workflow._jumpToStateFor(contract, 'validated')
+    preference.setPreferredCloudContractEnabled(True)
     self.tic()
     result = person.Person_isAllowedToAllocate()
     self.assertEquals(result, True)
 
+  def test_allowed_if_has_a_validated_contract_with_disabled_preference(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    person = self.createPerson()
+    contract = self.createCloudContract()
+    contract.edit(
+      destination_section_value=person
+    )
+    self.portal.portal_workflow._jumpToStateFor(contract, 'validated')
+    preference.setPreferredCloudContractEnabled(0)
+    self.tic()
+    result = person.Person_isAllowedToAllocate()
+    self.assertEquals(result, True)
+
+
   def test_not_allowed_if_has_an_invalidated_contract(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
     person = self.createPerson()
     contract = self.createCloudContract()
     contract.edit(
       destination_section_value=person
     )
     self.portal.portal_workflow._jumpToStateFor(contract, 'invalidated')
+    preference.setPreferredCloudContractEnabled(True)
+    self.tic()
+    result = person.Person_isAllowedToAllocate()
+    self.assertEquals(result, False)
+
+  def test_not_allowed_if_has_an_invalidated_contract_with_disabled_preference(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    person = self.createPerson()
+    contract = self.createCloudContract()
+    contract.edit(
+      destination_section_value=person
+    )
+    self.portal.portal_workflow._jumpToStateFor(contract, 'invalidated')
+    preference.setPreferredCloudContractEnabled(False)
     self.tic()
     result = person.Person_isAllowedToAllocate()
     self.assertEquals(result, False)
 
   def test_not_allowed_if_no_related_contract(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
     person = self.createPerson()
     contract = self.createCloudContract()
+    preference.setPreferredCloudContractEnabled(True)
     self.portal.portal_workflow._jumpToStateFor(contract, 'validated')
     self.tic()
     result = person.Person_isAllowedToAllocate()
     self.assertEquals(result, False)
+
+  def test_not_allowed_if_no_related_contract_with_disabled_preference(self):
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    person = self.createPerson()
+    contract = self.createCloudContract()
+    preference.setPreferredCloudContractEnabled(0)
+    self.portal.portal_workflow._jumpToStateFor(contract, 'validated')
+    self.tic()
+    result = person.Person_isAllowedToAllocate()
+    self.assertEquals(result, False)
+
