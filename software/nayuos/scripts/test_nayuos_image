@@ -12,7 +12,6 @@ BOARD=$1
 MOUNTPOINT="/tmp/${BOARD}"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
-VIRTUALENV_BIN="usr/local/bin/virtualenv"
 CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
 
 HAS_FAILED=0
@@ -35,9 +34,7 @@ install -d "${MOUNTPOINT}"
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
-  virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
   chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
-
 else
   is_empty=1
 fi
@@ -58,18 +55,6 @@ else
     print_result ${FAILURE} "opensshd config exists: ${opensshd_config}"
   else
     print_result ${SUCCESS} "opensshd config removed."
-  fi
-
-  echo "* test if git core directory is not empty"
-
-  echo "* test bashrc changes for git paths quick fix"
-
-  echo "* test if virtualenv binary exists"
-
-  if [[ ${virtualenvbin} ]] ; then
-    print_result ${SUCCESS} "virtualenv binary exists."
-  else
-    print_result ${FAILURE} "Expected virtualenv binary not in ${MOUNTPOINT}/${VIRTUALENV_BIN}."
   fi
 
   echo "* test if Chromium policies are installed"
