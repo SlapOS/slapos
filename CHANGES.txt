@@ -1,6 +1,15 @@
 Changes
 =======
 
+1.4.8 (2018-06-26)
+------------------
+ * format: fix brokend parse_computer_definition
+ * grid.promise: kill timed out promise process if terminate is not enough
+ * grid.promise: avoid blocking process while sending or receiving message from queue
+ * grid.promise: on promise timeout fail only if the problem is occurring a second time
+ * slapgrid: Do not set minfds. select() does not support file descriptors greater than 1023
+ * slapgrid: Set the minimum number of file descriptors.
+
 1.4.7 (2018-04-08)
 ------------------
  * grid.promise: loadModule is now done in PromiseProcess class
