@@ -218,6 +218,7 @@ context = key host_dict hosts-parameter:hostalias-dict
 [hosts]
 < = jinja2-template-base
 template = inline: {{ '
+  127.0.0.1 localhost
   {% for alias, aliased in host_dict.items() -%}
   {{ aliased }} {{ alias }}
   {% endfor %}
