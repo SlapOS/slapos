@@ -125,6 +125,43 @@
     return status;
   }
 
+  function getStatus(gadget) {
+    return new RSVP.Queue()
+      .push(function () {
+        return gadget.jio_get(gadget.options.value.jio_key);
+      })
+      .push(function (result) {
+        var monitor_url,
+           status_class = 'ui-btn-no-data',
+           status_title = 'Computer',
+           right_title = 'Partitions',
+           right_class = 'ui-btn-no-data',
+           status_style = "color: transparent !important;",
+           right_style = 'color: transparent !important;';
+
+        status_class = checkSiteStatus(result);
+        right_class = checkSitePartitionStatus(result);
+
+        right_style = '';
+        status_style = '';
+
+        if (status_class === 'ui-btn-no-data') {
+          status_style = "color: transparent !important;";
+        }
+        monitor_url = gadget.props.hateoas_url + gadget.options.value.jio_key + '/Base_redirectToMonitor';
+        gadget.element.innerHTML = inline_status_template({
+          monitor_url: monitor_url,
+          status_class: status_class,
+          status_title: status_title,
+          status_style: status_style,
+          right_class: right_class,
+          right_title: right_title,
+          right_style: right_style
+        });
+        return gadget;
+      }
+    );
+  }
 
   gadget_klass
     .ready(function (gadget) {
@@ -141,71 +178,20 @@
     .declareMethod("getContent", function () {
       return {};
     })
+
+    .declareJob("getStatus", function () {
+      var gadget = this;
+      return getStatus(gadget);
+    })
+    .onLoop(function () {
+      var gadget = this;
+      return getStatus(gadget);
+    }, 300000)
+
     .declareMethod("render", function (options) {
-      var gadget = this,
-        status_style,
-        middle_style,
-        queue = new RSVP.Queue();
-
-      function getStatus(options) {
-          queue.push(function () {
-            return gadget.jio_get(options.value.jio_key);
-          })
-          .push(function (result) {
-            var project,
-              data_supply_line,
-              data_supply_line_list,
-              count = 0,
-              tmp,
-              sum = 0,
-              i,
-              no_data = true,
-              no_data_since_24_hours = true,
-              value = "",
-              template,
-              monitor_url,
-              status_class = 'ui-btn-no-data',
-              status_title = 'Computer',
-              right_title = 'Partitions',
-              right_class = 'ui-btn-no-data',
-              status_style = "color: transparent !important;",
-              right_style = 'color: transparent !important;';
-
-            if ((options.value !== undefined) && (options.doc === undefined)) {
-              options.doc = options.value.doc;
-            }
-            status_class = checkSiteStatus(result);
-            right_class = checkSitePartitionStatus(result);
-
-            i = options;
-            // right_title = value.max? Math.round(value.max * 100 * 10) / 10 + '%': 'nan';
-            right_style = '';
-            status_style = '';
-
-            template = inline_status_template;
-
-            if (status_class === 'ui-btn-no-data') {
-              status_style = "color: transparent !important;";
-            }
-            monitor_url = gadget.props.hateoas_url + options.value.jio_key + '/Base_redirectToMonitor';
-            gadget.element.innerHTML = template({
-              monitor_url: monitor_url,
-              status_class: status_class,
-              status_title: status_title,
-              status_style: status_style,
-              middle_style: middle_style,
-              right_class: right_class,
-              right_title: right_title,
-              right_style: right_style
-            });
-            return RSVP.delay(300000);
-          })
-
-          .push(function () {
-            gadget.element.innerHTML = loading_template();
-            return getStatus(options);
-          });
-        }
-      return queue.push(getStatus(options));
+      var gadget = this;
+      gadget.options = options;
+      gadget.flag = options.value.jio_key;
+      return gadget.getStatus();
     });
 }(window, rJS, RSVP, Handlebars));
