@@ -4,18 +4,10 @@
 (function (window, rJS, RSVP, Handlebars) {
   "use strict";
   var gadget_klass = rJS(window),
-    sensor_status_source = gadget_klass.__template_element
-                         .getElementById("sensor-status-template")
-                         .innerHTML,
-    sensor_status_template = Handlebars.compile(sensor_status_source),
     inline_status_source = gadget_klass.__template_element
                          .getElementById("inline-status-template")
                          .innerHTML,
-    inline_status_template = Handlebars.compile(inline_status_source),
-    loading_source = gadget_klass.__template_element
-                         .getElementById("loading-template")
-                         .innerHTML,
-    loading_template = Handlebars.compile(loading_source);
+    inline_status_template = Handlebars.compile(inline_status_source);
 
   function checkComputerStatus(options) {
     if (!options) {
