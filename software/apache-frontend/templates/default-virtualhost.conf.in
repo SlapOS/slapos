@@ -123,9 +123,6 @@
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
-  # Remove "Secure" from cookies, as backend may be https
-  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
 {% if enable_h2 %}
   Protocols h2 http/1.1
 {% endif -%}
