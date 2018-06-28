@@ -10,6 +10,11 @@ from zope import interface
 
 logger = logging.getLogger(__name__)
 
+def _format_ip_addr(ip_addr):
+  if ip_addr.version == 6:
+    return '[{}]'.format(ip_addr)
+  return str(ip_addr)
+
 class Manager(object):
   interface.implements(IManager)
 
@@ -126,7 +131,7 @@ class Manager(object):
       command.append(socat_source)
 
       socat_dest_type = '{rtype}{version}'.format(rtype=redir_type.upper(), version=dest_addr.version)
-      socat_dest = '{}:{}:{}'.format(socat_dest_type, dest_addr, dest_port)
+      socat_dest = '{}:{}:{}'.format(socat_dest_type, _format_ip_addr(dest_addr), dest_port)
       command.append(socat_dest)
 
       # If source port >= 1024, we don't need to run as root

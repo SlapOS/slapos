@@ -2783,6 +2783,21 @@ class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
       self.assertIn('socat-tcp-{}'.format(1234), partition_supervisord_config)
       self.assertIn('socat TCP4-LISTEN:1234,fork TCP4:127.0.0.1:4321', partition_supervisord_config)
 
+  def test_ipv6_port_redirection(self):
+    with self._mock_requests():
+      self._setup_instance([
+        {
+          'srcPort': 1234,
+          'destPort': 4321,
+          'destAddress': '::1',
+        }
+      ])
+
+      # Check the socat command
+      partition_supervisord_config = self._read_instance_supervisord_config()
+      self.assertIn('socat-tcp-{}'.format(1234), partition_supervisord_config)
+      self.assertIn('socat TCP4-LISTEN:1234,fork TCP6:[::1]:4321', partition_supervisord_config)
+
   def test_udp_port_redirection(self):
     with self._mock_requests():
       self._setup_instance([
