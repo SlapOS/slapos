@@ -67,6 +67,5 @@ TestSlave-1/var/log/httpd/_url_https-url_error_log
 TestSlave-1/var/log/monitor-httpd-error.log
 TestSlave-1/var/log/nginx-access.log
 TestSlave-1/var/log/nginx-error.log
-TestSlave-1/var/log/trafficserver/diags.log
 TestSlave-1/var/log/trafficserver/manager.log
 TestSlave-1/var/log/trafficserver/traffic.out
