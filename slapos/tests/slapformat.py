@@ -44,6 +44,8 @@ import pwd
 import time
 import mock
 
+from .slapgrid import DummyManager
+
 USER_LIST = []
 GROUP_LIST = []
 INTERFACE_DICT = {}
@@ -881,6 +883,22 @@ class TestUser(SlapformatMixin):
   def test_isAvailable_notAvailable(self):
     user = slapos.format.User('doesnotexistsyet')
     self.assertFalse(user.isAvailable())
+
+
+class TestSlapformatManagerLifecycle(SlapformatMixin):
+
+  def test_partition_format(self):
+    computer = slapos.format.Computer('computer',
+                                      instance_root='/instance_root',
+                                      software_root='software_root')
+    manager = DummyManager()
+    computer._manager_list = [manager]
+
+    computer.format(alter_user=False, alter_network=False)
+
+    self.assertEqual(manager.sequence,
+                     ['format', 'formatTearDown'])
+
 
 if __name__ == '__main__':
       unittest.main()

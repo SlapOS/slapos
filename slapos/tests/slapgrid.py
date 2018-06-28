@@ -44,6 +44,7 @@ import re
 
 import xml_marshaller
 from mock import patch
+from zope import interface
 
 import slapos.slap.slap
 import slapos.grid.utils
@@ -52,6 +53,7 @@ from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog
 from slapos.grid import SlapObject
 from slapos.grid.SlapObject import WATCHDOG_MARK
+from slapos.manager.interface import IManager
 from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 import slapos.grid.SlapObject
 from slapos import manager as slapmanager
@@ -108,6 +110,7 @@ touch worked
 class BasicMixin(object):
   def setUp(self):
     self._tempdir = tempfile.mkdtemp()
+    self.manager_list = []
     self.software_root = os.path.join(self._tempdir, 'software')
     self.instance_root = os.path.join(self._tempdir, 'instance')
     if os.environ.has_key('SLAPGRID_INSTANCE_ROOT'):
@@ -131,6 +134,7 @@ class BasicMixin(object):
                                   self.buildout,
                                   develop=develop,
                                   logger=logging.getLogger())
+    self.grid._manager_list = self.manager_list
     # monkey patch buildout bootstrap
 
     def dummy(*args, **kw):
@@ -360,6 +364,8 @@ class ComputerForTest(object):
       # XXX hardcoded to first software release!
       software = self.software_list[0]
       software.sequence.append(url.path)
+      if url.path == '/availableSoftwareRelease':
+        return {'status_code': 200}
       if url.path == '/buildingSoftwareRelease':
         return {'status_code': 200}
       if url.path == '/softwareReleaseError':
@@ -543,6 +549,34 @@ touch worked"""):
     """
     with open(os.path.join(self.srdir, 'periodicity'), 'w') as fout:
       fout.write(str(periodicity))
+
+
+class DummyManager(object):
+  interface.implements(IManager)
+
+  def __init__(self):
+    self.sequence = []
+
+  def format(self, computer):
+    self.sequence.append('format')
+
+  def formatTearDown(self, computer):
+    self.sequence.append('formatTearDown')
+
+  def software(self, software):
+    self.sequence.append('software')
+
+  def softwareTearDown(self, software):
+    self.sequence.append('softwareTearDown')
+
+  def instance(self, partition):
+    self.sequence.append('instance')
+
+  def instanceTearDown(self, partition):
+    self.sequence.append('instanceTearDown')
+
+  def report(self, partition):
+    self.sequence.append('report')
 
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
@@ -2924,3 +2958,47 @@ class TestSlapgridWithPortRedirection(MasterMixin, unittest.TestCase):
       partition_supervisord_config = self._read_instance_supervisord_config()
       self.assertNotIn('socat-htcpcp-1234', partition_supervisord_config)
       self.assertNotIn('socat HTCPCP4-LISTEN:1234,fork HTCPCP4:127.0.0.1:4321', partition_supervisord_config)
+
+class TestSlapgridManagerLifecycle(MasterMixin, unittest.TestCase):
+
+  def setUp(self):
+    MasterMixin.setUp(self)
+
+    self.manager = DummyManager()
+    self.manager_list = [self.manager]
+    self.setSlapgrid()
+
+    self.computer = ComputerForTest(self.software_root, self.instance_root)
+
+  def _mock_requests(self):
+    return httmock.HTTMock(self.computer.request_handler)
+
+  def test_partition_instance(self):
+    with self._mock_requests():
+      partition = self.computer.instance_list[0]
+
+      partition.requested_state = 'started'
+      partition.software.setBuildout(WRAPPER_CONTENT)
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+
+      self.assertEqual(self.computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition'])
+      self.assertEqual(partition.state, 'started')
+
+      self.assertEqual(self.manager.sequence,
+                       ['instance', 'instanceTearDown'])
+
+  def test_partition_software(self):
+    with self._mock_requests():
+      software = self.computer.software_list[0]
+
+      buildout = """#!/bin/sh
+echo "Kitty cute kitkat"
+"""
+      software.setBuildout(buildout)
+      self.launchSlapgridSoftware()
+
+      self.assertEqual(self.manager.sequence,
+                       ['software', 'softwareTearDown'])
+
