@@ -31,6 +31,7 @@ import socket
 import subprocess
 from contextlib import closing
 import logging
+import StringIO
 import json
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -164,20 +165,43 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
   @classmethod
   def runSoftwareRelease(cls):
-    cls.software_status_dict = cls.slapos_controler.runSoftwareRelease(
-      cls.config, environment=os.environ)
-    # TODO: log more details in this case
-    assert cls.software_status_dict['status_code'] == 0
+
+    logger = logging.getLogger()
+    logger.level = logging.DEBUG
+    stream = StringIO.StringIO()
+    stream_handler = logging.StreamHandler(stream)
+    logger.addHandler(stream_handler)
+
+    try:
+      cls.software_status_dict = cls.slapos_controler.runSoftwareRelease(
+        cls.config, environment=os.environ)
+      stream.seek(0)
+      stream.flush()
+      assert cls.software_status_dict['status_code'] == 0, stream.read()
+    finally:
+      logger.removeHandler(stream_handler)
+      del stream
 
   @classmethod
   def runComputerPartition(cls):
+    logger = logging.getLogger()
+    logger.level = logging.DEBUG
+    stream = StringIO.StringIO()
+    stream_handler = logging.StreamHandler(stream)
+    logger.addHandler(stream_handler)
+
     instance_parameter_dict = cls.getInstanceParameterDict()
-    cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
+    try:
+      cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
         cls.config,
         cluster_configuration=instance_parameter_dict,
         environment=os.environ)
-    # TODO: log more details in this case
-    assert cls.instance_status_dict['status_code'] == 0
+      stream.seek(0)
+      stream.flush()
+      assert cls.instance_status_dict['status_code'] == 0, stream.read()
+    finally:
+      logger.removeHandler(stream_handler)
+      del stream
 
     # FIXME: similar to test node, only one (root) partition is really
     #        supported for now.
