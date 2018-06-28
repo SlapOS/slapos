@@ -1,18 +1,3 @@
-# Dummy site for starting Caddy correctly
-https://www.example.org:{{ port }} {
-  tls {{ ssl_certificate }} {{ ssl_key }}
-  bind {{ local_ip }}
-# Serve an error 204 (No Content) for favicon.ico
-status 204 /favicon.ico
-status 404 /
-}
-
-http://www.example.org:{{ plain_port }} {
-  bind {{ local_ip }}
-# Serve an error 204 (No Content) for favicon.ico
-status 204 /favicon.ico
-status 404 /
-}
 # TODO-Caddy worker_processes $${nginx-configuration:worker_processes};
 
 # TODO-Caddy events {
@@ -71,3 +56,26 @@ status 404 /
 # TODO-Caddy }
 
 import {{ slave_configuration_directory }}/*.conf
+
+:{{ port }} {
+  tls {{ ssl_certificate }} {{ ssl_key }}
+  bind {{ local_ip }}
+  # Serve an error 204 (No Content) for favicon.ico
+  status 204 /favicon.ico
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}
+
+:{{ plain_port }} {
+  bind {{ local_ip }}
+  # Serve an error 204 (No Content) for favicon.ico
+  status 204 /favicon.ico
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}

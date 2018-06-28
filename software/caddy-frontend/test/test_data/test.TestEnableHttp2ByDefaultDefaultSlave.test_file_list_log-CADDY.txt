@@ -8,6 +8,7 @@ TestEnableHttp2ByDefaultDefaultSlave-1/var/log/httpd/_enable-http2-false_error_l
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/httpd/_enable-http2-true_access_log
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/httpd/_enable-http2-true_error_log
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/monitor-httpd-error.log
+TestEnableHttp2ByDefaultDefaultSlave-1/var/log/nginx-access.log
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/nginx-error.log
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/trafficserver/manager.log
 TestEnableHttp2ByDefaultDefaultSlave-1/var/log/trafficserver/traffic.out
