@@ -1273,18 +1273,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       utils.der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(
-      result.status_code,
-      501
-    )
+    if IS_CADDY:
+      self.assertEqual(
+        result.status_code,
+        501
+      )
 
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      result_http = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-    self.assertEqual(
-      result_http.status_code,
-      501
-    )
+      self.assertEqual(
+        result_http.status_code,
+        501
+      )
+    else:
+      self.assertEqualResultJson(result, 'Path', '/test-path')
+
+      try:
+        j = result.json()
+      except Exception:
+        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+      self.assertEqual(
+        result.headers['Set-Cookie'],
+        'secured=value;secure, nonsecured=value'
+      )
+
+      result_http = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      self.assertEqualResultJson(result_http, 'Path', '/test-path')
+
+      try:
+        j = result_http.json()
+      except Exception:
+        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+      self.assertEqual(
+        result_http.headers['Set-Cookie'],
+        'secured=value;secure, nonsecured=value'
+      )
 
   def test_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1343,18 +1372,62 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       utils.der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(
-      result.status_code,
-      501
-    )
+    if IS_CADDY:
+      self.assertEqual(
+        result.status_code,
+        501
+      )
 
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      result_http = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-    self.assertEqual(
-      result_http.status_code,
-      501
-    )
+      self.assertEqual(
+        result_http.status_code,
+        501
+      )
+    else:
+      self.assertEqualResultJson(result, 'Path', '/test-path')
+
+      headers = result.headers.copy()
+
+      self.assertKeyWithPop('Via', headers)
+      self.assertKeyWithPop('Server', headers)
+      self.assertKeyWithPop('Date', headers)
+
+      # drop keys appearing randomly in headers
+      headers.pop('Transfer-Encoding', None)
+      headers.pop('Content-Length', None)
+      headers.pop('Connection', None)
+      headers.pop('Keep-Alive', None)
+
+      self.assertEqual(
+        headers,
+        {'Age': '0', 'Content-type': 'text/json',
+         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+      )
+
+      result_http = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+      self.assertEqualResultJson(result_http, 'Path', '/test-path')
+
+      headers = result_http.headers.copy()
+
+      self.assertKeyWithPop('Via', headers)
+      self.assertKeyWithPop('Server', headers)
+      self.assertKeyWithPop('Date', headers)
+
+      # drop keys appearing randomly in headers
+      headers.pop('Transfer-Encoding', None)
+      headers.pop('Content-Length', None)
+      headers.pop('Connection', None)
+      headers.pop('Keep-Alive', None)
+
+      self.assertEqual(
+        headers,
+        {'Age': '0', 'Content-type': 'text/json',
+         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+      )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1413,18 +1486,42 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       utils.der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(
-      result.status_code,
-      501
-    )
+    if IS_CADDY:
+      self.assertEqual(
+        result.status_code,
+        501
+      )
 
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      result_http = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-    self.assertEqual(
-      result_http.status_code,
-      501
-    )
+      self.assertEqual(
+        result_http.status_code,
+        501
+      )
+    else:
+      try:
+        j = result.json()
+      except Exception:
+        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+      self.assertEqualResultJson(
+        result,
+        'Path',
+        '/VirtualHostBase/https//typezopesslproxyverifysslproxycacrt.example'
+        '.com:443//VirtualHostRoot/test-path'
+      )
+
+      result = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+      self.assertEqualResultJson(
+        result,
+        'Path',
+        '/VirtualHostBase/http//typezopesslproxyverifysslproxycacrt.example'
+        '.com:80//VirtualHostRoot/test-path'
+      )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
