@@ -360,7 +360,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     cls.backend_url = 'http://%s:%s' % server.server_address
     cls.server_process = multiprocessing.Process(target=server.serve_forever)
     cls.server_process.start()
-    cls.backend_https_url = 'http://%s:%s' % server_https.server_address
+    cls.backend_https_url = 'https://%s:%s' % server_https.server_address
     cls.server_https_process = multiprocessing.Process(
       target=server_https.serve_forever)
     cls.server_https_process.start()
