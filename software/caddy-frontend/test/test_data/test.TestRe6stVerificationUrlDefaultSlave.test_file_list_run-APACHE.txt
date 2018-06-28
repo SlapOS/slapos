@@ -1,0 +1,7 @@
+TestRe6stVerificationUrlDefaultSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestRe6stVerificationUrlDefaultSlave-1/var/run/apache_configuration.signature
+TestRe6stVerificationUrlDefaultSlave-1/var/run/httpd.pid
+TestRe6stVerificationUrlDefaultSlave-1/var/run/monitor-httpd.pid
+TestRe6stVerificationUrlDefaultSlave-1/var/run/monitor/monitor-bootstrap.pid
+TestRe6stVerificationUrlDefaultSlave-1/var/run/napache_configuration.signature
+TestRe6stVerificationUrlDefaultSlave-1/var/run/nginx.pid
