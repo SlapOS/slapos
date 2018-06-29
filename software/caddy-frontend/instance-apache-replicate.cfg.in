@@ -1,4 +1,4 @@
-{% if slap_software_type in software_type -%}
+{% if slap_software_type in software_type %}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -12,33 +12,33 @@ context =
     key slave_instance_list slap-parameter:slave_instance_list
     ${:extra-context}
 
-{% set part_list = [] -%}
+{% set part_list = [] %}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type == "replicate" %}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') -%}
-{% elif slap_software_type in ['default', 'RootSoftwareInstance'] -%}
-{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') -%}
-{% else -%}
-{%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) -%}
-{% endif -%}
-{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int -%}
-{% set slave_list_name = 'extra_slave_instance_list' -%}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
+{% elif slap_software_type in ['default', 'RootSoftwareInstance'] %}
+{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
+{% else %}
+{%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) %}
+{% endif %}
+{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
+{% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set request_dict = {} %}
-{% set namebase = 'caddy-frontend' -%}
+{% set namebase = 'caddy-frontend' %}
 # XXX Dirty hack, not possible to define default value before
-{% set sla_computer_caddy_1_key = '-sla-1-computer_guid' -%}
-{% if not sla_computer_caddy_1_key in slapparameter_dict -%}
-{%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') -%}
-{% endif -%}
+{% set sla_computer_caddy_1_key = '-sla-1-computer_guid' %}
+{% if not sla_computer_caddy_1_key in slapparameter_dict %}
+{%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') %}
+{% endif %}
 
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
-{% for i in range(1, frontend_quantity + 1) -%}
-{%   set frontend_name = "%s-%s" % (namebase, i) -%}
-{%   set request_section_title = 'request-%s' % frontend_name -%}
-{%   set sla_key = "-sla-%s-" % i -%}
+{% for i in range(1, frontend_quantity + 1) %}
+{%   set frontend_name = "%s-%s" % (namebase, i) %}
+{%   set request_section_title = 'request-%s' % frontend_name %}
+{%   set sla_key = "-sla-%s-" % i %}
 {%   set sla_key_length = sla_key | length %}
 {%   set sla_dict = {} %}
 {%   set config_key = "-frontend-config-%s-" % i %}
@@ -48,13 +48,13 @@ context =
 {%     if key.startswith(sla_key) %}
 {%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
 # We check for specific configuration regarding the frontend
-{%     elif key.startswith(config_key) -%}
+{%     elif key.startswith(config_key) %}
 {%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
-{%     endif -%}
-{%   endfor -%}
-{%   do frontend_list.append(frontend_name) -%}
-{%   do frontend_section_list.append(request_section_title) -%}
-{%   do part_list.append(request_section_title) -%}
+{%     endif %}
+{%   endfor %}
+{%   do frontend_list.append(frontend_name) %}
+{%   do frontend_section_list.append(request_section_title) %}
+{%   do part_list.append(request_section_title) %}
 # Filling request dict for slave
 {%   set state_key = "-frontend-%s-state" % i %}
 {%   do request_dict.__setitem__(request_section_title,
@@ -64,9 +64,9 @@ context =
                                   'sla': sla_dict,
                                   'state': slapparameter_dict.pop(state_key, None)
                                   }) %}
-{% endfor -%}
+{% endfor %}
 
-{% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') -%}
+{% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_list = [] %}
 {% for slave in slave_instance_list %}
@@ -75,7 +75,7 @@ context =
 {%   else %}
 {%     do rejected_slave_list.append(slave.get('slave_reference')) %}
 {%   endif %}
-{% endfor -%}
+{% endfor %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
@@ -110,11 +110,11 @@ state = {{ frontend_request.get('state') }}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 config-_ = {{ json_module.dumps(slave_configuration_dict) }}
 {%   if frontend_request.get('sla') %}
-{%     for parameter, value in frontend_request.get('sla').iteritems() -%}
+{%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
-{%     endfor -%}
-{%   endif -%}
-{% endfor -%}
+{%     endfor %}
+{%   endif %}
+{% endfor %}
 
 
 [publish-information]
@@ -138,9 +138,9 @@ custom-personal = ${dynamic-publish-slave-information:rendered}
 custom-group = ${dynamic-publish-slave-information:rendered}
 
 [slave-information]
-{% for frontend_section in frontend_section_list -%}
+{% for frontend_section in frontend_section_list %}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
-{% endfor -%}
+{% endfor %}
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
@@ -154,7 +154,7 @@ extra-context =
 monitor-url-list +=
 {% for frontend in frontend_section_list %}
 {{ '  ${' + frontend + ':connection-monitor-base-url}' }}
-{% endfor -%}
+{% endfor %}
 
 [buildout]
 extends = {{ template_monitor }}
@@ -162,9 +162,9 @@ parts =
   monitor-base
   publish-slave-information
   publish-information
-{% for part in part_list -%}
+{% for part in part_list %}
 {{ '  %s' % part }}
-{% endfor -%}
+{% endfor %}
 #      publish-information
 
 eggs-directory = {{ eggs_directory }}
@@ -185,4 +185,4 @@ cert_file = ${slap-connection:cert-file}
 slave_instance_list =
 -frontend-quantity = 1
 -frontend-type = single-default
-{%- endif %}
+{% endif %}

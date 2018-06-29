@@ -1,14 +1,14 @@
-{% set url = slave_parameter.get('url') -%}
-{% set https_url = slave_parameter.get('https-url', url) -%}
-{% if url.startswith("http://") or url.startswith("https://") -%}
-{%   set upstream = url.split("/")[2] -%}
-{%   set https_upstream = https_url.split("/")[2] -%}
-{%   set protocol = url.split("/")[0] -%}
-{%   set https_protocol = https_url.split("/")[0] -%}
-{%   set proxy_pass = '%s//%s' % (protocol, slave_parameter.get('slave_reference')) -%}
-{%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) -%}
-{%- set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
-                                 ('ssl_certificate_key', 'path_to_ssl_key')] -%}
+{% set url = slave_parameter.get('url') %}
+{% set https_url = slave_parameter.get('https-url', url) %}
+{% if url.startswith("http://") or url.startswith("https://") %}
+{%   set upstream = url.split("/")[2] %}
+{%   set https_upstream = https_url.split("/")[2] %}
+{%   set protocol = url.split("/")[0] %}
+{%   set https_protocol = https_url.split("/")[0] %}
+{%   set proxy_pass = '%s//%s' % (protocol, slave_parameter.get('slave_reference')) %}
+{%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) %}
+{% set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
+                                 ('ssl_certificate_key', 'path_to_ssl_key')] %}
 
 
 # TODO-Caddy upstream {{ slave_parameter.get('slave_reference') }} {
@@ -75,10 +75,10 @@
 # TODO-Caddy  ssl_prefer_server_ciphers on;
 # TODO-Caddy  ssl_session_cache shared:SSL:10m;
 
-{% for key, value in ssl_configuration_list -%}
-{%   if value in slave_parameter -%}
+{% for key, value in ssl_configuration_list %}
+{%   if value in slave_parameter %}
 # TODO-Caddy {{ '  %s' % key }} {{ slave_parameter.get(value) }};
-{% endif -%}
+{% endif %}
 {% endfor %}
 
 # TODO-Caddy  location /pub {
@@ -110,4 +110,4 @@
 # TODO-Caddy     default_type "text/event-stream; charset=utf-8";
 # TODO-Caddy  }
 # TODO-Caddy}
-{% endif -%}
+{% endif %}
