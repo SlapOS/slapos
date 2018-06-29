@@ -184,6 +184,16 @@ name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
 post = test ! -s ${re6st-registry-wrapper:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry-wrapper:pid-file} -s USR1
 
+[port-redirection]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  [{"srcPort": 9201, "destPort": 9201, "destAddress": "{{ parameter_dict['ipv4'] }}"}]
+{% endraw -%}
+rendered = ${buildout:directory}/.slapos-port-redirect
+context =
+  section parameter_dict re6st-registry-conf-dict
+
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promises}/re6st-registry
@@ -221,7 +231,8 @@ parts =
   apache-httpd
   apache-httpd-graceful
   publish
-  
+  port-redirection
+
   re6st-registry-promise
   apache-registry-promise
   monitor-base
