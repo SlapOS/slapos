@@ -400,6 +400,53 @@ class TestPartitionSlapObject(MasterMixin, unittest.TestCase):
     # XXX: What should it raise?
     self.assertRaises(IOError, partition.install)
 
+class TestPartitionSupervisorConfig(MasterMixin, unittest.TestCase):
+
+  def setUp(self):
+    MasterMixin.setUp(self)
+
+    self.software = self.createSoftware()
+    self.partition = self.createPartition(self.software.url)
+    self.partition.generateSupervisorConfiguration()
+
+    utils.bootstrapBuildout = FakeCallAndNoop()
+    utils.launchBuildout = FakeCallAndNoop()
+
+  def test_grouped_program(self):
+    self.assertEqual(self.partition.supervisor_configuration_group, '')
+    self.assertEqual(self.partition.partition_supervisor_configuration, '')
+
+    partition_id = self.partition.partition_id
+
+    group_id = self.partition.addCustomGroup('test', partition_id,
+                                             ['sample-1'])
+
+    self.assertIn('group:{}-test'.format(partition_id),
+                  self.partition.supervisor_configuration_group)
+
+    self.partition.addProgramToGroup(group_id, 'sample-1', 'sample-1',
+                                     '/bin/ls')
+
+    self.assertIn('program:{}-test_sample-1'.format(partition_id),
+                  self.partition.partition_supervisor_configuration)
+
+  def test_simple_service(self):
+    self.assertEqual(self.partition.supervisor_configuration_group, '')
+    self.assertEqual(self.partition.partition_supervisor_configuration, '')
+
+    partition_id = self.partition.partition_id
+
+    runners = ['runner-{}'.format(i) for i in range(3)]
+    path = os.path.join(self.partition.instance_path, 'etc/run')
+    self.partition.addServiceToGroup(partition_id, runners, path)
+
+    for i in range(3):
+      self.assertIn('program:{}_runner-{}'.format(partition_id, i),
+                    self.partition.partition_supervisor_configuration)
+
+      runner_path = os.path.join(self.partition.instance_path, 'etc/run',
+                                 'runner-{}'.format(i))
+
 class TestPartitionDestructionLock(MasterMixin, unittest.TestCase):
   def setUp(self):
     MasterMixin.setUp(self)
