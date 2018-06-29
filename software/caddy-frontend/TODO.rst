@@ -1,5 +1,6 @@
 Generally things to be done with ``caddy-frontend``:
 
+ * **CRITICAL** fix templates/cached-virtualhost.conf.in SSL-enabled hosts with proper test
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
  * (new) ``type:websocket`` slave
  * ``type:eventsource`` https://lab.nexedi.com/nexedi/slapos/merge_requests/312#note_58483
