@@ -1,200 +1,210 @@
-{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{% set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES %}
-{% set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES %}
-{% set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES %}
-{% set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
-{% set enable_h2 = ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
-{% set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
-{% set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
-{% set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
-{% set slave_type = slave_parameter.get('type', '') %}
-{% set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
-{% set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')) %}
-{% set http_host_list = [] %}
-{% set https_host_list = [] %}
-{% for host in host_list %}
-{%   do http_host_list.append('http://%s:%s' % (host, http_port)) %}
-{%   do https_host_list.append('https://%s:%s' % (host, https_port)) %}
-{% endfor %}
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
+{%- set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES %}
+{%- set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES %}
+{%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES %}
+{%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
+{%- set enable_h2 = ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
+{%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
+{%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
+{%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
+{%- set slave_type = slave_parameter.get('type', '') %}
+{%- set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
+{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')) %}
+{%- set http_host_list = [] %}
+{%- set https_host_list = [] %}
+{%- for host in host_list %}
+{%-   do http_host_list.append('http://%s:%s' % (host, http_port)) %}
+{%-   do https_host_list.append('https://%s:%s' % (host, https_port)) %}
+{%- endfor %}
+
+# SSL enabled hosts
 {{ https_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-{% if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{% endif %}
+{%- endif %}
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
-{% if slave_parameter.get('path_to_ssl_ca_crt') %}
+{%- if slave_parameter.get('path_to_ssl_ca_crt') %}
+    # Configuration of accepted clients
     clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
-{% endif %}
-{% if enable_h2 %}
+{%- endif %}
+{%- if enable_h2 %}
+    # Allow HTTP2
     alpn h2 http/1.1
-{% else %}
+{%- else %}
+    # Disallow HTTP2
     alpn http/1.1
-{% endif %}
+{%- endif %}
   }
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{% for disabled_cookie in disabled_cookie_list %}
-{% endfor %}
+{%- for disabled_cookie in disabled_cookie_list %}
+{%- endfor %}
 
-{% if prefer_gzip %}
-{% endif %}
+{%- if prefer_gzip %}
+{%- endif %}
 
-{% if slave_type ==  'zope' and backend_url %}
+{%- if slave_type ==  'zope' and backend_url %}
+  # Zope configuration
   proxy / {{ backend_url }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
-{% if disable_via_header %}
+{%-   if disable_via_header %}
     header_downstream -Via
-{% endif %}
+{%-   endif %}
 
-{% if disable_no_cache_header %}
+{%-   if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{% endif %}
+{%-   endif %}
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%-   if ssl_proxy_verify %}
+{%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-     endif %}
+{%-   else %}
     insecure_skip_verify
-{% endif %}
+{%-   endif %}
   }
-  {% if 'default-path' in slave_parameter %}
+  {%- if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
   }
-  {% endif %}
+  {%- endif %}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   }
-{% elif slave_type ==  'redirect' and backend_url %}
+{%- elif slave_type ==  'redirect' and backend_url %}
+  # Redirect configuration
   redir 302 {
     /  {{ backend_url }}{uri}
   }
-{% else %}
-  {% if 'default-path' in slave_parameter %}
+{%- else %}
+  # Default configuration
+{%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
   }
-  {% endif %}
-  {% if backend_url %}
+{%-   endif %}
+{%-   if backend_url %}
 
   proxy / {{ backend_url }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
-{% if disable_via_header %}
+{%-     if disable_via_header %}
     header_downstream -Via
-{% endif %}
+{%-     endif %}
 
-{% if disable_no_cache_header %}
+{%-     if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{% endif %}
+{%-     endif %}
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%-     if ssl_proxy_verify %}
+{%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-       endif %}
+{%-     else %}
     insecure_skip_verify
-{% endif %}
+{%-     endif %}
   }
-  {%   endif %}
-{% endif %}
+{%-   endif %}
+{%- endif %}
 }
 
+# SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-{% if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{% endif %}
+{%- endif %}
 
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{% for disabled_cookie in disabled_cookie_list %}
-{% endfor %}
+{%- for disabled_cookie in disabled_cookie_list %}
+{%- endfor %}
 
-{% if prefer_gzip %}
-{% endif %}
+{%- if prefer_gzip %}
+{%- endif %}
 
-{% if https_only %}
+{%- if https_only %}
+  # Enforced redirection to SSL-enabled host
   redir / https://{host}{uri}
-{% elif slave_type ==  'redirect' and slave_parameter.get('url', '') %}
+{%- elif slave_type ==  'redirect' and slave_parameter.get('url', '') %}
+  # Redirect configuration
   redir 302 {
     /  {{ slave_parameter.get('url', '') }}{uri}
   }
-{% elif slave_type ==  'zope' and backend_url %}
+{%- elif slave_type ==  'zope' and backend_url %}
+  # Zope configuration
   proxy / {{ backend_url }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
-{% if disable_via_header %}
+{%-   if disable_via_header %}
     header_downstream -Via
-{% endif %}
+{%-   endif %}
 
-{% if disable_no_cache_header %}
+{%-   if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{% endif %}
+{%-   endif %}
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%-   if ssl_proxy_verify %}
+{%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-     endif %}
+{%-   else %}
     insecure_skip_verify
-{% endif %}
+{%-   endif %}
   }
-  {% if 'default-path' in slave_parameter %}
+{%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
   }
-  {% endif %}
+{%-   endif %}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   }
-{% else %}
-  {% if 'default-path' in slave_parameter %}
+{%- else %}
+  # Default configuration
+{%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
   }
-  {% endif %}
-  {% if slave_parameter.get('url', '') %}
+{%-   endif %}
+{%-   if slave_parameter.get('url', '') %}
   proxy / {{ slave_parameter.get('url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
-{% if disable_via_header %}
+{%-     if disable_via_header %}
     header_downstream -Via
-{% endif %}
+{%-     endif %}
 
-{% if disable_no_cache_header %}
+{%-     if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{% endif %}
+{%-     endif %}
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%-     if ssl_proxy_verify %}
+{%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-       endif %}
+{%-     else %}
     insecure_skip_verify
-{% endif %}
+{%-     endif %}
   }
-{% endif %}
-{% endif %}
-  # If nothing exist : put a nice error
-#  ErrorDocument 404 /notfound.html
-# Dadiboom
+{%-   endif %}
+{%- endif %}
 }

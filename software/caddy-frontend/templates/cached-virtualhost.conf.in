@@ -1,20 +1,20 @@
-{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{% set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
-{% set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
-{% set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
-{% set http_backend_host_list = [] %}
-{% set https_backend_host_list = [] %}
-{% for host in host_list %}
-{%   do http_backend_host_list.append('http://%s:%s' % (host, cached_port)) %}
-{%   do https_backend_host_list.append('http://%s:%s' % (host, ssl_cached_port)) %}
-{% endfor %}
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
+{%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
+{%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
+{%- set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
+{%- set http_backend_host_list = [] %}
+{%- set https_backend_host_list = [] %}
+{%- for host in host_list %}
+{%-   do http_backend_host_list.append('http://%s:%s' % (host, cached_port)) %}
+{%-   do https_backend_host_list.append('http://%s:%s' % (host, ssl_cached_port)) %}
+{%- endfor %}
 
-# Only accept generic (i.e not Zope) backends on http
+# SSL-disabled backends
 {{ http_backend_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-{% if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{% endif %}
+{%- endif %}
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
@@ -22,30 +22,31 @@
 
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-   endif %}
+{%- else %}
     insecure_skip_verify
-{% endif %}
+{%- endif %}
   }
 }
 
+# SSL-enabled backends
 {{ https_backend_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
-{% if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
+{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{% endif %}
+{%- endif %}
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
     transparent
     timeout 600s
-{% if ssl_proxy_verify %}
-{%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%   endif %}
-{% else %}
+{%- if ssl_proxy_verify %}
+{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-   endif %}
+{%- else %}
     insecure_skip_verify
-{% endif %}
+{%- endif %}
   }
 }
