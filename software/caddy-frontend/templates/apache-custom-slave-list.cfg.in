@@ -1,20 +1,20 @@
-{% if software_type == slap_software_type -%}
+{% if software_type == slap_software_type %}
 
-{% set cached_server_dict = {} -%}
-{% set part_list = [] -%}
+{% set cached_server_dict = {} %}
+{% set part_list = [] %}
 {% set cache_port = caddy_configuration.get('cache-port') %}
 {% set cached_port = caddy_configuration.get('cache-through-port') %}
 {% set ssl_cached_port = caddy_configuration.get('ssl-cache-through-port') %}
-{% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
-{% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
-{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] -%}
+{% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
+{% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
+{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
+{% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] %}
 {% set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
-{% set slave_log_dict = {} -%}
-{% if extra_slave_instance_list -%}
-{%   set slave_instance_information_list = [] -%}
-{%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) -%}
-{% endif -%}
+{% set slave_log_dict = {} %}
+{% if extra_slave_instance_list %}
+{%   set slave_instance_information_list = [] %}
+{%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) %}
+{% endif %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
@@ -26,7 +26,7 @@ context =
 
 {% do logrotate_dict.pop('recipe') %}
 [logrotate]
-{% for key, value in logrotate_dict.iteritems() -%}
+{% for key, value in logrotate_dict.iteritems() %}
 {{ key }} = {{ value }}
 {% endfor %}
 
@@ -46,28 +46,28 @@ newcerts = {{ custom_ssl_directory }}/newcerts/
 crl = {{ custom_ssl_directory }}/crl/
 
 {# Loop thought slave list to set up slaves #}
-{% for slave_instance in slave_instance_list -%}
-{%   set slave_reference = slave_instance.get('slave_reference') -%}
-{%   set slave_type = slave_instance.get('type', '') -%}
-{%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
-{%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
-{%   set slave_publish_dict = {} -%}
+{% for slave_instance in slave_instance_list %}
+{%   set slave_reference = slave_instance.get('slave_reference') %}
+{%   set slave_type = slave_instance.get('type', '') %}
+{%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
+{%   set slave_parameter_dict = generic_instance_parameter_dict.copy() %}
+{%   set slave_publish_dict = {} %}
 {%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
-{%   set slave_logrotate_section = slave_reference + "-logs" -%}
-{%   set slave_password_section = slave_reference + "-password" -%}
-{%   set slave_ln_section = slave_reference + "-ln" -%}
+{%   set slave_logrotate_section = slave_reference + "-logs" %}
+{%   set slave_password_section = slave_reference + "-password" %}
+{%   set slave_ln_section = slave_reference + "-ln" %}
 
 {#   extend parts #}
-{%   do part_list.extend([slave_ln_section]) -%}
-{%   do part_list.extend([slave_logrotate_section, slave_section_title]) -%}
+{%   do part_list.extend([slave_ln_section]) %}
+{%   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 
-{%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" -%}
+{%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" %}
 
 {#   Set Up log files #}
-{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) -%}
-{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) -%}
-{%   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) -%}
-{%   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) -%}
+{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
+{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
+{%   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
+{%   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
 
 {#   Add slave log directory to the slave log access dict #}
 {%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
@@ -78,33 +78,33 @@ crl = {{ custom_ssl_directory }}/crl/
 {%   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
 
 {# Set slave domain if none was defined #}
-{%   if slave_instance.get('custom_domain', None) == None -%}
-{%     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() -%}
-{%     if slave_type in NGINX_TYPE_LIST -%}
-{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('nginx-domain', slapparameter_dict.get('domain')))) -%}
-{%     else -%}
-{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) -%}
-{%     endif -%}
-{%   endif -%}
+{%   if slave_instance.get('custom_domain', None) == None %}
+{%     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
+{%     if slave_type in NGINX_TYPE_LIST %}
+{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('nginx-domain', slapparameter_dict.get('domain')))) %}
+{%     else %}
+{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
+{%     endif %}
+{%   endif %}
 
-{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') -%}
-{%   if enable_cache and 'url' in slave_instance -%}
-{%     if 'domain' in slave_instance -%}
-{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
-{%     endif -%}
-{%     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
-{%     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
-{%     do slave_instance.__setitem__('url', cache_access) -%}
-{%     do slave_instance.__setitem__('https-url', ssl_cache_access) -%}
-{%     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
-{%   endif -%}
+{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
+{%   if enable_cache and 'url' in slave_instance %}
+{%     if 'domain' in slave_instance %}
+{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%     endif %}
+{%     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %}
+{%     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %}
+{%     do slave_instance.__setitem__('url', cache_access) %}
+{%     do slave_instance.__setitem__('https-url', ssl_cache_access) %}
+{%     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
+{%   endif %}
 
 {%   if not slave_instance.has_key('apache_custom_http') and not slave_instance.has_key('apache_custom_https') %}
-{%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
-{%   endif -%}
+{%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
+{%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
+{%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
+{%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) %}
+{%   endif %}
 
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
@@ -136,13 +136,13 @@ bytes = 8
 {# Set Slave Certificates if needed                   #}
 
 {# Set ssl certificates for each slave #}
-{%   for cert_name in ('ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')-%}
-{%     if cert_name in slave_instance -%}
-{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
-{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
-{%       do part_list.append(cert_title) -%}
-{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) -%}
-{%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) -%}
+{%   for cert_name in ('ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')%}
+{%     if cert_name in slave_instance %}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%       do part_list.append(cert_title) %}
+{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
+{%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
 {# Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
@@ -153,26 +153,26 @@ extra-context =
 # Store certificate in config
 [{{ cert_title + '-config' }}]
 value = {{ dumps(slave_instance.get(cert_name)) }}
-{%     endif -%}
-{%   endfor -%}
+{%     endif %}
+{%   endfor %}
 
 {#-   Set Up Certs #}
-{%-   do slave_instance.__setitem__('login_certificate', login_certificate) %}
-{%-   do slave_instance.__setitem__('login_key', login_key) %}
-{%-   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
-{%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
-{%-   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
-{%-   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
-{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance -%}
-{%     set cert_title = '%s-crt' % (slave_reference) -%}
-{%     set key_title = '%s-key' % (slave_reference) -%}
-{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
-{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) -%}
-{%     do part_list.append(cert_title) -%}
-{%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) -%}
-{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) -%}
-{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) -%}
-{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) -%}
+{%   do slave_instance.__setitem__('login_certificate', login_certificate) %}
+{%   do slave_instance.__setitem__('login_key', login_key) %}
+{%   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
+{%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
+{%   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
+{%   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
+{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
+{%     set cert_title = '%s-crt' % (slave_reference) %}
+{%     set key_title = '%s-key' % (slave_reference) %}
+{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) %}
+{%     do part_list.append(cert_title) %}
+{%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
+{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) %}
 
 [{{cert_title}}]
 recipe = slapos.cookbook:certificate_authority.request
@@ -188,17 +188,17 @@ key-file = {{ key_file }}
 cert-file = {{ cert_file }}
 key-content = {{ dumps(slave_instance.get('ssl_key')) }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt')) }} 
-{%     endif -%}
+{%     endif %}
 
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-{%     set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) -%}
-{%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
+{%     set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) %}
+{%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) %}
 apache_custom_http = {{ dumps(apache_custom_http) }}
 apache_custom_https = {{ dumps(apache_custom_https) }}
 {{ '\n' }}
-{%     for key, value in slave_instance.iteritems() -%}
+{%     for key, value in slave_instance.iteritems() %}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 
@@ -232,16 +232,16 @@ extra-context =
 {{ '\n' }}
 
 
-{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') -%}
-{%   do part_list.append(check_error_log_section_title) -%}
+{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') %}
+{%   do part_list.append(check_error_log_section_title) %}
 [{{ check_error_log_section_title }}]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600
 filename = {{ check_error_log_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 
-{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') -%}
-{%   do part_list.append(check_error_log_section_title) -%}
+{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') %}
+{%   do part_list.append(check_error_log_section_title) %}
 [{{ check_error_log_section_title }}]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 86400
@@ -251,7 +251,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
-{%     do part_list.append(monitor_ipv6_section_title) -%}
+{%     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/is-icmp-packet-lost -a {{monitor_ipv6_test}} 
@@ -262,7 +262,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%   set monitor_ipv4_test = slave_instance.get('monitor-ipv4-test', '') %}
 {%   if monitor_ipv4_test %}
 {%     set monitor_ipv4_section_title = 'check-%s-ipv4-packet-list-test' % slave_instance.get('slave_reference') %}
-{%     do part_list.append(monitor_ipv4_section_title) -%}
+{%     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/is-icmp-packet-lost -4 -a {{monitor_ipv4_test}}
@@ -274,7 +274,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%   if re6st_optimal_test %}
 {%     set re6st_ipv6, re6st_ipv4 = re6st_optimal_test.split(",") %}
 {%     set re6st_optimal_test_section_title = 'check-%s-re6st-optimal-test' % slave_instance.get('slave_reference') %}
-{%     do part_list.append(re6st_optimal_test_section_title) -%}
+{%     do part_list.append(re6st_optimal_test_section_title) %}
 [{{ re6st_optimal_test_section_title }}]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/check-re6st-optimal-status -4 {{re6st_ipv4}} -6 {{re6st_ipv6}}
@@ -285,27 +285,27 @@ wrapper-path = {{ promise_directory }}/${:filename}
 
 {# ###############################  #}
 {# Publish Slave Information        #}
-{%   if not extra_slave_instance_list -%}
-{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
-{%     do part_list.append(publish_section_title) -%}
+{%   if not extra_slave_instance_list %}
+{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') %}
+{%     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 {%     for key, value in slave_publish_dict.iteritems() %}
 {{ key }} = {{ value }}
 {%     endfor %}
-{%   else -%}
-{%     do slave_instance_information_list.append(slave_publish_dict) -%}
-{%   endif -%}
+{%   else %}
+{%     do slave_instance_information_list.append(slave_publish_dict) %}
+{%   endif %}
 
 {# End of the main for loop#}
-{% endfor -%}
+{% endfor %}
 
 ###############################################
 ### Prepare virtualhost for slaves using cache
 
 {% for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
 {%   set cached_slave_configuration_section_title = '%s-cached-virtualhost' % slave_reference %}
-{%   do part_list.append(cached_slave_configuration_section_title) -%}
+{%   do part_list.append(cached_slave_configuration_section_title) %}
 [{{ cached_slave_configuration_section_title }}]
 < = jinja2-template-base
 template = {{ template_cached_slave_configuration }}
@@ -387,15 +387,15 @@ extra-context =
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
-{% if extra_slave_instance_list -%}
+{% if extra_slave_instance_list %}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
-{% endif -%}
+{% endif %}
 monitor-base-url = {{ monitor_base_url }}
 
 [buildout]
 parts +=
     slave-log-directories
-{% for part in part_list -%}
+{% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
     publish-caddy-information
@@ -412,4 +412,4 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 cache-access = {{ cache_access }}
 
-{% endif -%}
+{% endif %}
