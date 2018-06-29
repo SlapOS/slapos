@@ -24,8 +24,6 @@
     timeout 600s
 {% if ssl_proxy_verify %}
 {%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
-#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
 {%   endif %}
 {% else %}
     insecure_skip_verify
@@ -45,8 +43,6 @@
     timeout 600s
 {% if ssl_proxy_verify %}
 {%   if 'ssl_proxy_ca_crt' in slave_parameter %}
-# TODO-Caddy   SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
-#              Requires https://github.com/mholt/caddy/issues/1550 or "just adding your CA to the system's trust store"
 {%   endif %}
 {% else %}
     insecure_skip_verify
