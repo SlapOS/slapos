@@ -1,0 +1,28 @@
+# 33_scripts__mysql_create_system_tables__no_test.dpatch by  <ch@debian.org>
+
+A user with no password prevents a normal user from login under certain
+circumstances as it is checked first.
+See http://bugs.debian.org/301741
+and http://bugs.mysql.com/bug.php?id=6901
+
+--- scripts/mysql_system_tables_data.sql.orig	2018-06-25 11:13:26.000000000 +0000
++++ scripts/mysql_system_tables_data.sql	2018-06-29 10:50:42.032343572 +0000
+@@ -30,8 +30,6 @@
+ -- Fill "db" table with default grants for anyone to
+ -- access database 'test' and 'test_%' if "db" table didn't exist
+ CREATE TEMPORARY TABLE tmp_db LIKE db;
+-INSERT INTO tmp_db VALUES ('%','test','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N','Y','Y');
+-INSERT INTO tmp_db VALUES ('%','test\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N','Y','Y');
+ INSERT INTO db SELECT * FROM tmp_db WHERE @had_db_table=0;
+ DROP TABLE tmp_db;
+ 
+@@ -51,9 +49,6 @@
+ IF @auth_root_socket is not null THEN
+   IF not exists(select 1 from information_schema.plugins where plugin_name='unix_socket') THEN
+      INSTALL SONAME 'auth_socket'; END IF; END IF;
+--- Anonymous user with no privileges.
+-INSERT INTO tmp_user_anonymous (host,user) VALUES ('localhost','');
+-INSERT INTO tmp_user_anonymous (host,user) SELECT @current_hostname,'' FROM dual WHERE @current_hostname != 'localhost';
+ 
+ INSERT INTO user SELECT * FROM tmp_user_nopasswd WHERE @had_user_table=0 AND @skip_auth_root_nopasswd IS NULL;
+ INSERT INTO user SELECT * FROM tmp_user_socket WHERE @had_user_table=0 AND @auth_root_socket IS NOT NULL;
