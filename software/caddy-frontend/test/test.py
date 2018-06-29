@@ -1727,6 +1727,42 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
        'Set-Cookie': 'secured=value;secure, nonsecured=value'}
     )
 
+    result_direct = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      port=26011)
+
+    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
+
+    try:
+      j = result_direct.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_direct.headers['Set-Cookie'],
+      'secured=value;secure, nonsecured=value'
+    )
+
+    result_direct_https_backend = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      port=26012)
+
+    self.assertEqualResultJson(
+      result_direct_https_backend, 'Path', '/test-path')
+
+    try:
+      j = result_direct_https_backend.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (
+        result_direct_https_backend.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_direct_https_backend.headers['Set-Cookie'],
+      'secured=value;secure, nonsecured=value'
+    )
+
   def test_enable_cache_disable_no_cache_request(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache-disable-no-cache-request']
