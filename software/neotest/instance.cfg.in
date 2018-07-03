@@ -25,4 +25,4 @@ neotest = ${:home}/neotest
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 command-line = /bin/bash -c 'cd ${directory:neotest} && ${software:bin}/neotest-runTestSuite "$@"' runTestSuite
-# vvv appends "$@" to argv ^^^ without shell-escaping
+# "$@" is implicitly added to argv
