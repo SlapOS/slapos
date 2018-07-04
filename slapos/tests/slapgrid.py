@@ -3002,3 +3002,19 @@ echo "Kitty cute kitkat"
       self.assertEqual(self.manager.sequence,
                        ['software', 'softwareTearDown'])
 
+  def test_partition_software_fail(self):
+    """Manager.softwareTearDown should not run when software release fail.
+    """
+    with self._mock_requests():
+      software = self.computer.software_list[0]
+
+      buildout = """#!/bin/sh
+echo "Kitty cute kitkat"
+exit 1
+"""
+      software.setBuildout(buildout)
+      self.launchSlapgridSoftware()
+
+      self.assertEqual(self.manager.sequence,
+                       ['software'])
+
