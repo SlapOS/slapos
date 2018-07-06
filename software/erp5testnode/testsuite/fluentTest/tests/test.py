@@ -110,9 +110,14 @@ class TestIngestion(FluentdPluginTestCase):
       start_fluentd_cat(self, "dummyInputDelayCheckKeepAlive", "tag_test_3")
       time.sleep(10)
 
-      for conn in caddy_process.connections('inet'):
-        if len(conn.raddr) > 1 and  conn.laddr.port == 4443:
-          self.assertEqual('ESTABLISHED', conn.status) #conn.status == 'ESTABLISHED' :
+      self.assertEqual(
+      ['ESTABLISHED'],
+      [conn.status for conn in caddy_process.connections('inet')
+        if len(conn.raddr) > 1 and  conn.laddr.port == 4443])
+
+      #for conn in caddy_process.connections('inet'):
+      #  if len(conn.raddr) > 1 and  conn.laddr.port == 4443:
+      #    self.assertEqual('ESTABLISHED', conn.status) #conn.status == 'ESTABLISHED' :
 
     def test_ingest_with_15mins_delay(self):
       '''
