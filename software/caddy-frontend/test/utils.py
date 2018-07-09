@@ -177,7 +177,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         cls.config, environment=os.environ)
       stream.seek(0)
       stream.flush()
-      assert cls.software_status_dict['status_code'] == 0, stream.read()
+      message = ''.join(stream.readlines()[-100:])
+      assert cls.software_status_dict['status_code'] == 0, message
     finally:
       logger.removeHandler(stream_handler)
       del stream
@@ -198,7 +199,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         environment=os.environ)
       stream.seek(0)
       stream.flush()
-      assert cls.instance_status_dict['status_code'] == 0, stream.read()
+      message = ''.join(stream.readlines()[-100:])
+      assert cls.instance_status_dict['status_code'] == 0, message
     finally:
       logger.removeHandler(stream_handler)
       del stream
