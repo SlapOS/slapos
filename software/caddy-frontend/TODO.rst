@@ -42,13 +42,6 @@ Generally things to be done with ``caddy-frontend``:
     BrowserMatch "^gnome-vfs" redirect-carefully
     BrowserMatch "^XML Spy" redirect-carefully
     BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
- * Implement gzip/defalte on resources::
-
-    # Deflate
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
-    BrowserMatch ^Mozilla/4 gzip-only-text/html
-    BrowserMatch ^Mozilla/4\.0[678] no-gzip
-    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
  * check, and if needed apply, Apache-like SSL configuration switches::
 
     # SSL Configuration
