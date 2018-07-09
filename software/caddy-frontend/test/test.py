@@ -783,6 +783,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
+      result.headers['Content-Encoding'],
+      'gzip'
+    )
+
+    self.assertEqual(
       result.headers['Set-Cookie'],
       'secured=value;secure, nonsecured=value'
     )
@@ -796,6 +801,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_http.headers['Content-Encoding'],
+      'gzip'
+    )
 
     self.assertEqual(
       result_http.headers['Set-Cookie'],
@@ -1296,6 +1306,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
       self.assertEqual(
+        result.headers['Content-Encoding'],
+        'gzip'
+      )
+
+      self.assertEqual(
         result.headers['Set-Cookie'],
         'secured=value;secure, nonsecured=value'
       )
@@ -1309,6 +1324,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       except Exception:
         raise ValueError('JSON decode problem in:\n%s' % (result.text,))
       self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+      self.assertEqual(
+        result_http.headers['Content-Encoding'],
+        'gzip'
+      )
 
       self.assertEqual(
         result_http.headers['Set-Cookie'],
@@ -1724,7 +1744,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {'Age': '0', 'Content-type': 'text/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+       'Set-Cookie': 'secured=value;secure, nonsecured=value',
+       'Content-Encoding': 'gzip'}
     )
 
     result_direct = self.fakeHTTPResult(
@@ -1738,6 +1759,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_direct.headers['Content-Encoding'],
+      'gzip'
+    )
 
     self.assertEqual(
       result_direct.headers['Set-Cookie'],
@@ -1757,6 +1783,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       raise ValueError('JSON decode problem in:\n%s' % (
         result_direct_https_backend.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_direct_https_backend.headers['Content-Encoding'],
+      'gzip'
+    )
 
     self.assertEqual(
       result_direct_https_backend.headers['Set-Cookie'],
@@ -1806,7 +1837,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {'Age': '0', 'Content-type': 'text/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+       'Set-Cookie': 'secured=value;secure, nonsecured=value',
+       'Content-Encoding': 'gzip'}
     )
 
     try:
@@ -1856,7 +1888,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {'Age': '0', 'Content-type': 'text/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+       'Set-Cookie': 'secured=value;secure, nonsecured=value',
+       'Content-Encoding': 'gzip'}
     )
 
   def test_enable_http2_false(self):
@@ -1899,8 +1932,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {
+        'Vary': 'Accept-Encoding',
         'Content-Type': 'text/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Content-Encoding': 'gzip',
       }
     )
 
@@ -1947,8 +1982,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {
+        'Vary': 'Accept-Encoding',
         'Content-type': 'text/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Content-Encoding': 'gzip',
       }
     )
 
