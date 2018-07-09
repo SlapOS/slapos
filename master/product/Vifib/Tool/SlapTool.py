@@ -1467,6 +1467,16 @@ class SlapTool(BaseTool):
 
   @UnrestrictedMethod
   def _getComputerUidByReference(self, computer_reference):
+    """
+    Get the validated computer with this reference.
+    """
+    result = CachingMethod(self._getNonCachedComputerUidByReference,
+        id='_getNonCachedComputerUidByReference',
+        cache_factory='slap_cache_factory')(computer_reference)
+    return result
+
+  @UnrestrictedMethod
+  def _getNonCachedComputerUidByReference(self, computer_reference):
     return self.getPortalObject().portal_catalog.unrestrictedSearchResults(
       portal_type='Computer', reference=computer_reference,
       validation_state="validated")[0].UID
