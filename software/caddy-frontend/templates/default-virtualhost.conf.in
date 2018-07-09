@@ -20,6 +20,8 @@
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
 {%- endif %}
@@ -121,6 +123,8 @@
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
   bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
 {%- endif %}
