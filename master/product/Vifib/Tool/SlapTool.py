@@ -1070,17 +1070,21 @@ class SlapTool(BaseTool):
 
   @convertToREST
   def _softwareInstanceError(self, computer_id,
-                            computer_partition_id, error_log):
+                            computer_partition_id, error_log=""):
     """
     Add an error for the software Instance Workflow
     """
+    if error_log is None:
+      error_log = ""
+
     instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(), 
-                    '#error while instanciating')
+    self._logAccess(user, instance,
+                    '#error while instanciating: %s' % error_log[-80:])
+
     #return instance.reportComputerPartitionError()
 
   @convertToREST
