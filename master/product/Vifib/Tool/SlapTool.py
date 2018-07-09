@@ -481,8 +481,11 @@ class SlapTool(BaseTool):
     """
     Return preferred HATEOAS URL.
     """
+    preference_tool = self.getPortalObject().portal_preferences
     try:
-      url = self.getPortalObject().portal_preferences.getPreferredHateoasUrl()
+      url = CachingMethod(preference_tool.getPreferredHateoasUrl,
+        id='getHateoasUrl',
+        cache_factory='slap_cache_factory')()
     except AttributeError:
       raise NotFound
     if not url:
