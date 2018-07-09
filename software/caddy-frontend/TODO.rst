@@ -58,7 +58,7 @@ Generally things to be done with ``caddy-frontend``:
     <FilesMatch "\.(cgi|shtml|phtml|php)$">
           SSLOptions +StdEnvVars
     </FilesMatch>
-
+ * reduce the time of configuration validation (in ``instance-apache-frontend.cfg`` sections ``[configtest]``, ``[caddy-configuration]``, ``[nginx-configuration]``), as it is not scalable on frontend with 2000+ slaves (takes few minutes instead of few, < 5, seconds)
 
 Things which can't be implemented:
 
