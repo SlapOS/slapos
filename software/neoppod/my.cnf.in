@@ -29,6 +29,7 @@ innodb_locks_unsafe_for_binlog = 1
 {{x}}innodb_flush_log_at_trx_commit = 0
 {{x}}innodb_flush_method = nosync
 {{x}}innodb_doublewrite = 0
+{{x}}tokudb_commit_sync = 0
 {{x}}sync_frm = 0
 
 # Extra parameters.

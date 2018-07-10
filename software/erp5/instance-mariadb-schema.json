@@ -85,6 +85,11 @@
       "minimum": 0,
       "type": "integer"
     },
+    "tokudb-block-size": {
+      "description": "See MariaDB documentation on tokudb_block_size",
+      "minimum": 0,
+      "type": "integer"
+    },
     "long-query-time": {
       "description": "Number of seconds above which long queries are logged",
       "minimum": 0,

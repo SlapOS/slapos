@@ -137,6 +137,7 @@ innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-si
 innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
+tokudb-block-size = {{ dumps(slapparameter_dict.get('tokudb-block-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 {% if incremental_backup_retention_days > -1 -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog

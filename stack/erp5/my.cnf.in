@@ -29,20 +29,23 @@ max_allowed_packet = 128M
 query_cache_size = 32M
 innodb_file_per_table = 0
 
-plugin_load = ha_mroonga.so;handlersocket.so
+plugin_load = ha_mroonga;handlersocket;ha_tokudb
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections
 max_connections = 1000
 
-{% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
-{% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}
-{% set innodb_buffer_pool_instances = parameter_dict['innodb-buffer-pool-instances'] -%}
-{% if innodb_buffer_pool_instances %}innodb_buffer_pool_instances = {{ innodb_buffer_pool_instances }}{% endif %}
-{% set innodb_log_file_size = parameter_dict['innodb-log-file-size'] -%}
-{% if innodb_log_file_size %} innodb_log_file_size = {{ innodb_log_file_size }}{% endif %}
-{% set innodb_log_buffer_size = parameter_dict['innodb-log-buffer-size'] -%}
-{% if innodb_log_buffer_size %} innodb_log_buffer_size = {{ innodb_log_buffer_size }}{% endif %}
+{% for k in ('innodb-buffer-pool-size',
+             'innodb-buffer-pool-instances',
+             'innodb-log-file-size',
+             'innodb-log-buffer-size',
+             'tokudb-block-size',
+             ) -%}
+{%   set v = parameter_dict[k] -%}
+{%   if v -%}
+{{ k.replace('-', '_') }} = {{ v }}
+{%   endif -%}
+{% endfor -%}
 
 # very important to allow parallel indexing
 # Note: this is compatible with binlog-based incremental backups, because ERP5
@@ -63,6 +66,7 @@ server_id = {{ parameter_dict['server-id'] }}
 {{x}}innodb_flush_log_at_trx_commit = 0
 {{x}}innodb_flush_method = nosync
 {{x}}innodb_doublewrite = 0
+{{x}}tokudb_commit_sync = 0
 {{x}}sync_frm = 0
 
 # Force utf8 usage
