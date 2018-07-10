@@ -78,6 +78,7 @@ class TestIngestion(FluentdPluginTestCase):
       print("serever shutdown")
     
     def setUp(self):
+      self.caddy_process = psutil.Process(int(caddy_pid))
       self.startServer()
 
     def tearDown(self):
@@ -88,6 +89,7 @@ class TestIngestion(FluentdPluginTestCase):
         simple get request to be sure that server is up
       '''
       print("############## TEST 1 ##############")
+      print("conn_before = %s" %str(self.caddy_process.connections()))
       url  = self.computer_partition.getConnectionParameterDict()['url']
       resp = requests.get(url)
       self.assertEqual(resp.status_code, 200)
@@ -104,20 +106,15 @@ class TestIngestion(FluentdPluginTestCase):
     def test_keepAlive_on(self):
       print("############## TEST 3 ##############")
       
-      caddy_process = psutil.Process(int(caddy_pid)) 
-      port=9443
-    
       start_fluentd_cat(self, "dummyInputDelayCheckKeepAlive", "tag_test_3")
       time.sleep(10)
 
       self.assertEqual(
       ['ESTABLISHED'],
-      [conn.status for conn in caddy_process.connections('inet')
+      [conn.status for conn in self.caddy_process.connections('inet')
         if len(conn.raddr) > 1 and  conn.laddr.port == 4443])
+      print("conn_afet = %s" %str(self.caddy_process.connections()))
 
-      #for conn in caddy_process.connections('inet'):
-      #  if len(conn.raddr) > 1 and  conn.laddr.port == 4443:
-      #    self.assertEqual('ESTABLISHED', conn.status) #conn.status == 'ESTABLISHED' :
 
     def test_ingest_with_15mins_delay(self):
       '''

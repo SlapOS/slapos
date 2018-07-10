@@ -36,6 +36,7 @@
   #buffer_path       "#{ENV['HOME']/var}"
   flush_interval    1s
   num_threads 1
+  use_keep_alive  true
 </match>
 
 
