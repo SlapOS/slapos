@@ -59,6 +59,7 @@ Generally things to be done with ``caddy-frontend``:
           SSLOptions +StdEnvVars
     </FilesMatch>
  * reduce the time of configuration validation (in ``instance-apache-frontend.cfg`` sections ``[configtest]``, ``[caddy-configuration]``, ``[nginx-configuration]``), as it is not scalable on frontend with 2000+ slaves (takes few minutes instead of few, < 5, seconds)
+ * drop ``6tunnel`` and use ``bind`` in Caddy configuration, as soon as multiple binds will be possible, tracked in upstream `bind: support multiple values <https://github.com/mholt/caddy/pull/2128>`_ and `ipv6: does not bind on ipv4 and ipv6 for sites that resolve to both <https://github.com/mholt/caddy/issues/864>`_
 
 Things which can't be implemented:
 
