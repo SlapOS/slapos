@@ -812,6 +812,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'secured=value;secure, nonsecured=value'
     )
 
+  @skipIf(IS_CADDY, 'Feature postponed')
   def test_url_ipv6_access(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
