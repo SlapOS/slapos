@@ -1,0 +1,82 @@
+# TODO-Caddy worker_processes $${nginx-configuration:worker_processes};
+
+# TODO-Caddy events {
+# TODO-Caddy   worker_connections $${nginx-configuration:worker_connections};
+# TODO-Caddy   # multi_accept on;
+# TODO-Caddy }
+
+# TODO-Caddy http {
+
+  ##
+  # Basic Settings
+  ##
+
+# TODO-Caddy   sendfile on;
+# TODO-Caddy   tcp_nopush on;
+# TODO-Caddy   tcp_nodelay on;
+# TODO-Caddy   keepalive_timeout 65;
+# TODO-Caddy   types_hash_max_size 2048;
+# TODO-Caddy   server_tokens off;
+
+# TODO-Caddy   log_format custom '$remote_addr - $remote_user $time_local $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time';
+# TODO-Caddy   access_log $${nginx-configuration:access_log} custom;
+
+  # server_names_hash_bucket_size 64;
+  # server_name_in_redirect off;
+
+# TODO-Caddy   default_type application/octet-stream;
+
+# TODO-Caddy   ssl_certificate $${ca-frontend:cert-file};
+# TODO-Caddy   ssl_certificate_key $${ca-frontend:key-file};
+
+  ##
+  # Gzip Settings
+  ##
+# TODO-Caddy   gzip on;
+# TODO-Caddy   gzip_disable "msie6";
+
+# TODO-Caddy   gzip_vary on;
+# TODO-Caddy   gzip_proxied any;
+# TODO-Caddy   gzip_comp_level 6;
+# TODO-Caddy   gzip_buffers 16 8k;
+# TODO-Caddy   gzip_http_version 1.1;
+# TODO-Caddy   gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  
+  ##
+  # Push stream Settings
+  ##
+# TODO-Caddy   push_stream_shared_memory_size                32m;
+
+# TODO-Caddy   fastcgi_temp_path  $${directory:varnginx} 1 2;
+# TODO-Caddy   uwsgi_temp_path  $${directory:varnginx} 1 2;
+# TODO-Caddy   scgi_temp_path  $${directory:varnginx} 1 2;
+
+# TODO-Caddy   client_body_temp_path $${directory:varnginx} 1 2;
+# TODO-Caddy   proxy_temp_path $${directory:varnginx} 1 2;
+# TODO-Caddy }
+
+import {{ slave_configuration_directory }}/*.conf
+
+# Catch-all and 404 for not configured instances
+:{{ port }} {
+  tls {{ ssl_certificate }} {{ ssl_key }}
+  bind {{ local_ip }}
+  # Serve an error 204 (No Content) for favicon.ico
+  status 204 /favicon.ico
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}
+
+:{{ plain_port }} {
+  bind {{ local_ip }}
+  # Serve an error 204 (No Content) for favicon.ico
+  status 204 /favicon.ico
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}

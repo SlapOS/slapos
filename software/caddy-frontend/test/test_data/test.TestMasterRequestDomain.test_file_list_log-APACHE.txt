@@ -1,0 +1,7 @@
+TestMasterRequestDomain-1/var/log/frontend-apache-access.log
+TestMasterRequestDomain-1/var/log/frontend-apache-error.log
+TestMasterRequestDomain-1/var/log/monitor-httpd-error.log
+TestMasterRequestDomain-1/var/log/nginx-access.log
+TestMasterRequestDomain-1/var/log/nginx-error.log
+TestMasterRequestDomain-1/var/log/trafficserver/manager.log
+TestMasterRequestDomain-1/var/log/trafficserver/traffic.out

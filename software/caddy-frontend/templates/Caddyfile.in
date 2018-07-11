@@ -1,0 +1,47 @@
+# Main caddy configuration file
+
+import {{frontend_configuration.get('log-access-configuration')}}
+import {{ slave_configuration_directory }}/*.conf
+import {{ slave_with_cache_configuration_directory }}/*.conf
+
+# Catch-all and 404 for not configured instances
+:{{ https_port }} {
+  tls {{ login_certificate }} {{ login_key }}
+  bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}
+
+:{{ http_port }} {
+  bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
+  status 404 /
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}
+
+# Access to server-status Caddy-style
+https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
+  tls {{ login_certificate }} {{ login_key }}
+  # Compress the output
+  gzip
+  bind {{ local_ipv4 }}
+  basicauth "{{ username }}" {{ password }} {
+    "Server Status"
+    /
+  }
+  expvar
+  pprof
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}

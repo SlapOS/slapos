@@ -1,0 +1,63 @@
+{%- set url = slave_parameter.get('url') %}
+{%- set https_url = slave_parameter.get('https-url', url) %}
+{%- if url.startswith("http://") or url.startswith("https://") %}
+{%-   set upstream = url.split("/")[2] %}
+{%-   set https_upstream = https_url.split("/")[2] %}
+
+# SSL-enabled
+https://{{ slave_parameter.get('custom_domain') }}:{{ nginx_https_port }} {
+  bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
+  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ slave_parameter.get('error_log') }}
+
+  tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
+{%-   if slave_parameter.get('path_to_ssl_ca_crt') %}
+    clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
+{%-   endif %}
+    alpn http/1.1
+  }
+
+  proxy / {{ https_upstream }} {
+    transparent
+    insecure_skip_verify
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ https_upstream }} {
+    header_upstream X-Real-IP {remote}
+    header_upstream Host {host}
+    websocket
+    without /proxy/
+    insecure_skip_verify
+  }
+}
+
+# SSL-disabled
+http://{{ slave_parameter.get('custom_domain') }}:{{ nginx_http_port }} {
+  bind {{ local_ipv4 }}
+  # Compress the output
+  gzip
+  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ slave_parameter.get('error_log') }}
+
+  proxy / {{ upstream }} {
+    transparent
+    insecure_skip_verify
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ upstream }} {
+    header_upstream X-Real-IP {remote}
+    header_upstream Host {host}
+    websocket
+    without /proxy/
+    insecure_skip_verify
+  }
+}
+{%- endif %}

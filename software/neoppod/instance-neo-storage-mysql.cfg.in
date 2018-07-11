@@ -28,6 +28,17 @@ rendered = ${directory:etc}/mariadb.cnf
 template = {{ template_neo_my_cnf }}
 context = section parameter_dict my-cnf-parameters
 
+[{{ section('binary-wrap-mysql') }}]
+recipe = slapos.cookbook:wrapper
+command-line = ${mysqld:mysql-base-directory}/bin/${:command} --defaults-file=${my-cnf:rendered}
+wrapper-path = ${directory:bin}/${:command}
+command = mysql
+
+[{{ section('binary-neolog') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ bin_directory }}/neolog
+
 {% set master_list = [] -%}
 {% set admin_list = [] -%}
 {% for k, v in slapparameter_dict.iteritems() -%}

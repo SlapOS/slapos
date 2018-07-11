@@ -1,0 +1,10 @@
+#!${dash-output:dash}
+
+exec {{ caddy }} \
+  -conf {{ conf }} \
+  -log {{ log }} \
+  -http2=true \
+  -grace {{ grace }}s \
+  -disable-http-challenge \
+  -disable-tls-sni-challenge \
+  "$@"

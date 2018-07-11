@@ -1,0 +1,16 @@
+{% for slave, directory in slave_log_directory.iteritems() %}
+https://[{{ global_ipv6 }}]:{{ https_port }}/{{ slave }}, https://{{ local_ipv4 }}:{{ https_port }}/{{ slave }} {
+  bind {{ local_ipv4 }}
+  root {{directory}}/
+  browse
+  tls {{ login_certificate }} {{ login_key }}
+  basicauth "{{ slave }}" {{ slave_password[slave] }} {
+    "Log Access {{ slave }}"
+    /
+  }
+  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  errors {{ error_log }} {
+    * {{ not_found_file }}
+  }
+}
+{% endfor %}

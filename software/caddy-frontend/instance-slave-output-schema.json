@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Values returned by Caddy Frontend instanciation",
+    "properties": {
+        "domain": {
+            "description": "Base domain used by the instance",
+            "type": "string"
+        },
+        "log-access-url": {
+            "description": "List of URLs to access logs",
+            "type": "array"
+        },
+        "public-ipv4": {
+            "description": "Public IPv4 to be included on DNS",
+            "type": "string"
+        },
+        "replication_number": {
+            "description": "Number of nodes the slave is replicated",
+            "type": "integer"
+        },
+        "secure_access": {
+            "description": "URL for HTTP access",
+            "type": "string"
+        },
+        "site_url": {
+            "description": "URL for HTTP access",
+            "type": "string"
+        },
+        "url": {
+            "description": "Default URL provided",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}

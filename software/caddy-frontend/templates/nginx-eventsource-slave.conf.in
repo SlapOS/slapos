@@ -1,0 +1,113 @@
+{% set url = slave_parameter.get('url') %}
+{% set https_url = slave_parameter.get('https-url', url) %}
+{% if url.startswith("http://") or url.startswith("https://") %}
+{%   set upstream = url.split("/")[2] %}
+{%   set https_upstream = https_url.split("/")[2] %}
+{%   set protocol = url.split("/")[0] %}
+{%   set https_protocol = https_url.split("/")[0] %}
+{%   set proxy_pass = '%s//%s' % (protocol, slave_parameter.get('slave_reference')) %}
+{%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) %}
+{% set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
+                                 ('ssl_certificate_key', 'path_to_ssl_key')] %}
+
+
+# TODO-Caddy upstream {{ slave_parameter.get('slave_reference') }} {
+# TODO-Caddy  server {{ upstream }};
+# TODO-Caddy 
+
+# TODO-Caddy pstream https_{{ slave_parameter.get('slave_reference') }} {
+# TODO-Caddy  server {{ https_upstream }};
+# TODO-Caddy 
+
+
+# TODO-Caddy server {
+# TODO-Caddy  listen {{ local_ipv4 }}:{{ nginx_http_port }};
+# TODO-Caddy 
+# TODO-Caddy  server_name {{ slave_parameter.get('custom_domain') }};
+# TODO-Caddy 
+# TODO-Caddy  error_log {{ slave_parameter.get('error_log') }} error; 
+# TODO-Caddy  access_log {{ slave_parameter.get('access_log') }} custom;
+# TODO-Caddy  
+# TODO-Caddy  location /pub {
+# TODO-Caddy    push_stream_publisher;
+# TODO-Caddy    push_stream_channels_path $arg_id;
+# TODO-Caddy    # store messages in memory
+# TODO-Caddy    push_stream_store_messages  off;
+# TODO-Caddy 
+# TODO-Caddy    # Message size limit
+# TODO-Caddy    # client_max_body_size MUST be equal to client_body_buffer_size or
+# TODO-Caddy    # you will be sorry.
+# TODO-Caddy    client_max_body_size 16k;
+# TODO-Caddy    client_body_buffer_size 16k;
+# TODO-Caddy 
+# TODO-Caddy   }
+# TODO-Caddy 
+# TODO-Caddy   location ~ /sub/(.*) {
+# TODO-Caddy     # activate subscriber mode for this location
+# TODO-Caddy     add_header "Access-Control-Allow-Origin" "*";
+# TODO-Caddy     add_header 'Access-Control-Allow-Credentials' 'false';
+# TODO-Caddy     add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
+# TODO-Caddy     add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since';
+# TODO-Caddy 
+# TODO-Caddy     push_stream_subscriber eventsource;
+# TODO-Caddy     # positional channel path
+# TODO-Caddy     push_stream_channels_path $1;
+# TODO-Caddy 
+# TODO-Caddy     # content-type
+# TODO-Caddy     default_type "text/event-stream; charset=utf-8";
+# TODO-Caddy  }
+# TODO-Caddy 
+# TODO-Caddy 
+
+# TODO-Caddy server {
+# TODO-Caddy  listen {{ local_ipv4 }}:{{ nginx_https_port }} ssl;
+# TODO-Caddy 
+# TODO-Caddy  server_name {{ slave_parameter.get('custom_domain') }};
+# TODO-Caddy 
+# TODO-Caddy  error_log {{ slave_parameter.get('error_log') }} error;
+# TODO-Caddy  access_log {{ slave_parameter.get('access_log') }} custom;
+# TODO-Caddy 
+# TODO-Caddy  ssl on;
+# TODO-Caddy  
+# TODO-Caddy  ssl_session_timeout 5m;
+# TODO-Caddy  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+# TODO-Caddy  ssl_ciphers 'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5';
+# TODO-Caddy  ssl_prefer_server_ciphers on;
+# TODO-Caddy  ssl_session_cache shared:SSL:10m;
+
+{% for key, value in ssl_configuration_list %}
+{%   if value in slave_parameter %}
+# TODO-Caddy {{ '  %s' % key }} {{ slave_parameter.get(value) }};
+{% endif %}
+{% endfor %}
+
+# TODO-Caddy  location /pub {
+# TODO-Caddy    push_stream_publisher;
+# TODO-Caddy    push_stream_channels_path $arg_id;
+# TODO-Caddy    # store messages in memory
+# TODO-Caddy    push_stream_store_messages  off;
+# TODO-Caddy 
+# TODO-Caddy    # Message size limit
+# TODO-Caddy    # client_max_body_size MUST be equal to client_body_buffer_size or
+# TODO-Caddy    # you will be sorry.
+# TODO-Caddy    client_max_body_size 16k;
+# TODO-Caddy    client_body_buffer_size 16k;
+# TODO-Caddy 
+# TODO-Caddy   }
+# TODO-Caddy 
+# TODO-Caddy   location ~ /sub/(.*) {
+# TODO-Caddy     # activate subscriber mode for this location
+# TODO-Caddy     add_header "Access-Control-Allow-Origin" "*";
+# TODO-Caddy     add_header 'Access-Control-Allow-Credentials' 'false';
+# TODO-Caddy     add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
+# TODO-Caddy     add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since';
+# TODO-Caddy 
+# TODO-Caddy     push_stream_subscriber eventsource;
+# TODO-Caddy     # positional channel path
+# TODO-Caddy     push_stream_channels_path $1;
+# TODO-Caddy 
+# TODO-Caddy     # content-type
+# TODO-Caddy     default_type "text/event-stream; charset=utf-8";
+# TODO-Caddy  }
+# TODO-Caddy}
+{% endif %}

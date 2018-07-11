@@ -1,0 +1,8 @@
+TestRe6stVerificationUrlSlave-0/var/run/monitor-httpd.pid
+TestRe6stVerificationUrlSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestRe6stVerificationUrlSlave-1/var/run/caddy_configuration.signature
+TestRe6stVerificationUrlSlave-1/var/run/httpd.pid
+TestRe6stVerificationUrlSlave-1/var/run/monitor-httpd.pid
+TestRe6stVerificationUrlSlave-1/var/run/monitor/monitor-bootstrap.pid
+TestRe6stVerificationUrlSlave-1/var/run/ncaddy_configuration.signature
+TestRe6stVerificationUrlSlave-1/var/run/nginx.pid

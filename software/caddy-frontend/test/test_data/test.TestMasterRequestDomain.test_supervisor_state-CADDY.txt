@@ -1,0 +1,6 @@
+TestMasterRequestDomain-0:bootstrap-monitor EXITED
+TestMasterRequestDomain-0:certificate_authority-on-watch RUNNING
+TestMasterRequestDomain-0:crond RUNNING
+TestMasterRequestDomain-0:monitor-httpd-graceful EXITED
+TestMasterRequestDomain-0:monitor-httpd-on-watch RUNNING
+watchdog:watchdog RUNNING

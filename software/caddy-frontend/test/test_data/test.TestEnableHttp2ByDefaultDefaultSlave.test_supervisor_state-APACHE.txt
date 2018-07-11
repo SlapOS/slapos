@@ -1,0 +1,17 @@
+TestEnableHttp2ByDefaultDefaultSlave-0:bootstrap-monitor EXITED
+TestEnableHttp2ByDefaultDefaultSlave-0:certificate_authority-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-0:crond RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-0:monitor-httpd-graceful EXITED
+TestEnableHttp2ByDefaultDefaultSlave-0:monitor-httpd-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:bootstrap-monitor EXITED
+TestEnableHttp2ByDefaultDefaultSlave-1:certificate_authority-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:crond-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:frontend-apache-safe-graceful EXITED
+TestEnableHttp2ByDefaultDefaultSlave-1:frontend-nginx-safe-graceful EXITED
+TestEnableHttp2ByDefaultDefaultSlave-1:frontend_apache-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:frontend_nginx-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:monitor-httpd-graceful EXITED
+TestEnableHttp2ByDefaultDefaultSlave-1:monitor-httpd-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:trafficserver-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:trafficserver-reload EXITED
+watchdog:watchdog RUNNING

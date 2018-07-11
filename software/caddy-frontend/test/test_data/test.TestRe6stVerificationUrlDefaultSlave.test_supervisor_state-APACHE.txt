@@ -1,0 +1,17 @@
+TestRe6stVerificationUrlDefaultSlave-0:bootstrap-monitor EXITED
+TestRe6stVerificationUrlDefaultSlave-0:certificate_authority-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-0:crond RUNNING
+TestRe6stVerificationUrlDefaultSlave-0:monitor-httpd-graceful EXITED
+TestRe6stVerificationUrlDefaultSlave-0:monitor-httpd-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:bootstrap-monitor EXITED
+TestRe6stVerificationUrlDefaultSlave-1:certificate_authority-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:crond-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:frontend-apache-safe-graceful EXITED
+TestRe6stVerificationUrlDefaultSlave-1:frontend-nginx-safe-graceful EXITED
+TestRe6stVerificationUrlDefaultSlave-1:frontend_apache-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:frontend_nginx-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:monitor-httpd-graceful EXITED
+TestRe6stVerificationUrlDefaultSlave-1:monitor-httpd-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:trafficserver-on-watch RUNNING
+TestRe6stVerificationUrlDefaultSlave-1:trafficserver-reload EXITED
+watchdog:watchdog RUNNING
