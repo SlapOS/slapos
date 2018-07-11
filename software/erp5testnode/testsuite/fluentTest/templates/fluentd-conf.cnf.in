@@ -3,37 +3,24 @@
   port 5438
 </source>
 
-# HTTP input
-# http://localhost:8888/<tag>?json=<json>
-#<source>
-#  @type http
-#  @id http_input
-#  port 8888
-#</source>
-
-
 ## output tag=sensor.** to Wendelin
 <match tag_*>
   @type wendelin
   @id wendelin_out
-
   streamtool_uri http://{{local_ip}}:4443
- 
-
-
-  # all parameters of BufferedOutput & Output classes are supported too, e.g.
-  # `buffer_type`, `flush_interval`, `num_threads`, `log_level`, etc - see
-  # their code near:
-  #
-  #   https://github.com/fluent/fluentd/blob/master/lib/fluent/output.rb#L182
-  #
-  # logging setup description:
-  #
-  #   http://docs.fluentd.org/articles/logging
-
   buffer_type       memory
   buffer_chunk_limit 1MB
-  #buffer_path       "#{ENV['HOME']/var}"
+  flush_interval    1s
+  num_threads 1
+  use_keep_alive  true
+</match>
+
+<match diff_*>
+  @type wendelin
+  @id wendelin_out
+  streamtool_uri http://{{local_ip}}:4443/different_uri/
+  buffer_type       memory
+  buffer_chunk_limit 1MB
   flush_interval    1s
   num_threads 1
   use_keep_alive  true
@@ -64,23 +51,7 @@
   port 5443
 </source>
 
-
-## match tag=debug.** and dump to console
 <match debug.**>
   @type stdout
   @id stdout_output
 </match>
-
-
-## match fluent's internal events
-#<match fluent.**>
-#  @type null
-#</match>
-
-## match not matched logs and write to file
-#<match **>
-#  @type file
-#  path /var/log/fluent/else
-#  compress gz
-#</match>
-

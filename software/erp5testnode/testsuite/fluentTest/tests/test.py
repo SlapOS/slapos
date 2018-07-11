@@ -102,18 +102,17 @@ class TestIngestion(FluentdPluginTestCase):
       time.sleep(10)
       self.assertEqual(test_msg, TestServerHandler.posted_data)
     
-    
     def test_keepAlive_on(self):
       print("############## TEST 3 ##############")
       
       start_fluentd_cat(self, "dummyInputDelayCheckKeepAlive", "tag_test_3")
-      time.sleep(10)
+      time.sleep(20)
 
       self.assertEqual(
       ['ESTABLISHED'],
       [conn.status for conn in self.caddy_process.connections('inet')
         if len(conn.raddr) > 1 and  conn.laddr.port == 4443])
-      print("conn_afet = %s" %str(self.caddy_process.connections()))
+      print("conn_after = %s" %str(self.caddy_process.connections()))
 
 
     def test_ingest_with_15mins_delay(self):
@@ -174,6 +173,25 @@ class TestIngestion(FluentdPluginTestCase):
       start_fluentd_cat(self, "dummyInputTags_6_3", "tag_Test_6_3")
       time.sleep(10)
       self.assertEqual("tag_Test_6_3", TestServerHandler.request_tag)
+      
+    def test_simple_ingest_on_different_uri(self):
+      print("############## TEST 7 ##############")
+      kill_caddy(caddy_pid)
+      time.sleep(5)
+      start_caddy(caddy_pid)
+      
+      
+      start_fluentd_cat(self, "dummyInputOnURI1", "tag_uri_1")
+      start_fluentd_cat(self, "dummyInputOnURI2", "different_tag_uri_2")
+      time.sleep(5)
+      self.assertTrue("dummyInputOnURI1" in TestServerHandler.all_data)
+      self.assertTrue("dummyInputOnURI2" in TestServerHandler.all_data)
+      self.assertEqual(
+      ['ESTABLISHED', 'ESTABLISHED'],
+      [conn.status for conn in self.caddy_process.connections('inet')
+        if len(conn.raddr) > 1 and  conn.laddr.port == 4443])
+      print("conn_after = %s" %str(self.caddy_process.connections()))
+      
       
 def start_fluentd_cat(self, test_msg, tag):
   """Feeds `test_msg` with `tag` to fluentd.
