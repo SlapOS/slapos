@@ -1,2 +1,2 @@
-{{ slave_parameter.get('apache_custom_https', '') }}
-{{ slave_parameter.get('apache_custom_http', '') }}
+{{ slave_parameter.get('caddy_custom_https', '') }}
+{{ slave_parameter.get('caddy_custom_http', '') }}
