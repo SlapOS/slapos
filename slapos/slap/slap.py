@@ -475,16 +475,6 @@ class ComputerPartition(SlapRequester):
     self._updateTransactionFile(partition_reference)
     return self._requestComputerPartition(request_dict)
 
-  def building(self):
-    self._connection_helper.POST('buildingComputerPartition', data={
-      'computer_id': self._computer_id,
-      'computer_partition_id': self.getId()})
-
-  def available(self):
-    self._connection_helper.POST('availableComputerPartition', data={
-      'computer_id': self._computer_id,
-      'computer_partition_id': self.getId()})
-
   def destroyed(self):
     self._connection_helper.POST('destroyedComputerPartition', data={
       'computer_id': self._computer_id,

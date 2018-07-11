@@ -107,34 +107,7 @@ class IRequester(Interface):
                            to identify the instances.
     """
 
-class IBuildoutController(Interface):
-  """
-  Classes which implement IBuildoutController can report the buildout run
-  status to the slapgrid server.
-  """
-
-  def available():
-    """
-    Notify (to the slapgrid server) that the software instance is
-    available.
-    """
-
-  def building():
-    """
-    Notify (to the slapgrid server) that the buildout is not
-    available and under creation.
-    """
-
-  def error(error_log):
-    """
-    Notify (to the slapgrid server) that the buildout is not available
-    and reports an error.
-
-    error_log -- a text describing the error
-                 It can be a traceback for example.
-    """
-
-class ISoftwareRelease(IBuildoutController):
+class ISoftwareRelease(Interface):
   """
   Software release interface specification
   """
@@ -158,10 +131,31 @@ class ISoftwareRelease(IBuildoutController):
     The result can be: available, destroyed
     """
 
+  def available():
+    """
+    Notify (to the slapgrid server) that the software release is
+    available.
+    """
+
+  def building():
+    """
+    Notify (to the slapgrid server) that the software release is not
+    available and under creation.
+    """
+
   def destroyed():
     """
     Notify (to the slapgrid server) that the software installation has
     been correctly destroyed.
+    """
+
+  def error(error_log):
+    """
+    Notify (to the slapgrid server) that the software installation is 
+    not available and reports an error.
+
+    error_log -- a text describing the error
+                 It can be a traceback for example.
     """
 
 class ISoftwareProductCollection(Interface):
@@ -181,7 +175,7 @@ class ISoftwareInstance(Interface):
   informations about a Software Instance.
   """
 
-class IComputerPartition(IBuildoutController, IRequester):
+class IComputerPartition(IRequester):
   """
   Computer Partition interface specification
 
@@ -207,6 +201,16 @@ class IComputerPartition(IBuildoutController, IRequester):
     Notify (to the slapgrid server) that the software instance has
     been correctly destroyed.
     """
+
+  def error(error_log):
+    """
+    Notify (to the slapgrid server) that the software instance is 
+    not available and reports an error.
+
+    error_log -- a text describing the error
+                 It can be a traceback for example.
+    """
+
 
   def getId():
     """

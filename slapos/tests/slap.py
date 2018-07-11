@@ -899,20 +899,6 @@ class TestComputerPartition(SlapMixin):
       self.assertRaises(slapos.slap.NotFoundError,
                         getattr(computer_partition, state))
 
-  def test_available_new_ComputerPartition_raises(self):
-    """
-    Asserts that calling ComputerPartition.available on new partition
-    raises (not defined yet) exception
-    """
-    self._test_new_computer_partition_state('available')
-
-  def test_building_new_ComputerPartition_raises(self):
-    """
-    Asserts that calling ComputerPartition.building on new partition raises
-    (not defined yet) exception
-    """
-    self._test_new_computer_partition_state('building')
-
   def test_started_new_ComputerPartition_raises(self):
     """
     Asserts that calling ComputerPartition.started on new partition raises

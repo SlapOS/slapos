@@ -590,22 +590,6 @@ class SlapTool(BaseTool):
     return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
-    'buildingComputerPartition')
-  def buildingComputerPartition(self, computer_id, computer_partition_id):
-    """
-    Reports that Computer Partition is being build
-    """
-    return self._buildingComputerPartition(computer_id, computer_partition_id)
-
-  security.declareProtected(Permissions.AccessContentsInformation,
-    'availableComputerPartition')
-  def availableComputerPartition(self, computer_id, computer_partition_id):
-    """
-    Reports that Computer Partition is available
-    """
-    return self._availableComputerPartition(computer_id, computer_partition_id)
-
-  security.declareProtected(Permissions.AccessContentsInformation,
     'softwareInstanceError')
   def softwareInstanceError(self, computer_id,
                             computer_partition_id, error_log):
@@ -1043,32 +1027,6 @@ class SlapTool(BaseTool):
         comment="Software Release destroyed report.")
 
   @convertToREST
-  def _buildingComputerPartition(self, computer_id, computer_partition_id):
-    """
-    Log the computer status
-    """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
-                                                   .getUserName()
-    self._logAccess(user, instance.getReference(), 
-                    'building the instance')
-
-  @convertToREST
-  def _availableComputerPartition(self, computer_id, computer_partition_id):
-    """
-    Log the computer status
-    """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
-                                                   .getUserName()
-    self._logAccess(user, instance.getReference(), 
-                    '#access instance available')
-
-  @convertToREST
   def _softwareInstanceError(self, computer_id,
                             computer_partition_id, error_log=""):
     """
@@ -1082,7 +1040,7 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance,
+    self._logAccess(user, instance.getReference(),
                     '#error while instanciating: %s' % error_log[-80:])
 
     #return instance.reportComputerPartitionError()

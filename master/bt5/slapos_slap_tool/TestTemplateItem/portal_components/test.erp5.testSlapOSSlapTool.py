@@ -1519,7 +1519,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#error while instanciating</unicode>
+    <unicode>#error while instanciating: The error</unicode>
     <unicode>user</unicode>
     <unicode>%(instance_guid)s</unicode>
   </dictionary>
@@ -1818,80 +1818,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.tic()
     self.assertEqual([],
               self.start_requested_software_instance.getPredecessorTitleList())
-
-  def test_availableComputerPartition(self):
-    self._makeComplexComputer()
-    partition_id = self.start_requested_software_instance.getAggregateValue(
-        portal_type='Computer Partition').getReference()
-    self.login(self.start_requested_software_instance.getUserId())
-    response = self.portal_slap.availableComputerPartition(self.computer_id,
-      partition_id)
-    self.assertEqual('None', response)
-    created_at = rfc1123_date(DateTime())
-    response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
-      partition_id)
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <dictionary id='i2'>
-    <unicode>created_at</unicode>
-    <unicode>%(created_at)s</unicode>
-    <unicode>text</unicode>
-    <unicode>#access instance available</unicode>
-    <unicode>user</unicode>
-    <unicode>%(instance_guid)s</unicode>
-  </dictionary>
-</marshal>
-""" % dict(
-  created_at=created_at,
-  instance_guid=self.start_requested_software_instance.getReference(),
-)
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
-
-  def test_buildingComputerPartition(self):
-    self._makeComplexComputer()
-    partition_id = self.start_requested_software_instance.getAggregateValue(
-        portal_type='Computer Partition').getReference()
-    self.login(self.start_requested_software_instance.getUserId())
-    response = self.portal_slap.buildingComputerPartition(self.computer_id,
-      partition_id)
-    self.assertEqual('None', response)
-    created_at = rfc1123_date(DateTime())
-    response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
-      partition_id)
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <dictionary id='i2'>
-    <unicode>created_at</unicode>
-    <unicode>%(created_at)s</unicode>
-    <unicode>text</unicode>
-    <unicode>building the instance</unicode>
-    <unicode>user</unicode>
-    <unicode>%(instance_guid)s</unicode>
-  </dictionary>
-</marshal>
-""" % dict(
-  created_at=created_at,
-  instance_guid=self.start_requested_software_instance.getReference(),
-)
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
   def test_stoppedComputerPartition(self):
     self._makeComplexComputer()

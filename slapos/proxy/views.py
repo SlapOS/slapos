@@ -277,14 +277,6 @@ def availableSoftwareRelease():
 def softwareReleaseError():
   return 'Ignored'
 
-@app.route('/buildingComputerPartition', methods=['POST'])
-def buildingComputerPartition():
-  return 'Ignored'
-
-@app.route('/availableComputerPartition', methods=['POST'])
-def availableComputerPartition():
-  return 'Ignored'
-
 @app.route('/softwareInstanceError', methods=['POST'])
 def softwareInstanceError():
   return 'Ignored'

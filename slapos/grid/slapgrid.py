@@ -1091,7 +1091,6 @@ stderr_logfile_backups=1
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
-        computer_partition.available()
         local_partition.start()
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
@@ -1104,14 +1103,19 @@ stderr_logfile_backups=1
           # We want to process the partition, even if stopped, because it should
           # propagate the state to children if any.
           local_partition.install()
-          computer_partition.available()
           if self.firewall_conf:
             self._setupComputerPartitionFirewall(computer_partition,
                                                 partition_ip_list)
         finally:
           # Instance has to be stopped even if buildout/reporting is wrong.
           local_partition.stop()
-        computer_partition.stopped()
+        try:
+          computer_partition.stopped()
+        except (SystemExit, KeyboardInterrupt):
+          computer_partition.error(traceback.format_exc(), logger=self.logger)
+          raise
+        except Exception:
+          pass
         self._endInstallationTransaction(computer_partition)
       elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
         local_partition.stop()
