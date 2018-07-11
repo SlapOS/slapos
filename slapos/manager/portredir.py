@@ -2,7 +2,7 @@
 import json
 import logging
 import netaddr
-import os.path
+import os
 
 from .interface import IManager
 from itertools import ifilter
@@ -14,6 +14,13 @@ def _format_ip_addr(ip_addr):
   if ip_addr.version == 6:
     return '[{}]'.format(ip_addr)
   return str(ip_addr)
+
+def which(exename):
+  for path in os.environ["PATH"].split(os.pathsep):
+    full_path = os.path.join(path, exename)
+    if os.path.exists(full_path):
+      return full_path
+  return None
 
 class Manager(object):
   interface.implements(IManager)
@@ -120,7 +127,7 @@ class Manager(object):
         logger.warning('Bad source address provided', exc_info=True)
         continue
 
-      command = ['socat']
+      command = [which('socat')]
 
       socat_source_version = source_addr.version if source_addr is not None else 4
       socat_source_type = '{rtype}{version}-LISTEN'.format(rtype=redir_type.upper(), version=socat_source_version)
