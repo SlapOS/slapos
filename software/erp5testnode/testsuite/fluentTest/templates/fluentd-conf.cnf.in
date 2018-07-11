@@ -6,7 +6,6 @@
 ## output tag=sensor.** to Wendelin
 <match tag_*>
   @type wendelin
-  @id wendelin_out
   streamtool_uri http://{{local_ip}}:4443
   buffer_type       memory
   buffer_chunk_limit 1MB
@@ -17,7 +16,6 @@
 
 <match diff_*>
   @type wendelin
-  @id wendelin_out
   streamtool_uri http://{{local_ip}}:4443/different_uri/
   buffer_type       memory
   buffer_chunk_limit 1MB
