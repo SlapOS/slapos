@@ -15,7 +15,7 @@
 {%- for host in host_list %}
 {%-   do http_host_list.append('http://%s:%s' % (host, http_port)) %}
 {%-   do https_host_list.append('https://%s:%s' % (host, https_port)) %}
-{%- endfor %}
+{%- endfor %} {#- for host in host_list #}
 
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
@@ -24,28 +24,28 @@
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{%- endif %}
+{%- endif %} {#- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter #}
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
 {%- if slave_parameter.get('path_to_ssl_ca_crt') %}
     # Configuration of accepted clients
     clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
-{%- endif %}
+{%- endif %} {#- if slave_parameter.get('path_to_ssl_ca_crt') #}
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1
-{%- else %}
+{%- else %} {#- if enable_h2 #}
     # Disallow HTTP2
     alpn http/1.1
-{%- endif %}
-  }
+{%- endif %} {#- if enable_h2 #}
+  } {# tls #}
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
 {%- for disabled_cookie in disabled_cookie_list %}
-{%- endfor %}
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%- if prefer_gzip %}
-{%- endif %}
+{%- endif %} {#- if prefer_gzip #}
 
 {%- if slave_type ==  'zope' and backend_url %}
   # Zope configuration
@@ -55,44 +55,44 @@
 
 {%-   if disable_via_header %}
     header_downstream -Via
-{%-   endif %}
+{%-   endif %} {#-   if disable_via_header #}
 
 {%-   if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{%-   endif %}
+{%-   endif %} {#-   if disable_no_cache_header #}
     transparent
     timeout 600s
 {%-   if ssl_proxy_verify %}
 {%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-     endif %}
-{%-   else %}
+{%-     endif %} {#-     if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-   else %} {#-   if ssl_proxy_verify #}
     insecure_skip_verify
-{%-   endif %}
-  }
+{%-   endif %} {#-   if ssl_proxy_verify #}
+  } {# proxy #}
   {%- if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
-  }
-  {%- endif %}
+  } {# redir #}
+  {%- endif %} {#- if 'default-path' in slave_parameter #}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
-  }
-{%- elif slave_type ==  'redirect' and backend_url %}
+  } {# rewrite #}
+{%- elif slave_type ==  'redirect' and backend_url %} {#- if slave_type ==  'zope' and backend_url #}
   # Redirect configuration
   redir 302 {
     /  {{ backend_url }}{uri}
-  }
-{%- else %}
+  } {# redir #}
+{%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
 {%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
-  }
-{%-   endif %}
+  }  {# redir #}
+{%-   endif %} {#-   if 'default-path' in slave_parameter #}
 {%-   if backend_url %}
 
   proxy / {{ backend_url }} {
@@ -101,24 +101,24 @@
 
 {%-     if disable_via_header %}
     header_downstream -Via
-{%-     endif %}
+{%-     endif %} {#-     if disable_via_header #}
 
 {%-     if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{%-     endif %}
+{%-     endif %} {#-     if disable_no_cache_header #}
     transparent
     timeout 600s
 {%-     if ssl_proxy_verify %}
 {%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-       endif %}
-{%-     else %}
+{%-       endif %} {#-       if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-     else %} {#-     if ssl_proxy_verify #}
     insecure_skip_verify
-{%-     endif %}
-  }
-{%-   endif %}
-{%- endif %}
-}
+{%-     endif %} {#-     if ssl_proxy_verify #}
+  }  {# proxy #}
+{%-   endif %} {#-   if backend_url #}
+{%- endif %} {#- if slave_type ==  'zope' and backend_url #}
+}  {# https_host_list|join(', ') #}
 
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
@@ -127,26 +127,26 @@
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
     status 501 /
-{%- endif %}
+{%- endif %} {#- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter #}
 
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
 {%- for disabled_cookie in disabled_cookie_list %}
-{%- endfor %}
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%- if prefer_gzip %}
-{%- endif %}
+{%- endif %} {#- if prefer_gzip #}
 
 {%- if https_only %}
   # Enforced redirection to SSL-enabled host
   redir / https://{host}{uri}
-{%- elif slave_type ==  'redirect' and slave_parameter.get('url', '') %}
+{%- elif slave_type ==  'redirect' and slave_parameter.get('url', '') %} {#- if https_only #}
   # Redirect configuration
   redir 302 {
     /  {{ slave_parameter.get('url', '') }}{uri}
-  }
-{%- elif slave_type ==  'zope' and backend_url %}
+  } {# redir #}
+{%- elif slave_type ==  'zope' and backend_url %} {#- if https_only #}
   # Zope configuration
   proxy / {{ backend_url }} {
     # As backend is trusting REMOTE_USER header unset it always
@@ -154,39 +154,39 @@
 
 {%-   if disable_via_header %}
     header_downstream -Via
-{%-   endif %}
+{%-   endif %} {#-   if disable_via_header #}
 
 {%-   if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{%-   endif %}
+{%-   endif %} {#-   if disable_no_cache_header #}
     transparent
     timeout 600s
 {%-   if ssl_proxy_verify %}
 {%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-     endif %}
-{%-   else %}
+{%-     endif %} {#-     if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-   else %} {#-   if ssl_proxy_verify #}
     insecure_skip_verify
-{%-   endif %}
-  }
+{%-   endif %} {#-   if ssl_proxy_verify #}
+  } {# proxy #}
 {%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
-  }
-{%-   endif %}
+  } {# redir #}
+{%-   endif %} {#-   if 'default-path' in slave_parameter #}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
-  }
-{%- else %}
+  } {# rewrite #}
+{%- else %} {#- if https_only #}
   # Default configuration
 {%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
     / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
-  }
-{%-   endif %}
+  } {# redir #}
+{%-   endif %} {#-   if 'default-path' in slave_parameter #}
 {%-   if slave_parameter.get('url', '') %}
   proxy / {{ slave_parameter.get('url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
@@ -194,21 +194,21 @@
 
 {%-     if disable_via_header %}
     header_downstream -Via
-{%-     endif %}
+{%-     endif %} {#-     if disable_via_header #}
 
 {%-     if disable_no_cache_header %}
     header_upstream -Cache-Control
     header_upstream -Pragma
-{%-     endif %}
+{%-     endif %} {#-     if disable_no_cache_header #}
     transparent
     timeout 600s
 {%-     if ssl_proxy_verify %}
 {%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-       endif %}
-{%-     else %}
+{%-       endif %} {#-       if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-     else %} {#-     if ssl_proxy_verify #}
     insecure_skip_verify
-{%-     endif %}
-  }
-{%-   endif %}
-{%- endif %}
-}
+{%-     endif %} {#-     if ssl_proxy_verify #}
+  } {# proxy #}
+{%-   endif %} {#-   if slave_parameter.get('url', '') #}
+{%- endif %} {#- if https_only #}
+} {# http_host_list|join(', ') #}
