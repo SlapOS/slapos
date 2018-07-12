@@ -2034,7 +2034,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertTrue(
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
-  @skipIf(IS_CADDY, 'Feature postponed')
   def test_prefer_gzip_encoding_to_backend(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'prefer-gzip-encoding-to-backend']
