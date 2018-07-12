@@ -59,10 +59,6 @@ Generally things to be done with ``caddy-frontend``:
  * drop ``6tunnel`` and use ``bind`` in Caddy configuration, as soon as multiple binds will be possible, tracked in upstream `bind: support multiple values <https://github.com/mholt/caddy/pull/2128>`_ and `ipv6: does not bind on ipv4 and ipv6 for sites that resolve to both <https://github.com/mholt/caddy/issues/864>`_
  * use caddy-frontend in `standalone style playbooks <https://lab.nexedi.com/nexedi/slapos.package/tree/master/playbook/roles/standalone-shared>`_
  * ensure `QUIC <https://en.wikipedia.org/wiki/QUIC>`_ is used by caddy
- * fix missing ``caddy_custom_https`` in:
-
-    * instance-apache-replicate.cfg.in:``{%   if not ((slave.has_key('caddy_custom_http') or slave.has_key('apache_custom_http')) and not slave.get('slave_reference') in authorized_slave_string) %}``
-    * templates/apache-custom-slave-list.cfg.in:``{%   if caddy_custom_http %}``
 
 Things which can't be implemented:
 

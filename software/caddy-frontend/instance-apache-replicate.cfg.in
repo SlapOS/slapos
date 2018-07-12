@@ -70,8 +70,8 @@ context =
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_list = [] %}
 {% for slave in slave_instance_list %}
-{# BBB: apache_custom_http #}
-{%   if not ((slave.has_key('caddy_custom_http') or slave.has_key('apache_custom_http')) and not slave.get('slave_reference') in authorized_slave_string) %}
+{# BBB: apache_custom_https AND apache_custom_http #}
+{%   if not ((slave.has_key('caddy_custom_http') or slave.has_key('apache_custom_http') or slave.has_key('caddy_custom_https') or slave.has_key('apache_custom_https')) and not slave.get('slave_reference') in authorized_slave_string) %}
 {%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_list.append(slave.get('slave_reference')) %}
