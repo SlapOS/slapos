@@ -213,7 +213,7 @@ rendered = {{ caddy_configuration_directory }}/${:filename}
 {%   endif %}
 
 
-{%   if caddy_custom_http %}
+{%   if caddy_custom_http or caddy_custom_https %}
 template = {{ template_custom_slave_configuration }}
 {%   elif slave_type == 'eventsource' %}
 template = {{ template_eventsource_slave_configuration }}
