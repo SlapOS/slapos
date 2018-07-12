@@ -14,6 +14,7 @@
 {% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}
 [request-common]
 <= request-common-base
+state = {{ instance_state }}
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
