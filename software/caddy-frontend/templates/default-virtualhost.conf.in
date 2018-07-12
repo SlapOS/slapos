@@ -2,6 +2,10 @@
 {%- set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES %}
 {%- set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES %}
 {%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES %}
+{%- set proxy_append_list = [''] %}
+{%- if prefer_gzip %}
+{%- do proxy_append_list.append('prefer-gzip') %}
+{%- endif %} {#- if prefer_gzip #}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
 {%- set enable_h2 = ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
 {%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
@@ -45,11 +49,20 @@
 {%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%- if prefer_gzip %}
+  rewrite {
+    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /prefer-gzip{uri}
+  }
 {%- endif %} {#- if prefer_gzip #}
 
 {%- if slave_type ==  'zope' and backend_url %}
   # Zope configuration
-  proxy / {{ backend_url }} {
+{%-   for proxy_name in proxy_append_list %}
+  proxy /{{ proxy_name }} {{ backend_url }} {
+{%-     if proxy_name == 'prefer-gzip' %}
+    without /prefer-gzip
+    header_upstream Accept-Encoding gzip
+{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -70,6 +83,7 @@
     insecure_skip_verify
 {%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
+{%-   endfor %} {#-   for proxy_name in proxy_append_list #}
   {%- if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
@@ -95,7 +109,12 @@
 {%-   endif %} {#-   if 'default-path' in slave_parameter #}
 {%-   if backend_url %}
 
-  proxy / {{ backend_url }} {
+{%-   for proxy_name in proxy_append_list %}
+  proxy /{{ proxy_name }} {{ backend_url }} {
+{%-     if proxy_name == 'prefer-gzip' %}
+    without /prefer-gzip
+    header_upstream Accept-Encoding gzip
+{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -116,6 +135,7 @@
     insecure_skip_verify
 {%-     endif %} {#-     if ssl_proxy_verify #}
   }  {# proxy #}
+{%-    endfor %} {#-   for proxy_name in proxy_append_list #}
 {%-   endif %} {#-   if backend_url #}
 {%- endif %} {#- if slave_type ==  'zope' and backend_url #}
 }  {# https_host_list|join(', ') #}
@@ -136,6 +156,10 @@
 {%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%- if prefer_gzip %}
+  rewrite {
+    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /prefer-gzip{uri}
+  }
 {%- endif %} {#- if prefer_gzip #}
 
 {%- if https_only %}
@@ -148,7 +172,12 @@
   } {# redir #}
 {%- elif slave_type ==  'zope' and backend_url %} {#- if https_only #}
   # Zope configuration
-  proxy / {{ backend_url }} {
+{%-   for proxy_name in proxy_append_list %}
+  proxy /{{ proxy_name }} {{ backend_url }} {
+{%-     if proxy_name == 'prefer-gzip' %}
+    without /prefer-gzip
+    header_upstream Accept-Encoding gzip
+{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -169,6 +198,7 @@
     insecure_skip_verify
 {%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
+{%- endfor %} {#-   for proxy_name in proxy_append_list #}
 {%-   if 'default-path' in slave_parameter %}
   redir 301 {
     if {path} is /
@@ -188,7 +218,12 @@
   } {# redir #}
 {%-   endif %} {#-   if 'default-path' in slave_parameter #}
 {%-   if slave_parameter.get('url', '') %}
-  proxy / {{ slave_parameter.get('url', '') }} {
+{%-   for proxy_name in proxy_append_list %}
+  proxy /{{ proxy_name }} {{ slave_parameter.get('url', '') }} {
+{%-     if proxy_name == 'prefer-gzip' %}
+    without /prefer-gzip
+    header_upstream Accept-Encoding gzip
+{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -209,6 +244,7 @@
     insecure_skip_verify
 {%-     endif %} {#-     if ssl_proxy_verify #}
   } {# proxy #}
+{%-    endfor %} {#-   for proxy_name in proxy_append_list #}
 {%-   endif %} {#-   if slave_parameter.get('url', '') #}
 {%- endif %} {#- if https_only #}
 } {# http_host_list|join(', ') #}

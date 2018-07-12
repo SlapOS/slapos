@@ -6,9 +6,6 @@ Generally things to be done with ``caddy-frontend``:
 
    * **Jérome Perrin**: *For event source, if I understand https://github.com/mholt/caddy/issues/1355 correctly, we could use caddy as a proxy in front of nginx-push-stream . If we have a "central shared" caddy instance, can it handle keeping connections opens for many clients ?*
  * ``ssl_ca_crt``
- * ``prefer-gzip-encoding-to-backend`` (requires writing middleware plugin for Caddy)::
-
-    RequestHeader edit Accept-Encoding "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)" "gzip"
  * ``disabled-cookie-list`` (requires writing middleware plugin for Caddy)::
 
     RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
