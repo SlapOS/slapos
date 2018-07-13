@@ -2183,6 +2183,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'apache_custom_http_filled_in_accepted' in open(q).read()]
     self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
+  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-rejected']
@@ -2200,6 +2201,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
     self.assertEqual([], configuration_file_with_custom_http_list)
 
+  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_accepted(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-accepted']
