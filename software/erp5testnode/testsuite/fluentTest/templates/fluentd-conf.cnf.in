@@ -14,7 +14,7 @@
   use_keep_alive  true
 </match>
 
-<match diff_*>
+<match diff*>
   @type wendelin
   streamtool_uri http://{{local_ip}}:4443/different_uri/
   buffer_type       memory
