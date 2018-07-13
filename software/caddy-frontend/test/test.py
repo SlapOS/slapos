@@ -1464,7 +1464,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'text/json',
+        {'Age': '0', 'Content-type': 'application/json',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
 
@@ -1487,7 +1487,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'text/json',
+        {'Age': '0', 'Content-type': 'application/json',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
 
@@ -1785,7 +1785,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'text/json',
+      {'Age': '0', 'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -1878,7 +1878,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'text/json',
+      {'Age': '0', 'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -1929,7 +1929,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'text/json',
+      {'Age': '0', 'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -1975,7 +1975,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers,
       {
         'Vary': 'Accept-Encoding',
-        'Content-Type': 'text/json',
+        'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Content-Encoding': 'gzip',
       }
@@ -2025,7 +2025,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers,
       {
         'Vary': 'Accept-Encoding',
-        'Content-type': 'text/json',
+        'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Content-Encoding': 'gzip',
       }
@@ -2159,7 +2159,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {
-        'Content-type': 'text/json',
+        'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
       }
     )
@@ -2235,7 +2235,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       headers,
       {
-        'Content-type': 'text/json',
+        'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
       }
     )
