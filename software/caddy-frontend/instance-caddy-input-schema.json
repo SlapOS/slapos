@@ -66,6 +66,16 @@
             "description": "Url to verify if the internet and/or re6stnet is working.",
             "title": "Test Verification URL",
             "type": "string"
+        },
+        "enable-quic": {
+            "default": "false",
+            "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour.",
+            "enum": [
+                "true",
+                "false"
+            ],
+            "title": "Enable QUIC",
+            "type": "string"
         }
     },
     "title": "Input Parameters",

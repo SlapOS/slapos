@@ -2830,3 +2830,110 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'Listen [%s]:8196' % (utils.GLOBAL_IPV6,) in master_monitor_conf)
     self.assertTrue(
       'Listen [%s]:8072' % (utils.GLOBAL_IPV6,) in slave_monitor_conf)
+
+
+class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': utils.LOCAL_IPV4,
+      'enable-quic': 'true',
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      '-frontend-authorized-slave-string':
+      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'url': {
+        'url': cls.backend_url,
+      },
+    }
+
+  def getMasterPartitionPath(self):
+    # partition w/o etc/trafficserver, but with buildout.cfg
+    return [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if not os.path.exists(os.path.join(q, 'etc', 'trafficserver')) and
+      os.path.exists(os.path.join(q, 'buildout.cfg'))][0]
+
+  def getSlavePartitionPath(self):
+    # partition w/ etc/trafficserver
+    return [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
+
+  def test_url(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'url'].copy()
+    self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'url.example.com',
+        'replication_number': '1',
+        'url': 'http://url.example.com',
+        'site_url': 'http://url.example.com',
+        'secure_access': 'https://url.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertKeyWithPop('Date', result.headers)
+    self.assertKeyWithPop('Content-Length', result.headers)
+
+    self.assertEqual(
+      result.headers,
+      {'Content-Encoding': 'gzip',
+       'Alt-Svc': 'quic=":11443"; ma=2592000; v="39"',  # QUIC advertises
+       'Set-Cookie': 'secured=value;secure, nonsecured=value',
+       'Vary': 'Accept-Encoding',
+       'Server': 'Caddy, BaseHTTP/0.3 Python/2.7.14',
+       'Content-Type': 'application/json'}
+    )
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+
+    try:
+      j = result_http.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result_http.headers['Content-Encoding'],
+      'gzip'
+    )
+
+    self.assertEqual(
+      result_http.headers['Set-Cookie'],
+      'secured=value;secure, nonsecured=value'
+    )
