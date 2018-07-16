@@ -449,6 +449,16 @@ the proxy::
     }
   )
 
+QUIC Protocol
+=============
+
+Experimental QUIC available in Caddy is not configurable, thus it is required to open port ``udp:11443`` on the machine, like::
+
+  iptables -I INPUT -p udp --dport 11443 --destination ${ip} -j ACCEPT
+
+where ``${ip}`` is the IP of the partition with running caddy process.
+
+
 Notes
 =====
 
