@@ -9,7 +9,9 @@ Generally things to be done with ``caddy-frontend``:
  * ``disabled-cookie-list`` (requires writing middleware plugin for Caddy)::
 
     RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
- * ``ssl_proxy_ca_crt`` for ``ssl_proxy_verify``, this is related to bug https://github.com/mholt/caddy/issues/1550, proposed solution `just adding your CA to the system's trust store`
+
+   * there is already `MR <https://github.com/mholt/caddy/pull/2144>`_ which will allow regexp modification of headers, thus cookies
+ * ``ssl_proxy_ca_crt`` for ``ssl_proxy_verify``, this is related to bug `#1550 <https://github.com/mholt/caddy/issues/1550>`_, proposed solution `just adding your CA to the system's trust store`
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
  * cover test suite like resilient tests for KVM and prove it works the same way as Caddy
  * have ``caddy-frontend`` specific parameters, with backward compatibility to ``apache-frontend`` ones:
@@ -17,9 +19,9 @@ Generally things to be done with ``caddy-frontend``:
   * ``apache-ca-certificate``
   * ``apache-certificate`` and ``apache-key``
 
- * change ``switch-softwaretype`` to way how ``software/erp5`` does, which will help with dropping jinja2 template for ``caddy-wrapper``, which is workaround for current situation https://lab.nexedi.com/nexedi/slapos/merge_requests/312#note_62678
+ * change ``switch-softwaretype`` to way how ``software/erp5`` does, which will help with dropping jinja2 template for ``caddy-wrapper``, which is workaround for current situation, cf `note_62678 <https://lab.nexedi.com/nexedi/slapos/merge_requests/312#note_62678>`_
  * use `slapos!326 <https://lab.nexedi.com/nexedi/slapos/merge_requests/326>`_, and especially `note about complex restart scenarios <https://lab.nexedi.com/nexedi/slapos/merge_requests/326#note_60198>`_, instead of self-developed graceful restart scripts
- * move out `test/utils.py` and use it from shared python distribution
+ * move out ``test/utils.py`` and use it from shared python distribution
  * provide various tricks for older browsers::
 
     # The following directives modify normal HTTP response behavior to
