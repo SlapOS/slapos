@@ -2,6 +2,10 @@ TestSlave-1/var/log/frontend-apache-access.log
 TestSlave-1/var/log/frontend-apache-error.log
 TestSlave-1/var/log/httpd/_apache_custom_http_s-accepted_access_log
 TestSlave-1/var/log/httpd/_apache_custom_http_s-accepted_error_log
+TestSlave-1/var/log/httpd/_caddy_custom_http_s-accepted_access_log
+TestSlave-1/var/log/httpd/_caddy_custom_http_s-accepted_error_log
+TestSlave-1/var/log/httpd/_caddy_custom_http_s-rejected_access_log
+TestSlave-1/var/log/httpd/_caddy_custom_http_s-rejected_error_log
 TestSlave-1/var/log/httpd/_custom_domain_access_log
 TestSlave-1/var/log/httpd/_custom_domain_error_log
 TestSlave-1/var/log/httpd/_custom_domain_ssl_crt_ssl_key_access_log
