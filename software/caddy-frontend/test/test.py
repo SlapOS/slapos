@@ -67,8 +67,31 @@ else:
 # response_code difference
 if IS_CADDY:
   no_backend_response_code = 404
+  COMMON_HEADERS = {
+    'Content-type': 'application/json',
+    'Alt-Svc': 'quic=":11443"; ma=2592000; v="39"',
+    'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+  COMMON_HEADERS_VARY_GZIP = COMMON_HEADERS.copy()
+  COMMON_HEADERS_VARY_GZIP.update({
+    'Content-Encoding': 'gzip',
+    'Vary': 'Accept-Encoding'})
+  COMMON_HEADERS_VARY_GZIP_AGE = COMMON_HEADERS_VARY_GZIP.copy()
+  COMMON_HEADERS_VARY_GZIP_AGE.update({
+    'Age': '0'
+  })
 else:
   no_backend_response_code = 502
+  COMMON_HEADERS = {
+    'Content-type': 'application/json',
+    'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+  COMMON_HEADERS_VARY_GZIP = COMMON_HEADERS.copy()
+  COMMON_HEADERS_VARY_GZIP.update({
+    'Content-Encoding': 'gzip',
+    'Vary': 'Accept-Encoding'})
+  COMMON_HEADERS_VARY_GZIP_AGE = COMMON_HEADERS_VARY_GZIP.copy()
+  COMMON_HEADERS_VARY_GZIP_AGE.update({
+    'Age': '0'
+  })
 
 caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
 https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
@@ -853,6 +876,44 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'secured=value;secure, nonsecured=value'
     )
 
+  @skipIf(not IS_CADDY, 'Caddy only')
+  def test_url_quic(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'url'].copy()
+    self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'url.example.com',
+        'replication_number': '1',
+        'url': 'http://url.example.com',
+        'site_url': 'http://url.example.com',
+        'secure_access': 'https://url.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      result.headers['Alt-Svc'], 'quic=":11443"; ma=2592000; v="39"'
+    )
+    # TODO: As soon as curl will have QUIC support it will be used to check
+    #       how well QUIC works https://github.com/curl/curl/wiki/QUIC
+
   @skipIf(IS_CADDY, 'Feature postponed')
   def test_url_ipv6_access(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1464,8 +1525,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'application/json',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+        COMMON_HEADERS
       )
 
       result_http = self.fakeHTTPResult(
@@ -1487,8 +1547,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'application/json',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
+        COMMON_HEADERS
       )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
@@ -1785,9 +1844,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+      COMMON_HEADERS_VARY_GZIP_AGE
     )
 
     result_direct = self.fakeHTTPResult(
@@ -1878,9 +1935,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+      COMMON_HEADERS_VARY_GZIP_AGE
     )
 
     try:
@@ -1929,9 +1984,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+      COMMON_HEADERS_VARY_GZIP_AGE
     )
 
   def test_enable_http2_false(self):
@@ -1973,12 +2026,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {
-        'Vary': 'Accept-Encoding',
-        'Content-Type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Content-Encoding': 'gzip',
-      }
+      COMMON_HEADERS_VARY_GZIP
     )
 
     self.assertFalse(
@@ -2023,12 +2071,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {
-        'Vary': 'Accept-Encoding',
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Content-Encoding': 'gzip',
-      }
+      COMMON_HEADERS_VARY_GZIP
     )
 
     self.assertTrue(
@@ -2158,10 +2201,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      }
+      COMMON_HEADERS
     )
 
     result_http = self.fakeHTTPResult(
@@ -2234,10 +2274,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      }
+      COMMON_HEADERS
     )
 
     result_http = self.fakeHTTPResult(
