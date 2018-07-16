@@ -1,3 +1,4 @@
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
 extends =
   {{ parameter_dict['common_profile'] }}
@@ -225,6 +226,9 @@ command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
   -log ${caddy-configuration:error-log}
   -http2=true
+{% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
+  -quic
+{% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
   -disable-tls-sni-challenge

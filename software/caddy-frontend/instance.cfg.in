@@ -89,6 +89,7 @@ configuration.trafficserver-autoconf-port = 8083
 configuration.trafficserver-mgmt-port = 8084
 configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
 configuration.enable-http2-by-default = true
+configuration.enable-quic = false
 configuration.mpm-graceful-shutdown-timeout = 5
 configuration.monitor-httpd-port = 8072
 configuration.frontend-name =
