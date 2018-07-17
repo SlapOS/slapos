@@ -10,13 +10,8 @@ fi
 
 BOARD=$1
 MOUNTPOINT="/tmp/${BOARD}"
-ORIGINAL_GRANDENET_SCRIPT=~/trunk/src/third_party/chromiumos-overlay/net-misc/re6stnet/files/grandenet
-GRANDENET_SCRIPT="usr/local/bin/grandenet"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
-GIT_CORE="usr/local/libexec/git-core/"
-GIT_EXPECTED_EXPORT="export GIT_EXEC_PATH=/usr/local/libexec/git-core"
-VIRTUALENV_BIN="usr/local/bin/virtualenv"
 CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
 
 HAS_FAILED=0
@@ -38,13 +33,8 @@ install -d "${MOUNTPOINT}"
 ./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT}
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
-  my_diff=$(diff "${ORIGINAL_GRANDENET_SCRIPT}" "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
-  gitcore=$(ls "${MOUNTPOINT}/${GIT_CORE}")
-  gitexport=$(grep "${GIT_EXPECTED_EXPORT}" "${MOUNTPOINT}/${BASHRC}")
-  virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
   chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
-
 else
   is_empty=1
 fi
@@ -60,44 +50,11 @@ if [[ "${is_empty}" == "1" ]] ; then
 else
   print_result ${SUCCESS} "/usr/local is not empty."
 
-  echo "* test grandenet script existence and content"
-  if [[ ${no_grandenet_script} == 1 ]] ; then
-    print_result ${FAILURE} "grandenet script is missing (no file at ${GRANDENET_SCRIPT})."
-  elif [[ ${my_diff} != "" ]] ; then
-    print_result ${FAILURE} "grandenet scripts differs:\n${my_diff}"
-  else
-    print_result ${SUCCESS} "${GRANDENET_SCRIPT} exists and contains what is expected."
-  fi
-
   echo "* test openssh server init script absence"
   if [[ ${opensshd_config} ]] ; then
     print_result ${FAILURE} "opensshd config exists: ${opensshd_config}"
   else
     print_result ${SUCCESS} "opensshd config removed."
-  fi
-
-  echo "* test if git core directory is not empty"
-
-  if [[ "${gitcore}" == "" ]] ; then
-    print_result ${FAILURE} "No git file in ${MOUNTPOINT}/${GIT_CORE}."
-  else
-    print_result ${SUCCESS} "git core directory exists and is not empty."
-  fi
-
-  echo "* test bashrc changes for git paths quick fix"
-
-  if [[ "${gitexport}" == ""  ]] ; then
-    print_result ${FAILURE} "Expected alias for git command not in ${MOUNTPOINT}/${BASHRC}. There should be: ${GIT_EXPECTED_EXPORT}"
-  else
-    print_result ${SUCCESS} "git alias is correct."
-  fi
-
-  echo "* test if virtualenv binary exists"
-
-  if [[ ${virtualenvbin} ]] ; then
-    print_result ${SUCCESS} "virtualenv binary exists."
-  else
-    print_result ${FAILURE} "Expected virtualenv binary not in ${MOUNTPOINT}/${VIRTUALENV_BIN}."
   fi
 
   echo "* test if Chromium policies are installed"
