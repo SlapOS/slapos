@@ -321,7 +321,13 @@ for board in ${BOARDS} ; do
   # NayuOS images
   date >> "${BUILD_LOG}"
   echo "building image" >> "${BUILD_LOG}"
-  cros_sdk --nouse-image -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
+  if [ {{ dev_server}} == "yes" ] ; then
+	cros_sdk -- ./start_devserver &
+	ROOTFS_VERIFICATION_FLAG = "--noenable_rootfs_verification"
+  else
+	ROOTFS_VERIFICATION_FLAG = ""
+  fi
+  cros_sdk --nouse-image -- ./build_image $ROOTFS_VERIFICATION_FLAG --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
