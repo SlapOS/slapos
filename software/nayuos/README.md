@@ -40,6 +40,7 @@ In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters
 *   **board** / ex: peppy, swanky, ... Complete list of devices and board names on [chromiumOS developer guide](http://www.chromium.org/chromium-os/developer-information-for-chrome-os-devices)
 *   **branch** / ex: release-R46-7390.B (you can find the release in the [Chromium OS source tree](https://chromium.googlesource.com/chromiumos/manifest/+refs))
 *   **keep_cache** / yes|no (choosing "no" saves about 15Go of disk space per board, choosing "yes" will makes next build faster and less expensive in term of needed ressources because of not rebuilding everything)
+*   **dev_server** / yes|no Enables devserver to configure over the air updates and install packages after build. Probably should not be used in production
 
 //Choosing board daisy will accept all licenses for the daisy board build only, in order to use Mali drivers, see [chromium mailing list](https://groups.google.com/a/chromium.org/forum/#!topic/chromium-os-dev/Pf9ZG2itxWM)
 
