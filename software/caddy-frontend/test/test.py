@@ -153,7 +153,7 @@ RewriteEngine On
 
 RewriteRule ^/(.*)$ %(url)s/$1 [L,P]
 '''
-  apache_custom_http = '''# apache_custom_http_filled_in_accpeted
+  apache_custom_http = '''# apache_custom_http_filled_in_accepted
 ServerName apachecustomhttpsaccepted.example.com
 ServerAlias apachecustomhttpsaccepted.example.com
 
@@ -708,15 +708,27 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
-    self.assertEqual(
-      {
+    if IS_CADDY:
+      expected_parameter_dict = {
         'monitor-base-url': None,
         'domain': 'example.com',
         'accepted-slave-amount': '33',
         'rejected-slave-amount': '2',
         'slave-amount': '35',
         'rejected-slave-list':
-        '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'},
+        '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'}
+    else:
+      expected_parameter_dict = {
+        'monitor-base-url': None,
+        'domain': 'example.com',
+        'accepted-slave-amount': '34',
+        'rejected-slave-amount': '1',
+        'slave-amount': '35',
+        'rejected-slave-list':
+        '["_apache_custom_http_s-rejected"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
       parameter_dict
     )
 
@@ -1473,6 +1485,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertEqual(
         headers,
         {'Age': '0', 'Content-type': 'application/json',
+         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
 
@@ -1496,6 +1509,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertEqual(
         headers,
         {'Age': '0', 'Content-type': 'application/json',
+         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
 
@@ -1942,6 +1956,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
 
+  @skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
@@ -2164,13 +2179,23 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     headers.pop('Connection', None)
     headers.pop('Keep-Alive', None)
 
-    self.assertEqual(
-      headers,
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      }
-    )
+    if IS_CADDY:
+      self.assertEqual(
+        headers,
+        {
+          'Content-type': 'application/json',
+          'Set-Cookie': 'secured=value;secure, nonsecured=value'
+        }
+      )
+    else:
+      self.assertEqual(
+        headers,
+        {
+          'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
+          'Content-type': 'application/json',
+          'Set-Cookie': 'secured=value;secure, nonsecured=value'
+        }
+      )
 
     result_http = self.fakeHTTPResult(
       'apachecustomhttpsaccepted.example.com',
@@ -2367,6 +2392,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
+@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
                                          TestDataMixin):
   @classmethod
@@ -2460,6 +2486,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
 
+@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
                                            TestDataMixin):
   @classmethod
