@@ -143,6 +143,10 @@ def main():
       '--test_location',
       help="Location of the tests"
   )
+  parser.add_argument(
+      '--python_interpreter',
+      help="Path to python interpreter used to run the test suite"
+  )
 
   args = parser.parse_args()
 
