@@ -71,7 +71,7 @@ def main():
 
   test_name_list = 'SQLite', 'MySQL'
 
-  tool = taskdistribution.TaskDistributionTool(portal_url = args.master_url)
+  tool = taskdistribution.TaskDistributor(portal_url = args.master_url)
   test_result = tool.createTestResult(revision = revision,
                                       test_name_list = test_name_list,
                                       node_title = args.test_node_title,
