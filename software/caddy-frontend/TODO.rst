@@ -1,6 +1,10 @@
 Generally things to be done with ``caddy-frontend``:
 
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
+
+   * ``apache-ca-certificate`` shall be appended to ``apache-certificate`` if not already there
+ * BUG?? check that changing ``apache-certificate`` on master partition results in reloading slave partition
+ * provide ``apache-frontend`` to ``caddy-frontend`` migration information
  * (new) ``type:websocket`` slave
  * ``type:eventsource``:
 
