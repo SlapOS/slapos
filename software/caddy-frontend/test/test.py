@@ -572,6 +572,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkey.example.com',
         'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
+        'ssl_ca_crt': open('example.com.root.ca.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
       'type-zope': {
