@@ -12,13 +12,13 @@
             "type": "integer"
         },
         "apache-ca-certificate": {
-            "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server.",
+            "description": "SSL CA Certificate used by the server.",
             "textarea": true,
-            "title": "[NOT IMPLEMENTED] SSL CA Certificate",
+            "title": "SSL CA Certificate",
             "type": "string"
         },
         "apache-certificate": {
-            "description": "SSL Certificate used by the server.",
+            "description": "SSL Certificate used by the server. If the certificate is signed by CA, it can be either bundled with by concatenting of the server's certificate followed by the CA's certificate or the CA's certificate can end up in `apache-ca-certificate`.",
             "textarea": true,
             "title": "SSL Certificate",
             "type": "string"
