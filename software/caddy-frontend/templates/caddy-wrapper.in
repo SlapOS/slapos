@@ -5,7 +5,6 @@ exec {{ caddy }} \
   -log {{ log }} \
   -http2=true \
   -grace {{ grace }}s \
-  -quic \
   -disable-http-challenge \
   -disable-tls-sni-challenge \
   "$@"
