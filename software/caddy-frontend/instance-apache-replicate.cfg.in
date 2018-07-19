@@ -6,10 +6,7 @@ rendered = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    key eggs_directory buildout:eggs-directory
-    key develop_eggs_directory buildout:develop-eggs-directory
-    key slap_software_type slap-parameter:slap_software_type
-    key slave_instance_list slap-parameter:slave_instance_list
+    raw common_profile {{ common_profile }}
     ${:extra-context}
 
 {% set part_list = [] %}
@@ -173,7 +170,9 @@ monitor-url-list +=
 {% endfor %}
 
 [buildout]
-extends = {{ template_monitor }}
+extends =
+  {{ common_profile }}
+  {{ template_monitor }}
 parts =
   monitor-base
   publish-slave-information
@@ -182,23 +181,4 @@ parts =
 {{ '  %s' % part }}
 {% endfor %}
 #      publish-information
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
-
-[slap_connection]
-# Kept for backward compatibility
-computer_id = ${slap-connection:computer-id}
-partition_id = ${slap-connection:partition-id}
-server_url = ${slap-connection:server-url}
-software_release_url = ${slap-connection:software-release-url}
-key_file = ${slap-connection:key-file}
-cert_file = ${slap-connection:cert-file}
-
-[slap-parameter]
-slave_instance_list =
--frontend-quantity = 1
--frontend-type = single-default
 {% endif %}

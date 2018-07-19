@@ -41,11 +41,8 @@ log-access-url = {{ json_module.dumps(slave_information.pop('log-access-urls', 1
 {% endfor %}
 
 [buildout]
+extends = {{ common_profile }}
 parts =
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
