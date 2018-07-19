@@ -20,8 +20,7 @@ recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
 extra-context =
 context =
-    key eggs_directory buildout:eggs-directory
-    key develop_eggs_directory buildout:develop-eggs-directory
+    raw common_profile {{ common_profile }}
     ${:extra-context}
 
 {% do logrotate_dict.pop('recipe') %}
@@ -395,6 +394,7 @@ slave-instance-information-list = {{ json_module.dumps(slave_instance_informatio
 monitor-base-url = {{ monitor_base_url }}
 
 [buildout]
+extends = {{ common_profile }}
 parts +=
     slave-log-directories
 {% for part in part_list %}
@@ -409,9 +409,6 @@ parts +=
     tunnel-6to4-base-nginx_http_port
     tunnel-6to4-base-nginx_https_port
 
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 cache-access = {{ cache_access }}
 
 {% endif %}
