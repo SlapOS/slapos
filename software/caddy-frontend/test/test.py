@@ -735,6 +735,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       set(),
       set(os.listdir(os.path.join(partition_path, 'etc', 'monitor-promise'))))
 
+    # check that monitor cors domains are correctly setup by file presence, as
+    # we trust monitor stack being tested in proper place and it is too hard
+    # to have working monitor with local proxy
+    self.assertTestData(
+      open(
+        os.path.join(
+          partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+
   def test_empty(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'empty']
