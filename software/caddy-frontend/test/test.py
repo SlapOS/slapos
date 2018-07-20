@@ -532,6 +532,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
     }
 
   @classmethod
@@ -754,6 +755,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       open(
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+
+  def test_slave_partition_state(self):
+    partition_path = self.getSlavePartitionPath()
+    self.assertTrue(
+      '-grace 2s' in
+      open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
+    )
+
+    self.assertTrue(
+      '-grace 2s' in
+      open(os.path.join(partition_path, 'bin', 'nginx-wrapper'), 'r').read()
+    )
 
   def test_empty(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
