@@ -193,7 +193,7 @@ class TestComputerNetwork(TestSlapOSGroupRoleSecurityMixin):
         ['G-COMPANY', 'R-SHADOW-PERSON', self.user_id], False)
     self.assertRoles(network, 'G-COMPANY', ['Assignor'])
     self.assertRoles(network, 'R-SHADOW-PERSON', ['Auditor'])
-    self.assertRoles(network, self.user_id, ['Owner'])
+    self.assertRoles(network, self.user_id, ['Assignee', 'Owner'])
 
   test_PersonShadow = test_GroupCompany
 
@@ -208,7 +208,7 @@ class TestComputerNetwork(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(network,
         ['G-COMPANY', 'R-SHADOW-PERSON', self.user_id, person.getUserId()], False)
     self.assertRoles(network, person.getUserId(), ['Assignee'])
-    self.assertRoles(network, self.user_id, ['Owner'])
+    self.assertRoles(network, self.user_id, ['Assignee', 'Owner'])
 
 class TestComputerNetworkModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
