@@ -756,6 +756,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
 
+  @skipIf(not IS_CADDY, 'Will NOT be covered on apache-frontend')
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
     self.assertTrue(
