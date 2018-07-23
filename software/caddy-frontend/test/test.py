@@ -250,6 +250,8 @@ class TestDataMixin(object):
 
   def test_file_list_log(self):
     self._test_file_list('log', [
+      # no control at all when cron would kick in, ignore it
+      'cron.log',
       # appears late, not needed for assertion
       'trafficserver/diags.log',
       'trafficserver/squid.blog',
