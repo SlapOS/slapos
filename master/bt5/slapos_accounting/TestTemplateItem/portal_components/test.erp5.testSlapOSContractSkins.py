@@ -3,7 +3,6 @@ from erp5.component.test.SlapOSTestCaseMixin import SlapOSTestCaseMixinWithAbort
 
 from zExceptions import Unauthorized
 from DateTime import DateTime
-import transaction
 
 class TestSlapOSSoftwareInstance_requestValidationPayment(SlapOSTestCaseMixinWithAbort):
 
@@ -272,9 +271,10 @@ class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
   def test_not_allowed_by_default_with_disabled_preference(self):
     preference =  self.portal.portal_preferences.getActiveSystemPreference()
     person = self.createPerson()
+    # If Contract is disabled, anyone can allocate
     preference.setPreferredCloudContractEnabled(False)
     result = person.Person_isAllowedToAllocate()
-    self.assertEquals(result, False)
+    self.assertEquals(result, True)
 
   def test_allowed_if_has_a_validated_contract(self):
     preference =  self.portal.portal_preferences.getActiveSystemPreference()
@@ -300,6 +300,7 @@ class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
     preference.setPreferredCloudContractEnabled(0)
     self.tic()
     result = person.Person_isAllowedToAllocate()
+    # If Contract is disabled, anyone can allocate
     self.assertEquals(result, True)
 
 
@@ -327,7 +328,8 @@ class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
     preference.setPreferredCloudContractEnabled(False)
     self.tic()
     result = person.Person_isAllowedToAllocate()
-    self.assertEquals(result, False)
+    # If Contract is disabled, anyone can allocate
+    self.assertEquals(result, True)
 
   def test_not_allowed_if_no_related_contract(self):
     preference =  self.portal.portal_preferences.getActiveSystemPreference()
@@ -347,5 +349,6 @@ class TestSlapOSPerson_isAllowedToAllocate(SlapOSTestCaseMixinWithAbort):
     self.portal.portal_workflow._jumpToStateFor(contract, 'validated')
     self.tic()
     result = person.Person_isAllowedToAllocate()
-    self.assertEquals(result, False)
+    # If Contract is disabled, anyone can allocate
+    self.assertEquals(result, True)
 
