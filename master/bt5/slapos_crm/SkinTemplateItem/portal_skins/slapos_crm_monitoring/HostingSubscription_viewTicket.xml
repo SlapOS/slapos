@@ -103,7 +103,9 @@
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_monitor_scope</string>
+                      </list>
                     </value>
                 </item>
               </dictionary>

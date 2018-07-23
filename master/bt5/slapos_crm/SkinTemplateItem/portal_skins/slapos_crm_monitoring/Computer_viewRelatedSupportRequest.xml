@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Base_edit</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -59,6 +59,7 @@
             <key> <string>group_list</string> </key>
             <value>
               <list>
+                <string>left</string>
                 <string>bottom</string>
                 <string>hidden</string>
               </list>
@@ -82,39 +83,20 @@
                       <list/>
                     </value>
                 </item>
+                <item>
+                    <key> <string>left</string> </key>
+                    <value>
+                      <list>
+                        <string>my_monitor_scope</string>
+                      </list>
+                    </value>
+                </item>
               </dictionary>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>Computer_viewRelatedSupportRequest</string> </value>
-        </item>
-        <item>
-            <key> <string>isIndexable</string> </key>
-            <value>
-              <object>
-                <klass>
-                  <global name="PropertyGetter" module="Products.ERP5Type.Accessor.Constant"/>
-                </klass>
-                <tuple/>
-                <state>
-                  <dictionary>
-                    <item>
-                        <key> <string>__name__</string> </key>
-                        <value> <string>isIndexable</string> </value>
-                    </item>
-                    <item>
-                        <key> <string>_id</string> </key>
-                        <value> <string>isIndexable</string> </value>
-                    </item>
-                    <item>
-                        <key> <string>value</string> </key>
-                        <value> <int>0</int> </value>
-                    </item>
-                  </dictionary>
-                </state>
-              </object>
-            </value>
         </item>
         <item>
             <key> <string>method</string> </key>
