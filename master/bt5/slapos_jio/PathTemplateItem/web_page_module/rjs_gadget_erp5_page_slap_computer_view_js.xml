@@ -70,6 +70,14 @@
             </value>
         </item>
         <item>
+            <key> <string>creators</string> </key>
+            <value>
+              <tuple>
+                <string>zope</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>gadget_erp5_page_slap_computer_view.js</string> </value>
         </item>
@@ -86,6 +94,25 @@
         <item>
             <key> <string>language</string> </key>
             <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1523884646.27</float>
+                    <string>UTC</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -230,7 +257,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>965.32357.28484.18978</string> </value>
+                <value> <string>969.7375.53535.32409</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -248,7 +275,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1519839785.23</float>
+                        <float>1532424039.98</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

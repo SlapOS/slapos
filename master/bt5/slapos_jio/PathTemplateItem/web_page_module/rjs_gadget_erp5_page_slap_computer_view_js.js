@@ -124,6 +124,9 @@
               ['modification_date', 'Modification Date'],
               ['translated_simulation_state_title', 'State']
             ],
+            monitor_scope_list = [['', ''],
+                                ['Enabled', 'enable'],
+                                ['Disabled', 'disable']],
             allocation_scope_list = [['', ''],
                                 ['Closed for maintenance', 'close/maintenance'],
                                 ['Closed for termination', 'close/termination'],
@@ -188,6 +191,18 @@
                   "required": 1,
                   "editable": 1,
                   "key": "allocation_scope",
+                  "hidden": 0,
+                  "type": "ListField"
+                },
+                "my_monitor_scope": {
+                  "description": "",
+                  "title": "Monitoring",
+                  "default": gadget.state.doc.monitor_scope,
+                  "css_class": "",
+                  "items": monitor_scope_list,
+                  "required": 1,
+                  "editable": 1,
+                  "key": "monitor_scope",
                   "hidden": 0,
                   "type": "ListField"
                 },
@@ -290,7 +305,8 @@
                  ['my_monitoring_status']]
               ], [
                 "right",
-                [["my_source"], ["my_source_project"], ["my_allocation_scope"], ["my_subject_list"]]
+                [["my_source"], ["my_source_project"], ["my_monitor_scope"],
+                 ["my_allocation_scope"], ["my_subject_list"]]
               ], [
                 "bottom",
                 [["ticket_listbox"], ["listbox"]]
