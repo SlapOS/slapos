@@ -81,9 +81,9 @@ EOF
     echo "$exclude" |rsync --exclude-from=- instance "$backup_path"
   fi
 
-  test -d project  && rsync project "$backup_path"
-  test -d public  && rsync public "$backup_path"
-  test -f proxy.db && rsync proxy.db "$backup_path"
+  (test -d project  && rsync project "$backup_path") || true
+  (test -d public  && rsync public "$backup_path") || true
+  (test -f proxy.db && rsync proxy.db "$backup_path") || true
 )
 # We sync .* appart
 (
