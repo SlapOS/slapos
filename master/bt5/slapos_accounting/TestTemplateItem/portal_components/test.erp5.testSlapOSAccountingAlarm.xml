@@ -47,22 +47,16 @@
             <value>
               <tuple>
                 <string>W: 30, 10: Use of eval (eval-used)</string>
-                <string>W:350, 16: Unused variable \'update_line\' (unused-variable)</string>
-                <string>W:528, 20: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:588,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:649,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:688, 29: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:688,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:1364, 20: Use of eval (eval-used)</string>
-                <string>W:1365, 23: Use of eval (eval-used)</string>
-                <string>W:1386, 20: Use of eval (eval-used)</string>
-                <string>W:1387, 23: Use of eval (eval-used)</string>
-                <string>W:1452, 20: Use of eval (eval-used)</string>
-                <string>W:1453, 23: Use of eval (eval-used)</string>
-                <string>W:1462, 20: Use of eval (eval-used)</string>
-                <string>W:1463, 23: Use of eval (eval-used)</string>
-                <string>W:1526, 35: Use of eval (eval-used)</string>
-                <string>W:1527, 31: Use of eval (eval-used)</string>
+                <string>W:758, 20: Use of eval (eval-used)</string>
+                <string>W:759, 23: Use of eval (eval-used)</string>
+                <string>W:780, 20: Use of eval (eval-used)</string>
+                <string>W:781, 23: Use of eval (eval-used)</string>
+                <string>W:846, 20: Use of eval (eval-used)</string>
+                <string>W:847, 23: Use of eval (eval-used)</string>
+                <string>W:856, 20: Use of eval (eval-used)</string>
+                <string>W:857, 23: Use of eval (eval-used)</string>
+                <string>W:920, 35: Use of eval (eval-used)</string>
+                <string>W:921, 31: Use of eval (eval-used)</string>
               </tuple>
             </value>
         </item>
