@@ -216,19 +216,19 @@ extra-context =
     key password monitor-htpasswd:passwd
 
 [caddy-wrapper]
-< = jinja2-template-base
-template = {{ parameter_dict['template_caddy_wrapper'] }}
-rendered = ${directory:bin}/caddy-wrapper
-mode = 0700
-extra-context =
-    raw caddy {{ parameter_dict['caddy'] }}
-    key conf dynamic-caddy-frontend-template:rendered
-    key log caddy-configuration:error-log
-    key grace configuration:mpm-graceful-shutdown-timeout
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['caddy'] }}
+  -conf ${dynamic-caddy-frontend-template:rendered}
+  -log ${caddy-configuration:error-log}
+  -http2=true
+  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
+  -disable-http-challenge
+  -disable-tls-sni-challenge
+wrapper-path = ${directory:bin}/caddy-wrapper
 
 [caddy-frontend]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:rendered} -pidfile ${caddy-configuration:pid-file}
+command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
 wait-for-files =
 	       ${ca-frontend:cert-file}
@@ -256,7 +256,7 @@ frontend-configuration = ${directory:etc}/Caddyfile
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
-frontend-configuration-verification = ${caddy-wrapper:rendered} -validate > /dev/null
+frontend-configuration-verification = ${caddy-wrapper:wrapper-path} -validate > /dev/null
 frontend-graceful-command = ${:frontend-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${:pid-file}); fi
 not-found-file = ${caddy-directory:document-root}/notfound.html
 # Communication with ATS
@@ -266,7 +266,7 @@ ssl-cache-through-port = 26012
 
 [configtest]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:rendered} -validate
+command-line = ${caddy-wrapper:wrapper-path} -validate
 wrapper-path = ${directory:bin}/caddy-configtest
 
 [certificate-authority]
@@ -616,19 +616,19 @@ curl_path = {{ parameter_dict['curl'] }}/bin/curl
 # Nginx
 #
 [nginx-wrapper]
-< = jinja2-template-base
-template = {{ parameter_dict['template_caddy_wrapper'] }}
-rendered = ${directory:bin}/nginx-wrapper
-mode = 0700
-extra-context =
-    raw caddy {{ parameter_dict['caddy'] }}
-    key conf dynamic-nginx-frontend-template:rendered
-    key log nginx-configuration:error_log
-    key grace configuration:mpm-graceful-shutdown-timeout
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['caddy'] }}
+  -conf ${dynamic-nginx-frontend-template:rendered}
+  -log ${nginx-configuration:error_log}
+  -http2=true
+  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
+  -disable-http-challenge
+  -disable-tls-sni-challenge
+wrapper-path = ${directory:bin}/nginx-wrapper
 
 [nginx-frontend]
 recipe = slapos.cookbook:wrapper
-command-line = ${nginx-wrapper:rendered} -pidfile ${nginx-configuration:pid-file}
+command-line = ${nginx-wrapper:wrapper-path} -pidfile ${nginx-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_nginx
 
 [dynamic-nginx-frontend-template]
@@ -659,7 +659,7 @@ worker_connections = 1024
 slave-configuration-directory = ${caddy-directory:nginx-slave-configuration}
 pid-file = ${directory:run}/nginx.pid 
 nginx-graceful-command = ${:nginx-configuration-verification}; if [ $? -eq 0 ]; then kill -HUP $(cat ${:pid-file}); fi
-nginx-configuration-verification = ${nginx-wrapper:rendered} -validate
+nginx-configuration-verification = ${nginx-wrapper:wrapper-path} -validate
 ssl_certificate = ${ca-frontend:cert-file}
 ssl_key = ${ca-frontend:key-file}
 
