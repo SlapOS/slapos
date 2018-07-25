@@ -21,7 +21,7 @@
 
 
 # TODO-Caddy server {
-# TODO-Caddy  listen {{ local_ipv4 }}:{{ nginx_http_port }};
+# TODO-Caddy  listen {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['nginx_http_port'] }};
 # TODO-Caddy 
 # TODO-Caddy  server_name {{ slave_parameter.get('custom_domain') }};
 # TODO-Caddy 
@@ -60,7 +60,7 @@
 # TODO-Caddy 
 
 # TODO-Caddy server {
-# TODO-Caddy  listen {{ local_ipv4 }}:{{ nginx_https_port }} ssl;
+# TODO-Caddy  listen {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['nginx_https_port'] }} ssl;
 # TODO-Caddy 
 # TODO-Caddy  server_name {{ slave_parameter.get('custom_domain') }};
 # TODO-Caddy 

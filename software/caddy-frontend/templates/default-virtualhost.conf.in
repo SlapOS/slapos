@@ -17,13 +17,13 @@
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
 {%- for host in host_list %}
-{%-   do http_host_list.append('http://%s:%s' % (host, http_port)) %}
-{%-   do https_host_list.append('https://%s:%s' % (host, https_port)) %}
+{%-   do http_host_list.append('http://%s:%s' % (host, slave_parameter['http_port'] )) %}
+{%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
 
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
-  bind {{ local_ipv4 }}
+  bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
@@ -144,7 +144,7 @@
 
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
-  bind {{ local_ipv4 }}
+  bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}

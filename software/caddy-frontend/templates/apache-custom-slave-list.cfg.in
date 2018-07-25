@@ -193,6 +193,13 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
+https_port = {{ dumps(https_port) }}
+http_port = {{ dumps(http_port) }}
+local_ipv4 = {{ dumps(local_ipv4) }}
+nginx_http_port = {{ dumps(nginx_http_port) }}
+nginx_https_port = {{ dumps(nginx_https_port) }}
+cached_port = {{ dumps(cached_port) }}
+ssl_cached_port = {{ (ssl_cached_port) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http = ((slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', ''))) % slave_parameter_dict) %}
 {%     set caddy_custom_https = ((slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', ''))) % slave_parameter_dict) %}
@@ -224,11 +231,6 @@ template = {{ template_default_slave_configuration }}
 
 filename = {{ '%s.conf' % slave_reference }}
 extra-context =
-    raw https_port {{ https_port }}
-    raw http_port {{ http_port }}
-    raw local_ipv4 {{ local_ipv4 }}
-    raw nginx_http_port {{ nginx_http_port }} 
-    raw nginx_https_port {{ nginx_https_port }}
     section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
 
@@ -315,9 +317,6 @@ rendered = {{ caddy_cached_configuration_directory }}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
-    raw cached_port {{ cached_port }}
-    raw ssl_cached_port {{ ssl_cached_port }}
-    raw local_ipv4 {{ local_ipv4 }}
 {{ '\n' }}
 {% endfor %}
 
@@ -364,6 +363,19 @@ ipv4-port = {{ nginx_https_port }}
 ipv6-port = {{ nginx_https_port }}
 
 {# Define log access #}
+[caddy-log-access-parameters]
+caddy_log_directory = {{ dumps(caddy_log_directory) }}
+caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
+local_ipv4 = {{ dumps(local_ipv4) }}
+global_ipv6 = {{ dumps(global_ipv6) }}
+https_port = {{ dumps(https_port) }}
+http_port = {{ dumps(http_port) }}
+login_certificate = {{ dumps(login_certificate) }}
+login_key = {{ dumps(login_key) }}
+access_log = {{ dumps(access_log) }}
+error_log = {{ dumps(error_log) }}
+not_found_file = {{ dumps(not_found_file) }}
+
 [caddy-log-access]
 < = jinja2-template-base
 template = {{frontend_configuration.get('template-log-access')}}
@@ -371,17 +383,7 @@ rendered = {{frontend_configuration.get('log-access-configuration')}}
 extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
-    raw caddy_log_directory {{caddy_log_directory}}
-    raw caddy_configuration_directory {{caddy_configuration_directory}}
-    raw local_ipv4 {{ local_ipv4 }}
-    raw global_ipv6 {{ global_ipv6 }}
-    raw https_port {{ https_port }}
-    raw http_port {{ http_port }}
-    raw login_certificate {{ login_certificate }}
-    raw login_key {{ login_key }}
-    raw access_log {{ access_log }}
-    raw error_log {{ error_log }}
-    raw not_found_file {{ not_found_file }}
+    section parameter_dict caddy-log-access-parameters
 
 {# Publish information for the instance #}
 [publish-caddy-information]

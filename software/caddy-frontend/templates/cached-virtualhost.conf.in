@@ -5,13 +5,13 @@
 {%- set http_backend_host_list = [] %}
 {%- set https_backend_host_list = [] %}
 {%- for host in host_list %}
-{%-   do http_backend_host_list.append('http://%s:%s' % (host, cached_port)) %}
-{%-   do https_backend_host_list.append('http://%s:%s' % (host, ssl_cached_port)) %}
+{%-   do http_backend_host_list.append('http://%s:%s' % (host, slave_parameter['cached_port'])) %}
+{%-   do https_backend_host_list.append('http://%s:%s' % (host, slave_parameter['ssl_cached_port'])) %}
 {%- endfor %}
 
 # SSL-disabled backends
 {{ http_backend_host_list|join(', ') }} {
-  bind {{ local_ipv4 }}
+  bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
@@ -35,7 +35,7 @@
 
 # SSL-enabled backends
 {{ https_backend_host_list|join(', ') }} {
-  bind {{ local_ipv4 }}
+  bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
 {%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
