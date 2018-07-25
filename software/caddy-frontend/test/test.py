@@ -2692,3 +2692,91 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'URL="some-re6st-verification-url"' in
       open(re6st_connectivity_promise_list[0]).read()
     )
+
+
+class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
+                                  TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': utils.LOCAL_IPV4,
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'empty': {
+      },
+      'url': {
+        'url': "https://[fd46::c2ae]:!py!u'123123'",
+      },
+      'https-url': {
+        'https-url': "https://[fd46::c2ae]:!py!u'123123'",
+      }
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '1',
+      'rejected-slave-amount': '2',
+      'slave-amount': '3',
+      'rejected-slave-list': '["_url", "_https-url"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_empty(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'empty']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'empty')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'empty.example.com',
+        'replication_number': '1',
+        'url': 'http://empty.example.com',
+        'site_url': 'http://empty.example.com',
+        'secure_access': 'https://empty.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+  def test_url(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'url'].copy()
+    self.assertEqual(
+      parameter_dict, {}
+    )
+
+  def test_https_url(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'https-url'].copy()
+    self.assertEqual(
+      parameter_dict, {}
+    )
