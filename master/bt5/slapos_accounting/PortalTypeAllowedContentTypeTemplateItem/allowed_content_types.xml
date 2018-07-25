@@ -19,7 +19,6 @@
   <item>Causality Movement Group</item>
   <item>Day Movement Group</item>
   <item>Delivery Causality Assignment Movement Group</item>
-  <item>Mirror Movement Group</item>
   <item>Monthly Range Movement Group</item>
   <item>Nested Line Movement Group</item>
   <item>Order Movement Group</item>
@@ -41,7 +40,6 @@
   <item>Automatic Quantity Adopt Solver</item>
  </portal_type>
  <portal_type id="Subscription Item Root Simulation Rule">
-  <item>Accounting Rule Cell</item>
   <item>Category Membership Divergence Tester</item>
   <item>DateTime Divergence Tester</item>
   <item>Float Divergence Tester</item>
