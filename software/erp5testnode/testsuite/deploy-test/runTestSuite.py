@@ -143,14 +143,21 @@ def main():
       '--test_location',
       help="Location of the tests"
   )
+  parser.add_argument(
+      '--python_interpreter',
+      help="Path to python interpreter used to run the test suite"
+  )
 
   args = parser.parse_args()
 
   revision = args.revision
   test_suite_title = args.test_suite_title or args.test_suite
-  os.environ['SOURCE_CODE_TO_TEST'] = args.test_location
   suite = testsuite.EggTestSuite(
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
+      python_interpreter=args.python_interpreter,
+      egg_test_path_dict={
+          os.path.basename(os.path.normpath(path)): path
+          for path in args.test_location.split(',')},
       revision=revision)
   access_url_http = None
   access_url_https = None

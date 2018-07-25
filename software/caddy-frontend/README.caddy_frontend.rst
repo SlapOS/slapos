@@ -157,12 +157,12 @@ Will append the specified path to the "VirtualHostRoot" of the zope's VirtualHos
 "path" is an optional parameter, ignored if not specified.
 Example of value: "/erp5/web_site_module/hosting/"
 
-apache_custom_https
-~~~~~~~~~~~~~~~~~~~
+caddy_custom_https
+~~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
 
-apache_custom_http
-~~~~~~~~~~~~~~~~~~
+caddy_custom_http
+~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
 
 url
@@ -286,7 +286,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 
-        "apache_custom_https":'
+        "caddy_custom_https":'
   https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
     bind %(local_ipv4)s
     tls %(ssl_crt)s %(ssl_key)s
@@ -300,7 +300,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
       insecure_skip_verify
     }
   }
-        "apache_custom_http":'
+        "caddy_custom_http":'
   http://www.example.com:%(http_port)s, http://example.com:%(http_port)s {
     bind %(local_ipv4)s
     log / %(access_log)s {combined}
@@ -329,7 +329,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
 	"domain": "www.example.org",
 	"enable_cache": "True",
 
-        "apache_custom_https":'
+        "caddy_custom_https":'
   ServerName www.example.org
   ServerAlias www.example.org
   ServerAlias example.org
@@ -343,7 +343,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
   RewriteEngine On
   RewriteRule ^/(.*) %(cache_access)s/$1 [L,P]',
 
-        "apache_custom_http":'
+        "caddy_custom_http":'
   ServerName www.example.org
   ServerAlias www.example.org
   ServerAlias example.org
@@ -384,7 +384,7 @@ the proxy::
         "path":"/erp5",
         "domain":"example.org",
 
-  	"apache_custom_https":'
+  	"caddy_custom_https":'
   ServerName www.example.org
   ServerAlias www.example.org
   ServerAdmin example.org
@@ -413,7 +413,7 @@ the proxy::
   # Use cache
   RewriteRule ^/(.*) %(cache_access)s/VirtualHostBase/https/www.example.org:443/erp5/VirtualHostRoot/$1 [L,P]',
 
-    "apache_custom_http":'
+    "caddy_custom_http":'
   ServerName www.example.org
   ServerAlias www.example.org
   ServerAlias example.org

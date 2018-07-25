@@ -157,6 +157,19 @@ SLAPOSCFG='{{ supervisord["slapos-cfg"] }}'
 SLAPGRIDSRLOG='{{ supervisord["slapgrid-sr-log"] }}'
 SLAPGRIDCPLOG='{{ supervisord["slapgrid-cp-log"] }}'
 
+contain_software_release=0
+
+SOFTWARE_RELEASES_COUNT=$("$SQLITE3" "$DATABASE" 'SELECT count(1) FROM software11 WHERE url != "";')
+if [ $SOFTWARE_RELEASES_COUNT -gt 0 ]; then
+  contain_software_release=1
+fi
+
+if [ $contain_software_release -eq 0 ]; then
+  log_message "No Software Release were deployed, so skip to continue..."
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
+
 log_message "Building newest Software Release..."
 "$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||
 "$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" >/dev/null 2>&1 ||

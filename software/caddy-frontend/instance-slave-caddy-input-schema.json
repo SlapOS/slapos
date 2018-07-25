@@ -1,14 +1,14 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema",
     "properties": {
-        "apache_custom_http": {
+        "caddy_custom_http": {
             "default": "",
             "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
             "textarea": true,
             "title": "HTTP configuration",
             "type": "string"
         },
-        "apache_custom_https": {
+        "caddy_custom_https": {
             "default": "",
             "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
             "textarea": true,

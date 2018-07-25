@@ -99,7 +99,8 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
 {%   endif %}
 
-{%   if not slave_instance.has_key('apache_custom_http') and not slave_instance.has_key('apache_custom_https') %}
+{# BBB: apache_custom_https and apache_custom_http #}
+{%   if not slave_instance.has_key('caddy_custom_http') and not slave_instance.has_key('caddy_custom_https') and not slave_instance.has_key('apache_custom_http') and not slave_instance.has_key('apache_custom_https') %}
 {%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
 {%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
@@ -193,10 +194,11 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-{%     set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) %}
-{%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) %}
-apache_custom_http = {{ dumps(apache_custom_http) }}
-apache_custom_https = {{ dumps(apache_custom_https) }}
+{# BBB: apache_custom_https and apache_custom_http #}
+{%     set caddy_custom_http = ((slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', ''))) % slave_parameter_dict) %}
+{%     set caddy_custom_https = ((slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', ''))) % slave_parameter_dict) %}
+caddy_custom_http = {{ dumps(caddy_custom_http) }}
+caddy_custom_https = {{ dumps(caddy_custom_https) }}
 {{ '\n' }}
 {%     for key, value in slave_instance.iteritems() %}
 {{ key }} = {{ dumps(value) }}
@@ -211,7 +213,7 @@ rendered = {{ caddy_configuration_directory }}/${:filename}
 {%   endif %}
 
 
-{%   if apache_custom_http %}
+{%   if caddy_custom_http or caddy_custom_https %}
 template = {{ template_custom_slave_configuration }}
 {%   elif slave_type == 'eventsource' %}
 template = {{ template_eventsource_slave_configuration }}

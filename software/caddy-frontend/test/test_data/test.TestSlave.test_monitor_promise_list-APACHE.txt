@@ -1,5 +1,9 @@
 TestSlave-1/etc/monitor-promise/check-_apache_custom_http_s-accepted-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_apache_custom_http_s-accepted-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_caddy_custom_http_s-accepted-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_caddy_custom_http_s-accepted-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_caddy_custom_http_s-rejected-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_caddy_custom_http_s-rejected-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_custom_domain-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_custom_domain-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_custom_domain_ssl_crt_ssl_key-error-log-last-day

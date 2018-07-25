@@ -254,7 +254,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
     self.send_response(200)
-    self.send_header("Content-type", "text/json")
+    self.send_header("Content-type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
     self.send_header('Set-Cookie', 'nonsecured=value')
     self.end_headers()
