@@ -94,9 +94,9 @@ EOF
     echo "$exclude" |rsync --exclude-from=- instance "$path"
   fi
 
-  (test -d project  && rsync project "$path") || true
-  (test -d public  && rsync public "$path") || true
-  (test -f proxy.db && rsync proxy.db "$path") || true
+  if [ -d "project" ]; then rsync project "$path"; fi
+  if [ -d "public" ]; then rsync public "$path"; fi
+  if [ -f "proxy.db" ]; then rsync proxy.db "$path"; fi
 )
 
 log_message "Restoring WebRunner config (etc directory)..."
