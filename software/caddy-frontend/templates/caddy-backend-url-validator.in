@@ -1,0 +1,4 @@
+#!${dash:location}/bin/dash
+config="https://example.com {\n  proxy / $1 {\n  }\n}"
+
+echo -e $config | ${caddy:output} -conf stdin -validate > /dev/null 2>&1
