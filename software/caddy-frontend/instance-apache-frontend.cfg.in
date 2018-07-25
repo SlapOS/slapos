@@ -126,6 +126,10 @@ slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = ${configuration:extra_slave_instance_list}
 local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
+software_type = single-custom-personal
+bin_directory = {{ parameter_dict['bin_directory'] }}
+sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
+service_directory = ${directory:service}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
@@ -150,7 +154,7 @@ extra-context =
     key template_cached_slave_configuration software-release-path:template-cached-slave-virtualhost
     key template_eventsource_slave_configuration software-release-path:template-nginx-eventsource-slave-virtualhost
     key template_notebook_slave_configuration software-release-path:template-nginx-notebook-slave-virtualhost
-    raw software_type single-custom-personal
+    key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     section logrotate_dict logrotate
     section frontend_configuration frontend-configuration
@@ -159,15 +163,15 @@ extra-context =
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key promise_directory monitor-directory:promises
     key report_directory monitor-directory:reports
-    raw bin_directory {{ parameter_dict['bin_directory'] }}
+    key bin_directory :bin_directory
     key login_certificate ca-frontend:cert-file
     key login_key ca-frontend:key-file
     key login_ca_crt ca-custom-frontend:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
-    raw sixtunnel_executable {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
-    raw service_directory ${directory:service}
+    key sixtunnel_executable :sixtunnel_executable
+    key service_directory directory:service
     key not_found_file caddy-configuration:not-found-file
 
 [dynamic-virtualhost-template-slave]
@@ -502,9 +506,10 @@ template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
 rendered = ${directory:bin}/frontend-caddy-lazy-graceful
 mode = 0700
 pid-file = ${directory:run}/lazy-graceful.pid
+wait_time = 60
 extra-context =
     key pid_file :pid-file
-    raw wait_time 60
+    key wait_time :wait_time
     key lazy_command caddy-configuration:frontend-graceful-command
 
 # Promises checking configuration:
