@@ -20,14 +20,6 @@
   <workflow>slapos_accounting_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Slave Instance</type>
-  <workflow>slapos_accounting_interaction_workflow, slapos_api_invoicing_workflow</workflow>
- </chain>
- <chain>
-  <type>Software Instance</type>
-  <workflow>slapos_accounting_interaction_workflow, slapos_api_invoicing_workflow</workflow>
- </chain>
- <chain>
   <type>Subscription Item Root Simulation Rule</type>
   <workflow>edit_workflow, rule_validation_workflow</workflow>
  </chain>

@@ -7,10 +7,6 @@ Hosting Subscription | slapos_accounting_interaction_workflow
 Hosting Subscription | slapos_api_invoicing_workflow
 Sale Invoice Transaction | slapos_accounting_interaction_workflow
 Sale Packing List | slapos_accounting_interaction_workflow
-Slave Instance | slapos_accounting_interaction_workflow
-Slave Instance | slapos_api_invoicing_workflow
-Software Instance | slapos_accounting_interaction_workflow
-Software Instance | slapos_api_invoicing_workflow
 Subscription Item Root Simulation Rule | edit_workflow
 Subscription Item Root Simulation Rule | rule_validation_workflow
 User Consumption HTML File | document_conversion_interaction_workflow
