@@ -301,7 +301,7 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
 
   def personRequestInstance(self, **kw):
     response = self.portal.portal_slap.requestComputerPartition(**kw)
-    self.assertTrue(isinstance(response, str))
+    self.assertTrue(isinstance(response, str), "response is not a string: %s" % response)
     software_instance = xml_marshaller.xml_marshaller.loads(response)
     self.assertEqual('SoftwareInstance', software_instance.__class__.__name__)
     self.tic()
@@ -811,10 +811,6 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
     self.stepCallSlaposTriggerBuildAlarm()
     self.tic()
 
-    # build other deliveries
-    self.stepCallSlaposInstanceInvoicingAlarm()
-    self.tic()
-
     # stabilise build deliveries and expand them
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
@@ -922,7 +918,7 @@ class TestSlapOSDefaultCRMEscalation(DefaultScenarioMixin):
     # is covered by unit tests
     packing_list_line_list = subscription.getAggregateRelatedValueList(
         portal_type='Sale Packing List Line')
-    self.assertTrue(len(packing_list_line_list) >= 2)
+    self.assertEquals(len(packing_list_line_list), 1)
     for packing_list_line in packing_list_line_list:
       packing_list = packing_list_line.getParentValue()
       self.assertEqual('Sale Packing List',
@@ -1125,10 +1121,6 @@ class TestSlapOSDefaultCRMEscalation(DefaultScenarioMixin):
 
     # build subscription packing list
     self.stepCallSlaposTriggerBuildAlarm()
-    self.tic()
-
-    # build other deliveries
-    self.stepCallSlaposInstanceInvoicingAlarm()
     self.tic()
 
     # stabilise build deliveries and expand them
