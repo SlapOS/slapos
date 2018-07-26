@@ -289,7 +289,7 @@ template = inline:
   # Error cannot be deduced if files do not exist
   cd $${directory:pbs-backup}
   if [ ! -f "proof.signature" ]; then exit 0; fi
-  backup_signature=$(find . -maxdepth 2 -name backup.signature)
+  backup_signature=$(find . -maxdepth 2 -name backup.signature -not -path "./tmp/*")
   if [ -z "$backup_signature" ]; then
     exit 0;
   else
