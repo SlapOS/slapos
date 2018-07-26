@@ -63,7 +63,7 @@ class TestSlapOSHypermediaPersonScenario(SlapOSTestCaseMixin):
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method='GET',
-      url='%s/web_site_module/hateoas/Base_getHateoasMaster' % \
+      url='%s/web_site_module/hateoas/' % \
           self.portal.absolute_url(),
       headers={
        'Authorization': authorization,
@@ -410,7 +410,7 @@ class TestSlapOSHypermediaInstanceScenario(SlapOSTestCaseMixin):
     self.portal.changeSkin('Hal')
     self.tic()
 
-    remote_user = instance.getReference()
+    remote_user = instance.getUserId()
     content_type = "application/hal+json"
 
     api_scheme, api_netloc, api_path, api_query, \
@@ -429,7 +429,7 @@ class TestSlapOSHypermediaInstanceScenario(SlapOSTestCaseMixin):
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method='GET',
-      url='%s/web_site_module/hateoas/Base_getHateoasMaster' % \
+      url='%s/web_site_module/hateoas/' % \
           self.portal.absolute_url(),
       headers={
        'REMOTE_USER': remote_user,
@@ -438,7 +438,7 @@ class TestSlapOSHypermediaInstanceScenario(SlapOSTestCaseMixin):
       body="",
     )
     response = connection.getresponse()
-    self.assertEquals(response.status, 200)
+    self.assertEquals(response.status, 200, response)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     home_page_hal = json.loads(response.read())
 
