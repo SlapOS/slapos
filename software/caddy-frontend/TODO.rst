@@ -1,5 +1,6 @@
 Generally things to be done with ``caddy-frontend``:
 
+ * tests: add assertion with results of promises in etc/promise for each partition
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
 
    * ``apache-ca-certificate`` shall be appended to ``apache-certificate`` if not already there
