@@ -134,14 +134,14 @@ class Password(object):
     if self.storage_path:
       try:
         with open(self.storage_path) as f:
-          passwd = f.read()
+          passwd = f.read().strip('\n')
       except IOError as e:
         if e.errno != errno.ENOENT:
           raise
     if not passwd:
       passwd = self.generatePassword(int(options.get('bytes', '8')))
       self.update = self.install
-    self.passwd = passwd.strip('\n')
+    self.passwd = passwd
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
     def get(option, *args, **kw):
