@@ -29,7 +29,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_software_instance_unallocated(self):
     self._makeTree()
-
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(True)
+    self.tic()
     self._simulateSoftwareInstance_requestValidationPayment()
     try:
       self.portal.portal_alarms.slapos_contract_request_validation_payment.activeSense()
@@ -42,6 +44,24 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_slave_instance_unallocated(self):
     self._makeSlaveTree()
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(True)
+    self.tic()
+    self._simulateSoftwareInstance_requestValidationPayment()
+    try:
+      self.portal.portal_alarms.slapos_contract_request_validation_payment.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_requestValidationPayment()
+    self.assertEqual(
+        'Visited by SoftwareInstance_requestValidationPayment',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_software_instance_unallocated_disable_cloud_contract(self):
+    self._makeTree()
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(False)
+    self.tic()
 
     self._simulateSoftwareInstance_requestValidationPayment()
     try:
@@ -53,9 +73,27 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_requestValidationPayment',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  def test_alarm_slave_instance_unallocated_disable_cloud_contract(self):
+    self._makeSlaveTree()
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(False)
+    self.tic()
+
+    self._simulateSoftwareInstance_requestValidationPayment()
+    try:
+      self.portal.portal_alarms.slapos_contract_request_validation_payment.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_requestValidationPayment()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_requestValidationPayment',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
   def test_alarm_software_instance_allocated(self):
     self._makeTree()
-
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(True)
+    self.tic()
     self._makeComputer()
     self.software_instance.setAggregate(self.partition.getRelativeUrl())
     self.tic()
@@ -71,7 +109,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_slave_instance_allocated(self):
     self._makeSlaveTree()
-
+    preference =  self.portal.portal_preferences.getActiveSystemPreference()
+    preference.setPreferredCloudContractEnabled(True)
+    self.tic()
     self._makeComputer()
     self.software_instance.setAggregate(self.partition.getRelativeUrl())
     self.tic()
