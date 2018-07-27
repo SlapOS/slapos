@@ -22,7 +22,8 @@ class DefaultScenarioMixin(TestSlapOSSecurityMixin):
     preference.edit(
       preferred_credential_alarm_automatic_call=0,
       preferred_credential_recovery_automatic_approval=0,
-      preferred_credential_request_automatic_approval=1
+      preferred_credential_request_automatic_approval=1,
+      preferred_cloud_contract_enabled=True
     )
 
     # Enable alarms for regularisation request
@@ -440,7 +441,7 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
     self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
     self.tic()
 
-    self.usePayzenManually(self.web_site, person_reference)
+    self.usePayzenManually(self.web_site, person_user_id)
     self.tic()
 
     payment = self.portal.portal_catalog.getResultValue(
@@ -515,9 +516,7 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
     # is covered by unit tests
     packing_list_line_list = subscription.getAggregateRelatedValueList(
         portal_type='Sale Packing List Line')
-    if len(packing_list_line_list) < 2:
-      raise ValueError(subscription)
-    self.assertTrue(len(packing_list_line_list) >= 2)
+    self.assertEquals(len(packing_list_line_list), 1)
     for packing_list_line in packing_list_line_list:
       packing_list = packing_list_line.getParentValue()
       self.assertEqual('Sale Packing List',
@@ -621,10 +620,17 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
     self.assertEqual(len(line_list), 0)
 
   @changeSkin('RJS')
-  def usePayzenManually(self, web_site, user_reference):
+  def usePayzenManually(self, web_site, user_id):
+
+    person = self.portal.portal_catalog.getResultValue(
+      portal_type="Person",
+      user_id=user_id)
+
+    self.assertNotEquals(person, None)
 
     # User received an email for payment
-    email = '%s@example.com' % user_reference
+    email = person.getDefaultEmailText()
+
     def findMessage(email, body):
       for candidate in reversed(self.portal.MailHost.getMessageList()):
         if [q for q in candidate[1] if email in q] and body in candidate[2]:
@@ -890,10 +896,10 @@ class TestSlapOSDefaultScenario(DefaultScenarioMixin):
       self.assertPersonDocumentCoverage(person)
 
     self.login(public_person.getUserId())
-    self.usePayzenManually(self.web_site, public_reference)
+    self.usePayzenManually(self.web_site, public_person.getUserId())
 
     self.login(friend_person.getUserId())
-    self.usePayzenManually(self.web_site, friend_reference)
+    self.usePayzenManually(self.web_site, friend_person.getUserId())
 
 class TestSlapOSDefaultCRMEscalation(DefaultScenarioMixin):
 
