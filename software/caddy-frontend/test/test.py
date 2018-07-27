@@ -758,6 +758,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
 
+  def test_promise_monitor_httpd_listening_on_tcp(self):
+      result = set([
+        subprocess.call(q) for q in glob.glob(
+          os.path.join(
+            self.instance_path, '*', 'etc', 'promise',
+            'monitor-httpd-listening-on-tcp'))])
+      self.assertEqual(
+        result,
+        set([0])
+      )
+
   @skipIf(not IS_CADDY, 'Will NOT be covered on apache-frontend')
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
