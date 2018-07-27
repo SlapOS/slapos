@@ -567,7 +567,13 @@ wrapper-path = ${directory:promise}/caddy-frontend-is-running-actual-software-re
 #
 
 [monitor-instance-parameter]
-monitor-httpd-port = ${configuration:monitor-httpd-port}
+# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
+#       directly, and in our case it can come from the network, thus resulting
+#       with need to strip !py!'u'
+{% set monitor_httpd_port = instance_parameter.get('configuration.monitor-httpd-port') %}
+{% if monitor_httpd_port %}
+monitor-httpd-port = {{ monitor_httpd_port | int }}
+{% endif -%}
 
 [monitor-conf-parameters]
 private-path-list += 

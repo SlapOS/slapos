@@ -758,6 +758,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
 
+  def test_promise_monitor_httpd_listening_on_tcp(self):
+      result = set([
+        subprocess.call(q) for q in glob.glob(
+          os.path.join(
+            self.instance_path, '*', 'etc', 'promise',
+            'monitor-httpd-listening-on-tcp'))])
+      self.assertEqual(
+        result,
+        set([0])
+      )
+
   @skipIf(not IS_CADDY, 'Will NOT be covered on apache-frontend')
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
@@ -2780,3 +2791,42 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(
       parameter_dict, {}
     )
+
+
+class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '-frontend-1-state': 'stopped',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'test': {
+        'url': cls.backend_url,
+      },
+    }
+
+  def test(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'test']
+    self.assertKeyWithPop('log-access-url', parameter_dict)
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'test.None', 'replication_number': '1',
+        'url': 'http://test.None', 'site_url': 'http://test.None',
+        'secure_access': 'https://test.None', 'public-ipv4': None}
+    )
+    master_monitor_conf = open(os.path.join(
+      self.instance_path, 'TestDefaultMonitorHttpdPort-0', 'etc',
+      'monitor-httpd.conf')).read()
+    slave_monitor_conf = open(os.path.join(
+      self.instance_path, 'TestDefaultMonitorHttpdPort-1', 'etc',
+      'monitor-httpd.conf')).read()
+
+    self.assertTrue(
+      'Listen [%s]:8196' % (utils.GLOBAL_IPV6,) in master_monitor_conf)
+    self.assertTrue(
+      'Listen [%s]:8072' % (utils.GLOBAL_IPV6,) in slave_monitor_conf)
