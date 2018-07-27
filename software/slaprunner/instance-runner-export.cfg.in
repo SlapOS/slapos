@@ -41,6 +41,11 @@ parts +=
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
+[directory]
+recipe = slapos.cookbook:mkdirectory
+# XXX - keep srv path with slash at the end.
+srv = ${:home}/srv/
+
 [proxy-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 49980
