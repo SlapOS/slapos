@@ -1,4 +1,8 @@
 portal = context.getPortalObject()
+
+if not portal.portal_preferences.getPreferredCloudContractEnabled():
+  return True
+
 select_dict= {'default_aggregate_uid': None}
 portal.portal_catalog.searchAndActivate(
   portal_type=('Slave Instance', 'Software Instance'),
