@@ -1,0 +1,26 @@
+<property_sheet_list>
+ <portal_type id="Subscription Request">
+  <item>HostingSubscription</item>
+  <item>SlapOSAccountingHostingSubscriptionConstraint</item>
+  <item>SlaposHostingSubscriptionConstraint</item>
+  <item>SoftwareInstance</item>
+  <item>Url</item>
+  <item>VariationRange</item>
+ </portal_type>
+ <portal_type id="Trial Condition">
+  <item>HostingSubscription</item>
+  <item>SoftwareInstance</item>
+  <item>TextDocument</item>
+  <item>TrialCondition</item>
+  <item>Url</item>
+ </portal_type>
+ <portal_type id="Trial Request">
+  <item>HostingSubscription</item>
+  <item>Organisation</item>
+  <item>Reference</item>
+  <item>SoftwareInstance</item>
+  <item>Task</item>
+  <item>TextDocument</item>
+  <item>Url</item>
+ </portal_type>
+</property_sheet_list>

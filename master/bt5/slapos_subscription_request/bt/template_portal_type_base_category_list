@@ -1,0 +1,10 @@
+Subscription Condition Module | business_application
+Subscription Request Module | business_application
+Subscription Request | destination_section
+Trial Condition Module | business_application
+Trial Condition | aggregate
+Trial Condition | follow_up
+Trial Request Module | business_application
+Trial Request | aggregate
+Trial Request | causality
+Trial Request | specialise

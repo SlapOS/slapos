@@ -290,7 +290,7 @@ class TestSlapOSConfigurator(SlapOSTestCaseMixin):
       'slapos_ecoallocation',
       'slapos_jio',
       'slapos_l10n_zh',
-      'slapos_trial_request',
+      'slapos_subscription_request',
       'erp5_bearer_token',
       'erp5_access_token',
       'erp5_project',

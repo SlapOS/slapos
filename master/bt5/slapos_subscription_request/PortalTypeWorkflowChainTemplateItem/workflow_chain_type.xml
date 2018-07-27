@@ -1,0 +1,18 @@
+<workflow_chain>
+ <chain>
+  <type>Subscription Condition</type>
+  <workflow>edit_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Subscription Request</type>
+  <workflow>edit_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Trial Condition</type>
+  <workflow>commerce_validation_workflow, edit_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Trial Request</type>
+  <workflow>edit_workflow, trial_request_workflow</workflow>
+ </chain>
+</workflow_chain>

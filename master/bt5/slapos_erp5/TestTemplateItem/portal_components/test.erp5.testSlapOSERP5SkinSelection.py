@@ -126,7 +126,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -232,7 +232,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -341,7 +341,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -451,7 +451,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -558,7 +558,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -666,7 +666,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -773,7 +773,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -881,7 +881,7 @@ slapos_erp5
 slapos_upgrader
 slapos_rss_style
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -988,7 +988,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -1097,7 +1097,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -1208,7 +1208,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
-slapos_trial
+slapos_subscription_request
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration

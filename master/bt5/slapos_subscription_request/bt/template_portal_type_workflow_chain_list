@@ -1,0 +1,6 @@
+Subscription Condition | edit_workflow
+Subscription Request | edit_workflow
+Trial Condition | commerce_validation_workflow
+Trial Condition | edit_workflow
+Trial Request | edit_workflow
+Trial Request | trial_request_workflow
