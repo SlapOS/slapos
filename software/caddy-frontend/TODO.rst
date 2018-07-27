@@ -1,7 +1,6 @@
 Generally things to be done with ``caddy-frontend``:
 
  * tests: add assertion with results of promises in etc/promise for each partition
- * generated files: ``| trim`` values (like ``slave_password[slave]`` in ``templates/template-log-access.conf.in``) in generated configuration files to have them renfered correctly
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
 
