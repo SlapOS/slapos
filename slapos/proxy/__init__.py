@@ -31,6 +31,7 @@
 import logging
 
 from slapos.proxy.views import app
+from slapos.util import sqlite_connect
 
 def _generateSoftwareProductListFromString(software_product_list_string):
   """
@@ -91,10 +92,16 @@ def setupFlaskConfiguration(conf):
   app.config['software_product_list'] = conf.software_product_list
   app.config['multimaster'] = conf.multimaster
 
+def connectDB():
+  # if first connection, create an empty db at DATABASE_URI path
+  conn = sqlite_connect(app.config['DATABASE_URI'])
+  conn.close()
+
 def do_proxy(conf):
   for handler in conf.logger.handlers:
     app.logger.addHandler(handler)
   app.logger.setLevel(logging.INFO)
   setupFlaskConfiguration(conf)
+  connectDB()
   app.run(host=conf.host, port=int(conf.port), threaded=True)
 
