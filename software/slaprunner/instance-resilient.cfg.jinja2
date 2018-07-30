@@ -28,6 +28,7 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
+  monitor-htpasswd
   {{ parts.replicate("runner", number_of_instances + 1) }}
   publish-connection-information
 

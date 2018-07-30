@@ -273,6 +273,7 @@ parts =
   httpd-promise
   publish-connection-information
   directory-doc
+  monitor-htpasswd
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
