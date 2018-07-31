@@ -198,7 +198,6 @@ extra-context =
     key httpd_home software-release-path:caddy-location
     key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
-    key server_admin configuration:server-admin
     key login_certificate ca-frontend:cert-file
     key login_key ca-frontend:key-file
     key login_ca_crt ca-custom-frontend:rendered
