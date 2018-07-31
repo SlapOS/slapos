@@ -277,11 +277,23 @@ monitor-username = admin
 recipe = slapos.recipe.template:jinja2
 template = inline:
   #!${dash:location}/bin/dash
+  # only check integrity if pull is not running
+  latest_item=$(ls -t $${pbs:status-item-directory} | head -n1)
+  if [ ! -z "$latest_item" ]; then
+    pbs_result=$(cat "$${pbs:status-item-directory}/$latest_item" | python -c "import sys, json; print json.load(sys.stdin)['title']" 2>/dev/null)
+    if [ "$?" -eq 0 ]; then
+      echo $pbs_result | egrep "pull_raw\s*:\s*STARTED" > /dev/null
+      if [ "$?" -eq 0 ]; then
+        echo "Skipped, PBS pull is running.";
+        exit 0;
+      fi
+    fi
+  fi
   # Raise an error if signatures are different
   # Error cannot be deduced if files do not exist
   cd $${directory:pbs-backup}
   if [ ! -f "proof.signature" ]; then exit 0; fi
-  backup_signature=$(find . -maxdepth 2 -name backup.signature)
+  backup_signature=$(find . -maxdepth 2 -name backup.signature -not -path "./tmp/*")
   if [ -z "$backup_signature" ]; then
     exit 0;
   else
