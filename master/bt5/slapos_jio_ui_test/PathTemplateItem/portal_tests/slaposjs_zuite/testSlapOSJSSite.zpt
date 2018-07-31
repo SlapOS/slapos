@@ -99,12 +99,9 @@
   <td>//div[@class="leaflet-popup-content"]/div/a[text()="TEST-SLAPOSJS-SET 0"]</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-  <td>5000</td>
-  <td>5000</td>
-</tr>
-<!-- check site -->
+
+
+  <!-- check site -->
 
 <!--  Broken history to return
 <tr>
@@ -113,6 +110,8 @@
   <td></td>
 </tr>
 -->
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
+
 <tr>
   <td>click</td>
   <td>//a[@data-i18n="Sites"]</td>

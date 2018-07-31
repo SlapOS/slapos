@@ -89,11 +89,6 @@
   <td>//button[@type="submit" and text()="Data Updated"]</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-  <td>5000</td>
-  <td>5000</td>
-</tr>
 <!-- check site -->
 
 <!--  Broken history to return
@@ -103,6 +98,8 @@
   <td></td>
 </tr>
 -->
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
+
 <tr>
   <td>click</td>
   <td>//a[@data-i18n="Networks"]</td>
@@ -168,6 +165,8 @@
   <td>//button[@type="submit" and text()="Network is Deleted."]</td>
   <td></td>
 </tr>
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
+
 <tr>
   <td>waitForElementPresent</td>
   <td>//span[@data-i18n="No records"]</td>

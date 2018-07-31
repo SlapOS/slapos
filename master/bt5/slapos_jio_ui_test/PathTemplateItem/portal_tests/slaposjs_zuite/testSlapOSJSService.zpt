@@ -118,11 +118,8 @@
   <td>//button[@type="submit" and text()="New service created."]</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-  <td>5000</td>
-  <td>5000</td>
-</tr>
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
 
 <tr>
   <td>click</td>
@@ -194,6 +191,7 @@
   <td>//button[@type="submit" and text()="Service is Destroyed."]</td>
   <td></td>
 </tr>
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
 <tr>
   <td>waitForElementPresent</td>
   <td>//span[@data-i18n="No records"]</td>

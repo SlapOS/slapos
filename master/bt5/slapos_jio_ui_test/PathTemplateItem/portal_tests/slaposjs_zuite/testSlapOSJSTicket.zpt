@@ -87,11 +87,9 @@
   <td>//button[@type="submit" and @data-i18n="Save"]</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-  <td>5000</td>
-  <td>5000</td>
-</tr>
+
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
+
 <tr>
   <td>click</td>
   <td>//a[@data-i18n="Tickets"]</td>

@@ -97,20 +97,8 @@
   <td>//a[@data-i18n="Computer: TEST-SLAPOSJS-COMPUTER 0"]</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-  <td>5000</td>
-  <td>5000</td>
-</tr>
-<!-- check site -->
+<tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
 
-<!--  Broken history to return
-<tr>
-  <td>click</td>
-  <td>//a[@data-i18n="Site : TEST-SLAPOSJS-SET 0"]</td>
-  <td></td>
-</tr>
--->
 <tr>
   <td>click</td>
   <td>//a[@data-i18n="Servers" and @accesskey="c"]</td>
@@ -507,11 +495,8 @@
   <td>//h1[@data-i18n='Servers']</td>
   <td></td>
 </tr>
-<tr>
-  <td>pause</td>
-	<td>5000</td>
- 	<td>5000</td>
-</tr>
+  <tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_activities_and_front_page" />
+
 <tr>
   <td>click</td>
   <td>//th/a[text()="Title"]</td>

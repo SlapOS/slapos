@@ -110,6 +110,23 @@
     </tr>
   </tal:block>
 
+  <tal:block metal:define-macro="slapos_wait_for_activities_and_front_page">
+
+    <tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/wait_for_activities" />
+
+    <tr>
+      <td>assertTextPresent</td>
+      <td>Done.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>open</td>
+      <td>${base_url}/web_site_module/hostingjs/</td>
+      <td></td>
+    </tr>
+    <tal:block metal:use-macro="here/Zuite_SlapOSCommonTemplate/macros/slapos_wait_for_front_page" />
+  </tal:block>
+
   <tal:block metal:define-macro="slapos_wait_for_front_page">
     <!-- Dashboard -->
     <tr>
@@ -132,11 +149,6 @@
       <td>waitForElementPresent</td>
       <td>//a[@class='leaflet-control-zoom-out']</td>
       <td></td>
-    </tr>
-    <tr>
-      <td>pause</td>
-      <td>5000</td>
-      <td>5000</td>
     </tr>
   </tal:block>
 
@@ -168,6 +180,26 @@
       <td>waitForElementPresent</td>
       <td>//input[@value='Login']</td>
       <td></td>
+    </tr>
+  </tal:block>
+
+  <tal:block metal:define-macro="wait_for_content_loaded">
+    <tr>
+      <td colspan="3"><b>Wait for the content to be loaded</b></td>
+    </tr>
+    <tr>
+      <td>waitForElementPresent</td>
+      <td>//div[contains(@data-gadget-url, 'gadget_erp5_header.html')]//h1[@class="ui-title"]//*[contains(@class, "ui-icon-spinner")]</td>
+      <td></td>
+    </tr>
+
+    <tr>
+      <td>waitForElementNotPresent</td>
+      <td>//div[contains(@data-gadget-url, 'gadget_erp5_header.html')]//h1[@class="ui-title"]//*[contains(@class, "ui-icon-spinner")]</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td colspan="3"><p></p></td>
     </tr>
   </tal:block>
 
