@@ -121,7 +121,7 @@ state = {{ frontend_request.get('state') }}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-config-_ = {{ json_module.dumps(slave_configuration_dict) }}
+config-_ = {{ dumps(json_module.dumps(slave_configuration_dict)) }}
 {%   if frontend_request.get('sla') %}
 {%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
