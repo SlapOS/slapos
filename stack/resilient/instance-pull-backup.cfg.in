@@ -282,7 +282,11 @@ template = inline:
   if [ ! -z "$latest_item" ]; then
     pbs_result=$(cat "$${pbs:status-item-directory}/$latest_item" | python -c "import sys, json; print json.load(sys.stdin)['title']" 2>/dev/null)
     if [ "$?" -eq 0 ]; then
-      (echo $pbs_result | egrep "pull_raw\s*:\s*STARTED" > /dev/null) && (echo "Skipped, PBS pull is running."; exit 0)
+      echo $pbs_result | egrep "pull_raw\s*:\s*STARTED" > /dev/null
+      if [ "$?" -eq 0 ]; then
+        echo "Skipped, PBS pull is running.";
+        exit 0;
+      fi
     fi
   fi
   # Raise an error if signatures are different
