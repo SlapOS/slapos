@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.4.9 (2018-07-31)
+------------------
+ * slapgrid: Add tear down methods to IManager interface
+ * manager: Add Port Redirection manager
+ * proxy: create empty slaproxy database if not exits yet
+ * slapgrid: Add methods to SlapObject.Partition for more control on generated supervisord config
+
 1.4.8 (2018-06-26)
 ------------------
  * format: fix brokend parse_computer_definition
