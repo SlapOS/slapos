@@ -108,7 +108,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Wed, 4 Apr 2018 12:00:00 GMT+0200\n
+# generated on Wed, 1 August 2018 12:00:00 GMT+0200\n
 CACHE:\n
 favicon.ico\n
 font-awesome/font-awesome-webfont.eot?v=4.6.3\n
@@ -249,6 +249,8 @@ rsvp.js\n
 gadget_erp5_page_map.css\n
 gadget_erp5_page_map.html\n
 gadget_erp5_page_map.js\n
+gadget_erp5_page_slap_accept_upgrade_decision.html\n
+gadget_erp5_page_slap_accept_upgrade_decision.js\n
 gadget_erp5_page_slap_add_computer.html\n
 gadget_erp5_page_slap_add_computer.js\n
 gadget_erp5_page_slap_add_hosting_subscription.html\n
@@ -273,6 +275,8 @@ gadget_erp5_page_slap_computer_list.html\n
 gadget_erp5_page_slap_computer_list.js\n
 gadget_erp5_page_slap_computer_network_view.html\n
 gadget_erp5_page_slap_computer_network_view.js\n
+gadget_erp5_page_slap_reject_upgrade_decision.html\n
+gadget_erp5_page_slap_reject_upgrade_decision.js\n
 gadget_erp5_page_slap_computer_request_certificate.html\n
 gadget_erp5_page_slap_computer_request_certificate.js\n
 gadget_erp5_page_slap_computer_revoke_certificate.html\n
@@ -545,7 +549,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>966.41530.11723.48674</string> </value>
+                <value> <string>969.19283.65183.18978</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -563,7 +567,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1522849619.08</float>
+                        <float>1533138491.34</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

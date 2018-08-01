@@ -214,16 +214,20 @@
         .push(function () {
           return RSVP.all([
             gadget.getUrlFor({command: "change", options: {editable: true}}),
-            gadget.getUrlFor({command: "change", options: {page: "slap_add_related_event", editable: true}}),
+            gadget.getUrlFor({command: "change", options: {page: "slap_accept_upgrade_decision"}}),
+            gadget.getUrlFor({command: "change", options: {page: "slap_reject_upgrade_decision"}}),
             gadget.getUrlFor({command: 'history_previous'})
           ]);
         })
         .push(function (url_list) {
           var header_dict = {
             page_title: "Upgrade Decision : " + gadget.state.doc.title,
-            add_url: url_list[1],
-            selection_url: url_list[2]
+            selection_url: url_list[3]
           };
+          if (gadget.state.doc.simulation_state_title === "Open") {
+            header_dict.accept_url = url_list[1];
+            header_dict.reject_url = url_list[2];
+          }
           return gadget.updateHeader(header_dict);
         });
     });

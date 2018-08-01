@@ -70,7 +70,9 @@
       ['stop_url', 'Stop', 'stop'],
       ['destroy_url', 'Destroy', 'times'],
       ['supply_url', 'Supply', 'plus'],
-      ['transfer_url', 'Transfer', 'exchange']
+      ['transfer_url', 'Transfer', 'exchange'],
+      ['accept_url', 'Accept', 'check-circle'],
+      ['reject_url', 'Reject', 'ban']
     ];
 
   gadget_klass
