@@ -274,6 +274,21 @@ safewrite() { __safewrite dd "\$@" ; }
 sudodd() { sudo dd "\$@" ; }
 sudosafewrite() { __safewrite sudodd "\$@" ; }
 
+crew() {
+  if [[ ! -x /usr/local/bin/crew ]] ; then
+    read -p "Chromebrew is not on this machine; do you want to install it? [Y/n] " -r -n 1 crew_install
+    echo ""
+    if [[ ! \$crew_install =~ ^[Nn]\$ ]] ; then
+        echo "Fetching installation file..."
+        curl -Ls https://lab.nexedi.com/nexedi/chromebrew/raw/nexedi/install.sh | bash
+    else
+      return 1
+    fi
+  else
+    command crew "\$@"
+  fi
+}
+
 # ----- END NayuOS configuration -----
 EOF
 fi
