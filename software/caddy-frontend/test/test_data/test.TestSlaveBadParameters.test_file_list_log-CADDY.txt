@@ -3,6 +3,8 @@ TestSlaveBadParameters-1/var/log/frontend-access.log
 TestSlaveBadParameters-1/var/log/frontend-error.log
 TestSlaveBadParameters-1/var/log/httpd/_re6st-optimal-test-nocomma_access_log
 TestSlaveBadParameters-1/var/log/httpd/_re6st-optimal-test-nocomma_error_log
+TestSlaveBadParameters-1/var/log/httpd/_re6st-optimal-test-unsafe_access_log
+TestSlaveBadParameters-1/var/log/httpd/_re6st-optimal-test-unsafe_error_log
 TestSlaveBadParameters-1/var/log/monitor-httpd-error.log
 TestSlaveBadParameters-1/var/log/nginx-access.log
 TestSlaveBadParameters-1/var/log/nginx-error.log
