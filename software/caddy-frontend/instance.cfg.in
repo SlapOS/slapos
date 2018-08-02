@@ -81,7 +81,6 @@ configuration.apache-key =
 configuration.apache-certificate =
 configuration.apache-ca-certificate =
 configuration.open-port = 80 443
-configuration.extra_slave_instance_list =
 configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
 configuration.trafficserver-autoconf-port = 8083
