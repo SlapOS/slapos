@@ -2968,7 +2968,55 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       're6st-optimal-test-nocomma': {
         're6st-optimal-test': 'nocomma',
       },
+      're6st-optimal-test-unsafe': {
+        're6st-optimal-test':
+        'new\nline;rm -fr ~;,new\line\n[s${esection:eoption}',
+      },
     }
+
+  def test_re6st_optimal_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      're6st-optimal-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 're6stoptimaltestunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://re6stoptimaltestunsafe.example.com',
+        'site_url': 'http://re6stoptimaltestunsafe.example.com',
+        'secure_access': 'https://re6stoptimaltestunsafe.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(
+        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_re6st-optimal-test-unsafe-re6st-optimal-test'))[0]
+
+    # Note: The result is a bit differnt from the request (newlines stripped),
+    #       but good enough to prove, that ${esection:eoption} has been
+    #       correctly passed to the script.
+    self.assertEqual(
+      '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
+      subprocess.check_output(monitor_file).strip()
+    )
 
   def test_re6st_optimal_test_nocomma(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
