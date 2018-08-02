@@ -3004,3 +3004,68 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Set-Cookie'],
       'secured=value;secure, nonsecured=value'
     )
+
+
+class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': LOCAL_IPV4,
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      '-frontend-authorized-slave-string':
+      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      're6st-optimal-test-nocomma': {
+        're6st-optimal-test': 'nocomma',
+      },
+    }
+
+  def test_re6st_optimal_test_nocomma(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      're6st-optimal-test-nocomma']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 're6st-optimal-test-nocomma')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 're6stoptimaltestnocomma.example.com',
+        'replication_number': '1',
+        'url': 'http://re6stoptimaltestnocomma.example.com',
+        'site_url': 'http://re6stoptimaltestnocomma.example.com',
+        'secure_access': 'https://re6stoptimaltestnocomma.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    # assert that there is no nocomma file
+    monitor_file_list = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_re6st-optimal-test-nocomma-re6st-optimal-test'))
+    self.assertEqual(
+      [],
+      monitor_file_list
+    )
