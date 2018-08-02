@@ -1,0 +1,2 @@
+TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-nocomma-error-log-last-day
+TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-nocomma-error-log-last-hour
