@@ -125,6 +125,7 @@ max-clients = {{ slapparameter_dict.get('max-clients', 0) }}
 hello = {{ slapparameter_dict.get('hello', 15) }}
 min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
 encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
+same-country = {{ slapparameter_dict.get('same-country', '') }}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
