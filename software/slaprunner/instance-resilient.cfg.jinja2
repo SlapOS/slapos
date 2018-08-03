@@ -28,7 +28,7 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
-  monitor-htpasswd
+  publish-early
   {{ parts.replicate("runner", number_of_instances + 1) }}
   publish-connection-information
 
@@ -38,8 +38,13 @@ storage-path = ${directory:etc}/.monitor_user
 bytes = 8
 username = admin
 
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  init-password monitor-htpasswd:passwd
+
 {%  do monitor_parameter.__setitem__('monitor-username', slapparameter_dict.get('monitor-username', 'admin'))%}
-{%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}'))%}
+{%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${publish-early:init-password}'))%}
 
 {{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict, monitor_parameter_dict=monitor_dict) }}
 
@@ -60,7 +65,7 @@ recipe = slapos.cookbook:publish
 backend-url = ${request-runner:connection-backend-url}
 url = ${request-runner:connection-url}
 init-user = ${request-runner:connection-init-user}
-init-password = ${request-runner:connection-init-password}
+init-password = ${publish-early:init-password}
 ssh-command = ${request-runner:connection-ssh-command}
 webdav-url = ${request-runner:connection-webdav-url}
 public-url = ${request-runner:connection-public-url}

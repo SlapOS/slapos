@@ -91,7 +91,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
-config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-password = ${publish-early:monitor-password}
 # Enable disk wipe options
 {% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
 config-wipe-disk-ondestroy = True
@@ -238,6 +238,11 @@ mode = {{ mode }}
 {{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
 {% endif -%}
 
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
+
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
@@ -260,6 +265,8 @@ recipe = slapos.cookbook:publish
 {% endfor %}
 {% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
+monitor-password = ${publish-early:monitor-password}
+monitor-user = ${monitor-publish-parameters:monitor-user}
 {% do part_list.append('monitor-base') -%}
 
 [buildout]
@@ -273,7 +280,6 @@ parts =
   httpd-promise
   publish-connection-information
   directory-doc
-  monitor-htpasswd
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
