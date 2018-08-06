@@ -26,3 +26,6 @@ encrypt
 {% if parameter_dict.get('max-clients') != '0' -%}
 max-clients {{ parameter_dict['max-clients'] }}
 {% endif -%}
+{% if parameter_dict.get('same-country') -%}
+same-country {{ parameter_dict['same-country'] }}
+{% endif -%}

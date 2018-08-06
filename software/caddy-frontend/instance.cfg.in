@@ -1,0 +1,93 @@
+[buildout]
+extends = {{ common_profile }}
+
+parts =
+  dynamic-template-caddy-replicate
+  switch-softwaretype
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    key slap_software_type instance-parameter:slap-software-type
+    key slapparameter_dict instance-parameter:configuration
+    key slave_instance_list instance-parameter:slave-instance-list
+    section instance_parameter instance-parameter
+    ${:extra-context}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${dynamic-template-caddy-replicate:rendered}
+RootSoftwareInstance = ${dynamic-template-caddy-replicate:rendered}
+custom-personal = ${dynamic-template-caddy-replicate:rendered}
+single-default = ${dynamic-template-caddy-frontend:rendered}
+single-custom-personal = ${dynamic-template-caddy-frontend:rendered}
+replicate = ${dynamic-template-caddy-replicate:rendered}
+
+[dynamic-template-caddy-frontend-parameters]
+{% for key,value in template_frontend_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+[dynamic-template-caddy-frontend]
+< = jinja2-template-base
+template = {{ template_caddy_frontend }}
+filename = instance-caddy-frontend.cfg
+extensions = jinja2.ext.do
+extra-context =
+  section parameter_dict dynamic-template-caddy-frontend-parameters
+
+[dynamic-template-caddy-replicate]
+< = jinja2-template-base
+template = {{ template_caddy_replicate }}
+filename = instance-caddy-replicate.cfg
+extensions = jinja2.ext.do
+extra-context =
+    import subprocess_module subprocess
+    raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
+    raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type RootSoftwareInstance-default-custom-personal-replicate
+    raw template_monitor {{ monitor2_template }}
+    raw common_profile {{ common_profile }}
+
+[instance-parameter]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+# Define default parameter(s) that will be used later, in case user didn't
+# specify it
+# All parameters are available through the configuration.XX syntax.
+# All possible parameters should have a default.
+configuration.domain = example.org
+configuration.public-ipv4 =
+configuration.port = 4443
+configuration.plain_http_port = 8080
+configuration.plain_nginx_port = 8081
+configuration.nginx_port = 9443
+# BBB: apache_custom_https and apache_custom_http
+configuration.apache_custom_https = ""
+configuration.apache_custom_http = ""
+configuration.caddy_custom_https = ""
+configuration.caddy_custom_http = ""
+configuration.apache-key =
+configuration.apache-certificate =
+configuration.apache-ca-certificate =
+configuration.open-port = 80 443
+configuration.extra_slave_instance_list =
+configuration.disk-cache-size = 8G
+configuration.ram-cache-size = 1G
+configuration.trafficserver-autoconf-port = 8083
+configuration.trafficserver-mgmt-port = 8084
+configuration.re6st-verification-url = http://[2001:67c:1254:4::1]/index.html
+configuration.enable-http2-by-default = true
+configuration.mpm-graceful-shutdown-timeout = 5
+configuration.monitor-httpd-port = 8072
+configuration.frontend-name =

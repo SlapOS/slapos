@@ -72,6 +72,12 @@
             "description": "Specify that tunnels should be encrypted.",
             "type": "boolean",
             "default": false
+        },
+        "same-country": {
+            "title": "Same Country",
+            "description": "Prevent tunnelling accross borders of listed countries",
+            "type": "string",
+            "default": ""
         }
     }
 }
