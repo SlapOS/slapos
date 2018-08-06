@@ -109,13 +109,9 @@ Dear User,\n
 <br>\n
 <br> New version of the ${software_product_title} has been released.\n
 <br>\n
-<br> Launch the upgrade on your instance <strong>  ${hosting_subscription_title} </strong> to the newest version <strong> ${software_release_name} ${software_release_reference} </strong> using the link below:\n
+<br> Launch the upgrade on your instance <strong>  ${hosting_subscription_title} </strong> to the newest version <strong> ${software_release_name} ${software_release_reference} </strong> by clicking on <Accept> button.\n
 <br>\n
-<br>   <a href=${upgrade_accept_link}> I AGREE TO LAUNCH THE UPGRADE NOW </a>\n
-<br>\n
-<br> If you don\'t want to use this new version, please cancel the upgrade request using the link below:\n
-<br>   \n
-<br>   <a href=${upgrade_reject_link}> I DON\'T WANT TO LAUNCH THE UPGRADE </a>\n
+<br> If you don\'t want to use this new version, please cancel the upgrade request by clicking on <Reject> button.\n
 <br>\n
 <br>Thank you for use our services,\n
 <br>Support Team\n
@@ -129,8 +125,7 @@ Dear User,\n
 <br> New Software Release URL:\n
 <br>\n
 <br>  &nbsp;&nbsp;&nbsp; ${new_software_release_url}\n
-<br>\n
-
+<br>
 
 ]]></string> </value>
         </item>

@@ -113,14 +113,9 @@ Dear User,\n
 <br>\n
 <br> &nbsp;&nbsp;&nbsp; <b> ${software_release_name} ${software_release_reference} </b>\n
 <br>\n
-<br> Click below to launch the Installation:\n
+<br> Click <Accept> button to launch the Installation.\n
 <br>\n
-<br>   <a href=${upgrade_accept_link}> I AGREE TO REQUEST THE INSTALLATION NOW </a>\n
-<br>\n
-<br> If you don\'t want to use this new version, please cancel the upgrade request using\n
-<br> the link below:\n
-<br>\n
-<br>   <a href=${upgrade_reject_link}> I DON\'T WANT TO INSTALL THIS NEW RELEASE </a>\n
+<br> If you don\'t want to use this new version, please cancel the upgrade request by clicking on <Reject> button.\n
 <br>\n
 <br>Thank you for use our services,\n
 <br>Support Team\n
@@ -130,8 +125,7 @@ Dear User,\n
 <br> ${software_release_name} ${software_release_reference} Software Release URL :\n
 <br>\n
 <br>  &nbsp;&nbsp;&nbsp; ${new_software_release_url}\n
-<br>\n
-
+<br>
 
 ]]></string> </value>
         </item>
