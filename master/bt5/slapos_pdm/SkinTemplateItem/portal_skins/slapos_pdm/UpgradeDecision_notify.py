@@ -15,12 +15,9 @@ computer = context.UpgradeDecision_getComputer()
 software_release = context.UpgradeDecision_getSoftwareRelease()
 software_product_title = software_release.getAggregateTitle(
                                portal_type="Software Product")
-reference = context.getReference()
 
 mapping_dict = {
   'software_product_title': software_product_title,
-  'upgrade_accept_link': 'Base_acceptUpgradeDecision?reference=%s' % reference,
-  'upgrade_reject_link': 'Base_rejectUpgradeDecision?reference=%s' % reference,
   'software_release_name': software_release.getTitle(),
   'software_release_reference': software_release.getReference(),
   'new_software_release_url': software_release.getUrlString(),

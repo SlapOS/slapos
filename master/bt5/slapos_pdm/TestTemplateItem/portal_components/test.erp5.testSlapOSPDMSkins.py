@@ -1499,6 +1499,48 @@ class TestSlapOSPDMSkins(SlapOSTestCaseMixin):
     self.tic()
     self.assertTrue(upgrade_decision.UpgradeDecision_isUpgradeFinished())
 
+  def testUpgradeDecision_requestChangeState_started(self):
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.setReference("UD-TESTDECISION")
+    upgrade_decision.confirm()
+    requested_state = "started"
+    self.assertEquals(upgrade_decision.getSimulationState(), 'confirmed')
+    upgrade_decision.UpgradeDecision_requestChangeState(requested_state)
+    self.assertEquals(upgrade_decision.getSimulationState(), 'started')
+
+  def testUpgradeDecision_requestChangeState_reject(self):
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.setReference("UD-TESTDECISION")
+    upgrade_decision.confirm()
+    requested_state = "rejected"
+    self.assertEquals(upgrade_decision.getSimulationState(), 'confirmed')
+    upgrade_decision.UpgradeDecision_requestChangeState(requested_state)
+    self.assertEquals(upgrade_decision.getSimulationState(), 'rejected')
+
+  def testUpgradeDecision_requestChangeState_stopped(self):
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.setReference("UD-TESTDECISION")
+    upgrade_decision.confirm()
+    upgrade_decision.stop()
+    requested_state = "started"
+    self.assertEquals(upgrade_decision.getSimulationState(), 'stopped')
+    result = upgrade_decision.UpgradeDecision_requestChangeState(requested_state)
+    self.assertEquals(upgrade_decision.getSimulationState(), 'stopped')
+    self.assertEquals(result, "Transition from state %s to %s is not permitted" % (
+                      upgrade_decision.getSimulationState(), requested_state))
+
+  def testUpgradeDecision_requestChangeState_rejected(self):
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.setReference("UD-TESTDECISION")
+    upgrade_decision.confirm()
+    upgrade_decision.start()
+    requested_state = "rejected"
+    self.assertEquals(upgrade_decision.getSimulationState(), 'started')
+    result = upgrade_decision.UpgradeDecision_requestChangeState(requested_state)
+    self.assertEquals(upgrade_decision.getSimulationState(), 'started')
+    self.assertEquals(result, "Transition from state %s to %s is not permitted" % (
+                      upgrade_decision.getSimulationState(), requested_state))
+
   def testUpgradeDecision_isUpgradeFinished_hosting_subscription(self):
     hosting_subscription = self._makeHostingSubscription()
     software_release = self._makeSoftwareRelease()
@@ -1540,8 +1582,6 @@ ${computer_title}
 ${computer_reference}
 ${software_release_name}
 ${software_release_reference}
-${upgrade_accept_link}
-${upgrade_reject_link}
 ${new_software_release_url}""",
       content_type='text/html',
       )
@@ -1570,9 +1610,7 @@ ${new_software_release_url}""",
      
     self.assertEqual(event.getTextContent().splitlines(),
       [software_product.getTitle(), computer.getTitle(), computer.getReference(),
-       software_release.getTitle(), software_release.getReference(), 
-       'Base_acceptUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       'Base_rejectUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
+       software_release.getTitle(), software_release.getReference(),
        software_release.getUrlString()])
       
       
@@ -1607,8 +1645,6 @@ ${hosting_subscription_title}
 ${old_software_release_url}
 ${software_release_name}
 ${software_release_reference}
-${upgrade_accept_link}
-${upgrade_reject_link}
 ${new_software_release_url}""",
       content_type='text/html',
       )
@@ -1637,9 +1673,7 @@ ${new_software_release_url}""",
      
     self.assertEqual(event.getTextContent().splitlines(),
       [software_product.getTitle(), hosting_subscription.getTitle(), 
-       old_url, software_release.getTitle(), software_release.getReference(), 
-       'Base_acceptUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       'Base_rejectUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
+       old_url, software_release.getTitle(), software_release.getReference(),
        software_release.getUrlString()])
 
     self.assertEquals(event.getSimulationState(), "delivered")
