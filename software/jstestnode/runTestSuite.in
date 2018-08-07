@@ -65,6 +65,8 @@ def main():
     args.target_browser = parsed_parameters.get('target-browser')
   if not getattr(args, 'target_device', None):
     args.target_device = parsed_parameters.get('target-device')
+  if not getattr(args, 'frontend_url', None):
+    args.frontend_url = parsed_parameters.get('frontend_url')
 
   is_browser_running = False
   try:
@@ -120,10 +122,11 @@ def main():
       appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
       browser = webdriver.Remote(appium_url, capabilities)
 
-      # adjust make path to testnode's frontend
-      full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
-      full_path = full_path.split('srv')[-1]
-      url = "%s%s" % (args.frontend_url, full_path)
+      # adjust path to testnode's frontend
+      if ('jio' in test_suite):
+        url = os.path.join(args.frontend_url, 'jio/test/tests.html')
+      else:
+        url = os.path.join(args.frontend_url, 'renderjs/test/')
 
     is_browser_running = True
     agent = browser.execute_script("return navigator.userAgent")
