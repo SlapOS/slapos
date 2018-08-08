@@ -3039,6 +3039,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
+      'server-alias-unsafe': {
+        'server-alias': '${section:option} afterspace',
+      },
     }
 
   def test_master_partition_state(self):
@@ -3049,9 +3052,10 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
-      'rejected-slave-amount': '1',
-      'slave-amount': '3',
-      'rejected-slave-list': '["_custom_domain-unsafe"]'}
+      'rejected-slave-amount': '2',
+      'slave-amount': '4',
+      'rejected-slave-list':
+      '["_server-alias-unsafe", "_custom_domain-unsafe"]'}
 
     self.assertEqual(
       expected_parameter_dict,
@@ -3141,6 +3145,14 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_custom_domain_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+  def test_server_alias_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-unsafe']
     self.assertEqual(
       parameter_dict,
       {}
