@@ -256,6 +256,9 @@ class TestDataMixin(object):
       'trafficserver/diags.log',
       'trafficserver/squid.blog',
       'trafficserver/.squid.blog.meta',
+      # not important, appears sometimes
+      'trafficserver/.error.log.meta,
+      'trafficserver/error.log,
     ])
 
   def test_file_list_run(self):
