@@ -3042,6 +3042,16 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'server-alias-unsafe': {
         'server-alias': '${section:option} afterspace',
       },
+      'virtualhostroot-http-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-http-port': '${section:option}',
+      },
+      'virtualhostroot-https-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-https-port': '${section:option}',
+      },
     }
 
   def test_master_partition_state(self):
@@ -3051,9 +3061,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '2',
+      'accepted-slave-amount': '4',
       'rejected-slave-amount': '2',
-      'slave-amount': '4',
+      'slave-amount': '6',
       'rejected-slave-list':
       '["_server-alias-unsafe", "_custom_domain-unsafe"]'}
 
@@ -3156,4 +3166,64 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       parameter_dict,
       {}
+    )
+
+  def test_virtualhostroot_http_port_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'virtualhostroot-http-port-unsafe']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'virtualhostroot-http-port-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'virtualhostroothttpportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpportunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//virtualhostroothttpportunsafe'
+      '.example.com:0//VirtualHostRoot/test-path'
+    )
+
+  def test_virtualhostroot_https_port_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'virtualhostroot-https-port-unsafe']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'virtualhostroot-https-port-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'virtualhostroothttpsportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpsportunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
+      '.example.com:0//VirtualHostRoot/test-path'
     )
