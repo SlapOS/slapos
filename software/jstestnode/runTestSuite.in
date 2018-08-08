@@ -144,10 +144,15 @@ def main():
     print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
     for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
-      test_name = '%s: %s' % (
-        elt.xpath('.//span[@class="module-name"]')[0].text,
-        elt.xpath('.//span[@class="test-name"]')[0].text
-      )
+      if (len(elt.xpath('.//span[@class="module-name"]'))):
+        test_name = '%s: %s' % (
+          elt.xpath('.//span[@class="module-name"]')[0].text,
+          elt.xpath('.//span[@class="test-name"]')[0].text
+        )
+      #global failure, like Uncaught ReferenceError: RSVP is not defined
+      else:
+        test_name = elt.xpath('.//span[@class="test-name"]')[0].text
+
       print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
       # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
