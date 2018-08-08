@@ -69,23 +69,30 @@ context =
 {% for slave in slave_instance_list %}
 {# BBB: apache_custom_https AND apache_custom_http #}
 {%   if not ((slave.has_key('caddy_custom_http') or slave.has_key('apache_custom_http') or slave.has_key('caddy_custom_https') or slave.has_key('apache_custom_https')) and not slave.get('slave_reference') in authorized_slave_string) %}
-{%     set slave_ok = True %}
+{%     set slave_dict = {'state': True} %}
 {%     if slave.get('url') %}
 {%       if subprocess_module.call([caddy_backend_url_validator, slave['url']]) == 1 %}
-{%         set slave_ok = False %}
+{%         do slave_dict.__setitem__('state', False) %}
 {%       endif %}
 {%     endif %}
 {%     if slave.get('https-url') %}
 {%       if subprocess_module.call([caddy_backend_url_validator, slave['https-url']]) == 1 %}
-{%         set slave_ok = False %}
+{%         do slave_dict.__setitem__('state', False) %}
 {%       endif %}
 {%     endif %}
 {%     if slave.get('custom_domain') %}
 {%       if not validators.domain(slave['custom_domain']) %}
-{%         set slave_ok = False %}
+{%         do slave_dict.__setitem__('state', False) %}
 {%       endif %}
 {%     endif %}
-{%     if slave_ok %}
+{%     if slave.get('server-alias') %}
+{%       for slave_alias in slave['server-alias'].split() %}
+{%         if not validators.domain(slave_alias) %}
+{%           do slave_dict.__setitem__('state', False) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%     if slave_dict['state'] %}
 {%       do authorized_slave_list.append(slave) %}
 {%     else %}
 {%       do rejected_slave_list.append(slave.get('slave_reference')) %}
