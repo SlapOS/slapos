@@ -2972,7 +2972,27 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         're6st-optimal-test':
         'new\nline;rm -fr ~;,new\line\n[s${esection:eoption}',
       },
+      'custom_domain-unsafe': {
+        'custom_domain': '${section:option} afterspace\nafternewline',
+      },
     }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '2',
+      'rejected-slave-amount': '1',
+      'slave-amount': '3',
+      'rejected-slave-list': '["_custom_domain-unsafe"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
 
   def test_re6st_optimal_test_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -3052,4 +3072,12 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       [],
       monitor_file_list
+    )
+
+  def test_custom_domain_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
     )
