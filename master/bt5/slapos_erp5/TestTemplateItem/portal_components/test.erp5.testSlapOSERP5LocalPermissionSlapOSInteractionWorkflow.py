@@ -281,7 +281,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     payment_transaction = self.portal.accounting_module.newContent(
         portal_type='Payment Transaction')
     self.assertSecurityGroup(payment_transaction, [self.user_id,
-        'G-COMPANY'],
+        'G-COMPANY', 'R-SHADOW-PERSON'],
         False)
 
     payment_transaction.edit(
@@ -290,7 +290,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
 
     self.assertSecurityGroup(payment_transaction, [self.user_id,
         'G-COMPANY', 'SHADOW-%s' % self.person_user.getUserId(),
-        self.person_user.getUserId()],
+        self.person_user.getUserId(), 'R-SHADOW-PERSON'],
         False)
 
   def test_PayzenEvent_setDestinationSection(self):
@@ -339,7 +339,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     sale_invoice_transaction = self.portal.accounting_module.newContent(
         portal_type='Sale Invoice Transaction')
     self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
-        'G-COMPANY'],
+        'G-COMPANY', 'R-SHADOW-PERSON'],
         False)
 
     sale_invoice_transaction.edit(
@@ -347,7 +347,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     self.commit()
 
     self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
-        'G-COMPANY', self.person_user.getUserId()],
+        'G-COMPANY', self.person_user.getUserId(), 'R-SHADOW-PERSON'],
         False)
 
   def test_SupportRequest_setDestinationDecision(self):

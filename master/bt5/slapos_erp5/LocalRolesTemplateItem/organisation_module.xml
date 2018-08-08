@@ -15,4 +15,13 @@
    <item>Auditor</item>
   </role>
  </local_roles>
+ <local_role_group_ids>
+  <local_role_group_id id='group'>
+    <principal id='G-COMPANY'>Auditor</principal>
+    <principal id='G-COMPANY'>Author</principal>
+  </local_role_group_id>
+  <local_role_group_id id='shadow'>
+    <principal id='R-SHADOW-PERSON'>Auditor</principal>
+  </local_role_group_id>
+ </local_role_group_ids>
 </local_roles_item>
