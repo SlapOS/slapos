@@ -53,8 +53,16 @@
             <value> <string>web_site=None</string> </value>
         </item>
         <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>PaymentTransaction_redirectToManualPayzenPayment</string> </value>
+            <value> <string>PaymentTransaction_redirectToSubscriptionManualPayzenPayment</string> </value>
         </item>
       </dictionary>
     </pickle>

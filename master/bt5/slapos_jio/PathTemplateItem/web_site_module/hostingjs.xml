@@ -289,6 +289,16 @@
                       <value> <string>string</string> </value>
                   </item>
                 </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>configuration_payment_result</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
               </tuple>
             </value>
         </item>
@@ -372,6 +382,10 @@
             <value> <string>gadget_slapos_panel.html</string> </value>
         </item>
         <item>
+            <key> <string>configuration_payment_result</string> </key>
+            <value> <string>slap_payment_result</string> </value>
+        </item>
+        <item>
             <key> <string>configuration_translation_gadget_url</string> </key>
             <value> <string>gadget_translation.html</string> </value>
         </item>
@@ -405,7 +419,7 @@
         </item>
         <item>
             <key> <string>layout_configuration_form_id</string> </key>
-            <value> <string>WebSection_viewRenderJSPreference</string> </value>
+            <value> <string>WebSection_viewSlapOSRenderJSPreference</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -610,7 +624,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>966.8632.57005.9079</string> </value>
+                <value> <string>969.29409.49424.20872</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -628,7 +642,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1520876084.55</float>
+                        <float>1533819967.39</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

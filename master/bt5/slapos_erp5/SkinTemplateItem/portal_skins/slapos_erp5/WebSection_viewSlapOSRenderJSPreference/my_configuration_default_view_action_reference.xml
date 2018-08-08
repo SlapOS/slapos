@@ -10,15 +10,13 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
-                <string>columns</string>
-                <string>selection_name</string>
                 <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>listbox</string> </value>
+            <value> <string>my_configuration_default_view_action_reference</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -74,54 +72,12 @@
             <value>
               <dictionary>
                 <item>
-                    <key> <string>columns</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>title</string>
-                          <string>Title</string>
-                        </tuple>
-                        <tuple>
-                          <string>url_string</string>
-                          <string>Url String</string>
-                        </tuple>
-                        <tuple>
-                          <string>start_date</string>
-                          <string>Start Date</string>
-                        </tuple>
-                        <tuple>
-                          <string>stop_date</string>
-                          <string>Stop Date</string>
-                        </tuple>
-                        <tuple>
-                          <string>validation_state</string>
-                          <string>State</string>
-                        </tuple>
-                      </list>
-                    </value>
-                </item>
-                <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_list_mode_listbox</string> </value>
+                    <value> <string>my_view_mode_reference</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
                     <value> <string>Base_viewFieldLibrary</string> </value>
-                </item>
-                <item>
-                    <key> <string>portal_type</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>Trial Request</string>
-                          <string>Trial Request</string>
-                        </tuple>
-                      </list>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>selection_name</string> </key>
-                    <value> <string>subscription_request_module_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -129,7 +85,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Subscription Requests</string> </value>
+                    <value> <string>Default View Action Reference</string> </value>
                 </item>
               </dictionary>
             </value>

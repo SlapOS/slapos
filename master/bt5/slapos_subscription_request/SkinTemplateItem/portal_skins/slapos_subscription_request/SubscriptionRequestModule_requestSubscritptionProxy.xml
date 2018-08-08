@@ -50,11 +50,20 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>web_site=None</string> </value>
+            <value> <string>email, user_input_dict={}, batch_mode=True, REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>PaymentTransaction_redirectToManualPayzenPayment</string> </value>
+            <value> <string>SubscriptionRequestModule_requestSubscritptionProxy</string> </value>
         </item>
       </dictionary>
     </pickle>
