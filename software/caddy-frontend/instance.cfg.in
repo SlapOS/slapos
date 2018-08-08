@@ -5,6 +5,9 @@ parts =
   dynamic-template-caddy-replicate
   switch-softwaretype
 
+[caddyprofiledeps]
+recipe = caddyprofiledeps
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -41,11 +44,13 @@ extra-context =
 
 [dynamic-template-caddy-replicate]
 < = jinja2-template-base
+depends = ${caddyprofiledeps:recipe}
 template = {{ template_caddy_replicate }}
 filename = instance-caddy-replicate.cfg
 extensions = jinja2.ext.do
 extra-context =
     import subprocess_module subprocess
+    import validators validators
     raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
     raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
 # Must match the key id in [switch-softwaretype] which uses this section.

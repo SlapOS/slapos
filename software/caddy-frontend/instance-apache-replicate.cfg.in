@@ -80,6 +80,11 @@ context =
 {%         set slave_ok = False %}
 {%       endif %}
 {%     endif %}
+{%     if slave.get('custom_domain') %}
+{%       if not validators.domain(slave['custom_domain']) %}
+{%         set slave_ok = False %}
+{%       endif %}
+{%     endif %}
 {%     if slave_ok %}
 {%       do authorized_slave_list.append(slave) %}
 {%     else %}
