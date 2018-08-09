@@ -20,6 +20,7 @@
 {%-   do http_host_list.append('http://%s:%s' % (host, slave_parameter['http_port'] )) %}
 {%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
+{%- set default_path = slave_parameter.get('default-path', '') | urlencode %}
 
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
@@ -85,12 +86,12 @@
 {%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
 {%-   endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
-  {%- if 'default-path' in slave_parameter %}
+  {%- if default_path %}
   redir 301 {
     if {path} is /
-    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+    / {scheme}://{host}/{{ default_path }}
   } {# redir #}
-  {%- endif %} {#- if 'default-path' in slave_parameter #}
+  {%- endif %} {#- if default_path #}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
@@ -102,12 +103,12 @@
   } {# redir #}
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
-{%-   if 'default-path' in slave_parameter %}
+{%-   if default_path %}
   redir 301 {
     if {path} is /
-    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+    / {scheme}://{host}/{{ default_path }}
   }  {# redir #}
-{%-   endif %} {#-   if 'default-path' in slave_parameter #}
+{%-   endif %} {#-   if default_path #}
 {%-   if backend_url %}
 
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
@@ -202,24 +203,24 @@
 {%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
 {%- endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
-{%-   if 'default-path' in slave_parameter %}
+{%-   if default_path %}
   redir 301 {
     if {path} is /
-    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+    / {scheme}://{host}/{{ default_path }}
   } {# redir #}
-{%-   endif %} {#-   if 'default-path' in slave_parameter #}
+{%-   endif %} {#-   if default_path #}
   rewrite {
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   } {# rewrite #}
 {%- else %} {#- if https_only #}
   # Default configuration
-{%-   if 'default-path' in slave_parameter %}
+{%-   if default_path %}
   redir 301 {
     if {path} is /
-    / {scheme}://{host}/{{ slave_parameter.get('default-path') }}
+    / {scheme}://{host}/{{ default_path }}
   } {# redir #}
-{%-   endif %} {#-   if 'default-path' in slave_parameter #}
+{%-   endif %} {#-   if default_path #}
 {%-   if slave_parameter.get('url', '') %}
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
