@@ -9,6 +9,7 @@ context =
     raw common_profile {{ common_profile }}
     ${:extra-context}
 
+{% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type == "replicate" %}
@@ -77,6 +78,15 @@ context =
 {%     endif %}
 {%     if slave.get('https-url') %}
 {%       if subprocess_module.call([caddy_backend_url_validator, slave['https-url']]) == 1 %}
+{%         do slave_dict.__setitem__('state', False) %}
+{%       endif %}
+{%     endif %}
+{%     if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%       set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
+{%       set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
+{%       set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
+{%       set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%       if not key_modulus or key_modulus != crt_modulus  %}
 {%         do slave_dict.__setitem__('state', False) %}
 {%       endif %}
 {%     endif %}

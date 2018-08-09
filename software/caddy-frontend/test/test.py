@@ -3063,6 +3063,10 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-ipv6-test-unsafe': {
         'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
       },
+      'ssl_key-ssl_crt-unsafe': {
+        'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
+        'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
+      },
     }
 
   def test_master_partition_state(self):
@@ -3073,10 +3077,11 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '2',
-      'slave-amount': '9',
+      'rejected-slave-amount': '3',
+      'slave-amount': '10',
       'rejected-slave-list':
-      '["_server-alias-unsafe", "_custom_domain-unsafe"]'}
+      '["_server-alias-unsafe", "_custom_domain-unsafe", '
+      '"_ssl_key-ssl_crt-unsafe"]'}
 
     self.assertEqual(
       expected_parameter_dict,
@@ -3352,4 +3357,12 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       '-a ${section:option} afternewline ipv6',
       subprocess.check_output(monitor_file).strip()
+    )
+
+  def test_ssl_key_ssl_crt_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_key-ssl_crt-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
     )
