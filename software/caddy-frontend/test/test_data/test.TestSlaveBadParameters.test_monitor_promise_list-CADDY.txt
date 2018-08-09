@@ -1,5 +1,11 @@
 TestSlaveBadParameters-1/etc/monitor-promise/check-_default-path-unsafe-error-log-last-day
 TestSlaveBadParameters-1/etc/monitor-promise/check-_default-path-unsafe-error-log-last-hour
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv4-test-unsafe-error-log-last-day
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv4-test-unsafe-error-log-last-hour
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv6-test-unsafe-error-log-last-day
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv6-test-unsafe-error-log-last-hour
+TestSlaveBadParameters-1/etc/monitor-promise/check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-nocomma-error-log-last-day
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-nocomma-error-log-last-hour
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-unsafe-error-log-last-day
