@@ -257,7 +257,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/is-icmp-packet-lost -a {{monitor_ipv6_test}} 
+command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -a ' ~ monitor_ipv6_test) }}
 filename = {{ monitor_ipv6_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
@@ -268,7 +268,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/is-icmp-packet-lost -4 -a {{monitor_ipv4_test}}
+command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -4 -a ' ~ monitor_ipv4_test) }}
 filename = {{ monitor_ipv4_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
