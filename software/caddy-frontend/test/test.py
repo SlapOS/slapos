@@ -2993,6 +2993,12 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
         'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
       },
+      'monitor-ipv4-test-unsafe': {
+        'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
+      },
+      'monitor-ipv6-test-unsafe': {
+        'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
+      },
     }
 
   def test_master_partition_state(self):
@@ -3002,9 +3008,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '5',
+      'accepted-slave-amount': '7',
       'rejected-slave-amount': '2',
-      'slave-amount': '7',
+      'slave-amount': '9',
       'rejected-slave-list':
       '["_server-alias-unsafe", "_custom_domain-unsafe"]'}
 
@@ -3196,4 +3202,90 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location'],
       'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
       '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,)
+    )
+
+  def test_monitor_ipv4_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'monitor-ipv4-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'monitoripv4testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv4testunsafe.example.com',
+        'site_url': 'http://monitoripv4testunsafe.example.com',
+        'secure_access': 'https://monitoripv4testunsafe.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(result_http.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
+    self.assertEqual(
+      '-4 -a ${section:option} afternewline ipv4',
+      subprocess.check_output(monitor_file).strip()
+    )
+
+  def test_monitor_ipv6_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'monitor-ipv6-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'monitoripv6testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv6testunsafe.example.com',
+        'site_url': 'http://monitoripv6testunsafe.example.com',
+        'secure_access': 'https://monitoripv6testunsafe.example.com',
+        'public-ipv4': utils.LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      utils.der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(result_http.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
+    self.assertEqual(
+      '-a ${section:option} afternewline ipv6',
+      subprocess.check_output(monitor_file).strip()
     )
