@@ -3052,6 +3052,11 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
         'virtualhostroot-https-port': '${section:option}',
       },
+      'default-path-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
+      },
     }
 
   def test_master_partition_state(self):
@@ -3061,9 +3066,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '4',
+      'accepted-slave-amount': '5',
       'rejected-slave-amount': '2',
-      'slave-amount': '6',
+      'slave-amount': '7',
       'rejected-slave-list':
       '["_server-alias-unsafe", "_custom_domain-unsafe"]'}
 
@@ -3226,4 +3231,33 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'Path',
       '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
       '.example.com:0//VirtualHostRoot/test-path'
+    )
+
+  def default_path_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'default-path-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'default-path-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'defaultpathunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://defaultpathunsafe.example.com',
+        'site_url': 'http://defaultpathunsafe.example.com',
+        'secure_access': 'https://defaultpathunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(
+      result.headers['Location'],
+      'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
+      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,)
     )
