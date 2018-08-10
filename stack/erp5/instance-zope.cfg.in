@@ -4,6 +4,7 @@
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
+{% set saucelabs_dict = slapparameter_dict.get('saucelabs-dict', None) -%}
 {% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
@@ -67,6 +68,23 @@ ca-certs = ${directory:test-ca-certs}
 ca-newcerts = ${directory:test-ca-newcerts}
 ca-crl = ${directory:test-ca-crl}
 
+{% if saucelabs_dict -%}
+[test-zelenium-runner-parameter]
+configuration = {{ dumps(saucelabs_dict) }}
+user = {{ dumps(slapparameter_dict['inituser-login']) }}
+password = {{ dumps(slapparameter_dict['inituser-password']) }}
+
+[{{ section('test-zelenium-runner') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['run-zelenium-template'] }}
+rendered = ${directory:bin}/runTestSuite
+extensions = jinja2.ext.do
+context =
+    import json_module json
+    key configuration test-zelenium-runner-parameter:configuration
+    key user test-zelenium-runner-parameter:user
+    key password test-zelenium-runner-parameter:password
+{% else -%}
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
@@ -124,6 +142,7 @@ command-line-extra =
 command-name = runTestSuite
 command-line-extra =
   --db_list '{{ ','.join(connection_string_list) }}'
+{%- endif %}
 {%- endif %}
 
 [directory]

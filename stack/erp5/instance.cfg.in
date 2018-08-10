@@ -84,6 +84,7 @@ extra-context =
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
+run-zelenium-template = {{ template_run_zelenium }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 coreutils = {{ coreutils_location }}
