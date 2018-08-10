@@ -123,7 +123,7 @@ if [ $line_number ] ; then
 fi
 
 # add some ebuilds, specific to NayuOS
-for category in $( ls {{ ebuilds_dir }} ); do
+for category in $( find {{ ebuilds_dir }} -maxdepth 1 -mindepth 1 -type d); do
   echo ${category}
   cp -R "{{ ebuilds_dir }}/${category}/"* "${CHROMIUM_OVERLAY}/${category}/"
 done
