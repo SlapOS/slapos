@@ -152,6 +152,7 @@ config-caucase-url = ${request-caucase:connection-http-url}
 config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-saucelabs-dict = {{ dumps(slapparameter_dict.get('saucelabs-dict', {})) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
