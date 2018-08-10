@@ -275,16 +275,16 @@ sudodd() { sudo dd "\$@" ; }
 sudosafewrite() { __safewrite sudodd "\$@" ; }
 
 crew() {
-  if [[ -x "$(command -v crew)" ]] ; then
+  if [[ -x "\$(command -v crew)" ]] ; then
     read -p "Chromebrew is not on this machine; do you want to install it? [Y/n] " -r -n 1 crew_install
     echo "Fetching installation file..."
-    if [[ ! $crew_install =~ ^[Nn]$ ]] ; then
+    if [[ ! \$crew_install =~ ^[Nn]$ ]] ; then
 	curl -Ls git.io/vddgY | bash
     else
       return 1
     fi
   else
-    command crew "$@"
+    command crew "\$@"
   fi
 }
 
@@ -356,13 +356,24 @@ mv {{ cros_location }}/{{ branch }}/chroot/tmp/*.img ${DIR_IMAGE_LOCATION}
 
 cd ${DIR_IMAGE_LOCATION}
 for hashfunction in md5sum sha1sum sha256sum sha512sum; do
-  echo ${hashfunction} >> hashes.txt
-  ${hashfunction} *.img >> hashes.txt
+  echo ${hashfunction} >> unzipped_hashes.txt
+  ${hashfunction} *.img >> unzipped_hashes.txt
   printf "\n\n" >> hashes.txt
 done
 
 for file in $(ls *.img); do
   gzip -9 -f ${file}
+done
+
+for hashfunction in md5sum sha1sum sha256sum sha512sum; do
+  echo ${hashfunction} >> hashes.txt
+  ${hashfunction} *.img.gz >> hashes.txt
+  printf "\n\n" >> hashes.txt
+done
+
+for file in $(ls *.img.gz); do
+  imageparent="public\/R[0-9]+\/(.*\/)*"
+  networkcache-upload --prefix-key packerimage- --url https://softinst62285.host.vifib.net/$BASH_REMATCH$(basename $file) --file $file  --config {{ shacache_location }}/shacache.cfg && rm $file
 done
 
 exit 0
