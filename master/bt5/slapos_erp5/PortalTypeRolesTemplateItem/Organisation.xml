@@ -1,6 +1,7 @@
 <type_roles>
   <role id='Assignor'>
    <property id='title'>Group company</property>
+   <multi_property id='categories'>local_role_group/group</multi_property>
    <multi_property id='category'>group/company</multi_property>
    <multi_property id='base_category'>group</multi_property>
   </role>
