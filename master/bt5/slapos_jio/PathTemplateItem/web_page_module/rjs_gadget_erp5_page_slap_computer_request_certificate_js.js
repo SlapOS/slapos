@@ -123,7 +123,7 @@
         })
         .push(function (result) {
           return RSVP.all([
-            gadget.getUrlFor({command: 'history_previous'})
+            gadget.getUrlFor({command: 'change', options: {page: "slap_controller"}})
           ]);
         })
         .push(function (url_list) {
