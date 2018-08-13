@@ -695,7 +695,7 @@
         </item>
         <item>
             <key> <string>certificate_authority_path</string> </key>
-            <value> <string></string> </value>
+            <value> <string>/etc/slapos-ssl</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
