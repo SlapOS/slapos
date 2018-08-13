@@ -275,16 +275,16 @@ sudodd() { sudo dd "\$@" ; }
 sudosafewrite() { __safewrite sudodd "\$@" ; }
 
 crew() {
-  if [[ -x "$(command -v crew)" ]] ; then
+  if [[ -x "\$(command -v crew)" ]] ; then
     read -p "Chromebrew is not on this machine; do you want to install it? [Y/n] " -r -n 1 crew_install
     echo "Fetching installation file..."
-    if [[ ! $crew_install =~ ^[Nn]$ ]] ; then
+    if [[ ! \$crew_install =~ ^[Nn]$ ]] ; then
 	curl -Ls git.io/vddgY | bash
     else
       return 1
     fi
   else
-    command crew "$@"
+    command crew "\$@"
   fi
 }
 
