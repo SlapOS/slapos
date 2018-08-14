@@ -11,7 +11,6 @@
   </role>
   <role id='Assignor'>
    <property id='title'>Person Shadow</property>
-   <multi_property id='categories'>local_role_group/shadow</multi_property>
    <multi_property id='category'>role/shadow/person</multi_property>
    <multi_property id='base_category'>role</multi_property>
   </role>
