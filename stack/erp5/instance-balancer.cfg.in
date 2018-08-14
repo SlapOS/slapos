@@ -285,10 +285,19 @@ crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
 
 [{{ section('monitor-generate-apachedex-report') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = generate-apachedex-report
+# The goal is to be executed before logrotate log rotation.
+# Here, logrotate-entry-base:frequency = daily, so we run at 23 o'clock every day.
+frequency = 0 23 * * *
+command = ${monitor-generate-apachedex-report-wrapper:wrapper-path}
+
+[monitor-generate-apachedex-report-wrapper]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${monitor-directory:reports}/${:command}
+wrapper-path = ${directory:bin}/${:command}
 command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration "${apachedex-parameters:configuration}"
-command = apachedex_every_23_hour
+command = generate-apachedex-report
 
 [apachedex-parameters]
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
