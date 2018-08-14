@@ -1,4 +1,6 @@
+Subscription Request | CredentialRequest
 Subscription Request | HostingSubscription
+Subscription Request | Person
 Subscription Request | SlapOSAccountingHostingSubscriptionConstraint
 Subscription Request | SlaposHostingSubscriptionConstraint
 Subscription Request | SoftwareInstance

@@ -3,6 +3,7 @@
   <item>business_application</item>
  </portal_type>
  <portal_type id="Subscription Request">
+  <item>causality</item>
   <item>destination_section</item>
  </portal_type>
  <portal_type id="Subscription Request Module">
