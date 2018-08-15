@@ -1,2 +1,6 @@
+accounting_module/slapos_pre_payment_template
+accounting_module/slapos_pre_payment_template/**
+accounting_module/template_pre_payment_subscription_sale_invoice_transaction
+accounting_module/template_pre_payment_subscription_sale_invoice_transaction/**
 notification_message_module/slapos-free-trial-token
 portal_alarms/slapos_trial_process_**
