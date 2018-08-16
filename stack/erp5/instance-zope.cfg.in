@@ -118,6 +118,7 @@ command-name = runUnitTest
 command-line-extra =
   --erp5_sql_connection_string '{{ connection_string_list[0] }}'
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
+  --zserver {{ ipv4 }}
 
 [{{ section('runTestSuite') }}]
 < = run-test-common
