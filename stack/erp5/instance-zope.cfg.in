@@ -8,6 +8,9 @@
 {% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
+{% set test_runner_address_list = [] -%}
+{% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
+{% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
@@ -68,84 +71,6 @@ ca-certs = ${directory:test-ca-certs}
 ca-newcerts = ${directory:test-ca-newcerts}
 ca-crl = ${directory:test-ca-crl}
 
-{% if saucelabs_dict -%}
-[test-zelenium-runner-parameter]
-configuration = {{ dumps(saucelabs_dict) }}
-user = {{ dumps(slapparameter_dict['inituser-login']) }}
-password = {{ dumps(slapparameter_dict['inituser-password']) }}
-bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
-
-[{{ section('test-zelenium-runner') }}]
-<= jinja2-template-base
-template = {{ parameter_dict['run-zelenium-template'] }}
-rendered = ${directory:bin}/runTestSuite
-mode = 755
-context =
-    import json_module json
-    key configuration test-zelenium-runner-parameter:configuration
-    key user test-zelenium-runner-parameter:user
-    key password test-zelenium-runner-parameter:password
-    key bin_path test-zelenium-runner-parameter:bin-path
-{% else -%}
-{% if slapparameter_dict['mysql-test-url-list'] -%}
-[{{ section('run-unit-test-userhosts-wrapper') }}]
-<= userhosts-wrapper-base
-wrapped-command-line = ${runUnitTest:wrapper-path}
-wrapper-path = ${buildout:bin-directory}/runUnitTest
-
-[{{ section('run-test-suite-userhosts-wrapper') }}]
-<= userhosts-wrapper-base
-wrapped-command-line = ${runTestSuite:wrapper-path}
-wrapper-path = ${buildout:bin-directory}/runTestSuite
-
-{% set connection_string_list = [] -%}
-{% for url in slapparameter_dict['mysql-test-url-list'] -%}
-{%   set parsed_url = urlparse.urlparse(url) -%}
-{%   do connection_string_list.append(
-       '%s@%s:%s %s %s' % (
-         parsed_url.path.lstrip('/'),
-         parsed_url.hostname,
-         parsed_url.port,
-         parsed_url.username,
-         parsed_url.password,
-       ),
-     ) -%}
-{% endfor -%}
-[run-test-common]
-< = run-common
-environment-extra =
-  REAL_INSTANCE_HOME=${:instance-home}
-  OPENSSL_BINARY=${test-certificate-authority:openssl-binary}
-  TEST_CA_PATH=${test-certificate-authority:ca-dir}
-instance-home = ${directory:unit-test-path}
-wrapper-path = ${directory:bin}/${:command-name}.real
-command-line =
-  '{{ parameter_dict['bin-directory'] }}/${:command-name}'
-  ${:command-line-extra}
-  --conversion_server_url={{ slapparameter_dict['cloudooo-url'] }}
-  --conversion_server_retry_count={{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
-{#- BBB: We still have test suites that only accept the following 2 options. #}
-  --conversion_server_hostname=erp5-cloudooo
-  --conversion_server_port={{ port_dict['erp5-cloudooo'] }}
-  --volatile_memcached_server_hostname=erp5-memcached-volatile
-  --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
-  --persistent_memcached_server_hostname=erp5-memcached-persistent
-  --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
-
-[{{ section('runUnitTest') }}]
-< = run-test-common
-command-name = runUnitTest
-command-line-extra =
-  --erp5_sql_connection_string '{{ connection_string_list[0] }}'
-  --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
-
-[{{ section('runTestSuite') }}]
-< = run-test-common
-command-name = runTestSuite
-command-line-extra =
-  --db_list '{{ ','.join(connection_string_list) }}'
-{%- endif %}
-{%- endif %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -472,6 +397,111 @@ wrapper-path = ${buildout:bin-directory}/${:_buildout_section_name_}
 [{{ section("wait_activities") }}]
 <= watch_activities
 
+
+{% if saucelabs_dict -%}
+[test-zelenium-runner-parameter]
+configuration = {{ dumps(saucelabs_dict) }}
+user = {{ dumps(slapparameter_dict['inituser-login']) }}
+password = {{ dumps(slapparameter_dict['inituser-password']) }}
+bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
+
+[{{ section('test-zelenium-runner') }}]
+<= jinja2-template-base
+template = {{ parameter_dict['run-zelenium-template'] }}
+rendered = ${directory:bin}/runTestSuite
+mode = 755
+context =
+    import json_module json
+    key configuration test-zelenium-runner-parameter:configuration
+    key user test-zelenium-runner-parameter:user
+    key password test-zelenium-runner-parameter:password
+    key bin_path test-zelenium-runner-parameter:bin-path
+{% else -%}
+{%   if test_runner_enabled and test_runner_node_count -%}
+{%   for _ in range(test_runner_node_count) %}
+{%     do test_runner_address_list.append((ipv4, next_port())) %}
+{%   endfor %}
+
+[{{ section('run-unit-test-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${runUnitTest:wrapper-path}
+wrapper-path = ${buildout:bin-directory}/runUnitTest
+
+[{{ section('run-test-suite-userhosts-wrapper') }}]
+<= userhosts-wrapper-base
+wrapped-command-line = ${runTestSuite:wrapper-path}
+wrapper-path = ${buildout:bin-directory}/runTestSuite
+
+{%   set connection_string_list = [] -%}
+{%   for url in slapparameter_dict['mysql-test-url-list'] -%}
+{%     set parsed_url = urlparse.urlparse(url) -%}
+{%     do connection_string_list.append(
+         '%s@%s:%s %s %s' % (
+           parsed_url.path.lstrip('/'),
+           parsed_url.hostname,
+           parsed_url.port,
+           parsed_url.username,
+           parsed_url.password,
+         ),
+       ) -%}
+{%   endfor -%}
+[run-test-common]
+< = run-common
+environment-extra =
+  REAL_INSTANCE_HOME=${:instance-home}
+  OPENSSL_BINARY=${test-certificate-authority:openssl-binary}
+  TEST_CA_PATH=${test-certificate-authority:ca-dir}
+instance-home = ${directory:unit-test-path}
+wrapper-path = ${directory:bin}/${:command-name}.real
+command-line =
+  '{{ parameter_dict['bin-directory'] }}/${:command-name}'
+  ${:command-line-extra}
+  --conversion_server_url={{ slapparameter_dict['cloudooo-url'] }}
+  --conversion_server_retry_count={{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
+{#- BBB: We still have test suites that only accept the following 2 options. #}
+  --conversion_server_hostname=erp5-cloudooo
+  --conversion_server_port={{ port_dict['erp5-cloudooo'] }}
+  --volatile_memcached_server_hostname=erp5-memcached-volatile
+  --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
+  --persistent_memcached_server_hostname=erp5-memcached-persistent
+  --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[{{ section('runUnitTest') }}]
+< = run-test-common
+command-name = runUnitTest
+command-line-extra =
+  --erp5_sql_connection_string '{{ connection_string_list[0] }}'
+  --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
+  --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
+  --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
+
+[{{ section('runTestSuite') }}]
+< = run-test-common
+command-name = runTestSuite
+command-line-extra =
+  --db_list '{{ ','.join(connection_string_list) }}'
+environment-extra +=
+  {#- turn a list of (ip, port) in a list of 'ip:port' #}
+  {% set zserver_address_list = [] -%}
+  {% for ip, port in test_runner_address_list %}
+  {%   do zserver_address_list.append(ip ~ ':' ~ port) %}
+  {% endfor -%}
+  zserver_address_list={{ ','.join(zserver_address_list) }}
+  zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-apache-url-list']) }}
+
+[{{ section("promise-test-runner-apache-url") }}]
+# promise to wait for apache partition to have returned the parameter
+recipe = slapos.cookbook:check_parameter
+value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
+expected-not-value = not-ready
+path = ${directory:promises}/${:_buildout_section_name_}
+expected-value =
+
+{%-   endif %}
+{%- endif %}
+
+
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 zope-address-list = {{ dumps(publish_list) }}
@@ -484,6 +514,7 @@ hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+test-runner-address-list = {{ dumps(test_runner_address_list) }}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
