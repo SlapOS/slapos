@@ -120,10 +120,15 @@ def main():
       appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
       browser = webdriver.Remote(appium_url, capabilities)
 
-      # adjust make path to testnode's frontend
-      full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
-      full_path = full_path.split('srv')[-1]
-      url = "%s%s" % (args.frontend_url, full_path)
+      # adjust path for remote test url
+      remote_access_url = parsed_parameters.get('remote-access-url', None)
+      if remote_access_url:
+        if ('jio' in test_suite):
+          url = os.path.join(remote_access_url, 'jio/test/tests.html')
+        else:
+          url = os.path.join(remote_access_url, 'renderjs/test/')
+      else:
+        raise ValueError('remote-access-url is not defined in instance parameter')
 
     is_browser_running = True
     agent = browser.execute_script("return navigator.userAgent")
@@ -131,7 +136,7 @@ def main():
     print url
 
     browser.get(url)
-    WebDriverWait(browser, 60).until(EC.presence_of_element_located((
+    WebDriverWait(browser, 300).until(EC.presence_of_element_located((
       By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
     ))
 
@@ -141,10 +146,15 @@ def main():
     print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
     for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
-      test_name = '%s: %s' % (
-        elt.xpath('.//span[@class="module-name"]')[0].text,
-        elt.xpath('.//span[@class="test-name"]')[0].text
-      )
+      if (len(elt.xpath('.//span[@class="module-name"]'))):
+        test_name = '%s: %s' % (
+          elt.xpath('.//span[@class="module-name"]')[0].text,
+          elt.xpath('.//span[@class="test-name"]')[0].text
+        )
+      #global failure, like Uncaught ReferenceError: RSVP is not defined
+      else:
+        test_name = elt.xpath('.//span[@class="test-name"]')[0].text
+         
       print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
       # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 

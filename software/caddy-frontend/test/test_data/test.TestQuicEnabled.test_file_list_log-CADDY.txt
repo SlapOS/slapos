@@ -1,0 +1,10 @@
+TestQuicEnabled-0/var/log/monitor-httpd-error.log
+TestQuicEnabled-1/var/log/frontend-access.log
+TestQuicEnabled-1/var/log/frontend-error.log
+TestQuicEnabled-1/var/log/httpd/_url_access_log
+TestQuicEnabled-1/var/log/httpd/_url_error_log
+TestQuicEnabled-1/var/log/monitor-httpd-error.log
+TestQuicEnabled-1/var/log/nginx-access.log
+TestQuicEnabled-1/var/log/nginx-error.log
+TestQuicEnabled-1/var/log/trafficserver/manager.log
+TestQuicEnabled-1/var/log/trafficserver/traffic.out

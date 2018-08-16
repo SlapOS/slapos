@@ -308,10 +308,19 @@ context =
   key update_executable update-mysql:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = generate-mariadb-slow-query-report
+# The goal is to be executed before logrotate log rotation.
+# Here, logrotate-entry-base:frequency = daily, so we run at 23 o'clock every day.
+frequency = 0 23 * * *
+command = ${monitor-generate-mariadb-slow-query-report-wrapper:rendered}
+
+[monitor-generate-mariadb-slow-query-report-wrapper]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
-rendered = ${monitor-directory:reports}/${:filename}
-filename = mariadb_slow_query_every_23_hour
+rendered = ${directory:bin}/${:filename}
+filename = generate-mariadb-slow-query-report
 mode = 755
 context = 
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
