@@ -318,6 +318,7 @@ for board in ${BOARDS} ; do
   cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --install
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_100_percent/
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
+  cp {{ wallpaper_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/wallpaper
 
   NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
