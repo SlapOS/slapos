@@ -132,6 +132,12 @@ SLAPOS='{{ directory["bin"] }}'/slapos
 # XXX hardcoded
 SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
 DATABASE="$HOME/srv/runner/proxy.db"
+# If slapproxy database is empty then no software release was opened
+if [ ! -s "$DATABASE" ]; then
+  log_message "Slapproxy database empty, no Software Requested... Writing status file... End"
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
 # Change slapproxy database to point instances to new software release
 # XXX hardcoded
 PARTITION=$(basename $HOME)
