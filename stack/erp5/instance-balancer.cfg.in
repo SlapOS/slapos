@@ -142,6 +142,17 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%   endif -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
+{# direct access to backend zopes #}
+{% for i, zope_family_address in enumerate(zope_family_address_list) %}
+{%   set external_port = next_port() -%}
+{%   do apache_dict.__setitem__(
+  'direct-' ~ family_name ~ '-zope-' ~ i,
+   ( external_port,
+     external_scheme,
+     internal_scheme ~ '://' ~ zope_family_address[0] ~ '/VirtualHostBase/' ~ external_scheme ~ '/[' ~ ipv6 ~ ']:' ~ external_port ~ '/VirtualHostRoot/',
+     ssl_authentication )) -%}
+{% endfor -%}
+
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
