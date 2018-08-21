@@ -187,7 +187,8 @@ class Software(object):
         self._install_from_buildout()
         # Upload to binary cache if possible and allowed
         if all([self.software_root, self.url, self.software_url_hash,
-                self.upload_binary_cache_url, self.upload_binary_dir_url]):
+                self.upload_binary_cache_url, self.upload_binary_dir_url,
+                not os.path.exists(os.path.join(self.software_path, '.shared'))]):
           blacklisted = False
           for url in self.upload_to_binary_cache_url_blacklist:
             if self.url.startswith(url):
