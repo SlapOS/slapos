@@ -99,6 +99,7 @@ ipv4 = {{ ipv4 }}
 {% set apache_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
 {% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
+{% set direct_zope_url_dict = {} %} {# family_name => list of apache URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
@@ -163,6 +164,18 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
 {%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
+
+{#   Direct access to backend zopes.  #}
+{%   set external_port = next_port() %}
+{%   set direct_zope_url_list = [] %}
+{%   set direct_zope_backend_mapping = {} %}
+{%   for i, (zope_family_address, _, _) in enumerate(zope_family_address_list) %}
+{%     do direct_zope_url_list.append('https://[' ~ ipv6 ~ ']:' ~ external_port ~ '/' ~ family_name ~ '/zope-' ~ i ) %}
+{%     do direct_zope_backend_mapping.__setitem__(family_name ~ '/zope-' ~ i, 'http://' ~ zope_family_address ) %}
+{%   endfor -%}
+{%   do zope_virtualhost_monster_backend_dict.__setitem__(('[' ~ ipv6 ~ ']', external_port), (ssl_authentication, direct_zope_backend_mapping) ) -%}
+{%   do direct_zope_url_dict.__setitem__(family_name, direct_zope_url_list) %}
+
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -250,6 +263,10 @@ recipe = slapos.cookbook:publish.serialised
 {% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
 {{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
 {% endfor -%}
+{% for family_name, direct_zope_url_list in direct_zope_url_dict.items() -%}
+{{    family_name ~ '-direct-zope-url-list' }} = {{ dumps(direct_zope_url_list) }}
+{% endfor -%}
+
 
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
