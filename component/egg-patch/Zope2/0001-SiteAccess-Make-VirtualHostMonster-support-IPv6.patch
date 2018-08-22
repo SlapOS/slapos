@@ -1,0 +1,110 @@
+From 4e4ffe940a8927abb0c0c8a2b704eb0a0218bf26 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Nowak?= <luke@nexedi.com>
+Date: Wed, 22 Aug 2018 03:23:47 +0200
+Subject: [PATCH] SiteAccess: Make VirtualHostMonster support IPv6
+
+from https://bugs.launchpad.net/zope2/+bug/699865 :
+
+VirtualHostMonster does not work with IPv6 named hosts.
+
+In case of such rewrite configuration:
+
+RewriteRule (.*) http://10.0.243.129:9280/VirtualHostBase/https/[%{SERVER_ADDR}]:4080$1 [L,P]
+
+When SERVER_ADDR is fd00::74ba VirtualHostMonster dies with:
+
+Traceback (most recent call last):
+  File "/eggs/Zope2-2.12.14-py2.6-linux-x86_64.egg/ZPublisher/BeforeTraverse.py", line 145, in __call__
+    meth(*(container, request, None)[:args])
+  File "/eggs/Zope2-2.12.14-py2.6-linux-x86_64.egg/Products/SiteAccess/VirtualHostMonster.py", line 154, in __call__
+    host, port = host.split(':')
+ValueError: too many values to unpack
+
+This is because IPv6 addresses contain ":" in them.
+---
+ src/Products/SiteAccess/VirtualHostMonster.py      |  7 +++-
+ .../SiteAccess/tests/testVirtualHostMonster.py     | 43 ++++++++++++++++++++++
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/src/Products/SiteAccess/VirtualHostMonster.py b/src/Products/SiteAccess/VirtualHostMonster.py
+index a455766be..c284df153 100644
+--- a/src/Products/SiteAccess/VirtualHostMonster.py
++++ b/src/Products/SiteAccess/VirtualHostMonster.py
+@@ -151,7 +151,12 @@ class VirtualHostMonster(Persistent, Item, Implicit):
+                 protocol = stack.pop()
+                 host = stack.pop()
+                 if ':' in host:
+-                    host, port = host.split(':')
++                    if host.startswith('['):
++                        # IPv6 address passed
++                        host, port = host.rsplit(':', 1)
++                    else:
++                        # Name or IPv4 address passed
++                        host, port = host.split(':')
+                     request.setServerURL(protocol, host, port)
+                 else:
+                     request.setServerURL(protocol, host)
+diff --git a/src/Products/SiteAccess/tests/testVirtualHostMonster.py b/src/Products/SiteAccess/tests/testVirtualHostMonster.py
+index 6a9e41815..32d7313ce 100644
+--- a/src/Products/SiteAccess/tests/testVirtualHostMonster.py
++++ b/src/Products/SiteAccess/tests/testVirtualHostMonster.py
+@@ -139,6 +139,48 @@ for i, (vaddr, vr, _vh, p, ubase) in enumerate(gen_cases()):
+ 
+     setattr(VHMRegressions, 'testTraverse%s' % i, test)
+ 
++class VHMPort(unittest.TestCase):
++
++    def setUp(self):
++        import transaction
++        from Testing.makerequest import makerequest
++        from Testing.ZopeTestCase.ZopeLite import app
++        transaction.begin()
++        self.app = makerequest(app())
++        if 'virtual_hosting' not in  self.app.objectIds():
++            # If ZopeLite was imported, we have no default virtual
++            # host monster
++            from Products.SiteAccess.VirtualHostMonster \
++                import manage_addVirtualHostMonster
++            manage_addVirtualHostMonster(self.app, 'virtual_hosting')
++        self.app.manage_addFolder('folder')
++        self.app.folder.manage_addDTMLMethod('doc', '')
++        self.app.REQUEST.set('PARENTS', [self.app])
++        self.traverse = self.app.REQUEST.traverse
++
++    def tearDown(self):
++        import transaction
++        transaction.abort()
++        self.app._p_jar.close()
++
++    def testPassedPort(self):
++      ob = self.traverse('/VirtualHostBase/http/www.mysite.com:81'
++                           '/folder/')
++      self.assertEqual(self.app.REQUEST['ACTUAL_URL'],
++                           'http://www.mysite.com:81/folder/')
++
++    def testIPv6(self):
++        ob = self.traverse('/VirtualHostBase/http/[::1]:80'
++                           '/folder/')
++        self.assertEqual(self.app.REQUEST['ACTUAL_URL'],
++                           'http://[::1]/folder/')
++
++    def testIPv6PassedPort(self):
++        ob = self.traverse('/VirtualHostBase/http/[::1]:81'
++                           '/folder/')
++        self.assertEqual(self.app.REQUEST['ACTUAL_URL'],
++                           'http://[::1]:81/folder/')
++
+ 
+ class VHMAddingTests(unittest.TestCase):
+ 
+@@ -200,6 +242,7 @@ class VHMAddingTests(unittest.TestCase):
+ 
+ def test_suite():
+     suite = unittest.TestSuite()
++    suite.addTest(unittest.makeSuite(VHMPort))
+     suite.addTest(unittest.makeSuite(VHMRegressions))
+     suite.addTest(unittest.makeSuite(VHMAddingTests))
+     return suite
+-- 
+2.11.0
+
