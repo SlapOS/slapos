@@ -12,6 +12,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from subprocess import check_output
+import json
 
 os.environ['TMPDIR'] = '$${xvfb-instance:tmp-path}'
 os.environ['DISPLAY'] = ':0'
@@ -81,13 +83,13 @@ def main():
 
     date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
 
-  
+
     ##########################
     # Run all tests
     ##########################
-    
+
     is_appium = False
-    
+
     if args.target == 'firefox':
       firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
       firefox_capabilities['marionette'] = True
@@ -114,71 +116,95 @@ def main():
         'platform': args.target,
         'version': args.target_version
       }
-    if is_appium:
-      if not args.appium_server_auth:
-        raise RuntimeError('--appium_server_auth is required.')
-      appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
-      browser = webdriver.Remote(appium_url, capabilities)
 
-      # adjust path for remote test url
-      remote_access_url = parsed_parameters.get('remote-access-url', None)
-      if remote_access_url:
-        if ('jio' in test_suite):
-          url = os.path.join(remote_access_url, 'jio/test/tests.html')
+
+    if args.target == 'node':
+      # Execute NodeJS tests
+      result_string = check_output(['${nodejs-output:node}', '${jio-repository.git:location}/test/node.js'],
+                                   cwd='${jio-repository.git:location}',
+                                   env={'CI': 'true'})
+      result_dict = json.loads(result_string)
+      for result in result_dict['tests']:
+        test_line_dict['%s: %s' % (result['module'], result['name'])] = {
+          'test_count': int(result['total']),
+          'error_count': 0,
+          'failure_count': int(result['failed']),
+          'skip_count': 0,
+          'duration': int(result['duration']),
+          'command': '',
+          'stdout': result['source'],
+          'stderr': '',
+          'html_test_result': json.dumps(result['assertions'])
+        }
+
+    else:
+      # Execute WebBrowser tests
+      if is_appium:
+        if not args.appium_server_auth:
+          raise RuntimeError('--appium_server_auth is required.')
+        appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
+        browser = webdriver.Remote(appium_url, capabilities)
+
+        # adjust path for remote test url
+        remote_access_url = parsed_parameters.get('remote-access-url', None)
+        if remote_access_url:
+          if ('jio' in test_suite):
+            url = os.path.join(remote_access_url, 'jio/test/tests.html')
+          else:
+            url = os.path.join(remote_access_url, 'renderjs/test/')
         else:
-          url = os.path.join(remote_access_url, 'renderjs/test/')
-      else:
-        raise ValueError('remote-access-url is not defined in instance parameter')
+          raise ValueError('remote-access-url is not defined in instance parameter')
 
-    is_browser_running = True
-    agent = browser.execute_script("return navigator.userAgent")
-    print agent
-    print url
+      is_browser_running = True
+      agent = browser.execute_script("return navigator.userAgent")
+      print agent
+      print url
 
-    browser.get(url)
-    WebDriverWait(browser, 300).until(EC.presence_of_element_located((
-      By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
-    ))
+      browser.get(url)
+      WebDriverWait(browser, 300).until(EC.presence_of_element_located((
+        By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
+      ))
 
-    html_parser = etree.HTMLParser(recover=True)
-    body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
+      html_parser = etree.HTMLParser(recover=True)
+      body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
 
-    print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
+      print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
-    for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
-      if (len(elt.xpath('.//span[@class="module-name"]'))):
-        test_name = '%s: %s' % (
-          elt.xpath('.//span[@class="module-name"]')[0].text,
-          elt.xpath('.//span[@class="test-name"]')[0].text
-        )
-      #global failure, like Uncaught ReferenceError: RSVP is not defined
-      else:
-        test_name = elt.xpath('.//span[@class="test-name"]')[0].text
-         
-      print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
-      # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+      for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
+        if (len(elt.xpath('.//span[@class="module-name"]'))):
+          test_name = '%s: %s' % (
+            elt.xpath('.//span[@class="module-name"]')[0].text,
+            elt.xpath('.//span[@class="test-name"]')[0].text
+          )
+        #global failure, like Uncaught ReferenceError: RSVP is not defined
+        else:
+          test_name = elt.xpath('.//span[@class="test-name"]')[0].text
 
-      failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
-      success = int(elt.xpath('.//b[@class="passed"]')[0].text)
-      test_line_dict[test_name] = {
-        'test_count': success + failure,
-        'error_count': 0,
-        'failure_count': failure,
-        'skip_count': 0,
-        'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
-        'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
-        'stdout': agent,
-        'stderr': '',
-        'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
-      }
+        print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
+        # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
-    # do quit browser asap as we have results. this is required in case of timeout of
-    # remote appium service which will close test session of no command received within
-    # usually 90s and thus fail this script. And it costs processing time as well
-    # to keep test session needlessly opened.
-    browser.quit()
-    is_browser_running = False
+        failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
+        success = int(elt.xpath('.//b[@class="passed"]')[0].text)
+        test_line_dict[test_name] = {
+          'test_count': success + failure,
+          'error_count': 0,
+          'failure_count': failure,
+          'skip_count': 0,
+          'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
+          'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
+          'stdout': agent,
+          'stderr': '',
+          'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
+        }
 
+      # do quit browser asap as we have results. this is required in case of timeout of
+      # remote appium service which will close test session of no command received within
+      # usually 90s and thus fail this script. And it costs processing time as well
+      # to keep test session needlessly opened.
+      browser.quit()
+      is_browser_running = False
+
+    # Send results
     tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),
@@ -208,7 +234,7 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
-  
+
   finally:
     if is_browser_running:
       # if by any chance browser is still running due to
