@@ -13,6 +13,7 @@ MOUNTPOINT="/tmp/${BOARD}"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
 CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
+NAYUOS_WALLPAPER="usr/share/chromeos-assets/wallpaper"
 
 HAS_FAILED=0
 
@@ -35,6 +36,7 @@ echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
   chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
+  nayuos_wallpaper=$(ls "${MOUNTPOINT}/${NAYUOS_WALLPAPER}")
 else
   is_empty=1
 fi
@@ -64,6 +66,15 @@ else
   else
     print_result ${FAILURE} "Expected Chromium policies file not in ${MOUNTPOINT}/${CHROMIUM_POLICY}."
   fi
+
+  echo "* test if NayuOS wallpapers are installed"
+
+  if [[ ${nayuos_wallpaper} ]] ; then
+    print_result ${SUCCESS} "NayuOS wallpapers are installed."
+  else
+    print_result ${FAILURE} "Expected NayuOS wallpapers not in ${MOUNTPOINT}/${NAYUOS_WALLPAPER}."
+  fi
+
 fi
 
 exit ${HAS_FAILED}
