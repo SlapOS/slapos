@@ -91,12 +91,23 @@ LOCALE_ENVIRONMENT_REMOVE_LIST = [
 class SlapPopen(subprocess.Popen):
   """
   Almost normal subprocess with greedish features and logging.
+
   Each line is logged "live", and self.output is a string containing the whole
-  log.
+  log, unless kwargs['debug'] is True, in which case the process outputs
+  normally on stdout and stderr.
   """
   def __init__(self, *args, **kwargs):
     logger = kwargs.pop('logger')
-    kwargs.update(stdin=subprocess.PIPE)
+
+    debug = kwargs.pop('debug', False)
+    if debug:
+      kwargs.pop('stdout', None)
+      kwargs.pop('stderr', None)
+    else:
+      kwargs.setdefault('stdout', subprocess.PIPE)
+      kwargs.setdefault('stderr', subprocess.STDOUT)
+      kwargs.update(stdin=subprocess.PIPE)
+
     if sys.platform == 'cygwin' and kwargs.get('env') == {}:
       kwargs['env'] = None
 
@@ -104,6 +115,10 @@ class SlapPopen(subprocess.Popen):
     kwargs.setdefault('close_fds', True)
 
     subprocess.Popen.__init__(self, *args, **kwargs)
+    if debug:
+      self.wait()
+      self.output = '(output not captured in debug mode)'
+      return
     self.stdin.flush()
     self.stdin.close()
     self.stdin = None
@@ -273,8 +288,6 @@ def bootstrapBuildout(path, logger, buildout=None,
     process_handler = SlapPopen(invocation_list,
                                 preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
                                 cwd=path,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
                                 logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % path
@@ -317,8 +330,6 @@ def launchBuildout(path, buildout_binary, logger,
                                 cwd=path,
                                 env=getCleanEnvironment(logger=logger,
                                                         home_path=path),
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
                                 logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % path
