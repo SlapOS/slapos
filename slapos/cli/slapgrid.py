@@ -131,6 +131,9 @@ class SoftwareCommand(SlapgridCommand):
     def get_parser(self, prog_name):
         ap = super(SoftwareCommand, self).get_parser(prog_name)
 
+        ap.add_argument('--buildout-debug',
+                        action='store_true',
+                        help='Run buildout in debug mode (with -D command line switch)')
         only = ap.add_mutually_exclusive_group()
         only.add_argument('--all', action='store_true',
                           help='Process all Software Releases, even if already installed.')
@@ -151,6 +154,9 @@ class InstanceCommand(SlapgridCommand):
     def get_parser(self, prog_name):
         ap = super(InstanceCommand, self).get_parser(prog_name)
 
+        ap.add_argument('--buildout-debug',
+                        action='store_true',
+                        help='Run buildout in debug mode (with -D command line switch)')
         only = ap.add_mutually_exclusive_group()
         only.add_argument('--all', action='store_true',
                           help='Process all Computer Partitions.')

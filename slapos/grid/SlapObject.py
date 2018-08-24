@@ -109,7 +109,8 @@ class Software(object):
                download_binary_dir_url=None, upload_binary_dir_url=None,
                download_from_binary_cache_url_blacklist=None,
                upload_to_binary_cache_url_blacklist=None,
-               software_min_free_space=None):
+               software_min_free_space=None,
+               buildout_debug=False,):
     """Initialisation of class parameters
     """
 
@@ -125,6 +126,7 @@ class Software(object):
     self.software_path = os.path.join(self.software_root,
                                       self.software_url_hash)
     self.buildout = buildout
+    self.buildout_debug = buildout_debug
     self.logger = logger
     self.signature_private_key_file = signature_private_key_file
     self.signature_certificate_list = signature_certificate_list
@@ -268,7 +270,8 @@ class Software(object):
       utils.launchBuildout(path=self.software_path,
                            buildout_binary=os.path.join(self.software_path, 'bin', 'buildout'),
                            logger=self.logger,
-                           additional_buildout_parameter_list=additional_parameters)
+                           additional_buildout_parameter_list=additional_parameters,
+                           debug=self.buildout_debug)
     finally:
       shutil.rmtree(extends_cache)
 
@@ -348,9 +351,11 @@ class Partition(object):
                instance_min_free_space=None,
                instance_storage_home='',
                ipv4_global_network='',
+               buildout_debug=False,
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
+    self.buildout_debug = buildout_debug
     self.logger = logger
     self.software_path = software_path
     self.instance_path = instance_path
@@ -619,7 +624,8 @@ class Partition(object):
     # Launches buildout
     utils.launchBuildout(path=self.instance_path,
                          buildout_binary=buildout_binary,
-                         logger=self.logger)
+                         logger=self.logger,
+                         debug=self.buildout_debug)
     self.generateSupervisorConfigurationFile()
     self.createRetentionLockDelay()
 

@@ -302,7 +302,8 @@ def bootstrapBuildout(path, logger, buildout=None,
 
 
 def launchBuildout(path, buildout_binary, logger,
-                   additional_buildout_parameter_list=None):
+                   additional_buildout_parameter_list=None,
+                   debug=False):
   """ Launches buildout."""
   if additional_buildout_parameter_list is None:
     additional_buildout_parameter_list = []
@@ -317,6 +318,10 @@ def launchBuildout(path, buildout_binary, logger,
     line = line[2:]
     # Prepares parameters for buildout
     invocation_list = line.split() + [buildout_binary]
+
+  if debug:
+    invocation_list.append('-D')
+
   # Run buildout without reading user defaults
   invocation_list.append('-U')
   invocation_list.extend(additional_buildout_parameter_list)
@@ -330,6 +335,7 @@ def launchBuildout(path, buildout_binary, logger,
                                 cwd=path,
                                 env=getCleanEnvironment(logger=logger,
                                                         home_path=path),
+                                debug=debug,
                                 logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % path

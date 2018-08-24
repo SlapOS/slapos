@@ -242,6 +242,7 @@ def create_slapgrid_object(options, logger):
                   master_url=op['master_url'],
                   computer_id=op['computer_id'],
                   buildout=op.get('buildout'),
+                  buildout_debug=op.get('buildout_debug'),
                   logger=logger,
                   maximum_periodicity = op.get('maximum_periodicity', 86400),
                   key_file=op.get('key_file'),
@@ -336,6 +337,7 @@ class Slapgrid(object):
                ipv4_global_network=None,
                firewall_conf={},
                config=None,
+               buildout_debug=False,
                ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
@@ -375,6 +377,7 @@ class Slapgrid(object):
     self.computer = self.slap.registerComputer(self.computer_id)
     # Defines all needed paths
     self.buildout = buildout
+    self.buildout_debug = buildout_debug
     self.promise_timeout = promise_timeout
     self.develop = develop
     if software_release_filter_list is not None:
@@ -537,6 +540,7 @@ stderr_logfile_backups=1
         software = Software(url=software_release_uri,
             software_root=self.software_root,
             buildout=self.buildout,
+            buildout_debug=self.buildout_debug,
             logger=self.logger,
             signature_private_key_file=self.signature_private_key_file,
             signature_certificate_list=self.signature_certificate_list,
@@ -1009,6 +1013,7 @@ stderr_logfile_backups=1
       software_release_url=software_url,
       certificate_repository_path=self.certificate_repository_path,
       buildout=self.buildout,
+      buildout_debug=self.buildout_debug,
       logger=self.logger,
       retention_delay=getattr(computer_partition, '_filter_dict', {}).get('retention_delay', '0'),
       instance_min_free_space=self.instance_min_free_space,
@@ -1595,6 +1600,7 @@ stderr_logfile_backups=1
             software_release_url=software_url,
             certificate_repository_path=self.certificate_repository_path,
             buildout=self.buildout,
+            buildout_debug=self.buildout_debug,
             logger=self.logger,
             instance_storage_home=self.instance_storage_home,
             ipv4_global_network=self.ipv4_global_network,
