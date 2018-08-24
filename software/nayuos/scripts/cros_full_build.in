@@ -97,7 +97,7 @@ git stash
 cd ${PORTAGE_STABLE}
 git stash
 
-repo sync >> $DL_LOG || { echo "Problem while downloading Chromium OS sources (repo sync). Exiting." ; exit 1 ; }
+repo sync -j 12 >> $DL_LOG || { echo "Problem while downloading Chromium OS sources (repo sync). Exiting." ; exit 1 ; }
 
 
 ############################## Prepare chroot environment ###################################
@@ -311,7 +311,7 @@ for board in ${BOARDS} ; do
   # preparing packages (for chroot and image)
   date >> "${BUILD_LOG}"
   echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
-  cros_sdk --nouse-image -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image -- ./build_packages --reuse_pkgs_from_local_boards --board=${board} >> "${BUILD_LOG}"
 
   # change boot pictures
   cros_sdk -- cros_workon --board=${board} start chromiumos-assets
