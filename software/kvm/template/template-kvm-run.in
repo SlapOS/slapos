@@ -235,9 +235,21 @@ number = -1
 if use_nat == 'true':
   number += 1
   rules = 'user,id=lan%s' % number
-  if nat_rules:
-    rules += ',' + ','.join('hostfwd=tcp:%s:%s-:%s' % (listen_ip,
-                        int(port) + 10000, port) for port in nat_rules.split())
+  for rule in nat_rules.split():
+    proto = 'tcp'
+    rule = rule.split(':')
+    if len(rule) == 1:
+      port = int(rule[0])
+    elif len(rule) == 2:
+      proto = rule[0]
+      port = int(rule[1])
+
+    rules += ',hostfwd={proto}:{hostaddr}:{hostport}-:{guestport}'.format(
+      proto=proto,
+      hostaddr=listen_ip,
+      hostport=port + 10000,
+      guestport=port
+    )
 
   if httpd_port > 0:
     rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%s %s %s' % (netcat_bin,
