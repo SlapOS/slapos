@@ -185,7 +185,7 @@ master_url=null
         sys.stdout = app_stdout = StringIO.StringIO()
         app.run(('console', '--cfg', self.config_file.name))
       finally:
-        sys.sdin = saved_stdin
+        sys.stdin = saved_stdin
         sys.stdout = saved_stdout
 
       self.mock_request.assert_called_once_with('software_release', 'instance')
