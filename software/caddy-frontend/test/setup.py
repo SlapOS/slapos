@@ -38,6 +38,7 @@ setup(name=name,
       packages=find_packages(),
       install_requires=[
         'slapos.core',
+        'slapos.libnetworkcache',
         'erp5.util',
         'requests',
         'forcediphttpsadapter',
