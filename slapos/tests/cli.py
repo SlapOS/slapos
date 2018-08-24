@@ -33,6 +33,7 @@ import StringIO
 import sys
 
 from mock import patch, create_autospec
+import mock
 
 import slapos.cli.console
 import slapos.cli.entry
@@ -80,6 +81,66 @@ product2 url2"""
         slapos.proxy._generateSoftwareProductListFromString(''),
         {}
     )
+
+class TestCliNode(CliMixin):
+
+  def test_node_software(self):
+    """slapos node software command
+    """
+    app = slapos.cli.entry.SlapOSApp()
+
+    software_release = mock.MagicMock()
+    software_release.getState = mock.Mock(return_value='available')
+    software_release.getURI = mock.Mock(return_value='http://example.org/software.cfg')
+    software_release.building = mock.Mock()
+
+    computer = mock.MagicMock()
+    computer.getSoftwareReleaseList = mock.Mock(return_value=[software_release])
+
+    software = mock.MagicMock()
+    from slapos.grid.slapgrid import Slapgrid
+    from slapos.slap.slap import slap
+    with patch('slapos.cli.slapgrid.check_root_user', return_value=True) as checked_root_user, \
+         patch('slapos.cli.slapgrid.setRunning') as write_pid_file, \
+         patch.object(Slapgrid, 'checkEnvironmentAndCreateStructure') as checkEnvironmentAndCreateStructure, \
+         patch.object(slap, 'registerComputer', return_value=computer) as registerComputer, \
+         patch('slapos.grid.slapgrid.Software', return_value=software) as Software, \
+         patch('slapos.grid.slapgrid.open') as _open:
+
+      app.run(('node', 'software'))
+
+      checked_root_user.assert_called_once()
+      write_pid_file.assert_called_once_with(
+          logger=mock.ANY,
+          pidfile='/opt/slapos/slapgrid-sr.pid')
+      checkEnvironmentAndCreateStructure.assert_called_once()
+      registerComputer.assert_called_once()
+
+      software_constructor_call, = Software.call_args_list
+      self.assertEqual('http://example.org/software.cfg', software_constructor_call[1]['url'])
+      # by default software are not built in debug mode
+      self.assertFalse(software_constructor_call[1]['buildout_debug'])
+
+      software.install.assert_called_once()
+
+  def test_node_instance(self):
+    """slapos node instance command
+    """
+    app = slapos.cli.entry.SlapOSApp()
+
+    from slapos.grid.slapgrid import Slapgrid
+    with patch('slapos.cli.slapgrid.check_root_user', return_value=True) as checked_root_user, \
+         patch('slapos.cli.slapgrid.setRunning') as write_pid_file, \
+         patch.object(Slapgrid, 'processComputerPartitionList') as processComputerPartitionList:
+
+      app.run(('node', 'instance'))
+
+      checked_root_user.assert_called_once()
+      write_pid_file.assert_called_once_with(
+          logger=mock.ANY,
+          pidfile='/opt/slapos/slapgrid-cp.pid')
+      processComputerPartitionList.assert_called_once()
+
 
 class TestCliList(CliMixin):
   def test_list(self):
