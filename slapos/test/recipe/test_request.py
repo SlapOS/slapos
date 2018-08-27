@@ -112,3 +112,10 @@ class RequestJSONEncodedTest(RecipeTestMixin, unittest.TestCase):
   raises = True
   called_partition_parameter_kw = {'_': '{}'}
 
+
+class RequestOptionalJSONEncodedTest(RecipeTestMixin, unittest.TestCase):
+  recipe = request.RequestOptionalJSONEncoded
+  return_value_empty = "{}"
+  return_value = '{"anything": "done"}'
+  raises = False
+  called_partition_parameter_kw = {'_': '{}'}
