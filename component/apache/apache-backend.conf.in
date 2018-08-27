@@ -50,15 +50,38 @@
  #         (8000, _, "http://10.0.0.10:8001", True),
  #         (8002, _, "http://10.0.0.10:8003", False),
  #       ],
+ #
+ #       # The mapping of zope paths this apache should redirect to.
+ #       # This is a Zope specific feature.
+ #       # `enable_authentication` has same meaning as for `backend-list`.
+ #       "zope-virtualhost-monster-backend-dict": {
+ #          # {(ip, port): ( enable_authentication, {frontend_path: ( internal_scheme ) }, ) }
+ #          ('[::1]', 8004): (
+ #            True, {
+ #              'zope-1': 'http://10.0.0.10:8001',
+ #              'zope-2': 'http://10.0.0.10:8002',
+ #            },
+ #          ),
+ #        },
  #     }
  #
  #  This sample of `parameter_dict` will make apache listening to :
+ #  From to `backend-list`:
  #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
  #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
  #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert`.
  #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
  #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
  #  accepting requests from any client.
+ #
+ # From zope-virtualhost-monster-backend-dict`:
+ #   - [::1]:8004 with some path based rewrite-rules redirecting to:
+ #     * http://10.0.0.10/8001 when path matches /zope-1(.*)
+ #     * http://10.0.0.10/8002 when path matches /zope-2(.*)
+ #   with some VirtualHostMonster rewrite rules so zope writes URLs with
+ #  [::1]:8004 as server name.
+ #  For more details, refer to
+ #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
 -#}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
@@ -153,5 +176,30 @@ Listen {{ ip }}:{{ port }}
   CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-access.log" combined
 {% endif -%}
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
+</VirtualHost>
+{% endfor -%}
+
+
+{% for (ip, port), (enable_authentication, path_mapping) in parameter_dict.get('zope-virtualhost-monster-backend-dict', {}).items() -%}
+Listen {{ ip }}:{{ port }}
+<VirtualHost {{ ip }}:{{ port }}>
+  SSLEngine on
+{%   if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
+  SSLVerifyClient require
+  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+  SSLCARevocationCheck chain
+  SSLCARevocationFile {{ parameter_dict['crl'] }}
+
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+
+  # We would like to separate the the authentificated logs.
+  # XXX filename ? is it log-rotated ?
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-service-virtual-host-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-virtual-host-access.log" combined
+{%   endif -%}
+
+{%   for path, backend in path_mapping.items() %}
+  RewriteRule ^/{{path}}(.*) {{ backend }}/VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ path }}$1 [L,P]
+{%   endfor -%}
 </VirtualHost>
 {% endfor -%}
