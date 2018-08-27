@@ -280,6 +280,11 @@ class RequestJSONEncoded(JSONCodec, Recipe):
   """
   pass
 
+class RequestOptionalJSONEncoded(JSONCodec, RequestOptional):
+  """
+  Like RequestOptional, but serialised with JSONCodec.
+  """
+  pass
 
 
 CONNECTION_PARAMETER_STRING = 'connection-'

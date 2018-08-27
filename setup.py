@@ -163,6 +163,8 @@ setup(name=name,
           'request.serialised = slapos.recipe.request:RequestJSONEncoded',
           'request.edge = slapos.recipe.request:RequestEdge',
           'requestoptional = slapos.recipe.request:RequestOptional',
+          'requestoptional.serialised = '
+          'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
           'reverseproxy.nginx = slapos.recipe.reverse_proxy_nginx:Recipe',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
