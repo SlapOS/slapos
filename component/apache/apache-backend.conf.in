@@ -46,17 +46,19 @@
  #
  #       #  The list of backends which apache should redirect to.
  #       "backend-list": [
- #         # (port, unused, internal_scheme)
- #         (8000, _, "http://10.0.0.10:8001"),
- #         (8002, _, "http://10.0.0.10:8003"),
+ #         # (port, unused, internal_scheme, enable_authentication)
+ #         (8000, _, "http://10.0.0.10:8001", True),
+ #         (8002, _, "http://10.0.0.10:8003", False),
  #       ],
  #     }
  #
- # This sample of `parameter_dict` will make apache listening to :
- # - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001
- # - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
- # - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
- # - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+ #  This sample of `parameter_dict` will make apache listening to :
+ #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
+ #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
+ #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert`.
+ #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
+ #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+ #  accepting requests from any client.
 -#}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
