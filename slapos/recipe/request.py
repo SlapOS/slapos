@@ -275,6 +275,14 @@ class Serialised(Recipe):
       return {}
 
 
+class RequestOptionalSerialised(RequestOptional, Serialised):
+  """
+  Request a SlapOS instance.
+  Won't fail if request failed or is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem and also
+  will return serialised information.
+  """
+  pass
 
 
 CONNECTION_PARAMETER_STRING = 'connection-'
