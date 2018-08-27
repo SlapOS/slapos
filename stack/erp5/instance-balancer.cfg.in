@@ -225,6 +225,18 @@ wait-for-files =
   ${apache-conf-ssl:cert}
   ${apache-conf-ssl:key}
 
+[{{ section('apache-reload-graceful') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/apache-graceful-reload
+command-line =
+  {{ parameter_dict['bash'] }}/bin/bash -c "${apache-graceful:output} &&
+  {{ parameter_dict['coreutils'] }}/bin/sleep infinity"
+hash-files =
+  ${apache-conf-ssl:cert}
+  ${apache-conf-ssl:key}
+  ${apache-conf:rendered}
+  ${apache:wrapper-path}
+
 [apache-graceful]
 recipe = collective.recipe.template
 input = inline:
