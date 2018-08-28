@@ -73,7 +73,7 @@ ca-crl = ${directory:test-ca-crl}
 configuration = {{ dumps(saucelabs_dict) }}
 user = {{ dumps(slapparameter_dict['inituser-login']) }}
 password = {{ dumps(slapparameter_dict['inituser-password']) }}
-binPath = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
+bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
 
 [{{ section('test-zelenium-runner') }}]
 <= jinja2-template-base
@@ -85,7 +85,7 @@ context =
     key configuration test-zelenium-runner-parameter:configuration
     key user test-zelenium-runner-parameter:user
     key password test-zelenium-runner-parameter:password
-    key binPath test-zelenium-runner-parameter:binPath
+    key bin_path test-zelenium-runner-parameter:bin-path
 {% else -%}
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
