@@ -264,7 +264,7 @@ class RequestOptional(Recipe):
 
   update = install
 
-class Serialised(Recipe):
+class JSONCodec(object):
   def _filterForStorage(self, partition_parameter_kw):
     return wrap(partition_parameter_kw)
 
@@ -274,6 +274,11 @@ class Serialised(Recipe):
     except slapmodule.NotFoundError:
       return {}
 
+class RequestJSONEncoded(JSONCodec, Recipe):
+  """
+  Like Recipe, but serialised with JSONCodec.
+  """
+  pass
 
 
 
