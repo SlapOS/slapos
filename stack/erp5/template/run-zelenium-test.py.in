@@ -25,9 +25,9 @@ def main():
   parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
-  parser.add_argument('--frontend_url',
-                      help='The url of frontend of the test suite',
-                      default = parser_configuration.get('frontend-url')
+  parser.add_argument('--remote_access_url',
+                      help='The access url',
+                      default = parser_configuration.get('remote-access-url')
                      )
   parser.add_argument('--target',
                       help='Target OS to run tests on',
@@ -77,11 +77,11 @@ def main():
       'version': args.target_version
     }
 
-  if not args.appium_server_auth or not args.frontend_url:
+  if not args.appium_server_auth or not args.remote_access_url:
     sys.exit(-1)
 
   appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
-  # adjust make path to frontend
+  # adjust make path to access url
   # Do not store any test result in the ZMI
   if args.run_only:
     url = "%s/erp5/portal_tests/%s/core/TestRunner.html" \
@@ -89,17 +89,17 @@ def main():
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.frontend_url, args.run_only, {{ repr(user) }}, {{ repr(password) }})
+      "&__ac_password=%s" % (args.remote_access_url, args.run_only, {{ repr(user) }}, {{ repr(password) }})
   else:
     url = "%s/erp5/portal_tests/core/TestRunner.html" \
       "?test=../test_suite_html" \
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.frontend_url, {{ repr(user) }}, {{ repr(password) }})
+      "&__ac_password=%s" % (args.remote_access_url, {{ repr(user) }}, {{ repr(password) }})
     
   # Wait until all activities are finished...
-  wait_url = args.frontend_url + '/erp5/Zuite_waitForActivities'
+  wait_url = args.remote_access_url + '/erp5/Zuite_waitForActivities'
   while 1:
     try:
       response = urlopen(wait_url)
