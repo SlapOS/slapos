@@ -11,12 +11,11 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import json
-import subprocess
 from urllib import urlopen
 
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser_configuration = {{ repr(configuration) }}
   parser.add_argument('--test_suite', help='The test suite name')
   parser.add_argument('--test_suite_title', help='The test suite title')
   parser.add_argument('--test_node_title', help='The test node title')
@@ -27,46 +26,34 @@ def main():
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
   parser.add_argument('--frontend_url',
-                      help='The url of frontend of the test suite')
+                      help='The url of frontend of the test suite',
+                      default = parser_configuration.get('frontend-url')
+                     )
   parser.add_argument('--target',
                       help='Target OS to run tests on',
-                      type=str)
+                      default = parser_configuration.get('target')
+                     )
   parser.add_argument('--target_version',
                       help='Target OS version to use',
-                      type=str,)
+                      default = parser_configuration.get('target-version')
+                     )
   parser.add_argument('--target_browser',
                       help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
-                      type=str,)
+                      default = parser_configuration.get('target-browser')
+                     )
   parser.add_argument('--target_device',
                       help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
-                      type=str,)
+                      default = parser_configuration.get('target-device')
+                     )
   parser.add_argument('--appium_server_auth',
                       help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
-                      type=str)
-
+                      default = parser_configuration.get('appium-server-auth')
+                     )
+  parser.add_argument('--run_only',
+                      help='zuite to run',
+                      default = parser_configuration.get('run-only')
+                     )
   args = parser.parse_args()
-
-  parsed_parameters = json.loads('{{ json_module.dumps(configuration) }}')
-  
-  
-
-
-  if not getattr(args, 'target', None):
-    args.target = parsed_parameters.get('target', 'firefox')
-  if not getattr(args, 'test_suite', None):
-    args.test_suite = parsed_parameters.get('test-suite')
-  if not getattr(args, 'target_version', None):
-    args.target_version = parsed_parameters.get('target-version')
-  if not getattr(args, 'appium_server_auth', None):
-    args.appium_server_auth = parsed_parameters.get('appium-server-auth')
-  if not getattr(args, 'target_browser', None):
-    args.target_browser = parsed_parameters.get('target-browser')
-  if not getattr(args, 'target_device', None):
-    args.target_device = parsed_parameters.get('target-device')
-  args.frontend_url = parsed_parameters.get('frontend-url')
-  args.run_only = parsed_parameters.get('run_only', None)
-
-  is_browser_running = False
   test_line_dict = {}
   test_suite_title = args.test_suite_title or args.test_suite
   test_suite = args.test_suite
@@ -90,13 +77,10 @@ def main():
       'version': args.target_version
     }
 
-  if not args.appium_server_auth:
-    raise RuntimeError('--appium_server_auth is required.')
-  if not args.frontend_url:
-    raise RuntimeError('--frontend_url is required.')
+  if not args.appium_server_auth or not args.frontend_url:
+    sys.exit(-1)
 
   appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
-
   # adjust make path to frontend
   # Do not store any test result in the ZMI
   if args.run_only:
@@ -105,14 +89,14 @@ def main():
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.frontend_url, args.run_only, "{{ user }}", "{{ password }}")
+      "&__ac_password=%s" % (args.frontend_url, args.run_only, {{ repr(user) }}, {{ repr(password) }})
   else:
     url = "%s/erp5/portal_tests/core/TestRunner.html" \
       "?test=../test_suite_html" \
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.frontend_url, "{{ user }}", "{{ password }}")
+      "&__ac_password=%s" % (args.frontend_url, {{ repr(user) }}, {{ repr(password) }})
     
   # Wait until all activities are finished...
   wait_url = args.frontend_url + '/erp5/Zuite_waitForActivities'
@@ -131,19 +115,14 @@ def main():
     time.sleep(10)
   
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
-
+  browser = webdriver.Remote(appium_url, capabilities)
+  
   try:
-    browser = webdriver.Remote(appium_url, capabilities)
-    is_browser_running = True
-
     agent = browser.execute_script("return navigator.userAgent")
     print url
     print agent
-
     start_time = time.time()
-
     browser.get(url)
-
     # Wait for Zelenium to be loaded
     WebDriverWait(browser, 10).until(EC.presence_of_element_located((
       By.XPATH, '//iframe[@id="testSuiteFrame"]'
@@ -181,48 +160,39 @@ def main():
       ).encode('UTF-8'),
       html_parser
     )
-
-    browser.quit()
-    is_browser_running = False
-
+    # parse test result
     tbody = iframe.xpath('.//body/table/tbody')[0]
     for tr in tbody[1:]:
       # First td is the main title
       test_name = tr[0][0].text
 
       skip_count = success_count = error_count = 0
-      if len(tr) == 1:
-        # Test was not executed
-        tr_count = 1
-        test_table = 'Test not executed!'
-        test_tbody = 'Test not executed!'
-      else:
-        test_table = tr[1].xpath('.//table')[0]
-        test_tbody = tr[1].xpath('.//tbody')[0]
+     
+      test_table = tr[1].xpath('.//table')[0]
+      test_tbody = tr[1].xpath('.//tbody')[0]
 
-        tr_count = len(test_tbody)
-        for tr in test_tbody:
-          # print etree.tostring(tr).split('\n')[0]
-          status = tr.attrib.get('class')
-          if status is None or 'status_done' in status:
-            skip_count += 1
-          elif 'status_passed' in status:
-            success_count += 1
-          elif 'status_failed' in status:
-            error_count += 1
+      tr_count = len(test_tbody)
+      for tr in test_tbody:
+        # print etree.tostring(tr).split('\n')[0]
+        status = tr.attrib.get('class')
+        if status is None or 'status_done' in status:
+          skip_count += 1
+        elif 'status_passed' in status:
+          success_count += 1
+        elif 'status_failed' in status:
+          error_count += 1
 
-        test_line_dict[test_name] = {
-          'test_count': tr_count,
-          'error_count': error_count,
-          'failure_count': tr_count - (skip_count + success_count + error_count),
-          'skip_count': skip_count,
-          'duration': test_execution_duration,
-          'command': url,
-          'stdout': agent,
-          'stderr': '',
-          'html_test_result': etree.tostring(test_table)
-        }
-
+      test_line_dict[test_name] = {
+        'test_count': tr_count,
+        'error_count': error_count,
+        'failure_count': tr_count - (skip_count + success_count + error_count),
+        'skip_count': skip_count,
+        'duration': test_execution_duration,
+        'command': url,
+        'stdout': agent,
+        'stderr': '',
+        'html_test_result': etree.tostring(test_table)
+      }
   except:
     test_line_dict['UnexpectedException'] = {
       'test_count': 1,
@@ -234,6 +204,8 @@ def main():
       'stdout': agent,
       'stderr': traceback.format_exc()
     }
+  finally:
+    browser.quit()
 
   try:
     test_result = tool.createTestResult(revision = revision,
@@ -257,20 +229,13 @@ def main():
   except:
     # Catch any exception here, to warn user instead of being silent,
     # by generating fake error result
-    print traceback.format_exc()
+    traceback.print_exc()
     result = dict(status_code=-1,
                   command=url,
                   stderr=traceback.format_exc(),
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
-
-  finally:
-    if is_browser_running:
-      # if by any chance browser is still running due to
-      # traceback raised make sure we cleanup
-      browser.quit()
-
 
 if __name__ == "__main__":
     main()
