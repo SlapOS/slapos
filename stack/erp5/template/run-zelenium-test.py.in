@@ -80,6 +80,8 @@ def main():
   if not args.appium_server_auth or not args.remote_access_url:
     sys.exit(-1)
 
+  #Authentication over HTTPS is not supported in saucelab
+  #https://wiki.saucelabs.com/display/DOCS/Instant+Selenium+Python+Tests
   appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
   # adjust make path to access url
   # Do not store any test result in the ZMI
