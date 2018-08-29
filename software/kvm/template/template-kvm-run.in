@@ -63,12 +63,11 @@ language_list = ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
 url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
-disk_cache = '{{ parameter_dict.get("disk-cache") }}'.strip()
+disk_cache = '{{ parameter_dict.get("disk-cache", "writeback") }}'.strip()
 disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe", 
               "directsync", "writethrough"] else "writeback"
-disk_aio = '{{ parameter_dict.get("disk-aio") }}'.strip()
-disk_aio = disk_aio if disk_aio in ["threads", "native"] and \
-              disk_cache == "directsync" else "threads"
+disk_aio = '{{ parameter_dict.get("disk-aio", "threads") }}'.strip()
+disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
 smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
