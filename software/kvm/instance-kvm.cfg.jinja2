@@ -88,10 +88,10 @@ nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = ${slap-network-information:network-interface}
 
-disk-path = ${directory:srv}/virtual.qcow2
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
-
+disk-format = ${slap-parameter:disk-format}
+disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}

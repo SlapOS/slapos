@@ -55,6 +55,14 @@
       "default": "virtio",
       "enum": ["ide", "scsi", "sd", "mtd", "floppy", "pflash", "virtio"]
     },
+    "disk-format": {
+      "title": "Type of disk drive to create by QEMU.",
+      "description": "Type of QEMU disk drive, to create.",
+      "type": "string",
+      "default": "qcow2",
+      "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
+    },
+
     "disk-cache": {
       "title": "Cache option to use with Disk.",
       "description": "Disk cache controls how the host cache is used to access block data.",
