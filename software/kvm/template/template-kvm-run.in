@@ -31,6 +31,7 @@ nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
               {{ parameter_dict.get("nbd2-port") }}))
 default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 disk_path = '{{ parameter_dict.get("disk-path") }}'
+
 virtual_hard_drive_url = '{{ parameter_dict.get("virtual-hard-drive-url") }}'.strip()
 virtual_hard_drive_md5sum = '{{ parameter_dict.get("virtual-hard-drive-md5sum") }}'.strip()
 virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped") }}'.strip().lower()
@@ -74,6 +75,16 @@ disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe",
               "directsync", "writethrough"] else "writeback"
 disk_aio = '{{ parameter_dict.get("disk-aio", "threads") }}'.strip()
 disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
+
+# If a device (ie.: /dev/sdb) is provided, use it instead 
+# the disk_path with disk_format
+disk_device_path = '{{ parameter_dict.get("disk-device-path", "") }}'
+if disk_device_path.startswith("/dev/"):
+  disk_path = disk_device_path 
+  disk_format = "raw" 
+  disk_aio = "native"
+  disk_cache = "none"
+
 smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
@@ -189,7 +200,7 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
-if not os.path.exists(disk_path):
+if not disk_device_path.startswith("/dev/") and not os.path.exists(disk_path):
   print('Creating virtual hard drive...')
   subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_format,
       disk_path, '%sG' % disk_size])
