@@ -20,6 +20,10 @@ qemu_img_path = '{{ parameter_dict.get("qemu-img-path") }}'
 qemu_path = '{{ parameter_dict.get("qemu-path") }}'
 disk_size = '{{ parameter_dict.get("disk-size") }}'
 disk_type = '{{ parameter_dict.get("disk-type") }}'
+disk_format = '{{ parameter_dict.get("disk-format", "qcow2")}}'
+disk_format = disk_format \
+              if disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
+
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
               {{ parameter_dict.get("nbd-port") }}),
@@ -46,7 +50,9 @@ init_ram_size = {{ parameter_dict.get("init-ram-size") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
-external_disk_format = '{{ parameter_dict.get("external-disk-format") }}'
+external_disk_format = '{{ parameter_dict.get("external-disk-format", "qcow2") }}'
+external_disk_format = external_disk_format \
+              if external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
@@ -185,7 +191,7 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
 # XXX: move to Buildout profile
 if not os.path.exists(disk_path):
   print('Creating virtual hard drive...')
-  subprocess.check_call([qemu_img_path, 'create' ,'-f', 'qcow2',
+  subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_format,
       disk_path, '%sG' % disk_size])
   print('Done.')
 
@@ -195,9 +201,6 @@ for storage in disk_storage_list:
   if storage:
     key, val = storage.split(' ')
     disk_storage_dict[key.strip()] = val.strip()
-
-if not external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed']:
-  external_disk_format = 'qcow2'
 
 map_storage_list, external_disk_number = getMapStorageList(disk_storage_dict,
                                                       int(external_disk_number))
@@ -214,7 +217,7 @@ if disk_storage_dict:
         disk_list = glob.glob('%s.*' % os.path.join(path, 'kvm_virtual_disk'))
         if disk_list == []:
           print('Creating one additional virtual hard drive...')
-          process = subprocess.check_call([qemu_img_path, 'create' ,'-f', '%s' % external_disk_format,
+          process = subprocess.check_call([qemu_img_path, 'create' ,'-f', external_disk_format,
               disk_filepath, '%sG' % external_disk_size])
         else:
           # Cannot change or recreate if disk is exists
@@ -264,6 +267,7 @@ if enable_device_hotplug != 'true':
 else:
   smp = '1,maxcpus=%s' % smp_max_count
   ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
+
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
   '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),
