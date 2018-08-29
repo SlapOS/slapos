@@ -88,7 +88,7 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 parameter-list = 
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
-  file min-free-disk-MB ${promise-check-free-disk-space:config-file}
+  file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
@@ -377,13 +377,15 @@ config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 mode = 600
 
 [promise-check-free-disk-space]
-recipe = slapos.cookbook:wrapper
-command-line = {{ check_disk_space }}
-               --collectordb ${monitor-instance-parameter:collector-db}
-               --home_path ${buildout:directory}
-               --config ${:config-file}
-wrapper-path = ${directory:promises}/check-free-disk-space
-config-file = ${directory:etc}/min-free-disk-size
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+output = ${directory:plugins}/check-free-disk-space.py
+content = 
+  from slapos.promise.plugin.check_free_disk_space import RunPromise
+mode = 600
+config-collectordb = ${monitor-instance-parameter:collector-db}
+config-threshold-file = ${directory:etc}/min-free-disk-size
 
 
 [monitor-base]
