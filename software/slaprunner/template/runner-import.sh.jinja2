@@ -132,20 +132,33 @@ SLAPOS='{{ directory["bin"] }}'/slapos
 # XXX hardcoded
 SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
 DATABASE="$HOME/srv/runner/proxy.db"
+db_query () {
+  # Try opening locked tables for 5 seconds to prevent "database is locked" error
+"$SQLITE3" "$DATABASE" <<EOF
+.timeout 5000
+$@
+EOF
+}
+# If slapproxy database is empty then no software release was opened
+if [ ! -s "$DATABASE" ]; then
+  log_message "Slapproxy database empty, no Software Requested... Writing status file... End"
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
 # Change slapproxy database to point instances to new software release
 # XXX hardcoded
 PARTITION=$(basename $HOME)
-OLD_SOFTWARE_RELEASE=$("$SQLITE3" "$DATABASE" "select software_release from partition11 where reference='slappart0';")
+OLD_SOFTWARE_RELEASE=$(db_query "select software_release from partition11 where reference='slappart0';")
 SOFTWARE_RELEASE=$(echo "$OLD_SOFTWARE_RELEASE" | sed 's/\/\(slappart\|test0-\)[0-9][0-9]*\//\/'"$PARTITION"'\//')
-"$SQLITE3" "$DATABASE" "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
-"$SQLITE3" "$DATABASE" "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || "$SQLITE3" "$DATABASE" "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
+db_query "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+db_query "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
-"$SQLITE3" "$DATABASE" "update partition11 set requested_state='stopped';"
+db_query "update partition11 set requested_state='stopped';"
 # Change slapproxy database to get correct IPs
 IPV4='{{ ipv4 }}'
 IPV6='{{ ipv6 }}'
-"$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
-"$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
+db_query "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
+db_query "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
 
 MASTERURL='http://{{ ipv4 }}:{{ proxy_port }}'
 
@@ -213,7 +226,7 @@ done
 
 # Change back slapproxy database to have all instances started
 log_message "Set instances as to start after takeover..."
-"$SQLITE3" "$DATABASE" "update partition11 set requested_state='started';"
+db_query "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
 log_message "Writing status file... End"
