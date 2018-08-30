@@ -331,6 +331,7 @@ for board in ${BOARDS} ; do
   echo "building image" >> "${BUILD_LOG}"
   if [ {{ dev_server}} == "yes" ] ; then
 	cros_sdk -- ./start_devserver &
+	RUNNING_DEVSERVER=$!
 	ROOTFS_VERIFICATION_FLAG = "--noenable_rootfs_verification"
   else
 	ROOTFS_VERIFICATION_FLAG = ""
@@ -341,6 +342,9 @@ for board in ${BOARDS} ; do
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
 
+  if [ {{ dev_server }} == "yes" ] ; then
+	kill ${RUNNING_DEVSERVER}
+  fi
   # save a lot of space on the server but delete cache and build files
   # (it means that the next build will be as long and use as much resources as this one)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
