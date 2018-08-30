@@ -84,6 +84,7 @@ extra-context =
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
+run-zelenium-template = {{ template_run_zelenium }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 coreutils = {{ coreutils_location }}
@@ -95,6 +96,8 @@ site-zcml = {{ site_zcml }}
 template-monitor = {{ dumps(template_monitor) }}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
+erp5-location = {{ erp5_location }}
+egg-interpreter = {{egg_interpreter}}
 
 [dynamic-template-zope]
 <= jinja2-template-base

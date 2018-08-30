@@ -88,10 +88,11 @@ nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = ${slap-network-information:network-interface}
 
-disk-path = ${directory:srv}/virtual.qcow2
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
-
+disk-format = ${slap-parameter:disk-format}
+disk-device-path = ${slap-parameter:disk-device-path}
+disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
@@ -565,6 +566,8 @@ ram-max-size = 51200
 ram-hotplug-slot-size = 512
 disk-size = 10
 disk-type = virtio
+disk-format = qcow2
+disk-device-path =
 
 cpu-count = 1
 cpu-max-count = 24

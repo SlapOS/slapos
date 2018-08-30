@@ -4,6 +4,7 @@
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
+{% set saucelabs_dict = slapparameter_dict.get('saucelabs-dict', None) -%}
 {% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
@@ -67,6 +68,25 @@ ca-certs = ${directory:test-ca-certs}
 ca-newcerts = ${directory:test-ca-newcerts}
 ca-crl = ${directory:test-ca-crl}
 
+{% if saucelabs_dict -%}
+[test-zelenium-runner-parameter]
+configuration = {{ dumps(saucelabs_dict) }}
+user = {{ dumps(slapparameter_dict['inituser-login']) }}
+password = {{ dumps(slapparameter_dict['inituser-password']) }}
+bin-path = {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
+
+[{{ section('test-zelenium-runner') }}]
+<= jinja2-template-base
+template = {{ parameter_dict['run-zelenium-template'] }}
+rendered = ${directory:bin}/runTestSuite
+mode = 755
+context =
+    import json_module json
+    key configuration test-zelenium-runner-parameter:configuration
+    key user test-zelenium-runner-parameter:user
+    key password test-zelenium-runner-parameter:password
+    key bin_path test-zelenium-runner-parameter:bin-path
+{% else -%}
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
@@ -124,6 +144,7 @@ command-line-extra =
 command-name = runTestSuite
 command-line-extra =
   --db_list '{{ ','.join(connection_string_list) }}'
+{%- endif %}
 {%- endif %}
 
 [directory]
@@ -278,8 +299,9 @@ site-id = {{ site_id }}
 mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
 inituser = {{ slapparameter_dict['inituser-login'] }}
 {%  set mysql = urlparse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
+{%  set mysql_db = mysql.path.split('/')[1] -%}
 sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
-    mysql.path.split('/')[1], mysql.port, mysql.username, mysql.password) }}
+    mysql_db, mysql.port, mysql.username, mysql.password) }}
 bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
@@ -439,6 +461,16 @@ post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_direc
        slapparameter_dict['longrequest-logger-interval'],
      ) }}
 {% endfor -%}
+
+[{{ section("watch_activities") }}]
+<= userhosts-wrapper-base
+environment +=
+  MYSQL=${binary-link:target-directory}/mysql
+wrapped-command-line = {{ parameter_dict['erp5-location'] }}/product/CMFActivity/bin/${:_buildout_section_name_} "-h erp5-catalog-0 -P  {{ mysql.port }}  -u {{ mysql.username }} -p{{ mysql.password}} {{ mysql_db }}" 5 3600
+wrapper-path = ${buildout:bin-directory}/${:_buildout_section_name_}
+
+[{{ section("wait_activities") }}]
+<= watch_activities
 
 [publish]
 recipe = slapos.cookbook:publish.serialised

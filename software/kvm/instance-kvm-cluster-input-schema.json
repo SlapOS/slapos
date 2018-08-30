@@ -232,6 +232,13 @@
               "default": 10,
               "minimum": 1
             },
+            "disk-format": {
+              "title": "Type of external disk drive to create by QEMU.",
+              "description": "Type of QEMU disk drive, to create.",
+              "type": "string",
+              "default": "qcow2",
+              "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
+            },
             "disk-type": {
               "title": "Disk type",
               "description": "Type of QEMU disk drive.",
@@ -288,7 +295,8 @@
             "cpu-model": {
               "title": "CPU model.",
               "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
-              "type": "string"
+              "type": "string",
+              "default": "host"
             },
             "keyboard-layout-language": {
               "title": "Use keyboard layout language",
