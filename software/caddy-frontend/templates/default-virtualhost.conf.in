@@ -45,9 +45,6 @@
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{%- for disabled_cookie in disabled_cookie_list %}
-{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
-
 {%- if prefer_gzip %}
   rewrite {
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
@@ -66,6 +63,9 @@
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
+{%- for disabled_cookie in disabled_cookie_list %}
+    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%-   if disable_via_header %}
     header_downstream -Via
@@ -119,6 +119,9 @@
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
+{%- for disabled_cookie in disabled_cookie_list %}
+    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%-     if disable_via_header %}
     header_downstream -Via
@@ -154,9 +157,6 @@
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{%- for disabled_cookie in disabled_cookie_list %}
-{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
-
 {%- if prefer_gzip %}
   rewrite {
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
@@ -183,6 +183,9 @@
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
+{%- for disabled_cookie in disabled_cookie_list %}
+    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%-   if disable_via_header %}
     header_downstream -Via
@@ -230,6 +233,9 @@
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
+{%- for disabled_cookie in disabled_cookie_list %}
+    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
+{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
 
 {%-     if disable_via_header %}
     header_downstream -Via
