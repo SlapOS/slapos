@@ -53,6 +53,11 @@ def main():
                       help='zuite to run',
                       default = parser_configuration.get('run-only')
                      )
+  parser.add_argument('--max_duration',
+                      type=int,
+                      help='max duration for running test en second',
+                      default = parser_configuration.get('max-duration', 1800)
+                     )
   args = parser.parse_args()
   test_line_dict = {}
   test_suite_title = args.test_suite_title or args.test_suite
@@ -68,13 +73,15 @@ def main():
       'platformName': args.target,
       'platformVersion': args.target_version,
       'deviceName': args.target_device,
-      'browserName': args.target_browser
+      'browserName': args.target_browser,
+      'maxDuration': args.max_duration
     }
   elif 'Windows' in args.target or 'OS X' in args.target:
     capabilities = {
       'browserName': args.target_browser,
       'platform': args.target,
-      'version': args.target_version
+      'version': args.target_version,
+      'maxDuration': args.max_duration
     }
 
   if not args.appium_server_auth or not args.remote_access_url:
@@ -115,7 +122,7 @@ def main():
     except Exception:
       traceback.print_exc()
     time.sleep(10)
-  
+ 
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
   browser = webdriver.Remote(appium_url, capabilities)
   
@@ -137,8 +144,7 @@ def main():
     ) - 1 # First child is the file name
 
     # Wait for test to be executed
-    erp5_zelenium_test_timeout = 90
-    WebDriverWait(browser, erp5_zelenium_test_timeout * (test_count + 1)).until(EC.presence_of_element_located((
+    WebDriverWait(browser, args.max_duration).until(EC.presence_of_element_located((
       By.XPATH, '//td[@id="testRuns" and contains(text(), "%i")]' % test_count
     )))
     execution_duration = round(time.time() - start_time, 2)
