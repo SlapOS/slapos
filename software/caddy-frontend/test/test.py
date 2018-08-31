@@ -2191,7 +2191,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       result.json()['Incoming Headers']['accept-encoding'], 'deflate')
 
-  @skipIf(IS_CADDY, 'Feature postponed')
   def test_disabled_cookie_list(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'disabled-cookie-list']
