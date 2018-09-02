@@ -190,10 +190,10 @@ def der2pem(der):
   return certificate
 
 def isHTTP2(domain, ip):
-  curl_command = '%(curl)s --http2 -v -k -H "Host: %(domain)s" ' \
+  curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
     'https://%(domain)s:%(https_port)s/ '\
     '--resolve %(domain)s:%(https_port)s:%(ip)s' % dict(
-      ip=ip, domain=domain, curl=os.environ['CURL'], https_port=HTTPS_PORT)
+      ip=ip, domain=domain, https_port=HTTPS_PORT)
   prc = subprocess.Popen(
     curl_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
   )
