@@ -3,7 +3,7 @@ Available ``software-type`` values
 
 - ``default``
 
-  Recommended for developemnt and production use. Automatic creation of
+  Recommended for development and production use. Automatic creation of
   erp5-site.
 
 Notes
@@ -100,7 +100,7 @@ Zope partitions should be assigned port ranges starting at 2200, incrementing
 by some value which depends on how many zope process you want per partition
 (see the ``port-base`` parameter in ``zope-partition-dict``).
 
-Notes to the Software Release developper: These ranges are not strictly
+Notes to the Software Release developer: These ranges are not strictly
 defined. Not each port is actually used so one may reduce alread-assigned
 ranges if needed (ex: memcached partitions use actually fewer ports). There
 should be enough room for evolution (as between smtp and mariadb types). It is
