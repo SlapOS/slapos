@@ -8,6 +8,7 @@
 {% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
+{% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
@@ -87,7 +88,7 @@ context =
     key password test-zelenium-runner-parameter:password
     key bin_path test-zelenium-runner-parameter:bin-path
 {% else -%}
-{% if slapparameter_dict['mysql-test-url-list'] -%}
+{% if test_runner_enabled -%}
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
 wrapped-command-line = ${runUnitTest:wrapper-path}
