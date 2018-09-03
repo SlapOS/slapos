@@ -109,12 +109,12 @@
     },
     "prefer-gzip-encoding-to-backend": {
       "default": "false",
-      "description": "[NOT Implemented] If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
+      "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
       "enum": [
         "false",
         "true"
       ],
-      "title": "[NOT Implemented] Prefer gzip Encoding for Backend",
+      "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
     "re6st-optimal-test": {
