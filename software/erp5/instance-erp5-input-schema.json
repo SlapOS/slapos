@@ -345,5 +345,26 @@
       },
       "type": "object"
     }
+  },
+  "test-runner": {
+    "description": "Test runner parameters.",
+    "properties": {
+      "enabled": {
+        "description": "Generate helper scripts to run test suite.",
+        "default": true,
+        "type": "boolean"
+      },
+      "node-count": {
+        "description": "Number of tests this instance can execute in parrallel.",
+        "default": 3,
+        "type": "integer"
+      },
+      "extra-database-count": {
+        "description": "Number of extra databases this instance tests will need.",
+        "default": 3,
+        "type": "integer"
+      }
+    },
+    "type": "object"
   }
 }
