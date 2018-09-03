@@ -49,7 +49,7 @@
       "type": "array"
     },
     "test-database-amount": {
-      "description": "The number of test databases to create, adding auto-generated entries to database-list",
+      "description": "The number of test databases to create, adding auto-generated entries to database-list. Deprecated, use testrunner.node-count and testrunner.extra-database-count",
       "default": 1,
       "minimum": 0,
       "type": "integer"

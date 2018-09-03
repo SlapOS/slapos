@@ -8,6 +8,16 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+{% set test_runner_enabled = slapparameter_dict.get('test-runner', {}).get('enabled', True) -%}
+{% set test_runner_node_count = slapparameter_dict.get('test-runner', {}).get('node-count', 3) -%}
+{% set test_runner_extra_database_count = slapparameter_dict.get('test-runner', {}).get('extra-database-count', 3) -%}
+{% set test_runner_total_database_count = test_runner_node_count * (1 + test_runner_extra_database_count) -%}
+{# Backward compatibility for mariadb.test-database-amount #}
+{% set mariadb_test_database_amount = slapparameter_dict.get('mariadb', {}).get('test-database-amount') -%}
+{% if mariadb_test_database_amount is not none -%}
+{%   set test_runner_total_database_count = mariadb_test_database_amount %}
+{%   set test_runner_enabled = mariadb_test_database_amount > 0 %}
+{% endif -%}
 {% set monitor_base_url_dict = {} -%}
 {% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
@@ -44,7 +54,7 @@ config-name = {{ name }}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', '') }, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', ''), 'test-database-amount': test_runner_total_database_count}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -169,6 +179,7 @@ config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
+config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}

@@ -107,5 +107,27 @@ should be enough room for evolution (as between smtp and mariadb types). It is
 important to not allocate any port after 2200 as user may have assigned ports
 to his zope processes.
 
+
+Running test suite
+==================
+
+All zope partitions will contain ``runTestSuite`` and ``runUnitTest`` script, unless the
+instance was requested with ``test-runner.enabled`` set to false.
+
+The following scripts will be created:
+
+* ``runUnitTest`` runs one test in a temporary instance. Developers can use this script
+to easily run one individual test.
+* ``runTestSuite`` runs a full test suite, optionally by running several tests in parallel.
+This will be used by the test infrastructure to run all ERP5 tests.
+The instance needs to set a value for ``test-runner.node-count`` large enough for
+the test node.
+
+While most of ERP5 tests use the default mariadb database, some tests needs more databases
+connections, for example to test the use of an external datawarehouse or test
+`hot reindexing` features of ERP5. When requesting, set ``extra-database-count`` to the
+number of extra database connections needed for the tests.
+
+
 .. _RewriteRules: http://httpd.apache.org/docs/current/en/mod/mod_rewrite.html#rewriterule
 .. _VirtualHostMonster: http://docs.zope.org/zope2/zope2book/VirtualHosting.html
