@@ -796,12 +796,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       set([
-        'check-free-disk-space',
         'monitor-http-frontend',
         'monitor-httpd-listening-on-tcp',
         'promise-monitor-httpd-is-process-older-than-dependency-set',
       ]),
       set(os.listdir(os.path.join(partition_path, 'etc', 'promise'))))
+
+    self.assertEqual(
+      set([
+        'monitor-bootstrap-status.py',
+        'check-free-disk-space.py',
+        'buildout-TestSlave-0-status.py',
+        '__init__.py',
+      ]),
+      set([
+        q for q in os.listdir(os.path.join(partition_path, 'etc', 'plugin'))
+        if not q.endswith('.pyc')]))
 
     self.assertEqual(
       set(),
