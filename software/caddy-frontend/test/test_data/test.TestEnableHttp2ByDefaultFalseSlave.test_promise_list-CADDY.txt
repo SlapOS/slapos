@@ -1,4 +1,3 @@
-TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/check-free-disk-space
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/monitor-http-frontend
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/monitor-httpd-listening-on-tcp
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
@@ -9,7 +8,6 @@ TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_ssl_cached
-TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-free-disk-space
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/monitor-http-frontend
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/monitor-httpd-listening-on-tcp

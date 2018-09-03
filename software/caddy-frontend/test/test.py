@@ -233,6 +233,16 @@ class TestDataMixin(object):
     finally:
       self.maxDiff = maxDiff
 
+  def test_plugin_list(self):
+    runtime_data = '\n'.join(sorted([
+      q[len(self.instance_path) + 1:]
+      for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'plugin', '*'))
+      if not q.endswith('pyc')  # ignore compiled python
+    ]))
+
+    self.assertTestData(runtime_data)
+
   def test_promise_list(self):
     runtime_data = '\n'.join(sorted([
       q[len(self.instance_path) + 1:]

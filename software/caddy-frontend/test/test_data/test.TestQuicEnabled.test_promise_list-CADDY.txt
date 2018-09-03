@@ -1,4 +1,3 @@
-TestQuicEnabled-0/etc/promise/check-free-disk-space
 TestQuicEnabled-0/etc/promise/monitor-http-frontend
 TestQuicEnabled-0/etc/promise/monitor-httpd-listening-on-tcp
 TestQuicEnabled-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
@@ -9,7 +8,6 @@ TestQuicEnabled-1/etc/promise/caddy_frontend_ipv4_https
 TestQuicEnabled-1/etc/promise/caddy_frontend_ipv6_http
 TestQuicEnabled-1/etc/promise/caddy_frontend_ipv6_https
 TestQuicEnabled-1/etc/promise/caddy_ssl_cached
-TestQuicEnabled-1/etc/promise/check-free-disk-space
 TestQuicEnabled-1/etc/promise/frontend-caddy-configuration-promise
 TestQuicEnabled-1/etc/promise/monitor-http-frontend
 TestQuicEnabled-1/etc/promise/monitor-httpd-listening-on-tcp

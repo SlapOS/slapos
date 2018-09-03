@@ -1,4 +1,3 @@
-TestMasterRequestDomain-0/etc/promise/check-free-disk-space
 TestMasterRequestDomain-0/etc/promise/monitor-http-frontend
 TestMasterRequestDomain-0/etc/promise/monitor-httpd-listening-on-tcp
 TestMasterRequestDomain-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
