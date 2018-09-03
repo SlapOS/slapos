@@ -6,7 +6,7 @@
       "description": "Password to access shellinabox.",
       "type": "string"
     },
-    "url": {  
+    "url": {
       "description": "IPv6 URL to access the shell in a box.",
       "type": "string"
     }

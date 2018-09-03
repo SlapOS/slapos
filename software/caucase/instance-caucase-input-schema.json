@@ -5,22 +5,28 @@
   "title": "Input Parameters",
   "properties": {
     "server-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "title": "http port to use",
-        "description": "Caucase http port to use.",
-        "default": 8009
-      }]
+      "allOf": [
+        {
+          "$ref": "#/definitions/tcpv4port"
+        },
+        {
+          "title": "http port to use",
+          "description": "Caucase http port to use.",
+          "default": 8009
+        }
+      ]
     },
     "server-https-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "title": "https port to use",
-        "description": "Caucase port to use for https connexion.",
-        "default": 8010
-      }]
+      "allOf": [
+        {
+          "$ref": "#/definitions/tcpv4port"
+        },
+        {
+          "title": "https port to use",
+          "description": "Caucase port to use for https connexion.",
+          "default": 8010
+        }
+      ]
     },
     "external-url": {
       "title": "External http url",
