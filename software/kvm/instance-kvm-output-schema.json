@@ -8,7 +8,6 @@
       "format": "uri",
       "require": true
     },
-
     "url": {
       "title": "URL",
       "description": "URL used to connect to the service.",

@@ -1,14 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "extends": "./schema-definitions.json#",
-  "required": ["tcpv4-port"],
+  "required": [
+    "tcpv4-port"
+  ],
   "properties": {
     "tcpv4-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "description": "Start allocating ports at this value, going upward"
-      }]
+      "allOf": [
+        {
+          "$ref": "#/definitions/tcpv4port"
+        },
+        {
+          "description": "Start allocating ports at this value, going upward"
+        }
+      ]
     },
     "postmaster": {
       "description": "Mail address to send technical mails to. Non-empty value required for smptd relay service to be deployed. Values will be put in alias-dict as 'postmaster' key (alias-dict takes precedence)",
@@ -29,7 +34,9 @@
     "relay": {
       "description": "Forward outgoing mails to a specific relay. If enabled, relay must support TLS-encrypted SASL authentication.",
       "dependencies": {
-        "host": ["sasl-credential"]
+        "host": [
+          "sasl-credential"
+        ]
       },
       "properties": {
         "host": {

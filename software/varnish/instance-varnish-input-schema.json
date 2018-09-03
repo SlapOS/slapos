@@ -3,12 +3,15 @@
   "extends": "./schema-definitions.json#",
   "properties": {
     "tcpv4-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "description": "Start allocating ports at this value, going upward",
-        "default": 6001
-      }]
+      "allOf": [
+        {
+          "$ref": "#/definitions/tcpv4port"
+        },
+        {
+          "description": "Start allocating ports at this value, going upward",
+          "default": 6001
+        }
+      ]
     },
     "backend-url": {
       "description": "The backend url that varnish will cache",
