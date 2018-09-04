@@ -180,6 +180,7 @@ if os.environ.get('DEBUG'):
   import unittest
   unittest.installHandler()
 
+
 def der2pem(der):
   certificate, error = subprocess.Popen(
       'openssl x509 -inform der'.split(), stdin=subprocess.PIPE,
@@ -188,6 +189,7 @@ def der2pem(der):
   if error:
     raise ValueError(error)
   return certificate
+
 
 def isHTTP2(domain, ip):
   curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
@@ -316,7 +318,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     # expose software directory, extract from found computer partition
     cls.software_path = os.path.realpath(os.path.join(
         cls.computer_partition_root_path, 'software_release'))
-
 
   def assertLogAccessUrlWithPop(self, parameter_dict, reference):
     log_access_url = parameter_dict.pop('log-access-url')
