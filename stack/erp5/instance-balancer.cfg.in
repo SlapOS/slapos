@@ -97,10 +97,13 @@ ipv4 = {{ ipv4 }}
 {% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
+{% set zope_virtualhost_monster_backend_dict = {} %}
+{% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
 {%   set zope_family_address_list = [] -%}
+{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
@@ -121,8 +124,27 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
 {%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
+
+{#       # Generate entries with rewrite rule for test runnners #}
+{%       set test_runner_backend_mapping = {} %}
+{%       set test_runner_apache_url_list = [] %}
+{%       set test_runner_external_port = next_port() %}
+{%       for i, (test_runner_internal_ip, test_runner_internal_port) in
+             enumerate(slapparameter_dict[parameter_id ~ '-test-runner-address-list']) %}
+{%         do test_runner_backend_mapping.__setitem__(
+                'unit_test_' ~ i,
+                'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
+{%         do test_runner_apache_url_list.append(
+                'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
+{%       endfor %}
+{%       do zope_virtualhost_monster_backend_dict.__setitem__(
+              (ipv4, test_runner_external_port),
+              ( ssl_authentication, test_runner_backend_mapping ) ) -%}
+{%       do test_runner_url_dict.__setitem__(family_name, test_runner_apache_url_list) -%}
+
 {%     endfor -%}
 {%   endfor -%}
+
 {# Make rendering fail artificially if any family has no known backend.
  # This is useful as haproxy's hot-reconfiguration mechanism is
  # supervisord-incompatible.
@@ -140,7 +162,6 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
 {% endfor -%}
 
@@ -173,6 +194,7 @@ crl = ${directory:apache-conf}/crl.pem
 
 [apache-conf-parameter-dict]
 backend-list = {{ dumps(apache_dict.values()) }}
+zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 log-dir = ${directory:log}
@@ -225,6 +247,10 @@ recipe = slapos.cookbook:publish.serialised
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
+{% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
+{{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
+{% endfor -%}
+
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [apache-ssl]
