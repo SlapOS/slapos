@@ -8,7 +8,9 @@
 {% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
+{% set test_runner_address_list = [] -%}
 {% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
+{% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
@@ -88,7 +90,11 @@ context =
     key password test-zelenium-runner-parameter:password
     key bin_path test-zelenium-runner-parameter:bin-path
 {% else -%}
-{% if test_runner_enabled -%}
+{% if test_runner_enabled and test_runner_node_count -%}
+{% for _ in range(test_runner_node_count) %}
+{%   do test_runner_address_list.append((ipv4, next_port())) %}
+{% endfor %}
+
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
 wrapped-command-line = ${runUnitTest:wrapper-path}
@@ -139,12 +145,31 @@ command-name = runUnitTest
 command-line-extra =
   --erp5_sql_connection_string '{{ connection_string_list[0] }}'
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
+  --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
+  --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
 
 [{{ section('runTestSuite') }}]
 < = run-test-common
 command-name = runTestSuite
 command-line-extra =
   --db_list '{{ ','.join(connection_string_list) }}'
+environment-extra +=
+  {#- turn a list of (ip, port) in a list of 'ip:port' #}
+  {% set zserver_address_list = [] -%}
+  {% for ip, port in test_runner_address_list %}
+  {%   do zserver_address_list.append(ip ~ ':' ~ port) %}
+  {% endfor -%}
+  zserver_address_list={{ ','.join(zserver_address_list) }}
+  zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-apache-url-list']) }}
+
+[{{ section("promise-test-runner-apache-url") }}]
+# promise to wait for apache partition to have returned the parameter
+recipe = slapos.cookbook:check_parameter
+value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
+expected-not-value = not-ready
+path = ${directory:promises}/${:_buildout_section_name_}
+expected-value =
+
 {%- endif %}
 {%- endif %}
 
@@ -485,6 +510,7 @@ hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+test-runner-address-list = {{ dumps(test_runner_address_list) }}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
