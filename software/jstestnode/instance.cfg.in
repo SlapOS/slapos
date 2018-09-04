@@ -39,15 +39,19 @@ buildout-directory = $${buildout:directory}
 mode = 0700
 
 [xvfb-instance]
-recipe = slapos.cookbook:xvfb
-runner-path = $${directory:services}/xvfb
-xvfb-path = ${xserver:location}/bin/Xvfb
-fbdir-path = $${directory:framebuffer}
-tmp-path = $${directory:run}
-shell-path = ${dash:location}/bin/dash
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${xserver:location}/bin/Xvfb
+    $${:display}
+    -screen 0 1024x768x24
+    -fbdir $${directory:framebuffer}
+environment =
+  SLAPOS_XORG_LOCK_DIR=$${:lock-dir}
 
-xwd-path = ${xwd:location}/bin/xwd
-xwd-hook-path = $${directory:bin}/xwd
+display = :0
+lock-dir = $${directory:run}
+
 
 #################################
 # Nginx service
