@@ -387,7 +387,7 @@ extra-context =
 
 {# Publish information for the instance #}
 [publish-caddy-information]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list %}
