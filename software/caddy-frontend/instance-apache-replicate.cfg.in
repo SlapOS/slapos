@@ -95,7 +95,7 @@ monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
 
 [replicate]
 <= slap-connection
-recipe = slapos.cookbook:requestoptional
+recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
@@ -121,7 +121,9 @@ state = {{ frontend_request.get('state') }}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-config-_ = {{ json_module.dumps(slave_configuration_dict) }}
+{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%   endfor -%}
 {%   if frontend_request.get('sla') %}
 {%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
