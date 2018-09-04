@@ -1,6 +1,14 @@
 Changes
 =======
 
+1.0.67 (2018-09-04)
+-------------------
+
+* erp5_test: stop using erp5_test recipe
+* random: fix password generation with newlines
+* erp5testnode: enable password authentication for scalability test system
+* request: add requestoptional.serialised
+
 1.0.65 (2018-06-22)
 -------------------
 
