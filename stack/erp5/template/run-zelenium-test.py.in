@@ -74,14 +74,16 @@ def main():
       'platformVersion': args.target_version,
       'deviceName': args.target_device,
       'browserName': args.target_browser,
-      'maxDuration': args.max_duration
+      'maxDuration': args.max_duration,
+      'name': test_suite_title
     }
   elif 'Windows' in args.target or 'OS X' in args.target:
     capabilities = {
       'browserName': args.target_browser,
       'platform': args.target,
       'version': args.target_version,
-      'maxDuration': args.max_duration
+      'maxDuration': args.max_duration,
+      'name': test_suite_title
     }
 
   if not args.appium_server_auth or not args.remote_access_url:
