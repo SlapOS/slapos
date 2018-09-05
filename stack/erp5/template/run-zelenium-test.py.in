@@ -149,6 +149,18 @@ def main():
     WebDriverWait(browser, args.max_duration).until(EC.presence_of_element_located((
       By.XPATH, '//td[@id="testRuns" and contains(text(), "%i")]' % test_count
     )))
+  except:
+    test_line_dict['UnexpectedException'] = {
+      'test_count': 1,
+      'error_count': 0,
+      'failure_count': 1,
+      'skip_count': 0,
+      'duration': 1,
+      'command': url,
+      'stdout': agent,
+      'stderr': traceback.format_exc()
+    }
+  finally:
     execution_duration = round(time.time() - start_time, 2)
     if test_count:
       test_execution_duration = execution_duration / test_count
@@ -175,46 +187,45 @@ def main():
     for tr in tbody[1:]:
       # First td is the main title
       test_name = tr[0][0].text
-
-      skip_count = success_count = error_count = 0
-     
-      test_table = tr[1].xpath('.//table')[0]
-      test_tbody = tr[1].xpath('.//tbody')[0]
-
-      tr_count = len(test_tbody)
-      for tr in test_tbody:
-        # print etree.tostring(tr).split('\n')[0]
-        status = tr.attrib.get('class')
-        if status is None or 'status_done' in status:
-          skip_count += 1
-        elif 'status_passed' in status:
-          success_count += 1
-        elif 'status_failed' in status:
-          error_count += 1
-
-      test_line_dict[test_name] = {
-        'test_count': tr_count,
-        'error_count': error_count,
-        'failure_count': tr_count - (skip_count + success_count + error_count),
-        'skip_count': skip_count,
-        'duration': test_execution_duration,
+      if len(tr) == 1:
+        test_line_dict[test_name] = {
+        'test_count': 1,
+        'error_count': 0,
+        'failure_count': 1,
+        'skip_count': 0,
+        'duration': 0,
         'command': url,
         'stdout': agent,
         'stderr': '',
-        'html_test_result': etree.tostring(test_table)
+        'html_test_result': 'Not Executed due to saucelabs related error'
       }
-  except:
-    test_line_dict['UnexpectedException'] = {
-      'test_count': 1,
-      'error_count': 0,
-      'failure_count': 1,
-      'skip_count': 0,
-      'duration': 1,
-      'command': url,
-      'stdout': agent,
-      'stderr': traceback.format_exc()
-    }
-  finally:
+      else:
+        skip_count = success_count = error_count = 0
+        test_table = tr[1].xpath('.//table')[0]
+        test_tbody = tr[1].xpath('.//tbody')[0]
+
+        tr_count = len(test_tbody)
+        for tr in test_tbody:
+          # print etree.tostring(tr).split('\n')[0]
+          status = tr.attrib.get('class')
+          if status is None or 'status_done' in status:
+            skip_count += 1
+          elif 'status_passed' in status:
+            success_count += 1
+          elif 'status_failed' in status:
+            error_count += 1
+
+        test_line_dict[test_name] = {
+          'test_count': tr_count,
+          'error_count': error_count,
+          'failure_count': tr_count - (skip_count + success_count + error_count),
+          'skip_count': skip_count,
+          'duration': test_execution_duration,
+          'command': url,
+          'stdout': agent,
+          'stderr': '',
+          'html_test_result': etree.tostring(test_table)
+        }
     browser.quit()
 
   try:
