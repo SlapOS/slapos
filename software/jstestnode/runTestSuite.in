@@ -15,8 +15,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from subprocess import check_output
 import json
 
-os.environ['TMPDIR'] = '$${xvfb-instance:tmp-path}'
-os.environ['DISPLAY'] = ':0'
+os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
+os.environ['DISPLAY'] = '$${xvfb-instance:display}'
 
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 

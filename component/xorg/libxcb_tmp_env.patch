@@ -1,3 +1,7 @@
+Store Xorg lock files and sockets in different directories
+
+see xorg-server_tmp_env.patch
+
 --- libxcb-1.7/src/xcb_util.c.back	2012-04-03 13:30:36.000000000 +0200
 +++ libxcb-1.7/src/xcb_util.c	2012-04-03 14:47:00.000000000 +0200
 @@ -147,11 +147,31 @@
@@ -30,7 +34,7 @@
 -    static const char unix_base[] = "/tmp/.X11-unix/X";
 -    const char *base = unix_base;
 +    char *base;
-+    base = _xcb_getandappendcompatibleenv("TMPDIR", "/tmp", "/.X11-unix/X");
++    base = _xcb_getandappendcompatibleenv("XORG_LOCK_DIR", "/tmp", "/.X11-unix/X");
      size_t filelen;
      char *file = NULL;
      int actual_filelen;
