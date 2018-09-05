@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.66 (unreleased)
+-------------------
+
+* Drop ``slapos.recipe:xvfb``, use simple ``slapos.recipe:wrapper`` instead.
+* Drop ``slapos.recipe:seleniumrunner`` and ``slapos.recipe:firefox``, they
+  were not used.
+
 1.0.65 (2018-06-22)
 -------------------
 
