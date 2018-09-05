@@ -7,7 +7,9 @@
       "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
       "additionalProperties": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "uniqueItems": true
       },
       "type": "object"
@@ -89,22 +91,24 @@
           "default": "RootSoftwareInstance",
           "type": "object"
         },
-	"virtualhostroot-http-port": {
-	  "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
-	  "default": 80,
-	  "type": "integer"
-	},
-	"virtualhostroot-https-port": {
-	  "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
-	  "default": 443,
-	  "type": "integer"
-	}
+        "virtualhostroot-http-port": {
+          "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
+          "default": 80,
+          "type": "integer"
+        },
+        "virtualhostroot-https-port": {
+          "description": "Front-end slave https port. Port where https requests to frontend will be redirected.",
+          "default": 443,
+          "type": "integer"
+        }
       },
       "type": "object"
     },
     "zope-partition-dict": {
       "description": "Zope layout definition",
-      "default": {"1": {}},
+      "default": {
+        "1": {}
+      },
       "patternProperties": {
         ".*": {
           "additionalProperties": false,
@@ -160,12 +164,15 @@
               "type": "string"
             },
             "port-base": {
-              "allOf": [{
-                "$ref": "#/definitions/tcpv4port"
-              }, {
-                "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
-                "default": 2200
-              }]
+              "allOf": [
+                {
+                  "$ref": "#/definitions/tcpv4port"
+                },
+                {
+                  "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
+                  "default": 2200
+                }
+              ]
             }
           },
           "type": "object"
@@ -215,11 +222,14 @@
       "description": "Common settings ZEO servers",
       "properties": {
         "tcpv4-port": {
-          "allOf": [{
-            "$ref": "#/definitions/tcpv4port"
-          }, {
-            "description": "Start allocating ports at this value, going upward"
-          }]
+          "allOf": [
+            {
+              "$ref": "#/definitions/tcpv4port"
+            },
+            {
+              "description": "Start allocating ports at this value, going upward"
+            }
+          ]
         },
         "backup-periodicity": {
           "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined). Enter 'never' to disable backups.",
@@ -237,7 +247,9 @@
     "zodb": {
       "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
       "items": {
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "properties": {
           "name": {
             "description": "Database name",
@@ -251,14 +263,21 @@
           },
           "type": {
             "description": "Storage type",
-            "enum": ["zeo", "neo"],
+            "enum": [
+              "zeo",
+              "neo"
+            ],
             "type": "string"
           },
           "server": {
             "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
             "anyOf": [
-              {"$ref": "./instance-zeo-schema.json"},
-              {"$ref": "../neoppod/instance-neo-input-schema.json"}
+              {
+                "$ref": "./instance-zeo-schema.json"
+              },
+              {
+                "$ref": "../neoppod/instance-neo-input-schema.json"
+              }
             ]
           },
           "storage-dict": {
@@ -270,11 +289,15 @@
                 "type": "boolean"
               }
             },
-            "additionalProperties": {"type": "string"},
+            "additionalProperties": {
+              "type": "string"
+            },
             "type": "object"
           }
         },
-        "additionalProperties": {"type": "string"},
+        "additionalProperties": {
+          "type": "string"
+        },
         "type": "object"
       },
       "type": "array"
@@ -311,10 +334,10 @@
           "format": "uri"
         },
         "crl-update-periodicity": {
-            "title": "Periodicity of CRL update",
-            "description": "Periodicity of CRL update, in cron format. The CRL will be downloaded from caucase URL and the new content will be saved if there was a change. Everytime a new CRL is writen, Apache reload will be called.",
-            "type": "string",
-            "default": "0 0 * * *"
+          "title": "Periodicity of CRL update",
+          "description": "Periodicity of CRL update, in cron format. The CRL will be downloaded from caucase URL and the new content will be saved if there was a change. Everytime a new CRL is writen, Apache reload will be called.",
+          "type": "string",
+          "default": "0 0 * * *"
         }
       },
       "additionalProperties": {

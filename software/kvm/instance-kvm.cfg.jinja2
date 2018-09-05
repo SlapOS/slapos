@@ -9,6 +9,7 @@
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set frontend_software_type = 'default' -%}
+{% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -632,6 +633,19 @@ keyboard-layout-language = fr
 
 {% endif -%}
 
+
+{% if disk_device_path %}
+{%   do part_list.append('disk-device-permission') -%}
+[disk-device-permission]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  [{"disk": "{{disk_device_path}}"}]
+{% endraw -%}
+rendered = ${buildout:directory}/.slapos-disk-permission
+context =
+  raw disk_device_path {{disk_device_path}}
+{% endif -%}
 
 [buildout]
 parts =

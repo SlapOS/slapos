@@ -1,7 +1,6 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
-
   "title": "Input Parameters",
   "properties": {
     "image-to-test-url": {
@@ -23,7 +22,10 @@
       "title": "Type of the test.",
       "type": "string",
       "default": "script-from-url",
-      "enum" : ["script-from-url", "cloned-playbook"]
+      "enum": [
+        "script-from-url",
+        "cloned-playbook"
+      ]
     },
     "script-to-test-url": {
       "title": "Optional URL of script to test, used for test-type=script-from-url.",
@@ -36,5 +38,9 @@
       "type": "string"
     }
   },
-  "required": ["image-to-test-url", "image-to-test-md5sum", "test-type"]
+  "required": [
+    "image-to-test-url",
+    "image-to-test-md5sum",
+    "test-type"
+  ]
 }

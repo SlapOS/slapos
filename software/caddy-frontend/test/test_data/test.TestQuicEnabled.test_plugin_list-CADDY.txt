@@ -1,0 +1,8 @@
+TestQuicEnabled-0/etc/plugin/__init__.py
+TestQuicEnabled-0/etc/plugin/buildout-TestQuicEnabled-0-status.py
+TestQuicEnabled-0/etc/plugin/check-free-disk-space.py
+TestQuicEnabled-0/etc/plugin/monitor-bootstrap-status.py
+TestQuicEnabled-1/etc/plugin/__init__.py
+TestQuicEnabled-1/etc/plugin/buildout-TestQuicEnabled-1-status.py
+TestQuicEnabled-1/etc/plugin/check-free-disk-space.py
+TestQuicEnabled-1/etc/plugin/monitor-bootstrap-status.py

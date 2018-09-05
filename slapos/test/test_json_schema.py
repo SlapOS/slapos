@@ -29,6 +29,7 @@ import unittest
 import os
 import glob
 import json
+import collections
 import slapos.test
 import jsonschema
 
@@ -41,20 +42,39 @@ def getSchemaValidator(filename):
     json_file.close()
   return json_dict
 
-def createTest(path, json_dict):
+def createValidatorTest(path, json_dict):
+  # Test that json is valid
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
-      self.assertEquals(jsonschema.validate(json.loads(json_file.read()), json_dict), None)
-      json_file.close()
+      self.assertEqual(jsonschema.validate(json.load(json_file), json_dict), None)
 
   return run
+
+def createFormatTest(path, json_dict):
+  # Test that json match our formatting rules
+  def run(self, *args, **kwargs):
+    with open(path, "r") as json_file:
+      content = json_file.read()
+      # this is the format produced by `format-json` tool at the
+      # root of this repository.
+      # XXX it would be better to reuse the code.
+      self.assertEqual(
+          (json.dumps(
+              json.loads(content, object_pairs_hook=collections.OrderedDict),
+              sort_keys=False,
+              indent=2,
+              separators=(',', ': ')) + "\n").splitlines(),
+          content.splitlines())
+  return run
+
 
 def generateSoftwareCfgTest():
   json_dict = getSchemaValidator("schema.json")
   base_path = "/".join(slapos.test.__file__.split("/")[:-3])
   for path in glob.glob("%s/software/*/software.cfg.json" % base_path):
     test_name = "test_%s_software_cfg_json" % path.split("/")[-2]
-    setattr(TestJSONSchemaValidation, test_name , createTest(path, json_dict)) 
+    setattr(TestJSONSchemaValidation, test_name, createValidatorTest(path, json_dict))
+    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path, json_dict))
 
 
 def generateJSONSchemaTest():
@@ -64,7 +84,8 @@ def generateJSONSchemaTest():
     software_type = path.split("/")[-2]
     filename = path.split("/")[-1].replace("-", "_").replace(".", "_")
     test_name = "test_schema_%s_%s" % (software_type, filename)
-    setattr(TestJSONSchemaValidation, test_name , createTest(path, json_dict)) 
+    setattr(TestJSONSchemaValidation, test_name, createValidatorTest(path, json_dict))
+    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path, json_dict))
 
 class TestJSONSchemaValidation(unittest.TestCase):
   pass

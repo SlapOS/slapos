@@ -1,4 +1,3 @@
-TestSlave-0/etc/promise/check-free-disk-space
 TestSlave-0/etc/promise/monitor-http-frontend
 TestSlave-0/etc/promise/monitor-httpd-listening-on-tcp
 TestSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
@@ -9,7 +8,6 @@ TestSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestSlave-1/etc/promise/caddy_ssl_cached
-TestSlave-1/etc/promise/check-free-disk-space
 TestSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestSlave-1/etc/promise/monitor-http-frontend
 TestSlave-1/etc/promise/monitor-httpd-listening-on-tcp

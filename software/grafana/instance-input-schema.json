@@ -8,11 +8,11 @@
       "type": "string"
     },
     "smtp-username": {
-      "description": "Username to connect to SMTP server", 
+      "description": "Username to connect to SMTP server",
       "type": "string"
     },
     "smtp-password": {
-      "description": "Password to connect to SMTP server", 
+      "description": "Password to connect to SMTP server",
       "type": "string"
     },
     "smtp-verify-ssl": {

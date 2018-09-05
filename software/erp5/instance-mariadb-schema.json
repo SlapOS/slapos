@@ -1,24 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "required": ["tcpv4-port"],
+  "required": [
+    "tcpv4-port"
+  ],
   "properties": {
     "tcpv4-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "description": "Start allocating ports at this value, going downward"
-      }]
+      "allOf": [
+        {
+          "$ref": "#/definitions/tcpv4port"
+        },
+        {
+          "description": "Start allocating ports at this value, going downward"
+        }
+      ]
     },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
-      "default": [{
-        "name": "erp5",
-        "user": "user",
-        "password": "insecure"
-      }],
+      "default": [
+        {
+          "name": "erp5",
+          "user": "user",
+          "password": "insecure"
+        }
+      ],
       "minItems": 1,
       "items": {
-        "required": ["name", "user", "password"],
+        "required": [
+          "name",
+          "user",
+          "password"
+        ],
         "properties": {
           "name": {
             "description": "Database name",
@@ -135,6 +146,5 @@
       },
       "type": "array"
     }
-
   }
 }

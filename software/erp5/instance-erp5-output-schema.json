@@ -51,7 +51,7 @@
     "mariadb-test-database-list": {
       "description": "Relational database access information",
       "items": {
-	"pattern": "^mysql://",
+        "pattern": "^mysql://",
         "type": "string"
       },
       "uniqueItems": true,
