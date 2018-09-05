@@ -99,7 +99,6 @@ recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-config-monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
 {% if slapparameter_dict.has_key(frontend_software_url_key) %}
