@@ -6,19 +6,19 @@
       "description": "Number of nodes the slave is replicated",
       "type": "integer"
     },
-    "domain": {  
+    "domain": {
       "description": "Base domain used by the instance",
       "type": "string"
     },
-    "url": {  
+    "url": {
       "description": "Default URL provided",
       "type": "string"
     },
-    "site_url": {      
+    "site_url": {
       "description": "URL for HTTP access",
       "type": "string"
     },
-    "secure_access": {      
+    "secure_access": {
       "description": "URL for HTTP access",
       "type": "string"
     },

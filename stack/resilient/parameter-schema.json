@@ -3,7 +3,6 @@
   "title": "Resiliency Parameters",
   "description": "List of possible parameters used in the resilient stack",
   "type": "object",
-
   "properties": {
     "-sla-0-computer_guid": {
       "title": "Target computer for main instance",

@@ -2,7 +2,9 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Parameters to instantiate a NEO cluster. See https://lab.nexedi.com/nexedi/neoppod/blob/master/neo.conf for more information.",
   "additionalProperties": false,
-  "require": ["cluster"],
+  "require": [
+    "cluster"
+  ],
   "properties": {
     "cluster": {
       "description": "Cluster unique identifier. Your last line of defense against mixing up NEO clusters and corrupting your data. Choose a unique value for each of your cluster.",
@@ -30,7 +32,9 @@
       "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...). The prefix 'node-' is mandatory and the number must start from 0. The total number of nodes here must be equal to the length of node-list.",
       "additionalProperties": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {
+          "type": "string"
+        },
         "uniqueItems": true
       },
       "type": "object"
@@ -71,14 +75,14 @@
             "type": "integer"
           },
           "data-deduplication": {
-              "description": "Set the --dedup option for storage nodes.",
-              "default": false,
-              "type": "boolean"
+            "description": "Set the --dedup option for storage nodes.",
+            "default": false,
+            "type": "boolean"
           },
           "disable-drop-partitions": {
-              "description": "Set the --disable-drop-partitions option for storage nodes.",
-              "default": false,
-              "type": "boolean"
+            "description": "Set the --disable-drop-partitions option for storage nodes.",
+            "default": false,
+            "type": "boolean"
           },
           "mysql": {
             "description": "Dictionary containing parameters for MySQL.",

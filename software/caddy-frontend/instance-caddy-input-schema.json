@@ -1,83 +1,83 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema",
-    "properties": {
-        "-frontend-authorized-slave-string": {
-            "description": "List of SOFTINST-XXX of Slaves, separated by space which is allowed to use custom configuration.",
-            "title": "Authorized Slave String",
-            "type": "string"
-        },
-        "-frontend-quantity": {
-            "description": "Quantity of Frontends Replicate.",
-            "title": "Frontend Replication Quantity",
-            "type": "integer"
-        },
-        "apache-ca-certificate": {
-            "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server.",
-            "textarea": true,
-            "title": "[NOT IMPLEMENTED] SSL CA Certificate",
-            "type": "string"
-        },
-        "apache-certificate": {
-            "description": "SSL Certificate used by the server.",
-            "textarea": true,
-            "title": "SSL Certificate",
-            "type": "string"
-        },
-        "apache-key": {
-            "description": "SSL Key used by the server.",
-            "textarea": true,
-            "title": "SSL Key",
-            "type": "string"
-        },
-        "domain": {
-            "description": "Base Domain for create subdomains (ie.: example.com).",
-            "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
-            "title": "Domain",
-            "type": "string"
-        },
-        "enable-http2-by-default": {
-            "default": "true",
-            "description": "Use HTTP2 as default Protocol",
-            "enum": [
-                "true",
-                "false"
-            ],
-            "title": "Enable HTTP2 by Default",
-            "type": "string"
-        },
-        "mpm-graceful-shutdown-timeout": {
-            "default": 5,
-            "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
-            "title": "Duration of the graceful shutdown period",
-            "type": "integer"
-        },
-        "nginx-domain": {
-            "description": "Base Domain for create subdomains (ie.: example2.com) for websocket, notebook and eventsource.",
-            "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
-            "title": "Nginx Domain",
-            "type": "string"
-        },
-        "public-ipv4": {
-            "description": "Public ipv4 of the frontend (the one Caddy will be indirectly listening to).",
-            "title": "Public IPv4",
-            "type": "string"
-        },
-        "re6st-verification-url": {
-            "description": "Url to verify if the internet and/or re6stnet is working.",
-            "title": "Test Verification URL",
-            "type": "string"
-        },
-        "enable-quic": {
-            "default": "false",
-            "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour.",
-            "enum": [
-                "true",
-                "false"
-            ],
-            "title": "Enable QUIC",
-            "type": "string"
-        }
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "-frontend-authorized-slave-string": {
+      "description": "List of SOFTINST-XXX of Slaves, separated by space which is allowed to use custom configuration.",
+      "title": "Authorized Slave String",
+      "type": "string"
     },
-    "title": "Input Parameters",
-    "type": "object"
+    "-frontend-quantity": {
+      "description": "Quantity of Frontends Replicate.",
+      "title": "Frontend Replication Quantity",
+      "type": "integer"
+    },
+    "apache-ca-certificate": {
+      "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server.",
+      "textarea": true,
+      "title": "[NOT IMPLEMENTED] SSL CA Certificate",
+      "type": "string"
+    },
+    "apache-certificate": {
+      "description": "SSL Certificate used by the server.",
+      "textarea": true,
+      "title": "SSL Certificate",
+      "type": "string"
+    },
+    "apache-key": {
+      "description": "SSL Key used by the server.",
+      "textarea": true,
+      "title": "SSL Key",
+      "type": "string"
+    },
+    "domain": {
+      "description": "Base Domain for create subdomains (ie.: example.com).",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "title": "Domain",
+      "type": "string"
+    },
+    "enable-http2-by-default": {
+      "default": "true",
+      "description": "Use HTTP2 as default Protocol",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Enable HTTP2 by Default",
+      "type": "string"
+    },
+    "mpm-graceful-shutdown-timeout": {
+      "default": 5,
+      "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
+      "title": "Duration of the graceful shutdown period",
+      "type": "integer"
+    },
+    "nginx-domain": {
+      "description": "Base Domain for create subdomains (ie.: example2.com) for websocket, notebook and eventsource.",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "title": "Nginx Domain",
+      "type": "string"
+    },
+    "public-ipv4": {
+      "description": "Public ipv4 of the frontend (the one Caddy will be indirectly listening to).",
+      "title": "Public IPv4",
+      "type": "string"
+    },
+    "re6st-verification-url": {
+      "description": "Url to verify if the internet and/or re6stnet is working.",
+      "title": "Test Verification URL",
+      "type": "string"
+    },
+    "enable-quic": {
+      "default": "false",
+      "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Enable QUIC",
+      "type": "string"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
 }

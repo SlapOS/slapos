@@ -43,11 +43,15 @@ import subprocess
 from unittest import skipIf, skip
 import ssl
 from BaseHTTPServer import HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler
 from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 
-import utils
+from utils import SlapOSInstanceTestCase
+from utils import findFreeTCPPort
 
+LOCAL_IPV4 = os.environ['LOCAL_IPV4']
+GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -177,11 +181,21 @@ if os.environ.get('DEBUG'):
   unittest.installHandler()
 
 
+def der2pem(der):
+  certificate, error = subprocess.Popen(
+      'openssl x509 -inform der'.split(), stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE, stderr=subprocess.PIPE
+  ).communicate(der)
+  if error:
+    raise ValueError(error)
+  return certificate
+
+
 def isHTTP2(domain, ip):
-  curl_command = '%(curl)s --http2 -v -k -H "Host: %(domain)s" ' \
+  curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
     'https://%(domain)s:%(https_port)s/ '\
     '--resolve %(domain)s:%(https_port)s:%(ip)s' % dict(
-      ip=ip, domain=domain, curl=os.environ['CURL'], https_port=HTTPS_PORT)
+      ip=ip, domain=domain, https_port=HTTPS_PORT)
   prc = subprocess.Popen(
     curl_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
   )
@@ -220,6 +234,16 @@ class TestDataMixin(object):
       raise
     finally:
       self.maxDiff = maxDiff
+
+  def test_plugin_list(self):
+    runtime_data = '\n'.join(sorted([
+      q[len(self.instance_path) + 1:]
+      for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'plugin', '*'))
+      if not q.endswith('pyc')  # ignore compiled python
+    ]))
+
+    self.assertTestData(runtime_data)
 
   def test_promise_list(self):
     runtime_data = '\n'.join(sorted([
@@ -275,8 +299,25 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data)
 
 
-class HttpFrontendTestCase(utils.SlapOSInstanceTestCase):
+class HttpFrontendTestCase(SlapOSInstanceTestCase):
   frontend_type = 'CADDY' if IS_CADDY else 'APACHE'
+
+  @classmethod
+  def getSoftwareURLList(cls):
+    return [os.path.realpath(os.environ['TEST_SR'])]
+
+  @classmethod
+  def setUpClass(cls):
+    super(HttpFrontendTestCase, cls).setUpClass()
+    # extra class attributes used in HttpFrontendTestCase
+
+    # expose instance directory
+    cls.instance_path = os.path.join(
+        cls.config['working_directory'],
+        'inst')
+    # expose software directory, extract from found computer partition
+    cls.software_path = os.path.realpath(os.path.join(
+        cls.computer_partition_root_path, 'software_release'))
 
   def assertLogAccessUrlWithPop(self, parameter_dict, reference):
     log_access_url = parameter_dict.pop('log-access-url')
@@ -373,16 +414,30 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     )
 
 
+class TestHandler(BaseHTTPRequestHandler):
+  def do_GET(self):
+    self.send_response(200)
+    self.send_header("Content-type", "application/json")
+    self.send_header('Set-Cookie', 'secured=value;secure')
+    self.send_header('Set-Cookie', 'nonsecured=value')
+    self.end_headers()
+    response = {
+      'Path': self.path,
+      'Incoming Headers': self.headers.dict
+    }
+    self.wfile.write(json.dumps(response, indent=2))
+
+
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
-      (utils.LOCAL_IPV4, utils.findFreeTCPPort(utils.LOCAL_IPV4)),
-      utils.TestHandler)
+      (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
+      TestHandler)
 
     server_https = HTTPServer(
-      (utils.LOCAL_IPV4, utils.findFreeTCPPort(utils.LOCAL_IPV4)),
-      utils.TestHandler)
+      (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
+      TestHandler)
 
     server_https.socket = ssl.wrap_socket(
       server_https.socket,
@@ -526,7 +581,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string':
@@ -742,12 +797,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       set([
-        'check-free-disk-space',
         'monitor-http-frontend',
         'monitor-httpd-listening-on-tcp',
         'promise-monitor-httpd-is-process-older-than-dependency-set',
       ]),
       set(os.listdir(os.path.join(partition_path, 'etc', 'promise'))))
+
+    self.assertEqual(
+      set([
+        'monitor-bootstrap-status.py',
+        'check-free-disk-space.py',
+        'buildout-TestSlave-0-status.py',
+        '__init__.py',
+      ]),
+      set([
+        q for q in os.listdir(os.path.join(partition_path, 'etc', 'plugin'))
+        if not q.endswith('.pyc')]))
 
     self.assertEqual(
       set(),
@@ -797,7 +862,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -805,7 +870,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(result.status_code, no_backend_response_code)
@@ -854,7 +919,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -862,7 +927,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -916,21 +981,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
     result_ipv6 = self.fakeHTTPSResult(
-      parameter_dict['domain'], utils.GLOBAL_IPV6, 'test-path',
-      source_ip=utils.GLOBAL_IPV6)
+      parameter_dict['domain'], GLOBAL_IPV6, 'test-path',
+      source_ip=GLOBAL_IPV6)
 
     self.assertEqual(
        result_ipv6.json()['Incoming Headers']['x-forwarded-for'],
-       utils.GLOBAL_IPV6
+       GLOBAL_IPV6
     )
 
     self.assertEqual(
-      utils.der2pem(result_ipv6.peercert),
+      der2pem(result_ipv6.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
@@ -947,7 +1012,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typezopepath.example.com',
         'site_url': 'http://typezopepath.example.com',
         'secure_access': 'https://typezopepath.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -955,7 +1020,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(
@@ -977,7 +1042,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typezopedefaultpath.example.com',
         'site_url': 'http://typezopedefaultpath.example.com',
         'secure_access': 'https://typezopedefaultpath.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -985,7 +1050,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], '')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1005,7 +1070,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://serveralias.example.com',
         'site_url': 'http://serveralias.example.com',
         'secure_access': 'https://serveralias.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1013,7 +1078,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1022,7 +1087,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1031,7 +1096,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'alias2.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1061,7 +1126,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://httpsonly.example.com',
         'site_url': 'http://httpsonly.example.com',
         'secure_access': 'https://httpsonly.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1069,7 +1134,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1094,7 +1159,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://customdomain.example.com',
         'site_url': 'http://customdomain.example.com',
         'secure_access': 'https://customdomain.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1102,7 +1167,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1119,7 +1184,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://customdomainsslcrtsslkey.example.com',
         'site_url': 'http://customdomainsslcrtsslkey.example.com',
         'secure_access': 'https://customdomainsslcrtsslkey.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1127,7 +1192,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('customdomainsslcrtsslkey.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1144,7 +1209,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typezope.example.com',
         'site_url': 'http://typezope.example.com',
         'secure_access': 'https://typezope.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1152,7 +1217,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     try:
@@ -1192,7 +1257,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://typezopevirtualhostroothttpport.example.com',
         'secure_access':
         'https://typezopevirtualhostroothttpport.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1220,7 +1285,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://typezopevirtualhostroothttpsport.example.com',
         'secure_access':
         'https://typezopevirtualhostroothttpsport.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1228,7 +1293,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(
@@ -1250,7 +1315,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typenotebook.nginx.example.com',
         'site_url': 'http://typenotebook.nginx.example.com',
         'secure_access': 'https://typenotebook.nginx.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1259,7 +1324,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1292,7 +1357,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typeeventsource.nginx.example.com',
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1301,7 +1366,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1334,7 +1399,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typeredirect.example.com',
         'site_url': 'http://typeredirect.example.com',
         'secure_access': 'https://typeredirect.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1342,7 +1407,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1364,7 +1429,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://sslproxyverifysslproxycacrt.example.com',
         'site_url': 'http://sslproxyverifysslproxycacrt.example.com',
         'secure_access': 'https://sslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1372,7 +1437,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     if IS_CADDY:
@@ -1441,7 +1506,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://sslproxyverifyunverified.example.com',
         'site_url': 'http://sslproxyverifyunverified.example.com',
         'secure_access': 'https://sslproxyverifyunverified.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1449,7 +1514,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1473,7 +1538,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'http://enablecachesslproxyverifysslproxycacrt.example.com',
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1481,7 +1546,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     if IS_CADDY:
@@ -1558,7 +1623,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://enablecachesslproxyverifyunverified.example.com',
         'secure_access':
         'https://enablecachesslproxyverifyunverified.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1566,7 +1631,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1589,7 +1654,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://typezopesslproxyverifysslproxycacrt.example.com',
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1597,7 +1662,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     if IS_CADDY:
@@ -1652,7 +1717,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://typezopesslproxyverifyunverified.example.com',
         'secure_access':
         'https://typezopesslproxyverifyunverified.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1660,7 +1725,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(
@@ -1680,7 +1745,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://monitoripv6test.example.com',
         'site_url': 'http://monitoripv6test.example.com',
         'secure_access': 'https://monitoripv6test.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1688,7 +1753,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(result.status_code, no_backend_response_code)
@@ -1723,7 +1788,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://monitoripv4test.example.com',
         'site_url': 'http://monitoripv4test.example.com',
         'secure_access': 'https://monitoripv4test.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1731,7 +1796,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(result.status_code, no_backend_response_code)
@@ -1766,7 +1831,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://re6stoptimaltest.example.com',
         'site_url': 'http://re6stoptimaltest.example.com',
         'secure_access': 'https://re6stoptimaltest.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1774,7 +1839,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(result.status_code, no_backend_response_code)
@@ -1810,7 +1875,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://enablecache.example.com',
         'site_url': 'http://enablecache.example.com',
         'secure_access': 'https://enablecache.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1818,7 +1883,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1902,7 +1967,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://enablecachedisablenocacherequest.example.com',
         'secure_access':
         'https://enablecachedisablenocacherequest.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1911,7 +1976,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers={'Pragma': 'no-cache', 'Cache-Control': 'something'})
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1955,7 +2020,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://enablecachedisableviaheader.example.com',
         'secure_access':
         'https://enablecachedisableviaheader.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -1963,7 +2028,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2000,7 +2065,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2008,7 +2073,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2050,7 +2115,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2058,7 +2123,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2101,7 +2166,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://prefergzipencodingtobackend.example.com',
         'secure_access':
         'https://prefergzipencodingtobackend.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2110,7 +2175,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2127,7 +2192,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       result.json()['Incoming Headers']['accept-encoding'], 'deflate')
 
-  @skipIf(IS_CADDY, 'Feature postponed')
   def test_disabled_cookie_list(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'disabled-cookie-list']
@@ -2140,7 +2204,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://disabledcookielist.example.com',
         'site_url': 'http://disabledcookielist.example.com',
         'secure_access': 'https://disabledcookielist.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2153,7 +2217,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         ))
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2185,7 +2249,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict, 'apache_custom_http_s-accepted')
     self.assertEqual(
       parameter_dict,
-      {'replication_number': '1', 'public-ipv4': utils.LOCAL_IPV4}
+      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4}
     )
 
     result = self.fakeHTTPSResult(
@@ -2193,7 +2257,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2271,7 +2335,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict, 'caddy_custom_http_s-accepted')
     self.assertEqual(
       parameter_dict,
-      {'replication_number': '1', 'public-ipv4': utils.LOCAL_IPV4}
+      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4}
     )
 
     result = self.fakeHTTPSResult(
@@ -2279,7 +2343,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2333,7 +2397,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://urlhttpsurl.example.com',
         'site_url': 'http://urlhttpsurl.example.com',
         'secure_access': 'https://urlhttpsurl.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2341,7 +2405,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path')
@@ -2357,7 +2421,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-quantity': 2,
@@ -2392,7 +2456,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2400,7 +2464,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2430,7 +2494,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
       'enable-http2-by-default': 'false',
@@ -2468,7 +2532,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2488,7 +2552,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2508,7 +2572,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2524,7 +2588,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
@@ -2561,7 +2625,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2581,7 +2645,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2601,7 +2665,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2715,7 +2779,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
@@ -2768,7 +2832,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2776,7 +2840,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqual(result.status_code, no_backend_response_code)
@@ -2830,9 +2894,9 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd.conf')).read()
 
     self.assertTrue(
-      'Listen [%s]:8196' % (utils.GLOBAL_IPV6,) in master_monitor_conf)
+      'Listen [%s]:8196' % (GLOBAL_IPV6,) in master_monitor_conf)
     self.assertTrue(
-      'Listen [%s]:8072' % (utils.GLOBAL_IPV6,) in slave_monitor_conf)
+      'Listen [%s]:8072' % (GLOBAL_IPV6,) in slave_monitor_conf)
 
 
 class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -2841,7 +2905,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': utils.LOCAL_IPV4,
+      'public-ipv4': LOCAL_IPV4,
       'enable-quic': 'true',
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
@@ -2889,7 +2953,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': utils.LOCAL_IPV4,
+        'public-ipv4': LOCAL_IPV4,
       }
     )
 
@@ -2897,7 +2961,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      utils.der2pem(result.peercert),
+      der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
     self.assertEqualResultJson(result, 'Path', '/test-path')

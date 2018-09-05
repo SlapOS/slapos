@@ -110,14 +110,17 @@
                   "title": "Scheme of HTTP service into the VM (require: kvm-name).",
                   "description": "Say If HTTP service to run/or running into the Virtual Machine will use http or https. Possible values: http, https.",
                   "type": "string",
-                  "enum": ["http", "https"],
+                  "enum": [
+                    "http",
+                    "https"
+                  ],
                   "default": "http"
                 }
               },
               "type": "object"
             }
           },
-         "type": "object"
+          "type": "object"
         }
       },
       "type": "object"
@@ -126,20 +129,23 @@
       "title": "Restrict all access to VM with firewall.",
       "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
       "type": "string",
-      "enum": ["on", "off"],
+      "enum": [
+        "on",
+        "off"
+      ],
       "default": "off"
     },
     "fw-authorized-sources": {
-        "title": "List of IP/Network address authorized to cluster.",
-        "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
-        "type": "array",
-        "optional": true
+      "title": "List of IP/Network address authorized to cluster.",
+      "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
+      "type": "array",
+      "optional": true
     },
     "fw-reject-sources": {
-        "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
-        "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
-        "type": "array",
-        "optional": true
+      "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
+      "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
+      "type": "array",
+      "optional": true
     },
     "authorized-keys": {
       "title": "Public keys for virtual machines.",
@@ -158,17 +164,17 @@
       "type": "string"
     },
     "monitor-interface-url": {
-        "title": "Monitor Web Interface URL",
-        "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
-        "type": "string",
-        "format": "uri",
-        "default": "https://monitor.app.officejs.com"
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
     },
     "monitor-cors-domains": {
-        "title": "Monitor CORS domains",
-        "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
-        "type": "string",
-        "default": "monitor.app.officejs.com"
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
     },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
@@ -187,7 +193,10 @@
               "description": "Define if SlapOS should start or stop this VM.",
               "type": "string",
               "default": "started",
-              "enum": ["started", "stopped"]
+              "enum": [
+                "started",
+                "stopped"
+              ]
             },
             "enable-device-hotplug": {
               "title": "Enable device hotplug mode",
@@ -237,7 +246,14 @@
               "description": "Type of QEMU disk drive, to create.",
               "type": "string",
               "default": "qcow2",
-              "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
+              "enum": [
+                "qcow2",
+                "raw",
+                "vdi",
+                "vmdk",
+                "cloop",
+                "qed"
+              ]
             },
             "disk-type": {
               "title": "Disk type",
@@ -259,14 +275,23 @@
               "description": "Disk cache controls how the host cache is used to access block data.",
               "type": "string",
               "default": "writeback",
-              "enum": ["none", "writeback", "unsafe", "directsync", "writethrough"]
+              "enum": [
+                "none",
+                "writeback",
+                "unsafe",
+                "directsync",
+                "writethrough"
+              ]
             },
             "disk-aio": {
               "title": "Disk aio to use.",
               "description": "Selects between pthread based disk I/O and native Linux AIO.",
               "type": "string",
               "default": "threads",
-              "enum": ["threads", "native"]
+              "enum": [
+                "threads",
+                "native"
+              ]
             },
             "cpu-count": {
               "title": "CPU count",
@@ -302,7 +327,41 @@
               "title": "Use keyboard layout language",
               "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
               "type": "string",
-              "enum": ["ar", "da", "de", "de-ch", "en-gb", "en-us", "es", "et", "fi", "fo", "fr", "fr-be", "fr-ca", "fr-ch", "hr", "hu", "is", "it", "ja", "lt", "lv", "mk", "nl", "nl-be", "no", "pl", "pt", "pt-br", "ru", "sl", "sv", "th", "tr"],
+              "enum": [
+                "ar",
+                "da",
+                "de",
+                "de-ch",
+                "en-gb",
+                "en-us",
+                "es",
+                "et",
+                "fi",
+                "fo",
+                "fr",
+                "fr-be",
+                "fr-ca",
+                "fr-ch",
+                "hr",
+                "hu",
+                "is",
+                "it",
+                "ja",
+                "lt",
+                "lv",
+                "mk",
+                "nl",
+                "nl-be",
+                "no",
+                "pl",
+                "pt",
+                "pt-br",
+                "ru",
+                "sl",
+                "sv",
+                "th",
+                "tr"
+              ],
               "default": "fr"
             },
             "nbd-host": {
@@ -366,7 +425,14 @@
               "description": "Type of QEMU disk drive, to create.",
               "type": "string",
               "default": "qcow2",
-              "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
+              "enum": [
+                "qcow2",
+                "raw",
+                "vdi",
+                "vmdk",
+                "cloop",
+                "qed"
+              ]
             },
             "wipe-disk-ondestroy": {
               "title": "Wipe disks when destroy the VM",

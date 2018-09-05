@@ -1,23 +1,23 @@
 {
-    "name": "RE6STNET",
-    "description": "Master instance of re6st (Resilient, Scalable, IPv6 Network application)",
-    "serialisation": "xml",
-    "software-type": {
-        "default": {
-            "title": "Default",
-            "description": "Re6st registry",
-            "request": "instance-re6stnet-input-schema.json",
-            "response": "instance-re6stnet-output-schema.json",
-            "index": 0
-        },
-        "default-slave": {
-            "title": "Re6st Token",
-            "description": "Re6st registry",
-            "software-type": "default",
-            "request": "instance-re6stnet-slave-input-schema.json",
-            "response": "instance-re6stnet-output-schema.json",
-            "shared": true,
-            "index": 1
-        }
+  "name": "RE6STNET",
+  "description": "Master instance of re6st (Resilient, Scalable, IPv6 Network application)",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Re6st registry",
+      "request": "instance-re6stnet-input-schema.json",
+      "response": "instance-re6stnet-output-schema.json",
+      "index": 0
+    },
+    "default-slave": {
+      "title": "Re6st Token",
+      "description": "Re6st registry",
+      "software-type": "default",
+      "request": "instance-re6stnet-slave-input-schema.json",
+      "response": "instance-re6stnet-output-schema.json",
+      "shared": true,
+      "index": 1
     }
+  }
 }

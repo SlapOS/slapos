@@ -28,35 +28,17 @@
 import unittest
 import os
 import socket
-import subprocess
 from contextlib import closing
 import logging
 import StringIO
-import json
-from BaseHTTPServer import HTTPServer
-from BaseHTTPServer import BaseHTTPRequestHandler
-
 import xmlrpclib
-import supervisor.xmlrpc
 
+import supervisor.xmlrpc
 from erp5.util.testnode.SlapOSControler import SlapOSControler
 from erp5.util.testnode.ProcessManager import ProcessManager
 
 
-LOCAL_IPV4 = os.environ['LOCAL_IPV4']
-GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
-
-
-def der2pem(der):
-  certificate, error = subprocess.Popen(
-      'openssl x509 -inform der'.split(), stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE, stderr=subprocess.PIPE
-  ).communicate(der)
-  if error:
-    raise ValueError(error)
-  return certificate
-
-
+# Utility functions
 def findFreeTCPPort(ip=''):
   """Find a free TCP port to listen to.
   """
@@ -66,7 +48,57 @@ def findFreeTCPPort(ip=''):
     return s.getsockname()[1]
 
 
+# TODO:
+#  - allow requesting multiple instances ?
+
 class SlapOSInstanceTestCase(unittest.TestCase):
+  """Install one slapos instance.
+
+  This test case install software(s) and request one instance during `setUpClass`
+  and destroy the instance during `tearDownClass`.
+
+  Software Release URL, Instance Software Type and Instance Parameters can be defined
+  on the class.
+
+  All tests from the test class will run with the same instance.
+
+  The following class attributes are available:
+
+    * `computer_partition`:  the computer partition instance, implementing
+    `slapos.slap.interface.slap.IComputerPartition`.
+
+    * `computer_partition_root_path`: the path of the instance root directory.
+
+  """
+
+  # Methods to be defined by subclasses.
+  @classmethod
+  def getSoftwareURLList(cls):
+    """Return URL of software releases to install.
+
+    To be defined by subclasses.
+    """
+    raise NotImplementedError()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    """Return instance parameters
+
+    To be defined by subclasses if they need to request instance with specific
+    parameters.
+    """
+    return {}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    """Return software type for instance, default "default"
+
+    To be defined by subclasses if they need to request instance with specific
+    software type.
+    """
+    return "default"
+
+  # Utility methods.
   def getSupervisorRPCServer(self):
     """Returns a XML-RPC connection to the supervisor used by slapos node
 
@@ -79,30 +111,52 @@ class SlapOSInstanceTestCase(unittest.TestCase):
            None,
            None,
            # XXX hardcoded socket path
-           serverurl="unix://{working_directory}/inst/supervisord.socket"
-           .format(**self.config)))
+           serverurl="unix://{working_directory}/inst/supervisord.socket".format(
+             **self.config)))
+
+  # Unittest methods
+  @classmethod
+  def setUpClass(cls):
+    """Setup the class, build software and request an instance.
+
+    If you have to override this method, do not forget to call this method on
+    parent class.
+    """
+    try:
+      cls.setUpWorkingDirectory()
+      cls.setUpConfig()
+      cls.setUpSlapOSController()
+
+      cls.runSoftwareRelease()
+      # XXX instead of "runSoftwareRelease", it would be better to be closer to slapos usage:
+      # cls.supplySoftwares()
+      # cls.installSoftwares()
+
+      cls.runComputerPartition()
+      # XXX instead of "runComputerPartition", it would be better to be closer to slapos usage:
+      # cls.requestInstances()
+      # cls.createInstances()
+      # cls.requestInstances()
+
+    except Exception:
+      cls.stopSlapOSProcesses()
+      raise
 
   @classmethod
-  def getSoftwareURLList(cls):
-    """Return URL of software releases to install.
-
-    To be defined by subclasses.
+  def tearDownClass(cls):
+    """Tear down class, stop the processes and destroy instance.
     """
-    return [os.path.realpath(os.environ['TEST_SR'])]
+    cls.stopSlapOSProcesses()
 
+  # Implementation
   @classmethod
-  def getInstanceParameterDict(cls):
-    """Return instance parameters
-
-    To be defined by subclasses if they need to request instance with specific
-    parameters.
-    """
-    return {}
-
- # TODO: allow subclasses to request a specific software type ?
+  def stopSlapOSProcesses(cls):
+    if hasattr(cls, '_process_manager'):
+      cls._process_manager.killPreviousRun()
 
   @classmethod
   def setUpWorkingDirectory(cls):
+    """Initialise the directories"""
     cls.working_directory = os.environ.get(
         'SLAPOS_TEST_WORKING_DIR',
         os.path.join(os.path.dirname(__file__), '.slapos'))
@@ -110,16 +164,18 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # AF_UNIX path too long This `working_directory` should not be too deep.
     # Socket path is 108 char max on linux
     # https://github.com/torvalds/linux/blob/3848ec5/net/unix/af_unix.c#L234-L238
+    # Supervisord socket name contains the pid number, which is why we add
+    # .xxxxxxx in this check.
     if len(cls.working_directory + '/inst/supervisord.socket.xxxxxxx') > 108:
-      raise RuntimeError(
-        'working directory ( {} ) is too deep, try setting '
-        'SLAPOS_TEST_WORKING_DIR'.format(cls.working_directory))
+      raise RuntimeError('working directory ( {} ) is too deep, try setting '
+              'SLAPOS_TEST_WORKING_DIR'.format(cls.working_directory))
 
     if not os.path.exists(cls.working_directory):
       os.mkdir(cls.working_directory)
 
   @classmethod
   def setUpConfig(cls):
+    """Create slapos configuration"""
     cls.config = {
       "working_directory": cls.working_directory,
       "slapos_directory": cls.working_directory,
@@ -130,7 +186,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       # "proper" slapos command must be in $PATH
       'slapos_binary': 'slapos',
     }
-    ipv4_address = LOCAL_IPV4
+    # Some tests are expecting that local IP is not set to 127.0.0.1
+    ipv4_address = os.environ.get('LOCAL_IPV4', '127.0.1.1')
     ipv6_address = os.environ['GLOBAL_IPV6']
 
     cls.config['proxy_host'] = cls.config['ipv4_address'] = ipv4_address
@@ -141,6 +198,15 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
   @classmethod
   def setUpSlapOSController(cls):
+    """Create the a "slapos controller" and supply softwares from `getSoftwareURLList`.
+
+    This is equivalent to:
+
+    slapos proxy start
+    for sr in getSoftwareURLList; do
+      slapos supply $SR $COMP
+    done
+    """
     cls._process_manager = ProcessManager()
 
     # XXX this code is copied from testnode code
@@ -160,12 +226,21 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         reset_software=False,
         software_path_list=cls.software_url_list)
 
+    # XXX we should check *earlier* if that pidfile exist and if supervisord
+    # process still running, because if developer started supervisord (or bugs?)
+    # then another supervisord will start and starting services a second time
+    # will fail.
     cls._process_manager.supervisord_pid_file = os.path.join(
       cls.slapos_controler.instance_root, 'var', 'run', 'supervisord.pid')
 
   @classmethod
   def runSoftwareRelease(cls):
+    """Run all the software releases that were supplied before.
 
+    This is the equivalent of `slapos node software`.
+
+    The tests will be marked file if software building fail.
+    """
     logger = logging.getLogger()
     logger.level = logging.DEBUG
     stream = StringIO.StringIO()
@@ -183,13 +258,28 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       logger.removeHandler(stream_handler)
       del stream
 
+
   @classmethod
   def runComputerPartition(cls):
+    """Instanciate the software.
+
+    This is the equivalent of doing:
+
+    slapos request --type=getInstanceSoftwareType --parameters=getInstanceParameterDict
+    slapos node instance
+
+    and return the slapos request instance parameters.
+
+    This can be called by tests to simulate re-request with different parameters.
+    """
     logger = logging.getLogger()
     logger.level = logging.DEBUG
     stream = StringIO.StringIO()
     stream_handler = logging.StreamHandler(stream)
     logger.addHandler(stream_handler)
+
+    if cls.getInstanceSoftwareType() != 'default':
+      raise NotImplementedError
 
     instance_parameter_dict = cls.getInstanceParameterDict()
     try:
@@ -221,53 +311,11 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     # the ComputerPartition instances, to getInstanceParameterDict
     cls.computer_partition = computer_partition_list[0]
 
-    # expose instance directory
-    cls.instance_path = os.path.join(
-        cls.config['working_directory'],
-        'inst')
     # the path of the instance on the filesystem, for low level inspection
     cls.computer_partition_root_path = os.path.join(
-        cls.instance_path,
+        cls.config['working_directory'],
+        'inst',
         cls.computer_partition.getId())
-    # expose software directory, extract from found computer partition
-    cls.software_path = os.path.realpath(os.path.join(
-      cls.computer_partition_root_path, 'software_release'))
-
-  @classmethod
-  def setUpClass(cls):
-    try:
-      cls.setUpWorkingDirectory()
-      cls.setUpConfig()
-      cls.setUpSlapOSController()
-      cls.runSoftwareRelease()
-      cls.runComputerPartition()
-    except Exception:
-      cls.tearDownClass()
-      raise
-
-  @classmethod
-  def tearDownClass(cls):
-    if getattr(cls, '_process_manager', None) is not None:
-      cls._process_manager.killPreviousRun()
 
 
-class TestHandler(BaseHTTPRequestHandler):
-  def do_GET(self):
-    self.send_response(200)
-    self.send_header("Content-type", "application/json")
-    self.send_header('Set-Cookie', 'secured=value;secure')
-    self.send_header('Set-Cookie', 'nonsecured=value')
-    self.end_headers()
-    response = {
-      'Path': self.path,
-      'Incoming Headers': self.headers.dict
-    }
-    self.wfile.write(json.dumps(response, indent=2))
 
-
-if __name__ == '__main__':
-  ip = LOCAL_IPV4
-  port = 8888
-  server = HTTPServer((ip, port), TestHandler)
-  print 'http://%s:%s' % server.server_address
-  server.serve_forever()

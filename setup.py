@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.66'
+version = '1.0.75'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -160,9 +160,11 @@ setup(name=name,
           'readline = slapos.recipe.readline:Recipe',
           'redis.server = slapos.recipe.redis:Recipe',
           'request = slapos.recipe.request:Recipe',
-          'request.serialised = slapos.recipe.request:Serialised',
+          'request.serialised = slapos.recipe.request:RequestJSONEncoded',
           'request.edge = slapos.recipe.request:RequestEdge',
           'requestoptional = slapos.recipe.request:RequestOptional',
+          'requestoptional.serialised = '
+          'slapos.recipe.request:RequestOptionalJSONEncoded',
           're6stnet.registry = slapos.recipe.re6stnet:Recipe',
           'reverseproxy.nginx = slapos.recipe.reverse_proxy_nginx:Recipe',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
@@ -208,5 +210,6 @@ setup(name=name,
       tests_require=[
         'jsonschema',
         'mock',
+        'testfixtures',
       ],
     )
