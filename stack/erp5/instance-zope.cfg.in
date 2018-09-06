@@ -90,10 +90,10 @@ context =
     key password test-zelenium-runner-parameter:password
     key bin_path test-zelenium-runner-parameter:bin-path
 {% else -%}
-{% if test_runner_enabled and test_runner_node_count -%}
-{% for _ in range(test_runner_node_count) %}
-{%   do test_runner_address_list.append((ipv4, next_port())) %}
-{% endfor %}
+{%   if test_runner_enabled and test_runner_node_count -%}
+{%   for _ in range(test_runner_node_count) %}
+{%     do test_runner_address_list.append((ipv4, next_port())) %}
+{%   endfor %}
 
 [{{ section('run-unit-test-userhosts-wrapper') }}]
 <= userhosts-wrapper-base
@@ -105,19 +105,19 @@ wrapper-path = ${buildout:bin-directory}/runUnitTest
 wrapped-command-line = ${runTestSuite:wrapper-path}
 wrapper-path = ${buildout:bin-directory}/runTestSuite
 
-{% set connection_string_list = [] -%}
-{% for url in slapparameter_dict['mysql-test-url-list'] -%}
-{%   set parsed_url = urlparse.urlparse(url) -%}
-{%   do connection_string_list.append(
-       '%s@%s:%s %s %s' % (
-         parsed_url.path.lstrip('/'),
-         parsed_url.hostname,
-         parsed_url.port,
-         parsed_url.username,
-         parsed_url.password,
-       ),
-     ) -%}
-{% endfor -%}
+{%   set connection_string_list = [] -%}
+{%   for url in slapparameter_dict['mysql-test-url-list'] -%}
+{%     set parsed_url = urlparse.urlparse(url) -%}
+{%     do connection_string_list.append(
+         '%s@%s:%s %s %s' % (
+           parsed_url.path.lstrip('/'),
+           parsed_url.hostname,
+           parsed_url.port,
+           parsed_url.username,
+           parsed_url.password,
+         ),
+       ) -%}
+{%   endfor -%}
 [run-test-common]
 < = run-common
 environment-extra =
@@ -170,7 +170,7 @@ expected-not-value = not-ready
 path = ${directory:promises}/${:_buildout_section_name_}
 expected-value =
 
-{%- endif %}
+{%-   endif %}
 {%- endif %}
 
 [directory]
