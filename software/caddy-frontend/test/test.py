@@ -3042,6 +3042,10 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'server-alias-unsafe': {
         'server-alias': '${section:option} afterspace',
       },
+      'server-alias-same': {
+        'url': cls.backend_url,
+        'server-alias': 'serveraliassame.example.com',
+      },
       'virtualhostroot-http-port-unsafe': {
         'type': 'zope',
         'url': cls.backend_url,
@@ -3076,9 +3080,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '7',
+      'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
-      'slave-amount': '10',
+      'slave-amount': '11',
       'rejected-slave-list':
       '["_server-alias-unsafe", "_custom_domain-unsafe", '
       '"_ssl_key-ssl_crt-unsafe"]'}
@@ -3087,6 +3091,31 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       expected_parameter_dict,
       parameter_dict
     )
+
+  def test_server_alias_same(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-same']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-same')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'serveraliassame.example.com',
+        'replication_number': '1',
+        'url': 'http://serveraliassame.example.com',
+        'site_url': 'http://serveraliassame.example.com',
+        'secure_access': 'https://serveraliassame.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_re6st_optimal_test_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
