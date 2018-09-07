@@ -93,3 +93,6 @@ no_auto_rehash
 
 [mysqlhotcopy]
 interactive_timeout
+
+[mysqldump]
+max_allowed_packet = 128M
