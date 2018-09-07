@@ -238,6 +238,11 @@ if disk_storage_dict:
         print('Data folder %s was not used to create external disk %r' % (index +1))
       index += 1
 
+additional_disk_options = ''
+
+if disk_aio == 'native':
+  additional_disk_options += ',cache.direct=on'
+
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
@@ -293,7 +298,8 @@ else:
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),
+  '-drive', 'file=%s,if=%s,cache=%s,aio=%s%s' % (disk_path, disk_type, disk_cache,
+                                                 disk_aio, additional_disk_options),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server' % socket_path,
