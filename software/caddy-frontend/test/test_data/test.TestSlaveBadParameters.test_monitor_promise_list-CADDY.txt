@@ -11,6 +11,8 @@ TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-nocomma-e
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-unsafe-error-log-last-day
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-unsafe-error-log-last-hour
 TestSlaveBadParameters-1/etc/monitor-promise/check-_re6st-optimal-test-unsafe-re6st-optimal-test
+TestSlaveBadParameters-1/etc/monitor-promise/check-_server-alias-same-error-log-last-day
+TestSlaveBadParameters-1/etc/monitor-promise/check-_server-alias-same-error-log-last-hour
 TestSlaveBadParameters-1/etc/monitor-promise/check-_virtualhostroot-http-port-unsafe-error-log-last-day
 TestSlaveBadParameters-1/etc/monitor-promise/check-_virtualhostroot-http-port-unsafe-error-log-last-hour
 TestSlaveBadParameters-1/etc/monitor-promise/check-_virtualhostroot-https-port-unsafe-error-log-last-day

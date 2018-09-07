@@ -1,7 +1,12 @@
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
 {%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
-{%- set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
+{%- set host_list = [] %}
+{%- for host in [slave_parameter.get('custom_domain')] + server_alias_list %}
+{%-   if host not in host_list %}
+{%-     do host_list.append(host) %}
+{%-   endif %}
+{%- endfor %}
 {%- set http_backend_host_list = [] %}
 {%- set https_backend_host_list = [] %}
 {%- for host in host_list %}
