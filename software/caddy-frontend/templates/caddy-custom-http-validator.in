@@ -1,0 +1,4 @@
+#!${dash:location}/bin/dash
+config="$1"
+
+echo -e $config | ${caddy:output} -conf stdin -validate > /dev/null 2>&1
