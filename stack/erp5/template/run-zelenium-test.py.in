@@ -146,9 +146,16 @@ def main():
     ) - 1 # First child is the file name
 
     # Wait for test to be executed
-    WebDriverWait(browser, args.max_duration).until(EC.presence_of_element_located((
-      By.XPATH, '//td[@id="testRuns" and contains(text(), "%i")]' % test_count
-    )))
+    while 1:
+      try:
+        WebDriverWait(browser, args.max_duration).until(EC.presence_of_element_located((
+          By.XPATH, '//td[@id="testRuns" and contains(text(), "%i")]' % test_count
+        )))
+        break
+      except TimeoutException as error:
+        raise error
+      except Exception:
+        traceback.print_exc()
   except:
     test_line_dict['UnexpectedException'] = {
       'test_count': 1,
