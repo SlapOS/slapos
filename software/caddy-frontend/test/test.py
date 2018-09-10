@@ -3015,8 +3015,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': LOCAL_IPV4,
       'apache-certificate': open('wildcard.example.com.crt').read(),
       'apache-key': open('wildcard.example.com.key').read(),
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
+      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -3029,6 +3028,16 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
+      'caddy_custom_http_s-reject': {
+        'caddy_custom_https': """DestroyCaddyHttps
+For sure
+This shall not be valid
+https://www.google.com {}""",
+        'caddy_custom_http': """DestroyCaddyHttp
+For sure
+This shall not be valid
+https://www.google.com {}""",
+      },
       're6st-optimal-test-nocomma': {
         're6st-optimal-test': 'nocomma',
       },
@@ -3081,11 +3090,11 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '8',
-      'rejected-slave-amount': '3',
-      'slave-amount': '11',
+      'rejected-slave-amount': '4',
+      'slave-amount': '12',
       'rejected-slave-list':
-      '["_server-alias-unsafe", "_custom_domain-unsafe", '
-      '"_ssl_key-ssl_crt-unsafe"]'}
+      '["_caddy_custom_http_s-reject", "_ssl_key-ssl_crt-unsafe", '
+      '"_custom_domain-unsafe", "_server-alias-unsafe"]'}
 
     self.assertEqual(
       expected_parameter_dict,
@@ -3391,6 +3400,14 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_ssl_key_ssl_crt_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl_key-ssl_crt-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+  def test_caddy_custom_http_s_reject(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'caddy_custom_http_s-reject']
     self.assertEqual(
       parameter_dict,
       {}

@@ -161,9 +161,13 @@ caddy_custom_https
 ~~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
 
+*Note*: The system will reject slaves which does not pass validation of caddy configuration, despite them being in ``-frontend-authorized-slave-string``, as otherwise this will lead to the whole frontend to fail.
+
 caddy_custom_http
 ~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
+
+*Note*: The system will reject slaves which does not pass validation of caddy configuration, despite them being in ``-frontend-authorized-slave-string``, as otherwise this will lead to the whole frontend to fail.
 
 url
 ~~~
