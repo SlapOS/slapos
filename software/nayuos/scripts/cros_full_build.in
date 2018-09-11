@@ -123,9 +123,9 @@ if [ $line_number ] ; then
 fi
 
 # add some ebuilds, specific to NayuOS
-for category in $( ls {{ ebuilds_dir }} ); do
+for category in {{ nayu_dev_packages }} {{nayu_dev_rootfs_packages }}; do
   echo ${category}
-  cp -R "{{ ebuilds_dir }}/${category}/"* "${CHROMIUM_OVERLAY}/${category}/"
+  cp -R "{{ ebuilds_dir }}/${category}" $(dirname "${CHROMIUM_OVERLAY}/${category}/")
 done
 
 install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
@@ -323,7 +323,7 @@ for board in ${BOARDS} ; do
   NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
   # rebuild packages with boot pictures
-  cros_sdk --nouse-image-- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS images
   date >> "${BUILD_LOG}"
