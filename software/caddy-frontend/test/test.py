@@ -262,7 +262,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-list': '[]'},
+        'rejected-slave-dict': '{}'},
       parameter_dict
     )
 
@@ -296,7 +296,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-list': '[]'
+        'rejected-slave-dict': '{}'
       },
       parameter_dict
     )
@@ -727,8 +727,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'accepted-slave-amount': '33',
       'rejected-slave-amount': '2',
       'slave-amount': '35',
-      'rejected-slave-list':
-      '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'}
+      'rejected-slave-dict':
+      '{"_apache_custom_http_s-rejected": ["slave not authorised"], '
+      '"_caddy_custom_http_s-rejected": ["slave not authorised"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -2638,7 +2640,11 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
       'slave-amount': '3',
-      'rejected-slave-list': '["_url", "_https-url"]'}
+      'rejected-slave-dict':
+      '{"_https-url": ["slave https-url \\"https://[fd46::c2ae]:!py!u\'123123'
+      '\'\\" invalid"], "_url": ["slave url \\"https://[fd46::c2ae]:!py!u\''
+      '123123\'\\" invalid"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -2917,9 +2923,15 @@ https://www.google.com {}""",
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '4',
       'slave-amount': '12',
-      'rejected-slave-list':
-      '["_caddy_custom_http_s-reject", "_ssl_key-ssl_crt-unsafe", '
-      '"_custom_domain-unsafe", "_server-alias-unsafe"]'}
+      'rejected-slave-dict':
+      '{"_caddy_custom_http_s-reject": ["slave caddy_custom_http '
+      'configuration invalid", "slave caddy_custom_https configuration '
+      'invalid"], "_server-alias-unsafe": ["server-alias \'${section:option}\''
+      ' not valid", "server-alias \'afterspace\' not valid"], '
+      '"_custom_domain-unsafe": ["custom_domain \'${section:option} '
+      'afterspace\\\\nafternewline\' invalid"], "_ssl_key-ssl_crt-unsafe": '
+      '["slave ssl_key and ssl_crt does not match"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -3286,7 +3298,11 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
-      'rejected-slave-list': '["_site_3", "_site_1", "_site_4"]'}
+      'rejected-slave-dict':
+      '{"_site_4": ["custom_domain clashes", "server-alias '
+      '\'duplicate.example.com\' clashes"], "_site_1": '
+      '["custom_domain clashes"], "_site_3": ["server-alias '
+      '\'duplicate.example.com\' clashes"]}'}
 
     self.assertEqual(
       expected_parameter_dict,
