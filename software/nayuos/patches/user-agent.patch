@@ -1,0 +1,14 @@
+diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
+index cbe93f471..bd72cbb09 100644
+--- a/login_manager/chrome_setup.cc
++++ b/login_manager/chrome_setup.cc
+@@ -341,6 +341,9 @@ void AddSystemFlags(ChromiumCommandBuilder* builder) {
+   // On developer systems, set a flag to let the browser know.
+   if (builder->is_developer_end_user())
+     builder->AddArg("--system-developer-mode");
++  //Modify user agent to improve anonimity by preventing fingerprinting
++  const char* useragent = "$USERAGENTSTRING"
++  builder->AddArg(base::StringPrintf("--user-agent=%s",useragent))
+ }
+ 
+ // Adds UI-related flags to the command line.

@@ -152,6 +152,11 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init)
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
+# modify user agent to improve anonimity by preventing fingerprinting
+# TODO: scrape https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
+NEWUSERAGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36"
+sed -i "s!\$USERAGENTSTRING!${NEWUSERAGENT}!" {{patches_dir}}/user-agent.patch
+patch {{ cros_location }}/{{ branch }}/src/platform2/login_manager/chrome_setup.cc {{patches_dir}}/user-agent.patch
 
 # bashrc modifications
 BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
