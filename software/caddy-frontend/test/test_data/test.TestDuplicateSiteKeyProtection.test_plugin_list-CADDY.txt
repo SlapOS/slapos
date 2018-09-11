@@ -1,0 +1,8 @@
+TestDuplicateSiteKeyProtection-0/etc/plugin/__init__.py
+TestDuplicateSiteKeyProtection-0/etc/plugin/buildout-TestDuplicateSiteKeyProtection-0-status.py
+TestDuplicateSiteKeyProtection-0/etc/plugin/check-free-disk-space.py
+TestDuplicateSiteKeyProtection-0/etc/plugin/monitor-bootstrap-status.py
+TestDuplicateSiteKeyProtection-1/etc/plugin/__init__.py
+TestDuplicateSiteKeyProtection-1/etc/plugin/buildout-TestDuplicateSiteKeyProtection-1-status.py
+TestDuplicateSiteKeyProtection-1/etc/plugin/check-free-disk-space.py
+TestDuplicateSiteKeyProtection-1/etc/plugin/monitor-bootstrap-status.py

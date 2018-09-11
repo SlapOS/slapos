@@ -3412,3 +3412,74 @@ https://www.google.com {}""",
       parameter_dict,
       {}
     )
+
+
+class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': LOCAL_IPV4,
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'site_1': {
+        'custom_domain': 'duplicate.example.com',
+      },
+      'site_2': {
+        'custom_domain': 'duplicate.example.com',
+      },
+      'site_3': {
+        'server-alias': 'duplicate.example.com',
+      },
+      'site_4': {
+        'custom_domain': 'duplicate.example.com',
+        'server-alias': 'duplicate.example.com',
+      },
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '1',
+      'rejected-slave-amount': '3',
+      'slave-amount': '4',
+      'rejected-slave-list': '["_site_3", "_site_1", "_site_4"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_site_2(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_2']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'site_2')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'duplicate.example.com',
+        'replication_number': '1',
+        'url': 'http://duplicate.example.com',
+        'site_url': 'http://duplicate.example.com',
+        'secure_access': 'https://duplicate.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
