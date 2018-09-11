@@ -3327,11 +3327,10 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'rejected-slave-amount': '3',
       'slave-amount': '4',
       'rejected-slave-dict':
-      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes", '
-      '"server-alias \'duplicate.example.com\' clashes"], "_site_1": '
-      '["custom_domain \'duplicate.example.com\' clashes"], "_site_3": '
-      '["server-alias \'duplicate.example.com\' clashes"]}'
-    }
+      '{"_site_4": ["custom_domain clashes", "server-alias '
+      '\'duplicate.example.com\' clashes"], "_site_1": '
+      '["custom_domain clashes"], "_site_3": ["server-alias '
+      '\'duplicate.example.com\' clashes"]}'}
 
     self.assertEqual(
       expected_parameter_dict,
