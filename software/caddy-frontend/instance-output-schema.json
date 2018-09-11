@@ -26,12 +26,12 @@
       "description": "User to access the monitor",
       "type": "string"
     },
-    "reject-slave-amount": {
+    "rejected-slave-amount": {
       "description": "Rejected Amount of Slaves allocated to the Instance which are not deployed",
       "type": "integer"
     },
-    "rejected-slave-list": {
-      "description": "List of slave instances references which are rejected",
+    "rejected-slave-dict": {
+      "description": "Dict of slaves which were rejected. Keys are slave references, values are lists of errors on slaves.",
       "type": "array"
     },
     "slave-amount": {
