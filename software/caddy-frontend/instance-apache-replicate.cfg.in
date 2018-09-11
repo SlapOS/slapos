@@ -67,9 +67,29 @@ context =
 {% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_list = [] %}
+{% set used_host_list = [] %}
 {% for slave in slave_instance_list %}
 {%   set slave_dict = {'state': True} %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
+{%   set custom_domain = slave.get('custom_domain') %}
+{%   if custom_domain and custom_domain in used_host_list %}
+{%      do slave_dict.__setitem__('state', False) %}
+{%   else %}
+{%      do used_host_list.append(custom_domain) %}
+{%   endif %}
+{%   if slave.get('server-alias') %}
+{%     for slave_alias in slave['server-alias'].split() %}
+{%       if not validators.domain(slave_alias) %}
+{%         do slave_dict.__setitem__('state', False) %}
+{%       else %}
+{%         if slave_alias in used_host_list %}
+{%           do slave_dict.__setitem__('state', False) %}
+{%         else %}
+{%           do used_host_list.append(slave_alias) %}
+{%         endif %}
+{%       endif %}
+{%     endfor %}
+{%   endif %}
 {%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
 {%     if slave.get(key) %}
 {%       if not slave.get('slave_reference') in authorized_slave_string %}
@@ -102,13 +122,6 @@ context =
 {%     if not validators.domain(slave['custom_domain']) %}
 {%       do slave_dict.__setitem__('state', False) %}
 {%     endif %}
-{%   endif %}
-{%   if slave.get('server-alias') %}
-{%     for slave_alias in slave['server-alias'].split() %}
-{%       if not validators.domain(slave_alias) %}
-{%         do slave_dict.__setitem__('state', False) %}
-{%       endif %}
-{%     endfor %}
 {%   endif %}
 {%   if slave_dict['state'] %}
 {%     do authorized_slave_list.append(slave) %}
