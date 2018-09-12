@@ -27,6 +27,13 @@
 {%   endfor %}
 {% endfor %}
 
+{% for slave_reference, rejected_info_list in rejected_slave_information.iteritems() %}
+{%   if slave_reference not in slave_information_dict %}
+{%     do slave_information_dict.__setitem__(slave_reference, {}) %}
+{%   endif %}
+{%   do slave_information_dict[slave_reference].__setitem__('request-error-list', rejected_info_list) %}
+{% endfor %}
+
 # Publish information for each slave
 {% for slave_reference, slave_information in slave_information_dict.iteritems() %}
 {%   set publish_section_title = 'publish-%s' % slave_reference %}
@@ -34,9 +41,12 @@
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
-log-access-url = {{ json_module.dumps(slave_information.pop('log-access-urls', 1000)) }}
+{% set log_access_url = slave_information.pop('log-access-urls', None) %}
+{% if log_access_url %}
+log-access-url = {{ dumps(json_module.dumps(log_access_url)) }}
+{% endif %}
 {%   for key, value in slave_information.iteritems() %}
-{{ key }} = {{ value }}
+{{ key }} = {{ dumps(value) }}
 {%   endfor %}
 {% endfor %}
 
