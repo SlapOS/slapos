@@ -118,6 +118,8 @@ server {
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
   location {{ path }} {
+    # Set CORS header
+    add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
     {{ 'gzip off;' if cfg_https else ''}}
