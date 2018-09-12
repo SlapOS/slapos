@@ -279,6 +279,7 @@ recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
 # NOTE $HOME needed to pick gitconfig
 environment  =
+    PATH = {{ node_bin_location }}:$PATH
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
     HOME = ${directory:home}
     RAILS_ENV = production
@@ -359,14 +360,15 @@ update-command =
 <= work-base
 software = {{ gitlab_repository_location }}
 tune-command =
-# secret* tmp/ log/ shared/ builds/
+# secret* tmp/ log/ shared/ builds/ node_modules/
     rm -f .secret  &&
-    rm -rf log tmp shared builds  &&
+    rm -rf log tmp shared builds node_modules  &&
     ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
     ln -sf ${gitlab:log} log  &&
     ln -sf ${gitlab:tmp} tmp  &&
     ln -sf ${gitlab:shared} shared  &&
     ln -sf ${gitlab:builds} builds  &&
+    ln -sf {{ gitlab_repository_location }}/node_modules node_modules &&
 # config/
     cd config  &&
     ln -sf ${unicorn.rb:rendered} unicorn.rb  &&
@@ -517,6 +519,7 @@ command-line    = {{ gitlab_workhorse }}
     -listenAddr ${gitlab-workhorse:socket}
     -authSocket ${unicorn:socket}
     -documentRoot ${gitlab-work:location}/public
+    -secretPath ${gitlab-work:location}/.gitlab_workhorse_secret
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -534,7 +537,9 @@ depend  =
 
 [promise-gitlab-workhorse]
 <= promise-byurl
-url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/static.css
+# http://localhost/users/statics.css will not redirect to /users/sign_in anymore because of this commit:
+#  https://lab.nexedi.com/nexedi/gitlab-workhorse/commit/c81f109a62fecf2a847fb17ceed012b380dab49f#c1215002e6d745f05eaaf9ee1dad7752e85d866f_318_331
+url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -645,15 +650,7 @@ command-line    =
     -c ${instance-parameter:configuration.sidekiq_concurrency}
     -L ${sidekiq:log}/sidekiq.log
 
-    -q post_receive
-    -q mailers
-    -q archive_repo
-    -q system_hook
-    -q project_web_hook
-    -q gitlab_shell
-    -q incoming_email
-    -q common
-    -q default
+    -C ${gitlab-work:location}/config/sidekiq_queues.yml
 
 depend  =
     ${promise-sidekiq:recipe}
@@ -731,7 +728,7 @@ depend  =
 <= promise-byurl
 # XXX this depends on gitlab-workhorse being up
 #     (nginx is configured to proxy all requests to gitlab-workhorse)
-url     = ${backend-info:url}/static.css
+url     = ${backend-info:url}/users/sign_in
 
 [logrotate-entry-nginx]
 <= logrotate-entry
@@ -849,6 +846,6 @@ rake    = ${gitlab-rake:wrapper-path}
 update-command = ${:command}
 
 command =
-    ${:rake} assets:clean  &&
-    ${:rake} assets:precompile  &&
+    ${:rake} gitlab:assets:clean  &&
+    ${:rake} gitlab:assets:compile  &&
     true

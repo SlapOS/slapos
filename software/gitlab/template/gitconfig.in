@@ -11,6 +11,9 @@
 # besides it packs better with 1 thread
 [pack]
         threads = 1
+# Configure Git to generate packfile bitmaps
+[repack]
+        writeBitmaps = true
 
 # don't allow corrupt/broken objects to go in
 [receive]

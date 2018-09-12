@@ -43,7 +43,7 @@ context =
     raw git_location                ${git:location}
     raw gitlab_export               ${gitlab-export:rendered}
     raw gitlab_workhorse            ${gitlab-workhorse:location}/gitlab-workhorse
-    raw gopath_bin                  ${gopath:bin}
+    raw gopath_bin                  ${gowork:bin}
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw grep_location               ${grep:location}
     raw gzip_bin                    ${gzip:location}/bin/gzip
@@ -51,6 +51,7 @@ context =
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
     raw nginx_bin                   ${nginx-output:nginx}
     raw nginx_mime_types            ${nginx-output:mime}
+    raw node_bin_location           ${nodejs-8.6.0:location}/bin/
     raw openssl_bin                 ${openssl-output:openssl}
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
