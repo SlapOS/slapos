@@ -194,6 +194,11 @@ replicate = ${dynamic-publish-slave-information:rendered}
 custom-personal = ${dynamic-publish-slave-information:rendered}
 custom-group = ${dynamic-publish-slave-information:rendered}
 
+[rejected-slave-information]
+{% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
+{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list)) }}
+{% endfor %}
+
 [slave-information]
 {% for frontend_section in frontend_section_list %}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
@@ -206,6 +211,7 @@ filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
+    section rejected_slave_information rejected-slave-information
 
 [monitor-conf-parameters]
 monitor-url-list +=

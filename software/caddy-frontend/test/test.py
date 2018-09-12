@@ -2069,7 +2069,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_apache_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'apache_custom_http_s-rejected']
-    self.assertEqual({}, parameter_dict)
+    self.assertEqual(
+      {
+        'request-error-list': '["slave not authorised"]'
+      },
+      parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
     # no configuration file contains provided custom http
@@ -2143,7 +2147,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_caddy_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-rejected']
-    self.assertEqual({}, parameter_dict)
+    self.assertEqual(
+      {
+        'request-error-list': '["slave not authorised"]'
+      },
+      parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
     # no configuration file contains provided custom http
@@ -2680,14 +2688,22 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
     self.assertEqual(
-      parameter_dict, {}
+      parameter_dict,
+      {
+        'request-error-list': '["slave url \\"https://[fd46::c2ae]:!py!'
+        'u\'123123\'\\" invalid"]'
+      }
     )
 
   def test_https_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'https-url'].copy()
     self.assertEqual(
-      parameter_dict, {}
+      parameter_dict,
+      {
+        'request-error-list': '["slave https-url \\"https://[fd46::c2ae]:'
+        '!py!u\'123123\'\\" invalid"]'
+      }
     )
 
 
@@ -3048,7 +3064,11 @@ https://www.google.com {}""",
       'custom_domain-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["custom_domain \'${section:option} afterspace\\\\nafternewline\' '
+        'invalid"]'
+      }
     )
 
   def test_server_alias_unsafe(self):
@@ -3056,7 +3076,11 @@ https://www.google.com {}""",
       'server-alias-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["server-alias \'${section:option}\' not valid", "server-alias '
+        '\'afterspace\' not valid"]'
+      }
     )
 
   def test_virtualhostroot_http_port_unsafe(self):
@@ -3239,7 +3263,7 @@ https://www.google.com {}""",
       'ssl_key-ssl_crt-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {'request-error-list': '["slave ssl_key and ssl_crt does not match"]'}
     )
 
   def test_caddy_custom_http_s_reject(self):
@@ -3247,7 +3271,11 @@ https://www.google.com {}""",
       'caddy_custom_http_s-reject']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["slave caddy_custom_http configuration invalid", '
+        '"slave caddy_custom_https configuration invalid"]'
+      }
     )
 
 
@@ -3299,14 +3327,26 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'rejected-slave-amount': '3',
       'slave-amount': '4',
       'rejected-slave-dict':
-      '{"_site_4": ["custom_domain clashes", "server-alias '
-      '\'duplicate.example.com\' clashes"], "_site_1": '
-      '["custom_domain clashes"], "_site_3": ["server-alias '
-      '\'duplicate.example.com\' clashes"]}'}
+      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes", '
+      '"server-alias \'duplicate.example.com\' clashes"], "_site_1": '
+      '["custom_domain \'duplicate.example.com\' clashes"], "_site_3": '
+      '["server-alias \'duplicate.example.com\' clashes"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
       parameter_dict
+    )
+
+  def test_site_1(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_1']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["custom_domain \'duplicate.example.com\' clashes"]'
+      }
     )
 
   def test_site_2(self):
@@ -3322,5 +3362,28 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
         'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+  def test_site_3(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_3']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["server-alias \'duplicate.example.com\' clashes"]'
+      }
+    )
+
+  def test_site_4(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_4']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["custom_domain \'duplicate.example.com\' clashes", "server-alias '
+        '\'duplicate.example.com\' clashes"]'
       }
     )
