@@ -53,6 +53,7 @@ production: &base
     email_from:         {{ cfg('email_from') }}
     email_display_name: {{ cfg('email_display_name') }}
     email_reply_to:     {{ cfg('email_reply_to') }}
+    email_subject_suffix: ''
 
     # Email server smtp settings are in [a separate file](initializers/smtp_settings.rb.sample).
 
@@ -93,14 +94,15 @@ production: &base
     {# default is just ok
     ## Repository downloads directory
     # When a user clicks e.g. 'Download zip' on a project, a temporary zip file is created in the following directory.
-    # The default is 'tmp/repositories' relative to the root of the Rails app.
+    # The default is 'shared/cache/archive/' relative to the root of the Rails app.
+    # repository_downloads_path: shared/cache/archive/
     repository_downloads_path: <%= @gitlab_repository_downloads_path %>
     #}
 
   {# we do not support reply by email
   ## Reply by email
   # Allow users to comment on issues and merge requests by replying to notification emails.
-  # For documentation on how to set this up, see http://doc.gitlab.com/ce/incoming_email/README.html
+  # For documentation on how to set this up, see http://doc.gitlab.com/ce/administration/reply_by_email.html
   incoming_email:
     enabled: <%= @incoming_email_enabled %>
 
@@ -126,6 +128,8 @@ production: &base
 
     # The mailbox where incoming mail will end up. Usually "inbox".
     mailbox: <%= single_quote(@incoming_email_mailbox_name) %>
+    # The IDLE command timeout.
+    idle_timeout: 60
   #}
 
   {# we do not support build artifacts
@@ -384,6 +388,15 @@ production: &base
     path: /dev/null
     timeout: 0
 
+  ## Repositories settings
+  repositories:
+    # Paths where repositories can be stored. Give the canonicalized absolute pathname.
+    # IMPORTANT: None of the path components may be symlink, because
+    # gitlab-shell invokes Dir.pwd inside the repository path and that results
+    # real path not the symlink.
+    storages: # You must have at least a `default` storage path.
+      default: {{ gitlab.repositories }}
+
   ## Backup settings
   backup:
     path: "{{ gitlab.backup }}"   # Relative paths are relative to Rails.root (default: tmp/backups/)
@@ -403,7 +416,6 @@ production: &base
       multipart_chunk_size: <%= @backup_multipart_chunk_size %>
       encryption: <%= @backup_encryption %>
       #}
-
 
   ## GitLab Shell settings
   gitlab_shell:
@@ -494,6 +506,9 @@ test:
     # user: YOUR_USERNAME
   satellites:
     path: tmp/tests/gitlab-satellites/
+  repositories:
+    storages:
+      default: tmp/tests/repositories/
   gitlab_shell:
     path: tmp/tests/gitlab-shell/
     repos_path: tmp/tests/repositories/
