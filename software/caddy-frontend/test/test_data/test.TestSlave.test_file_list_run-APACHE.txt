@@ -1,7 +1,0 @@
-TestSlave-0/var/run/monitor/monitor-bootstrap.pid
-TestSlave-1/var/run/apache_configuration.signature
-TestSlave-1/var/run/httpd.pid
-TestSlave-1/var/run/monitor-httpd.pid
-TestSlave-1/var/run/monitor/monitor-bootstrap.pid
-TestSlave-1/var/run/napache_configuration.signature
-TestSlave-1/var/run/nginx.pid

@@ -1,6 +1,5 @@
 Generally things to be done with ``caddy-frontend``:
 
- * tests: drop APACHE switches, as it is not taken care anymore
  * tests: add assertion with results of promises in etc/promise for each partition
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``

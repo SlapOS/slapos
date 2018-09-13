@@ -1,7 +1,0 @@
-TestEnableHttp2ByDefaultFalseSlave-0/var/run/monitor/monitor-bootstrap.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/apache_configuration.signature
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/httpd.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/monitor-httpd.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/monitor/monitor-bootstrap.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/napache_configuration.signature
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx.pid
