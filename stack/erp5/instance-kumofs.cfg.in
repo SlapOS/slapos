@@ -12,6 +12,7 @@ parts +=
   promise-kumofs-server-listen
   promise-kumofs-gateway
   promise-kumofs-manager
+  monitor-check-computer-memory
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
@@ -108,6 +109,11 @@ port = ${kumofs-instance:gateway-port}
 <= promise-template
 path = ${directory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
+
+[monitor-check-computer-memory]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-computer-memory
+command-line = "{{ parameter_dict["promise-check-computer-memory"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}

@@ -158,6 +158,11 @@ mode = 755
 
 {% endif -%}
 
+[{{ section('monitor-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promises}/check-computer-memory
+command-line = "{{ parameter_dict["promise-check-computer-memory"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 storage-dict = {{ dumps(storage_dict) }}

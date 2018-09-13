@@ -500,6 +500,10 @@ expected-value =
 {%-   endif %}
 {%- endif %}
 
+[{{ section('monitor-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promises}/check-computer-memory
+command-line = "{{ parameter_dict["promise-check-computer-memory"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 
 [publish]

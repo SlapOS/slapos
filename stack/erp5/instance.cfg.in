@@ -12,6 +12,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 cyrus-sasl-location = {{ cyrus_sasl_location }}
 openssl = {{ openssl_location }}
 postfix-location = {{ postfix_location }}
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
@@ -71,6 +72,7 @@ extra-context =
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
 template-monitor = {{ dumps(template_monitor) }}
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -99,6 +101,7 @@ extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
 egg-interpreter = {{egg_interpreter}}
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 
 [dynamic-template-zope]
 <= jinja2-template-base
@@ -118,6 +121,7 @@ gzip-location = {{ gzip_location }}
 kumo-location = {{ kumo_location }}
 logrotate-location = {{ logrotate_location }}
 template-monitor = {{ dumps(template_monitor) }}
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 
 [dynamic-template-kumofs]
 <= jinja2-template-base
@@ -144,6 +148,7 @@ promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-querie
 percona-tools-location = {{ percona_toolkit_location }}
 template-monitor = {{ template_monitor }}
 unixodbc-location = {{ unixodbc_location }}
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
