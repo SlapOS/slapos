@@ -11,14 +11,8 @@
       "title": "Frontend Replication Quantity",
       "type": "integer"
     },
-    "apache-ca-certificate": {
-      "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server.",
-      "textarea": true,
-      "title": "[NOT IMPLEMENTED] SSL CA Certificate",
-      "type": "string"
-    },
     "apache-certificate": {
-      "description": "SSL Certificate used by the server.",
+      "description": "SSL Certificate used by the server. If the certificate is signed by CA, it can be bundled with by concatenting of the server's certificate followed by the CA's certificate.",
       "textarea": true,
       "title": "SSL Certificate",
       "type": "string"

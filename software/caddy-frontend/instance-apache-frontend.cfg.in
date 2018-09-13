@@ -167,7 +167,6 @@ extra-context =
     key bin_directory :bin_directory
     key login_certificate ca-frontend:cert-file
     key login_key ca-frontend:key-file
-    key login_ca_crt ca-custom-frontend:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
@@ -201,7 +200,6 @@ extra-context =
     key instance_home buildout:directory
     key login_certificate ca-frontend:cert-file
     key login_key ca-frontend:key-file
-    key login_ca_crt ca-custom-frontend:rendered
     key ca_dir  certificate-authority:ca-dir
     key ca_crl certificate-authority:ca-crl
     key access_log caddy-configuration:access-log
@@ -306,14 +304,6 @@ key-content = ${configuration:apache-key}
 cert-content = ${configuration:apache-certificate}
 # Put domain name
 name = ${configuration:domain}
-
-[ca-custom-frontend]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
-rendered = ${cadirectory:certs}/frontend.ca.crt
-apache-ca-certificate = ${configuration:apache-ca-certificate}
-extra-context =
-    key content :apache-ca-certificate
 
 [cron]
 recipe = slapos.cookbook:cron

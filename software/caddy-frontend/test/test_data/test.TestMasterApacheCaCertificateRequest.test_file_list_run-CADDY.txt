@@ -1,0 +1,2 @@
+TestMasterApacheCaCertificateRequest-0/var/run/monitor-httpd.pid
+TestMasterApacheCaCertificateRequest-0/var/run/monitor/monitor-bootstrap.pid

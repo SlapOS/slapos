@@ -64,6 +64,12 @@ MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
 
+APACHE_CERTIFICATE = \
+  open('wildcard.example.com.crt').read() \
+  + '\n' + \
+  open('example.com.root.ca.crt').read()
+
+
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('DEBUG'):
   import logging
@@ -402,7 +408,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       session.mount('https://', new_source)
     return session.get(
       'https://%s:%s/%s' % (domain, port, path),
-      verify=False,
+      verify='example.com.bundle.crt',
       allow_redirects=False,
       headers=headers,
       cookies=cookies
@@ -530,7 +536,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
@@ -579,7 +585,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkey.example.com',
-        'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
+        'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read() +
+        '\n' + open('example.com.root.ca.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
       'type-zope': {
@@ -1280,11 +1287,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   @skip('Feature postponed')
   def test_type_websocket(self):
     # Pure websocket configurable frontend
-    raise NotImplementedError
-
-  @skip('Feature postponed')
-  def test_apache_ca_certificate(self):
-    # merge with apache-certificate
     raise NotImplementedError
 
   @skip('Feature postponed')
@@ -2259,7 +2261,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
@@ -2331,7 +2333,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
@@ -2424,7 +2426,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -2615,7 +2617,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -2754,7 +2756,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
       'enable-quic': 'true',
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
@@ -2860,7 +2862,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
@@ -3286,7 +3288,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-certificate': APACHE_CERTIFICATE,
       'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
@@ -3385,4 +3387,35 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         '["custom_domain \'duplicate.example.com\' clashes", "server-alias '
         '\'duplicate.example.com\' clashes"]'
       }
+    )
+
+
+class TestMasterApacheCaCertificateRequest(
+  HttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'apache-ca-certificate': 'unsupported',
+    }
+
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': None,
+        'domain': 'None',
+        'accepted-slave-amount': '0',
+        'rejected-slave-amount': '0',
+        'slave-amount': '0',
+        'rejected-slave-dict': '{}',
+        'request-warning-list':
+        '["apache-ca-certificate parameter is unsupported, please see the '
+        'documentation."]'},
+      parameter_dict
     )

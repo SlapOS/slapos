@@ -159,7 +159,6 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {#-   Set Up Certs #}
 {%   do slave_instance.__setitem__('login_certificate', login_certificate) %}
 {%   do slave_instance.__setitem__('login_key', login_key) %}
-{%   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
 {%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
 {%   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}

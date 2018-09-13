@@ -31,6 +31,12 @@ context =
 {%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') %}
 {% endif %}
 
+{# Analyze incorrect parameters #}
+{% set request_warning_list = [] %}
+{% if 'apache-ca-certificate' in slapparameter_dict %}
+{%   do request_warning_list.append('apache-ca-certificate parameter is unsupported, please see the documentation.') %}
+{% endif %}
+
 # Here we request individually each frontend.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, frontend_quantity + 1) %}
@@ -182,6 +188,9 @@ slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
+{% if len(request_warning_list) %}
+request-warning-list = {{ dumps(json_module.dumps(request_warning_list)) }}
+{% endif %}
 
 #----------------------------
 #--
