@@ -63,8 +63,6 @@ MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
 
-no_backend_response_code = 404
-
 caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
 https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
   bind %%(local_ipv4)s
@@ -812,7 +810,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -825,7 +823,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       LOG_REGEXP)
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # check that 404 is as configured
     result_missing = self.fakeHTTPSResult(
@@ -1586,11 +1584,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1629,11 +1627,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1672,11 +1670,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -2658,7 +2656,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -2964,7 +2962,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3009,7 +3007,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
@@ -3149,11 +3147,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3192,11 +3190,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, 404)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, 404)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
