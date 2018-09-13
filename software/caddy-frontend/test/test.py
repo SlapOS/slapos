@@ -40,7 +40,7 @@ from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skipIf, skip
+from unittest import skip
 import ssl
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -63,16 +63,7 @@ MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
 
-if os.environ['TEST_SR'].endswith('caddy-frontend/software.cfg'):
-  IS_CADDY = True
-else:
-  IS_CADDY = False
-
-# response_code difference
-if IS_CADDY:
-  no_backend_response_code = 404
-else:
-  no_backend_response_code = 502
+no_backend_response_code = 404
 
 caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
 https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
@@ -103,12 +94,10 @@ http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
 }
 '''
 
-# apache_custom_http[s] difference
-if IS_CADDY:
-  LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
-      '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-      '"GET \/test-path HTTP\/1.1" 404 \d+ "-" "python-requests.*" \d+'
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
+LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
+    '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
+    '"GET \/test-path HTTP\/1.1" 404 \d+ "-" "python-requests.*" \d+'
+apache_custom_https = '''# apache_custom_https_filled_in_accepted
 https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
   bind %%(local_ipv4)s
   tls %%(ssl_crt)s %%(ssl_key)s
@@ -123,7 +112,7 @@ https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
   }
 }
 '''
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
+apache_custom_http = '''# apache_custom_http_filled_in_accepted
 http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   bind %%(local_ipv4)s
   log / %%(access_log)s {combined}
@@ -135,42 +124,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     insecure_skip_verify
   }
 }
-'''
-else:
-  LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
-      '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-      '"GET \/test-path HTTP\/1.1" 502 \d+ "-" "python-requests.*" \d+'
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
-ServerName apachecustomhttpsaccepted.example.com
-ServerAlias apachecustomhttpsaccepted.example.com
-SSLEngine on
-SSLProxyEngine on
-
-ErrorLog %%(error_log)s
-LogLevel notice
-CustomLog %%(access_log)s combined
-
-# Rewrite part
-ProxyPreserveHost On
-ProxyTimeout 600
-RewriteEngine On
-
-RewriteRule ^/(.*)$ %(url)s/$1 [L,P]
-'''
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
-ServerName apachecustomhttpsaccepted.example.com
-ServerAlias apachecustomhttpsaccepted.example.com
-
-ErrorLog %%(error_log)s
-LogLevel notice
-CustomLog %%(access_log)s combined
-
-# Rewrite part
-ProxyPreserveHost On
-ProxyTimeout 600
-RewriteEngine On
-
-RewriteRule ^/(.*)$ %(url)s/$1 [L,P]
 '''
 
 # for development: debugging logs and install Ctrl+C handler
@@ -212,7 +165,7 @@ class TestDataMixin(object):
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
   def assertTestData(self, runtime_data):
-    filename = '%s-%s.txt' % (self.id(), self.frontend_type)
+    filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
@@ -291,7 +244,6 @@ class TestDataMixin(object):
       'monitor/monitor-collect.pid',
     ])
 
-  @skipIf(not IS_CADDY, 'Feature not needed for Apache')
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
@@ -300,8 +252,6 @@ class TestDataMixin(object):
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
-  frontend_type = 'CADDY' if IS_CADDY else 'APACHE'
-
   @classmethod
   def getSoftwareURLList(cls):
     return [os.path.realpath(os.environ['TEST_SR'])]
@@ -769,24 +719,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
-    if IS_CADDY:
-      expected_parameter_dict = {
-        'monitor-base-url': None,
-        'domain': 'example.com',
-        'accepted-slave-amount': '33',
-        'rejected-slave-amount': '2',
-        'slave-amount': '35',
-        'rejected-slave-list':
-        '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'}
-    else:
-      expected_parameter_dict = {
-        'monitor-base-url': None,
-        'domain': 'example.com',
-        'accepted-slave-amount': '34',
-        'rejected-slave-amount': '1',
-        'slave-amount': '35',
-        'rejected-slave-list':
-        '["_apache_custom_http_s-rejected"]'}
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '33',
+      'rejected-slave-amount': '2',
+      'slave-amount': '35',
+      'rejected-slave-list':
+      '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'}
 
     self.assertEqual(
       expected_parameter_dict,
@@ -837,7 +777,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         set([0])
       )
 
-  @skipIf(not IS_CADDY, 'Will NOT be covered on apache-frontend')
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
     self.assertTrue(
@@ -968,7 +907,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'secured=value;secure, nonsecured=value'
     )
 
-  @skipIf(IS_CADDY, 'Feature postponed')
+  @skip('Feature postponed')
   def test_url_ipv6_access(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
@@ -1339,7 +1278,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # merge with apache-certificate
     raise NotImplementedError
 
-  @skipIf(IS_CADDY, 'Feature postponed')
+  @skip('Feature postponed')
   def test_type_eventsource(self):
     # Caddy: For event source, if I understand
     #        https://github.com/mholt/caddy/issues/1355 correctly, we could use
@@ -1440,57 +1379,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      501
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      self.assertEqualResultJson(result, 'Path', '/test-path')
-
-      try:
-        j = result.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqual(
-        result.headers['Content-Encoding'],
-        'gzip'
-      )
-
-      self.assertEqual(
-        result.headers['Set-Cookie'],
-        'secured=value;secure, nonsecured=value'
-      )
-
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-      self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-      try:
-        j = result_http.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqual(
-        result_http.headers['Content-Encoding'],
-        'gzip'
-      )
-
-      self.assertEqual(
-        result_http.headers['Set-Cookie'],
-        'secured=value;secure, nonsecured=value'
-      )
+    self.assertEqual(
+      result_http.status_code,
+      501
+    )
 
   def test_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1549,66 +1449,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      501
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      self.assertEqualResultJson(result, 'Path', '/test-path')
-
-      headers = result.headers.copy()
-
-      self.assertKeyWithPop('Via', headers)
-      self.assertKeyWithPop('Server', headers)
-      self.assertKeyWithPop('Date', headers)
-      self.assertKeyWithPop('Age', headers)
-
-      # drop keys appearing randomly in headers
-      headers.pop('Transfer-Encoding', None)
-      headers.pop('Content-Length', None)
-      headers.pop('Connection', None)
-      headers.pop('Keep-Alive', None)
-
-      self.assertEqual(
-        headers,
-        {'Content-type': 'application/json',
-         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
-      )
-
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-      self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-      headers = result_http.headers.copy()
-
-      self.assertKeyWithPop('Via', headers)
-      self.assertKeyWithPop('Server', headers)
-      self.assertKeyWithPop('Date', headers)
-      self.assertKeyWithPop('Age', headers)
-
-      # drop keys appearing randomly in headers
-      headers.pop('Transfer-Encoding', None)
-      headers.pop('Content-Length', None)
-      headers.pop('Connection', None)
-      headers.pop('Keep-Alive', None)
-
-      self.assertEqual(
-        headers,
-        {'Content-type': 'application/json',
-         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
-      )
+    self.assertEqual(
+      result_http.status_code,
+      501
+    )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1667,42 +1519,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      501
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      try:
-        j = result.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqualResultJson(
-        result,
-        'Path',
-        '/VirtualHostBase/https//typezopesslproxyverifysslproxycacrt.example'
-        '.com:443//VirtualHostRoot/test-path'
-      )
-
-      result = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-      self.assertEqualResultJson(
-        result,
-        'Path',
-        '/VirtualHostBase/http//typezopesslproxyverifysslproxycacrt.example'
-        '.com:80//VirtualHostRoot/test-path'
-      )
+    self.assertEqual(
+      result_http.status_code,
+      501
+    )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -2056,7 +1884,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
 
-  @skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
@@ -2278,23 +2105,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     headers.pop('Connection', None)
     headers.pop('Keep-Alive', None)
 
-    if IS_CADDY:
-      self.assertEqual(
-        headers,
-        {
-          'Content-type': 'application/json',
-          'Set-Cookie': 'secured=value;secure, nonsecured=value'
-        }
-      )
-    else:
-      self.assertEqual(
-        headers,
-        {
-          'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-          'Content-type': 'application/json',
-          'Set-Cookie': 'secured=value;secure, nonsecured=value'
-        }
-      )
+    self.assertEqual(
+      headers,
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+      }
+    )
 
     result_http = self.fakeHTTPResult(
       'apachecustomhttpsaccepted.example.com',
@@ -2314,7 +2131,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'apache_custom_http_filled_in_accepted' in open(q).read()]
     self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
-  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-rejected']
@@ -2332,7 +2148,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
     self.assertEqual([], configuration_file_with_custom_http_list)
 
-  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_accepted(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-accepted']
@@ -2491,7 +2306,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
-@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
                                          TestDataMixin):
   @classmethod
@@ -2585,7 +2399,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
 
-@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
                                            TestDataMixin):
   @classmethod
