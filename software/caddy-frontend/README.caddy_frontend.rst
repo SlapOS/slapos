@@ -195,8 +195,8 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-ssl_key, ssl_crt, ssl_ca_crt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_key, ssl_crt
+~~~~~~~~~~~~~~~~
 
 SSL certificates of the slave.
 
@@ -210,7 +210,7 @@ In the slave Caddy configuration you can use parameters that will be replaced du
   * ``cache_access`` : url of the cache. Should replace backend url in configuration to use the cache
   * ``access_log`` : path of the slave error log in order to log in a file.
   * ``error_log`` : path of the slave access log in order to log in a file.
-  * ``ssl_key``, ``ssl_crt``, ``ssl_ca_crt``, ``ssl_crs`` : paths of the certificates given in slave instance parameters
+  * ``ssl_key``, ``ssl_crt``, ``ssl_crs`` : paths of the certificates given in slave instance parameters
 
 
 Examples
@@ -400,8 +400,6 @@ the proxy::
   # Use personal ssl certificates
   SSLCertificateFile %(ssl_crt)s
   SSLCertificateKeyFile %(ssl_key)s
-  SSLCACertificateFile %(ssl_ca_crt)s
-  SSLCertificateChainFile %(ssl_ca_crt)s
   # Configure personal logs
   ErrorLog "%(error_log)s"
   LogLevel info
@@ -443,9 +441,6 @@ the proxy::
   -----END RSA PRIVATE KEY-----",
       "ssl_crt":'-----BEGIN CERTIFICATE-----
   XXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX
-  -----END CERTIFICATE-----',
-      "ssl_ca_crt":'-----BEGIN CERTIFICATE-----
-  XXXXXXXXX...........XXXXXXXXXXXXXXXXX
   -----END CERTIFICATE-----',
       "ssl_csr":'-----BEGIN CERTIFICATE REQUEST-----
   XXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXX

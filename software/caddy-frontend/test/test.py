@@ -589,6 +589,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         '\n' + open('example.com.root.ca.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
+      'ssl_ca_crt': {
+        'ssl_ca_crt': 'unsupported',
+      },
       'type-zope': {
         'url': cls.backend_url,
         'type': 'zope',
@@ -1061,13 +1064,24 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # Caddy: Need to implement similar thing like check-error-on-apache-log
     raise NotImplementedError(self.id())
 
-  @skip('Feature postponed')
   def test_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
-
-  @skip('Feature postponed')
-  def test_path_to_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'ssl_ca_crt')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'sslcacrt.example.com',
+        'public-ipv4': '127.0.10.1',
+        'replication_number': '1',
+        'request-warning-list':
+        '"[\\"ssl_ca_crt parameter is unsupported, please see the '
+        'documentation.\\"]"',
+        'secure_access': 'https://sslcacrt.example.com',
+        'site_url': 'http://sslcacrt.example.com',
+        'url': 'http://sslcacrt.example.com'
+      }
+    )
 
   def test_https_only(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[

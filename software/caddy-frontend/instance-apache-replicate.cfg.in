@@ -73,11 +73,16 @@ context =
 {% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
+{% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% set unauthorised_message = 'slave not authorised' %}
 {% for slave in slave_instance_list %}
 {%   set slave_error_list = [] %}
+{%   set slave_warning_list = [] %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
+{%   if 'ssl_ca_crt' in slave %}
+{%     do slave_warning_list.append('ssl_ca_crt parameter is unsupported, please see the documentation.') %}
+{%   endif %}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
 {%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
@@ -136,6 +141,9 @@ context =
 {%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
+{%   endif %}
+{%   if len(slave_warning_list) %}
+{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
 {%   endif %}
 {% endfor %}
 
@@ -208,6 +216,11 @@ custom-group = ${dynamic-publish-slave-information:rendered}
 {{ slave_id }} = {{ dumps(json_module.dumps(rejected_list)) }}
 {% endfor %}
 
+[warning-slave-information]
+{% for slave_id, warning_list in warning_slave_dict.iteritems() %}
+{{ slave_id }} = {{ dumps(json_module.dumps(warning_list)) }}
+{% endfor %}
+
 [slave-information]
 {% for frontend_section in frontend_section_list %}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
@@ -221,6 +234,7 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
     section rejected_slave_information rejected-slave-information
+    section warning_slave_information warning-slave-information
 
 [monitor-conf-parameters]
 monitor-url-list +=

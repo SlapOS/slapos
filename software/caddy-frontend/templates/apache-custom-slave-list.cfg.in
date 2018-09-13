@@ -136,7 +136,7 @@ bytes = 8
 {# Set Slave Certificates if needed                   #}
 
 {# Set ssl certificates for each slave #}
-{%   for cert_name in ('ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')%}
+{%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%     if cert_name in slave_instance %}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}

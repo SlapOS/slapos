@@ -34,6 +34,13 @@
 {%   do slave_information_dict[slave_reference].__setitem__('request-error-list', json_module.dumps(rejected_info_list)) %}
 {% endfor %}
 
+{% for slave_reference, warning_info_list in warning_slave_information.iteritems() %}
+{%   if slave_reference not in slave_information_dict %}
+{%     do slave_information_dict.__setitem__(slave_reference, {}) %}
+{%   endif %}
+{%   do slave_information_dict[slave_reference].__setitem__('request-warning-list', json_module.dumps(warning_info_list)) %}
+{% endfor %}
+
 # Publish information for each slave
 {% for slave_reference, slave_information in slave_information_dict.iteritems() %}
 {%   set publish_section_title = 'publish-%s' % slave_reference %}

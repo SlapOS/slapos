@@ -139,16 +139,9 @@
       "title": "[NOT Implemented] Verify Backend Certificates",
       "type": "string"
     },
-    "ssl_ca_crt": {
-      "default": "",
-      "description": "[NOT Implemented] Content of the CA certificate file",
-      "textarea": true,
-      "title": "[NOT Implemented] SSL Certificate Authority's Certificate",
-      "type": "string"
-    },
     "ssl_crt": {
       "default": "",
-      "description": "Content of the SSL Certificate file",
+      "description": "Content of the SSL Certificate file. If the certificate is signed by CA, it can be bundled with by concatenting of the server's certificate followed by the CA's certificate.",
       "textarea": true,
       "title": "SSL Certificate",
       "type": "string"
