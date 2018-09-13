@@ -337,6 +337,10 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-slow-query-pt-digest-result
 command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
 
+[{{ section('promise-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-computer-memory
+command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper

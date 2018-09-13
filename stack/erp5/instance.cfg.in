@@ -6,9 +6,13 @@ extends =
 [jinja2-template-base]
 mode = 644
 
-[dynamic-template-postfix-parameters]
+[default-dynamic-template-parameters]
 bin-directory = {{ bin_directory }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
+
+[dynamic-template-postfix-parameters]
+<= default-dynamic-template-parameters
 cyrus-sasl-location = {{ cyrus_sasl_location }}
 openssl = {{ openssl_location }}
 postfix-location = {{ postfix_location }}
@@ -48,10 +52,10 @@ import-list =
 openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
+<= default-dynamic-template-parameters
 apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
-bin-directory = {{ bin_directory }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
@@ -68,7 +72,7 @@ extra-context =
     import itertools itertools
 
 [dynamic-template-zeo-parameters]
-buildout-bin-directory = {{ buildout_bin_directory }}
+<= default-dynamic-template-parameters
 template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-zeo]
@@ -82,10 +86,9 @@ extra-context =
     import itertools itertools
 
 [dynamic-template-zope-parameters]
-bin-directory = {{ bin_directory }}
+<= default-dynamic-template-parameters
 zope-conf-template = {{ template_zope_conf }}
 run-zelenium-template = {{ template_run_zelenium }}
-buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 coreutils = {{ coreutils_location }}
 dash = {{ dash_location }}
@@ -111,6 +114,7 @@ extra-context =
     import itertools itertools
 
 [dynamic-template-kumofs-parameters]
+<= default-dynamic-template-parameters
 dash-location = {{ dash_location }}
 dcron-location = {{ dcron_location }}
 gzip-location = {{ gzip_location }}
@@ -126,6 +130,7 @@ extra-context =
     section parameter_dict dynamic-template-kumofs-parameters
 
 [dynamic-template-mariadb-parameters]
+<= default-dynamic-template-parameters
 bash = {{ bash_location }}
 coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
@@ -135,7 +140,6 @@ mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
-bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
 mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
