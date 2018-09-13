@@ -63,67 +63,6 @@ MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
 
-caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
-https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
-http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
-    '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-    '"GET \/test-path HTTP\/1.1" 404 \d+ "-" "python-requests.*" \d+'
-apache_custom_https = '''# apache_custom_https_filled_in_accepted
-https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-apache_custom_http = '''# apache_custom_http_filled_in_accepted
-http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('DEBUG'):
   import logging
@@ -524,6 +463,66 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
+  caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
+https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
+  bind %%(local_ipv4)s
+  tls %%(ssl_crt)s %%(ssl_key)s
+
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
+http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
+  bind %%(local_ipv4)s
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  apache_custom_https = '''# apache_custom_https_filled_in_accepted
+https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
+  bind %%(local_ipv4)s
+  tls %%(ssl_crt)s %%(ssl_key)s
+
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  apache_custom_http = '''# apache_custom_http_filled_in_accepted
+http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
+  bind %%(local_ipv4)s
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -668,8 +667,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'apache_custom_http_s-accepted': {
         'url': cls.backend_url,
-        'apache_custom_https': apache_custom_https % dict(url=cls.backend_url),
-        'apache_custom_http': apache_custom_http % dict(url=cls.backend_url),
+        'apache_custom_https': cls.apache_custom_https % dict(
+          url=cls.backend_url),
+        'apache_custom_http': cls.apache_custom_http % dict(
+          url=cls.backend_url),
       },
       'caddy_custom_http_s-rejected': {
         'url': cls.backend_url,
@@ -678,8 +679,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'caddy_custom_http_s-accepted': {
         'url': cls.backend_url,
-        'caddy_custom_https': caddy_custom_https % dict(url=cls.backend_url),
-        'caddy_custom_http': caddy_custom_http % dict(url=cls.backend_url),
+        'caddy_custom_https': cls.caddy_custom_https % dict(
+          url=cls.backend_url),
+        'caddy_custom_http': cls.caddy_custom_http % dict(
+          url=cls.backend_url),
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
@@ -818,9 +821,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
+    log_regexp = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
+                 '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
+                 '"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 '"python-requests.*" \d+'
+
     self.assertRegexpMatches(
       open(log_file, 'r').read(),
-      LOG_REGEXP)
+      log_regexp)
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(result_http.status_code, 404)
