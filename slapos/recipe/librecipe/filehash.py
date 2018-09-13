@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
 import hashlib
 import shutil
 import os
@@ -91,6 +92,6 @@ if __name__ == '__main__':
   if len(sys.argv) == 1:
     raise ValueError("Not enough command line arguments")
   if len(sys.argv) == 2:
-    print sys.argv[1], '-', pathhash(sys.argv[1])
+    print(sys.argv[1], '-', pathhash(sys.argv[1]))
   else:
-    print sys.argv[2], '-', pathhash(sys.argv[2], sys.argv[1])
+    print(sys.argv[2], '-', pathhash(sys.argv[2], sys.argv[1]))

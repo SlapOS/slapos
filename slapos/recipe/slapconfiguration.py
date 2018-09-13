@@ -31,7 +31,8 @@ import os
 
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
-from ConfigParser import RawConfigParser
+import six
+from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 from slapos.util import mkdir_p
 from slapos import format as slapformat
@@ -115,7 +116,7 @@ class Recipe(object):
                                       buildout['buildout']['directory'])
 
       match = self.OPTCRE_match
-      for key, value in parameter_dict.iteritems():
+      for key, value in six.iteritems(parameter_dict):
           if match(key) is not None:
               continue
           options['configuration.' + key] = value
@@ -157,11 +158,10 @@ class Recipe(object):
               options[his_key.replace('_', '-')] = value
       # Get Instance and root instance title or return UNKNOWN if not set
       options['instance-title'] = parameter_dict.pop('instance_title',
-                                            'UNKNOWN Instance').encode('UTF-8')
+                                            'UNKNOWN Instance')
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
-                                            'UNKNOWN').encode('UTF-8')
-      options['instance-guid'] = computer_partition.getInstanceGuid() \
-          .encode('UTF-8')
+                                            'UNKNOWN')
+      options['instance-guid'] = computer_partition.getInstanceGuid()
 
       ipv4_set = set()
       v4_add = ipv4_set.add
@@ -204,9 +204,23 @@ class Recipe(object):
 
       # also export single ip values for those recipes that don't support sets.
       if ipv4_set:
-          options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
+          options['ipv4-random'] = min(ipv4_set)
       if ipv6_set:
-          options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
+          options['ipv6-random'] = min(ipv6_set)
+      if route_ipv4_set:
+        options['tap-ipv4'] = min(route_ipv4_set)
+        options['tap-network-information-dict'] = dict(ipv4=route_ipv4_set,
+                                    netmask=route_mask_set,
+                                    gateway=route_gw_set,
+                                    network=route_network_set)
+      else:
+        options['tap-network-information-dict'] = {}
+      if route_gw_set:
+        options['tap-gateway'] = min(route_gw_set)
+      if route_mask_set:
+        options['tap-netmask'] = min(route_mask_set)
+      if route_network_set:
+        options['tap-network'] = min(route_network_set)
 
       storage_home = options.get('storage-home')
       storage_dict = {}
@@ -265,8 +279,11 @@ class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
     parameter_dict = self.fetch_parameter_dict(options)
     self._json_output = options['json-output']
-    with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fout:
-      fout.write(json.dumps(parameter_dict, indent=2, sort_keys=True))
+    # XXX: do not touch file if there's no change to avoid excessive IO
+    #      (see https://lab.nexedi.com/nexedi/slapos.recipe.template/commit/14d26bc8c77a1940f389026bdbd3a9b229b241f4
+    #       for an example to fix this)
+    with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as fout:
+      json.dump(parameter_dict, fout, indent=2, sort_keys=True)
 
     def install(self):
         return [self._json_output]

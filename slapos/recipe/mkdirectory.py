@@ -27,6 +27,7 @@
 import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+from six import itervalues
 
 class Recipe(GenericBaseRecipe):
 
@@ -36,7 +37,7 @@ class Recipe(GenericBaseRecipe):
     self.mode = int(self.directory.pop('mode', '0777'), 8)
 
   def install(self):
-    for path in sorted(self.directory.itervalues()):
+    for path in sorted(itervalues(self.directory)):
       if path and not os.path.isdir(path):
         os.makedirs(path, self.mode)
     # WARNING: This recipe is currently used to create directories that will
