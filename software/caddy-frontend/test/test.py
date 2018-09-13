@@ -1570,6 +1570,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertKeyWithPop('Via', headers)
       self.assertKeyWithPop('Server', headers)
       self.assertKeyWithPop('Date', headers)
+      self.assertKeyWithPop('Age', headers)
 
       # drop keys appearing randomly in headers
       headers.pop('Transfer-Encoding', None)
@@ -1579,7 +1580,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'application/json',
+        {'Content-type': 'application/json',
          'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
@@ -1594,6 +1595,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertKeyWithPop('Via', headers)
       self.assertKeyWithPop('Server', headers)
       self.assertKeyWithPop('Date', headers)
+      self.assertKeyWithPop('Age', headers)
 
       # drop keys appearing randomly in headers
       headers.pop('Transfer-Encoding', None)
@@ -1603,7 +1605,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
       self.assertEqual(
         headers,
-        {'Age': '0', 'Content-type': 'application/json',
+        {'Content-type': 'application/json',
          'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
          'Set-Cookie': 'secured=value;secure, nonsecured=value'}
       )
@@ -1893,6 +1895,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -1902,7 +1905,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -1986,6 +1989,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -1995,7 +1999,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -2037,6 +2041,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -2046,7 +2051,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
