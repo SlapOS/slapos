@@ -274,6 +274,7 @@ config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
 config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configuration',
 '--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet')) }}
+config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-memory-percent-threshold', 80)) }}
 
 [request-frontend-base]
 {% if has_frontend -%}

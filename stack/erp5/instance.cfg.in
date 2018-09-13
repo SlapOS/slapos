@@ -55,6 +55,7 @@ bin-directory = {{ bin_directory }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
+promise-check-computer-memory = {{ bin_directory }}/check-computer-memory
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
 template-monitor = {{ dumps(template_monitor) }}
