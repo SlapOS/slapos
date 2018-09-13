@@ -255,6 +255,11 @@ path = ${directory:promise}/postfix
 hostname = {{ ip }}
 port = {{ tcpv4_port }}
 
+[{{ section('promise-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-computer-memory
+command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
 [buildout]
 extends = {{ logrotate_cfg }}
 parts =
