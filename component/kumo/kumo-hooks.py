@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import traceback
@@ -46,13 +48,15 @@ def pre_configure_hook(options, buildout):
     gcc_executable = os.getenv('CC', 'gcc')
     try:
         gcc = Popen([gcc_executable, '-v'], stdout=PIPE, stderr=PIPE,
+            universal_newlines=True,
             close_fds=True)
-    except OSError, (errno, _):
+    except OSError as e:
+        errno, _ = e
         if errno == 2:
             # No gcc installed, nothing to check
             pass
         else:
-            print 'Unexpected failure trying to detect gcc version'
+            print('Unexpected failure trying to detect gcc version')
             traceback.print_exc()
     else:
         gcc.wait()
@@ -66,10 +70,10 @@ def pre_configure_hook(options, buildout):
                     error = 'broken GCC version: %s' % (line, )
                 break
         else:
-            print >>sys.stderr, 'GCC version could not be detected, ' \
-                'building anyway'
+            print('GCC version could not be detected, ' \
+                'building anyway', file=sys.stderr)
         if error is not None:
-            print 'Disabling build, with reason:', error
+            print('Disabling build, with reason:', error)
             # Copy to preserver permission
             copy(CONFIGURE_PATH, CONFIGURE_BACKUP_PATH)
             open(CONFIGURE_PATH, 'w').write(FAKE_CONFIGURE % (error, ))
