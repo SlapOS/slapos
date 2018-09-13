@@ -1,0 +1,8 @@
+TestSlaveBadParameters-0/etc/plugin/__init__.py
+TestSlaveBadParameters-0/etc/plugin/buildout-TestSlaveBadParameters-0-status.py
+TestSlaveBadParameters-0/etc/plugin/check-free-disk-space.py
+TestSlaveBadParameters-0/etc/plugin/monitor-bootstrap-status.py
+TestSlaveBadParameters-1/etc/plugin/__init__.py
+TestSlaveBadParameters-1/etc/plugin/buildout-TestSlaveBadParameters-1-status.py
+TestSlaveBadParameters-1/etc/plugin/check-free-disk-space.py
+TestSlaveBadParameters-1/etc/plugin/monitor-bootstrap-status.py

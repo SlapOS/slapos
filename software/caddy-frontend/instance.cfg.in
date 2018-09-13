@@ -5,6 +5,9 @@ parts =
   dynamic-template-caddy-replicate
   switch-softwaretype
 
+[caddyprofiledeps]
+recipe = caddyprofiledeps
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -41,12 +44,18 @@ extra-context =
 
 [dynamic-template-caddy-replicate]
 < = jinja2-template-base
+depends = ${caddyprofiledeps:recipe}
 template = {{ template_caddy_replicate }}
 filename = instance-caddy-replicate.cfg
 extensions = jinja2.ext.do
+openssl = {{ template_frontend_parameter_dict['openssl'] ~ '/bin/openssl' }}
 extra-context =
     import subprocess_module subprocess
+    import functools_module functools
+    import validators validators
+    key openssl :openssl
     raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
+    raw caddy_custom_http_validator {{ caddy_custom_http_validator }}
     raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
@@ -81,7 +90,6 @@ configuration.apache-key =
 configuration.apache-certificate =
 configuration.apache-ca-certificate =
 configuration.open-port = 80 443
-configuration.extra_slave_instance_list =
 configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
 configuration.trafficserver-autoconf-port = 8083

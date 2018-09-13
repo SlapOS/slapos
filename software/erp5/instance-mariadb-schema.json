@@ -48,12 +48,6 @@
       },
       "type": "array"
     },
-    "test-database-amount": {
-      "description": "The number of test databases to create, adding auto-generated entries to database-list",
-      "default": 1,
-      "minimum": 0,
-      "type": "integer"
-    },
     "catalog-backup": {
       "description": "Backup control knobs",
       "properties": {

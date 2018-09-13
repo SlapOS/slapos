@@ -3004,3 +3004,482 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Set-Cookie'],
       'secured=value;secure, nonsecured=value'
     )
+
+
+class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': LOCAL_IPV4,
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'caddy_custom_http_s-reject': {
+        'caddy_custom_https': """DestroyCaddyHttps
+For sure
+This shall not be valid
+https://www.google.com {}""",
+        'caddy_custom_http': """DestroyCaddyHttp
+For sure
+This shall not be valid
+https://www.google.com {}""",
+      },
+      're6st-optimal-test-nocomma': {
+        're6st-optimal-test': 'nocomma',
+      },
+      're6st-optimal-test-unsafe': {
+        're6st-optimal-test':
+        'new\nline;rm -fr ~;,new\line\n[s${esection:eoption}',
+      },
+      'custom_domain-unsafe': {
+        'custom_domain': '${section:option} afterspace\nafternewline',
+      },
+      'server-alias-unsafe': {
+        'server-alias': '${section:option} afterspace',
+      },
+      'server-alias-same': {
+        'url': cls.backend_url,
+        'server-alias': 'serveraliassame.example.com',
+      },
+      'virtualhostroot-http-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-http-port': '${section:option}',
+      },
+      'virtualhostroot-https-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-https-port': '${section:option}',
+      },
+      'default-path-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
+      },
+      'monitor-ipv4-test-unsafe': {
+        'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
+      },
+      'monitor-ipv6-test-unsafe': {
+        'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
+      },
+      'ssl_key-ssl_crt-unsafe': {
+        'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
+        'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
+      },
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '8',
+      'rejected-slave-amount': '4',
+      'slave-amount': '12',
+      'rejected-slave-list':
+      '["_caddy_custom_http_s-reject", "_ssl_key-ssl_crt-unsafe", '
+      '"_custom_domain-unsafe", "_server-alias-unsafe"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_server_alias_same(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-same']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-same')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'serveraliassame.example.com',
+        'replication_number': '1',
+        'url': 'http://serveraliassame.example.com',
+        'site_url': 'http://serveraliassame.example.com',
+        'secure_access': 'https://serveraliassame.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_re6st_optimal_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      're6st-optimal-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 're6stoptimaltestunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://re6stoptimaltestunsafe.example.com',
+        'site_url': 'http://re6stoptimaltestunsafe.example.com',
+        'secure_access': 'https://re6stoptimaltestunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(
+        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_re6st-optimal-test-unsafe-re6st-optimal-test'))[0]
+
+    # Note: The result is a bit differnt from the request (newlines stripped),
+    #       but good enough to prove, that ${esection:eoption} has been
+    #       correctly passed to the script.
+    self.assertEqual(
+      '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
+      subprocess.check_output(monitor_file).strip()
+    )
+
+  def test_re6st_optimal_test_nocomma(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      're6st-optimal-test-nocomma']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 're6st-optimal-test-nocomma')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 're6stoptimaltestnocomma.example.com',
+        'replication_number': '1',
+        'url': 'http://re6stoptimaltestnocomma.example.com',
+        'site_url': 'http://re6stoptimaltestnocomma.example.com',
+        'secure_access': 'https://re6stoptimaltestnocomma.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    # assert that there is no nocomma file
+    monitor_file_list = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_re6st-optimal-test-nocomma-re6st-optimal-test'))
+    self.assertEqual(
+      [],
+      monitor_file_list
+    )
+
+  def test_custom_domain_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+  def test_server_alias_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+  def test_virtualhostroot_http_port_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'virtualhostroot-http-port-unsafe']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'virtualhostroot-http-port-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'virtualhostroothttpportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpportunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//virtualhostroothttpportunsafe'
+      '.example.com:0//VirtualHostRoot/test-path'
+    )
+
+  def test_virtualhostroot_https_port_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'virtualhostroot-https-port-unsafe']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'virtualhostroot-https-port-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'virtualhostroothttpsportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpsportunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
+      '.example.com:0//VirtualHostRoot/test-path'
+    )
+
+  def default_path_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'default-path-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'default-path-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'defaultpathunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://defaultpathunsafe.example.com',
+        'site_url': 'http://defaultpathunsafe.example.com',
+        'secure_access': 'https://defaultpathunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(
+      result.headers['Location'],
+      'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
+      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,)
+    )
+
+  def test_monitor_ipv4_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'monitor-ipv4-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'monitoripv4testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv4testunsafe.example.com',
+        'site_url': 'http://monitoripv4testunsafe.example.com',
+        'secure_access': 'https://monitoripv4testunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(result_http.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
+    self.assertEqual(
+      '-4 -a ${section:option} afternewline ipv4',
+      subprocess.check_output(monitor_file).strip()
+    )
+
+  def test_monitor_ipv6_test_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'monitor-ipv6-test-unsafe']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test-unsafe')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'monitoripv6testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv6testunsafe.example.com',
+        'site_url': 'http://monitoripv6testunsafe.example.com',
+        'secure_access': 'https://monitoripv6testunsafe.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      der2pem(result.peercert),
+      open('wildcard.example.com.crt').read())
+
+    self.assertEqual(result.status_code, no_backend_response_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(result_http.status_code, no_backend_response_code)
+
+    # rewrite SR/bin/is-icmp-packet-lost
+    open(
+      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
+    ).write('echo "$@"')
+    # call the monitor for this partition
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor-promise',
+        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
+    self.assertEqual(
+      '-a ${section:option} afternewline ipv6',
+      subprocess.check_output(monitor_file).strip()
+    )
+
+  def test_ssl_key_ssl_crt_unsafe(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_key-ssl_crt-unsafe']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+  def test_caddy_custom_http_s_reject(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'caddy_custom_http_s-reject']
+    self.assertEqual(
+      parameter_dict,
+      {}
+    )
+
+
+class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'nginx-domain': 'nginx.example.com',
+      'public-ipv4': LOCAL_IPV4,
+      'apache-certificate': open('wildcard.example.com.crt').read(),
+      'apache-key': open('wildcard.example.com.key').read(),
+      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'site_1': {
+        'custom_domain': 'duplicate.example.com',
+      },
+      'site_2': {
+        'custom_domain': 'duplicate.example.com',
+      },
+      'site_3': {
+        'server-alias': 'duplicate.example.com',
+      },
+      'site_4': {
+        'custom_domain': 'duplicate.example.com',
+        'server-alias': 'duplicate.example.com',
+      },
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '1',
+      'rejected-slave-amount': '3',
+      'slave-amount': '4',
+      'rejected-slave-list': '["_site_3", "_site_1", "_site_4"]'}
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_site_2(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_2']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'site_2')
+    self.assertEqual(
+      parameter_dict,
+      {
+        'domain': 'duplicate.example.com',
+        'replication_number': '1',
+        'url': 'http://duplicate.example.com',
+        'site_url': 'http://duplicate.example.com',
+        'secure_access': 'https://duplicate.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      }
+    )

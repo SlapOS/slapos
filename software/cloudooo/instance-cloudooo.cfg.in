@@ -271,17 +271,23 @@ var = ${buildout:directory}/var
 framebuffer = ${:srv}/framebuffer
 
 [xvfb-instance]
-recipe = slapos.cookbook:xvfb
-runner-path = ${directory:services}/xvfb
-xvfb-path = {{ parameter_dict["xserver"] }}/bin/Xvfb
-fbdir-path = ${directory:framebuffer}
-tmp-path = ${directory:run}
-shell-path = {{ parameter_dict["dash"] }}/bin/dash
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/${:_buildout_section_name_}
+command-line =
+  {{ parameter_dict["xserver"] }}/bin/Xvfb
+    ${:display}
+    -screen 0 1024x768x24
+    -fbdir ${directory:framebuffer}
+environment =
+  XORG_LOCK_DIR=${:lock-dir}
+
+display = :0
+lock-dir = ${directory:run}
 
 [wkhtmltopdf-on-xvfb]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/wkhtmltopdf
 environment =
-  DISPLAY=:0
-  TMPDIR=${directory:run}
+  DISPLAY=${xvfb-instance:display}
+  XORG_LOCK_DIR=${xvfb-instance:lock-dir}
 command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver

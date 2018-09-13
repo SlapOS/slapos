@@ -169,25 +169,27 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
 {%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) %}
 {%     do part_list.append(cert_title) %}
+{%     do part_list.append(key_title) %}
 {%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
 {%     do slave_parameter_dict.__setitem__("ssl_key", key_file) %}
 {%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
 {%     do slave_instance.__setitem__('path_to_ssl_key', key_file) %}
 
-[{{cert_title}}]
-recipe = slapos.cookbook:certificate_authority.request
-#openssl-binary = ${openssl:location}/bin/openssl
-
-requests-directory = ${cadirectory:requests}
-ca-private = ${cadirectory:private}
-ca-certs = ${cadirectory:certs}
-ca-newcerts = ${cadirectory:newcerts}
-ca-crl = ${cadirectory:crl}
-
-key-file = {{ key_file }}
-cert-file = {{ cert_file }}
+[{{key_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ key_file }}
 key-content = {{ dumps(slave_instance.get('ssl_key')) }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt')) }} 
+extra-context =
+    key content :key-content
+
+[{{cert_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
+extra-context =
+    key content :cert-content
 {%     endif %}
 
 {# ########################################## #}
@@ -257,7 +259,7 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/is-icmp-packet-lost -a {{monitor_ipv6_test}} 
+command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -a ' ~ monitor_ipv6_test) }}
 filename = {{ monitor_ipv6_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
@@ -268,19 +270,24 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/is-icmp-packet-lost -4 -a {{monitor_ipv4_test}}
+command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -4 -a ' ~ monitor_ipv4_test) }}
 filename = {{ monitor_ipv4_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
 
 {%   set re6st_optimal_test = slave_instance.get('re6st-optimal-test', '') %}
-{%   if re6st_optimal_test %}
+{%   set re6st_ipv6 = None %}
+{%   set re6st_ipv4 = None %}
+{%   if ',' in re6st_optimal_test %}
 {%     set re6st_ipv6, re6st_ipv4 = re6st_optimal_test.split(",") %}
+{%   endif %}
+{%   if re6st_ipv6 and re6st_ipv4 %}
 {%     set re6st_optimal_test_section_title = 'check-%s-re6st-optimal-test' % slave_instance.get('slave_reference') %}
 {%     do part_list.append(re6st_optimal_test_section_title) %}
+
 [{{ re6st_optimal_test_section_title }}]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-re6st-optimal-status -4 {{re6st_ipv4}} -6 {{re6st_ipv6}}
+command-line = {{ dumps(bin_directory ~ '/check-re6st-optimal-status -4 ' ~ re6st_ipv4 ~ ' -6 ' ~ re6st_ipv6) }}
 filename = {{ re6st_optimal_test_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
@@ -387,7 +394,7 @@ extra-context =
 
 {# Publish information for the instance #}
 [publish-caddy-information]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list %}

@@ -9,6 +9,7 @@ context =
     raw common_profile {{ common_profile }}
     ${:extra-context}
 
+{% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type == "replicate" %}
@@ -66,25 +67,64 @@ context =
 {% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_list = [] %}
+{% set used_host_list = [] %}
 {% for slave in slave_instance_list %}
-{# BBB: apache_custom_https AND apache_custom_http #}
-{%   if not ((slave.has_key('caddy_custom_http') or slave.has_key('apache_custom_http') or slave.has_key('caddy_custom_https') or slave.has_key('apache_custom_https')) and not slave.get('slave_reference') in authorized_slave_string) %}
-{%     set slave_ok = True %}
-{%     if slave.get('url') %}
-{%       if subprocess_module.call([caddy_backend_url_validator, slave['url']]) == 1 %}
-{%         set slave_ok = False %}
+{%   set slave_dict = {'state': True} %}
+{#   BBB: apache_custom_https AND apache_custom_http #}
+{%   set custom_domain = slave.get('custom_domain') %}
+{%   if custom_domain and custom_domain in used_host_list %}
+{%      do slave_dict.__setitem__('state', False) %}
+{%   else %}
+{%      do used_host_list.append(custom_domain) %}
+{%   endif %}
+{%   if slave.get('server-alias') %}
+{%     for slave_alias in slave['server-alias'].split() %}
+{%       if not validators.domain(slave_alias) %}
+{%         do slave_dict.__setitem__('state', False) %}
+{%       else %}
+{%         if slave_alias in used_host_list %}
+{%           do slave_dict.__setitem__('state', False) %}
+{%         else %}
+{%           do used_host_list.append(slave_alias) %}
+{%         endif %}
+{%       endif %}
+{%     endfor %}
+{%   endif %}
+{%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
+{%     if slave.get(key) %}
+{%       if not slave.get('slave_reference') in authorized_slave_string %}
+{%         do slave_dict.__setitem__('state', False) %}
+{%       elif subprocess_module.call([caddy_custom_http_validator, slave[key]]) == 1 %}
+{%         do slave_dict.__setitem__('state', False) %}
 {%       endif %}
 {%     endif %}
-{%     if slave.get('https-url') %}
-{%       if subprocess_module.call([caddy_backend_url_validator, slave['https-url']]) == 1 %}
-{%         set slave_ok = False %}
-{%       endif %}
+{%   endfor %} {# for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] #}
+{%   if slave.get('url') %}
+{%     if subprocess_module.call([caddy_backend_url_validator, slave['url']]) == 1 %}
+{%       do slave_dict.__setitem__('state', False) %}
 {%     endif %}
-{%     if slave_ok %}
-{%       do authorized_slave_list.append(slave) %}
-{%     else %}
-{%       do rejected_slave_list.append(slave.get('slave_reference')) %}
+{%   endif %}
+{%   if slave.get('https-url') %}
+{%     if subprocess_module.call([caddy_backend_url_validator, slave['https-url']]) == 1 %}
+{%       do slave_dict.__setitem__('state', False) %}
 {%     endif %}
+{%   endif %}
+{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%     set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
+{%     set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     if not key_modulus or key_modulus != crt_modulus  %}
+{%       do slave_dict.__setitem__('state', False) %}
+{%     endif %}
+{%   endif %}
+{%   if slave.get('custom_domain') %}
+{%     if not validators.domain(slave['custom_domain']) %}
+{%       do slave_dict.__setitem__('state', False) %}
+{%     endif %}
+{%   endif %}
+{%   if slave_dict['state'] %}
+{%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_list.append(slave.get('slave_reference')) %}
 {%   endif %}
@@ -95,11 +135,10 @@ monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
 
 [replicate]
 <= slap-connection
-recipe = slapos.cookbook:requestoptional
+recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-config-monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
 {% if slapparameter_dict.has_key(frontend_software_url_key) %}
@@ -121,7 +160,9 @@ state = {{ frontend_request.get('state') }}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-config-_ = {{ json_module.dumps(slave_configuration_dict) }}
+{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%   endfor -%}
 {%   if frontend_request.get('sla') %}
 {%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}

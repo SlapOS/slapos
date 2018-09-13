@@ -1,3 +1,7 @@
+Store Xorg lock files and sockets in different directories
+
+see xorg-server_tmp_env.patch
+
 --- xtrans-1.2.6/Xtranssock.c.old	2012-03-29 14:25:45.000000000 +0200
 +++ xtrans-1.2.6/Xtranssock.c	2012-03-29 18:40:54.000000000 +0200
 @@ -207,29 +207,49 @@ static int TRANS(SocketINETClose) (Xtran
@@ -27,38 +31,38 @@
  #if defined(X11_t)
 -#define UNIX_PATH "/tmp/.X11-unix/X"
 -#define UNIX_DIR "/tmp/.X11-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.X11-unix/X")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.X11-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.X11-unix/X")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.X11-unix")
  #endif /* X11_t */
  #if defined(XIM_t)
 -#define UNIX_PATH "/tmp/.XIM-unix/XIM"
 -#define UNIX_DIR "/tmp/.XIM-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.XIM-unix/XIM")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.XIM-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.XIM-unix/XIM")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.XIM-unix")
  #endif /* XIM_t */
  #if defined(FS_t) || defined(FONT_t)
 -#define UNIX_PATH "/tmp/.font-unix/fs"
 -#define UNIX_DIR "/tmp/.font-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.font-unix/fs")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.font-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.font-unix/fs")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.font-unix")
  #endif /* FS_t || FONT_t */
  #if defined(ICE_t)
 -#define UNIX_PATH "/tmp/.ICE-unix/"
 -#define UNIX_DIR "/tmp/.ICE-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.ICE-unix/")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.ICE-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.ICE-unix/")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.ICE-unix")
  #endif /* ICE_t */
  #if defined(TEST_t)
 -#define UNIX_PATH "/tmp/.Test-unix/test"
 -#define UNIX_DIR "/tmp/.Test-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.Test-unix/test")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.Test-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.Test-unix/test")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.Test-unix")
  #endif
  #if defined(LBXPROXY_t)
 -#define UNIX_PATH "/tmp/.X11-unix/X"
 -#define UNIX_DIR  "/tmp/.X11-unix"
-+#define UNIX_PATH getandappendcompatibleenv(0, "TMPDIR", "/tmp", "/.X11-unix/X")
-+#define UNIX_DIR getandappendcompatibleenv(1, "TMPDIR", "/tmp", "/.X11-unix")
++#define UNIX_PATH getandappendcompatibleenv(0, "XORG_LOCK_DIR", "/tmp", "/.X11-unix/X")
++#define UNIX_DIR getandappendcompatibleenv(1, "XORG_LOCK_DIR", "/tmp", "/.X11-unix")
  #endif
  
  

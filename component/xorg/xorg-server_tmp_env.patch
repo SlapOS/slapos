@@ -1,3 +1,12 @@
+Store Xorg lock files and sockets in different directories
+
+This patch allow easy enable isolation of multiple Xorg servers and clients
+running on same machine, instead of using the convention to store sockets and
+lock files in /tmp/ store them in a directory defined in XORG_LOCK_DIR
+environment variable.
+When this environment variable is not set, fallbacks to the traditional
+behavior of using /tmp/ .
+
 --- xorg-server-1.9.3/os/utils.c.old	2012-03-29 18:20:02.000000000 +0200
 +++ xorg-server-1.9.3/os/utils.c	2012-03-29 18:39:33.000000000 +0200
 @@ -226,7 +226,26 @@ OsSignal(int sig, OsSigHandlerPtr handle
@@ -24,7 +33,7 @@
 +
 +}
 +
-+#define LOCK_DIR getcompatibleenv("TMPDIR", "/tmp")
++#define LOCK_DIR getcompatibleenv("XORG_LOCK_DIR", "/tmp")
  #define LOCK_TMP_PREFIX "/.tX"
  #define LOCK_PREFIX "/.X"
  #define LOCK_SUFFIX "-lock"
