@@ -36,6 +36,7 @@
 import glob
 import os
 import requests
+import httplib
 from requests_toolbelt.adapters import source
 import json
 import multiprocessing
@@ -813,7 +814,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -831,12 +832,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       log_regexp)
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # check that 404 is as configured
     result_missing = self.fakeHTTPSResult(
       'forsuredoesnotexists.example.com', parameter_dict['public-ipv4'], '')
-    self.assertEqual(404, result_missing.status_code)
+    self.assertEqual(httplib.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
       """<html>
 <head>
@@ -1387,7 +1388,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
     result_http = self.fakeHTTPResult(
@@ -1395,7 +1396,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result_http.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
   def test_ssl_proxy_verify_unverified(self):
@@ -1457,7 +1458,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
     result_http = self.fakeHTTPResult(
@@ -1465,7 +1466,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result_http.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
@@ -1527,7 +1528,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
     result_http = self.fakeHTTPResult(
@@ -1535,7 +1536,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       result_http.status_code,
-      501
+      httplib.NOT_IMPLEMENTED
     )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
@@ -1592,11 +1593,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1635,11 +1636,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1678,11 +1679,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -2667,7 +2668,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -2973,7 +2974,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3018,7 +3019,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
@@ -3158,11 +3159,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3201,11 +3202,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, 404)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, 404)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
