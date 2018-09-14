@@ -93,8 +93,12 @@ $ORIGIN {{ cdn.get('origin') }}
 152 {{ cdn.get('south-america', 'sa') }}
 # Cameroon
 120 {{ cdn.get('africa', 'af') }}
-# China
-156 {{ cdn.get('china', 'cn') }}
+# China telecom
+155 {{ cdn.get('china-telecom', 'cn-t') }}
+#china unicom
+156 {{ cdn.get('china-unicom', 'cn-u') }}
+#china mobile
+157 {{ cdn.get('china-mobile', 'cn-m') }}
 # Colombia
 170 {{ cdn.get('south-america', 'sa') }}
 # Costa Rica

@@ -42,10 +42,22 @@
       "default": "na",
       "type": "string"
     },
-    "china": {
-      "title": "China RR",
-      "description": "Records to use for China",
-      "default": "cn",
+    "china-telecom": {
+      "title": "China Telecom RR",
+      "description": "Records to use for China Telecom",
+      "default": "cn-t",
+      "type": "string"
+    },
+    "china-unicom": {
+      "title": "China Unicom RR",
+      "description": "Records to use for China Unicom",
+      "default": "cn-u",
+      "type": "string"
+    },
+    "china-mobile": {
+      "title": "China Mobile RR",
+      "description": "Records to use for China Mobile",
+      "default": "cn-m",
       "type": "string"
     },
     "japan": {
