@@ -1,2 +1,0 @@
-TestRe6stVerificationUrlSlave-1/etc/monitor-promise/check-_default-error-log-last-day
-TestRe6stVerificationUrlSlave-1/etc/monitor-promise/check-_default-error-log-last-hour

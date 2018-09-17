@@ -1,7 +1,0 @@
-TestMasterRequestDomain-0/var/run/monitor/monitor-bootstrap.pid
-TestMasterRequestDomain-1/var/run/apache_configuration.signature
-TestMasterRequestDomain-1/var/run/httpd.pid
-TestMasterRequestDomain-1/var/run/monitor-httpd.pid
-TestMasterRequestDomain-1/var/run/monitor/monitor-bootstrap.pid
-TestMasterRequestDomain-1/var/run/napache_configuration.signature
-TestMasterRequestDomain-1/var/run/nginx.pid

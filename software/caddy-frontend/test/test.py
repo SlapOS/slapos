@@ -36,11 +36,12 @@
 import glob
 import os
 import requests
+import httplib
 from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skipIf, skip
+from unittest import skip
 import ssl
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -62,116 +63,6 @@ MONITOR_HTTPD_PORT = '13000'
 MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
-
-if os.environ['TEST_SR'].endswith('caddy-frontend/software.cfg'):
-  IS_CADDY = True
-else:
-  IS_CADDY = False
-
-# response_code difference
-if IS_CADDY:
-  no_backend_response_code = 404
-else:
-  no_backend_response_code = 502
-
-caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
-https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
-http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-# apache_custom_http[s] difference
-if IS_CADDY:
-  LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
-      '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-      '"GET \/test-path HTTP\/1.1" 404 \d+ "-" "python-requests.*" \d+'
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
-https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
-http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-else:
-  LOG_REGEXP = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
-      '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-      '"GET \/test-path HTTP\/1.1" 502 \d+ "-" "python-requests.*" \d+'
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
-ServerName apachecustomhttpsaccepted.example.com
-ServerAlias apachecustomhttpsaccepted.example.com
-SSLEngine on
-SSLProxyEngine on
-
-ErrorLog %%(error_log)s
-LogLevel notice
-CustomLog %%(access_log)s combined
-
-# Rewrite part
-ProxyPreserveHost On
-ProxyTimeout 600
-RewriteEngine On
-
-RewriteRule ^/(.*)$ %(url)s/$1 [L,P]
-'''
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
-ServerName apachecustomhttpsaccepted.example.com
-ServerAlias apachecustomhttpsaccepted.example.com
-
-ErrorLog %%(error_log)s
-LogLevel notice
-CustomLog %%(access_log)s combined
-
-# Rewrite part
-ProxyPreserveHost On
-ProxyTimeout 600
-RewriteEngine On
-
-RewriteRule ^/(.*)$ %(url)s/$1 [L,P]
-'''
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('DEBUG'):
@@ -212,7 +103,7 @@ class TestDataMixin(object):
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
   def assertTestData(self, runtime_data):
-    filename = '%s-%s.txt' % (self.id(), self.frontend_type)
+    filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
@@ -291,7 +182,6 @@ class TestDataMixin(object):
       'monitor/monitor-collect.pid',
     ])
 
-  @skipIf(not IS_CADDY, 'Feature not needed for Apache')
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
@@ -300,8 +190,6 @@ class TestDataMixin(object):
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
-  frontend_type = 'CADDY' if IS_CADDY else 'APACHE'
-
   @classmethod
   def getSoftwareURLList(cls):
     return [os.path.realpath(os.environ['TEST_SR'])]
@@ -374,7 +262,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-list': '[]'},
+        'rejected-slave-dict': '{}'},
       parameter_dict
     )
 
@@ -408,7 +296,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-list': '[]'
+        'rejected-slave-dict': '{}'
       },
       parameter_dict
     )
@@ -576,6 +464,66 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
+  caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
+https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
+  bind %%(local_ipv4)s
+  tls %%(ssl_crt)s %%(ssl_key)s
+
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
+http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
+  bind %%(local_ipv4)s
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  apache_custom_https = '''# apache_custom_https_filled_in_accepted
+https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
+  bind %%(local_ipv4)s
+  tls %%(ssl_crt)s %%(ssl_key)s
+
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
+  apache_custom_http = '''# apache_custom_http_filled_in_accepted
+http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
+  bind %%(local_ipv4)s
+  log / %%(access_log)s {combined}
+  errors %%(error_log)s
+
+  proxy / %(url)s {
+    transparent
+    timeout 600s
+    insecure_skip_verify
+  }
+}
+'''
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -720,8 +668,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'apache_custom_http_s-accepted': {
         'url': cls.backend_url,
-        'apache_custom_https': apache_custom_https % dict(url=cls.backend_url),
-        'apache_custom_http': apache_custom_http % dict(url=cls.backend_url),
+        'apache_custom_https': cls.apache_custom_https % dict(
+          url=cls.backend_url),
+        'apache_custom_http': cls.apache_custom_http % dict(
+          url=cls.backend_url),
       },
       'caddy_custom_http_s-rejected': {
         'url': cls.backend_url,
@@ -730,8 +680,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'caddy_custom_http_s-accepted': {
         'url': cls.backend_url,
-        'caddy_custom_https': caddy_custom_https % dict(url=cls.backend_url),
-        'caddy_custom_http': caddy_custom_http % dict(url=cls.backend_url),
+        'caddy_custom_https': cls.caddy_custom_https % dict(
+          url=cls.backend_url),
+        'caddy_custom_http': cls.caddy_custom_http % dict(
+          url=cls.backend_url),
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
@@ -769,24 +721,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
-    if IS_CADDY:
-      expected_parameter_dict = {
-        'monitor-base-url': None,
-        'domain': 'example.com',
-        'accepted-slave-amount': '33',
-        'rejected-slave-amount': '2',
-        'slave-amount': '35',
-        'rejected-slave-list':
-        '["_caddy_custom_http_s-rejected", "_apache_custom_http_s-rejected"]'}
-    else:
-      expected_parameter_dict = {
-        'monitor-base-url': None,
-        'domain': 'example.com',
-        'accepted-slave-amount': '34',
-        'rejected-slave-amount': '1',
-        'slave-amount': '35',
-        'rejected-slave-list':
-        '["_apache_custom_http_s-rejected"]'}
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '33',
+      'rejected-slave-amount': '2',
+      'slave-amount': '35',
+      'rejected-slave-dict':
+      '{"_apache_custom_http_s-rejected": ["slave not authorised"], '
+      '"_caddy_custom_http_s-rejected": ["slave not authorised"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -837,7 +781,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         set([0])
       )
 
-  @skipIf(not IS_CADDY, 'Will NOT be covered on apache-frontend')
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
     self.assertTrue(
@@ -873,7 +816,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -881,17 +824,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
+    log_regexp = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
+                 '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
+                 '"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 '"python-requests.*" \d+'
+
     self.assertRegexpMatches(
       open(log_file, 'r').read(),
-      LOG_REGEXP)
+      log_regexp)
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # check that 404 is as configured
     result_missing = self.fakeHTTPSResult(
       'forsuredoesnotexists.example.com', parameter_dict['public-ipv4'], '')
-    self.assertEqual(404, result_missing.status_code)
+    self.assertEqual(httplib.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
       """<html>
 <head>
@@ -968,7 +916,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'secured=value;secure, nonsecured=value'
     )
 
-  @skipIf(IS_CADDY, 'Feature postponed')
+  @skip('Feature postponed')
   def test_url_ipv6_access(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
@@ -1339,7 +1287,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # merge with apache-certificate
     raise NotImplementedError
 
-  @skipIf(IS_CADDY, 'Feature postponed')
+  @skip('Feature postponed')
   def test_type_eventsource(self):
     # Caddy: For event source, if I understand
     #        https://github.com/mholt/caddy/issues/1355 correctly, we could use
@@ -1440,57 +1388,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      self.assertEqualResultJson(result, 'Path', '/test-path')
-
-      try:
-        j = result.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqual(
-        result.headers['Content-Encoding'],
-        'gzip'
-      )
-
-      self.assertEqual(
-        result.headers['Set-Cookie'],
-        'secured=value;secure, nonsecured=value'
-      )
-
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-      self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-      try:
-        j = result_http.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqual(
-        result_http.headers['Content-Encoding'],
-        'gzip'
-      )
-
-      self.assertEqual(
-        result_http.headers['Set-Cookie'],
-        'secured=value;secure, nonsecured=value'
-      )
+    self.assertEqual(
+      result_http.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
   def test_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1549,64 +1458,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      self.assertEqualResultJson(result, 'Path', '/test-path')
-
-      headers = result.headers.copy()
-
-      self.assertKeyWithPop('Via', headers)
-      self.assertKeyWithPop('Server', headers)
-      self.assertKeyWithPop('Date', headers)
-
-      # drop keys appearing randomly in headers
-      headers.pop('Transfer-Encoding', None)
-      headers.pop('Content-Length', None)
-      headers.pop('Connection', None)
-      headers.pop('Keep-Alive', None)
-
-      self.assertEqual(
-        headers,
-        {'Age': '0', 'Content-type': 'application/json',
-         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
-      )
-
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-      self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-      headers = result_http.headers.copy()
-
-      self.assertKeyWithPop('Via', headers)
-      self.assertKeyWithPop('Server', headers)
-      self.assertKeyWithPop('Date', headers)
-
-      # drop keys appearing randomly in headers
-      headers.pop('Transfer-Encoding', None)
-      headers.pop('Content-Length', None)
-      headers.pop('Connection', None)
-      headers.pop('Keep-Alive', None)
-
-      self.assertEqual(
-        headers,
-        {'Age': '0', 'Content-type': 'application/json',
-         'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-         'Set-Cookie': 'secured=value;secure, nonsecured=value'}
-      )
+    self.assertEqual(
+      result_http.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1665,42 +1528,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    if IS_CADDY:
-      self.assertEqual(
-        result.status_code,
-        501
-      )
+    self.assertEqual(
+      result.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
-      result_http = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-      self.assertEqual(
-        result_http.status_code,
-        501
-      )
-    else:
-      try:
-        j = result.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-      self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-      self.assertEqualResultJson(
-        result,
-        'Path',
-        '/VirtualHostBase/https//typezopesslproxyverifysslproxycacrt.example'
-        '.com:443//VirtualHostRoot/test-path'
-      )
-
-      result = self.fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-      self.assertEqualResultJson(
-        result,
-        'Path',
-        '/VirtualHostBase/http//typezopesslproxyverifysslproxycacrt.example'
-        '.com:80//VirtualHostRoot/test-path'
-      )
+    self.assertEqual(
+      result_http.status_code,
+      httplib.NOT_IMPLEMENTED
+    )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -1756,11 +1595,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1799,11 +1638,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1842,11 +1681,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1893,6 +1732,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -1902,7 +1742,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -1986,6 +1826,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -1995,7 +1836,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
@@ -2037,6 +1878,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
 
     # drop keys appearing randomly in headers
     headers.pop('Transfer-Encoding', None)
@@ -2046,12 +1888,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       headers,
-      {'Age': '0', 'Content-type': 'application/json',
+      {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
     )
 
-  @skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
@@ -2228,7 +2069,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_apache_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'apache_custom_http_s-rejected']
-    self.assertEqual({}, parameter_dict)
+    self.assertEqual(
+      {
+        'request-error-list': '["slave not authorised"]'
+      },
+      parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
     # no configuration file contains provided custom http
@@ -2273,23 +2118,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     headers.pop('Connection', None)
     headers.pop('Keep-Alive', None)
 
-    if IS_CADDY:
-      self.assertEqual(
-        headers,
-        {
-          'Content-type': 'application/json',
-          'Set-Cookie': 'secured=value;secure, nonsecured=value'
-        }
-      )
-    else:
-      self.assertEqual(
-        headers,
-        {
-          'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip',
-          'Content-type': 'application/json',
-          'Set-Cookie': 'secured=value;secure, nonsecured=value'
-        }
-      )
+    self.assertEqual(
+      headers,
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+      }
+    )
 
     result_http = self.fakeHTTPResult(
       'apachecustomhttpsaccepted.example.com',
@@ -2309,11 +2144,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'apache_custom_http_filled_in_accepted' in open(q).read()]
     self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
-  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-rejected']
-    self.assertEqual({}, parameter_dict)
+    self.assertEqual(
+      {
+        'request-error-list': '["slave not authorised"]'
+      },
+      parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
     # no configuration file contains provided custom http
@@ -2327,7 +2165,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
     self.assertEqual([], configuration_file_with_custom_http_list)
 
-  @skipIf(not IS_CADDY, 'Feature not applicable')
   def test_caddy_custom_http_s_accepted(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-accepted']
@@ -2486,7 +2323,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
-@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
                                          TestDataMixin):
   @classmethod
@@ -2580,7 +2416,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
 
-@skipIf(not IS_CADDY, 'Will NOT be fixed for apache-frontend')
 class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
                                            TestDataMixin):
   @classmethod
@@ -2813,7 +2648,11 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
       'slave-amount': '3',
-      'rejected-slave-list': '["_url", "_https-url"]'}
+      'rejected-slave-dict':
+      '{"_https-url": ["slave https-url \\"https://[fd46::c2ae]:!py!u\'123123'
+      '\'\\" invalid"], "_url": ["slave url \\"https://[fd46::c2ae]:!py!u\''
+      '123123\'\\" invalid"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -2843,20 +2682,28 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
     self.assertEqual(
-      parameter_dict, {}
+      parameter_dict,
+      {
+        'request-error-list': '["slave url \\"https://[fd46::c2ae]:!py!'
+        'u\'123123\'\\" invalid"]'
+      }
     )
 
   def test_https_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'https-url'].copy()
     self.assertEqual(
-      parameter_dict, {}
+      parameter_dict,
+      {
+        'request-error-list': '["slave https-url \\"https://[fd46::c2ae]:'
+        '!py!u\'123123\'\\" invalid"]'
+      }
     )
 
 
@@ -3092,9 +2939,15 @@ https://www.google.com {}""",
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '4',
       'slave-amount': '12',
-      'rejected-slave-list':
-      '["_caddy_custom_http_s-reject", "_ssl_key-ssl_crt-unsafe", '
-      '"_custom_domain-unsafe", "_server-alias-unsafe"]'}
+      'rejected-slave-dict':
+      '{"_caddy_custom_http_s-reject": ["slave caddy_custom_http '
+      'configuration invalid", "slave caddy_custom_https configuration '
+      'invalid"], "_server-alias-unsafe": ["server-alias \'${section:option}\''
+      ' not valid", "server-alias \'afterspace\' not valid"], '
+      '"_custom_domain-unsafe": ["custom_domain \'${section:option} '
+      'afterspace\\\\nafternewline\' invalid"], "_ssl_key-ssl_crt-unsafe": '
+      '["slave ssl_key and ssl_crt does not match"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
@@ -3149,7 +3002,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3194,7 +3047,7 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
@@ -3211,7 +3064,11 @@ https://www.google.com {}""",
       'custom_domain-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["custom_domain \'${section:option} afterspace\\\\nafternewline\' '
+        'invalid"]'
+      }
     )
 
   def test_server_alias_unsafe(self):
@@ -3219,7 +3076,11 @@ https://www.google.com {}""",
       'server-alias-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["server-alias \'${section:option}\' not valid", "server-alias '
+        '\'afterspace\' not valid"]'
+      }
     )
 
   def test_virtualhostroot_http_port_unsafe(self):
@@ -3334,11 +3195,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3377,11 +3238,11 @@ https://www.google.com {}""",
       der2pem(result.peercert),
       open('wildcard.example.com.crt').read())
 
-    self.assertEqual(result.status_code, no_backend_response_code)
+    self.assertEqual(result.status_code, httplib.NOT_FOUND)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, no_backend_response_code)
+    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3402,7 +3263,7 @@ https://www.google.com {}""",
       'ssl_key-ssl_crt-unsafe']
     self.assertEqual(
       parameter_dict,
-      {}
+      {'request-error-list': '["slave ssl_key and ssl_crt does not match"]'}
     )
 
   def test_caddy_custom_http_s_reject(self):
@@ -3410,7 +3271,11 @@ https://www.google.com {}""",
       'caddy_custom_http_s-reject']
     self.assertEqual(
       parameter_dict,
-      {}
+      {
+        'request-error-list':
+        '["slave caddy_custom_http configuration invalid", '
+        '"slave caddy_custom_https configuration invalid"]'
+      }
     )
 
 
@@ -3461,11 +3326,27 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
-      'rejected-slave-list': '["_site_3", "_site_1", "_site_4"]'}
+      'rejected-slave-dict':
+      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes", '
+      '"server-alias \'duplicate.example.com\' clashes"], "_site_1": '
+      '["custom_domain \'duplicate.example.com\' clashes"], "_site_3": '
+      '["server-alias \'duplicate.example.com\' clashes"]}'
+    }
 
     self.assertEqual(
       expected_parameter_dict,
       parameter_dict
+    )
+
+  def test_site_1(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_1']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["custom_domain \'duplicate.example.com\' clashes"]'
+      }
     )
 
   def test_site_2(self):
@@ -3481,5 +3362,28 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
         'public-ipv4': LOCAL_IPV4,
+      }
+    )
+
+  def test_site_3(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_3']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["server-alias \'duplicate.example.com\' clashes"]'
+      }
+    )
+
+  def test_site_4(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'site_4']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list':
+        '["custom_domain \'duplicate.example.com\' clashes", "server-alias '
+        '\'duplicate.example.com\' clashes"]'
       }
     )

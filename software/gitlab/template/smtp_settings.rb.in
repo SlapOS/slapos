@@ -10,6 +10,7 @@
 if Rails.env.production?
   Gitlab::Application.config.action_mailer.delivery_method = :smtp
 
+  ActionMailer::Base.delivery_method = :smtp
   ActionMailer::Base.smtp_settings = {
     address:                "{{ cfg('smtp_address') }}",
     port:                   {{ cfg('smtp_port') }},
