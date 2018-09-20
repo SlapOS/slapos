@@ -12,6 +12,10 @@ into your software release.
 server components of caucase.
 
 
+Remember, that importing the template has to happen with context:
+
+``{{ import "caucase" as caucase with context }}``
+
 Software
 --------
 
