@@ -337,6 +337,11 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-apachedex-result
 command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
+[{{ section('promise-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-computer-memory
+command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
