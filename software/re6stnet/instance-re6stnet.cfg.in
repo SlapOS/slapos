@@ -28,6 +28,12 @@ newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 re6st = ${:srv}/res6stnet
 
+# We need this part to clean services folder to avoid duplicates
+[clean-directories]
+recipe = plone.recipe.command
+command =
+  rm -f $${directory:services}/* $${directory:scripts}/*
+
 [re6stnet-dirs]
 recipe = slapos.cookbook:mkdirectory
 registry = ${directory:re6st}/registry
@@ -80,13 +86,19 @@ wrapper-path = {{ apache_wrapper }}
 command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
 {% if uri_scheme == 'https' %}
-[{{ section('apache-ca') }}]
+[apache-ca]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 executable = ${apache-httpd:wrapper-path}
-wrapper = ${directory:services}/httpd
+wrapper = ${directory:bin}/httpd
 key-file = ${certificate-authority:ca-private}/apache.key
 cert-file = ${certificate-authority:ca-certs}/apache.crt
+
+[{{ section('apache-ca-service') }}]
+recipe = slapos.cookbook:wrapper
+command-line = ${apache-ca:wrapper}
+wrapper-path = ${directory:services}/httpd
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 {% endif %}
 
 [apache-httpd-graceful]
@@ -222,7 +234,8 @@ extends =
   {{ monitor2_template_rendered }}
   {{ logrotate_cfg }}
 
-parts = 
+parts =
+  clean-directories
   certificate-authority
   logrotate-apache
   logrotate-entry-re6stnet
