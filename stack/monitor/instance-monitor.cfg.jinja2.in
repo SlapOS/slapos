@@ -65,7 +65,13 @@ recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
 cert-file = ${monitor-httpd-conf-parameter:cert-file}
 executable = ${monitor-httpd-wrapper:wrapper-path}
-wrapper = ${directory:services}/monitor-httpd
+wrapper = ${directory:bin}/monitor-httpd
+
+[ca-monitor-httpd-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-monitor-httpd:wrapper}
+wrapper-path = ${directory:services}/monitor-httpd
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [monitor-conf-parameters]
 title = ${monitor-instance-parameter:monitor-title}
@@ -403,7 +409,7 @@ depends =
   ${certificate-authority:wrapper}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
-  ${ca-monitor-httpd:wrapper}
+  ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
   ${monitor-symlink:recipe}
