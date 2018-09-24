@@ -58,7 +58,7 @@ port = 9026
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
 pid-file = ${directory:run}/apache.pid
-context = 
+context =
   key apache_port :port
   key re6st_ipv4 re6st-registry:ipv4
   key re6st_port re6st-registry:port
@@ -80,13 +80,19 @@ wrapper-path = {{ apache_wrapper }}
 command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
 {% if uri_scheme == 'https' %}
-[{{ section('apache-ca') }}]
+[apache-ca]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 executable = ${apache-httpd:wrapper-path}
-wrapper = ${directory:services}/httpd
+wrapper = ${directory:bin}/httpd
 key-file = ${certificate-authority:ca-private}/apache.key
 cert-file = ${certificate-authority:ca-certs}/apache.crt
+
+[{{ section('apache-ca-service') }}]
+recipe = slapos.cookbook:wrapper
+command-line = ${apache-ca:wrapper}
+wrapper-path = ${directory:services}/httpd
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 {% endif %}
 
 [apache-httpd-graceful]
@@ -164,7 +170,7 @@ dh-file = ${re6st-registry-conf-dict:dh}
 
 slave-instance-list = ${slap-parameter:slave_instance_list}
 
-environment = 
+environment =
   PATH={{ openssl_bin }}
 
 [re6stnet-manage]
@@ -222,7 +228,7 @@ extends =
   {{ monitor2_template_rendered }}
   {{ logrotate_cfg }}
 
-parts = 
+parts =
   certificate-authority
   logrotate-apache
   logrotate-entry-re6stnet
