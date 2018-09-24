@@ -50,6 +50,12 @@ cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
 
+# We need this part to clean services folder to avoid duplicates
+[clean-directories]
+recipe = plone.recipe.command
+command =
+  rm -f $${directory:services}/* $${directory:scripts}/*
+
 [create-mac]
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/mac
@@ -199,6 +205,7 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
+hash-files = $${buildout:directory}/software_release/buildout.cfg
 
 
 [kvm-controller-wrapper]
@@ -649,6 +656,7 @@ context =
 
 [buildout]
 parts =
+  clean-directories
   certificate-authority
   publish-connection-information
   kvm-instance
