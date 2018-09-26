@@ -1,0 +1,116 @@
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory} 
+offline = true
+
+
+[frontend-instance-password]
+recipe = slapos.cookbook:generate.password
+username = node
+bytes = 12
+
+[frontend-instance-config]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}
+template = inline:
+  https://$${:hostname}:$${:port} {
+    bind $${:ip}
+    tls self_signed # TODO
+    log stdout
+    errors stderr
+    gzip
+    # because protocol upgrade to websocket is not possible on http2
+    tls {
+      alpn http/1.1
+    }
+    proxy / $${theia-instance:base-url} {
+    #  transparent
+    }
+    proxy /services $${theia-instance:base-url} {
+      websocket
+    }
+    basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
+      realm "Theia"
+      /
+    }
+  }
+ip = $${instance-parameter:ipv6-random}
+hostname = [$${:ip}]
+port = 3001
+
+[frontend-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${caddy:output} -conf $${frontend-instance-config:rendered}
+
+ip = $${frontend-instance-config:ip}
+hostname = $${frontend-instance-config:hostname}
+port = $${frontend-instance-config:port}
+url = https://$${frontend-instance-password:username}:$${frontend-instance-password:passwd}@$${:hostname}:$${:port}/
+
+[user]
+recipe = slapos.cookbook:userinfo
+
+[theia-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  env -i HOME=$${directory:srv} LC_ALL=C.UTF-8 USER=$${user:pw-name} LOGNAME=$${user:pw-name} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+
+ip =  $${instance-parameter:ipv4-random}
+hostname =  $${:ip}
+port = 3000
+base-url = http://$${:hostname}:$${:port}/
+
+
+[promises]
+recipe =
+instance-promises =
+  $${theia-listen-promise:path}
+  $${frontend-listen-promise:path}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/$${:_buildout_section_name_}
+
+[theia-listen-promise]
+<= check-port-listening-promise
+hostname= $${theia-instance:ip}
+port = $${theia-instance:port}
+
+[frontend-listen-promise]
+<= check-port-listening-promise
+hostname= $${frontend-instance:ip}
+port = $${frontend-instance:port}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${frontend-instance:url}
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+
+services = $${:etc}/service
+promises = $${:etc}/promise
+framebuffer = $${:srv}/framebuffer
+fonts = $${:srv}/fonts/
