@@ -1,10 +1,19 @@
-Store Xorg lock files and sockets in different directories
+From 8469ef2a978e19145a56adb54925cf5936ab2d49 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 17 Sep 2018 16:07:02 +0200
+Subject: [PATCH] SlapOS: Store Xorg lock files and sockets in different
+ directories
 
 see xorg-server_tmp_env.patch
+---
+ src/xcb_util.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
---- libxcb-1.7/src/xcb_util.c.back	2012-04-03 13:30:36.000000000 +0200
-+++ libxcb-1.7/src/xcb_util.c	2012-04-03 14:47:00.000000000 +0200
-@@ -147,11 +147,31 @@
+diff --git a/src/xcb_util.c b/src/xcb_util.c
+index a16270c..d05f8a1 100644
+--- a/src/xcb_util.c
++++ b/src/xcb_util.c
+@@ -223,15 +223,37 @@ static int _xcb_open_unix(char *protocol, const char *file);
  static int _xcb_open_abstract(char *protocol, const char *file, size_t filelen);
  #endif
  
@@ -28,13 +37,22 @@ see xorg-server_tmp_env.patch
 +  return strncat(path_list[0], suffix, PATH_MAX);
 +}
 +
++
  static int _xcb_open(const char *host, char *protocol, const int display)
  {
      int fd;
+ #ifdef __hpux
+     static const char unix_base[] = "/usr/spool/sockets/X11/";
++    #error "SlapOS: no patch for hpux"
+ #else
 -    static const char unix_base[] = "/tmp/.X11-unix/X";
--    const char *base = unix_base;
 +    char *base;
 +    base = _xcb_getandappendcompatibleenv("XORG_LOCK_DIR", "/tmp", "/.X11-unix/X");
+ #endif
+-    const char *base = unix_base;
      size_t filelen;
      char *file = NULL;
      int actual_filelen;
+-- 
+2.11.0
+
