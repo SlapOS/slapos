@@ -137,7 +137,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       # cls.createInstances()
       # cls.requestInstances()
 
-    except Exception:
+    except BaseException:
       cls.stopSlapOSProcesses()
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
