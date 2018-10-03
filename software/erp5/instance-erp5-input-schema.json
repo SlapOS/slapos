@@ -221,7 +221,7 @@
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json#/properties"
+        "$ref": "./instance-mariadb-schema.json"
       },
       "type": "object"
     },
