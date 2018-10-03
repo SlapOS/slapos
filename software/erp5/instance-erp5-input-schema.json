@@ -2,6 +2,13 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Parameters to instantiate ERP5",
   "additionalProperties": false,
+  "definitions": {
+    "tcpv4port": {
+      "minimum": 0,
+      "maximum": 65535,
+      "type": "integer"
+    }
+  },
   "properties": {
     "sla-dict": {
       "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
@@ -89,7 +96,7 @@
         "software-type": {
           "description": "Request a front-end slave instance of this software type.",
           "default": "RootSoftwareInstance",
-          "type": "object"
+          "type": "string"
         },
         "virtualhostroot-http-port": {
           "description": "Front-end slave http port. Port where http requests to frontend will be redirected.",
