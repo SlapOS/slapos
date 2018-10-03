@@ -3,6 +3,7 @@
   "required": [
     "tcpv4-port"
   ],
+  "type": "object",
   "properties": {
     "tcpv4-port": {
       "allOf": [
