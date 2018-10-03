@@ -190,14 +190,14 @@
     "kumofs": {
       "description": "Persistent memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json#/properties"
+        "$ref": "./instance-kumofs-schema.json"
       },
       "type": "object"
     },
     "memcached": {
       "description": "Volatile memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json#/properties"
+        "$ref": "./instance-kumofs-schema.json"
       },
       "type": "object"
     },
@@ -214,14 +214,14 @@
     "smtp": {
       "description": "Mail queuing and relay service",
       "additionalProperties": {
-        "$ref": "./instance-smtp-schema.json#/properties"
+        "$ref": "./instance-smtp-schema.json"
       },
       "type": "object"
     },
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json#/properties"
+        "$ref": "./instance-mariadb-schema.json"
       },
       "type": "object"
     },
@@ -348,7 +348,7 @@
         }
       },
       "additionalProperties": {
-        "$ref": "../caucase/instance-caucase-input-schema.json#/properties"
+        "$ref": "../caucase/instance-caucase-input-schema.json"
       },
       "type": "object"
     }
