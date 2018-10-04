@@ -2,7 +2,7 @@ Monitor stack
 =============
 
 * This stack has for purpose to know if all promises, services, custom monitoring scripts went/are ok.
-* It also provides a web interface, to see which promises, instance and hosting subscription status. It also provide a rss feed to easily know the actual state of your instance, and to know when it started to went bad. You can also add your own monitoring scripts.
+* It also provides a web interface, to see promises, instances and hosting subscriptions status. It also provides a rss feed to easily know the actual state of your instance, and to know when it started to went bad. You can also add your own monitoring scripts.
 
 
 Implementation :
@@ -69,13 +69,13 @@ You don't need to define all parameters, you can only set what is required to be
 
 If you have sub-instances, you should collect the base monitor url from all instances with monitor and send it to monitor-url-list or you can override "monitor-base-url-dict" section and add all the urls as key/value pairs in the root instance.
 
-    [monitor-base-url-list]
+    [monitor-base-url-dict]
     monitor1-url = https://[xxxx:xxx:xxxx:e:11::1fb1]:4200
     monitor2-url = https://[xxxx:xxx:xxxx:e:22::2fb2]:4200
     ..
     ..
 
-Also, All monitors of the sub instances need to have same password as the password of the root instance monitor.
+Also, all monitors of the sub instances need to have same password as the password of the root instance monitor.
 
 NB: You should use double $ (ex: $${monitor-template:rendered}) instead of one $ in your instance template file if it's not a jinja template. See:
 - Jinja template file exemple, use one $: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance-resilient-test.cfg.jinja2
@@ -89,9 +89,9 @@ To learn how to write a promise in SlapOS, please read this document:
     https://www.erp5.com/slapos-TechnicalNote.General.SlapOS.Monitoring.Specifications
 
 Writing a promise consists of defining a class called RunPromise which inherits from GenericPromise class and defining methods: anomaly(), sense() and test(). Python promises should be placed into the folder etc/plugin of the computer partition.
-New promises should be placed into the folder etc/plugin, legacy promise are into the folder etc/promise. Legacy promises are bash or other executable promises script which does not use GenericPromise class.
+New promises should be placed into the folder etc/plugin, legacy promises are into the folder etc/promise. Legacy promises are bash or other executable promises script which does not use GenericPromise class.
 
-You will use slapos.cookbook:promise.plugin to generate your promise script into `etc/plugin` directory. Add promise will look like this:
+You will use slapos.cookbook:promise.plugin to generate your promise script into `etc/plugin` directory. Adding a promise will look like this:
 
     [promise-check-site]
     recipe = slapos.cookbook:promise.plugin
@@ -107,8 +107,7 @@ You will use slapos.cookbook:promise.plugin to generate your promise script into
 
 Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
 
-In your promise code, you will be able to call `self.getConfig('site-url')`, `self.getConfig('connection-timeout')` and `self.getConfig('foo')`. The
-returned value is `None` if the config parameter is not set.
+In your promise code, you will be able to call `self.getConfig('site-url')`, `self.getConfig('connection-timeout')` and `self.getConfig('foo')`. The returned value is `None` if the config parameter is not set.
 
 Slapgrid will run each promise every time a partition is processed (every minutes in theory), if the partition is up to date, slapgrid will only run promises anomaly check and save the result in a json file. Here is an exemple of promise result:
 
@@ -197,8 +196,7 @@ To publish configuration URL in your instance.cfg, you can do like this:
 Send parameters to monitor interface
 ------------------------------------
 
-Monitor has a paramters called "instance-configuration" from the section [monitor-instance-parameter]
-that can be updated to specify which parameters will be deplayed on monitor web interface.
+Monitor has a paramters called "instance-configuration" from the section [monitor-instance-parameter] that can be updated to specify which parameters will be deployed on monitor web interface.
 
 Parameters can be editable (except raw parameter) directly from  monitor interface. The change will be updated into the related file. Here are some examples:
 
