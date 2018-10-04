@@ -69,6 +69,8 @@ if 1:
         print("*.pid")
         print(".installed*.cfg")
         for partition in glob.glob(path + "/instance/slappart*"):
+            if not os.path.isdir(partition):
+              continue
             os.chdir(partition)
             try:
                 with open("srv/exporter.exclude") as f:
