@@ -68,7 +68,7 @@ if 1:
         print("*.socket")
         print("*.pid")
         print(".installed*.cfg")
-        for partition in glob.glob(path + "/instance/slappart*"):
+        for partition in glob.glob(path + "/instance/slappart*/"):
             os.chdir(partition)
             try:
                 with open("srv/exporter.exclude") as f:
