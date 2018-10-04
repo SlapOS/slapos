@@ -56,7 +56,12 @@ if 1:
         print("*.pid")
         print(".installed*.cfg")
         for partition in glob.glob(path + "/instance/slappart*"):
-            os.chdir(partition)
+            try:
+              os.chdir(partition)
+            except OSError as e:
+              if e.errno != errno.ENOTDIR:
+                raise
+              continue
             try:
                 with open("srv/exporter.exclude") as f:
                     exclude = f.readlines()
