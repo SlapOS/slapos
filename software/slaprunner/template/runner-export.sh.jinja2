@@ -122,7 +122,7 @@ sleep 5
 
 # Getting files from runner backup directory, as instance backup files may be
 # explicitely excluded from the backup, using the srv/exporter.exclude
-find -path "./runner/instance/slappart*/srv/backup/*" -type f -print0 |
+find -path "./runner/instance/slappart*/srv/backup/*" -type f ! -name backup.signature -print0 |
 xargs -r0 sha256sum | sort -k 66 > "$tmp_backup_sum"
 
 # If no backup found, it's over
