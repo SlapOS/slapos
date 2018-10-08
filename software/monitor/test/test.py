@@ -70,8 +70,9 @@ class ServicesTestCase(InstanceTestCase):
     hash_files = [
       'software_release/buildout.cfg',
     ]
-    service_names = [
-      'monitor-httpd',
+    expected_process_names = [
+      'monitor-httpd-{hash}-on-watch',
+      'crond-{hash}',
     ]
 
     supervisor = self.getSupervisorRPCServer().supervisor
@@ -81,8 +82,8 @@ class ServicesTestCase(InstanceTestCase):
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
 
-    for service_name in service_names:
+    for name in expected_process_names:
       h = ServicesTestCase.generateHashFromFiles(hash_files)
-      expected_process_name = '{}-{}-on-watch'.format(service_name, h)
+      expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
