@@ -31,7 +31,7 @@ import os
 
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
-import six
+from six import iteritems
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 from slapos.util import mkdir_p
@@ -116,7 +116,7 @@ class Recipe(object):
                                       buildout['buildout']['directory'])
 
       match = self.OPTCRE_match
-      for key, value in six.iteritems(parameter_dict):
+      for key, value in iteritems(parameter_dict):
           if match(key) is not None:
               continue
           options['configuration.' + key] = value

@@ -34,7 +34,7 @@ import stat
 import netaddr
 import time
 import re
-from six.moves.urllib import parse as urlparse
+from six.moves.urllib import parse
 import json
 
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
@@ -324,7 +324,7 @@ class BaseSlapRecipe:
     if port is not None:
       netloc += ':%s' % port
 
-    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    url = parse.urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
 
