@@ -11,14 +11,11 @@ parts =
   logrotate
   cron
   cron-entry-logrotate
-  ca-frontend
-  ca-frontend-service
-  certificate-authority
-  certificate-authority-service
   logrotate-entry-caddy
   logrotate-entry-nginx
   caddy-frontend
   switch-caddy-softwaretype
+  kedifa-login-certificate
   frontend-caddy-graceful
   frontend-nginx-graceful
   not-found-html
@@ -106,6 +103,7 @@ slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
 context =
     import json_module json
+    import os_module os
     raw common_profile {{ parameter_dict['common_profile'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
@@ -121,6 +119,51 @@ caddy-location = {{ parameter_dict['caddy_location'] }}
 template-nginx-eventsource-slave-virtualhost = {{ parameter_dict['template_nginx_eventsource_slave_virtualhost'] }}
 template-nginx-notebook-slave-virtualhost = {{ parameter_dict['template_nginx_notebook_slave_virtualhost'] }}
 
+[kedifa-login-config]
+d = ${directory:ca-dir}
+csr = ${:d}/kedifa-login-csr.pem
+key = ${:d}/kedifa-login-certificate.pem
+certificate = ${:key}
+ca-certificate = ${:d}/kedifa-caucase-ca.pem
+cas-ca-certificate = ${:d}/kedifa-cas-caucase-ca.pem
+crl = ${:d}/kedifa-login-crl.pem
+
+[kedifa-login-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+command =
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:csr}
+  fi
+{% endif %}
+  test -f ${:key} && test -f ${:csr}
+update-command = ${:command}
+csr = ${kedifa-login-config:csr}
+key = ${kedifa-login-config:key}
+stop-on-error = True
+
+[kedifa-login-certificate]
+recipe = slapos.cookbook:wrapper
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+command-line = {{ parameter_dict['bin_directory'] }}/caucase-updater
+  --ca-url {{ slapparameter_dict['kedifa-caucase-url'] }}
+  --mode service
+  --csr ${kedifa-login-csr:csr}
+  --key ${kedifa-login-csr:key}
+  --crt ${kedifa-login-config:certificate}
+  --cas-ca ${kedifa-login-config:cas-ca-certificate}
+  --ca ${kedifa-login-config:ca-certificate}
+  --crl ${kedifa-login-config:crl}
+{% else %}
+command-line = /bin/false
+{% endif %}
+wrapper-path = ${directory:service}/kedifa-login-certificate-caucase-updater
+
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
 template = {{ parameter_dict['template_slave_list'] }}
@@ -128,17 +171,25 @@ filename = custom-personal-instance-slave-list.cfg
 extensions = jinja2.ext.do
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
+master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
+slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
 local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
 software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
+kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
+    key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
+    key kedifa_login_certificate kedifa-login-config:certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
+    key kedifa_getter :kedifa-getter
+    key kedifa_csr :kedifa-csr
     key http_port configuration:plain_http_port
     key https_port configuration:port
     key nginx_http_port configuration:plain_nginx_port
@@ -146,7 +197,10 @@ extra-context =
     key public_ipv4 configuration:public-ipv4
     key slave_instance_list :slave_instance_list
     key extra_slave_instance_list :extra_slave_instance_list
-    key custom_ssl_directory caddy-directory:vh-ssl
+    key master_key_download_url :master_key_download_url
+    key slave_kedifa_information :slave_kedifa_information
+    key autocert caddy-directory:autocert
+    key master_certificate caddy-configuration:master-certificate
     key caddy_log_directory caddy-directory:slave-log
     key local_ipv4 :local_ipv4
     key local_ipv6 :local_ipv6
@@ -168,14 +222,12 @@ extra-context =
     key promise_directory monitor-directory:promises
     key report_directory monitor-directory:reports
     key bin_directory :bin_directory
-    key login_certificate ca-frontend:cert-file
-    key login_key ca-frontend:key-file
-    key login_ca_crt ca-custom-frontend:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
     key service_directory directory:service
+    key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
 
 [dynamic-virtualhost-template-slave]
@@ -202,11 +254,7 @@ extra-context =
     key httpd_home software-release-path:caddy-location
     key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
-    key login_certificate ca-frontend:cert-file
-    key login_key ca-frontend:key-file
-    key login_ca_crt ca-custom-frontend:rendered
-    key ca_dir  certificate-authority:ca-dir
-    key ca_crl certificate-authority:ca-crl
+    key master_certificate caddy-configuration:master-certificate
     key access_log caddy-configuration:access-log
     key slave_configuration_directory caddy-directory:slave-configuration
     key cached_port caddy-configuration:cache-through-port
@@ -240,10 +288,6 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
-wait-for-files =
-	       ${ca-frontend:cert-file}
-	       ${ca-frontend:key-file}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -258,9 +302,10 @@ slave-configuration = ${directory:etc}/caddy-slave-conf.d/
 slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
-vh-ssl = ${:slave-configuration}/ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
+autocert = ${directory:srv}/autocert
+master-autocert-dir = ${:autocert}/master-autocert
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -270,6 +315,7 @@ pid-file = ${directory:run}/httpd.pid
 frontend-configuration-verification = ${caddy-wrapper:wrapper-path} -validate > /dev/null
 frontend-graceful-command = ${:frontend-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${:pid-file}); fi
 not-found-file = ${caddy-directory:document-root}/notfound.html
+master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
 cache-through-port = 26011
@@ -279,57 +325,6 @@ ssl-cache-through-port = 26012
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -validate
 wrapper-path = ${directory:bin}/caddy-configtest
-
-[certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
-ca-dir = ${directory:ca-dir}
-requests-directory = ${cadirectory:requests}
-wrapper = ${directory:bin}/certificate_authority
-ca-private = ${cadirectory:private}
-ca-certs = ${cadirectory:certs}
-ca-newcerts = ${cadirectory:newcerts}
-ca-crl = ${cadirectory:crl}
-
-[certificate-authority-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${certificate-authority:wrapper}
-wrapper-path = ${directory:service}/certificate_authority
-hash-files = ${buildout:directory}/software_release/buildout.cfg
-
-[cadirectory]
-recipe = slapos.cookbook:mkdirectory
-requests = ${directory:ca-dir}/requests/
-private = ${directory:ca-dir}/private/
-certs = ${directory:ca-dir}/certs/
-newcerts = ${directory:ca-dir}/newcerts/
-crl = ${directory:ca-dir}/crl/
-
-[ca-frontend]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-key-file = ${cadirectory:certs}/frontend.key
-cert-file = ${cadirectory:certs}/frontend.crt
-executable = ${directory:service}/frontend_caddy
-wrapper = ${directory:bin}/frontend_caddy
-key-content = ${configuration:apache-key}
-cert-content = ${configuration:apache-certificate}
-# Put domain name
-name = ${configuration:domain}
-
-[ca-frontend-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${ca-frontend:wrapper}
-wrapper-path = ${directory:service}/frontend_caddy
-hash-files = ${buildout:directory}/software_release/buildout.cfg
-
-[ca-custom-frontend]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
-rendered = ${cadirectory:certs}/frontend.ca.crt
-apache-ca-certificate = ${configuration:apache-ca-certificate}
-extra-context =
-    key content :apache-ca-certificate
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -518,6 +513,7 @@ extra-context =
     key directory_run directory:run
     key directory_etc directory:etc
     key directory_bin directory:bin
+    key directory_autocert caddy-directory:autocert
     key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
 
 [frontend-caddy-lazy-graceful]
@@ -670,14 +666,13 @@ rendered = ${directory:etc}/nginx.cfg
 mode = 0600
 extra-context =
   key port nginx-configuration:port
-  key ssl_certificate nginx-configuration:ssl_certificate
-  key ssl_key nginx-configuration:ssl_key
   key local_ip nginx-configuration:local_ip
   key plain_port nginx-configuration:plain_port
   key slave_configuration_directory nginx-configuration:slave-configuration-directory
   key error_log nginx-configuration:error_log
   key access_log nginx-configuration:access_log
   key not_found_file caddy-configuration:not-found-file
+  key master_certificate caddy-configuration:master-certificate
 
 [nginx-configuration]
 access_log = ${directory:log}/nginx-access.log
@@ -692,8 +687,6 @@ slave-configuration-directory = ${caddy-directory:nginx-slave-configuration}
 pid-file = ${directory:run}/nginx.pid 
 nginx-graceful-command = ${:nginx-configuration-verification}; if [ $? -eq 0 ]; then kill -HUP $(cat ${:pid-file}); fi
 nginx-configuration-verification = ${nginx-wrapper:wrapper-path} -validate
-ssl_certificate = ${ca-frontend:cert-file}
-ssl_key = ${ca-frontend:key-file}
 
 [frontend-nginx-graceful]
 < = jinja2-template-base
