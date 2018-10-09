@@ -5,8 +5,9 @@ import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
 # Catch-all and 404 for not configured instances
+{% if os_module.path.exists(master_certificate) %}
 :{{ https_port }} {
-  tls {{ login_certificate }} {{ login_key }}
+  tls {{ master_certificate }} {{ master_certificate }}
   bind {{ local_ipv4 }}
   # Compress the output
   gzip
@@ -16,6 +17,7 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
     * {{ not_found_file }}
   }
 }
+{% endif %}
 
 :{{ http_port }} {
   bind {{ local_ipv4 }}
