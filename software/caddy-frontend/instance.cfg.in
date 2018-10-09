@@ -41,6 +41,7 @@ filename = instance-caddy-frontend.cfg
 extensions = jinja2.ext.do
 extra-context =
   section parameter_dict dynamic-template-caddy-frontend-parameters
+  raw software_type single-custom-personal
 
 [dynamic-template-caddy-replicate]
 < = jinja2-template-base

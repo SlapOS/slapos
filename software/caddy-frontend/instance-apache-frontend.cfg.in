@@ -1,3 +1,4 @@
+{%- if slap_software_type == software_type -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
 extends =
@@ -755,3 +756,4 @@ extra-context =
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor -%}
+{%- endif -%} {# if slap_software_type == software_type #}
