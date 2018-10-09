@@ -1,3 +1,5 @@
+# Access log configuration
+{% if os_module.path.exists(parameter_dict['master_certificate']) %}
 {% for slave, directory in slave_log_directory.iteritems() %}
 https://[{{ parameter_dict['global_ipv6'] }}]:{{ parameter_dict['https_port'] }}/{{ slave }}, https://{{ parameter_dict['local_ipv4'] }}:{{ parameter_dict['https_port'] }}/{{ slave }} {
   bind {{ parameter_dict['local_ipv4'] }}
@@ -14,3 +16,4 @@ https://[{{ parameter_dict['global_ipv6'] }}]:{{ parameter_dict['https_port'] }}
   }
 }
 {% endfor %}
+{% endif %}
