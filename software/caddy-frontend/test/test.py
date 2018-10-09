@@ -66,6 +66,8 @@ NGINX_HTTPS_PORT = '12443'
 MONITOR_HTTPD_PORT = '13000'
 MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
+CAUCASE_PORT = '15090'
+KEDIFA_PORT = '15080'
 
 
 # for development: debugging logs and install Ctrl+C handler
