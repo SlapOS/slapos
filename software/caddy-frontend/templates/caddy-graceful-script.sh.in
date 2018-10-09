@@ -3,12 +3,13 @@
 RUN_DIR={{ directory_run }}
 ETC_DIR={{ directory_etc }}
 BIN_DIR={{ directory_bin }}
+AUTOCERT_DIR={{ directory_autocert }}
 
 CADDY_SIGNATURE_FILE=$RUN_DIR/caddy_configuration.signature
 NCADDY_SIGNATURE_FILE=$RUN_DIR/ncaddy_configuration.signature
 
 touch $CADDY_SIGNATURE_FILE
-sha256sum $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-*.d/*.conf $ETC_DIR/caddy-*.d/ssl/*.*key $ETC_DIR/caddy-*.d/ssl/*.*crt* | sort -k 66 > $NCADDY_SIGNATURE_FILE
+sha256sum $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-*.d/*.conf $AUTOCERT_DIR/*/* | sort -k 66 > $NCADDY_SIGNATURE_FILE
 
 # If no diff, no restart for now
 if diff "$CADDY_SIGNATURE_FILE" "$NCADDY_SIGNATURE_FILE"; then
