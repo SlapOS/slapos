@@ -34,6 +34,16 @@
 {%   do slave_information_dict[slave_reference].__setitem__('request-error-list', rejected_info_list) %}
 {% endfor %}
 
+{% for slave_reference, kedifa_dict in json_module.loads(slave_kedifa_information).iteritems() %}
+{%   if slave_reference not in rejected_slave_information %}
+{%     if slave_reference not in slave_information_dict %}
+{%       do slave_information_dict.__setitem__(slave_reference, {}) %}
+{%     endif %}
+{%     do slave_information_dict[slave_reference].__setitem__('key-generate-auth-url', kedifa_dict['key-generate-auth-url']) %}
+{%     do slave_information_dict[slave_reference].__setitem__('key-upload-url', kedifa_dict['key-upload-url']) %}
+{%   endif %}
+{% endfor %}
+
 # Publish information for each slave
 {% for slave_reference, slave_information in slave_information_dict.iteritems() %}
 {%   set publish_section_title = 'publish-%s' % slave_reference %}
