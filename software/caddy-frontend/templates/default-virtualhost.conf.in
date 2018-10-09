@@ -26,11 +26,12 @@
 {%- set default_path = slave_parameter.get('default-path', '') | urlencode %}
 
 # SSL enabled hosts
+{% if os_module.path.exists(slave_parameter['certificate']) %}
 {{ https_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-  tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
+  tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1
@@ -166,6 +167,7 @@
 {%-   endif %} {#-   if backend_url #}
 {%- endif %} {#- if slave_type ==  'zope' and backend_url #}
 }  {# https_host_list|join(', ') #}
+{% endif %}
 
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
