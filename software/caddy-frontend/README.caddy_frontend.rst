@@ -195,12 +195,12 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-ssl_key, ssl_crt, ssl_ca_crt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_ca_crt
+~~~~~~~~~~
 
-SSL certificates of the slave.
+SSL CA certificates of the slave.
 
-They are optional.
+It is optional.
 
 Functionalities for Caddy configuration
 ---------------------------------------
@@ -210,7 +210,8 @@ In the slave Caddy configuration you can use parameters that will be replaced du
   * ``cache_access`` : url of the cache. Should replace backend url in configuration to use the cache
   * ``access_log`` : path of the slave error log in order to log in a file.
   * ``error_log`` : path of the slave access log in order to log in a file.
-  * ``ssl_key``, ``ssl_crt``, ``ssl_ca_crt``, ``ssl_crs`` : paths of the certificates given in slave instance parameters
+  * ``certificate`` : path to the certificate
+  * ``ssl_ca_crt``, ``ssl_crs`` : paths of the certificates given in slave instance parameters
 
 
 Examples
@@ -293,7 +294,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "caddy_custom_https":'
   https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
     bind %(local_ipv4)s
-    tls %(ssl_crt)s %(ssl_key)s
+    tls %%(certificate)s %%(certificate)s
 
     log / %(access_log)s {combined}
     errors %(error_log)s
