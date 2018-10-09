@@ -58,8 +58,9 @@
 import {{ slave_configuration_directory }}/*.conf
 
 # Catch-all and 404 for not configured instances
+{% if os_module.path.exists(master_certificate) %}
 :{{ port }} {
-  tls {{ ssl_certificate }} {{ ssl_key }}
+  tls {{ master_certificate }} {{ master_certificate }}
   bind {{ local_ip }}
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico
@@ -69,6 +70,7 @@ import {{ slave_configuration_directory }}/*.conf
     * {{ not_found_file }}
   }
 }
+{% endif %}
 
 :{{ plain_port }} {
   bind {{ local_ip }}
