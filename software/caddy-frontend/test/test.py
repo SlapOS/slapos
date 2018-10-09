@@ -63,6 +63,9 @@ MONITOR_HTTPD_PORT = '13000'
 MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
+MASTER_KEY = open('wildcard.example.com.crt').read() + \
+      open('wildcard.example.com.key').read()
+
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('DEBUG'):
@@ -348,6 +351,16 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     cls.server_https_process.terminate()
 
   @classmethod
+  def setUpMaster(cls):
+    parameter_dict = cls.computer_partition.getConnectionParameterDict()
+    master_key_upload_url = parameter_dict['master-key-upload-url']
+    result = requests.put(master_key_upload_url, data=MASTER_KEY)
+    assert result.status_code == 201
+    
+    # run partitions to update information about the key
+    cls.runComputerPartition()
+
+  @classmethod
   def setUpSlaves(cls):
     cls.slave_connection_parameter_dict_dict = {}
     request = cls.slapos_controler.slap.registerOpenOrder().request
@@ -376,6 +389,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     try:
       cls.startServerProcess()
       super(SlaveHttpFrontendTestCase, cls).setUpClass()
+      cls.setUpMaster()
       cls.setUpSlaves()
     except Exception:
       cls.tearDownClass()
@@ -467,7 +481,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
 https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
   bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
+  tls { load %%(autocert_dir)s }
 
   log / %%(access_log)s {combined}
   errors %%(error_log)s
@@ -497,7 +511,7 @@ http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
   apache_custom_https = '''# apache_custom_https_filled_in_accepted
 https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
   bind %%(local_ipv4)s
-  tls %%(ssl_crt)s %%(ssl_key)s
+  tls { load %%(autocert_dir)s }
 
   log / %%(access_log)s {combined}
   errors %%(error_log)s
@@ -530,8 +544,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
@@ -860,15 +872,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'url'].copy()
     self.assertLogAccessUrlWithPop(parameter_dict, 'url')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'url.example.com',
+        'key-upload-url': 'http://%s:8080/_url' % (LOCAL_IPV4,),
         'replication_number': '1',
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -2259,8 +2272,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'stopped',
@@ -2331,8 +2342,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -2424,8 +2433,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -2615,8 +2622,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -2754,8 +2759,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
       'enable-quic': 'true',
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
@@ -2860,8 +2863,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -3286,8 +3287,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,

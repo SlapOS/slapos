@@ -59,7 +59,7 @@ import {{ slave_configuration_directory }}/*.conf
 
 # Catch-all and 404 for not configured instances
 :{{ port }} {
-  tls {{ ssl_certificate }} {{ ssl_key }}
+  tls { load {{ master_autocert_dir }} }
   bind {{ local_ip }}
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico

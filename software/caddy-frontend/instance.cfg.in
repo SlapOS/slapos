@@ -28,6 +28,7 @@ custom-personal = ${dynamic-template-caddy-replicate:rendered}
 single-default = ${dynamic-template-caddy-frontend:rendered}
 single-custom-personal = ${dynamic-template-caddy-frontend:rendered}
 replicate = ${dynamic-template-caddy-replicate:rendered}
+kedifa = ${dynamic-template-kedifa:rendered}
 
 [dynamic-template-caddy-frontend-parameters]
 {% for key,value in template_frontend_parameter_dict.iteritems() %}
@@ -62,6 +63,15 @@ extra-context =
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
     raw template_monitor {{ monitor2_template }}
     raw common_profile {{ common_profile }}
+
+[dynamic-template-kedifa]
+< = jinja2-template-base
+template = {{ template_kedifa }}
+filename = instance-kedifa.cfg
+extensions = jinja2.ext.do
+extra-context =
+  section parameter_dict dynamic-template-caddy-frontend-parameters
+  raw software_type kedifa
 
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.

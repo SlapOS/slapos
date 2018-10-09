@@ -12,7 +12,8 @@ https://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_htt
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-  tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
+  tls {
+    load {{ slave_parameter['autocert_dir'] }}
 {%-   if slave_parameter.get('path_to_ssl_ca_crt') %}
     clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
 {%-   endif %}

@@ -10,6 +10,10 @@
       "description": "Base domain used by the instance",
       "type": "string"
     },
+    "master-key-upload-url": {
+      "description": "URL to PUT PEM bundle of main certificate and key",
+      "type": "string"
+    },
     "monitor-base-url": {
       "description": "Base url for monitor",
       "type": "string"

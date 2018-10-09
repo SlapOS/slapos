@@ -1,5 +1,6 @@
 {%- if slap_software_type == software_type -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- set master_reserved_reference = slapparameter_dict['master-reserved-reference'] -%}
 [buildout]
 extends =
   {{ parameter_dict['common_profile'] }}
@@ -126,17 +127,22 @@ filename = custom-personal-instance-slave-list.cfg
 extensions = jinja2.ext.do
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
+master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
+master_reserved_reference = {{ dumps(master_reserved_reference) }}
+slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
 local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
 software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
+kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
 service_directory = ${directory:service}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
+    key kedifa_getter :kedifa-getter
     key http_port configuration:plain_http_port
     key https_port configuration:port
     key nginx_http_port configuration:plain_nginx_port
@@ -144,7 +150,11 @@ extra-context =
     key public_ipv4 configuration:public-ipv4
     key slave_instance_list :slave_instance_list
     key extra_slave_instance_list :extra_slave_instance_list
-    key custom_ssl_directory caddy-directory:vh-ssl
+    key master_key_download_url :master_key_download_url
+    key master_reserved_reference :master_reserved_reference
+    key slave_kedifa_information :slave_kedifa_information
+    key autocert caddy-directory:autocert
+    key master_autocert_dir caddy-directory:master-autocert-dir
     key caddy_log_directory caddy-directory:slave-log
     key local_ipv4 :local_ipv4
     key local_ipv6 :local_ipv6
@@ -174,6 +184,7 @@ extra-context =
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
     key service_directory directory:service
+    key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
 
 [dynamic-virtualhost-template-slave]
@@ -200,8 +211,7 @@ extra-context =
     key httpd_home software-release-path:caddy-location
     key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
-    key login_certificate ca-frontend:cert-file
-    key login_key ca-frontend:key-file
+    key master_autocert_dir caddy-directory:master-autocert-dir
     key login_ca_crt ca-custom-frontend:rendered
     key ca_dir  certificate-authority:ca-dir
     key ca_crl certificate-authority:ca-crl
@@ -255,9 +265,10 @@ slave-configuration = ${directory:etc}/caddy-slave-conf.d/
 slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
-vh-ssl = ${:slave-configuration}/ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
+autocert = ${directory:srv}/autocert
+master-autocert-dir = ${:autocert}/{{ master_reserved_reference.replace('-','.') }}
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -502,6 +513,7 @@ extra-context =
     key directory_run directory:run
     key directory_etc directory:etc
     key directory_bin directory:bin
+    key directory_autocert caddy-directory:autocert
     key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
 
 [frontend-caddy-lazy-graceful]
@@ -661,6 +673,7 @@ extra-context =
   key error_log nginx-configuration:error_log
   key access_log nginx-configuration:access_log
   key not_found_file caddy-configuration:not-found-file
+  key master_autocert_dir caddy-directory:master-autocert-dir
 
 [nginx-configuration]
 access_log = ${directory:log}/nginx-access.log
