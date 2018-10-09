@@ -83,12 +83,69 @@ Those slave instances will be redirected to the "master" instance, and you will 
 
 Finally, the slave instance will be accessible from: https://someidentifier.moulefrite.org.
 
-About SSL
-=========
-
-``default`` and ``custom-personl`` software type can handle specific ssl for one slave instance.
+About SSL and SlapOS Master Zero Knowledge
+==========================================
 
 **IMPORTANT**: One Caddy can not serve more than one specific SSL site and be compatible with obsolete browser (i.e.: IE8). See http://wiki.apache.org/httpd/NameBasedSSLVHostsWithSNI
+
+SSL keys and certificates are directly send to the frontend cluster in order to follow zero knowledge principle of SlapOS Master.
+
+Master partition
+----------------
+
+After requesting master partition it will return ``master-key-generate-auth-url`` and ``master-key-upload-url``.
+
+Doing HTTP GET on ``master-key-generate-auth-url`` will return authentication token, which is used to communicate with ``master-key-upload-url``. This token shall be stored securely.
+
+By doing HTTP PUT to ``master-key-upload-url`` with appended authentication token it is possible to upload PEM bundle of certificate, key and any accompanying CA certificates to the master.
+
+Example sessions is::
+
+  request(...)
+
+  curl -X GET master-key-generate-auth-url
+  > authtoken
+
+  cat certificate.pem key.pem ca-bundle.pem > master.pem
+
+  curl -X PUT --data-binary @master.pem master-key-upload-url+authtoken
+
+This replaces old request parameters:
+
+ * ``apache-certificate``
+ * ``apache-key``
+ * ``apache-ca-certificate``
+
+(*Note*: They are still supported for backward compatibility, but any value send to the ``master-key-upload-url`` will supersede information from SlapOS Master.)
+
+Slave partition
+---------------
+
+After requesting slave partition it will return ``key-generate-auth-url`` and ``key-upload-url``.
+
+Doing HTTP GET on ``key-generate-auth-url`` will return authentication token, which is used to communicate with ``key-upload-url``. This token shall be stored securely.
+
+By doing HTTP PUT to ``key-upload-url`` with appended authentication token it is possible to upload PEM bundle of certificate, key and any accompanying CA certificates to the master.
+
+Example sessions is::
+
+  request(...)
+
+  curl -X GET key-generate-auth-url
+  > authtoken
+
+  cat certificate.pem key.pem ca-bundle.pem > master.pem
+
+  curl -X PUT --data-binary @master.pem key-upload-url+authtoken
+
+This replaces old request parameters:
+
+ * ``ssl_crt``
+ * ``ssl_key``
+ * ``ssl_ca_crt``
+
+(*Note*: They are still supported for backward compatibility, but any value send to the ``key-upload-url`` will supersede information from SlapOS Master.)
+
 
 How to have custom configuration in frontend server - XXX - to be written
 =========================================================================
@@ -195,13 +252,6 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-ssl_key, ssl_crt, ssl_ca_crt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-SSL certificates of the slave.
-
-They are optional.
-
 Functionalities for Caddy configuration
 ---------------------------------------
 
@@ -210,7 +260,7 @@ In the slave Caddy configuration you can use parameters that will be replaced du
   * ``cache_access`` : url of the cache. Should replace backend url in configuration to use the cache
   * ``access_log`` : path of the slave error log in order to log in a file.
   * ``error_log`` : path of the slave access log in order to log in a file.
-  * ``ssl_key``, ``ssl_crt``, ``ssl_ca_crt``, ``ssl_crs`` : paths of the certificates given in slave instance parameters
+  * ``certificate`` : path to the certificate
 
 
 Examples
@@ -293,7 +343,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "caddy_custom_https":'
   https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
     bind %(local_ipv4)s
-    tls %(ssl_crt)s %(ssl_key)s
+    tls %%(certificate)s %%(certificate)s
 
     log / %(access_log)s {combined}
     errors %(error_log)s
@@ -478,6 +528,13 @@ Note that in some cases promises will fail:
  * no nginx style slave present (websocket, notebook) (configuration promise and others)
 
 This is known issue and shall be tackled soon.
+
+KeDiFa
+======
+
+Additional partition with KeDiFa (Key Distribution Facility) is by default requested on the same computer as master frontend partition.
+
+By adding to the request keys like ``-sla-kedifa-<key>`` it is possible to provide SLA information for kedifa partition. Eg to put it on computer ``couscous`` it shall be ``-sla-kedifa-computer_guid: couscous``.
 
 Notes
 =====
