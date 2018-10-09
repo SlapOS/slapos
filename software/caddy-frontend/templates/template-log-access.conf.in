@@ -1,3 +1,4 @@
+# Access log configuration
 {% for slave, directory in slave_log_directory.iteritems() %}
 https://[{{ parameter_dict['global_ipv6'] }}]:{{ parameter_dict['https_port'] }}/{{ slave }}, https://{{ parameter_dict['local_ipv4'] }}:{{ parameter_dict['https_port'] }}/{{ slave }} {
   bind {{ parameter_dict['local_ipv4'] }}
