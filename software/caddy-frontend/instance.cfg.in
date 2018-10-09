@@ -28,6 +28,7 @@ custom-personal = ${dynamic-template-caddy-replicate:rendered}
 single-default = ${dynamic-template-caddy-frontend:rendered}
 single-custom-personal = ${dynamic-template-caddy-frontend:rendered}
 replicate = ${dynamic-template-caddy-replicate:rendered}
+kedifa = ${dynamic-template-kedifa:rendered}
 
 [dynamic-template-caddy-frontend-parameters]
 {% for key,value in template_frontend_parameter_dict.iteritems() %}
@@ -63,6 +64,15 @@ extra-context =
     raw template_monitor {{ monitor2_template }}
     raw common_profile {{ common_profile }}
 
+[dynamic-template-kedifa]
+< = jinja2-template-base
+template = {{ template_kedifa }}
+filename = instance-kedifa.cfg
+extensions = jinja2.ext.do
+extra-context =
+  section parameter_dict dynamic-template-caddy-frontend-parameters
+  raw software_type kedifa
+
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
@@ -82,13 +92,12 @@ configuration.port = 4443
 configuration.plain_http_port = 8080
 configuration.plain_nginx_port = 8081
 configuration.nginx_port = 9443
+configuration.kedifa_port = 7879
 # BBB: apache_custom_https and apache_custom_http
 configuration.apache_custom_https = ""
 configuration.apache_custom_http = ""
 configuration.caddy_custom_https = ""
 configuration.caddy_custom_http = ""
-configuration.apache-key =
-configuration.apache-certificate =
 configuration.apache-ca-certificate =
 configuration.open-port = 80 443
 configuration.disk-cache-size = 8G
