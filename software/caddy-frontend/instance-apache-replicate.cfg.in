@@ -112,15 +112,6 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
-{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
-{%     set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
-{%     set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
-{%     if not key_modulus or key_modulus != crt_modulus  %}
-{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
-{%     endif %}
-{%   endif %}
 {%   if slave.get('custom_domain') %}
 {%     if not validators.domain(slave['custom_domain']) %}
 {%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
@@ -152,6 +143,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
 
+{%- set master_reserved_reference = 'DEFAULT_FRONTEND_KEY' -%}
 {% for section, frontend_request in request_dict.iteritems() %}
 [{{section}}]
 <= replicate
@@ -159,6 +151,9 @@ name = {{ frontend_request.get('name') }}
 {%   if frontend_request.get('state') %}
 state = {{ frontend_request.get('state') }}
 {%   endif%}
+config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
+config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
+config-master-reserved-reference = {{ master_reserved_reference }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
@@ -182,6 +177,8 @@ slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
+master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
+master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 
 #----------------------------
 #--
@@ -193,6 +190,26 @@ RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
 replicate = ${dynamic-publish-slave-information:rendered}
 custom-personal = ${dynamic-publish-slave-information:rendered}
 custom-group = ${dynamic-publish-slave-information:rendered}
+
+[request-kedifa]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+
+config-slave-list = {{ dumps(slave_instance_list) }}
+config-master-reserved-reference = {{ master_reserved_reference }}
+
+{% set frontend_software_url_key = "-frontend-software-release-url" %}
+{% if slapparameter_dict.has_key(frontend_software_url_key) %}
+software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
+{% else %}
+software-url = ${slap-connection:software-release-url}
+{% endif %}
+software-type = kedifa
+name = kedifa
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url
 
 [rejected-slave-information]
 {% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
@@ -212,6 +229,7 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
     section rejected_slave_information rejected-slave-information
+    key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
 
 [monitor-conf-parameters]
 monitor-url-list +=
@@ -227,6 +245,7 @@ parts =
   monitor-base
   publish-slave-information
   publish-information
+  request-kedifa
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
