@@ -28,6 +28,7 @@ custom-personal = ${dynamic-template-caddy-replicate:rendered}
 single-default = ${dynamic-template-caddy-frontend:rendered}
 single-custom-personal = ${dynamic-template-caddy-frontend:rendered}
 replicate = ${dynamic-template-caddy-replicate:rendered}
+kedifa = ${dynamic-template-kedifa:rendered}
 
 [dynamic-template-caddy-frontend-parameters]
 {% for key,value in template_frontend_parameter_dict.iteritems() %}
@@ -42,6 +43,9 @@ extensions = jinja2.ext.do
 extra-context =
   section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type single-custom-personal
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+import-list =
+  file caucase :caucase-jinja2-library
 
 [dynamic-template-caddy-replicate]
 < = jinja2-template-base
@@ -49,12 +53,11 @@ depends = ${caddyprofiledeps:recipe}
 template = {{ template_caddy_replicate }}
 filename = instance-caddy-replicate.cfg
 extensions = jinja2.ext.do
-openssl = {{ template_frontend_parameter_dict['openssl'] ~ '/bin/openssl' }}
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
     import validators validators
-    key openssl :openssl
+    key cluster_identification instance-parameter:root-instance-title
     raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
     raw caddy_custom_http_validator {{ caddy_custom_http_validator }}
     raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
@@ -62,6 +65,18 @@ extra-context =
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
     raw template_monitor {{ monitor2_template }}
     raw common_profile {{ common_profile }}
+
+[dynamic-template-kedifa]
+< = jinja2-template-base
+template = {{ template_kedifa }}
+filename = instance-kedifa.cfg
+extensions = jinja2.ext.do
+extra-context =
+  section parameter_dict dynamic-template-caddy-frontend-parameters
+  raw software_type kedifa
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+import-list =
+  file caucase :caucase-jinja2-library
 
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.
@@ -82,14 +97,14 @@ configuration.port = 4443
 configuration.plain_http_port = 8080
 configuration.plain_nginx_port = 8081
 configuration.nginx_port = 9443
+configuration.kedifa_port = 7879
+# Warning: Caucase takes also cacuase_port+1
+configuration.caucase_port = 8890
 # BBB: apache_custom_https and apache_custom_http
 configuration.apache_custom_https = ""
 configuration.apache_custom_http = ""
 configuration.caddy_custom_https = ""
 configuration.caddy_custom_http = ""
-configuration.apache-key =
-configuration.apache-certificate =
-configuration.apache-ca-certificate =
 configuration.open-port = 80 443
 configuration.disk-cache-size = 8G
 configuration.ram-cache-size = 1G
