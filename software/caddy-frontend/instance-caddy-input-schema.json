@@ -17,18 +17,6 @@
       "title": "[NOT IMPLEMENTED] SSL CA Certificate",
       "type": "string"
     },
-    "apache-certificate": {
-      "description": "SSL Certificate used by the server.",
-      "textarea": true,
-      "title": "SSL Certificate",
-      "type": "string"
-    },
-    "apache-key": {
-      "description": "SSL Key used by the server.",
-      "textarea": true,
-      "title": "SSL Key",
-      "type": "string"
-    },
     "domain": {
       "description": "Base Domain for create subdomains (ie.: example.com).",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
