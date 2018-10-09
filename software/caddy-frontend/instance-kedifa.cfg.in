@@ -1,0 +1,202 @@
+{%- if slap_software_type == software_type -%}
+{% import "caucase" as caucase with context %}
+# KeDiFa instance profile
+[buildout]
+extends =
+  {{ parameter_dict['common_profile'] }}
+  {{ parameter_dict['monitor_template'] }}
+
+parts =
+  directory
+  kedifa
+  slave-kedifa-information
+  caucased
+  caucased-promise
+  caucase-updater
+
+[caucased]
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+{%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
+{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
+{%  set caucase_url = 'http://' ~ caucase_netloc -%}
+{{  caucase.caucased(
+      prefix='caucased',
+      buildout_bin_directory=parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/caucased',
+      backup_dir='${directory:backup-caucased}',
+      data_dir='${directory:caucased}',
+      netloc=caucase_netloc,
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
+      key_len=2048,
+      promise='${directory:promise}/caucased',
+)}}
+
+# Create all needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+etc-run = ${:etc}/run
+promise = ${:etc}/promise
+
+logrotate-backup = ${:backup}/logrotate
+logrotate-entries = ${:etc}/logrotate.d
+
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:etc}/cronstamps
+
+# KeDiFa directories
+kedifa = ${:srv}/kedifa
+etc-kedifa = ${:etc}/kedifa
+
+# CAUCASE directories
+caucased = ${:srv}/caucased
+backup-caucased = ${:backup}/caucased
+
+# reservation
+reservation = ${:srv}/reservation
+
+[kedifa-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = Kedifa Partition
+command =
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+    /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -reqexts SAN \
+      -config <(cat {{ parameter_dict['openssl_cnf'] }} \
+      <(printf "\n[SAN]\nsubjectAltName=IP:${kedifa-config:ip}")) \
+      -out ${:csr}'
+  fi
+update-command = ${:command}
+csr = ${kedifa-config:csr}
+key = ${kedifa-config:key}
+stop-on-error = True
+
+[caucase-updater-with-probe]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  {{ parameter_dict['bin_directory'] }}/caucase-probe {{ caucase_url }} &&
+  exec {{ parameter_dict['bin_directory'] }}/caucase-updater "$@"
+mode = 0700
+rendered = ${directory:bin}/caucase-updater-with-probe
+
+[caucase-updater]
+recipe = slapos.cookbook:wrapper
+command-line = ${caucase-updater-with-probe:rendered}
+  --ca-url {{ caucase_url }}
+  --mode service
+  --csr ${kedifa-csr:csr}
+  --key ${kedifa-csr:key}
+  --crt ${kedifa-config:certificate}
+  --cas-ca ${kedifa-config:cas-ca-certificate}
+  --ca ${kedifa-config:ca-certificate}
+  --crl ${kedifa-config:crl}
+  --on-renew ${kedifa-reloader:wrapper-path}
+
+wrapper-path = ${directory:service}/caucase-updater
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
+slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+context =
+    import json_module json
+    raw common_profile {{ parameter_dict['common_profile'] }}
+    key slap_software_type :slap_software_type
+    key slapparameter_dict :slapparameter_dict
+    section directory directory
+    ${:extra-context}
+
+[kedifa-config]
+ip = {{ instance_parameter['ipv6-random'] }}
+port = {{ instance_parameter['configuration.kedifa_port'] }}
+db = ${directory:kedifa}/kedifa.sqlite
+certificate = ${directory:etc-kedifa}/certificate.pem
+key = ${:certificate}
+ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
+cas-ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
+crl = ${directory:etc-kedifa}/crl.pem
+csr = ${directory:etc-kedifa}/csr.pem
+pidfile = ${directory:run}/kedifa.pid
+
+[kedifa-reloader]
+recipe = slapos.cookbook:wrapper
+command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
+wrapper-path = ${directory:etc-run}/kedifa-reloader
+
+[kedifa]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['kedifa'] }}
+  --ip ${kedifa-config:ip}
+  --port ${kedifa-config:port}
+  --db ${kedifa-config:db}
+  --certificate ${kedifa-config:certificate}
+  --ca-certificate ${kedifa-config:ca-certificate}
+  --crl ${kedifa-config:crl}
+  --pidfile ${kedifa-config:pidfile}
+
+wrapper-path = ${directory:service}/kedifa
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+# Publish KeDiFa configuration for upload and download for each slave
+{%- set slave_kedifa_information = {} -%}
+{%- for slave in slapparameter_dict['slave-list'] -%}
+{%-   set slave_reference = slave['slave_reference'] -%}
+{%-   set slave_dict = {} -%}
+{%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
+{%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
+{%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
+[{{ slave_reference }}-auth-random-generate]
+recipe = plone.recipe.command
+file = ${directory:reservation}/${:_buildout_section_name_}
+command =
+  [ ! -f ${:file} ] && {{ parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
+update-command = ${:command}
+
+[{{ slave_reference }}-auth-random]
+recipe = collective.recipe.shelloutput
+file = {{ '${' + slave_reference }}-auth-random-generate:file}
+commands =
+  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
+
+{% endfor %}
+
+[master-auth-random-generate]
+recipe = plone.recipe.command
+file = ${directory:reservation}/${:_buildout_section_name_}
+command =
+  [ ! -f ${:file} ] && {{ parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
+update-command = ${:command}
+
+[master-auth-random]
+recipe = collective.recipe.shelloutput
+file = ${master-auth-random-generate:file}
+commands =
+  passwd = cat ${:file} 2>/dev/null || echo "NotReadyYet"
+
+[slave-kedifa-information]
+recipe = slapos.cookbook:publish.serialised
+slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
+caucase-url = {{ caucase_url }}
+master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
+master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
+master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
+{%- endif -%} {# if slap_software_type in software_type #}
