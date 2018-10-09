@@ -122,18 +122,6 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
-{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
-{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
-{%   endif %}
-{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
-{%     set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
-{%     set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate('' ~ slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate('' ~ slave['ssl_crt'])[0] | trim %}
-{%     if not key_modulus or key_modulus != crt_modulus  %}
-{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
-{%     endif %}
-{%   endif %}
 {%   if slave.get('custom_domain') %}
 {%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
 {%     if slave_custom_domain.startswith('*.') %}
@@ -178,6 +166,10 @@ name = {{ frontend_request.get('name') }}
 {%   if frontend_request.get('state') %}
 state = {{ frontend_request.get('state') }}
 {%   endif%}
+config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
+config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
+config-cluster-identification = {{ cluster_identification }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
@@ -201,6 +193,9 @@ slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
+master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
+master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 
 #----------------------------
 #--
@@ -212,6 +207,30 @@ RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
 replicate = ${dynamic-publish-slave-information:rendered}
 custom-personal = ${dynamic-publish-slave-information:rendered}
 custom-group = ${dynamic-publish-slave-information:rendered}
+
+[request-kedifa]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+{% for key in ['kedifa_port', 'caucase_port'] -%}
+{%-   if key in slapparameter_dict %}
+config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
+{%-   endif %}
+{%- endfor %}
+config-slave-list = {{ dumps(slave_instance_list) }}
+config-cluster-identification = {{ cluster_identification }}
+
+{% set frontend_software_url_key = "-frontend-software-release-url" %}
+{% if slapparameter_dict.has_key(frontend_software_url_key) %}
+software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
+{% else %}
+software-url = ${slap-connection:software-release-url}
+{% endif %}
+software-type = kedifa
+name = kedifa
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url
 
 [rejected-slave-information]
 {% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
@@ -239,6 +258,7 @@ extra-context =
     section slave_information slave-information
     section rejected_slave_information rejected-slave-information
     section active_slave_instance_dict active-slave-instance
+    key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
 
 [monitor-conf-parameters]
 monitor-url-list +=
@@ -254,6 +274,7 @@ parts =
   monitor-base
   publish-slave-information
   publish-information
+  request-kedifa
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
