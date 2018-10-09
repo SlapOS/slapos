@@ -1,0 +1,86 @@
+{%- if slap_software_type == software_type -%}
+# KeDiFa instance profile
+[buildout]
+extends =
+  {{ parameter_dict['common_profile'] }}
+  {{ parameter_dict['monitor_template'] }}
+
+parts =
+  directory
+  kedifa
+  slave-kedifa-information
+
+# Create all needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+etc-run = ${:etc}/run
+promise = ${:etc}/promise
+
+logrotate-backup = ${:backup}/logrotate
+logrotate-entries = ${:etc}/logrotate.d
+
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:etc}/cronstamps
+
+# KeDiFa directories
+kedifa = ${:srv}/kedifa
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
+slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+context =
+    import json_module json
+    raw common_profile {{ parameter_dict['common_profile'] }}
+    key slap_software_type :slap_software_type
+    key slapparameter_dict :slapparameter_dict
+    section directory directory
+    ${:extra-context}
+
+[kedifa-config]
+ip = {{ instance_parameter['ipv6-random'] }}
+port = {{ instance_parameter['configuration.kedifa_port'] }}
+db = ${directory:kedifa}/kedifa.sqlite
+
+[kedifa]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['kedifa'] }}
+  ${kedifa-config:ip}
+  ${kedifa-config:port}
+  ${kedifa-config:db}
+
+wrapper-path = ${directory:service}/kedifa
+
+# Publish KeDiFa configuration for upload and download for each slave
+{%- set slave_kedifa_information = {} -%}
+{%- set master_reserved_reference = slapparameter_dict['master-reserved-reference'] -%}
+{%- for slave in slapparameter_dict['slave-list'] -%}
+{%-   set slave_reference = slave['slave_reference'] -%}
+{%-   if slave_reference != master_reserved_reference -%}
+{%-     set slave_dict = {} -%}
+{%-     do slave_dict.__setitem__('key-generate-auth-url', 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s/generateauth' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-upload-url', 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s?auth=' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-download-url', 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s' % (slave_reference,)) -%}
+{%-     do slave_kedifa_information.__setitem__(slave_reference, slave_dict) -%}
+{%-   endif -%}
+{% endfor %}
+[slave-kedifa-information]
+recipe = slapos.cookbook:publish.serialised
+slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
+master-key-generate-auth-url = {{ 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s/generateauth' % (master_reserved_reference,) }}
+master-key-upload-url = {{ 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s?auth=' % (master_reserved_reference,) }}
+master-key-download-url = {{ 'http://[${kedifa-config:ip}]:${kedifa-config:port}/%s' % (master_reserved_reference,) }}
+{%- endif -%} {# if slap_software_type in software_type #}

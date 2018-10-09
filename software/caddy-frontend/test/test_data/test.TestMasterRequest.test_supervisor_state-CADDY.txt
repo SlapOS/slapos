@@ -3,4 +3,5 @@ TestMasterRequest-0:certificate_authority-on-watch RUNNING
 TestMasterRequest-0:crond-{hash} RUNNING
 TestMasterRequest-0:monitor-httpd-{hash}-on-watch RUNNING
 TestMasterRequest-0:monitor-httpd-graceful EXITED
+TestMasterRequest-1:kedifa-on-watch RUNNING
 watchdog:watchdog RUNNING

@@ -2,10 +2,10 @@ TestReplicateSlave-0/etc/plugin/__init__.py
 TestReplicateSlave-0/etc/plugin/buildout-TestReplicateSlave-0-status.py
 TestReplicateSlave-0/etc/plugin/check-free-disk-space.py
 TestReplicateSlave-0/etc/plugin/monitor-bootstrap-status.py
-TestReplicateSlave-1/etc/plugin/__init__.py
-TestReplicateSlave-1/etc/plugin/buildout-TestReplicateSlave-1-status.py
-TestReplicateSlave-1/etc/plugin/check-free-disk-space.py
-TestReplicateSlave-1/etc/plugin/monitor-bootstrap-status.py
+TestReplicateSlave-2/etc/plugin/__init__.py
 TestReplicateSlave-2/etc/plugin/buildout-TestReplicateSlave-2-status.py
 TestReplicateSlave-2/etc/plugin/check-free-disk-space.py
 TestReplicateSlave-2/etc/plugin/monitor-bootstrap-status.py
+TestReplicateSlave-3/etc/plugin/buildout-TestReplicateSlave-3-status.py
+TestReplicateSlave-3/etc/plugin/check-free-disk-space.py
+TestReplicateSlave-3/etc/plugin/monitor-bootstrap-status.py
