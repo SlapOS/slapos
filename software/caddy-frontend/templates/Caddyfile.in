@@ -5,8 +5,9 @@ import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
 # Catch-all and 404 for not configured instances
+{% if os_module.path.exists(master_certificate) %}
 :{{ https_port }} {
-  tls {{ login_certificate }} {{ login_key }}
+  tls {{ master_certificate }} {{ master_certificate }}
   bind {{ local_ipv4 }}
   # Compress the output
   gzip
@@ -16,6 +17,7 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
     * {{ not_found_file }}
   }
 }
+{% endif %}
 
 :{{ http_port }} {
   bind {{ local_ipv4 }}
@@ -29,8 +31,9 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
 }
 
 # Access to server-status Caddy-style
+{% if os_module.path.exists(master_certificate) %}
 https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv4 }}:{{ https_port }}/server-status {
-  tls {{ login_certificate }} {{ login_key }}
+  tls {{ master_certificate }} {{ master_certificate }}
   # Compress the output
   gzip
   bind {{ local_ipv4 }}
@@ -45,3 +48,4 @@ https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv
     * {{ not_found_file }}
   }
 }
+{% endif %}

@@ -1,8 +1,8 @@
 TestQuicEnabled-0/var/run/monitor-httpd.pid
 TestQuicEnabled-0/var/run/monitor/monitor-bootstrap.pid
-TestQuicEnabled-1/var/run/caddy_configuration.signature
-TestQuicEnabled-1/var/run/httpd.pid
-TestQuicEnabled-1/var/run/monitor-httpd.pid
-TestQuicEnabled-1/var/run/monitor/monitor-bootstrap.pid
-TestQuicEnabled-1/var/run/ncaddy_configuration.signature
-TestQuicEnabled-1/var/run/nginx.pid
+TestQuicEnabled-2/var/run/caddy_configuration.signature
+TestQuicEnabled-2/var/run/httpd.pid
+TestQuicEnabled-2/var/run/monitor-httpd.pid
+TestQuicEnabled-2/var/run/monitor/monitor-bootstrap.pid
+TestQuicEnabled-2/var/run/ncaddy_configuration.signature
+TestQuicEnabled-2/var/run/nginx.pid
