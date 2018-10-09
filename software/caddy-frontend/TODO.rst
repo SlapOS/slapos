@@ -1,3 +1,7 @@
+``caddy-frontend-direct-ssl-information`` list phase 1:
+
+ * cleanup old hooks for certificates
+
 Generally things to be done with ``caddy-frontend``:
 
  * tests: add assertion with results of promises in etc/promise for each partition
