@@ -1,1 +1,2 @@
 TestMasterRequestDomain-0/var/log/monitor-httpd-error.log
+TestMasterRequestDomain-0/var/log/slapgrid-TestMasterRequestDomain-0-error.log
