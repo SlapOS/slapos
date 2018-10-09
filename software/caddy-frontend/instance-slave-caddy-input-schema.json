@@ -146,20 +146,6 @@
       "title": "SSL Certificate Authority's Certificate",
       "type": "string"
     },
-    "ssl_crt": {
-      "default": "",
-      "description": "Content of the SSL Certificate file",
-      "textarea": true,
-      "title": "SSL Certificate",
-      "type": "string"
-    },
-    "ssl_key": {
-      "default": "",
-      "description": "Content of the SSL Key file",
-      "textarea": true,
-      "title": "SSL Key",
-      "type": "string"
-    },
     "ssl_proxy_ca_crt": {
       "default": "",
       "description": "[NOT Implemented] Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
