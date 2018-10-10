@@ -246,7 +246,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     frontend, url = entry
     result = requests.get(url, verify=False)
     self.assertEqual(
-      200,
+      httplib.OK,
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
@@ -1451,7 +1451,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqual(
-      502,
+      httplib.BAD_GATEWAY,
       result.status_code
     )
 
@@ -1522,7 +1522,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqual(
-      502,
+      httplib.BAD_GATEWAY,
       result.status_code
     )
 
@@ -1592,7 +1592,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqual(
-      502,
+      httplib.BAD_GATEWAY,
       result.status_code
     )
 
