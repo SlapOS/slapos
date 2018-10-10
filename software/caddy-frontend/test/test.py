@@ -246,8 +246,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     frontend, url = entry
     result = requests.get(url, verify=False)
     self.assertEqual(
-      result.status_code,
       200,
+      result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
 
@@ -261,7 +261,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-    self.assertEqual(j[key], value)
+    self.assertEqual(value, j[key])
 
 
 class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
@@ -800,8 +800,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
             self.instance_path, '*', 'etc', 'promise',
             'monitor-httpd-listening-on-tcp'))])
       self.assertEqual(
-        result,
-        set([0])
+        set([0]),
+        result
       )
 
   def test_slave_partition_state(self):
@@ -836,10 +836,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -857,7 +857,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       log_regexp)
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # check that 404 is as configured
     result_missing = self.fakeHTTPSResult(
@@ -883,7 +883,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'url'].copy()
     self.assertLogAccessUrlWithPop(parameter_dict, 'url')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'url.example.com',
         'replication_number': '1',
@@ -891,15 +890,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -910,13 +910,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      result.headers['Content-Encoding'],
-      'gzip'
+      'gzip',
+      result.headers['Content-Encoding']
     )
 
     self.assertEqual(
-      result.headers['Set-Cookie'],
-      'secured=value;secure, nonsecured=value'
+      'secured=value;secure, nonsecured=value',
+      result.headers['Set-Cookie']
     )
 
     result_http = self.fakeHTTPResult(
@@ -930,13 +930,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      result_http.headers['Content-Encoding'],
-      'gzip'
+      'gzip',
+      result_http.headers['Content-Encoding']
     )
 
     self.assertEqual(
-      result_http.headers['Set-Cookie'],
-      'secured=value;secure, nonsecured=value'
+      'secured=value;secure, nonsecured=value',
+      result_http.headers['Set-Cookie']
     )
 
   @skip('Feature postponed')
@@ -945,7 +945,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'url'].copy()
     self.assertLogAccessUrlWithPop(parameter_dict, 'url')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'url.example.com',
         'replication_number': '1',
@@ -953,7 +952,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result_ipv6 = self.fakeHTTPSResult(
@@ -961,13 +961,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       source_ip=GLOBAL_IPV6)
 
     self.assertEqual(
-       result_ipv6.json()['Incoming Headers']['x-forwarded-for'],
-       GLOBAL_IPV6
+       GLOBAL_IPV6,
+       result_ipv6.json()['Incoming Headers']['x-forwarded-for']
     )
 
     self.assertEqual(
-      der2pem(result_ipv6.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result_ipv6.peercert))
 
     self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
 
@@ -976,7 +976,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-zope-path']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope-path')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopepath.example.com',
         'replication_number': '1',
@@ -984,15 +983,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopepath.example.com',
         'secure_access': 'https://typezopepath.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(
       result,
@@ -1006,7 +1006,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-zope-default-path']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope-default-path')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopedefaultpath.example.com',
         'replication_number': '1',
@@ -1014,19 +1013,21 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopedefaultpath.example.com',
         'secure_access': 'https://typezopedefaultpath.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], '')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.headers['Location'],
-      'https://typezopedefaultpath.example.com:%s/default-path' % (HTTPS_PORT,)
+      'https://typezopedefaultpath.example.com:%s/default-path' % (
+        HTTPS_PORT,),
+      result.headers['Location']
     )
 
   def test_server_alias(self):
@@ -1034,7 +1035,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'server-alias']
     self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'serveralias.example.com',
         'replication_number': '1',
@@ -1042,15 +1042,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://serveralias.example.com',
         'secure_access': 'https://serveralias.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1058,8 +1059,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1067,8 +1068,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'alias2.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1090,7 +1091,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'https-only']
     self.assertLogAccessUrlWithPop(parameter_dict, 'https-only')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'httpsonly.example.com',
         'replication_number': '1',
@@ -1098,15 +1098,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://httpsonly.example.com',
         'secure_access': 'https://httpsonly.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1114,8 +1115,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      result_http.headers['Location'],
-      'https://httpsonly.example.com/test-path'
+      'https://httpsonly.example.com/test-path',
+      result_http.headers['Location']
     )
 
   def test_custom_domain(self):
@@ -1123,7 +1124,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain']
     self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'customdomain.example.com',
         'replication_number': '1',
@@ -1131,15 +1131,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://customdomain.example.com',
         'secure_access': 'https://customdomain.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1148,7 +1149,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain_ssl_crt_ssl_key']
     self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain_ssl_crt_key')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'customdomainsslcrtsslkey.example.com',
         'replication_number': '1',
@@ -1156,15 +1156,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://customdomainsslcrtsslkey.example.com',
         'secure_access': 'https://customdomainsslcrtsslkey.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('customdomainsslcrtsslkey.example.com.crt').read())
+      open('customdomainsslcrtsslkey.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1173,7 +1174,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-zope']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezope.example.com',
         'replication_number': '1',
@@ -1181,15 +1181,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezope.example.com',
         'secure_access': 'https://typezope.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     try:
       j = result.json()
@@ -1220,7 +1221,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'type-zope-virtualhostroot-http-port')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopevirtualhostroothttpport.example.com',
         'replication_number': '1',
@@ -1229,7 +1229,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://typezopevirtualhostroothttpport.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPResult(
@@ -1248,7 +1249,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'type-zope-virtualhostroot-https-port')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopevirtualhostroothttpsport.example.com',
         'replication_number': '1',
@@ -1257,15 +1257,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://typezopevirtualhostroothttpsport.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(
       result,
@@ -1279,7 +1280,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-notebook']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-notebook')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typenotebook.nginx.example.com',
         'replication_number': '1',
@@ -1287,7 +1287,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typenotebook.nginx.example.com',
         'secure_access': 'https://typenotebook.nginx.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -1295,8 +1296,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1321,7 +1322,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-eventsource']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-eventsource')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typeeventsource.nginx.example.com',
         'replication_number': '1',
@@ -1329,7 +1329,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -1337,25 +1338,25 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.content,
-      ''
+      '',
+      result.content
     )
     headers = result.headers.copy()
     self.assertKeyWithPop('Expires', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertEqual(
-      headers,
       {
         'X-Nginx-PushStream-Explain': 'No channel id provided.',
         'Content-Length': '0',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Connection': 'keep-alive',
         'Server': 'nginx'
-      }
+      },
+      headers
     )
 
   def test_type_redirect(self):
@@ -1363,7 +1364,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-redirect']
     self.assertLogAccessUrlWithPop(parameter_dict, 'type-redirect')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typeredirect.example.com',
         'replication_number': '1',
@@ -1371,19 +1371,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typeredirect.example.com',
         'secure_access': 'https://typeredirect.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.headers['Location'],
-      '%s/test-path' % (self.backend_url,)
+      '%s/test-path' % (self.backend_url,),
+      result.headers['Location']
     )
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -1393,7 +1394,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'ssl-proxy-verify_ssl_proxy_ca_crt')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'sslproxyverifysslproxycacrt.example.com',
         'replication_number': '1',
@@ -1401,27 +1401,28 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslproxyverifysslproxycacrt.example.com',
         'secure_access': 'https://sslproxyverifysslproxycacrt.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result.status_code
     )
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      result_http.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result_http.status_code
     )
 
   def test_ssl_proxy_verify_unverified(self):
@@ -1431,7 +1432,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'ssl-proxy-verify-unverified')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'sslproxyverifyunverified.example.com',
         'replication_number': '1',
@@ -1439,19 +1439,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslproxyverifyunverified.example.com',
         'secure_access': 'https://sslproxyverifyunverified.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      502
+      502,
+      result.status_code
     )
 
   def test_enable_cache_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -1461,7 +1462,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablecachesslproxyverifysslproxycacrt.example.com',
         'replication_number': '1',
@@ -1471,27 +1471,28 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrt.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result.status_code
     )
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      result_http.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result_http.status_code
     )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
@@ -1501,7 +1502,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'enable_cache-ssl-proxy-verify-unverified')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablecachesslproxyverifyunverified.example.com',
         'replication_number': '1',
@@ -1510,19 +1510,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablecachesslproxyverifyunverified.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      502
+      502,
+      result.status_code
     )
 
   def test_type_zope_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -1532,7 +1533,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopesslproxyverifysslproxycacrt.example.com',
         'replication_number': '1',
@@ -1541,27 +1541,28 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrt.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result.status_code
     )
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      result_http.status_code,
-      httplib.NOT_IMPLEMENTED
+      httplib.NOT_IMPLEMENTED,
+      result_http.status_code
     )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
@@ -1571,7 +1572,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'type-zope-ssl-proxy-verify-unverified')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'typezopesslproxyverifyunverified.example.com',
         'replication_number': '1',
@@ -1580,19 +1580,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://typezopesslproxyverifyunverified.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.status_code,
-      502
+      502,
+      result.status_code
     )
 
   def test_monitor_ipv6_test(self):
@@ -1600,7 +1601,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'monitor-ipv6-test']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'monitoripv6test.example.com',
         'replication_number': '1',
@@ -1608,21 +1608,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://monitoripv6test.example.com',
         'secure_access': 'https://monitoripv6test.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1643,7 +1644,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'monitor-ipv4-test']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'monitoripv4test.example.com',
         'replication_number': '1',
@@ -1651,21 +1651,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://monitoripv4test.example.com',
         'secure_access': 'https://monitoripv4test.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1686,7 +1687,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       're6st-optimal-test']
     self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 're6stoptimaltest.example.com',
         'replication_number': '1',
@@ -1694,21 +1694,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://re6stoptimaltest.example.com',
         'secure_access': 'https://re6stoptimaltest.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -1730,7 +1731,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable_cache']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable_cache')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablecache.example.com',
         'replication_number': '1',
@@ -1738,15 +1738,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablecache.example.com',
         'secure_access': 'https://enablecache.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1764,10 +1765,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      headers
     )
 
     result_direct = self.fakeHTTPResult(
@@ -1783,13 +1784,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      result_direct.headers['Content-Encoding'],
-      'gzip'
+      'gzip',
+      result_direct.headers['Content-Encoding']
     )
 
     self.assertEqual(
-      result_direct.headers['Set-Cookie'],
-      'secured=value;secure, nonsecured=value'
+      'secured=value;secure, nonsecured=value',
+      result_direct.headers['Set-Cookie']
     )
 
     result_direct_https_backend = self.fakeHTTPResult(
@@ -1807,13 +1808,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      result_direct_https_backend.headers['Content-Encoding'],
-      'gzip'
+      'gzip',
+      result_direct_https_backend.headers['Content-Encoding']
     )
 
     self.assertEqual(
-      result_direct_https_backend.headers['Set-Cookie'],
-      'secured=value;secure, nonsecured=value'
+      'secured=value;secure, nonsecured=value',
+      result_direct_https_backend.headers['Set-Cookie']
     )
 
   def test_enable_cache_disable_no_cache_request(self):
@@ -1822,7 +1823,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'enable_cache-disable-no-cache-request')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablecachedisablenocacherequest.example.com',
         'replication_number': '1',
@@ -1831,7 +1831,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablecachedisablenocacherequest.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -1839,8 +1840,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       headers={'Pragma': 'no-cache', 'Cache-Control': 'something'})
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1858,10 +1859,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      headers
     )
 
     try:
@@ -1876,7 +1877,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'enable_cache-disable-via-header')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablecachedisableviaheader.example.com',
         'replication_number': '1',
@@ -1885,15 +1885,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablecachedisableviaheader.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1910,10 +1911,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {'Content-type': 'application/json',
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'}
+       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      headers
     )
 
   def test_enable_http2_false(self):
@@ -1921,7 +1922,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable-http2-false']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2false.example.com',
         'replication_number': '1',
@@ -1930,15 +1930,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablehttp2false.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -1954,13 +1955,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {
         'Vary': 'Accept-Encoding',
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Content-Encoding': 'gzip',
-      }
+      },
+      headers
     )
 
     self.assertFalse(
@@ -1971,7 +1972,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable-http2-default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2default.example.com',
         'replication_number': '1',
@@ -1980,15 +1980,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2004,13 +2005,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {
         'Vary': 'Accept-Encoding',
         'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
         'Content-Encoding': 'gzip',
-      }
+      },
+      headers
     )
 
     self.assertTrue(
@@ -2022,7 +2023,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'prefer-gzip-encoding-to-backend')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'prefergzipencodingtobackend.example.com',
         'replication_number': '1',
@@ -2031,7 +2031,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'secure_access':
         'https://prefergzipencodingtobackend.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -2039,13 +2040,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     self.assertEqual(
-      result.json()['Incoming Headers']['accept-encoding'], 'gzip')
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
@@ -2054,14 +2055,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     self.assertEqual(
-      result.json()['Incoming Headers']['accept-encoding'], 'deflate')
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_disabled_cookie_list(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'disabled-cookie-list']
     self.assertLogAccessUrlWithPop(parameter_dict, 'disabled-cookie-list')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'disabledcookielist.example.com',
         'replication_number': '1',
@@ -2069,7 +2069,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://disabledcookielist.example.com',
         'secure_access': 'https://disabledcookielist.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -2081,13 +2082,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         ))
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     self.assertEqual(
-      result.json()['Incoming Headers']['cookie'], 'Coffee=present')
+      'Coffee=present', result.json()['Incoming Headers']['cookie'])
 
   def test_apache_custom_http_s_rejected(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -2116,8 +2117,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'apache_custom_http_s-accepted')
     self.assertEqual(
-      parameter_dict,
-      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4}
+      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -2125,8 +2126,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2142,11 +2143,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {
         'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      }
+      },
+      headers
     )
 
     result_http = self.fakeHTTPResult(
@@ -2194,8 +2195,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'caddy_custom_http_s-accepted')
     self.assertEqual(
-      parameter_dict,
-      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4}
+      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
@@ -2203,8 +2204,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2220,11 +2221,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      headers,
       {
         'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      }
+      },
+      headers
     )
 
     result_http = self.fakeHTTPResult(
@@ -2250,7 +2251,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'url_https-url']
     self.assertLogAccessUrlWithPop(parameter_dict, 'url_https-url')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'urlhttpsurl.example.com',
         'replication_number': '1',
@@ -2258,15 +2258,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://urlhttpsurl.example.com',
         'secure_access': 'https://urlhttpsurl.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path')
 
@@ -2309,7 +2310,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'replicate']
     self.assertLogAccessUrlWithPop(parameter_dict, 'replicate')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'replicate.example.com',
         'replication_number': '2',
@@ -2317,15 +2317,16 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2383,7 +2384,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2default.example.com',
         'replication_number': '1',
@@ -2392,7 +2392,8 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertFalse(
@@ -2403,7 +2404,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-false']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2false.example.com',
         'replication_number': '1',
@@ -2412,7 +2412,8 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2false.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertFalse(
@@ -2423,7 +2424,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-true']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2true.example.com',
         'replication_number': '1',
@@ -2432,7 +2432,8 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2true.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertTrue(
@@ -2475,7 +2476,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'enable-http2-default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2default.example.com',
         'replication_number': '1',
@@ -2484,7 +2484,8 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertTrue(
@@ -2495,7 +2496,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'enable-http2-false']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2false.example.com',
         'replication_number': '1',
@@ -2504,7 +2504,8 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2false.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertFalse(
@@ -2515,7 +2516,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'enable-http2-true']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'enablehttp2true.example.com',
         'replication_number': '1',
@@ -2524,7 +2524,8 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2true.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     self.assertTrue(
@@ -2556,7 +2557,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'default.None',
         'replication_number': '1',
@@ -2564,7 +2564,8 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
         'public-ipv4': None,
-      }
+      },
+      parameter_dict
     )
 
     re6st_connectivity_promise_list = glob.glob(
@@ -2606,7 +2607,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'default.None',
         'replication_number': '1',
@@ -2614,7 +2614,8 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
         'public-ipv4': None,
-      }
+      },
+      parameter_dict
     )
 
     re6st_connectivity_promise_list = glob.glob(
@@ -2687,7 +2688,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'empty']
     self.assertLogAccessUrlWithPop(parameter_dict, 'empty')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'empty.example.com',
         'replication_number': '1',
@@ -2695,38 +2695,39 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list': '["slave url \\"https://[fd46::c2ae]:!py!'
         'u\'123123\'\\" invalid"]'
-      }
+      },
+      parameter_dict
     )
 
   def test_https_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'https-url'].copy()
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list': '["slave https-url \\"https://[fd46::c2ae]:'
         '!py!u\'123123\'\\" invalid"]'
-      }
+      },
+      parameter_dict
     )
 
 
@@ -2750,11 +2751,11 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'test']
     self.assertKeyWithPop('log-access-url', parameter_dict)
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'test.None', 'replication_number': '1',
         'url': 'http://test.None', 'site_url': 'http://test.None',
-        'secure_access': 'https://test.None', 'public-ipv4': None}
+        'secure_access': 'https://test.None', 'public-ipv4': None},
+      parameter_dict
     )
     master_monitor_conf = open(os.path.join(
       self.instance_path, 'TestDefaultMonitorHttpdPort-0', 'etc',
@@ -2816,7 +2817,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'url'].copy()
     self.assertLogAccessUrlWithPop(parameter_dict, 'url')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'url.example.com',
         'replication_number': '1',
@@ -2824,15 +2824,16 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -2846,13 +2847,13 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Content-Length', result.headers)
 
     self.assertEqual(
-      result.headers,
       {'Content-Encoding': 'gzip',
        'Alt-Svc': 'quic=":11443"; ma=2592000; v="39"',  # QUIC advertises
        'Set-Cookie': 'secured=value;secure, nonsecured=value',
        'Vary': 'Accept-Encoding',
        'Server': 'Caddy, BaseHTTP/0.3 Python/2.7.14',
-       'Content-Type': 'application/json'}
+       'Content-Type': 'application/json'},
+      result.headers
     )
 
     result_http = self.fakeHTTPResult(
@@ -2866,13 +2867,13 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      result_http.headers['Content-Encoding'],
-      'gzip'
+      'gzip',
+      result_http.headers['Content-Encoding']
     )
 
     self.assertEqual(
-      result_http.headers['Set-Cookie'],
-      'secured=value;secure, nonsecured=value'
+      'secured=value;secure, nonsecured=value',
+      result_http.headers['Set-Cookie']
     )
 
 
@@ -2982,7 +2983,6 @@ https://www.google.com {}""",
       'server-alias-same']
     self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-same')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'serveraliassame.example.com',
         'replication_number': '1',
@@ -2990,15 +2990,16 @@ https://www.google.com {}""",
         'site_url': 'http://serveraliassame.example.com',
         'secure_access': 'https://serveraliassame.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
@@ -3007,7 +3008,6 @@ https://www.google.com {}""",
       're6st-optimal-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 're6stoptimaltestunsafe.example.com',
         'replication_number': '1',
@@ -3015,17 +3015,18 @@ https://www.google.com {}""",
         'site_url': 'http://re6stoptimaltestunsafe.example.com',
         'secure_access': 'https://re6stoptimaltestunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3052,7 +3053,6 @@ https://www.google.com {}""",
     self.assertLogAccessUrlWithPop(
       parameter_dict, 're6st-optimal-test-nocomma')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 're6stoptimaltestnocomma.example.com',
         'replication_number': '1',
@@ -3060,17 +3060,18 @@ https://www.google.com {}""",
         'site_url': 'http://re6stoptimaltestnocomma.example.com',
         'secure_access': 'https://re6stoptimaltestnocomma.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
@@ -3086,24 +3087,24 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain-unsafe']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["custom_domain \'${section:option} afterspace\\\\nafternewline\' '
         'invalid"]'
-      }
+      },
+      parameter_dict
     )
 
   def test_server_alias_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias-unsafe']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["server-alias \'${section:option}\' not valid", "server-alias '
         '\'afterspace\' not valid"]'
-      }
+      },
+      parameter_dict
     )
 
   def test_virtualhostroot_http_port_unsafe(self):
@@ -3112,7 +3113,6 @@ https://www.google.com {}""",
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'virtualhostroot-http-port-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'virtualhostroothttpportunsafe.example.com',
         'replication_number': '1',
@@ -3121,7 +3121,8 @@ https://www.google.com {}""",
         'secure_access':
         'https://virtualhostroothttpportunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPResult(
@@ -3140,7 +3141,6 @@ https://www.google.com {}""",
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'virtualhostroot-https-port-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'virtualhostroothttpsportunsafe.example.com',
         'replication_number': '1',
@@ -3149,15 +3149,16 @@ https://www.google.com {}""",
         'secure_access':
         'https://virtualhostroothttpsportunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqualResultJson(
       result,
@@ -3171,7 +3172,6 @@ https://www.google.com {}""",
       'default-path-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default-path-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'defaultpathunsafe.example.com',
         'replication_number': '1',
@@ -3179,20 +3179,21 @@ https://www.google.com {}""",
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], '')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
     self.assertEqual(
-      result.headers['Location'],
       'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
-      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,)
+      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,),
+      result.headers['Location']
     )
 
   def test_monitor_ipv4_test_unsafe(self):
@@ -3200,7 +3201,6 @@ https://www.google.com {}""",
       'monitor-ipv4-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'monitoripv4testunsafe.example.com',
         'replication_number': '1',
@@ -3208,21 +3208,22 @@ https://www.google.com {}""",
         'site_url': 'http://monitoripv4testunsafe.example.com',
         'secure_access': 'https://monitoripv4testunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3243,7 +3244,6 @@ https://www.google.com {}""",
       'monitor-ipv6-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test-unsafe')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'monitoripv6testunsafe.example.com',
         'replication_number': '1',
@@ -3251,21 +3251,22 @@ https://www.google.com {}""",
         'site_url': 'http://monitoripv6testunsafe.example.com',
         'secure_access': 'https://monitoripv6testunsafe.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      der2pem(result.peercert),
-      open('wildcard.example.com.crt').read())
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
 
-    self.assertEqual(result.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(result_http.status_code, httplib.NOT_FOUND)
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
     open(
@@ -3285,20 +3286,20 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl_key-ssl_crt-unsafe']
     self.assertEqual(
-      parameter_dict,
-      {'request-error-list': '["slave ssl_key and ssl_crt does not match"]'}
+      {'request-error-list': '["slave ssl_key and ssl_crt does not match"]'},
+      parameter_dict
     )
 
   def test_caddy_custom_http_s_reject(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-reject']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["slave caddy_custom_http configuration invalid", '
         '"slave caddy_custom_https configuration invalid"]'
-      }
+      },
+      parameter_dict
     )
 
 
@@ -3365,11 +3366,11 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'site_1']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["custom_domain \'duplicate.example.com\' clashes"]'
-      }
+      },
+      parameter_dict
     )
 
   def test_site_2(self):
@@ -3377,7 +3378,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'site_2']
     self.assertLogAccessUrlWithPop(parameter_dict, 'site_2')
     self.assertEqual(
-      parameter_dict,
       {
         'domain': 'duplicate.example.com',
         'replication_number': '1',
@@ -3385,30 +3385,31 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
         'public-ipv4': LOCAL_IPV4,
-      }
+      },
+      parameter_dict
     )
 
   def test_site_3(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'site_3']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["server-alias \'duplicate.example.com\' clashes"]'
-      }
+      },
+      parameter_dict,
     )
 
   def test_site_4(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'site_4']
     self.assertEqual(
-      parameter_dict,
       {
         'request-error-list':
         '["custom_domain \'duplicate.example.com\' clashes", "server-alias '
         '\'duplicate.example.com\' clashes"]'
-      }
+      },
+      parameter_dict
     )
 
 class AutoRestartTestCase(SlaveHttpFrontendTestCase):
