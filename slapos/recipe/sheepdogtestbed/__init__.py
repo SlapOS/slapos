@@ -26,8 +26,6 @@
 ##############################################################################
 
 import os
-import urllib
-import urllib2
 import pkg_resources
 from slapos.recipe.librecipe import BaseSlapRecipe
 

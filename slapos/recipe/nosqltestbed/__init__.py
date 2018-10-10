@@ -25,6 +25,8 @@
 #
 ##############################################################################
 
+from __future__ import print_function
+
 import sys
 import pkg_resources
 from logging import Formatter
@@ -41,7 +43,7 @@ class NoSQLTestBed(BaseSlapRecipe):
 
       testbed = plugin_class()
     except:
-      print Formatter().formatException(sys.exc_info())
+      print(Formatter().formatException(sys.exc_info()))
       return None
 
     software_type = self.parameter_dict.get('slap_software_type', 'default')

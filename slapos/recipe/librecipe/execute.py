@@ -1,9 +1,13 @@
+from __future__ import print_function
+
 import sys
 import os
 import signal
 import subprocess
 from collections import defaultdict
 from inotify_simple import INotify, flags
+
+import six
 
 def _wait_files_creation(file_list):
   # Establish a list of directory and subfiles.
@@ -14,7 +18,7 @@ def _wait_files_creation(file_list):
     directories[dirname][filename] = os.path.lexists(f)
 
   def all_files_exists():
-    return all(all(files.itervalues()) for files in directories.itervalues())
+    return all(all(six.itervalues(files)) for files in six.itervalues(directories))
 
   with INotify() as inotify:
     watchdescriptors = {inotify.add_watch(dirname,
@@ -101,7 +105,7 @@ def generic_exec(args, extra_environ=None, wait_list=None,
 child_pg = None
 
 def sig_handler(sig, frame):
-  print 'Received signal %r, killing children and exiting' % sig
+  print('Received signal %r, killing children and exiting' % sig)
   if child_pg is not None:
     os.killpg(child_pg, signal.SIGHUP)
     os.killpg(child_pg, signal.SIGTERM)
@@ -116,7 +120,7 @@ def execute_with_signal_translation(args):
   child = subprocess.Popen(args, close_fds=True, preexec_fn=os.setsid)
   child_pg = child.pid
   try:
-    print 'Process %r started' % (args, )
+    print('Process %r started' % (args, ))
     signal.pause()
   finally:
     os.killpg(child_pg, signal.SIGHUP)

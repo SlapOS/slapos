@@ -2,7 +2,7 @@
 """
 import sys
 import os.path
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 
 import logging
 

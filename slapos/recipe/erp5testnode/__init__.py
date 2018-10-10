@@ -24,10 +24,10 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import ConfigParser
+from six.moves import configparser
 import json
 import os
-import StringIO
+import six
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -40,13 +40,13 @@ class Recipe(GenericBaseRecipe):
     CONFIG['PATH'] = os.environ['PATH']
 
     if self.options['instance-dict']:
-      config_instance_dict = ConfigParser.ConfigParser()
+      config_instance_dict = configparser.ConfigParser()
       config_instance_dict.add_section('instance_dict')
       instance_dict = json.loads(self.options['instance-dict'])
 
       for k ,v in instance_dict.iteritems():
         config_instance_dict.set('instance_dict', k, v)
-      value = StringIO.StringIO()
+      value = six.StringIO()
       config_instance_dict.write(value)
       CONFIG['instance_dict'] = value.getvalue()
 

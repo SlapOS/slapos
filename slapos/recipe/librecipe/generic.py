@@ -34,7 +34,8 @@ import inspect
 import re
 import shutil
 import urllib
-from six import iteritems
+import itertools
+import six
 from six.moves import map
 from six.moves.urllib import parse
 
@@ -131,9 +132,9 @@ class GenericBaseRecipe(object):
       module, function = function
     path, filename = os.path.split(os.path.abspath(name))
 
-    assert not isinstance(args, (basestring, dict)), args
-    args = map(repr, args)
-    args += map('%s=%r'.__mod__, kw.iteritems())
+    assert not isinstance(args, (six.string_types, dict)), args
+    args = itertools.chain(map(repr, args),
+                           map('%s=%r'.__mod__, six.iteritems(kw)))
 
     return zc.buildout.easy_install.scripts(
       [(filename, module, function)], self._ws, sys.executable,
@@ -156,7 +157,7 @@ class GenericBaseRecipe(object):
     lines = ['#!/bin/sh']
 
     if env:
-      for k, v in sorted(iteritems(env)):
+      for k, v in sorted(six.iteritems(env)):
         lines.append('export %s=%s' % (k, shlex.quote(v)))
 
     lines.append('exec')

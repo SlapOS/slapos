@@ -24,6 +24,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 import subprocess
@@ -177,7 +179,7 @@ class Recipe(GenericBaseRecipe):
               copyright=self.copyright, installroot=self.installroot))
     )
     path_list.append(sh_script)
-    os.chmod(bash , 0700)
+    os.chmod(bash , 0o700)
 
     #After make_project run configure_script to perform and restart apache php services
     service_status = os.path.join(self.home, '.start_service')
@@ -234,9 +236,9 @@ class App(GenericBaseRecipe):
         downloader = zc.buildout.download.Download(self.buildout['buildout'],
                         hash_name=True, cache=cache)
         path, _ = downloader(param, md5sum=None)
-        mode = 0600
+        mode = 0o600
         if key == 'binary':
-          mode = 0700
+          mode = 0o700
         os.chmod(path, mode)
         app[key] = path
 
@@ -278,7 +280,7 @@ class App(GenericBaseRecipe):
           if not current_app['template-result'] or not current_app['binary'] \
               or not current_app['input-file'] or not current_app['template-wu'] \
               or not current_app['platform']:
-            print "BOINC-APP: ERROR - Invalid argements values for % ...operation cancelled" % app
+            print("BOINC-APP: ERROR - Invalid argements values for % ...operation cancelled" % app)
             app_list[app][version] = None
             continue
         #write application to install
@@ -319,7 +321,7 @@ class App(GenericBaseRecipe):
         dict(dash=self.options['dash'].strip()))
     )
     path_list.append(sh_script)
-    os.chmod(bash , 0700)
+    os.chmod(bash , 0o700)
 
     #If useful, download necessary files and update options path
     start_boinc = os.path.join(home, '.start_boinc')
@@ -339,7 +341,7 @@ class App(GenericBaseRecipe):
         platform = app_list[appname][version]['platform']
         application = os.path.join(apps_dir, appname, version, platform)
         if app_list[appname][version]['binary'] and not platform:
-          print "BOINC-APP: WARNING - Cannot specify binary without giving platform value"
+          print("BOINC-APP: WARNING - Cannot specify binary without giving platform value")
           app_list[appname][version]['binary'] = '' #Binary will not be updated
 
         parameter = dict(installroot=installroot,

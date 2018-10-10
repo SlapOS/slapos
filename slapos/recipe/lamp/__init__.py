@@ -31,7 +31,7 @@ import pkg_resources
 import zc.buildout
 import sys
 import zc.recipe.egg
-import urlparse
+from six.moves.urllib import parse
 
 # Warning : this recipe is deprecated and has been replaced by apachephp.
 
@@ -264,7 +264,7 @@ class Request(BaseRecipe):
     mysql = self.request(self.options['mariadb-software-url'],
       software_type, 'MariaDB Server', partition_parameter_kw=parameters
     ).getConnectionParameter('url')
-    mysql_parsed = urlparse.urlparse(mysql)
+    mysql_parsed = parse.urlparse(mysql)
 
     mysql_host, mysql_port = mysql_parsed.hostname, mysql_parsed.port
     if mysql_parsed.scheme == 'mysqls': # Listen over stunnel

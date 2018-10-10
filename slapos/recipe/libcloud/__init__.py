@@ -57,7 +57,7 @@ class Recipe(BaseSlapRecipe):
       try:
         self.slave_partition_configuration_dict_list.append(
             self._installSlavePartition(slave_partition))
-      except SlavePartitionError, e:
+      except SlavePartitionError as e:
         self.logger.warning('Slave Parttion %r not installed, issue: %r'%(
           slave_partition.getId(), e))
     # Installs wrappers

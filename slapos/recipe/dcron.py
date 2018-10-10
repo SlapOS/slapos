@@ -29,6 +29,8 @@ import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
 
+from six.moves import map
+
 class Recipe(GenericBaseRecipe):
 
   def install(self):
@@ -124,7 +126,7 @@ def systemd_to_cron(spec):
     x = spec[i]
     if x != '*':
       for x in x.split(','):
-        x = map(int, x.split('/', 1))
+        x = list(map(int, x.split('/', 1)))
         a = x[0] - y
         if 0 <= a < z:
           if len(x) == 1:

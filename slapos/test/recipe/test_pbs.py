@@ -22,7 +22,7 @@ class PBSTest(unittest.TestCase):
     def test_push(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile() as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
             recipe.wrapper_push(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
                                 remote_dir='TEST_REMOTE_DIR',
@@ -35,7 +35,7 @@ class PBSTest(unittest.TestCase):
     def test_pull(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile() as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
             recipe.wrapper_pull(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
                                 remote_dir='TEST_REMOTE_DIR',

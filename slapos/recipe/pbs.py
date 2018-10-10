@@ -25,12 +25,14 @@
 #
 ##############################################################################
 
+from __future__ import print_function
+
 import json
 import os
 import subprocess
 import sys
 import textwrap
-import urlparse
+from six.moves.urllib import parse
 
 from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
@@ -208,7 +210,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       # This behavior has been removed to accelerate deployment of the
       # Software Release. The buildout, instead of failing, can process
       # other sections, which will return parameters to the main instance faster
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = parse.urlparse(url)
 
     slave_type = entry['type']
     if not slave_type in ['pull', 'push']:
@@ -216,7 +218,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     slave_id = entry['notification-id']
 
-    print 'Processing PBS slave %s with type %s' % (slave_id, slave_type)
+    print('Processing PBS slave %s with type %s' % (slave_id, slave_type))
 
     path_list.append(self.createPythonScript(
       os.path.join(self.options['promises-directory'], "ssh-to-%s" % slave_id),

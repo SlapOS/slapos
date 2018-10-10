@@ -81,5 +81,5 @@ def promise(host, port, unixsocket):
     r = Redis(host=host, port=port, unix_socket_path=unixsocket, db=0)
     r.publish("Promise-Service","SlapOS Promise")
     r.connection_pool.disconnect()
-  except Exception, e:
+  except Exception as e:
     sys.exit(e)

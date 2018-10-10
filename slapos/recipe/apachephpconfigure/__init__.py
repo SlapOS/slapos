@@ -24,6 +24,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 import zc.buildout
 import sys
@@ -101,17 +103,17 @@ class Recipe(GenericBaseRecipe):
 
     # TODO factor
     if delete != []:
-      print "Creating lampconfigure with 'delete' arguments"
+      print("Creating lampconfigure with 'delete' arguments")
       command = argument + delete
     if rename != []:
       for parameters in rename:
-        print "Creating lampconfigure with 'rename' arguments"
+        print("Creating lampconfigure with 'rename' arguments")
         command = argument + rename
     if chmod != []:
-      print "Creating lampconfigure with 'chmod' arguments"
+      print("Creating lampconfigure with 'chmod' arguments")
       command = argument + chmod
     if data != []:
-      print "Creating lampconfigure with 'run' arguments"
+      print("Creating lampconfigure with 'run' arguments")
       command = argument + data
 
 

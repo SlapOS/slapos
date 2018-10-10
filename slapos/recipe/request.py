@@ -33,6 +33,8 @@ from slapos.slap import SoftwareProductCollection
 import slapos.recipe.librecipe.generic as librecipe
 import traceback
 
+import six
+
 SOFTWARE_PRODUCT_NAMESPACE = "product."
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
@@ -110,10 +112,10 @@ class Recipe(object):
       raise UserError("'config' & 'sla' options are obsolete."
                       " Clean up your software release.")
     filter_kw = {k[4:]: v
-      for k, v in options.iteritems()
+      for k, v in six.iteritems(options)
       if k.startswith('sla-') and v}
     partition_parameter_kw = self._filterForStorage({k[7:]: v
-      for k, v in options.iteritems()
+      for k, v in six.iteritems(options)
       if k.startswith('config-')})
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
@@ -310,12 +312,12 @@ class RequestEdge(Recipe):
 
       self.request_dict[country] = Recipe(buildout, name, local_options)
       # "Bubble" all connection parameters
-      for option, value in local_options.iteritems():
+      for option, value in six.iteritems(local_options):
         if option.startswith(CONNECTION_PARAMETER_STRING):
           self.options['%s-%s' % (option, country)] = value
 
   def install(self):
-    for country, request in self.request_dict.iteritems():
+    for country, request in six.iteritems(self.request_dict):
       request.install()
     return []
 

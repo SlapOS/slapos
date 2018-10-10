@@ -29,7 +29,6 @@ import os
 import subprocess
 import zc.buildout
 import filecmp
-import urlparse
 import shutil
 import re
 import json
@@ -130,9 +129,9 @@ class Recipe(GenericBaseRecipe):
 
     #create condor binary launcher for slapos
     if not os.path.exists(self.wrapper_bin):
-      os.makedirs(self.wrapper_bin, int('0744', 8))
+      os.makedirs(self.wrapper_bin, int('0o744', 8))
     if not os.path.exists(self.wrapper_sbin):
-      os.makedirs(self.wrapper_sbin, int('0744', 8))
+      os.makedirs(self.wrapper_sbin, int('0o744', 8))
     #generate script for each file in prefix/bin
     for binary in os.listdir(self.prefix+'/bin'):
       wrapper_location = os.path.join(self.wrapper_bin, binary)
@@ -153,7 +152,7 @@ class Recipe(GenericBaseRecipe):
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
-      os.chmod(wrapper_location, 0744)
+      os.chmod(wrapper_location, 0o744)
 
     #generate script for each file in prefix/sbin
     for binary in os.listdir(self.prefix+'/sbin'):
@@ -175,7 +174,7 @@ class Recipe(GenericBaseRecipe):
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
-      os.chmod(wrapper_location, 0744)
+      os.chmod(wrapper_location, 0o744)
 
     #generate script for start condor
     wrapper = self.createPythonScript(
@@ -228,7 +227,7 @@ class AppSubmit(GenericBaseRecipe):
         for file in file_list:
           if file and (file.startswith('http') or file.startswith('ftp')):
             file_list[file] = self.download(file_list[file])
-          os.chmod(file_list[file], 0600)
+          os.chmod(file_list[file], 0o600)
       else:
         app_list[app]['files'] = {}
 
@@ -236,11 +235,11 @@ class AppSubmit(GenericBaseRecipe):
       if executable and (executable.startswith('http') or executable.startswith('ftp')):
         app_list[app]['executable'] = self.download(executable,
                                       app_list[app]['executable-name'])
-        os.chmod(app_list[app]['executable-name'], 0700)
+        os.chmod(app_list[app]['executable-name'], 0o700)
       submit_file = app_list[app].get('description-file', '')
       if submit_file and (submit_file.startswith('http') or submit_file.startswith('ftp')):
         app_list[app]['description-file'] = self.download(submit_file, 'submit')
-        os.chmod(app_list[app]['description-file'], 0600)
+        os.chmod(app_list[app]['description-file'], 0o600)
 
     return app_list
 

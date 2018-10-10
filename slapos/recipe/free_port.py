@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import ConfigParser
+from six.moves import configparser
 import os
 import netaddr
 import socket
@@ -48,7 +48,7 @@ class Recipe(object):
     # If this check isn't done, a new port would be picked for every upgrade
     # of the software release
     try:
-      parser = ConfigParser.RawConfigParser()
+      parser = configPprser.RawConfigParser()
       if os.path.exists(buildout['buildout']['installed']):
         with open(buildout['buildout']['installed']) as config_file:
           parser.readfp(config_file)
@@ -59,7 +59,7 @@ class Recipe(object):
         if port != '0':
           self.options['port'] = port
           return
-    except (IOError, ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except (IOError, configparser.NoSectionError, configparser.NoOptionError):
       pass
 
     # Otherwise, let's find one
