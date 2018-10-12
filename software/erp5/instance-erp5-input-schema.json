@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Parameters to instantiate ERP5",
   "additionalProperties": false,
   "definitions": {
@@ -268,25 +268,6 @@
             "default": "/",
             "type": "string"
           },
-          "type": {
-            "description": "Storage type",
-            "enum": [
-              "zeo",
-              "neo"
-            ],
-            "type": "string"
-          },
-          "server": {
-            "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
-            "anyOf": [
-              {
-                "$ref": "./instance-zeo-schema.json"
-              },
-              {
-                "$ref": "../neoppod/instance-neo-input-schema.json"
-              }
-            ]
-          },
           "storage-dict": {
             "description": "Storage configuration. For NEO, 'logfile' is automatically set (see https://lab.nexedi.com/nexedi/neoppod/blob/master/neo/client/component.xml for other settings).",
             "properties": {
@@ -300,8 +281,39 @@
               "type": "string"
             },
             "type": "object"
-          }
+          },
+          "type": true,
+          "server": true
         },
+        "anyOf": [
+          {
+            "title": "zeo",
+            "properties": {
+              "type": {
+                "description": "Storage type",
+                "const": "zeo"
+              },
+              "server": {
+                "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
+                "$ref": "./instance-zeo-schema.json"
+              }
+
+            }
+          },
+          {
+            "title": "neo",
+            "properties": {
+              "type": {
+                "description": "Storage type",
+                "const": "neo"
+              },
+              "server": {
+                "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
+                "$ref": "../neoppod/instance-neo-input-schema.json"
+              }
+            }
+          }
+        ],
         "additionalProperties": {
           "type": "string"
         },
