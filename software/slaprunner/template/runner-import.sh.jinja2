@@ -154,6 +154,12 @@ fi
 # XXX hardcoded
 PARTITION=$(basename $HOME)
 OLD_SOFTWARE_RELEASE=$(db_query "select software_release from partition11 where reference='slappart0';")
+if [ -z "$OLD_SOFTWARE_RELEASE" ]; then
+  # if Software Release is selected but Instance was not ran
+  log_message "No instance deployed... Writing status file... End"
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
 SOFTWARE_RELEASE=$({{ sys.executable }} - $OLD_SOFTWARE_RELEASE $PARTITION <<EOF
 if 1:
   import os, re, sys
