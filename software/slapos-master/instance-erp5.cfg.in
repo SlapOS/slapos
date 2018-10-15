@@ -8,6 +8,16 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+{% set test_runner_enabled = slapparameter_dict.get('test-runner', {}).get('enabled', True) -%}
+{% set test_runner_node_count = slapparameter_dict.get('test-runner', {}).get('node-count', 3) -%}
+{% set test_runner_extra_database_count = slapparameter_dict.get('test-runner', {}).get('extra-database-count', 3) -%}
+{% set test_runner_total_database_count = test_runner_node_count * (1 + test_runner_extra_database_count) -%}
+{# Backward compatibility for mariadb.test-database-amount #}
+{% set mariadb_test_database_amount = slapparameter_dict.get('mariadb', {}).get('test-database-amount') -%}
+{% if mariadb_test_database_amount is not none -%}
+{%   set test_runner_total_database_count = mariadb_test_database_amount %}
+{%   set test_runner_enabled = mariadb_test_database_amount > 0 %}
+{% endif -%}
 {% set monitor_base_url_dict = {} -%}
 {% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
@@ -15,6 +25,7 @@
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-memory-percent-threshold', 80)) }}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
@@ -44,7 +55,7 @@ config-name = {{ name }}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', '') }, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', ''), 'test-database-amount': test_runner_total_database_count}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -93,45 +104,7 @@ connection-http-url = {{ caucase_url }}
 {%   endif -%}
 {% endfor -%}
 
-[publish-early]
-recipe = slapos.cookbook:publish-early
--init =
-  inituser-password gen-password:passwd
-  deadlock-debugger-password gen-deadlock-debugger-password:passwd
-{%- if has_posftix %}
-  smtpd-sasl-password gen-smtpd-sasl-password:passwd
-{%- endif %}
-{%- if neo %}
-  neo-cluster gen-neo-cluster:name
-{%-  if neo[0] %}
-neo-cluster = {{ dumps(neo[0]) }}
-{%-  endif %}
-{%- endif %}
-{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
-{%- if inituser_password %}
-inituser-password = {{ dumps(inituser_password) }}
-{%- endif %}
-{%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
-{%- if deadlock_debugger_password %}
-deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
-{%- endif %}
-
-[gen-password]
-recipe = slapos.cookbook:generate.password
-storage-path =
-
-[gen-deadlock-debugger-password]
-<= gen-password
-
-[gen-neo-cluster-base]
-<= gen-password
-
-[gen-neo-cluster]
-name = neo-${gen-neo-cluster-base:passwd}
-
-[gen-smtpd-sasl-password]
-< = gen-password
-
+{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_address_list_id_dict = {} -%}
 {% if zope_partition_dict -%}
@@ -142,6 +115,9 @@ return =
   zope-address-list
   hosts-dict
   monitor-base-url
+{%- if test_runner_enabled %}
+  test-runner-address-list
+{% endif %}
 {% set bt5_default_list = 'erp5_full_text_myisam_catalog slapos_configurator' -%}
 {% if has_jupyter -%}
 {%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
@@ -152,6 +128,7 @@ config-caucase-url = ${request-caucase:connection-http-url}
 config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-saucelabs-dict = {{ dumps(slapparameter_dict.get('saucelabs-dict', {})) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
@@ -169,6 +146,8 @@ config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
 config-ca-path = ${directory:ca-dir}
 config-zodb-dict = {{ dumps(zodb_dict) }}
+config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
+config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
@@ -183,6 +162,7 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
+{% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
@@ -190,6 +170,7 @@ software-type = zope
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
+{%   do zope_family_name_list.append(zope_family) %}
 {%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
@@ -214,6 +195,7 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
@@ -309,6 +291,9 @@ return =
 {%- for family in zope_family_dict %}
   {{ family }}
   {{ family }}-v6
+  {% if test_runner_enabled %}
+  {{ family }}-test-runner-url-list
+  {% endif %}
 {% endfor -%}
 {% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
 
@@ -316,6 +301,9 @@ config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
+{%   if test_runner_enabled -%}
+config-{{ name }}-test-runner-address-list = {{ ' ${' ~ zope_section_id ~ ':connection-test-runner-address-list}' }}
+{%   endif -%}
 {% endfor -%}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
@@ -377,6 +365,57 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}
+{% for zope_family_name in zope_family_name_list -%}
+{{ zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
+{% endfor -%}
+
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  inituser-password gen-password:passwd
+  deadlock-debugger-password gen-deadlock-debugger-password:passwd
+{%- if has_posftix %}
+  smtpd-sasl-password gen-smtpd-sasl-password:passwd
+{%- endif %}
+{% for zope_family_name in zope_family_name_list %}
+  {{ zope_family_name }}-test-runner-url-list default-balancer-test-runner-url-list:default
+{% endfor -%}
+{%- if neo %}
+  neo-cluster gen-neo-cluster:name
+{%-  if neo[0] %}
+neo-cluster = {{ dumps(neo[0]) }}
+{%-  endif %}
+{%- endif %}
+{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
+{%- if inituser_password %}
+inituser-password = {{ dumps(inituser_password) }}
+{%- endif %}
+{%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
+{%- if deadlock_debugger_password %}
+deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
+{%- endif %}
+
+
+[default-balancer-test-runner-url-list]
+recipe =
+default = not-ready
+
+[gen-password]
+recipe = slapos.cookbook:generate.password
+storage-path =
+
+[gen-deadlock-debugger-password]
+<= gen-password
+
+[gen-neo-cluster-base]
+<= gen-password
+
+[gen-neo-cluster]
+name = neo-${gen-neo-cluster-base:passwd}
+
+[gen-smtpd-sasl-password]
+< = gen-password
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8386

@@ -98,6 +98,8 @@ ipv4 = {{ ipv4 }}
 {% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
+{% set zope_virtualhost_monster_backend_dict = {} %}
+{% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
@@ -122,8 +124,27 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
 {%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
+
+{#       # Generate entries with rewrite rule for test runnners #}
+{%       set test_runner_backend_mapping = {} %}
+{%       set test_runner_apache_url_list = [] %}
+{%       set test_runner_external_port = next_port() %}
+{%       for i, (test_runner_internal_ip, test_runner_internal_port) in
+             enumerate(slapparameter_dict[parameter_id ~ '-test-runner-address-list']) %}
+{%         do test_runner_backend_mapping.__setitem__(
+                'unit_test_' ~ i,
+                'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
+{%         do test_runner_apache_url_list.append(
+                'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
+{%       endfor %}
+{%       do zope_virtualhost_monster_backend_dict.__setitem__(
+              (ipv4, test_runner_external_port),
+              ( ssl_authentication, test_runner_backend_mapping ) ) -%}
+{%       do test_runner_url_dict.__setitem__(family_name, test_runner_apache_url_list) -%}
+
 {%     endfor -%}
 {%   endfor -%}
+
 {# Make rendering fail artificially if any family has no known backend.
  # This is useful as haproxy's hot-reconfiguration mechanism is
  # supervisord-incompatible.
@@ -162,6 +183,7 @@ extensions = jinja2.ext.do
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
+hash-files = ${haproxy-cfg:rendered}
 
 {# TODO: build socat and wrap it as "${directory:bin}/haproxy-ctl" to connect to "${haproxy-cfg-parameter-dict:socket-path}" #}
 
@@ -173,6 +195,7 @@ crl = ${directory:apache-conf}/crl.pem
 
 [apache-conf-parameter-dict]
 backend-list = {{ dumps(apache_dict.values()) }}
+zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 log-dir = ${directory:log}
@@ -230,6 +253,10 @@ recipe = slapos.cookbook:publish.serialised
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
+{% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
+{{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
+{% endfor -%}
+
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [apache-ssl]
@@ -304,10 +331,19 @@ crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
 
 [{{ section('monitor-generate-apachedex-report') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = generate-apachedex-report
+# The goal is to be executed before logrotate log rotation.
+# Here, logrotate-entry-base:frequency = daily, so we run at 23 o'clock every day.
+frequency = 0 23 * * *
+command = ${monitor-generate-apachedex-report-wrapper:wrapper-path}
+
+[monitor-generate-apachedex-report-wrapper]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${monitor-directory:reports}/${:command}
+wrapper-path = ${directory:bin}/${:command}
 command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration "${apachedex-parameters:configuration}"
-command = apachedex_every_23_hour
+command = generate-apachedex-report
 
 [apachedex-parameters]
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
@@ -320,6 +356,11 @@ promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-apachedex-result
 command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
+
+[{{ section('promise-check-computer-memory') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-computer-memory
+command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
