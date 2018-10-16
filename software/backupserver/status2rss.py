@@ -23,7 +23,7 @@ while 1:
   if not line:
     break
 
-  time, statistic, desc = line.split(',', 2)
+  time, statistic, desc = line.split(', ', 2)
 
   rss_item = PyRSS2Gen.RSSItem(
     title = desc,
