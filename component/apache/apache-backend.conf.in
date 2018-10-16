@@ -185,6 +185,7 @@ Listen {{ ip }}:{{ port }}
 Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
+  Timeout 3600
 {%   if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
   SSLVerifyClient require
   SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
