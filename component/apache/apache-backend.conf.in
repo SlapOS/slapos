@@ -102,6 +102,7 @@ LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule deflate_module modules/mod_deflate.so
 LoadModule filter_module modules/mod_filter.so
+LoadModule reqtimeout_module modules/mod_reqtimeout.so
 
 AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript image/svg+xml application/x-font-ttf application/font-woff application/font-woff2 application/x-font-opentype
 
