@@ -97,12 +97,24 @@ def isHTTP2(domain, ip):
 
 
 class TestDataMixin(object):
+  @staticmethod
+  def generateHashFromFiles(file_list):
+    import hashlib
+    hasher = hashlib.md5()
+    for path in file_list:
+      with open(path, 'r') as afile:
+        buf = afile.read()
+      hasher.update("%s\n" % len(buf))
+      hasher.update(buf)
+    hash = hasher.hexdigest()
+    return hash
+
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data):
+  def assertTestData(self, runtime_data, **kw):
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -111,6 +123,8 @@ class TestDataMixin(object):
       test_data = open(test_data_file).read().strip()
     except IOError:
       test_data = ''
+
+    test_data = test_data.format(**kw)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -185,8 +199,16 @@ class TestDataMixin(object):
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
+
+    hash_files = [
+      'software_release/buildout.cfg',
+    ]
+    hash_files = [os.path.join(self.computer_partition_root_path, path)
+                  for path in hash_files]
+    h = self.generateHashFromFiles(hash_files)
+
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data)
+    self.assertTestData(runtime_data, hash=h)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
