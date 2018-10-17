@@ -1,6 +1,6 @@
 TestMasterRequestDomain-0:bootstrap-monitor EXITED
 TestMasterRequestDomain-0:certificate_authority-on-watch RUNNING
-TestMasterRequestDomain-0:crond RUNNING
+TestMasterRequestDomain-0:crond-f6307f84913be309ab7c9eeb522e0c81 RUNNING
+TestMasterRequestDomain-0:monitor-httpd-f6307f84913be309ab7c9eeb522e0c81-on-watch RUNNING
 TestMasterRequestDomain-0:monitor-httpd-graceful EXITED
-TestMasterRequestDomain-0:monitor-httpd-on-watch RUNNING
 watchdog:watchdog RUNNING
