@@ -201,7 +201,7 @@ Listen {{ ip }}:{{ port }}
 {%   endif -%}
 
 {%   for path, backend in path_mapping.items() %}
-  RewriteRule ^/{{path}}(.*) {{ backend }}/VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ path }}$1 [L,P]
+  RewriteRule ^/{{path}}(.*) {{ backend }}/VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ path.replace('/', '/_vh_') }}$1 [L,P]
 {%   endfor -%}
 </VirtualHost>
 {% endfor -%}
