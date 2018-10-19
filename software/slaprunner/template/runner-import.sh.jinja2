@@ -69,7 +69,12 @@ if 1:
         print("*.pid")
         print(".installed*.cfg")
         for partition in glob.glob(path + "/instance/slappart*"):
-            os.chdir(partition)
+            try:
+              os.chdir(partition)
+            except OSError as e:
+              if e.errno != errno.ENOTDIR:
+                raise
+              continue
             try:
                 with open("srv/exporter.exclude") as f:
                     exclude = f.readlines()
@@ -149,7 +154,19 @@ fi
 # XXX hardcoded
 PARTITION=$(basename $HOME)
 OLD_SOFTWARE_RELEASE=$(db_query "select software_release from partition11 where reference='slappart0';")
-SOFTWARE_RELEASE=$(echo "$OLD_SOFTWARE_RELEASE" | sed 's/\/\(slappart\|test0-\)[0-9][0-9]*\//\/'"$PARTITION"'\//')
+SOFTWARE_RELEASE=$({{ sys.executable }} - $OLD_SOFTWARE_RELEASE $PARTITION <<EOF
+if 1:
+  import os, re, sys
+
+  # We want to replace the last occurence only
+  old_software_release, partition = sys.argv[1], sys.argv[2]
+  for match in re.finditer("(slappart|test0-)[0-9][0-9]*", old_software_release):
+    start, end = match.start(), match.end()
+
+  print old_software_release[:start] + partition + old_software_release[end:]
+EOF
+)
+
 db_query "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
 db_query "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped

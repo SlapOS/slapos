@@ -56,7 +56,12 @@ if 1:
         print("*.pid")
         print(".installed*.cfg")
         for partition in glob.glob(path + "/instance/slappart*"):
-            os.chdir(partition)
+            try:
+              os.chdir(partition)
+            except OSError as e:
+              if e.errno != errno.ENOTDIR:
+                raise
+              continue
             try:
                 with open("srv/exporter.exclude") as f:
                     exclude = f.readlines()
@@ -104,34 +109,32 @@ fi
 
 # Check that export didn't happen during backup of instances
 tmp_backup_sum=$(mktemp -p "$tmp_directory")
-tmp_filtered_signature=$(mktemp -p "$tmp_directory")
 
 remove_tmp_files () {
-  rm "$tmp_backup_sum" "$tmp_filtered_signature"
+  rm "$tmp_backup_sum"
 }
 trap remove_tmp_files EXIT
 
+cd {{ directory['backup'] }}
+
+# Wait a little to increase the probability to detect an ongoing backup.
+sleep 5
+
 # Getting files from runner backup directory, as instance backup files may be
 # explicitely excluded from the backup, using the srv/exporter.exclude
-backup_directory_path="$tmp_directory/backup_files.txt"
-cd {{ directory['backup'] }}
-find . -path "./runner/instance/slappart*/srv/backup/*" -type f -print0 > $backup_directory_path
+find -path "./runner/instance/slappart*/srv/backup/*" -type f ! -name backup.signature -print0 |
+xargs -r0 sha256sum | sort -k 66 > "$tmp_backup_sum"
 
 # If no backup found, it's over
-if [ ! -s "$backup_directory_path" ]; then
+if [ ! -s "$tmp_backup_sum" ]; then
   exit 0
 fi
-
-sleep 5
-cat $backup_directory_path | xargs -0 sha256sum | sort -k 66 > "$tmp_backup_sum"
-rm $backup_directory_path
-egrep "instance/slappart.*/srv/backup/" "$backup_directory/backup.signature" > "$tmp_filtered_signature"
 
 # If the diff fails, then the notifier will restart this script
-if diff "$tmp_backup_sum" "$tmp_filtered_signature"; then
-  exit 0
-fi
-echo "ERROR: Some backups are not consistent, exporter should be re-run."
-echo "Let's sleep {{ backup_wait_time }} minutes, to let the backup end..."
-sleep {{ backup_wait_time }}m
-exit 1
+grep "instance/slappart.*/srv/backup/" "$backup_directory/backup.signature" |
+diff "$tmp_backup_sum" - || {
+  echo "ERROR: Some backups are not consistent, exporter should be re-run."
+  echo "Let's sleep {{ backup_wait_time }} minutes, to let the backup end..."
+  sleep {{ backup_wait_time }}m
+  exit 1
+}

@@ -1,5 +1,6 @@
 [buildout]
 parts =
+  cron-service
   cron-entry-logrotate
   logrotate-entry-cron
 
@@ -10,7 +11,16 @@ dcrond-binary = {{ dcron_location }}/sbin/crond
 crontabs = ${logrotate-directory:crontabs}
 cronstamps = ${logrotate-directory:cronstamps}
 catcher = ${cron-simplelogger:wrapper}
-binary = ${logrotate-directory:services}/crond
+binary = ${logrotate-directory:bin}/crond
+# This is here so to keep backward compatibility where the cron
+# section should create the service too and keep variables here
+service = ${cron-service:wrapper-path}
+
+[cron-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${cron:binary}
+wrapper-path = ${logrotate-directory:services}/crond
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
@@ -51,7 +61,7 @@ post =
 pre =
 frequency = daily
 rotate-num = 3650
-nocompress = 
+nocompress =
 
 [logrotate]
 recipe = slapos.cookbook:wrapper
