@@ -1,5 +1,9 @@
 #!${dash-output:dash}
 
+# don't run if rdiff-backup is still running
+# in that case, the promise will detect that previous rdiff backup took too long and report an error
+${util-linux:location}/bin/flock --nb $${:status_log}.lock true || exit
+
 export HOME=$${directory:home}
 
 # Inform about beginning of backup
@@ -8,7 +12,8 @@ ${coreutils-output:echo} "Available only if backup succeed." > $${:statistic_log
 
 # set -e
 cd $${:datadirectory}
-${rdiff-backup-output:rdiff-backup} \
+${util-linux:location}/bin/flock $${:status_log}.lock \
+  ${rdiff-backup-output:rdiff-backup} \
   $${:exclude_string} \
   --include='$${:include}' \
   --exclude='**' \
