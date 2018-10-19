@@ -72,20 +72,11 @@ ip = ${slaprunner:ipv4}
 port = ${supervisord-free-port:port}
 
 [exporter]
-recipe = slapos.recipe.template:jinja2
-template = {{ exporter_script_path }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
-# backward compatibility for resilient stack
-wrapper = ${:rendered}
-mode = 700
-context =
-  import sys sys
-  import easy_install zc.buildout.easy_install
-  section directory directory
-  raw  backup_wait_time {{ backup_wait_time }}
-  raw  output_log_file ${directory:log}/resilient.log
-  raw  shell_binary {{ bash_executable_location }}
-  raw  rsync_binary {{ rsync_executable_location }}
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
+# wrapper parameter is needed by resilience stack
+wrapper = ${:wrapper-path}
+command-line = {{ software_release_bin }}/${slap-parameter:namebase}-exporter --srv-path ${directory:srv} --etc-path ${directory:etc} --backup-path ${directory:backup} --tmp-path ${directory:tmp} --rsync-binary {{ rsync_executable_location }} --backup-wait-time {{ backup_wait_time }}
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port
