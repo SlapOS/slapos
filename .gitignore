@@ -14,3 +14,4 @@ slapos.cookbook.egg-info
 .eggs/
 *.egg/
 TEST_KNOWN_HOSTS
+node_modules
