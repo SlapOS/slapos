@@ -3,6 +3,8 @@ TestMalformedBackenUrlSlave-0:certificate_authority-on-watch RUNNING
 TestMalformedBackenUrlSlave-0:crond-{hash} RUNNING
 TestMalformedBackenUrlSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestMalformedBackenUrlSlave-0:monitor-httpd-graceful EXITED
+TestMalformedBackenUrlSlave-1:caucase-updater-on-watch RUNNING
+TestMalformedBackenUrlSlave-1:caucased-on-watch RUNNING
 TestMalformedBackenUrlSlave-1:kedifa-on-watch RUNNING
 TestMalformedBackenUrlSlave-2:6tunnel-11080-on-watch RUNNING
 TestMalformedBackenUrlSlave-2:6tunnel-11443-on-watch RUNNING

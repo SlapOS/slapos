@@ -3,6 +3,8 @@ TestSlaveBadParameters-0:certificate_authority-on-watch RUNNING
 TestSlaveBadParameters-0:crond-{hash} RUNNING
 TestSlaveBadParameters-0:monitor-httpd-{hash}-on-watch RUNNING
 TestSlaveBadParameters-0:monitor-httpd-graceful EXITED
+TestSlaveBadParameters-1:caucase-updater-on-watch RUNNING
+TestSlaveBadParameters-1:caucased-on-watch RUNNING
 TestSlaveBadParameters-1:kedifa-on-watch RUNNING
 TestSlaveBadParameters-2:6tunnel-11080-on-watch RUNNING
 TestSlaveBadParameters-2:6tunnel-11443-on-watch RUNNING
