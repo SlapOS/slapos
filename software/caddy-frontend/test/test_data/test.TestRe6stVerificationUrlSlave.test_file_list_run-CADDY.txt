@@ -1,5 +1,6 @@
 TestRe6stVerificationUrlSlave-0/var/run/monitor-httpd.pid
 TestRe6stVerificationUrlSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestRe6stVerificationUrlSlave-1/var/run/kedifa.pid
 TestRe6stVerificationUrlSlave-2/var/run/caddy_configuration.signature
 TestRe6stVerificationUrlSlave-2/var/run/httpd.pid
 TestRe6stVerificationUrlSlave-2/var/run/monitor-httpd.pid

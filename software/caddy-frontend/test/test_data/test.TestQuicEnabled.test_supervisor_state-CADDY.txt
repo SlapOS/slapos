@@ -3,7 +3,10 @@ TestQuicEnabled-0:certificate_authority-on-watch RUNNING
 TestQuicEnabled-0:crond-{hash} RUNNING
 TestQuicEnabled-0:monitor-httpd-{hash}-on-watch RUNNING
 TestQuicEnabled-0:monitor-httpd-graceful EXITED
+TestQuicEnabled-1:caucase-updater-on-watch RUNNING
+TestQuicEnabled-1:caucased-on-watch RUNNING
 TestQuicEnabled-1:kedifa-on-watch RUNNING
+TestQuicEnabled-1:kedifa-reloader EXITED
 TestQuicEnabled-2:6tunnel-11080-on-watch RUNNING
 TestQuicEnabled-2:6tunnel-11443-on-watch RUNNING
 TestQuicEnabled-2:6tunnel-12080-on-watch RUNNING
@@ -16,8 +19,9 @@ TestQuicEnabled-2:crond-{hash} RUNNING
 TestQuicEnabled-2:crond-on-watch RUNNING
 TestQuicEnabled-2:frontend-caddy-safe-graceful EXITED
 TestQuicEnabled-2:frontend-nginx-safe-graceful EXITED
-TestQuicEnabled-2:frontend_caddy-{hash}-on-watch RUNNING
+TestQuicEnabled-2:frontend_caddy-on-watch RUNNING
 TestQuicEnabled-2:frontend_nginx-{hash}-on-watch RUNNING
+TestQuicEnabled-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 TestQuicEnabled-2:monitor-httpd-{hash}-on-watch RUNNING
 TestQuicEnabled-2:monitor-httpd-graceful EXITED
 TestQuicEnabled-2:trafficserver-{hash}-on-watch RUNNING
