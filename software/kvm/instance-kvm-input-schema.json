@@ -172,10 +172,16 @@
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
       "type": "string",
-      "format": [
-        "host-name",
-        "ip-address",
-        "ipv6"
+      "oneOf": [
+        {
+          "format": "hostname"
+        },
+        {
+          "format": "ipv4"
+        },
+        {
+          "format": "ipv6"
+        }
       ],
       "default": "debian.nbd.vifib.net"
     },
@@ -191,10 +197,16 @@
       "title": "Second NBD hostname",
       "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
       "type": "string",
-      "format": [
-        "host-name",
-        "ip-address",
-        "ipv6"
+      "oneOf": [
+        {
+          "format": "hostname"
+        },
+        {
+          "format": "ipv4"
+        },
+        {
+          "format": "ipv6"
+        }
       ]
     },
     "nbd2-port": {
