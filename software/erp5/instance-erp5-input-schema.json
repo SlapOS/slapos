@@ -297,7 +297,6 @@
                 "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. The partition reference is 'zodb'.",
                 "$ref": "./instance-zeo-schema.json"
               }
-
             }
           },
           {
