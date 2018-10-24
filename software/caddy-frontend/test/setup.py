@@ -40,7 +40,11 @@ setup(name=name,
         'slapos.core',
         'slapos.libnetworkcache',
         'erp5.util',
-        'requests',
+        'requests >= 2.20.0',  # needed for recent SSL certificate fixes
+        'urllib3 >= 1.24',  # needed for recent SSL certificate fixes
+        # ipaddress is patching IPAddress so IPv6 in SSL certificates
+        # match works
+        'ipaddress >= 1.0.22',
         'forcediphttpsadapter',
         'requests-toolbelt',
         'supervisor',

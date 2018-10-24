@@ -3,6 +3,8 @@ TestQuicEnabled-0:certificate_authority-on-watch RUNNING
 TestQuicEnabled-0:crond-{hash} RUNNING
 TestQuicEnabled-0:monitor-httpd-{hash}-on-watch RUNNING
 TestQuicEnabled-0:monitor-httpd-graceful EXITED
+TestQuicEnabled-1:caucase-updater-on-watch RUNNING
+TestQuicEnabled-1:caucased-on-watch RUNNING
 TestQuicEnabled-1:kedifa-on-watch RUNNING
 TestQuicEnabled-2:6tunnel-11080-on-watch RUNNING
 TestQuicEnabled-2:6tunnel-11443-on-watch RUNNING
