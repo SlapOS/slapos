@@ -1,6 +1,7 @@
 TestQuicEnabled-0/etc/promise/monitor-http-frontend
 TestQuicEnabled-0/etc/promise/monitor-httpd-listening-on-tcp
 TestQuicEnabled-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestQuicEnabled-1/etc/promise/caucased
 TestQuicEnabled-2/etc/promise/caddy-frontend-is-running-actual-software-release
 TestQuicEnabled-2/etc/promise/caddy_cached
 TestQuicEnabled-2/etc/promise/caddy_frontend_ipv4_http
