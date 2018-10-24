@@ -3,6 +3,8 @@ TestEnableHttp2ByDefaultDefaultSlave-0:certificate_authority-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-0:crond-{hash} RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-0:monitor-httpd-graceful EXITED
+TestEnableHttp2ByDefaultDefaultSlave-1:caucase-updater-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:caucased-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-1:kedifa-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:6tunnel-11080-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:6tunnel-11443-on-watch RUNNING

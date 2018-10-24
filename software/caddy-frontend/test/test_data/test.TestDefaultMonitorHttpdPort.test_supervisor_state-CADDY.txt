@@ -3,6 +3,8 @@ TestDefaultMonitorHttpdPort-0:certificate_authority-on-watch RUNNING
 TestDefaultMonitorHttpdPort-0:crond-{hash} RUNNING
 TestDefaultMonitorHttpdPort-0:monitor-httpd-{hash}-on-watch EXITED
 TestDefaultMonitorHttpdPort-0:monitor-httpd-graceful EXITED
+TestDefaultMonitorHttpdPort-1:caucase-updater-on-watch RUNNING
+TestDefaultMonitorHttpdPort-1:caucased-on-watch RUNNING
 TestDefaultMonitorHttpdPort-1:kedifa-on-watch RUNNING
 TestDefaultMonitorHttpdPort-2:6tunnel-26011-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:6tunnel-26012-on-watch STOPPED
