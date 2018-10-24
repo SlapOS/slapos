@@ -69,9 +69,12 @@ extra-context =
 template = {{ template_kedifa }}
 filename = instance-kedifa.cfg
 extensions = jinja2.ext.do
+caucase-jinja2-library = {{ caucase_jinja2_library }}
 extra-context =
   section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type kedifa
+import-list =
+  file caucase :caucase-jinja2-library
 
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.

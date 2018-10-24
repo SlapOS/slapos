@@ -1,6 +1,7 @@
 TestReplicateSlave-0/etc/promise/monitor-http-frontend
 TestReplicateSlave-0/etc/promise/monitor-httpd-listening-on-tcp
 TestReplicateSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestReplicateSlave-1/etc/promise/caucased
 TestReplicateSlave-2/etc/promise/caddy-frontend-is-running-actual-software-release
 TestReplicateSlave-2/etc/promise/caddy_cached
 TestReplicateSlave-2/etc/promise/caddy_frontend_ipv4_http

@@ -119,6 +119,20 @@ caddy-location = {{ parameter_dict['caddy_location'] }}
 template-nginx-eventsource-slave-virtualhost = {{ parameter_dict['template_nginx_eventsource_slave_virtualhost'] }}
 template-nginx-notebook-slave-virtualhost = {{ parameter_dict['template_nginx_notebook_slave_virtualhost'] }}
 
+[kedifa-caucase-ca-certificate]
+recipe = plone.recipe.command
+command =
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+  {{ parameter_dict['bin_directory'] }}/caucase \
+    --ca-url {{ slapparameter_dict['kedifa-caucase-url'] }} \
+    --ca-crt ${:ca-certificate} \
+    --mode service
+{% endif %}
+  test -f ${:ca-certificate}
+update-command = ${:command}
+stop-on-error = True
+ca-certificate = ${directory:ca-dir}/kedifa-caucase-ca-certificate.crt
+
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
 template = {{ parameter_dict['template_slave_list'] }}
@@ -135,13 +149,16 @@ software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
+    key kedifa_caucase_ca_certificate kedifa-caucase-ca-certificate:ca-certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_getter :kedifa-getter
+    key kedifa_csr :kedifa-csr
     key http_port configuration:plain_http_port
     key https_port configuration:port
     key nginx_http_port configuration:plain_nginx_port

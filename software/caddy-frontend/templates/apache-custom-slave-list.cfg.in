@@ -42,7 +42,7 @@ create = true
 [{{ master_reserved_reference}}]
 recipe = plone.recipe.command
 destination = {{ master_certificate }}
-command = {{ kedifa_getter }} {{ master_key_download_url }} ${:destination}
+command = {{ kedifa_getter }} {{ master_key_download_url }} ${:destination} {{ kedifa_caucase_ca_certificate }}
 update-command = ${:command}
 {% endif %}
 
@@ -165,7 +165,7 @@ destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
 used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
 source-master = {{ '${' + master_reserved_reference + ':destination}'}}
 command =
-  {{ kedifa_getter }} {{ key_download_url }} ${:destination}
+  {{ kedifa_getter }} {{ key_download_url }} ${:destination} {{ kedifa_caucase_ca_certificate }}
   if [ -f ${:destination} ] ; then
     # if the slave specific certificate is available, use it
     ln -sf ${:destination} ${:used}

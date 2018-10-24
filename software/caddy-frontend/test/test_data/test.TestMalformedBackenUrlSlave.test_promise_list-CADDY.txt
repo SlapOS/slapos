@@ -1,6 +1,7 @@
 TestMalformedBackenUrlSlave-0/etc/promise/monitor-http-frontend
 TestMalformedBackenUrlSlave-0/etc/promise/monitor-httpd-listening-on-tcp
 TestMalformedBackenUrlSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestMalformedBackenUrlSlave-1/etc/promise/caucased
 TestMalformedBackenUrlSlave-2/etc/promise/caddy-frontend-is-running-actual-software-release
 TestMalformedBackenUrlSlave-2/etc/promise/caddy_cached
 TestMalformedBackenUrlSlave-2/etc/promise/caddy_frontend_ipv4_http

@@ -1,6 +1,7 @@
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/monitor-http-frontend
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/monitor-httpd-listening-on-tcp
 TestEnableHttp2ByDefaultFalseSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caucased
 TestEnableHttp2ByDefaultFalseSlave-2/etc/promise/caddy-frontend-is-running-actual-software-release
 TestEnableHttp2ByDefaultFalseSlave-2/etc/promise/caddy_cached
 TestEnableHttp2ByDefaultFalseSlave-2/etc/promise/caddy_frontend_ipv4_http
