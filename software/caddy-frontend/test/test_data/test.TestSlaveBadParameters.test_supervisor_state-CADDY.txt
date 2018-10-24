@@ -3,7 +3,10 @@ TestSlaveBadParameters-0:certificate_authority-on-watch RUNNING
 TestSlaveBadParameters-0:crond-{hash} RUNNING
 TestSlaveBadParameters-0:monitor-httpd-{hash}-on-watch RUNNING
 TestSlaveBadParameters-0:monitor-httpd-graceful EXITED
+TestSlaveBadParameters-1:caucase-updater-on-watch RUNNING
+TestSlaveBadParameters-1:caucased-on-watch RUNNING
 TestSlaveBadParameters-1:kedifa-on-watch RUNNING
+TestSlaveBadParameters-1:kedifa-reloader EXITED
 TestSlaveBadParameters-2:6tunnel-11080-on-watch RUNNING
 TestSlaveBadParameters-2:6tunnel-11443-on-watch RUNNING
 TestSlaveBadParameters-2:6tunnel-12080-on-watch RUNNING
@@ -16,8 +19,9 @@ TestSlaveBadParameters-2:crond-{hash} RUNNING
 TestSlaveBadParameters-2:crond-on-watch RUNNING
 TestSlaveBadParameters-2:frontend-caddy-safe-graceful EXITED
 TestSlaveBadParameters-2:frontend-nginx-safe-graceful EXITED
-TestSlaveBadParameters-2:frontend_caddy-{hash}-on-watch RUNNING
+TestSlaveBadParameters-2:frontend_caddy-on-watch RUNNING
 TestSlaveBadParameters-2:frontend_nginx-{hash}-on-watch RUNNING
+TestSlaveBadParameters-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 TestSlaveBadParameters-2:monitor-httpd-{hash}-on-watch RUNNING
 TestSlaveBadParameters-2:monitor-httpd-graceful EXITED
 TestSlaveBadParameters-2:trafficserver-{hash}-on-watch RUNNING

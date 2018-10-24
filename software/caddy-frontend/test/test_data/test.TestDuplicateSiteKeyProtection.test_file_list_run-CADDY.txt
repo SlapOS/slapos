@@ -1,5 +1,6 @@
 TestDuplicateSiteKeyProtection-0/var/run/monitor-httpd.pid
 TestDuplicateSiteKeyProtection-0/var/run/monitor/monitor-bootstrap.pid
+TestDuplicateSiteKeyProtection-1/var/run/kedifa.pid
 TestDuplicateSiteKeyProtection-2/var/run/caddy_configuration.signature
 TestDuplicateSiteKeyProtection-2/var/run/httpd.pid
 TestDuplicateSiteKeyProtection-2/var/run/monitor-httpd.pid

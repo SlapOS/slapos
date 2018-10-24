@@ -53,7 +53,7 @@ from utils import findFreeTCPPort
 
 LOCAL_IPV4 = os.environ['LOCAL_IPV4']
 GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
-KEDIFA_IPV6_BASE = 'http://[%s]:7879' % (GLOBAL_IPV6,)
+KEDIFA_IPV6_BASE = 'https://[%s]:7879' % (GLOBAL_IPV6,)
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -289,6 +289,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': None,
         'domain': 'None',
+        'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
         'master-key-generate-auth-url':
         '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
         'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
@@ -321,6 +322,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': None,
         'domain': 'example.com',
+        'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
         'master-key-generate-auth-url':
         '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
         'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
@@ -382,10 +384,19 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpMaster(cls):
     parameter_dict = cls.computer_partition.getConnectionParameterDict()
-    auth = requests.get(parameter_dict['master-key-generate-auth-url'])
+    ca_certificate = requests.get(
+      parameter_dict['kedifa-caucase-url'] + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    cls.ca_certificate_file = os.path.join(cls.working_directory, 'ca.crt.pem')
+    open(cls.ca_certificate_file, 'w').write(ca_certificate.text)
+    auth = requests.get(
+      parameter_dict['master-key-generate-auth-url'],
+      verify=cls.ca_certificate_file)
     assert auth.status_code == httplib.CREATED
     upload = requests.put(
-      parameter_dict['master-key-upload-url'] + auth.text, data=MASTER_KEY)
+      parameter_dict['master-key-upload-url'] + auth.text,
+      data=MASTER_KEY,
+      verify=cls.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
 
   @classmethod
@@ -763,6 +774,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
+      'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
       'master-key-generate-auth-url':
       '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
       'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
@@ -1097,12 +1109,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.assertSlaveBase('custom_domain_ssl_crt_ssl_key')
 
     # as now the place to put the key is known put the key there
-    auth = requests.get(parameter_dict['key-generate-auth-url'])
+    auth = requests.get(
+      parameter_dict['key-generate-auth-url'],
+      verify=self.ca_certificate_file)
     assert auth.status_code == httplib.CREATED
     data = open('customdomainsslcrtsslkey.example.com.crt').read() + \
         open('customdomainsslcrtsslkey.example.com.key').read()
     upload = requests.put(
-      parameter_dict['key-upload-url'] + auth.text, data=data)
+      parameter_dict['key-upload-url'] + auth.text,
+      data=data,
+      verify=self.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
 
     # after partitions being processed the key will be used for this slave
@@ -2365,6 +2381,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
+      'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
       'master-key-generate-auth-url':
       '%s/DEFAULT_FRONTEND_KEY/generateauth' % (
         KEDIFA_IPV6_BASE,),
@@ -2660,6 +2677,7 @@ https://www.google.com {}""",
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
+      'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
       'master-key-generate-auth-url':
       '%s/DEFAULT_FRONTEND_KEY/generateauth' % (
         KEDIFA_IPV6_BASE,),
@@ -3072,6 +3090,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
+      'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
       'master-key-generate-auth-url':
       '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
       'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (

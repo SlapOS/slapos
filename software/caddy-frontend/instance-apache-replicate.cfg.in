@@ -152,6 +152,7 @@ name = {{ frontend_request.get('name') }}
 state = {{ frontend_request.get('state') }}
 {%   endif%}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
+config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-master-reserved-reference = {{ master_reserved_reference }}
 {%   set slave_configuration_dict = slapparameter_dict %}
@@ -179,6 +180,7 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 
 #----------------------------
 #--
@@ -209,7 +211,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = kedifa
 name = kedifa
-return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url
 
 [rejected-slave-information]
 {% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
