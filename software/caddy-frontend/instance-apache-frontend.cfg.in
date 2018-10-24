@@ -16,6 +16,7 @@ parts =
   logrotate-entry-nginx
   caddy-frontend
   switch-caddy-softwaretype
+  kedifa-login-certificate
   frontend-caddy-graceful
   frontend-nginx-graceful
   not-found-html
@@ -119,6 +120,50 @@ caddy-location = {{ parameter_dict['caddy_location'] }}
 template-nginx-eventsource-slave-virtualhost = {{ parameter_dict['template_nginx_eventsource_slave_virtualhost'] }}
 template-nginx-notebook-slave-virtualhost = {{ parameter_dict['template_nginx_notebook_slave_virtualhost'] }}
 
+[kedifa-login-config]
+d = ${directory:ca-dir}
+csr = ${:d}/kedifa-login-csr.pem
+key = ${:d}/kedifa-login-certificate.pem
+certificate = ${:key}
+ca-certificate = ${:d}/kedifa-caucase-ca.pem
+cas-ca-certificate = ${:d}/kedifa-cas-caucase-ca.pem
+crl = ${:d}/kedifa-login-crl.pem
+
+[kedifa-login-csr]
+recipe = plone.recipe.command
+name = ${configuration:frontend-name}
+command =
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+     {{ parameter_dict['kedifa-csr'] }} \
+       --name ${:name} \
+       --csr ${:csr} \
+       --key ${:key}
+  fi
+{% endif %}
+  test -f ${:key} && test -f ${:csr}
+update-command = ${:command}
+csr = ${kedifa-login-config:csr}
+key = ${kedifa-login-config:key}
+stop-on-error = True
+
+[kedifa-login-certificate]
+recipe = slapos.cookbook:wrapper
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+command-line = {{ parameter_dict['bin_directory'] }}/caucase-updater
+  --ca-url {{ slapparameter_dict['kedifa-caucase-url'] }}
+  --mode service
+  --csr ${kedifa-login-csr:csr}
+  --key ${kedifa-login-csr:key}
+  --crt ${kedifa-login-config:certificate}
+  --cas-ca ${kedifa-login-config:cas-ca-certificate}
+  --ca ${kedifa-login-config:ca-certificate}
+  --crl ${kedifa-login-config:crl}
+{% else %}
+command-line = /bin/false
+{% endif %}
+wrapper-path = ${directory:service}/kedifa-login-certificate-caucase-updater
+
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
 template = {{ parameter_dict['template_slave_list'] }}
@@ -135,13 +180,17 @@ software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
+    key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
+    key kedifa_login_certificate kedifa-login-config:certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_getter :kedifa-getter
+    key kedifa_csr :kedifa-csr
     key http_port configuration:plain_http_port
     key https_port configuration:port
     key nginx_http_port configuration:plain_nginx_port

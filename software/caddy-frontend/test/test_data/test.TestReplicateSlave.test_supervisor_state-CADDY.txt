@@ -3,6 +3,8 @@ TestReplicateSlave-0:certificate_authority-on-watch RUNNING
 TestReplicateSlave-0:crond-{hash} RUNNING
 TestReplicateSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestReplicateSlave-0:monitor-httpd-graceful EXITED
+TestReplicateSlave-1:caucase-updater-on-watch RUNNING
+TestReplicateSlave-1:caucased-on-watch RUNNING
 TestReplicateSlave-1:kedifa-on-watch RUNNING
 TestReplicateSlave-2:6tunnel-11080-on-watch RUNNING
 TestReplicateSlave-2:6tunnel-11443-on-watch RUNNING
