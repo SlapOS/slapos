@@ -1,6 +1,7 @@
 TestDuplicateSiteKeyProtection-0/etc/promise/monitor-http-frontend
 TestDuplicateSiteKeyProtection-0/etc/promise/monitor-httpd-listening-on-tcp
 TestDuplicateSiteKeyProtection-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestDuplicateSiteKeyProtection-1/etc/promise/caucased
 TestDuplicateSiteKeyProtection-2/etc/promise/caddy-frontend-is-running-actual-software-release
 TestDuplicateSiteKeyProtection-2/etc/promise/caddy_cached
 TestDuplicateSiteKeyProtection-2/etc/promise/caddy_frontend_ipv4_http
