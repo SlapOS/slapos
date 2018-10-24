@@ -34,23 +34,36 @@ import slapos.test
 import jsonschema
 
 
-def getSchemaValidator(filename):
-  schema_json_file = "/".join(slapos.test.__file__.split("/")[:-1])
-  schema_json_file += "/%s" % filename
-  with open(schema_json_file, "r") as json_file:
-    json_dict = json.loads(json_file.read())
-    json_file.close()
-  return json_dict
-
-def createValidatorTest(path, json_dict):
-  # Test that json is valid
+def createInstanceParameterSchemaValidatorTest(path):
+  # Test that json is a valid json schema, supports several
+  # validator, depending on the `$schema` defined in the json.
+  validator_dict = {
+    "http://json-schema.org/draft-03/schema#": jsonschema.Draft3Validator,
+    "http://json-schema.org/draft-04/schema": jsonschema.Draft4Validator,
+    "http://json-schema.org/draft-04/schema#": jsonschema.Draft4Validator,
+    "http://json-schema.org/draft-06/schema#": jsonschema.Draft6Validator,
+    "http://json-schema.org/draft-07/schema#": jsonschema.Draft7Validator,
+  }
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
-      self.assertEqual(jsonschema.validate(json.load(json_file), json_dict), None)
-
+      json_dict = json.load(json_file)
+      validator = validator_dict.get(
+        json_dict.get('$schema'),
+        jsonschema.Draft7Validator)
+      validator.check_schema(json_dict)
   return run
 
-def createFormatTest(path, json_dict):
+
+def createSoftwareCfgValidatorTest(path, software_cfg_schema):
+  # Test that software json follows the schema for softwares json,
+  # which is defined in schema.json in this directory
+  def run(self, *args, **kwargs):
+    with open(path, "r") as json_file:
+      jsonschema.validate(json.load(json_file), software_cfg_schema)
+  return run
+
+
+def createFormatTest(path):
   # Test that json match our formatting rules
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
@@ -69,23 +82,26 @@ def createFormatTest(path, json_dict):
 
 
 def generateSoftwareCfgTest():
-  json_dict = getSchemaValidator("schema.json")
+  software_cfg_schema = json.load(
+    open(os.path.join(
+        os.path.dirname(slapos.test.__file__),
+        "schema.json"), 'r'))
   base_path = "/".join(slapos.test.__file__.split("/")[:-3])
   for path in glob.glob("%s/software/*/software.cfg.json" % base_path):
     test_name = "test_%s_software_cfg_json" % path.split("/")[-2]
-    setattr(TestJSONSchemaValidation, test_name, createValidatorTest(path, json_dict))
-    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path, json_dict))
+    setattr(TestJSONSchemaValidation, test_name, createSoftwareCfgValidatorTest(path, software_cfg_schema))
+    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path))
 
 
 def generateJSONSchemaTest():
-  json_dict = getSchemaValidator("metaschema.json")
   base_path = "/".join(slapos.test.__file__.split("/")[:-3])
   for path in glob.glob("%s/software/*/*schema.json" % base_path):
     software_type = path.split("/")[-2]
     filename = path.split("/")[-1].replace("-", "_").replace(".", "_")
     test_name = "test_schema_%s_%s" % (software_type, filename)
-    setattr(TestJSONSchemaValidation, test_name, createValidatorTest(path, json_dict))
-    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path, json_dict))
+    setattr(TestJSONSchemaValidation, test_name, createInstanceParameterSchemaValidatorTest(path))
+    setattr(TestJSONSchemaValidation, test_name + '_format', createFormatTest(path))
+
 
 class TestJSONSchemaValidation(unittest.TestCase):
   pass
