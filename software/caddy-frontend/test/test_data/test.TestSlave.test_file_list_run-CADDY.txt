@@ -1,5 +1,6 @@
 TestSlave-0/var/run/monitor-httpd.pid
 TestSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestSlave-1/var/run/kedifa.pid
 TestSlave-2/var/run/caddy_configuration.signature
 TestSlave-2/var/run/httpd.pid
 TestSlave-2/var/run/monitor-httpd.pid

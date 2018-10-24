@@ -3,7 +3,10 @@ TestDefaultMonitorHttpdPort-0:certificate_authority-on-watch RUNNING
 TestDefaultMonitorHttpdPort-0:crond-{hash} RUNNING
 TestDefaultMonitorHttpdPort-0:monitor-httpd-{hash}-on-watch EXITED
 TestDefaultMonitorHttpdPort-0:monitor-httpd-graceful EXITED
+TestDefaultMonitorHttpdPort-1:caucase-updater-on-watch RUNNING
+TestDefaultMonitorHttpdPort-1:caucased-on-watch RUNNING
 TestDefaultMonitorHttpdPort-1:kedifa-on-watch RUNNING
+TestDefaultMonitorHttpdPort-1:kedifa-reloader EXITED
 TestDefaultMonitorHttpdPort-2:6tunnel-26011-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:6tunnel-26012-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:6tunnel-4443-on-watch STOPPED
@@ -16,8 +19,9 @@ TestDefaultMonitorHttpdPort-2:crond-{hash} STOPPED
 TestDefaultMonitorHttpdPort-2:crond-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:frontend-caddy-safe-graceful STOPPED
 TestDefaultMonitorHttpdPort-2:frontend-nginx-safe-graceful STOPPED
-TestDefaultMonitorHttpdPort-2:frontend_caddy-{hash}-on-watch STOPPED
+TestDefaultMonitorHttpdPort-2:frontend_caddy-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:frontend_nginx-{hash}-on-watch STOPPED
+TestDefaultMonitorHttpdPort-2:kedifa-login-certificate-caucase-updater-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:monitor-httpd-{hash}-on-watch STOPPED
 TestDefaultMonitorHttpdPort-2:monitor-httpd-graceful STOPPED
 TestDefaultMonitorHttpdPort-2:trafficserver-{hash}-on-watch STOPPED
