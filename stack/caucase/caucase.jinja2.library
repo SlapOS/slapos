@@ -69,9 +69,10 @@ context = key content {{ prefix }}-provided-csr-content:content
 
 {{   rerequest(
        prefix=prefix ~ '-csr',
-       template='${provided-csr:rendered}',
+       buildout_bin_directory=buildout_bin_directory,
+       template='${' + prefix + '-provided-csr:rendered}',
        csr='${:csr}',
-       key='${apache-conf-ssl:key}',
+       key=key_path,
 )}}
 {%- else -%}
 [{{ prefix }}-csr]
