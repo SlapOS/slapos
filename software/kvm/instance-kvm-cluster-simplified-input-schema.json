@@ -64,11 +64,7 @@
               "title": "NBD hostname or IP",
               "description": "hostname (or IP) of the NBD server containing the boot image.",
               "type": "string",
-              "format": [
-                "host-name",
-                "ip-address",
-                "ipv6"
-              ],
+              "format": "internet-address",
               "default": "debian.nbd.vifib.net"
             },
             "nbd-port": {
