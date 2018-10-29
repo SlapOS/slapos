@@ -12,13 +12,17 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.remote_connection import RemoteConnection
 from subprocess import check_output
+import urllib3
+import certifi
 import json
 
 os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
 os.environ['DISPLAY'] = '$${xvfb-instance:display}'
 
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
+ETC_DIRECTORY = '$${directory:etc}'
 
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -33,40 +37,11 @@ def main():
                       help='The Url of Master controling many suites')
   parser.add_argument('--frontend_url',
                       help='The url of frontend of the test suite')
-  parser.add_argument('--target',
-                      help='Target OS to run tests on',
-                      type=str)
-  parser.add_argument('--target_version',
-                      help='Target OS version to use',
-                      type=str,)
-  parser.add_argument('--target_browser',
-                      help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
-                      type=str,)
-  parser.add_argument('--target_device',
-                      help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
-                      type=str,)
-  parser.add_argument('--appium_server_auth',
-                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
-                      type=str)
 
   args = parser.parse_args()
 
-  import json
-  parsed_parameters = json.loads('$${instance-parameter:configuration._}')
-
-
-  if not getattr(args, 'target', None):
-    args.target = parsed_parameters.get('target', 'firefox')
-  if not getattr(args, 'test_suite', None):
-    args.test_suite = parsed_parameters.get('test-suite')
-  if not getattr(args, 'target_version', None):
-    args.target_version = parsed_parameters.get('target-version')
-  if not getattr(args, 'appium_server_auth', None):
-    args.appium_server_auth = parsed_parameters.get('appium-server-auth')
-  if not getattr(args, 'target_browser', None):
-    args.target_browser = parsed_parameters.get('target-browser')
-  if not getattr(args, 'target_device', None):
-    args.target_device = parsed_parameters.get('target-device')
+  parsed_parameters = json.load(
+      open('$${runTestSuite-config-file:rendered}', 'rb'))
 
   is_browser_running = False
   try:
@@ -87,38 +62,8 @@ def main():
     ##########################
     # Run all tests
     ##########################
-
-    is_appium = False
-
-    if args.target == 'firefox':
-      firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
-      firefox_capabilities['marionette'] = True
-      browser = webdriver.Firefox(capabilities=firefox_capabilities,
-                                  firefox_binary='${firefox-wrapper:location}',
-                                  executable_path='${geckodriver:location}')
-    elif args.target in ['iOS', 'Android']:
-      # parameters for mobile emulators have different names then parameters for
-      # desktop OSes
-      is_appium = True
-      capabilities = {
-        'platformName': args.target,
-        'platformVersion': args.target_version,
-        'deviceName': args.target_device,
-        'browserName': args.target_browser
-
-      }
-    elif 'Windows' in args.target or 'OS X' in args.target:
-      # parameters for mobile emulators have different names then parameters for
-      # desktop OSes
-      is_appium = True
-      capabilities = {
-        'browserName': args.target_browser,
-        'platform': args.target,
-        'version': args.target_version
-      }
-
-
-    if args.target == 'node':
+    target = parsed_parameters.get('target', 'firefox')
+    if target == 'node':
       # Execute NodeJS tests
       result_string = check_output(['${nodejs-output:node}', '${jio-repository.git:location}/test/node.js'],
                                    cwd='${jio-repository.git:location}',
@@ -139,21 +84,41 @@ def main():
 
     else:
       # Execute WebBrowser tests
-      if is_appium:
-        if not args.appium_server_auth:
-          raise RuntimeError('--appium_server_auth is required.')
-        appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
-        browser = webdriver.Remote(appium_url, capabilities)
+      if target == 'firefox':
+        firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
+        firefox_capabilities['marionette'] = True
+        browser = webdriver.Firefox(
+            capabilities=firefox_capabilities,
+            firefox_binary='${firefox-wrapper:location}',
+            executable_path='${geckodriver:location}')
+      else:
+        assert target == 'selenium-server', "Unsupported target {}".format(parsed_parameters['target'])
+        # use a remote connection which verifies TLS certificate
+        # workaround for https://github.com/SeleniumHQ/selenium/issues/6534
+        executor = RemoteConnection(parsed_parameters['server-url'], keep_alive=True)
+        cert_reqs = 'CERT_REQUIRED'
+        ca_certs = certifi.where()
+        if not parsed_parameters.get('verify-server-certificate', True):
+          cert_reqs = 'CERT_NONE'
+          ca_certs = None
+        if parsed_parameters.get('server-ca-certificate'):
+          ca_certs = os.path.join(ETC_DIRECTORY, "cacerts.pem")
+          with open(ca_certs, 'w') as f:
+            f.write(parsed_parameters.get('server-ca-certificate'))
+        executor._conn = urllib3.PoolManager(cert_reqs=cert_reqs, ca_certs=ca_certs)
 
-        # adjust path for remote test url
-        remote_access_url = parsed_parameters.get('remote-access-url', None)
-        if remote_access_url:
-          if ('jio' in test_suite):
-            url = os.path.join(remote_access_url, 'jio/test/tests.html')
-          else:
-            url = os.path.join(remote_access_url, 'renderjs/test/')
+        browser = webdriver.Remote(
+            command_executor=executor,
+            desired_capabilities=parsed_parameters['desired-capabilities'],
+        )
+
+      # adjust path for remote test url
+      remote_access_url = parsed_parameters.get('remote-access-url')
+      if remote_access_url:
+        if ('jio' in test_suite):
+          url = '{}/jio/test/tests.html'.format(remote_access_url)
         else:
-          raise ValueError('remote-access-url is not defined in instance parameter')
+          url = '{}/renderjs/test/'.format(remote_access_url)
 
       is_browser_running = True
       agent = browser.execute_script("return navigator.userAgent")
