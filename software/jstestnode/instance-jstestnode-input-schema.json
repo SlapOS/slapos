@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate JSTestNode",
+  "additionalProperties": false,
+  "properties": {
+    "target": {
+      "description": "Target system",
+      "type": "string",
+      "default": "firefox",
+      "enum": [
+        "firefox",
+        "node",
+        "iOS"
+      ]
+    },
+    "target-version": {
+      "description": "Target browser version",
+      "type": "string",
+      "default": "11.3"
+    },
+    "target-device": {
+      "description": "Target device",
+      "type": "string",
+      "default": "iPhone Simulator"
+    },
+    "target-browser": {
+      "description": "Target browser",
+      "type": "string",
+      "default": "Safari"
+    },
+    "appium-server-auth": {
+      "description": "Authentication Key",
+      "type": "string",
+      "default": "user:key"
+    },
+    "test-suite": {
+      "description": "The test suite to run",
+      "type": "string",
+      "enum": [
+        "jio",
+        "renderjs"
+      ]
+    },
+    "remote-access-url": {
+      "description": "URL that controlled browser must access to run tests",
+      "type": "string",
+      "format": "uri",
+      "default": "(the nginx server started by this instance)",
+      "example": "https://softinst1234.host.vifib.net/"
+    }
+  }
+}
