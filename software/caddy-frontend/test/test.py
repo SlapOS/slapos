@@ -114,7 +114,7 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, **kw):
+  def assertTestData(self, runtime_data, hash_value=None):
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -124,8 +124,8 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    if len(kw) > 0:
-      test_data = test_data.format(**kw)
+    if hash_value is not None:
+      runtime_data = runtime_data.replace(hash_value, '{hash}')
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -209,7 +209,7 @@ class TestDataMixin(object):
     h = self.generateHashFromFiles(hash_files)
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash=h)
+    self.assertTestData(runtime_data, hash_value=h)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
