@@ -3,36 +3,6 @@
   "description": "Parameters to instantiate JSTestNode",
   "additionalProperties": false,
   "properties": {
-    "target": {
-      "description": "Target system",
-      "type": "string",
-      "default": "firefox",
-      "enum": [
-        "firefox",
-        "node",
-        "iOS"
-      ]
-    },
-    "target-version": {
-      "description": "Target browser version",
-      "type": "string",
-      "default": "11.3"
-    },
-    "target-device": {
-      "description": "Target device",
-      "type": "string",
-      "default": "iPhone Simulator"
-    },
-    "target-browser": {
-      "description": "Target browser",
-      "type": "string",
-      "default": "Safari"
-    },
-    "appium-server-auth": {
-      "description": "Authentication Key",
-      "type": "string",
-      "default": "user:key"
-    },
     "test-suite": {
       "description": "The test suite to run",
       "type": "string",
@@ -45,8 +15,71 @@
       "description": "URL that controlled browser must access to run tests",
       "type": "string",
       "format": "uri",
-      "default": "(the nginx server started by this instance)",
+      "default": "(the web server started by this instance)",
       "example": "https://softinst1234.host.vifib.net/"
-    }
+    },
+    "oneOf": [
+      {
+        "title": "selenium server",
+        "description": "Configuration for running tests on selenium server",
+        "properties": {
+          "target": {
+            "description": "Target system",
+            "const": "selenium-server"
+          },
+          "server-url": {
+            "description": "URL of the selenium server",
+            "type": "string"
+          },
+          "verify-server-certificate": {
+            "description": "Verify the SSL/TLS Certificats of the selenium server when using HTTPS",
+            "type": "boolean",
+            "default": true
+          },
+          "server-ca-certificate": {
+            "description": "PEM encoded bundle of CA Certificates to verify the SSL/TLS Certificate of the selenium server when using HTTPS",
+            "type": "string",
+            "default": "root certificates from http://certifi.io/en/latest/"
+          },
+          "desired-capabilities": {
+            "description": "Desired browser capabilities",
+            "type": "object",
+            "properties": {
+              "browserName": {
+                "description": "Name of the browser being used, for example firefox, chrome",
+                "type": "string",
+                "required": true
+              },
+              "version": {
+                "description": "The browser version",
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      {
+        "title": "firefox",
+        "description": "Configuration for running tests on local firefox process",
+        "properties": {
+          "target": {
+            "description": "Target system",
+            "const": "firefox",
+            "default": "firefox"
+          }
+        }
+      },
+      {
+        "title": "node",
+        "description": "Configuration for running tests on local nodejs",
+        "properties": {
+          "target": {
+            "description": "Target system",
+            "const": "node"
+          }
+        }
+      }
+    ]
   }
 }

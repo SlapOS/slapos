@@ -29,9 +29,8 @@ ssl = $${:etc}/ssl
 framebuffer = $${:srv}/framebuffer
 
 #################################
-# Firefox
+# Test runner
 #################################
-
 [runTestSuite-instance]
 recipe = slapos.recipe.template
 url = ${template-runTestSuite:output}
@@ -39,6 +38,15 @@ output = $${directory:bin}/runTestSuite
 buildout-directory = $${buildout:directory}
 mode = 0700
 
+[runTestSuite-config-file]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}.json
+template = inline:
+  $${instance-parameter:configuration._}
+
+#################################
+# Xvfb / Firefox
+#################################
 [xvfb-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
@@ -62,7 +70,7 @@ recipe = slapos.recipe.template
 url = ${template-nginx-service:output}
 output = $${directory:services}/nginx
 mode = 0700
-virtual-depends = 
+virtual-depends =
   $${nginx-configuration:ip}
 
 [nginx-configuration]
