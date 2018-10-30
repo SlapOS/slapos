@@ -1,0 +1,105 @@
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[fontconfig-instance]
+recipe = slapos.cookbook:fontconfig
+conf-path = $${directory:etc}/font.conf
+font-system-folder = ${fonts:location}
+font-folder = $${directory:fonts}
+service-folder = $${directory:services}
+
+
+[tomcat-server-xml]
+recipe = slapos.recipe.template
+url = ${tomcat-server-xml:output}
+output = $${directory:catalina_conf}/server.xml
+ip = $${instance-parameter:ipv6-random}
+port = 8899
+scheme = https
+
+[tomcat-keystore]
+recipe = plone.recipe.command
+command =
+  ${java-re-8-output:keytool} \
+    -genkeypair \
+    -alias "tomcat" \
+    -keyalg RSA \
+    -keypass "$${:pass}" \
+    -dname "CN=Web Server,OU=Unit,O=Organization,L=City,S=State,C=Country" \
+    -keystore "$${:file}" \
+    -storepass "$${:pass}"
+file = $${directory:catalina_base}/.keystore
+pass = insecure
+
+[tomcat-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = ${tomcat9:location}/bin/catalina.sh run
+environment =
+  JRE_HOME=${java-re-8:location}
+  CATALINA_BASE=$${directory:catalina_base}
+  GRAPHVIZ_DOT=${graphviz:location}/bin/dot
+  FONTCONFIG_FILE=$${fontconfig-instance:conf-path}
+hash-files =
+  $${buildout:directory}/software_release/buildout.cfg
+  $${tomcat-server-xml:output}
+
+ip =  $${tomcat-server-xml:ip}
+port =  $${tomcat-server-xml:port}
+scheme = $${tomcat-server-xml:scheme}
+hostname =  [$${:ip}]
+url = $${:scheme}://$${:hostname}:$${:port}/png/
+
+
+[promises]
+recipe =
+instance-promises =
+  $${tomcat-listen-promise:path}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/$${:_buildout_section_name_}
+
+[tomcat-listen-promise]
+<= check-port-listening-promise
+hostname= $${tomcat-instance:ip}
+port = $${tomcat-instance:port}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${tomcat-instance:url}
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+fonts = $${:srv}/fonts/
+pidfiles = $${:var}/run
+services = $${:etc}/service
+promises = $${:etc}/promise
+
+# tomcat directories
+catalina_base = $${:var}/tomcat
+catalina_logs = $${:catalina_base}/logs
+catalina_temp = $${:catalina_base}/temp
+catalina_webapps = $${:catalina_base}/webapps
+catalina_work = $${:catalina_base}/work
+catalina_conf = $${:catalina_base}/conf
