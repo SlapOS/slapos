@@ -67,9 +67,9 @@ recipe = plone.recipe.command
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
      {{ parameter_dict['kedifa-csr'] }} \
-       ${kedifa-config:ip} \
-       ${:csr} \
-       ${:key}
+       --name ${kedifa-config:ip} \
+       --csr ${:csr} \
+       --key ${:key}
   fi
 update-command = ${:command}
 csr = ${kedifa-config:csr}
@@ -87,6 +87,7 @@ command-line = {{ parameter_dict['bin_directory'] }}/caucase-updater
   --cas-ca ${kedifa-config:cas-ca-certificate}
   --ca ${kedifa-config:ca-certificate}
   --crl ${kedifa-config:crl}
+  --on-renew ${kedifa-reloader:wrapper-path}
 
 wrapper-path = ${directory:service}/caucase-updater
 
@@ -114,14 +115,23 @@ ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
 cas-ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 csr = ${directory:etc-kedifa}/csr.pem
+pidfile = ${directory:run}/kedifa.pid
+
+[kedifa-reloader]
+recipe = slapos.cookbook:wrapper
+command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
+wrapper-path = ${directory:etc-run}/kedifa-reloader
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['kedifa'] }}
-  ${kedifa-config:ip}
-  ${kedifa-config:port}
-  ${kedifa-config:db}
-  ${kedifa-config:certificate}
+  --ip ${kedifa-config:ip}
+  --port ${kedifa-config:port}
+  --db ${kedifa-config:db}
+  --certificate ${kedifa-config:certificate}
+  --ca-certificate ${kedifa-config:ca-certificate}
+  --crl ${kedifa-config:crl}
+  --pidfile ${kedifa-config:pidfile}
 
 wrapper-path = ${directory:service}/kedifa
 
