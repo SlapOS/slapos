@@ -1,7 +1,11 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Parameters to instantiate JSTestNode",
   "additionalProperties": false,
+  "required": [
+    "test-suite",
+    "test-runner"
+  ],
   "properties": {
     "test-suite": {
       "description": "The test suite to run",
@@ -18,68 +22,86 @@
       "default": "(the web server started by this instance)",
       "example": "https://softinst1234.host.vifib.net/"
     },
-    "oneOf": [
-      {
-        "title": "selenium server",
-        "description": "Configuration for running tests on selenium server",
-        "properties": {
-          "target": {
-            "description": "Target system",
-            "const": "selenium-server"
-          },
-          "server-url": {
-            "description": "URL of the selenium server",
-            "type": "string"
-          },
-          "verify-server-certificate": {
-            "description": "Verify the SSL/TLS Certificats of the selenium server when using HTTPS",
-            "type": "boolean",
-            "default": true
-          },
-          "server-ca-certificate": {
-            "description": "PEM encoded bundle of CA Certificates to verify the SSL/TLS Certificate of the selenium server when using HTTPS",
-            "type": "string",
-            "default": "root certificates from http://certifi.io/en/latest/"
-          },
-          "desired-capabilities": {
-            "description": "Desired browser capabilities",
-            "type": "object",
-            "properties": {
-              "browserName": {
-                "description": "Name of the browser being used, for example firefox, chrome",
-                "type": "string",
-                "required": true
-              },
-              "version": {
-                "description": "The browser version",
-                "type": "string"
-              }
+    "test-runner": {
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Selenium Server",
+          "description": "Configuration for Selenium server",
+          "additionalProperties": false,
+          "required": [
+            "desired-capabilities",
+            "server-url",
+            "target"
+          ],
+          "properties": {
+            "target": {
+              "description": "Target system",
+              "type": "string",
+              "const": "selenium-server"
             },
-            "additionalProperties": true
+            "server-url": {
+              "description": "URL of the selenium server",
+              "type": "string",
+              "format": "uri"
+            },
+            "verify-server-certificate": {
+              "description": "Verify the SSL/TLS Certificats of the selenium server when using HTTPS",
+              "type": "boolean",
+              "default": true
+            },
+            "server-ca-certificate": {
+              "description": "PEM encoded bundle of CA Certificates to verify the SSL/TLS Certificate of the selenium server when using HTTPS",
+              "type": "string",
+              "default": "root certificates from http://certifi.io/en/latest/"
+            },
+            "desired-capabilities": {
+              "description": "Desired browser capabilities",
+              "required": [
+                "browserName"
+              ],
+              "type": "object",
+              "properties": {
+                "browserName": {
+                  "description": "Name of the browser being used, for example firefox, chrome",
+                  "type": "string"
+                },
+                "version": {
+                  "description": "The browser version",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "Firefox",
+          "description": "Configuration for Firefox",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "description": "Target system",
+              "const": "firefox",
+              "type": "string",
+              "default": "firefox"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "title": "NodeJS",
+          "description": "Configuration for NodeJS",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "description": "Target system",
+              "const": "node",
+              "type": "string"
+            }
           }
         }
-      },
-      {
-        "title": "firefox",
-        "description": "Configuration for running tests on local firefox process",
-        "properties": {
-          "target": {
-            "description": "Target system",
-            "const": "firefox",
-            "default": "firefox"
-          }
-        }
-      },
-      {
-        "title": "node",
-        "description": "Configuration for running tests on local nodejs",
-        "properties": {
-          "target": {
-            "description": "Target system",
-            "const": "node"
-          }
-        }
-      }
-    ]
+      ]
+    }
   }
 }
