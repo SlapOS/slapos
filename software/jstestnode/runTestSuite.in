@@ -25,8 +25,14 @@ BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 ETC_DIRECTORY = '$${directory:etc}'
 
 def main():
+  parsed_parameters = json.load(
+      open('$${runTestSuite-config-file:rendered}', 'rb'))
+  test_runner = parsed_parameters.get('test-runner', {})
+
   parser = argparse.ArgumentParser(description='Run a test suite.')
-  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite', help='The test suite name',
+                      default=parsed_parameters.get('test-suite', ''),
+                      required=not parsed_parameters.has_key('test-suite'))
   parser.add_argument('--test_suite_title', help='The test suite title')
   parser.add_argument('--test_node_title', help='The test node title')
   parser.add_argument('--project_title', help='The project title')
@@ -39,9 +45,6 @@ def main():
                       help='The url of frontend of the test suite')
 
   args = parser.parse_args()
-
-  parsed_parameters = json.load(
-      open('$${runTestSuite-config-file:rendered}', 'rb'))
 
   is_browser_running = False
   try:
@@ -62,7 +65,7 @@ def main():
     ##########################
     # Run all tests
     ##########################
-    target = parsed_parameters.get('target', 'firefox')
+    target = test_runner.get('target', 'firefox')
     if target == 'node':
       # Execute NodeJS tests
       result_string = check_output(['${nodejs-output:node}', '${jio-repository.git:location}/test/node.js'],
@@ -92,24 +95,24 @@ def main():
             firefox_binary='${firefox-wrapper:location}',
             executable_path='${geckodriver:location}')
       else:
-        assert target == 'selenium-server', "Unsupported target {}".format(parsed_parameters['target'])
+        assert target == 'selenium-server', "Unsupported target {}".format(test_runner['target'])
         # use a remote connection which verifies TLS certificate
         # workaround for https://github.com/SeleniumHQ/selenium/issues/6534
-        executor = RemoteConnection(parsed_parameters['server-url'], keep_alive=True)
+        executor = RemoteConnection(test_runner['server-url'], keep_alive=True)
         cert_reqs = 'CERT_REQUIRED'
         ca_certs = certifi.where()
-        if not parsed_parameters.get('verify-server-certificate', True):
+        if not test_runner.get('verify-server-certificate', True):
           cert_reqs = 'CERT_NONE'
           ca_certs = None
-        if parsed_parameters.get('server-ca-certificate'):
+        if test_runner.get('server-ca-certificate'):
           ca_certs = os.path.join(ETC_DIRECTORY, "cacerts.pem")
           with open(ca_certs, 'w') as f:
-            f.write(parsed_parameters.get('server-ca-certificate'))
+            f.write(test_runner.get('server-ca-certificate'))
         executor._conn = urllib3.PoolManager(cert_reqs=cert_reqs, ca_certs=ca_certs)
 
         browser = webdriver.Remote(
             command_executor=executor,
-            desired_capabilities=parsed_parameters['desired-capabilities'],
+            desired_capabilities=test_runner['desired-capabilities'],
         )
 
       # adjust path for remote test url
