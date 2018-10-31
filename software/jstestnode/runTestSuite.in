@@ -41,7 +41,7 @@ def main():
   args = parser.parse_args()
 
   parsed_parameters = json.load(
-      open('$${runTestSuite-config-file:rendered}', 'rb'))
+      open('$${runTestSuite-config-file:rendered}', 'rb')).get('test-runner', {})
 
   is_browser_running = False
   try:
