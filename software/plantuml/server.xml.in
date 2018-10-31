@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="-1" shutdown="SHUTDOWN">
+  <Service name="Catalina">
+    <Connector
+      protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+      sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation"
+      address="$${tomcat-server-xml:ip}"
+      port="$${tomcat-server-xml:port}"
+      maxThreads="10"
+      scheme="$${tomcat-server-xml:scheme}"
+      secure="true"
+      clientAuth="false"
+      SSLEnabled="true"
+      keystorePass="$${tomcat-keystore:pass}"
+      keystoreFile="$${tomcat-keystore:file}"
+    />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Valve className="org.apache.catalina.valves.AccessLogValve"
+             directory="logs" prefix="localhost_access_log." suffix=".log"
+             pattern="common"/>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+        <Context path="" docBase="${plantuml.war:location}/plantuml.war"
+           privileged="true">
+        </Context>
+      </Host>
+    </Engine>
+  </Service>
+</Server>
