@@ -90,6 +90,10 @@ class TestSimpleDiagram(PlantUMLTestCase):
     # use http://exif.regex.info/exif.cgi to see metadata )
     # So we process the image to remove metadata.
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_sequence_diagram.png"))
+    dump = os.path.expanduser(os.path.join("~", self.id() + ".png"))
+    with open(dump, 'wb') as f:
+      f.write(png)
+    print ("Saved image as ", dump)
     self.assertImagesSame(Image.open(BytesIO(png)), reference)
 
   def test_class_diagram(self):
@@ -106,6 +110,10 @@ class TestSimpleDiagram(PlantUMLTestCase):
     """))
     # rendering is not exactly same on class diagrams, because of fonts and maybe also something in graphviz.
     # We just compare that image are similar.
+    dump = os.path.expanduser(os.path.join("~", self.id() + ".png"))
+    with open(dump, 'wb') as f:
+      f.write(png)
+    print ("Saved image as ", dump)
 
     # http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd1EBEBYSYdAB4ijKj05yHIi5590t685EouGLqjN8JmZDJK7A9wHM9QgO08LrzLL24WjAixF0qhOAEINvnLpSJcavgK0ZGO0
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_class_diagram.png"))
@@ -119,6 +127,12 @@ class TestSimpleDiagram(PlantUMLTestCase):
     @enduml
     """))
     # rendering is not exactly same on class diagrams, because of fonts and maybe also something in graphviz.
+    # We just compare that image are similar.
+    dump = os.path.expanduser(os.path.join("~", self.id() + ".png"))
+    with open(dump, 'wb') as f:
+      f.write(png)
+    print ("Saved image as ", dump)
+
     # URL on the reference implementation would be
     # http://www.plantuml.com/plantuml/png/oyaiBadBpoifLdY-lF5nu_hdKpO_Rfp-OWMGR7hSrFMuST_ZnjcFcoQ_tpCBek3PzANFvgnviMhUuwP9BrPkVDmuzN7ZgiUDBOyRcW00
     # but we don't have same fonts, so we compare against the fonts of a slapos instance.
