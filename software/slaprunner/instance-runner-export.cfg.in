@@ -79,15 +79,11 @@ environment =
   PATH={{ rsync_bin_folder }}:/bin:/usr/bin
 
 [exporter]
-recipe = collective.recipe.template
-log = $${directory:log}/runner-sshd.log
-input = inline:#!/bin/sh
-    exec ${exporter-raw:wrapper-path} >> ${directory:log}/resilient.log 2>&1
-
-output = ${directory:bin}/${slap-parameter:namebase}-exporter
+recipe = slapos.cookbook:wrapper
+command-line = {{ bash_executable_location }} -c "exec ${exporter-raw:wrapper-path} > >(tee -ai "${directory:log}/resilient.log") 2>&1"
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
 # wrapper parameter is needed by resilience stack
-wrapper = ${:output}
-mode = 700
+wrapper = ${:wrapper-path}
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port
