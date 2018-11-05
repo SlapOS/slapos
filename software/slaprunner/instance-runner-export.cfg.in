@@ -71,14 +71,23 @@ ip = ${slaprunner:ipv4}
 [supervisord]
 port = ${supervisord-free-port:port}
 
-[exporter]
+[exporter-raw]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
-# wrapper parameter is needed by resilience stack
-wrapper = ${:wrapper-path}
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter-raw
 command-line = {{ software_release_bin }}/${slap-parameter:namebase}-exporter --srv-path ${directory:srv} --etc-path ${directory:etc} --backup-path ${directory:backup} --backup-wait-time {{ backup_wait_time }}
 environment =
   PATH={{ rsync_bin_folder }}:/bin:/usr/bin
+
+[exporter]
+recipe = collective.recipe.template
+log = $${directory:log}/runner-sshd.log
+input = inline:#!/bin/sh
+    exec ${exporter-raw:wrapper-path} >> ${directory:log}/resilient.log 2>&1
+
+output = ${directory:bin}/${slap-parameter:namebase}-exporter
+# wrapper parameter is needed by resilience stack
+wrapper = ${:output}
+mode = 700
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port
