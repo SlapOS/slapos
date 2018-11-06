@@ -262,13 +262,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
+    base = '^' + KEDIFA_IPV6_BASE.replace(
+      '/', r'\/').replace('[', r'\[').replace(']', r'\]') + r'\/' + r'.{8}'
     self.assertRegexpMatches(
-      '^' + KEDIFA_IPV6_BASE + '/' + r'.{8}' + '/generateauth$',
-      generate_auth_url
+      generate_auth_url,
+      base + r'\/generateauth$'
     )
     self.assertRegexpMatches(
-      '^' + KEDIFA_IPV6_BASE + '/' + r'.{8}' + '?auth=$',
-      upload_url
+      upload_url,
+      base + '?auth=$'
     )
 
   def assertKeyWithPop(self, key, d):
