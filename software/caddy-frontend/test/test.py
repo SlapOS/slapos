@@ -731,8 +731,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # partition w/o etc/trafficserver, but with buildout.cfg
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(os.path.join(q, 'etc', 'trafficserver')) and
-      os.path.exists(os.path.join(q, 'buildout.cfg'))][0]
+      if not os.path.exists(
+        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
+          os.path.join(q, 'buildout.cfg'))][0]
 
   def getSlavePartitionPath(self):
     # partition w/ etc/trafficserver
@@ -847,10 +848,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
-    log_regexp = '^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
-                 '\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 '"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
-                 '"python-requests.*" \d+'
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
+                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
+                 r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 r'"python-requests.*" \d+'
 
     self.assertRegexpMatches(
       open(log_file, 'r').read(),
@@ -2803,8 +2804,9 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     # partition w/o etc/trafficserver, but with buildout.cfg
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(os.path.join(q, 'etc', 'trafficserver')) and
-      os.path.exists(os.path.join(q, 'buildout.cfg'))][0]
+      if not os.path.exists(
+        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
+          os.path.join(q, 'buildout.cfg'))][0]
 
   def getSlavePartitionPath(self):
     # partition w/ etc/trafficserver
@@ -2914,7 +2916,7 @@ https://www.google.com {}""",
       },
       're6st-optimal-test-unsafe': {
         're6st-optimal-test':
-        'new\nline;rm -fr ~;,new\line\n[s${esection:eoption}',
+        'new\nline;rm -fr ~;,new\\line\n[s${esection:eoption}',
       },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
@@ -3411,6 +3413,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       parameter_dict
     )
+
 
 class AutoRestartTestCase(SlaveHttpFrontendTestCase):
   @classmethod
