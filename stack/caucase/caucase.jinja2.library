@@ -62,7 +62,7 @@ data-dir = {{ data_dir }}
 {%   if template_csr_pem %}
 content = {{ dumps(template_csr_pem) }}
 {%   elif template_csr %}
-content = {{ template_csr }}
+content = {{ dumps(template_csr) }}
 {%   endif %}
 [{{ prefix }}-provided-csr]
 recipe = slapos.recipe.template:jinja2
