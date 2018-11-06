@@ -258,6 +258,21 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
 
+  def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
+    generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
+      prefix,))
+    upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
+    base = '^' + KEDIFA_IPV6_BASE.replace(
+      '[', r'\[').replace(']', r'\]') + '/.{8}'
+    self.assertRegexpMatches(
+      generate_auth_url,
+      base + r'\/generateauth$'
+    )
+    self.assertRegexpMatches(
+      upload_url,
+      base + r'\?auth=$'
+    )
+
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
@@ -285,15 +300,12 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertEqual(
       {
         'monitor-base-url': None,
         'domain': 'None',
         'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-        'master-key-generate-auth-url':
-        '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
-        'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -317,16 +329,13 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
 
     self.assertEqual(
       {
         'monitor-base-url': None,
         'domain': 'example.com',
         'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-        'master-key-generate-auth-url':
-        '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
-        'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -770,15 +779,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_master_partition_state(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
       'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-      'master-key-generate-auth-url':
-      '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
-      'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-        KEDIFA_IPV6_BASE,),
       'accepted-slave-amount': '33',
       'rejected-slave-amount': '2',
       'slave-amount': '35',
@@ -852,13 +858,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       reference]
     self.assertLogAccessUrlWithPop(parameter_dict, reference)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
-        'key-generate-auth-url': '%s/_%s/generateauth' % (
-          KEDIFA_IPV6_BASE, reference),
-        'key-upload-url': '%s/_%s?auth=' % (KEDIFA_IPV6_BASE, reference),
         'replication_number': '1',
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
@@ -1204,12 +1208,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       reference]
     self.assertLogAccessUrlWithPop(parameter_dict, reference)
     hostname = reference.translate(None, '_-')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.nginx.example.com' % (hostname,),
-        'key-generate-auth-url': '%s/_%s/generateauth' % (
-          KEDIFA_IPV6_BASE, reference),
-        'key-upload-url': '%s/_%s?auth=' % (KEDIFA_IPV6_BASE, reference),
         'replication_number': '1',
         'url': 'http://%s.nginx.example.com' % (hostname, ),
         'site_url': 'http://%s.nginx.example.com' % (hostname, ),
@@ -1802,13 +1804,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'apache_custom_http_s-accepted']
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'apache_custom_http_s-accepted')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'key-generate-auth-url':
-        '%s/_apache_custom_http_s-accepted/generateauth' % (
-            KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_apache_custom_http_s-accepted?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'public-ipv4': LOCAL_IPV4
       },
@@ -1888,13 +1886,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'caddy_custom_http_s-accepted']
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'caddy_custom_http_s-accepted')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'key-generate-auth-url':
-        '%s/_caddy_custom_http_s-accepted/generateauth' % (
-            KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_caddy_custom_http_s-accepted?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'public-ipv4': LOCAL_IPV4
       },
@@ -1996,12 +1990,10 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'replicate']
     self.assertLogAccessUrlWithPop(parameter_dict, 'replicate')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
-        'key-generate-auth-url': '%s/_replicate/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_replicate?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '2',
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
@@ -2071,13 +2063,10 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-default/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-default?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2default.example.com',
         'site_url': 'http://enablehttp2default.example.com',
@@ -2095,12 +2084,10 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-false/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-false?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2false.example.com',
         'site_url': 'http://enablehttp2false.example.com',
@@ -2118,12 +2105,10 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-true']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-true/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-true?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2true.example.com',
         'site_url': 'http://enablehttp2true.example.com',
@@ -2171,13 +2156,10 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-default/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-default?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2default.example.com',
         'site_url': 'http://enablehttp2default.example.com',
@@ -2195,12 +2177,10 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-false/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-false?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2false.example.com',
         'site_url': 'http://enablehttp2false.example.com',
@@ -2218,12 +2198,10 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-true']
     self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
-        'key-generate-auth-url': '%s/_enable-http2-true/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_enable-http2-true?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://enablehttp2true.example.com',
         'site_url': 'http://enablehttp2true.example.com',
@@ -2262,12 +2240,10 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'default.None',
-        'key-generate-auth-url': '%s/_default/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_default?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://default.None',
         'site_url': 'http://default.None',
@@ -2315,12 +2291,10 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'default.None',
-        'key-generate-auth-url': '%s/_default/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_default?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://default.None',
         'site_url': 'http://default.None',
@@ -2375,6 +2349,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
   def test_master_partition_state(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -2382,11 +2357,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
       'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-      'master-key-generate-auth-url':
-      '%s/DEFAULT_FRONTEND_KEY/generateauth' % (
-        KEDIFA_IPV6_BASE,),
-      'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-        KEDIFA_IPV6_BASE,),
       'slave-amount': '3',
       'rejected-slave-dict':
       '{"_https-url": ["slave https-url \\"https://[fd46::c2ae]:!py!u\'123123'
@@ -2403,12 +2373,10 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'empty']
     self.assertLogAccessUrlWithPop(parameter_dict, 'empty')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'empty.example.com',
-        'key-generate-auth-url': '%s/_empty/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_empty?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
@@ -2469,12 +2437,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'test']
     self.assertKeyWithPop('log-access-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'test.None', 'replication_number': '1',
-        'key-generate-auth-url': '%s/_test/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_test?auth=' % (KEDIFA_IPV6_BASE,),
         'url': 'http://test.None', 'site_url': 'http://test.None',
         'secure_access': 'https://test.None', 'public-ipv4': None},
       parameter_dict
@@ -2537,11 +2503,10 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
     self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'url.example.com',
-        'key-generate-auth-url': '%s/_url/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_url?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
@@ -2673,16 +2638,12 @@ https://www.google.com {}""",
   def test_master_partition_state(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
       'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-      'master-key-generate-auth-url':
-      '%s/DEFAULT_FRONTEND_KEY/generateauth' % (
-        KEDIFA_IPV6_BASE,),
-      'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-        KEDIFA_IPV6_BASE,),
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
       'slave-amount': '11',
@@ -2704,12 +2665,10 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias-same']
     self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-same')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliassame.example.com',
-        'key-generate-auth-url': '%s/_server-alias-same/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_server-alias-same?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://serveraliassame.example.com',
         'site_url': 'http://serveraliassame.example.com',
@@ -2732,13 +2691,10 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       're6st-optimal-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 're6stoptimaltestunsafe.example.com',
-        'key-generate-auth-url':
-        '%s/_re6st-optimal-test-unsafe/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_re6st-optimal-test-unsafe?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://re6stoptimaltestunsafe.example.com',
         'site_url': 'http://re6stoptimaltestunsafe.example.com',
@@ -2781,13 +2737,10 @@ https://www.google.com {}""",
       're6st-optimal-test-nocomma']
     self.assertLogAccessUrlWithPop(
       parameter_dict, 're6st-optimal-test-nocomma')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 're6stoptimaltestnocomma.example.com',
-        'key-generate-auth-url':
-        '%s/_re6st-optimal-test-nocomma/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_re6st-optimal-test-nocomma?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://re6stoptimaltestnocomma.example.com',
         'site_url': 'http://re6stoptimaltestnocomma.example.com',
@@ -2845,13 +2798,10 @@ https://www.google.com {}""",
       'virtualhostroot-http-port-unsafe']
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'virtualhostroot-http-port-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'virtualhostroothttpportunsafe.example.com',
-        'key-generate-auth-url': '%s/_virtualhostroot-http-port-'
-        'unsafe/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_virtualhostroot-http-port-'
-        'unsafe?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://virtualhostroothttpportunsafe.example.com',
         'site_url': 'http://virtualhostroothttpportunsafe.example.com',
@@ -2877,13 +2827,10 @@ https://www.google.com {}""",
       'virtualhostroot-https-port-unsafe']
     self.assertLogAccessUrlWithPop(
       parameter_dict, 'virtualhostroot-https-port-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'virtualhostroothttpsportunsafe.example.com',
-        'key-generate-auth-url': '%s/_virtualhostroot-https-port-'
-        'unsafe/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_virtualhostroot-https-port-'
-        'unsafe?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://virtualhostroothttpsportunsafe.example.com',
         'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
@@ -2912,13 +2859,10 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default-path-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'default-path-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
-        'key-generate-auth-url': '%s/_default-path-unsafe/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_default-path-unsafe?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
@@ -2945,13 +2889,10 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv4-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv4testunsafe.example.com',
-        'key-generate-auth-url':
-        '%s/_monitor-ipv4-test-unsafe/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_monitor-ipv4-test-unsafe?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://monitoripv4testunsafe.example.com',
         'site_url': 'http://monitoripv4testunsafe.example.com',
@@ -2992,13 +2933,10 @@ https://www.google.com {}""",
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv6-test-unsafe']
     self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test-unsafe')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv6testunsafe.example.com',
-        'key-generate-auth-url':
-        '%s/_monitor-ipv6-test-unsafe/generateauth' % (KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_monitor-ipv6-test-unsafe?auth=' % (
-          KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://monitoripv6testunsafe.example.com',
         'site_url': 'http://monitoripv6testunsafe.example.com',
@@ -3086,15 +3024,12 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
       'kedifa-caucase-url': 'http://[%s]:8890' % (GLOBAL_IPV6,),
-      'master-key-generate-auth-url':
-      '%s/DEFAULT_FRONTEND_KEY/generateauth' % (KEDIFA_IPV6_BASE,),
-      'master-key-upload-url': '%s/DEFAULT_FRONTEND_KEY?auth=' % (
-        KEDIFA_IPV6_BASE,),
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
@@ -3125,12 +3060,10 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'site_2']
     self.assertLogAccessUrlWithPop(parameter_dict, 'site_2')
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'duplicate.example.com',
-        'key-generate-auth-url': '%s/_site_2/generateauth' % (
-          KEDIFA_IPV6_BASE,),
-        'key-upload-url': '%s/_site_2?auth=' % (KEDIFA_IPV6_BASE,),
         'replication_number': '1',
         'url': 'http://duplicate.example.com',
         'site_url': 'http://duplicate.example.com',
