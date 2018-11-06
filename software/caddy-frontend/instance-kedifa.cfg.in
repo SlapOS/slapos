@@ -142,17 +142,23 @@ wrapper-path = ${directory:service}/kedifa
 {%-   set slave_reference = slave['slave_reference'] -%}
 {%-   if slave_reference != master_reserved_reference -%}
 {%-     set slave_dict = {} -%}
-{%-     do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s/generateauth' % (slave_reference,)) -%}
-{%-     do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s?auth=' % (slave_reference,)) -%}
-{%-     do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s' % (slave_reference,)) -%}
-{%-     do slave_kedifa_information.__setitem__(slave_reference, slave_dict) -%}
-{%-   endif -%}
+{%-     do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
+{%-     do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-     do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
+[{{ slave_reference }}-auth-random]
+recipe = slapos.cookbook:generate.password
+{%   endif -%}
 {% endfor %}
+
+[master-auth-random]
+recipe = slapos.cookbook:generate.password
+
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
 slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
 caucase-url = {{ caucase_url }}
-master-key-generate-auth-url = {{ 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s/generateauth' % (master_reserved_reference,) }}
-master-key-upload-url = {{ 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s?auth=' % (master_reserved_reference,) }}
-master-key-download-url = {{ 'https://[${kedifa-config:ip}]:${kedifa-config:port}/%s' % (master_reserved_reference,) }}
+master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
+master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
+master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
 {%- endif -%} {# if slap_software_type in software_type #}
