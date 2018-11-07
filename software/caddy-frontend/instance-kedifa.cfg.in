@@ -25,8 +25,8 @@ parts =
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
       netloc=caucase_netloc,
-      service_auto_approve_count=50,
-      user_auto_approve_count=50,
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
       key_len=2048,
       promise='${directory:promise}/caucased',
 )}}
