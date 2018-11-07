@@ -6,6 +6,7 @@ TestSlave-0:monitor-httpd-graceful EXITED
 TestSlave-1:caucase-updater-on-watch RUNNING
 TestSlave-1:caucased-on-watch RUNNING
 TestSlave-1:kedifa-on-watch RUNNING
+TestSlave-1:kedifa-reloader EXITED
 TestSlave-2:6tunnel-11080-on-watch RUNNING
 TestSlave-2:6tunnel-11443-on-watch RUNNING
 TestSlave-2:6tunnel-12080-on-watch RUNNING
@@ -18,8 +19,9 @@ TestSlave-2:crond-{hash} RUNNING
 TestSlave-2:crond-on-watch RUNNING
 TestSlave-2:frontend-caddy-safe-graceful EXITED
 TestSlave-2:frontend-nginx-safe-graceful EXITED
-TestSlave-2:frontend_caddy-{hash}-on-watch RUNNING
+TestSlave-2:frontend_caddy-on-watch RUNNING
 TestSlave-2:frontend_nginx-{hash}-on-watch RUNNING
+TestSlave-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 TestSlave-2:monitor-httpd-{hash}-on-watch RUNNING
 TestSlave-2:monitor-httpd-graceful EXITED
 TestSlave-2:trafficserver-{hash}-on-watch RUNNING

@@ -1,5 +1,6 @@
 TestSlaveBadParameters-0/var/run/monitor-httpd.pid
 TestSlaveBadParameters-0/var/run/monitor/monitor-bootstrap.pid
+TestSlaveBadParameters-1/var/run/kedifa.pid
 TestSlaveBadParameters-2/var/run/caddy_configuration.signature
 TestSlaveBadParameters-2/var/run/httpd.pid
 TestSlaveBadParameters-2/var/run/monitor-httpd.pid

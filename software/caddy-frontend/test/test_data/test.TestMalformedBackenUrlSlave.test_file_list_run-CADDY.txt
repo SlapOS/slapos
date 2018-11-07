@@ -1,5 +1,6 @@
 TestMalformedBackenUrlSlave-0/var/run/monitor-httpd.pid
 TestMalformedBackenUrlSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestMalformedBackenUrlSlave-1/var/run/kedifa.pid
 TestMalformedBackenUrlSlave-2/var/run/caddy_configuration.signature
 TestMalformedBackenUrlSlave-2/var/run/httpd.pid
 TestMalformedBackenUrlSlave-2/var/run/monitor-httpd.pid

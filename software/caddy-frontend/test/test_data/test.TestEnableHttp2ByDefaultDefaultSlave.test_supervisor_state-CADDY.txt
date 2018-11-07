@@ -6,6 +6,7 @@ TestEnableHttp2ByDefaultDefaultSlave-0:monitor-httpd-graceful EXITED
 TestEnableHttp2ByDefaultDefaultSlave-1:caucase-updater-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-1:caucased-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-1:kedifa-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-1:kedifa-reloader EXITED
 TestEnableHttp2ByDefaultDefaultSlave-2:6tunnel-11080-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:6tunnel-11443-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:6tunnel-12080-on-watch RUNNING
@@ -18,8 +19,9 @@ TestEnableHttp2ByDefaultDefaultSlave-2:crond-{hash} RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:crond-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:frontend-caddy-safe-graceful EXITED
 TestEnableHttp2ByDefaultDefaultSlave-2:frontend-nginx-safe-graceful EXITED
-TestEnableHttp2ByDefaultDefaultSlave-2:frontend_caddy-{hash}-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-2:frontend_caddy-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:frontend_nginx-{hash}-on-watch RUNNING
+TestEnableHttp2ByDefaultDefaultSlave-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:monitor-httpd-{hash}-on-watch RUNNING
 TestEnableHttp2ByDefaultDefaultSlave-2:monitor-httpd-graceful EXITED
 TestEnableHttp2ByDefaultDefaultSlave-2:trafficserver-{hash}-on-watch RUNNING
