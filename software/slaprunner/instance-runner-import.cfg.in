@@ -185,3 +185,10 @@ configuration-file-path = ${buildout:directory}/knowledge0.cfg
 [monitor-conf-parameters]
 private-path-list += 
   ${directory:logrotate-backup}
+
+[post-notification-run]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_release_bin }}/runner-importer-post-notification-run --diff-file ${:diff-file} --proof-signature-file ${:proof-signature-file} --srv-path ${directory:srv} --backup-path ${directory:backup}
+wrapper-path = ${rootdirectory:bin}/post-notification-run
+output = ${:wrapper-path}
+mode = 0700
