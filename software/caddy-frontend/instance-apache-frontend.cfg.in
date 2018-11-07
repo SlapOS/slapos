@@ -131,12 +131,11 @@ crl = ${:d}/kedifa-login-crl.pem
 
 [kedifa-login-csr]
 recipe = plone.recipe.command
-name = ${configuration:frontend-name}
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
      {{ parameter_dict['kedifa-csr'] }} \
-       --name ${:name} \
+       --name {{ instance_parameter['configuration.frontend-name'] }} \
        --csr ${:csr} \
        --key ${:key}
   fi
