@@ -186,6 +186,7 @@ name = {{ partition_name }}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
+config-instance = {{ dumps(zope_parameter_dict.get('instance', {})) }}
 config-private-dev-shm = {{ zope_parameter_dict.get('private-dev-shm', '') }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
