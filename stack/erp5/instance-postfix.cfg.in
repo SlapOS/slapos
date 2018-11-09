@@ -56,6 +56,15 @@ var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
 
+# Used for ERP5 resiliency or (more probably)
+# webrunner resiliency with erp5 inside.
+[{{ section("resiliency-exclude-file") }}]
+# Generate rdiff exclude file
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "${directory:log}\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
+
 {% if divert -%}
 {%   set milter_port = tcpv4_port + 1 -%}
 {%   set socket = 'inet:' ~ ip ~ ':' ~ milter_port -%}

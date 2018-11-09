@@ -310,6 +310,12 @@ newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
 
+[{{ section('resiliency-exclude-file') }}]
+# Generate rdiff exclude file in case of resiliency
+< = jinja2-template-base
+template = {{ 'inline:{{ "${directory:log}\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
+
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
