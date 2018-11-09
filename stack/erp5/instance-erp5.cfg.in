@@ -267,6 +267,7 @@ config-{{ name }}-test-runner-address-list = {{ ' ${' ~ zope_section_id ~ ':conn
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
+config-custom-template-apache-conf = {{ dumps(balancer_dict.get('custom-template-apache-conf', {})) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-name = ${:name}
 config-caucase-url = ${request-caucase:connection-http-url}

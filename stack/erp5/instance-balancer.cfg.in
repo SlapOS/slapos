@@ -21,6 +21,12 @@ per partition. No more (undefined result), no less (IndexError).
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
+{% if slapparameter_dict.get('custom-template-apache-conf', {}) -%}
+{%   set apache_conf_template = slapparameter_dict['custom-template-apache-conf'] -%}
+{% else -%}
+{%   set apache_conf_template = parameter_dict['template-apache-conf'] -%}
+{% endif -%}
+
 [simplefile]
 < = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
@@ -213,7 +219,7 @@ crl = ${apache-ssl-client:crl}
 
 [apache-conf]
 < = jinja2-template-base
-template = {{ parameter_dict['template-apache-conf'] }}
+template = {{ dumps(apache_conf_template) }}
 rendered = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
 
