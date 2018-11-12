@@ -66,10 +66,14 @@ backup-caucased = ${:backup}/caucased
 recipe = plone.recipe.command
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-     {{ parameter_dict['kedifa-csr'] }} \
-       --name ${kedifa-config:ip} \
-       --csr ${:csr} \
-       --key ${:key}
+    {{ parameter_dict['openssl'] }} genrsa -out ${:key} 2048 &&
+    /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
+      -key ${:key} \
+      -subj "/O={{ instance_parameter['instance-guid'] }}/OU=Kedifa Partition" \
+      -reqexts SAN \
+      -config <(cat {{ parameter_dict['openssl_cnf'] }} \
+      <(printf "\n[SAN]\nsubjectAltName=IP:${kedifa-config:ip}")) \
+      -out ${:csr}'
   fi
 update-command = ${:command}
 csr = ${kedifa-config:csr}
