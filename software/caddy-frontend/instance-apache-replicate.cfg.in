@@ -155,6 +155,7 @@ config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-infor
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-master-reserved-reference = {{ master_reserved_reference }}
+config-cluster-identification = {{ cluster_identification }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
 {%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
@@ -202,6 +203,7 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 
 config-slave-list = {{ dumps(slave_instance_list) }}
 config-master-reserved-reference = {{ master_reserved_reference }}
+config-cluster-identification = {{ cluster_identification }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
 {% if slapparameter_dict.has_key(frontend_software_url_key) %}
