@@ -131,13 +131,15 @@ crl = ${:d}/kedifa-login-crl.pem
 
 [kedifa-login-csr]
 recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-     {{ parameter_dict['kedifa-csr'] }} \
-       --name {{ instance_parameter['configuration.frontend-name'] }} \
-       --csr ${:csr} \
-       --key ${:key}
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:csr}
   fi
 {% endif %}
   test -f ${:key} && test -f ${:csr}
