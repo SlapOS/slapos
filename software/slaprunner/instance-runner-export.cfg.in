@@ -7,6 +7,8 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
+  certificate-authority-service
+  ca-nginx-service
   logrotate-entry-nginx
   gunicorn-launcher
   gunicorn-graceful
@@ -19,10 +21,12 @@ parts +=
   runner-sshd-graceful
   runner-sshd-promise
   runner-sshkeys-authority
+  runner-sshkeys-authority-service
   runner-sshkeys-sshd
   runtestsuite
   symlinks
   shellinabox
+  shellinabox-service
   slapos-cfg
   cron-entry-prepare-software
   deploy-instance-parameters

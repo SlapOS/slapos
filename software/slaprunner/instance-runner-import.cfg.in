@@ -7,6 +7,8 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
+  certificate-authority-service
+  ca-nginx-service
   gunicorn-launcher
   gunicorn-graceful
   slaprunner-promise
@@ -15,9 +17,11 @@ parts +=
   runner-sshd-graceful
   runner-sshd-promise
   runner-sshkeys-authority
+  runner-sshkeys-authority-service
   runner-sshkeys-sshd
   runtestsuite
   shellinabox
+  shellinabox-service
   symlinks
   slapos-cfg
   cron-entry-prepare-software
@@ -183,5 +187,5 @@ instance-configuration =
 configuration-file-path = ${buildout:directory}/knowledge0.cfg
 
 [monitor-conf-parameters]
-private-path-list += 
+private-path-list +=
   ${directory:logrotate-backup}
