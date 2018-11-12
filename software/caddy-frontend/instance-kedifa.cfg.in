@@ -64,12 +64,17 @@ backup-caucased = ${:backup}/caucased
 
 [kedifa-csr]
 recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = Kedifa Partition
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-     {{ parameter_dict['kedifa-csr'] }} \
-       --name ${kedifa-config:ip} \
-       --csr ${:csr} \
-       --key ${:key}
+    /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -reqexts SAN \
+      -config <(cat {{ parameter_dict['openssl_cnf'] }} \
+      <(printf "\n[SAN]\nsubjectAltName=IP:${kedifa-config:ip}")) \
+      -out ${:csr}'
   fi
 update-command = ${:command}
 csr = ${kedifa-config:csr}
