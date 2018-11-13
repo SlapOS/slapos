@@ -66,9 +66,8 @@ backup-caucased = ${:backup}/caucased
 recipe = plone.recipe.command
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} genrsa -out ${:key} 2048 &&
     /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
-      -key ${:key} \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O={{ instance_parameter['instance-guid'] }}/OU=Kedifa Partition" \
       -reqexts SAN \
       -config <(cat {{ parameter_dict['openssl_cnf'] }} \

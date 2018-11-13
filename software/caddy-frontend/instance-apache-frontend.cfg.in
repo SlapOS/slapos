@@ -134,9 +134,8 @@ recipe = plone.recipe.command
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} genrsa -out ${:key} 2048 &&
     {{ parameter_dict['openssl'] }} req -new -sha256 \
-      -key ${:key} \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O={{ instance_parameter['instance-guid'] }}/OU={{ instance_parameter['configuration.frontend-name'] }}" \
       -out ${:csr}
   fi
