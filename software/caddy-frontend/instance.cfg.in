@@ -54,6 +54,7 @@ extra-context =
     import subprocess_module subprocess
     import functools_module functools
     import validators validators
+    key cluster_identification instance-parameter:root-instance-title
     raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
     raw caddy_custom_http_validator {{ caddy_custom_http_validator }}
     raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
