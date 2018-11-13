@@ -48,6 +48,8 @@ setup(name=name,
         'forcediphttpsadapter',
         'requests-toolbelt',
         'supervisor',
+        # caucase needed to connect to the KeDiFa caucase
+        'caucase',
       ],
       zip_safe=True,
       test_suite='test',
