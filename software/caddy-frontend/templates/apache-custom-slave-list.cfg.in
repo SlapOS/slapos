@@ -402,6 +402,8 @@ private-ipv4 = {{ local_ipv4 }}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
 {% endif %}
 monitor-base-url = {{ monitor_base_url }}
+csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
+csr_id-certificate = ${get-csr_id-certificate:certificate}
 
 [buildout]
 extends = {{ common_profile }}
@@ -416,7 +418,76 @@ parts +=
     tunnel-6to4-base-ssl_cached_port
     tunnel-6to4-base-nginx_http_port
     tunnel-6to4-base-nginx_https_port
+    expose-csr_id
 
 cache-access = {{ cache_access }}
+
+[store-csr_id]
+recipe = plone.recipe.command
+
+csr_id_path = {{ directory_csr_id }}/csr_id.txt
+csr_work_path = {{ directory_tmp }}/${:_buildout_section_name_}
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  {{ bin_directory }}/caucase \
+    --ca-url {{ caucase_url }} \
+    --ca-crt {{ csr_cas_ca_certificate }} \
+    --crl {{ csr_crl }} \
+    --mode service \
+    --send-csr {{ csr_id_csr }} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+
+[certificate-csr_id]
+recipe = plone.recipe.command
+certificate = {{ directory_caddy_csr_id }}/certificate.pem
+key = {{ directory_caddy_csr_id }}/key.pem
+
+stop-on-error = True
+update-command = ${:command}
+command =
+  if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
+    openssl req -new -newkey rsa:2048 -sha256 -subj \
+      "/O={{ certificate_organization }}/OU={{ certificate_organizational_unit }}/CN=${slap-network-information:global-ipv6}" \
+      -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
+  fi
+
+[expose-csr_id-configuration]
+ip = ${slap-network-information:global-ipv6}
+port = 17001
+key = ${certificate-csr_id:key}
+certificate = ${certificate-csr_id:certificate}
+error-log = {{ directory_caddy_csr_id_log }}/expose-csr_id.log
+
+[expose-csr_id-template]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  https://:${expose-csr_id-configuration:port}/ {
+    bind ${expose-csr_id-configuration:ip}
+    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
+    log ${expose-csr_id-configuration:error-log}
+  }
+
+rendered = {{ directory_caddy_csr_id }}/Caddyfile
+
+[expose-csr_id]
+depends = ${store-csr_id:command}
+recipe = slapos.cookbook:wrapper
+command-line = {{ caddy_executable }}
+  -conf ${expose-csr_id-template:rendered}
+  -log ${expose-csr_id-configuration:error-log}
+  -http2=true
+  -disable-http-challenge
+  -disable-tls-sni-challenge
+  -root {{ directory_csr_id }}
+
+wrapper-path = {{ service_directory }}/expose-csr_id
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[get-csr_id-certificate]
+recipe = collective.recipe.shelloutput
+commands =
+  certificate = cat ${certificate-csr_id:certificate}
 
 {% endif %}
