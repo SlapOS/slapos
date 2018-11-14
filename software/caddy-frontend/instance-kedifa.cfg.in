@@ -13,6 +13,7 @@ parts =
   caucased
   caucased-promise
   caucase-updater
+  expose-csr_id
 
 [caucased]
 hash-files = ${buildout:directory}/software_release/buildout.cfg
@@ -41,6 +42,7 @@ bin = ${buildout:directory}/bin/
 etc = ${buildout:directory}/etc/
 srv = ${buildout:directory}/srv/
 var = ${buildout:directory}/var/
+tmp = ${buildout:directory}/tmp/
 
 backup = ${:srv}/backup
 log = ${:var}/log
@@ -66,6 +68,10 @@ backup-caucased = ${:backup}/caucased
 
 # reservation
 reservation = ${:srv}/reservation
+
+# csr_id publication
+csr_id = ${:srv}/csr_id
+caddy-csr_id = ${:etc}/caddy-csr_id
 
 [kedifa-csr]
 recipe = plone.recipe.command
@@ -101,6 +107,74 @@ stop-on-error = True
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 
+[store-csr_id]
+recipe = plone.recipe.command
+
+csr_id_path = ${directory:csr_id}/csr_id.txt
+csr_work_path = ${directory:tmp}/${:_buildout_section_name_}
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  {{ parameter_dict['bin_directory'] }}/caucase \
+    --ca-url {{ caucase_url }} \
+    --ca-crt ${kedifa-config:ca-certificate} \
+    --crl ${kedifa-config:crl} \
+    --mode service \
+    --send-csr ${kedifa-csr:csr} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+
+[certificate-csr_id]
+recipe = plone.recipe.command
+certificate = ${directory:caddy-csr_id}/certificate.pem
+key = ${directory:caddy-csr_id}/key.pem
+
+stop-on-error = True
+update-command = ${:command}
+command =
+  if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
+    openssl req -new -newkey rsa:2048 -sha256 -subj \
+      "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
+      -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
+  fi
+
+[expose-csr_id-configuration]
+ip = {{ instance_parameter['ipv6-random'] }}
+port = 17000
+key = ${certificate-csr_id:key}
+certificate = ${certificate-csr_id:certificate}
+error-log = ${directory:log}/expose-csr_id.log
+
+[expose-csr_id-template]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  https://:${expose-csr_id-configuration:port}/ {
+    bind ${expose-csr_id-configuration:ip}
+    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
+    log ${expose-csr_id-configuration:error-log}
+  }
+
+rendered = ${directory:caddy-csr_id}/Caddyfile
+
+[expose-csr_id]
+depends = ${store-csr_id:command}
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['caddy'] }}
+  -conf ${expose-csr_id-template:rendered}
+  -log ${expose-csr_id-configuration:error-log}
+  -http2=true
+  -disable-http-challenge
+  -disable-tls-sni-challenge
+  -root ${directory:csr_id}
+
+wrapper-path = ${directory:service}/expose-csr_id
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[get-csr_id-certificate]
+recipe = collective.recipe.shelloutput
+commands =
+  certificate = cat ${certificate-csr_id:certificate}
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -121,8 +195,7 @@ port = {{ instance_parameter['configuration.kedifa_port'] }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
-ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
-cas-ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
+ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 csr = ${directory:etc-kedifa}/csr.pem
 pidfile = ${directory:run}/kedifa.pid
@@ -190,4 +263,6 @@ caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
+csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
+csr_id-certificate = ${get-csr_id-certificate:certificate}
 {%- endif -%} {# if slap_software_type in software_type #}
