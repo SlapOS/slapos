@@ -92,11 +92,13 @@ class TestPublishedURLIsReachableMixin(object):
 class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated with no parameters
   """
+  __partition_reference__ = 'defp'
 
 
 class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated without test runner.
   """
+  __partition_reference__ = 'distr'
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'test-runner': {'enabled': False}})}

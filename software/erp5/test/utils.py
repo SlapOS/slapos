@@ -61,15 +61,25 @@ class SlapOSInstanceTestCase(unittest.TestCase):
   on the class.
 
   All tests from the test class will run with the same instance.
-  
+
   The following class attributes are available:
 
     * `computer_partition`:  the `slapos.core.XXX` computer partition instance.
 
     * `computer_partition_root_path`: the path of the instance root directory,
-        
+
+  A note about paths:
+    SlapOS itself and some services running in SlapOS uses unix sockets and (sometimes very)
+    deep path, which does not play very well together. To workaround this, users can
+    set SLAPOS_TEST_WORKING_DIR enivonment variable to the path of a short enough directory
+    and local slapos will be in this directory.
+    The partitions references will be named after the unittest class name, which can also lead
+    to long paths. For this, unit test classes can define a __partition_reference__ attribute
+    which will be used as partition reference. The trick is then to use a shorter
+    __partition_reference__
+  See https://lab.nexedi.com/kirr/slapns for the solution to all these problems.
+
   """
-  
   # Methods to be defined by subclasses.
   @classmethod
   def getSoftwareURLList(cls):
@@ -182,7 +192,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       "log_directory": cls.working_directory,
       "computer_id": 'slapos.test',  # XXX
       'proxy_database': os.path.join(cls.working_directory, 'proxy.db'),
-      'partition_reference': cls.__name__,
+      'partition_reference': getattr(cls, '__partition_reference__', cls.__name__)
       # "proper" slapos command must be in $PATH
       'slapos_binary': 'slapos',
     }
