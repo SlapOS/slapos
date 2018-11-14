@@ -1,6 +1,5 @@
 {%- if slap_software_type == software_type -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set master_reserved_reference = slapparameter_dict['master-reserved-reference'] -%}
 [buildout]
 extends =
   {{ parameter_dict['common_profile'] }}
@@ -179,7 +178,6 @@ extensions = jinja2.ext.do
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
-master_reserved_reference = {{ dumps(master_reserved_reference) }}
 slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
 local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
@@ -219,7 +217,6 @@ extra-context =
     key slave_instance_list :slave_instance_list
     key extra_slave_instance_list :extra_slave_instance_list
     key master_key_download_url :master_key_download_url
-    key master_reserved_reference :master_reserved_reference
     key slave_kedifa_information :slave_kedifa_information
     key autocert caddy-directory:autocert
     key master_certificate caddy-configuration:master-certificate
@@ -327,7 +324,7 @@ mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
-master-autocert-dir = ${:autocert}/{{ master_reserved_reference.replace('-','.') }}
+master-autocert-dir = ${:autocert}/master-autocert
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
