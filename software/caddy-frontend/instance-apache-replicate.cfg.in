@@ -156,7 +156,7 @@ software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url csr_id-url csr_id-certificate
 
 {% for section, frontend_request in request_dict.iteritems() %}
 [{{section}}]
@@ -194,7 +194,14 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
+kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
+{{ frontend }}-csr_ud-certificate = {{ section_part }}:connection-csr_id-certificate}
+{% endfor %}
 
 #----------------------------
 #--
@@ -225,7 +232,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = kedifa
 name = kedifa
-return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url csr_id-url csr_id-certificate
 
 [rejected-slave-information]
 {% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
