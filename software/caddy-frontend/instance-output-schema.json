@@ -45,6 +45,22 @@
     "slave-amount": {
       "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
       "type": "integer"
+    },
+    "kedifa-csr_id-url": {
+      "description": "URL on which KeDiFa publishes its csr_id sent to caucase.",
+      "type": "string"
+    },
+    "kedifa-csr_id-certificate": {
+      "description": "Certificate used to serve data on kedifa-csr_id-url.",
+      "type": "string"
+    },
+    "caddy-frontend-N-csr_id-url": {
+      "description": "URL on which frontend node number N publishes its csr_id sent to caucase.",
+      "type": "string"
+    },
+    "caddy-frontend-N-csr_id-certificate": {
+      "description": "Certificate used to serve data on caddy-frontend-N-csr_id-url.",
+      "type": "string"
     }
   },
   "type": "object"
