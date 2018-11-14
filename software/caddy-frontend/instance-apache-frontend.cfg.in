@@ -64,6 +64,7 @@ bin = ${buildout:directory}/bin/
 etc = ${buildout:directory}/etc/
 srv = ${buildout:directory}/srv/
 var = ${buildout:directory}/var/
+tmp = ${:var}/tmp
 template = ${buildout:directory}/template/
 
 backup = ${:srv}/backup
@@ -85,6 +86,11 @@ varnginx = ${:var}/nginx
 
 frontend_cluster = ${:var}/frontend_cluster
 nginx_cluster = ${:var}/nginx_cluster
+
+# csr_id publication
+csr_id = ${:srv}/csr_id
+caddy-csr_id = ${:etc}/caddy-csr_id
+caddy-csr_id-log = ${:log}/httpd-csr_id
 
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
@@ -216,6 +222,8 @@ local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
 software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
+caddy_executable = {{ parameter_dict['caddy'] }}
+caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
@@ -229,6 +237,17 @@ extra-context =
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_getter :kedifa-getter
     key kedifa_csr :kedifa-csr
+    key caddy_executable :caddy_executable
+    key caucase_url :caucase_url
+    key directory_csr_id directory:csr_id
+    key directory_caddy_csr_id directory:caddy-csr_id
+    key directory_tmp directory:tmp
+    key directory_caddy_csr_id_log directory:caddy-csr_id-log
+    key certificate_organization kedifa-login-csr:organization
+    key certificate_organizational_unit kedifa-login-csr:organizational_unit
+    key csr_id_csr kedifa-login-csr:csr
+    key csr_crl kedifa-login-config:crl
+    key csr_cas_ca_certificate kedifa-login-config:cas-ca-certificate
     key http_port configuration:plain_http_port
     key https_port configuration:port
     key nginx_http_port configuration:plain_nginx_port
