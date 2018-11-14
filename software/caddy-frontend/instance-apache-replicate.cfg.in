@@ -143,7 +143,6 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url csr_id-url csr_id-certificate
 
-{%- set master_reserved_reference = 'DEFAULT_FRONTEND_KEY' -%}
 {% for section, frontend_request in request_dict.iteritems() %}
 [{{section}}]
 <= replicate
@@ -154,7 +153,6 @@ state = {{ frontend_request.get('state') }}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
-config-master-reserved-reference = {{ master_reserved_reference }}
 config-cluster-identification = {{ cluster_identification }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
@@ -209,7 +207,6 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 config-slave-list = {{ dumps(slave_instance_list) }}
-config-master-reserved-reference = {{ master_reserved_reference }}
 config-cluster-identification = {{ cluster_identification }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
