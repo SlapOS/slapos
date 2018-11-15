@@ -414,7 +414,7 @@ recipe = plone.recipe.command
 csr_id_path = {{ directory_csr_id }}/csr_id.txt
 csr_work_path = {{ directory_tmp }}/${:_buildout_section_name_}
 
-stop-on-error = True
+stop-on-error = False
 update-command = ${:command}
 command =
   {{ bin_directory }}/caucase \
@@ -422,8 +422,8 @@ command =
     --ca-crt {{ csr_cas_ca_certificate }} \
     --crl {{ csr_crl }} \
     --mode service \
-    --send-csr {{ csr_id_csr }} | cut -d ' ' -f 1 > ${:csr_work_path} && \
-  mv ${:csr_work_path} ${:csr_id_path}
+    --send-csr {{ csr_id_csr }} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
 [certificate-csr_id]
 recipe = plone.recipe.command
