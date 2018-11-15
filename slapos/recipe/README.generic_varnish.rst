@@ -33,11 +33,6 @@ result.
 [Note]
 When web-checker-* parameters are not given, web_checker will be disabled.
 
-TODO
-====
-
-We need to merge this and apache_frontend recipe.
-
 References
 ==========
 
