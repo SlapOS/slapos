@@ -533,6 +533,7 @@ extra-context =
     key directory_etc directory:etc
     key directory_bin directory:bin
     key directory_autocert caddy-directory:autocert
+    key master_certificate caddy-configuration:master-certificate
     key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
 
 [frontend-caddy-lazy-graceful]
