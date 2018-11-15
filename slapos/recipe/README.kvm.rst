@@ -1,8 +1,8 @@
 kvm
 ===
 
-Introduction
-------------
+kvm: Introduction
+-----------------
 
 The erp5.recipe.kvm aims to integrate KVM setups and buildout. This recipe is 
 able to download one remote image and setup a KVM environment to use it. 
