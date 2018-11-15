@@ -362,27 +362,27 @@
         "$ref": "../caucase/instance-caucase-input-schema.json"
       },
       "type": "object"
-    }
-  },
-  "test-runner": {
-    "description": "Test runner parameters.",
-    "properties": {
-      "enabled": {
-        "description": "Generate helper scripts to run test suite.",
-        "default": true,
-        "type": "boolean"
-      },
-      "node-count": {
-        "description": "Number of tests this instance can execute in parrallel. This must be at least equal to the number of nodes configured on testnode running the test",
-        "default": 3,
-        "type": "integer"
-      },
-      "extra-database-count": {
-        "description": "Number of extra databases this instance tests will need.",
-        "default": 3,
-        "type": "integer"
-      }
     },
-    "type": "object"
+    "test-runner": {
+      "description": "Test runner parameters.",
+      "properties": {
+        "enabled": {
+          "description": "Generate helper scripts to run test suite.",
+          "default": true,
+          "type": "boolean"
+        },
+        "node-count": {
+          "description": "Number of tests this instance can execute in parrallel. This must be at least equal to the number of nodes configured on testnode running the test",
+          "default": 3,
+          "type": "integer"
+        },
+        "extra-database-count": {
+          "description": "Number of extra databases this instance tests will need.",
+          "default": 3,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
   }
 }
