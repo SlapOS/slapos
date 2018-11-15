@@ -4,20 +4,20 @@ generic_varnish
 This recipe creates a varnish instance dedicated for ERP5 with a web checker[1]
 set up.
 
-How to Use
-==========
+How to Use generic_varnish ?
+============================
 
-On slap console, you can instanciate varnish like this:
-
-instance = request(
-  software_type='varnish',
-  partition_parameter_kw={
-     'backend-url':'https://[your_backend_address]:your_backend_port',
-     'web-checker-frontend-url':'http://www.example.com',
-     'web-checker-mail-address':'web-checker-result@example.com',
-     'web-checker-smtp-host':'mail.example.com',
-  }
-)
+On slap console, you can instanciate varnish like this::
+  
+  instance = request(
+    software_type='varnish',
+    partition_parameter_kw={
+       'backend-url':'https://[your_backend_address]:your_backend_port',
+       'web-checker-frontend-url':'http://www.example.com',
+       'web-checker-mail-address':'web-checker-result@example.com',
+       'web-checker-smtp-host':'mail.example.com',
+    }
+  )
 
 backend-url is the backend url that varnish will cache.
 
