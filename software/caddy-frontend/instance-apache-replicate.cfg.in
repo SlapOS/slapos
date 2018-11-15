@@ -1,5 +1,6 @@
 {% if slap_software_type in software_type %}
-
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', '').lower() in TRUE_VALUES %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -199,14 +200,16 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+{% if not aikc_enabled %}
 kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
 kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
-{{ frontend }}-csr_ud-certificate = {{ section_part }}:connection-csr_id-certificate}
+{{ frontend }}-csr_id-certificate = {{ section_part }}:connection-csr_id-certificate}
 {% endfor %}
+{% endif %}
 
 #----------------------------
 #--
@@ -285,6 +288,126 @@ monitor-url-list +=
 {% for frontend in frontend_section_list %}
 {{ '  ${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
+
+{% if aikc_enabled %}
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+srv = ${buildout:directory}/srv/
+aikc = ${:srv}/aikc
+
+[aikc-config]
+caucase-url = ${request-kedifa:connection-caucase-url}
+
+csr = ${directory:aikc}/csr.pem
+key = ${directory:aikc}/key.pem
+ca-certificate = ${directory:aikc}/cas-ca-certificate.pem
+crl = ${directory:aikc}/crl.pem
+user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
+user-crl = ${directory:aikc}/user-crl.pem
+user-created = ${directory:aikc}/user-created
+csr_id = ${directory:aikc}/csr_id
+
+[aikc-user-csr]
+recipe = plone.recipe.command
+organization = {{ cluster_identification }}
+organizational_unit = Automatic Internal Kedifa Caucase CSR
+command =
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:csr}
+  fi
+update-command = ${:command}
+csr = ${aikc-config:csr}
+key = ${aikc-config:key}
+stop-on-error = True
+
+
+[aikc-caucase-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key caucase_url aikc-config:caucase-url
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  exec {{ parameter_dict['bin_directory'] }}/caucase \
+{# raw block to use context #}
+{% raw %}
+  --ca-url {{ caucase_url }} \
+{% endraw %}
+  --ca-crt ${aikc-config:ca-certificate} \
+  --user-ca-crt ${aikc-config:user-ca-certificate} \
+  --user-crl ${aikc-config:user-crl} \
+  --crl ${aikc-config:crl} \
+  "$@"
+
+rendered = ${directory:bin}/aikc-caucase-wrapper
+mode = 0700
+
+{% do part_list.append('aikc-create-user') %}
+[aikc-create-user]
+recipe = plone.recipe.command
+stop-on-error = True
+update-command = ${:command}
+command =
+  if ! [ -f ${aikc-config:user-created} ] ; then
+    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${aikc-config:csr_id} || exit 1
+    cut -d ' ' -f 1 ${aikc-config:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${aikc-config:csr_id}`
+    sleep 1
+    ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
+    touch ${aikc-config:user-created}
+  fi
+
+[aikc-check-certificate]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/aikc-check-certificate
+template = inline:
+  import sys
+  import ssl
+  import urlparse
+  certificate = sys.argv[2]
+  parsed = urlparse.urlparse(sys.argv[1])
+  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
+  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
+
+{% for csr in frontend_list + ['kedifa'] %}
+[aikc-{{ csr }}-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key csr_id_url request-{{ csr }}:connection-csr_id-url
+  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  test -f ${directory:aikc}/{{ csr }}-done && exit 0
+  ${buildout:executable} ${aikc-check-certificate:rendered} \
+{# raw block to use context #}
+{% raw %}
+  {{ csr_id_url }} \
+  """{{ csr_id_certificate }}"""
+{% endraw %}
+  if [ $? = 0 ]; then
+    csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
+{% raw %}
+  {{ csr_id_url }} \
+{% endraw %}
+  ` || exit 1
+    ${aikc-caucase-wrapper:rendered} --user-key ${aikc-config:key} --sign-csr $csr_id && touch ${directory:aikc}/{{ csr }}-done
+  fi
+rendered = ${directory:bin}/aikc-{{ csr }}-wrapper
+mode = 0700
+
+{% do part_list.append('aikc-%s' % (csr,)) %}
+[aikc-{{ csr }}]
+recipe = plone.recipe.command
+stop-on-error = True
+command =
+  ${aikc-{{ csr }}-wrapper:rendered}
+update-command = ${:command}
+{% endfor %}
+{% endif %}
 
 [buildout]
 extends =
