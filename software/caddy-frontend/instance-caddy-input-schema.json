@@ -58,6 +58,16 @@
       ],
       "title": "Enable QUIC",
       "type": "string"
+    },
+    "automatic-internal-kedifa-caucase-csr": {
+      "default": "false",
+      "description": "Automatically signs CSRs sent to KeDiFa's caucase, based on csr_id and matching certificate.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Automatic Internal KeDiFa's Caucase CSR",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
