@@ -62,6 +62,7 @@ extra-context =
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
     raw template_monitor {{ monitor2_template }}
     raw common_profile {{ common_profile }}
+    section parameter_dict dynamic-template-caddy-frontend-parameters
 
 [dynamic-template-kedifa]
 < = jinja2-template-base
