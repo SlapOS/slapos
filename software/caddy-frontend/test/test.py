@@ -295,6 +295,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       'nginx_port': NGINX_HTTPS_PORT,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   def test(self):
@@ -324,6 +325,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       'nginx_port': NGINX_HTTPS_PORT,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   def test(self):
@@ -601,6 +603,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -1976,6 +1979,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2044,6 +2048,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2137,6 +2142,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2227,6 +2233,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2278,6 +2285,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       're6st-verification-url': 'some-re6st-verification-url',
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2331,6 +2339,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2423,6 +2432,7 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       '-frontend-1-state': 'stopped',
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2475,6 +2485,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -2580,6 +2591,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3001,6 +3013,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3102,6 +3115,7 @@ class AutoRestartTestCase(SlaveHttpFrontendTestCase):
   def getInstanceParameterDict(cls):
     return {
       '-frontend-1-state': 'stopped',
+      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
