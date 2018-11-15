@@ -156,8 +156,8 @@ input = inline: #!/bin/sh
   $repozo --verify --repository="$zodb_backup_directory/$storage_name"
   CURRENT_EXIT_CODE=$?
   if [ ! "$CURRENT_EXIT_CODE"="0" ]; then
-    EXIT_CODE="$CURRENT_EXIT_CODE"
     echo "$storage_name Backup verification failed. Backup data is inconsistent."
+    exit "$CURRENT_EXIT_CODE"
   fi
   $repozo --recover --output="$zodb_directory/$zodb_path" --repository="$zodb_backup_directory/$storage_name"
   CURRENT_EXIT_CODE=$?
