@@ -108,7 +108,7 @@ recipe = plone.recipe.command
 csr_id_path = ${directory:csr_id}/csr_id.txt
 csr_work_path = ${directory:tmp}/${:_buildout_section_name_}
 
-stop-on-error = True
+stop-on-error = False
 update-command = ${:command}
 command =
   {{ parameter_dict['bin_directory'] }}/caucase \
@@ -116,8 +116,8 @@ command =
     --ca-crt ${kedifa-config:cas-ca-certificate} \
     --crl ${kedifa-config:crl} \
     --mode service \
-    --send-csr ${kedifa-csr:csr} | cut -d ' ' -f 1 > ${:csr_work_path} && \
-  mv ${:csr_work_path} ${:csr_id_path}
+    --send-csr ${kedifa-csr:csr} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
 [certificate-csr_id]
 recipe = plone.recipe.command
