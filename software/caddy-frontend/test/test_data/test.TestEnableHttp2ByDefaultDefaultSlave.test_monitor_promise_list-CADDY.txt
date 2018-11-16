@@ -1,0 +1,6 @@
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-default-error-log-last-day
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-default-error-log-last-hour
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-false-error-log-last-day
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-false-error-log-last-hour
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-true-error-log-last-day
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/monitor-promise/check-_enable-http2-true-error-log-last-hour
