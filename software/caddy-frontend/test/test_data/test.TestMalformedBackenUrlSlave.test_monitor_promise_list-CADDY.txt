@@ -1,2 +1,2 @@
-TestMalformedBackenUrlSlave-1/etc/monitor-promise/check-_empty-error-log-last-day
-TestMalformedBackenUrlSlave-1/etc/monitor-promise/check-_empty-error-log-last-hour
+TestMalformedBackenUrlSlave-2/etc/monitor-promise/check-_empty-error-log-last-day
+TestMalformedBackenUrlSlave-2/etc/monitor-promise/check-_empty-error-log-last-hour
