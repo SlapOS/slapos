@@ -1,1 +1,3 @@
 TestMasterRequestDomain-0/var/log/monitor-httpd-error.log
+TestMasterRequestDomain-0/var/log/slapgrid-TestMasterRequestDomain-0-error.log
+TestMasterRequestDomain-1/var/log/expose-csr_id.log
