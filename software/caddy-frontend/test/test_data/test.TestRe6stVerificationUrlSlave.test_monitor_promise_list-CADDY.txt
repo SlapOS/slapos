@@ -1,0 +1,2 @@
+T-2/etc/monitor-promise/check-_default-error-log-last-day
+T-2/etc/monitor-promise/check-_default-error-log-last-hour
