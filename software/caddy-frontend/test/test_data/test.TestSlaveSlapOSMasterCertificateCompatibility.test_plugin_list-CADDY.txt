@@ -1,0 +1,8 @@
+TestSlaveSlapOSMasterCertificateCompatibility-0/etc/plugin/__init__.py
+TestSlaveSlapOSMasterCertificateCompatibility-0/etc/plugin/buildout-TestSlaveSlapOSMasterCertificateCompatibility-0-status.py
+TestSlaveSlapOSMasterCertificateCompatibility-0/etc/plugin/check-free-disk-space.py
+TestSlaveSlapOSMasterCertificateCompatibility-0/etc/plugin/monitor-bootstrap-status.py
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/plugin/__init__.py
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/plugin/buildout-TestSlaveSlapOSMasterCertificateCompatibility-2-status.py
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/plugin/check-free-disk-space.py
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/plugin/monitor-bootstrap-status.py
