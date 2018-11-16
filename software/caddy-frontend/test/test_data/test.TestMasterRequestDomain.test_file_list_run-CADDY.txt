@@ -1,2 +1,7 @@
 TestMasterRequestDomain-0/var/run/monitor-httpd.pid
 TestMasterRequestDomain-0/var/run/monitor/monitor-bootstrap.pid
+TestMasterRequestDomain-1/var/run/kedifa.pid
+TestMasterRequestDomain-2/var/run/caddy_configuration.signature
+TestMasterRequestDomain-2/var/run/monitor/monitor-bootstrap.pid
+TestMasterRequestDomain-2/var/run/ncaddy_configuration.signature
+TestMasterRequestDomain-2/var/run/nginx.pid
