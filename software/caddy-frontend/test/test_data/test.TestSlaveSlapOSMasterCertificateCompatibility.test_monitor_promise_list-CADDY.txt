@@ -1,0 +1,4 @@
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/monitor-promise/check-_ssl_from_master-error-log-last-day
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/monitor-promise/check-_ssl_from_master-error-log-last-hour
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/monitor-promise/check-_ssl_from_slave-error-log-last-day
+TestSlaveSlapOSMasterCertificateCompatibility-2/etc/monitor-promise/check-_ssl_from_slave-error-log-last-hour
