@@ -1,5 +1,8 @@
 TestMasterRequest-0/var/log/monitor-httpd-error.log
-TestMasterRequest-1/var/log/nginx-access.log
-TestMasterRequest-1/var/log/nginx-error.log
-TestMasterRequest-1/var/log/trafficserver/manager.log
-TestMasterRequest-1/var/log/trafficserver/traffic.out
+TestMasterRequest-0/var/log/slapgrid-TestMasterRequest-0-error.log
+TestMasterRequest-1/var/log/expose-csr_id.log
+TestMasterRequest-2/var/log/httpd-csr_id/expose-csr_id.log
+TestMasterRequest-2/var/log/nginx-access.log
+TestMasterRequest-2/var/log/nginx-error.log
+TestMasterRequest-2/var/log/trafficserver/manager.log
+TestMasterRequest-2/var/log/trafficserver/traffic.out
