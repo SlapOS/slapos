@@ -288,7 +288,7 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aikc-config:caucase-url
-template = inline:#!/bin/sh
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
   exec {{ parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
 {% raw %}
@@ -337,7 +337,7 @@ recipe = slapos.recipe.template:jinja2
 context =
   key csr_id_url request-{{ csr }}:connection-csr_id-url
   key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
-template = inline:#!/bin/sh
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
   test -f ${directory:aikc}/{{ csr }}-done && exit 0
   ${buildout:executable} ${aikc-check-certificate:rendered} \
 {# raw block to use context #}
@@ -345,7 +345,7 @@ template = inline:#!/bin/sh
   {{ csr_id_url }} \
   """{{ csr_id_certificate }}"""
 {% endraw %}
-  if [ $? == 0 ]; then
+  if [ $? = 0 ]; then
     csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
 {% raw %}
   {{ csr_id_url }} \
