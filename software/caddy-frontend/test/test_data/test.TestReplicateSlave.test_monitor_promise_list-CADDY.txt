@@ -1,0 +1,4 @@
+T-2/etc/monitor-promise/check-_replicate-error-log-last-day
+T-2/etc/monitor-promise/check-_replicate-error-log-last-hour
+T-3/etc/monitor-promise/check-_replicate-error-log-last-day
+T-3/etc/monitor-promise/check-_replicate-error-log-last-hour
