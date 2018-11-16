@@ -1,0 +1,2 @@
+T-0/var/log/slapgrid-TestDefaultMonitorHttpdPort-0-error.log
+T-1/var/log/expose-csr_id.log
