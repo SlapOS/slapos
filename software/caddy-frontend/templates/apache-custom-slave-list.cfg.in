@@ -112,6 +112,23 @@ crl = {{ custom_ssl_directory }}/crl/
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
 
+[slave-log-directories]
+<= slave-log-directory-dict
+recipe = slapos.cookbook:mkdirectory
+
+{% do part_list.append('slave-log-directories') %}
+
+[caddy-log-access]
+< = jinja2-template-base
+template = {{frontend_configuration.get('template-log-access')}}
+rendered = {{frontend_configuration.get('log-access-configuration')}}
+extra-context =
+    section slave_log_directory slave-log-directory-dict
+    section slave_password slave-password
+    section parameter_dict caddy-log-access-parameters
+
+{% do part_list.append('caddy-log-access') %}
+
 [slave-password]
 {{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
 
@@ -329,10 +346,6 @@ extra-context =
 {{ '\n' }}
 {% endfor %}
 
-[slave-log-directories]
-<= slave-log-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
 {#- Define IPv6 to IPV4 tunneling #}
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
@@ -408,12 +421,10 @@ monitor-base-url = {{ monitor_base_url }}
 [buildout]
 extends = {{ common_profile }}
 parts +=
-    slave-log-directories
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
     publish-caddy-information
-    caddy-log-access
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
     tunnel-6to4-base-cached_port
