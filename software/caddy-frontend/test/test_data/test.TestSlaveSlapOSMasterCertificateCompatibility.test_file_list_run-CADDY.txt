@@ -1,0 +1,9 @@
+TestSlaveSlapOSMasterCertificateCompatibility-0/var/run/monitor-httpd.pid
+TestSlaveSlapOSMasterCertificateCompatibility-0/var/run/monitor/monitor-bootstrap.pid
+TestSlaveSlapOSMasterCertificateCompatibility-1/var/run/kedifa.pid
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/caddy_configuration.signature
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/httpd.pid
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/monitor-httpd.pid
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/monitor/monitor-bootstrap.pid
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/ncaddy_configuration.signature
+TestSlaveSlapOSMasterCertificateCompatibility-2/var/run/nginx.pid
