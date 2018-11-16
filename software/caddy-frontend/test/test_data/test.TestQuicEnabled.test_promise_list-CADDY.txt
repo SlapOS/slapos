@@ -1,4 +1,5 @@
 TestQuicEnabled-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestQuicEnabled-1/etc/promise/caddy-frontend-is-running-actual-software-release
-TestQuicEnabled-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestQuicEnabled-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestQuicEnabled-1/etc/promise/caucased
+TestQuicEnabled-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestQuicEnabled-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestQuicEnabled-2/etc/promise/promise-nginx-is-process-older-than-dependency-set

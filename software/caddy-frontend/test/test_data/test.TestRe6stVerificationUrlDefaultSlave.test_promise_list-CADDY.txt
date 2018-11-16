@@ -1,4 +1,5 @@
 TestRe6stVerificationUrlDefaultSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caddy-frontend-is-running-actual-software-release
-TestRe6stVerificationUrlDefaultSlave-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestRe6stVerificationUrlDefaultSlave-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caucased
+TestRe6stVerificationUrlDefaultSlave-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestRe6stVerificationUrlDefaultSlave-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestRe6stVerificationUrlDefaultSlave-2/etc/promise/promise-nginx-is-process-older-than-dependency-set

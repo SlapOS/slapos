@@ -1,4 +1,5 @@
 TestEnableHttp2ByDefaultDefaultSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/promise/caddy-frontend-is-running-actual-software-release
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestEnableHttp2ByDefaultDefaultSlave-1/etc/promise/caucased
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestEnableHttp2ByDefaultDefaultSlave-2/etc/promise/promise-nginx-is-process-older-than-dependency-set

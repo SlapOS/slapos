@@ -1,4 +1,5 @@
 TestDefaultMonitorHttpdPort-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestDefaultMonitorHttpdPort-1/etc/promise/caddy-frontend-is-running-actual-software-release
-TestDefaultMonitorHttpdPort-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestDefaultMonitorHttpdPort-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestDefaultMonitorHttpdPort-1/etc/promise/caucased
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestDefaultMonitorHttpdPort-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestDefaultMonitorHttpdPort-2/etc/promise/promise-nginx-is-process-older-than-dependency-set

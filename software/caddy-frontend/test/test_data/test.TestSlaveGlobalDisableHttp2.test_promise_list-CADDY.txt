@@ -1,4 +1,5 @@
 TestSlaveGlobalDisableHttp2-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestSlaveGlobalDisableHttp2-1/etc/promise/caddy-frontend-is-running-actual-software-release
-TestSlaveGlobalDisableHttp2-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
-TestSlaveGlobalDisableHttp2-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestSlaveGlobalDisableHttp2-1/etc/promise/caucased
+TestSlaveGlobalDisableHttp2-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestSlaveGlobalDisableHttp2-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestSlaveGlobalDisableHttp2-2/etc/promise/promise-nginx-is-process-older-than-dependency-set
