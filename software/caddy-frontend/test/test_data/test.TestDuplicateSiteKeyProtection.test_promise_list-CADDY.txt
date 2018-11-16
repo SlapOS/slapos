@@ -1,6 +1,7 @@
 TestDuplicateSiteKeyProtection-0/etc/promise/monitor-http-frontend
 TestDuplicateSiteKeyProtection-0/etc/promise/monitor-httpd-listening-on-tcp
 TestDuplicateSiteKeyProtection-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+<<<<<<< HEAD
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy-frontend-is-running-actual-software-release
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_cached
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv4_http
@@ -23,3 +24,26 @@ TestDuplicateSiteKeyProtection-1/etc/promise/promise-nginx-is-process-older-than
 TestDuplicateSiteKeyProtection-1/etc/promise/re6st-connectivity
 TestDuplicateSiteKeyProtection-1/etc/promise/trafficserver-cache-availability
 TestDuplicateSiteKeyProtection-1/etc/promise/trafficserver-port-listening
+=======
+TestDuplicateSiteKeyProtection-1/etc/promise/caucased
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_cached
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_frontend_ipv4_http
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_frontend_ipv4_https
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_frontend_ipv6_http
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_frontend_ipv6_https
+TestDuplicateSiteKeyProtection-2/etc/promise/caddy_ssl_cached
+TestDuplicateSiteKeyProtection-2/etc/promise/frontend-caddy-configuration-promise
+TestDuplicateSiteKeyProtection-2/etc/promise/monitor-http-frontend
+TestDuplicateSiteKeyProtection-2/etc/promise/monitor-httpd-listening-on-tcp
+TestDuplicateSiteKeyProtection-2/etc/promise/nginx-configuration-promise
+TestDuplicateSiteKeyProtection-2/etc/promise/nginx_frontend_ipv4_http
+TestDuplicateSiteKeyProtection-2/etc/promise/nginx_frontend_ipv4_https
+TestDuplicateSiteKeyProtection-2/etc/promise/nginx_frontend_ipv6_http
+TestDuplicateSiteKeyProtection-2/etc/promise/nginx_frontend_ipv6_https
+TestDuplicateSiteKeyProtection-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestDuplicateSiteKeyProtection-2/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestDuplicateSiteKeyProtection-2/etc/promise/re6st-connectivity
+TestDuplicateSiteKeyProtection-2/etc/promise/trafficserver-cache-availability
+TestDuplicateSiteKeyProtection-2/etc/promise/trafficserver-port-listening
+>>>>>>> caddy-frontend: Adapt tests to SSL zero knowledge

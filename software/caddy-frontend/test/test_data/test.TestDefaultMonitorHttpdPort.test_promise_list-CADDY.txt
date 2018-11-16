@@ -1,6 +1,7 @@
 TestDefaultMonitorHttpdPort-0/etc/promise/monitor-http-frontend
 TestDefaultMonitorHttpdPort-0/etc/promise/monitor-httpd-listening-on-tcp
 TestDefaultMonitorHttpdPort-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+<<<<<<< HEAD
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy-frontend-is-running-actual-software-release
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy_cached
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy_frontend_ipv4_http
@@ -23,3 +24,26 @@ TestDefaultMonitorHttpdPort-1/etc/promise/promise-nginx-is-process-older-than-de
 TestDefaultMonitorHttpdPort-1/etc/promise/re6st-connectivity
 TestDefaultMonitorHttpdPort-1/etc/promise/trafficserver-cache-availability
 TestDefaultMonitorHttpdPort-1/etc/promise/trafficserver-port-listening
+=======
+TestDefaultMonitorHttpdPort-1/etc/promise/caucased
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy-frontend-is-running-actual-software-release
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_cached
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_frontend_ipv4_http
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_frontend_ipv4_https
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_frontend_ipv6_http
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_frontend_ipv6_https
+TestDefaultMonitorHttpdPort-2/etc/promise/caddy_ssl_cached
+TestDefaultMonitorHttpdPort-2/etc/promise/frontend-caddy-configuration-promise
+TestDefaultMonitorHttpdPort-2/etc/promise/monitor-http-frontend
+TestDefaultMonitorHttpdPort-2/etc/promise/monitor-httpd-listening-on-tcp
+TestDefaultMonitorHttpdPort-2/etc/promise/nginx-configuration-promise
+TestDefaultMonitorHttpdPort-2/etc/promise/nginx_frontend_ipv4_http
+TestDefaultMonitorHttpdPort-2/etc/promise/nginx_frontend_ipv4_https
+TestDefaultMonitorHttpdPort-2/etc/promise/nginx_frontend_ipv6_http
+TestDefaultMonitorHttpdPort-2/etc/promise/nginx_frontend_ipv6_https
+TestDefaultMonitorHttpdPort-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set
+TestDefaultMonitorHttpdPort-2/etc/promise/promise-nginx-is-process-older-than-dependency-set
+TestDefaultMonitorHttpdPort-2/etc/promise/re6st-connectivity
+TestDefaultMonitorHttpdPort-2/etc/promise/trafficserver-cache-availability
+TestDefaultMonitorHttpdPort-2/etc/promise/trafficserver-port-listening
+>>>>>>> caddy-frontend: Adapt tests to SSL zero knowledge
