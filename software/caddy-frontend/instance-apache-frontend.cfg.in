@@ -153,10 +153,20 @@ csr = ${kedifa-login-config:csr}
 key = ${kedifa-login-config:key}
 stop-on-error = True
 
+[caucase-updater-with-probe]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+{% if slapparameter_dict['kedifa-caucase-url'] %}
+  {{ parameter_dict['bin_directory'] }}/caucase-probe {{ slapparameter_dict['kedifa-caucase-url'] }} &&
+  exec {{ parameter_dict['bin_directory'] }}/caucase-updater "$@"
+{% endif %}
+mode = 0700
+rendered = ${directory:bin}/caucase-updater-with-probe
+
 [kedifa-login-certificate]
 recipe = slapos.cookbook:wrapper
 {% if slapparameter_dict['kedifa-caucase-url'] %}
-command-line = {{ parameter_dict['bin_directory'] }}/caucase-updater
+command-line = ${caucase-updater-with-probe:rendered}
   --ca-url {{ slapparameter_dict['kedifa-caucase-url'] }}
   --mode service
   --csr ${kedifa-login-csr:csr}
