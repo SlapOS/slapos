@@ -135,7 +135,7 @@ command =
 
 [expose-csr_id-configuration]
 ip = {{ instance_parameter['ipv6-random'] }}
-port = 12001
+port = 17000
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
 error-log = ${directory:log}/expose-csr_id.log

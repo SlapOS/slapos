@@ -443,7 +443,7 @@ command =
 
 [expose-csr_id-configuration]
 ip = ${slap-network-information:global-ipv6}
-port = 12001
+port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
 error-log = {{ directory_caddy_csr_id_log }}/expose-csr_id.log
