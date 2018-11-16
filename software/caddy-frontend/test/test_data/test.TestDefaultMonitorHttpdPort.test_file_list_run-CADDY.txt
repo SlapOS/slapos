@@ -1,1 +1,3 @@
+TestDefaultMonitorHttpdPort-0/var/run/monitor-httpd.pid
 TestDefaultMonitorHttpdPort-0/var/run/monitor/monitor-bootstrap.pid
+TestDefaultMonitorHttpdPort-1/var/run/kedifa.pid

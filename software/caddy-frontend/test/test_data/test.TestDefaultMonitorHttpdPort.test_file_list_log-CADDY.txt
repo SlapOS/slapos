@@ -1,0 +1,3 @@
+TestDefaultMonitorHttpdPort-0/var/log/monitor-httpd-error.log
+TestDefaultMonitorHttpdPort-0/var/log/slapgrid-TestDefaultMonitorHttpdPort-0-error.log
+TestDefaultMonitorHttpdPort-1/var/log/expose-csr_id.log
