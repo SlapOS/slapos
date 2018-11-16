@@ -1,0 +1,5 @@
+TestSlaveSlapOSMasterCertificateCompatibilityUpdate-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
+TestSlaveSlapOSMasterCertificateCompatibilityUpdate-1/etc/promise/caucased: OK
+TestSlaveSlapOSMasterCertificateCompatibilityUpdate-2/etc/promise/caddy-frontend-is-running-actual-software-release: OK
+TestSlaveSlapOSMasterCertificateCompatibilityUpdate-2/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
+TestSlaveSlapOSMasterCertificateCompatibilityUpdate-2/etc/promise/promise-nginx-is-process-older-than-dependency-set: OK
