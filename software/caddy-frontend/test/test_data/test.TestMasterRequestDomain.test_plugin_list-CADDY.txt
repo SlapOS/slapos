@@ -2,7 +2,7 @@ TestMasterRequestDomain-0/etc/plugin/__init__.py
 TestMasterRequestDomain-0/etc/plugin/buildout-TestMasterRequestDomain-0-status.py
 TestMasterRequestDomain-0/etc/plugin/check-free-disk-space.py
 TestMasterRequestDomain-0/etc/plugin/monitor-bootstrap-status.py
-TestMasterRequestDomain-1/etc/plugin/__init__.py
-TestMasterRequestDomain-1/etc/plugin/buildout-TestMasterRequestDomain-1-status.py
-TestMasterRequestDomain-1/etc/plugin/check-free-disk-space.py
-TestMasterRequestDomain-1/etc/plugin/monitor-bootstrap-status.py
+TestMasterRequestDomain-2/etc/plugin/__init__.py
+TestMasterRequestDomain-2/etc/plugin/buildout-TestMasterRequestDomain-2-status.py
+TestMasterRequestDomain-2/etc/plugin/check-free-disk-space.py
+TestMasterRequestDomain-2/etc/plugin/monitor-bootstrap-status.py
