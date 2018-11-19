@@ -1,7 +1,9 @@
 TestSlave-0/var/log/monitor-httpd-error.log
 TestSlave-0/var/log/slapgrid-TestSlave-0-error.log
+TestSlave-1/var/log/expose-csr_id.log
 TestSlave-2/var/log/frontend-access.log
 TestSlave-2/var/log/frontend-error.log
+TestSlave-2/var/log/httpd-csr_id/expose-csr_id.log
 TestSlave-2/var/log/httpd/_apache_custom_http_s-accepted_access_log
 TestSlave-2/var/log/httpd/_apache_custom_http_s-accepted_error_log
 TestSlave-2/var/log/httpd/_caddy_custom_http_s-accepted_access_log

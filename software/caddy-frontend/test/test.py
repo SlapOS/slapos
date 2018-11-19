@@ -263,7 +263,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
     base = '^' + KEDIFA_IPV6_BASE.replace(
-      '[', r'\[').replace(']', r'\]') + '/.{8}'
+      '[', r'\[').replace(']', r'\]') + '/.{32}'
     self.assertRegexpMatches(
       generate_auth_url,
       base + r'\/generateauth$'
