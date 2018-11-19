@@ -1,5 +1,6 @@
 {% if slap_software_type in software_type %}
-
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr').lower() in TRUE_VALUES %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -179,14 +180,16 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+{% if not aick_enabled %}
 kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
 kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
-{{ frontend }}-csr_ud-certificate = {{ section_part }}:connection-csr_id-certificate}
+{{ frontend }}-csr_id-certificate = {{ section_part }}:connection-csr_id-certificate}
 {% endfor %}
+{% endif %}
 
 #----------------------------
 #--
@@ -245,8 +248,7 @@ monitor-url-list +=
 {{ '  ${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
 
-{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{% if slapparameter_dict.get('automatic-internal-kedifa-caucase-csr').lower() in TRUE_VALUES %}
+{% if aikc_enabled %}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 
