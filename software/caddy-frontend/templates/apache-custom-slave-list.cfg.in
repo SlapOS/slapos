@@ -180,7 +180,7 @@ cert = {{ autocert_dir }}
 recipe = plone.recipe.command
 destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
 used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
-source-master = ${master-key-download:destination}'}}
+source-master = ${master-key-download:destination}
 command =
   {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ master_key_download_url }}
   if [ -f ${:destination} ] ; then
