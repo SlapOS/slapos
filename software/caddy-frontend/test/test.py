@@ -708,6 +708,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'caddy_custom_http': cls.caddy_custom_http % dict(
           url=cls.backend_url),
       },
+      # this has to be rejected
+      'caddy_custom_http_s': {
+        'url': cls.backend_url,
+        'caddy_custom_https': '# caddy_custom_https_filled_in_rejected_2',
+        'caddy_custom_http': '# caddy_custom_http_filled_in_rejected_2',
+      },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
@@ -753,7 +759,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'slave-amount': '35',
       'rejected-slave-dict':
       '{"_apache_custom_http_s-rejected": ["slave not authorised"], '
-      '"_caddy_custom_http_s-rejected": ["slave not authorised"]}'
+      '"_caddy_custom_http_s-rejected": ["slave not authorised"]}, '
+      '"_caddy_custom_http_s": ["slave not authorised"]'
     }
 
     self.assertEqual(
@@ -2188,6 +2195,27 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     configuration_file_with_custom_http_list = [
       q for q in slave_configuration_file_list
       if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
+    self.assertEqual([], configuration_file_with_custom_http_list)
+
+  def test_caddy_custom_http_s(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'caddy_custom_http_s']
+    self.assertEqual(
+      {
+        'request-error-list': '["slave not authorised"]'
+      },
+      parameter_dict)
+    slave_configuration_file_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
+    # no configuration file contains provided custom http
+    configuration_file_with_custom_https_list = [
+      q for q in slave_configuration_file_list
+      if 'caddy_custom_https_filled_in_rejected_2' in open(q).read()]
+    self.assertEqual([], configuration_file_with_custom_https_list)
+
+    configuration_file_with_custom_http_list = [
+      q for q in slave_configuration_file_list
+      if 'caddy_custom_http_filled_in_rejected_2' in open(q).read()]
     self.assertEqual([], configuration_file_with_custom_http_list)
 
   def test_caddy_custom_http_s_accepted(self):
