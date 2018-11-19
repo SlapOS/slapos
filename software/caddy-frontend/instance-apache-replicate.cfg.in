@@ -64,7 +64,7 @@ context =
                                   }) %}
 {% endfor %}
 
-{% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
+{% set authorized_slave_string_list = slapparameter_dict.pop('-frontend-authorized-slave-string', '').split() %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
 {% set used_host_list = [] %}
@@ -93,7 +93,7 @@ context =
 {%   endif %}
 {%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
 {%     if slave.get(key) %}
-{%       if not slave.get('slave_reference') in authorized_slave_string %}
+{%       if not slave.get('slave_reference') in authorized_slave_string_list %}
 {%         if not unauthorised_message in slave_error_list %}
 {%           do slave_error_list.append(unauthorised_message) %}
 {%         endif %}
