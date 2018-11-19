@@ -758,9 +758,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'rejected-slave-amount': '2',
       'slave-amount': '35',
       'rejected-slave-dict':
-      '{"_apache_custom_http_s-rejected": ["slave not authorised"], '
-      '"_caddy_custom_http_s-rejected": ["slave not authorised"], '
-      '"_caddy_custom_http_s": ["slave not authorised"]'
+      '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
+      '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
+      '"_caddy_custom_http_s": ["slave not authorized"]'
     }
 
     self.assertEqual(
@@ -2103,7 +2103,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'apache_custom_http_s-rejected']
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorised"]'
+        'request-error-list': '["slave not authorized"]'
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
@@ -2181,7 +2181,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'caddy_custom_http_s-rejected']
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorised"]'
+        'request-error-list': '["slave not authorized"]'
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
@@ -2202,7 +2202,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'caddy_custom_http_s']
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorised"]'
+        'request-error-list': '["slave not authorized"]'
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(

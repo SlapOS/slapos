@@ -68,7 +68,7 @@ context =
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% set unauthorised_message = 'slave not authorised' %}
+{% set unauthorized_message = 'slave not authorized' %}
 {% for slave in slave_instance_list %}
 {%   set slave_error_list = [] %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
@@ -94,8 +94,8 @@ context =
 {%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
 {%     if slave.get(key) %}
 {%       if not slave.get('slave_reference') in authorized_slave_string_list %}
-{%         if not unauthorised_message in slave_error_list %}
-{%           do slave_error_list.append(unauthorised_message) %}
+{%         if not unauthorized_message in slave_error_list %}
+{%           do slave_error_list.append(unauthorized_message) %}
 {%         endif %}
 {%       elif subprocess_module.call([caddy_custom_http_validator, slave[key]]) == 1 %}
 {%         do slave_error_list.append('slave %s configuration invalid' % (key,)) %}
