@@ -12,7 +12,7 @@
       "type": "integer"
     },
     "apache-ca-certificate": {
-      "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server.",
+      "description": "[NOT IMPLEMENTED] SSL CA Certificate used by the server. You can append it to 'apache-certificate'.",
       "textarea": true,
       "title": "[NOT IMPLEMENTED] SSL CA Certificate",
       "type": "string"
