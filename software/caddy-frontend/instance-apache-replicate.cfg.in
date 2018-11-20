@@ -80,7 +80,12 @@ context =
 {%   endif %}
 {%   if slave.get('server-alias') %}
 {%     for slave_alias in slave['server-alias'].split() %}
-{%       if not validators.domain(slave_alias) %}
+{%       if slave_alias.startswith('*.') %}
+{%         set clean_slave_alias = slave_alias[2:] %}
+{%       else %}
+{%         set clean_slave_alias = slave_alias %}
+{%       endif %}
+{%       if not validators.domain(clean_slave_alias) %}
 {%         do slave_error_list.append('server-alias %r not valid' % (slave_alias,)) %}
 {%       else %}
 {%         if slave_alias in used_host_list %}
@@ -122,7 +127,12 @@ context =
 {%     endif %}
 {%   endif %}
 {%   if slave.get('custom_domain') %}
-{%     if not validators.domain(slave['custom_domain']) %}
+{%     if slave['custom_domain'].startswith('*.') %}
+{%       set clean_custom_domain = slave['custom_domain'][2:] %}
+{%     else %}
+{%       set clean_custom_domain = slave['custom_domain'] %}
+{%     endif %}
+{%     if not validators.domain(clean_custom_domain) %}
 {%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
 {%     endif %}
 {%   endif %}

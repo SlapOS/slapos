@@ -585,6 +585,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
       },
+      'server-alias-wildcard': {
+        'url': cls.backend_url,
+        'server-alias': '*.alias1.example.com',
+      },
       'ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -601,6 +605,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain': {
         'url': cls.backend_url,
         'custom_domain': 'customdomain.example.com',
+      },
+      'custom_domain_wildcard': {
+        'url': cls.backend_url,
+        'custom_domain': '*.customdomain.example.com',
       },
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
@@ -757,9 +765,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '33',
+      'accepted-slave-amount': '35',
       'rejected-slave-amount': '3',
-      'slave-amount': '36',
+      'slave-amount': '38',
       'rejected-slave-dict':
       '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
       '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
@@ -1082,6 +1090,38 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       open('wildcard.example.com.crt').read(),
       der2pem(result.peercert))
 
+  def test_server_alias_wildcard(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-wildcard']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-wildcard')
+    self.assertEqual(
+      {
+        'domain': 'serveraliaswildcard.example.com',
+        'replication_number': '1',
+        'url': 'http://serveraliaswildcard.example.com',
+        'site_url': 'http://serveraliaswildcard.example.com',
+        'secure_access': 'https://serveraliaswildcard.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      'wild.alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   @skip('Feature postponed')
@@ -1148,6 +1188,32 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_custom_domain_wildcard(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain_wildcard']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain_wildcard')
+    self.assertEqual(
+      {
+        'domain': '*.customdomain.example.com',
+        'replication_number': '1',
+        'url': 'http://*.customdomain.example.com',
+        'site_url': 'http://*.customdomain.example.com',
+        'secure_access': 'https://*.customdomain.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      'wild.customdomain.example.com', parameter_dict['public-ipv4'],
+      'test-path')
 
     self.assertEqual(
       open('wildcard.example.com.crt').read(),
