@@ -189,7 +189,7 @@ extra-context =
 < = jinja2-template-base
 template = {{ empty_template }}
 rendered = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt') + slave_instance.get('ssl_ca_crt', '')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
 extra-context =
     key content :cert-content
 {%     endif %}
