@@ -1,5 +1,7 @@
 Generally things to be done with ``caddy-frontend``:
 
+ * support wildcard domain in ``custom_domain`` and ``server-alias``
+ * return warning on not implemented keys (from ``apache-frontend`` perspective) in master and slave request
  * tests: add assertion with results of promises in etc/promise for each partition
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
