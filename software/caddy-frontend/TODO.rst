@@ -12,7 +12,6 @@ Generally things to be done with ``caddy-frontend``:
  * ``type:eventsource``:
 
    * **Jérome Perrin**: *For event source, if I understand https://github.com/mholt/caddy/issues/1355 correctly, we could use caddy as a proxy in front of nginx-push-stream . If we have a "central shared" caddy instance, can it handle keeping connections opens for many clients ?*
- * ``ssl_ca_crt``
  * ``ssl_proxy_ca_crt`` for ``ssl_proxy_verify``, this is related to bug `#1550 <https://github.com/mholt/caddy/issues/1550>`_, proposed solution `just adding your CA to the system's trust store`
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
  * cover test suite like resilient tests for KVM and prove it works the same way as Caddy
