@@ -1,0 +1,89 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "kvm-partition-dict": {
+      "title": "kvm instances definition",
+      "description": "kvm instances definition",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "state": {
+              "title": "State of this Virtual Machine",
+              "description": "Define if SlapOS should start or stop this VM.",
+              "type": "string",
+              "default": "started",
+              "enum": [
+                "started",
+                "stopped"
+              ]
+            },
+            "keyboard-layout-language": {
+              "title": "Use keyboard layout language",
+              "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
+              "type": "string",
+              "enum": [
+                "ar",
+                "da",
+                "de",
+                "de-ch",
+                "en-gb",
+                "en-us",
+                "es",
+                "et",
+                "fi",
+                "fo",
+                "fr",
+                "fr-be",
+                "fr-ca",
+                "fr-ch",
+                "hr",
+                "hu",
+                "is",
+                "it",
+                "ja",
+                "lt",
+                "lv",
+                "mk",
+                "nl",
+                "nl-be",
+                "no",
+                "pl",
+                "pt",
+                "pt-br",
+                "ru",
+                "sl",
+                "sv",
+                "th",
+                "tr"
+              ],
+              "default": "fr"
+            },
+            "nbd-host": {
+              "title": "NBD hostname or IP",
+              "description": "hostname (or IP) of the NBD server containing the boot image.",
+              "type": "string",
+              "format": [
+                "host-name",
+                "ip-address",
+                "ipv6"
+              ],
+              "default": "debian.nbd.vifib.net"
+            },
+            "nbd-port": {
+              "title": "NBD port",
+              "description": "Port of the NBD server containing the boot image.",
+              "type": "integer",
+              "default": 1024,
+              "minimum": 1,
+              "maximum": 65535
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}
