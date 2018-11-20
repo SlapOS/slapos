@@ -41,8 +41,12 @@ TestSlave-1/var/log/httpd/_re6st-optimal-test_access_log
 TestSlave-1/var/log/httpd/_re6st-optimal-test_error_log
 TestSlave-1/var/log/httpd/_server-alias-wildcard_access_log
 TestSlave-1/var/log/httpd/_server-alias-wildcard_error_log
+TestSlave-1/var/log/httpd/_server-alias-duplicated_access_log
+TestSlave-1/var/log/httpd/_server-alias-duplicated_error_log
 TestSlave-1/var/log/httpd/_server-alias_access_log
 TestSlave-1/var/log/httpd/_server-alias_error_log
+TestSlave-1/var/log/httpd/_server-alias_custom_domain-duplicated_access_log
+TestSlave-1/var/log/httpd/_server-alias_custom_domain-duplicated_error_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_error_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt_access_log
