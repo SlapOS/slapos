@@ -585,6 +585,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
       },
+      'server-alias-duplicated': {
+        'url': cls.backend_url,
+        'server-alias': 'alias3.example.com alias3.example.com',
+      },
+      'server-alias_custom_domain-duplicated': {
+        'url': cls.backend_url,
+        'custom_domain': 'alias4.example.com',
+        'server-alias': 'alias4.example.com alias4.example.com',
+      },
       'ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -757,9 +766,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '33',
+      'accepted-slave-amount': '35',
       'rejected-slave-amount': '3',
-      'slave-amount': '36',
+      'slave-amount': '38',
       'rejected-slave-dict':
       '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
       '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
@@ -1077,6 +1086,66 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       'alias2.example.com', parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_server_alias_duplicated(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias-duplicated']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-duplicated')
+    self.assertEqual(
+      {
+        'domain': 'serveraliasduplicated.example.com',
+        'replication_number': '1',
+        'url': 'http://serveraliasduplicated.example.com',
+        'site_url': 'http://serveraliasduplicated.example.com',
+        'secure_access': 'https://serveraliasduplicated.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      'alias3.example.com', parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_server_alias_custom_domain_duplicated(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'server-alias_custom_domain-duplicated']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'server-alias_custom_domain-duplicated')
+    self.assertEqual(
+      {
+        'domain': 'alias4.example.com',
+        'replication_number': '1',
+        'url': 'http://alias4.example.com',
+        'site_url': 'http://alias4.example.com',
+        'secure_access': 'https://alias4.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
       open('wildcard.example.com.crt').read(),
@@ -3384,10 +3453,9 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'rejected-slave-amount': '3',
       'slave-amount': '4',
       'rejected-slave-dict':
-      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes", '
-      '"server-alias \'duplicate.example.com\' clashes"], "_site_1": '
-      '["custom_domain \'duplicate.example.com\' clashes"], "_site_3": '
-      '["server-alias \'duplicate.example.com\' clashes"]}'
+      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes"], '
+      '"_site_1": ["custom_domain \'duplicate.example.com\' clashes"], '
+      '"_site_3": ["server-alias \'duplicate.example.com\' clashes"]}'
     }
 
     self.assertEqual(
@@ -3439,8 +3507,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       {
         'request-error-list':
-        '["custom_domain \'duplicate.example.com\' clashes", "server-alias '
-        '\'duplicate.example.com\' clashes"]'
+        '["custom_domain \'duplicate.example.com\' clashes"]'
       },
       parameter_dict
     )

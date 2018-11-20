@@ -12,12 +12,7 @@
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
 {%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
-{%- set host_list = [] %}
-{%- for host in [slave_parameter.get('custom_domain')] + server_alias_list %}
-{%-   if host not in host_list %}
-{%-     do host_list.append(host) %}
-{%-   endif %}
-{%- endfor %}
+{%- set host_list = [slave_parameter.get('custom_domain')] + server_alias_list %}
 {%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')) %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
