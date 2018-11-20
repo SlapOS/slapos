@@ -37,8 +37,12 @@ TestSlave-1/etc/monitor-promise/check-_prefer-gzip-encoding-to-backend-error-log
 TestSlave-1/etc/monitor-promise/check-_re6st-optimal-test-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_re6st-optimal-test-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_re6st-optimal-test-re6st-optimal-test
+TestSlave-1/etc/monitor-promise/check-_server-alias-duplicated-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_server-alias-duplicated-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_server-alias-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_server-alias-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_server-alias_custom_domain-duplicated-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_server-alias_custom_domain-duplicated-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day

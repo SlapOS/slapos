@@ -71,6 +71,7 @@ context =
 {% set unauthorized_message = 'slave not authorized' %}
 {% for slave in slave_instance_list %}
 {%   set slave_error_list = [] %}
+{%   set slave_server_alias_unclashed = [] %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
@@ -83,13 +84,17 @@ context =
 {%       if not validators.domain(slave_alias) %}
 {%         do slave_error_list.append('server-alias %r not valid' % (slave_alias,)) %}
 {%       else %}
-{%         if slave_alias in used_host_list %}
+{%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
+{#           optionally do something about reporting back that server-alias has been unclashed #}
+{%         elif slave_alias in used_host_list %}
 {%           do slave_error_list.append('server-alias %r clashes' % (slave_alias,)) %}
 {%         else %}
+{%           do slave_server_alias_unclashed.append(slave_alias) %}
 {%           do used_host_list.append(slave_alias) %}
 {%         endif %}
 {%       endif %}
 {%     endfor %}
+{%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
 {%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
 {%     if slave.get(key) %}
