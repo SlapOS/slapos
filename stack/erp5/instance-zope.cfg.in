@@ -115,7 +115,7 @@ ca-crl = ${:ca-dir}/crl
 # Generate rdiff exclude file
 recipe = slapos.recipe.template:jinja2
 mode = 644
-template = {{ 'inline:{{ "${directory:log}\\n" }}' }}
+template = {{ 'inline:{{ "${directory:log}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]

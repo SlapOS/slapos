@@ -229,7 +229,7 @@ init-user = admin
 recipe = slapos.recipe.template:jinja2
 mode = 644
 template = inline:
-  ${directory:log}
+  ${directory:log}/**
 rendered = ${directory:srv}/exporter.exclude
 {% do part_list.append('resiliency-exclude-file') -%}
 
