@@ -273,7 +273,7 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
-template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n${directory:log}/**\\n" }}' }}
+template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
