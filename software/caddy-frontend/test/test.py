@@ -213,6 +213,9 @@ class TestDataMixin(object):
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
+  # show full diffs, as it is required for proper analysis of problems
+  maxDiff = None
+
   @classmethod
   def getSoftwareURLList(cls):
     return [os.path.realpath(os.environ['TEST_SR'])]
