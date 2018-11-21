@@ -625,6 +625,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt': {
+        'url': cls.backend_url,
+        'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
       'type-zope': {
         'url': cls.backend_url,
         'type': 'zope',
@@ -1198,13 +1205,32 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # Caddy: Need to implement similar thing like check-error-on-apache-log
     raise NotImplementedError(self.id())
 
-  @skip('Feature postponed')
   def test_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+    self.assertEqual(
+      {
+        'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'replication_number': '1',
+        'url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'secure_access':
+        'https://customdomainsslcrtsslkeysslcacrt.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
 
-  @skip('Feature postponed')
-  def test_path_to_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('CA.wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_https_only(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -3119,6 +3145,22 @@ https://www.google.com {}""",
         'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
+      'ssl_ca_crt_only': {
+        'url': cls.backend_url,
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
+      'ssl_ca_crt_garbage': {
+        'url': cls.backend_url,
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': 'some garbage',
+      },
+      'ssl_ca_crt_does_not_match': {
+        'url': cls.backend_url,
+        'ssl_crt': open('wildcard.example.com.crt').read(),
+        'ssl_key': open('wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
     }
 
   def test_master_partition_state(self):
@@ -3466,6 +3508,39 @@ https://www.google.com {}""",
         'request-error-list':
         '["slave caddy_custom_http configuration invalid", '
         '"slave caddy_custom_https configuration invalid"]'
+      },
+      parameter_dict
+    )
+
+  def test_ssl_ca_crt_only(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_only']
+    self.assertEqual(
+      {
+        'request-error-list':
+        '["ssl_ca_crt is present, so ssl_crt and ssl_key are required"]'
+      },
+      parameter_dict
+    )
+
+  def test_ssl_ca_crt_does_not_match(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_does_not_match']
+    self.assertEqual(
+      {
+        'request-error-list':
+        '["slave ssl_ca_crt and ssl_crt does not match"]'
+      },
+      parameter_dict
+    )
+
+  def test_ssl_ca_crt_garbage(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_does_not_match']
+    self.assertEqual(
+      {
+        'request-error-list':
+        '["slave ssl_ca_crt and ssl_crt does not match"]'
       },
       parameter_dict
     )
