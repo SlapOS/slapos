@@ -24,6 +24,15 @@
       "request": "instance-kvm-cluster-input-schema.json",
       "response": "instance-kvm-output-schema.json",
       "index": 2
+    },
+    "kvm-cluster-simplified": {
+      "title": "Basic Cluster",
+      "description": "Simplified Schema for Cluster KVM",
+      "software-type": "kvm-cluster",
+      "serialisation": "json-in-xml",
+      "request": "instance-kvm-cluster-simplified-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 3
     }
   }
 }

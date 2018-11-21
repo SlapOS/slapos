@@ -179,26 +179,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
         fi
 
-        SUCCEEDED=true
-
-        if [ -e %(backup_signature)s ]; then
-          cd $BACKUP_DIR
-          find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
-          cmp backup.signature ../proof.signature || SUCCEEDED=false
-          diff -ruw backup.signature ../proof.signature > ../backup.diff
-          # XXX If there is a difference on the backup, we should publish the
-          # failure and ask the equeue, re-run this script again,
-          # instead do a push it to the clone.
-        fi
-
-        $SUCCEEDED || find $BACKUP_DIR -name rdiff-backup.tmp.* -exec rm -rf {} \;
-
         """)
 
     template_dict = {
       'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
       'rdiff_backup_data': shlex.quote(os.path.join(local_dir, 'rdiff-backup-data')),
-      'backup_signature': shlex.quote(os.path.join(local_dir, 'backup.signature')),
       'remote_schema': shlex.quote(remote_schema),
       'remote_dir': shlex.quote(remote_dir),
       'local_dir': shlex.quote(local_dir),

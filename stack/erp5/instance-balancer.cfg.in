@@ -130,7 +130,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%       set test_runner_apache_url_list = [] %}
 {%       set test_runner_external_port = next_port() %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in
-             enumerate(slapparameter_dict[parameter_id ~ '-test-runner-address-list']) %}
+             enumerate(slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', [])) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
                 'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
@@ -309,6 +309,12 @@ certs = ${:ca-dir}/certs
 newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
+
+[{{ section('resiliency-exclude-file') }}]
+# Generate rdiff exclude file in case of resiliency
+< = jinja2-template-base
+template = {{ 'inline:{{ "${directory:log}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:cron.d

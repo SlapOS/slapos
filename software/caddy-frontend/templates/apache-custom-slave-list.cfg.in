@@ -62,6 +62,9 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" %}
 
+{#   Pass HTTP2 switch #}
+{%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
+
 {#   Set Up log files #}
 {%   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
@@ -160,7 +163,6 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   do slave_instance.__setitem__('login_certificate', login_certificate) %}
 {%   do slave_instance.__setitem__('login_key', login_key) %}
 {%   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
-{%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
 {%   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
@@ -187,7 +189,7 @@ extra-context =
 < = jinja2-template-base
 template = {{ empty_template }}
 rendered = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
 extra-context =
     key content :cert-content
 {%     endif %}

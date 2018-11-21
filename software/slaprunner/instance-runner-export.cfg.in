@@ -7,6 +7,8 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
+  certificate-authority-service
+  ca-nginx-service
   logrotate-entry-nginx
   gunicorn-launcher
   gunicorn-graceful
@@ -19,10 +21,12 @@ parts +=
   runner-sshd-graceful
   runner-sshd-promise
   runner-sshkeys-authority
+  runner-sshkeys-authority-service
   runner-sshkeys-sshd
   runtestsuite
   symlinks
   shellinabox
+  shellinabox-service
   slapos-cfg
   cron-entry-prepare-software
   deploy-instance-parameters
@@ -71,21 +75,19 @@ ip = ${slaprunner:ipv4}
 [supervisord]
 port = ${supervisord-free-port:port}
 
+[exporter-raw]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter-raw
+command-line = {{ software_release_bin }}/${slap-parameter:namebase}-exporter --srv-path ${directory:srv} --etc-path ${directory:etc} --backup-path ${directory:backup} --backup-wait-time {{ backup_wait_time }}
+environment =
+  PATH={{ rsync_bin_folder }}:/bin:/usr/bin
+
 [exporter]
-recipe = slapos.recipe.template:jinja2
-template = {{ exporter_script_path }}
-rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
-# backward compatibility for resilient stack
-wrapper = ${:rendered}
-mode = 700
-context =
-  import sys sys
-  import easy_install zc.buildout.easy_install
-  section directory directory
-  raw  backup_wait_time {{ backup_wait_time }}
-  raw  output_log_file ${directory:log}/resilient.log
-  raw  shell_binary {{ bash_executable_location }}
-  raw  rsync_binary {{ rsync_executable_location }}
+recipe = slapos.cookbook:wrapper
+command-line = {{ bash_executable_location }} -c "exec ${exporter-raw:wrapper-path} > >(tee -ai "${directory:log}/resilient.log") 2>&1"
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
+# wrapper parameter is needed by resilience stack
+wrapper = ${:wrapper-path}
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port

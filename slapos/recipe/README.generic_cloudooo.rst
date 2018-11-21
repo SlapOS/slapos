@@ -4,12 +4,12 @@ generic_cloudooo
 The generic_cloudooo recipe helps you to deploy cloudooo services with their configuration files.
 
 
-How to use?
------------
+How to use generic_cloudooo?
+----------------------------
 
 Here is an example of a section to add in your software.cfg :
 
-.. code-block::
+.. code-block:: ini
 
   [cloudooo-configuration]
   recipe = slapos.cookbook:generic_cloudooo
@@ -42,7 +42,7 @@ Where :
   order to make the global mimetype at the bottom of the list.
   (i.e. `* * ooo` > `text/* * ooo`)
 
-    .. code-block::
+    .. code-block:: ini
 
         mimetype_entry_addition =
           <input_format> <output_format> <handler>
@@ -57,7 +57,7 @@ Where :
 Default mimetype registry
 -------------------------
 
-.. code-block::
+.. code-block:: ini
 
   application/vnd.oasis.opendocument* * ooo
   application/vnd.sun.xml* * ooo

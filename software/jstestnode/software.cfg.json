@@ -1,0 +1,13 @@
+{
+  "name": "JSTestNode",
+  "description": "Simple Test Runner for Javascrip projects",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "request": "instance-jstestnode-input-schema.json",
+      "response": "instance-jstestnode-output-schema.json",
+      "index": 0
+    }
+  }
+}

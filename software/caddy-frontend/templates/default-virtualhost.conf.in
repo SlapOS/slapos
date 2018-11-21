@@ -12,12 +12,10 @@
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
 {%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
-{%- set host_list = [] %}
-{%- for host in [slave_parameter.get('custom_domain')] + server_alias_list %}
-{%-   if host not in host_list %}
-{%-     do host_list.append(host) %}
-{%-   endif %}
-{%- endfor %}
+{%- set host_list = server_alias_list %}
+{%- if slave_parameter.get('custom_domain') not in host_list %}
+{%-   do host_list.append(slave_parameter.get('custom_domain')) %}
+{%- endif %}
 {%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')) %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
@@ -36,10 +34,6 @@
     status 501 /
 {%- endif %} {#- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter #}
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
-{%- if slave_parameter.get('path_to_ssl_ca_crt') %}
-    # Configuration of accepted clients
-    clients {{ slave_parameter.get('path_to_ssl_ca_crt') }}
-{%- endif %} {#- if slave_parameter.get('path_to_ssl_ca_crt') #}
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1

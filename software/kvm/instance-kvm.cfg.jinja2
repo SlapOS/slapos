@@ -124,7 +124,7 @@ qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
 
 etc-directory = ${directory:etc}
-disk-storage-list = 
+disk-storage-list =
 {% for key, path in storage_dict.items() -%}
 {{ '  ' ~ key ~ ' ' ~ path }}
 {% endfor -%}
@@ -143,7 +143,7 @@ httpd-port = 0
 cluster-doc-host = ${tunnel-cluster-url:ipv4}
 cluster-doc-port = ${tunnel-cluster-url:ipv4-port}
 {% else -%}
-cluster-doc-host = 
+cluster-doc-host =
 cluster-doc-port = 0
 {% endif -%}
 netcat-binary = {{ netcat_bin }}
@@ -163,7 +163,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ template_kvm_run }}
 rendered = ${directory:bin}/kvm_raw
 mode = 700
-context = 
+context =
   section parameter_dict kvm-parameter-dict
 
 [kvm-controller]
@@ -171,7 +171,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ template_kvm_controller_run }}
 rendered = ${directory:bin}/kvm_controller_raw
 mode = 700
-context = 
+context =
   section parameter_dict kvm-controller-parameter-dict
 
 [tunnel-6to4-base]
@@ -180,6 +180,7 @@ ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 {% if use_nat == 'true' and nat_rule_list -%}
 {%   for port in nat_rule_list.split(' ') -%}
@@ -199,6 +200,7 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 
 [kvm-controller-wrapper]
@@ -239,7 +241,7 @@ mode = 700
 [wipe-disk-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
-command-line = 
+command-line =
   {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
 {% endif -%}
 
@@ -248,7 +250,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ qemu_start_promise_tpl }}
 rendered = ${directory:promises}/qemu-virtual-machine-is-ready
 mode = 700
-context = 
+context =
   raw dash {{ dash_executable_location }}
   raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
   raw qemu_service_log_file ${buildout:directory}/.${slap-connection:partition-id}_kvm.log
@@ -267,19 +269,31 @@ ssl-cert-path = ${ca-novnc:cert-file}
 
 [websockify-sighandler]
 recipe = slapos.cookbook:signalwrapper
-wrapper-path = ${directory:services}/websockify
+wrapper-path = ${directory:bin}/websockify-sighandler
 wrapped-path = ${novnc-instance:path}
+
+[websockify-sighandler-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${websockify-sighandler:wrapper-path}
+wrapper-path = ${directory:services}/websockify
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_executable_location }}
 ca-dir = ${directory:ca-dir}
 requests-directory = ${cadirectory:requests}
-wrapper = ${directory:services}/certificate_authority
+wrapper = ${directory:bin}/certificate_authority
 ca-private = ${cadirectory:private}
 ca-certs = ${cadirectory:certs}
 ca-newcerts = ${cadirectory:newcerts}
 ca-crl = ${cadirectory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -315,7 +329,13 @@ cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
 catcher = ${cron-simplelogger:wrapper}
-binary = ${directory:services}/crond
+binary = ${directory:bin}/crond_raw
+
+[cron-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${cron:binary}
+wrapper-path = ${directory:services}/crond
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
@@ -356,9 +376,15 @@ recipe = slapos.cookbook:simplehttpserver
 host = ${slap-network-information:local-ipv4}
 port = ${slap-parameter:httpd-port}
 base-path = ${directory:public}
-wrapper = ${directory:services}/http-server
+wrapper = ${directory:bin}/http-server
 log-file = ${directory:log}/httpd.log
 use-hash-url = false
+
+[httpd-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${httpd:wrapper}
+wrapper-path = ${directory:services}/http-server
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [httpd-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -440,7 +466,7 @@ route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-informa
 {% else -%}
 route-default =
 {%   endif -%}
-command = 
+command =
   echo "#!/bin/sh" > ${:path}
   echo "" >> ${:path}
   echo "${:ifconfig}" >> ${:path}
@@ -493,7 +519,7 @@ path-ip = ${directory:public}/ipv4
 path-gateway = ${directory:public}/gateway
 path-network = ${directory:public}/network
 path-netmask = ${directory:public}/netmask
-command = 
+command =
   rm -f ${:path-host}
   rm -f ${:path-ip}
   rm -f ${:path-gateway}
@@ -526,7 +552,13 @@ ipv6-port = {{ slapparameter_dict.get('document-port', '') }}
 ipv4-port = 16936
 shell-path = {{ dash_executable_location }}
 6tunnel-path = {{ sixtunnel_executable_location }}
-runner-path = ${directory:services}/6tunnel-cluster
+runner-path = ${directory:bin}/6tunnel-cluster
+
+[tunnel-cluster-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${tunnel-cluster-url:runner-path}
+wrapper-path = ${directory:services}/6tunnel-cluster
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ansible-vm-promise]
 recipe = slapos.recipe.template:jinja2
@@ -575,8 +607,8 @@ cpu-max-count = 24
 disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
-machine-options = 
-cpu-model = 
+machine-options =
+cpu-model =
 
 nat-rules = 22 80 443
 use-nat = True
@@ -598,7 +630,7 @@ external-disk-format = qcow2
 enable-http-server = False
 httpd-port = 8081
 # for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
-authorized-key = 
+authorized-key =
 
 # send some content which will be accessible to the vm through static url: http://10.0.2.100/data
 data-to-vm =
@@ -617,7 +649,7 @@ keyboard-layout-language = fr
 {%   do part_list.append('cluster-url-path') -%}
 {% endif -%}
 {% if enable_http == 'true' %}
-{%   do part_list.extend(['httpd', 'httpd-promise', 'publish-host-config']) -%}
+{%   do part_list.extend(['httpd', 'httpd-service', 'httpd-promise', 'publish-host-config']) -%}
 {% if slapparameter_dict.get('data-to-vm', '') %}
 {%   do part_list.append('vm-data-content') -%}
 {% endif -%}
@@ -629,6 +661,9 @@ keyboard-layout-language = fr
 {% endif -%}
 {% if slapparameter_dict.get('bootstrap-script-url', '') -%}
 {%   do part_list.append('download-bootstrap-script') -%}
+{% endif -%}
+{% if slapparameter_dict.get('document-port', '') -%}
+{%   do part_list.append('tunnel-cluster-service') -%}
 {% endif -%}
 
 {% endif -%}
@@ -650,15 +685,18 @@ context =
 [buildout]
 parts =
   certificate-authority
+  certificate-authority-service
   publish-connection-information
   kvm-instance
   kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
   websockify-sighandler
+  websockify-sighandler-service
   novnc-promise
   kvm-started-promise
   cron
+  cron-service
   cron-entry-logrotate
   frontend-promise
 # monitor parts
@@ -666,7 +704,7 @@ parts =
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
 
-extends = 
+extends =
 #  Add extends list
  {{ extends_list | join('\n  ') }}
 #  {{ template_httpd_cfg }}

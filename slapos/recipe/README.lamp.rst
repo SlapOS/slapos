@@ -6,12 +6,12 @@ able to setup mariadb, apache and apache-php for your php application, and is al
 configuring your software during installation to ensure a full compatibility.
 
 
-How to use?
------------
+How to use lamp ?
+-----------------
 
 just add this part in your software.cfg to use the lamp.simple module
 
-.. code-block::
+.. code-block:: ini
 
   [instance-recipe]
   egg = slapos.cookbook
@@ -19,7 +19,7 @@ just add this part in your software.cfg to use the lamp.simple module
 
 you also need to extend lamp.cfg
 
-.. code-block::
+.. code-block:: ini
 
   extends =
     https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.50/stack/lamp.cfg
@@ -35,13 +35,13 @@ in this case you need to write a python script and lamp recipe must run it when 
 
 
 
-How to use?
------------
+How to use lamp.runner ?
+------------------------
 
 this part of lamp recipe work with slapos.toolbox, Therefore you must add it to your recipe.
 in software.cfg, replace instance-recipe-egg part by
 
-.. code-block::
+.. code-block:: ini
 
   [instance-recipe-egg]
   recipe = zc.recipe.egg
@@ -52,7 +52,7 @@ in software.cfg, replace instance-recipe-egg part by
 
 and add into your instance.cfg
 
-.. code-block::
+.. code-block:: ini
 
   lampconfigure_directory = ${buildout:bin-directory}/lampconfigure
 
@@ -71,10 +71,10 @@ you can also use database to check condition. add ::
   table_name = name_of_table
   constraint = sql_where_condition
 
-name_of_table is the full or partial name(in some cases we can not know the prefix used to create tables) of table
-into mariadb databse for example table_name = admin. if you use
-name_of_table = **, the action will begin when database is ready. 
-constraint is the sql_condition to use when search entry into name_of_table for example constraint = `admin_id`=1
+``name_of_table`` is the full or partial name(in some cases we can not know the prefix used to create tables) of table
+into mariadb databse for example ``table_name = admin``. if you use
+``name_of_table = **``, the action will begin when database is ready.
+constraint is the sql_condition to use when search entry into name_of_table for example constraint = ``admin_id=1``
 
 you can't use file_token and table_name at the same time, otherwise file_token will be used in priority. Beware of conditions that will never be satisfied.
 
@@ -115,7 +115,7 @@ mode = mode_to_apply (ex= 0644)
 use script = ${configure-script:location}/${configure-script:filename} into instance.cfg, add part configure-script
 into software.cfg
 
-.. code-block::
+.. code-block:: ini
 
   parts = configure-script
 

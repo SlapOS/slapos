@@ -141,9 +141,9 @@
     },
     "ssl_ca_crt": {
       "default": "",
-      "description": "[NOT Implemented] Content of the CA certificate file",
+      "description": "Content of the CA certificate file",
       "textarea": true,
-      "title": "[NOT Implemented] SSL Certificate Authority's Certificate",
+      "title": "SSL Certificate Authority's Certificate",
       "type": "string"
     },
     "ssl_crt": {

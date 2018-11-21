@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "husky": "^1.1.2",
+    "lint-staged": "^7.3.0"
+  },
+  "lint-staged": {
+    "*.json": [
+      "python2 ./format-json",
+      "git add"
+    ],
+    "{components,software,stack}/**": [
+      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"python2\", \"./update-hash\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'",
+      "python -c 'import sys, os.path, subprocess; [subprocess.check_call((\"git\", \"add\", buildout_hash)) for buildout_hash in { os.path.join(os.path.dirname(staged), \"buildout.hash.cfg\") for staged in sys.argv[1:]} if os.path.exists(buildout_hash)]'"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

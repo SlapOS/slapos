@@ -64,13 +64,14 @@ context =
                                   }) %}
 {% endfor %}
 
-{% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') %}
+{% set authorized_slave_string_list = slapparameter_dict.pop('-frontend-authorized-slave-string', '').split() %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% set unauthorised_message = 'slave not authorised' %}
+{% set unauthorized_message = 'slave not authorized' %}
 {% for slave in slave_instance_list %}
 {%   set slave_error_list = [] %}
+{%   set slave_server_alias_unclashed = [] %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
@@ -80,22 +81,31 @@ context =
 {%   endif %}
 {%   if slave.get('server-alias') %}
 {%     for slave_alias in slave['server-alias'].split() %}
-{%       if not validators.domain(slave_alias) %}
+{%       if slave_alias.startswith('*.') %}
+{%         set clean_slave_alias = slave_alias[2:] %}
+{%       else %}
+{%         set clean_slave_alias = slave_alias %}
+{%       endif %}
+{%       if not validators.domain(clean_slave_alias) %}
 {%         do slave_error_list.append('server-alias %r not valid' % (slave_alias,)) %}
 {%       else %}
-{%         if slave_alias in used_host_list %}
+{%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
+{#           optionally do something about reporting back that server-alias has been unclashed #}
+{%         elif slave_alias in used_host_list %}
 {%           do slave_error_list.append('server-alias %r clashes' % (slave_alias,)) %}
 {%         else %}
+{%           do slave_server_alias_unclashed.append(slave_alias) %}
 {%           do used_host_list.append(slave_alias) %}
 {%         endif %}
 {%       endif %}
 {%     endfor %}
+{%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
 {%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
 {%     if slave.get(key) %}
-{%       if not slave.get('slave_reference') in authorized_slave_string %}
-{%         if not unauthorised_message in slave_error_list %}
-{%           do slave_error_list.append(unauthorised_message) %}
+{%       if not slave.get('slave_reference') in authorized_slave_string_list %}
+{%         if not unauthorized_message in slave_error_list %}
+{%           do slave_error_list.append(unauthorized_message) %}
 {%         endif %}
 {%       elif subprocess_module.call([caddy_custom_http_validator, slave[key]]) == 1 %}
 {%         do slave_error_list.append('slave %s configuration invalid' % (key,)) %}
@@ -122,7 +132,12 @@ context =
 {%     endif %}
 {%   endif %}
 {%   if slave.get('custom_domain') %}
-{%     if not validators.domain(slave['custom_domain']) %}
+{%     if slave['custom_domain'].startswith('*.') %}
+{%       set clean_custom_domain = slave['custom_domain'][2:] %}
+{%     else %}
+{%       set clean_custom_domain = slave['custom_domain'] %}
+{%     endif %}
+{%     if not validators.domain(clean_custom_domain) %}
 {%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
 {%     endif %}
 {%   endif %}

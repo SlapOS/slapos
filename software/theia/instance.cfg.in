@@ -1,0 +1,158 @@
+[buildout]
+parts =
+  promises
+  .bashrc
+  frontend-reload
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory} 
+offline = true
+
+
+[frontend-instance-password]
+recipe = slapos.cookbook:generate.password
+username = node
+bytes = 12
+
+[frontend-instance-config]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}
+template = inline:
+  https://$${:hostname}:$${:port} {
+    bind $${:ip}
+    tls self_signed # TODO
+    log stdout
+    errors stderr
+    gzip
+    # because caddy does not support upgrade http2 to websocket
+    # https://tools.ietf.org/html/rfc8441
+    tls {
+      alpn http/1.1
+    }
+    proxy / $${theia-instance:base-url} {
+    #  transparent
+    }
+    proxy /services $${theia-instance:base-url} {
+      websocket
+    }
+    basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
+      realm "Theia"
+      /
+    }
+  }
+ip = $${instance-parameter:ipv6-random}
+hostname = [$${:ip}]
+port = 3001
+
+[frontend-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${caddy:output} -conf $${frontend-instance-config:rendered} -pidfile $${:pidfile}
+
+ip = $${frontend-instance-config:ip}
+hostname = $${frontend-instance-config:hostname}
+port = $${frontend-instance-config:port}
+pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
+url = https://$${frontend-instance-password:username}:$${frontend-instance-password:passwd}@$${:hostname}:$${:port}/
+
+[frontend-reload]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  ${bash:location}/bin/bash -c
+  "kill -s USR1 $$(${coreutils:location}/bin/cat $${frontend-instance:pidfile}) \
+    && ${coreutils:location}/bin/sleep infinity"
+hash-files =
+  $${frontend-instance-config:rendered}
+  $${frontend-instance:wrapper-path}
+wait-for-files = $${frontend-instance:pidfile}
+
+[user]
+recipe = slapos.cookbook:userinfo
+
+[theia-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line =
+  env -i HOME=$${directory:home} LC_ALL=C.UTF-8 USER=$${user:pw-name} LOGNAME=$${user:pw-name} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+
+ip =  $${instance-parameter:ipv4-random}
+hostname =  $${:ip}
+port = 3000
+base-url = http://$${:hostname}:$${:port}/
+
+[.bashrc]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:home}/$${:_buildout_section_name_}
+template = inline:
+  export PS1="$ " # because we are in a gowork workspace
+  # XXX .bash_profile is not executed, so we introduce a bashrc.theia file
+  # to allow customizations.
+  if [ -f "$HOME/.bashrc.theia" ] ; then
+    source $HOME/.bashrc.theia
+  fi
+  # If not running interactively, don't do anything
+  case $- in
+      *i*) ;;
+        *) return;;
+  esac
+  # enable color support
+  if [ -x /usr/bin/dircolors ]; then
+      test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+      alias ls='ls --color=auto'
+  fi
+  # common ls aliases
+  alias ll='ls -l'
+  alias la='ls -A'
+  alias l='ls -CF'
+
+[promises]
+recipe =
+instance-promises =
+  $${theia-listen-promise:path}
+  $${frontend-listen-promise:path}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/$${:_buildout_section_name_}
+
+[theia-listen-promise]
+<= check-port-listening-promise
+hostname= $${theia-instance:ip}
+port = $${theia-instance:port}
+
+[frontend-listen-promise]
+<= check-port-listening-promise
+hostname= $${frontend-instance:ip}
+port = $${frontend-instance:port}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${frontend-instance:url}
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+pidfiles = $${:var}/run
+
+services = $${:etc}/service
+promises = $${:etc}/promise
+framebuffer = $${:srv}/framebuffer
+fonts = $${:srv}/fonts
+home = $${:srv}/home

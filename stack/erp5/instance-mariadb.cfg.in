@@ -273,8 +273,17 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
-template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
+template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
+
+[{{ section("resiliency-identity-signature-script")}}]
+# Generate identity script used by webrunner to check data integrity
+# It excludes repozo files as they already include a hash function
+# used to check backups when rebuilding the datafs
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate"
+wrapper-path = ${directory:srv}/.backup_identity_script
+mode = 770
 
 [dash]
 dash = {{ dumps(dash) }}

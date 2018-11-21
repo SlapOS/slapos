@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by JSTestNode instantiation",
+  "additionalProperties": false,
+  "type": "object",
+  "nginx": {
+    "description": "Nginx web server serving html test runner",
+    "type": "string"
+  }
+}
