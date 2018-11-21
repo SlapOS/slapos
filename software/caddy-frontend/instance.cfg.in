@@ -53,6 +53,8 @@ openssl = {{ template_frontend_parameter_dict['openssl'] ~ '/bin/openssl' }}
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
+    import tempfile_module tempfile
+    import os_module os
     import validators validators
     key openssl :openssl
     raw caddy_backend_url_validator {{ caddy_backend_url_validator }}

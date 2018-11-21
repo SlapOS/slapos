@@ -133,6 +133,17 @@ context =
 {%     if not key_modulus or key_modulus != crt_modulus  %}
 {%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
 {%     endif %}
+{%     if slave.get('ssl_ca_crt') %}
+{%       set ssl_ca_file = tempfile_module.NamedTemporaryFile(delete=False) %}
+{%       do ssl_ca_file.write(slave.get('ssl_ca_crt')) %}
+{%       do ssl_ca_file.close() %}
+{%       set check_popen = popen([openssl, 'verify', '-CAfile', ssl_ca_file.name]) %}
+{%       set check_result = check_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%       if 'error' in check_result.lower() %}
+{%         do slave_error_list.append('slave ssl_ca_crt and ssl_crt does not match')  %}
+{%       endif %}
+{%       do os_module.unlink(ssl_ca_file.name) %}
+{%     endif %}
 {%   endif %}
 {%   if slave.get('custom_domain') %}
 {%     if slave['custom_domain'].startswith('*.') %}
