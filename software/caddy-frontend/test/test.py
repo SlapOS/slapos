@@ -625,6 +625,29 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt': {
+        'url': cls.backend_url,
+        'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
+      'ssl_ca_crt_only': {
+        'url': cls.backend_url,
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
+      'ssl_ca_crt_garbage': {
+        'url': cls.backend_url,
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': 'some garbage',
+      },
+      'ssl_ca_crt_does_not_match': {
+        'url': cls.backend_url,
+        'ssl_crt': open('wildcard.example.com.crt').read(),
+        'ssl_key': open('wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
       'type-zope': {
         'url': cls.backend_url,
         'type': 'zope',
@@ -774,13 +797,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '37',
-      'rejected-slave-amount': '3',
-      'slave-amount': '40',
+      'accepted-slave-amount': '40',
+      'rejected-slave-amount': '4',
+      'slave-amount': '44',
       'rejected-slave-dict':
       '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
+      '"_caddy_custom_http_s": ["slave not authorized"], '
       '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
-      '"_caddy_custom_http_s": ["slave not authorized"]}'
+      '"_ssl_ca_crt_only": ["ssl_ca_crt is present, so ssl_crt and ssl_key '
+      'are required"]}'
     }
 
     self.assertEqual(
@@ -1198,13 +1223,96 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # Caddy: Need to implement similar thing like check-error-on-apache-log
     raise NotImplementedError(self.id())
 
-  @skip('Feature postponed')
   def test_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+    self.assertEqual(
+      {
+        'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'replication_number': '1',
+        'url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'secure_access':
+        'https://customdomainsslcrtsslkeysslcacrt.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
 
-  @skip('Feature postponed')
-  def test_path_to_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('CA.wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_ssl_ca_crt_only(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_only']
+    self.assertEqual(
+      parameter_dict,
+      {
+        'request-error-list': '["ssl_ca_crt is present, so ssl_crt and '
+        'ssl_key are required"]'}
+    )
+
+  def test_ssl_ca_crt_garbage(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_garbage']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'ssl_ca_crt_garbage')
+    self.assertEqual(
+      {
+        'domain': 'sslcacrtgarbage.example.com',
+        'replication_number': '1',
+        'url': 'http://sslcacrtgarbage.example.com',
+        'site_url': 'http://sslcacrtgarbage.example.com',
+        'secure_access':
+        'https://sslcacrtgarbage.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('CA.wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_ssl_ca_crt_does_not_match(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_does_not_match']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'ssl_ca_crt_does_not_match')
+    self.assertEqual(
+      {
+        'domain': 'sslcacrtdoesnotmatch.example.com',
+        'replication_number': '1',
+        'url': 'http://sslcacrtdoesnotmatch.example.com',
+        'site_url': 'http://sslcacrtdoesnotmatch.example.com',
+        'secure_access':
+        'https://sslcacrtdoesnotmatch.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_https_only(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
