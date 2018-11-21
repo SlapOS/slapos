@@ -3145,6 +3145,22 @@ https://www.google.com {}""",
         'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
+      'ssl_ca_crt_only': {
+        'url': cls.backend_url,
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
+      'ssl_ca_crt_garbage': {
+        'url': cls.backend_url,
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': 'some garbage',
+      },
+      'ssl_ca_crt_does_not_match': {
+        'url': cls.backend_url,
+        'ssl_crt': open('wildcard.example.com.crt').read(),
+        'ssl_key': open('wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
     }
 
   def test_master_partition_state(self):
@@ -3497,13 +3513,35 @@ https://www.google.com {}""",
     )
 
   def test_ssl_ca_crt_only(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_only']
+    self.assertEqual(
+      {
+        'request-error-list':
+        '["ssl_ca_crt is present, so ssl_crt and ssl_key are required"]'
+      },
+      parameter_dict
+    )
 
   def test_ssl_ca_crt_does_not_match(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_does_not_match']
+    self.assertEqual(
+      {
+        'fixme': 'fixme',
+      },
+      parameter_dict
+    )
 
   def test_ssl_ca_crt_garbage(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_ca_crt_does_not_match']
+    self.assertEqual(
+      {
+        'fixme': 'fixme',
+      },
+      parameter_dict
+    )
 
 
 class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
