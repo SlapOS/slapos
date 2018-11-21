@@ -774,9 +774,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '35',
+      'accepted-slave-amount': '37',
       'rejected-slave-amount': '3',
-      'slave-amount': '38',
+      'slave-amount': '40',
       'rejected-slave-dict':
       '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
       '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
