@@ -1198,12 +1198,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # Caddy: Need to implement similar thing like check-error-on-apache-log
     raise NotImplementedError(self.id())
 
-  @skip('Feature postponed')
   def test_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
-
-  @skip('Feature postponed')
-  def test_path_to_ssl_ca_crt(self):
     raise NotImplementedError(self.id())
 
   def test_https_only(self):
@@ -3469,6 +3464,15 @@ https://www.google.com {}""",
       },
       parameter_dict
     )
+
+  def test_ssl_ca_crt_only(self):
+    raise NotImplementedError(self.id())
+
+  def test_ssl_ca_crt_does_not_match(self):
+    raise NotImplementedError(self.id())
+
+  def test_ssl_ca_crt_garbage(self):
+    raise NotImplementedError(self.id())
 
 
 class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
