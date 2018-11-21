@@ -9,6 +9,8 @@ TestSlave-1/var/log/httpd/_custom_domain_access_log
 TestSlave-1/var/log/httpd/_custom_domain_error_log
 TestSlave-1/var/log/httpd/_custom_domain_ssl_crt_ssl_key_access_log
 TestSlave-1/var/log/httpd/_custom_domain_ssl_crt_ssl_key_error_log
+TestSlave-1/var/log/httpd/_custom_domain_ssl_crt_ssl_key_ssl_ca_crt_access_log
+TestSlave-1/var/log/httpd/_custom_domain_ssl_crt_ssl_key_ssl_ca_crt_error_log
 TestSlave-1/var/log/httpd/_custom_domain_wildcard_access_log
 TestSlave-1/var/log/httpd/_custom_domain_wildcard_error_log
 TestSlave-1/var/log/httpd/_disabled-cookie-list_access_log
@@ -51,6 +53,10 @@ TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_error_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt_access_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt_error_log
+TestSlave-1/var/log/httpd/_ssl_ca_crt_does_not_match_access_log
+TestSlave-1/var/log/httpd/_ssl_ca_crt_does_not_match_error_log
+TestSlave-1/var/log/httpd/_ssl_ca_crt_garbage_access_log
+TestSlave-1/var/log/httpd/_ssl_ca_crt_garbage_error_log
 TestSlave-1/var/log/httpd/_type-notebook_access_log
 TestSlave-1/var/log/httpd/_type-notebook_error_log
 TestSlave-1/var/log/httpd/_type-redirect_access_log
