@@ -625,6 +625,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
         'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
       },
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt': {
+        'url': cls.backend_url,
+        'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
+        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+      },
       'type-zope': {
         'url': cls.backend_url,
         'type': 'zope',
@@ -1198,13 +1205,32 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # Caddy: Need to implement similar thing like check-error-on-apache-log
     raise NotImplementedError(self.id())
 
-  @skip('Feature postponed')
   def test_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt']
+    self.assertLogAccessUrlWithPop(
+      parameter_dict, 'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+    self.assertEqual(
+      {
+        'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
+        'replication_number': '1',
+        'url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
+        'secure_access':
+        'https://customdomainsslcrtsslkeysslcacrt.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
 
-  @skip('Feature postponed')
-  def test_path_to_ssl_ca_crt(self):
-    raise NotImplementedError(self.id())
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('CA.wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_https_only(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
@@ -3469,6 +3495,15 @@ https://www.google.com {}""",
       },
       parameter_dict
     )
+
+  def test_ssl_ca_crt_only(self):
+    raise NotImplementedError(self.id())
+
+  def test_ssl_ca_crt_does_not_match(self):
+    raise NotImplementedError(self.id())
+
+  def test_ssl_ca_crt_garbage(self):
+    raise NotImplementedError(self.id())
 
 
 class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
