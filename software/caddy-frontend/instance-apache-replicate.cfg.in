@@ -122,6 +122,9 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
+{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
+{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
+{%   endif %}
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
 {%     set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
