@@ -6,6 +6,8 @@ TestSlave-1/etc/monitor-promise/check-_custom_domain-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_custom_domain-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_custom_domain_ssl_crt_ssl_key-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_custom_domain_ssl_crt_ssl_key-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_custom_domain_ssl_crt_ssl_key_ssl_ca_crt-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_custom_domain_ssl_crt_ssl_key_ssl_ca_crt-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_custom_domain_wildcard-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_custom_domain_wildcard-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_disabled-cookie-list-error-log-last-day
@@ -51,6 +53,10 @@ TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-las
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_does_not_match-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_does_not_match-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_garbage-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_garbage-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-eventsource-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-eventsource-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-notebook-error-log-last-day
