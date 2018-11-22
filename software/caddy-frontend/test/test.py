@@ -25,14 +25,6 @@
 #
 ##############################################################################
 
-# Note for SSL
-#  This test comes with certificates and keys. There is even root Certificate
-#  Authority, for the backends
-#  Please follow https://datacenteroverlords.com/2012/03/01/\
-#     creating-your-own-ssl-certificate-authority/
-#  in order to add more certificates for backend.
-#  Frontend still uses self-signed certificates.
-
 import glob
 import os
 import requests
@@ -47,9 +39,19 @@ from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
 from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
+import tempfile
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
+
+import datetime
+
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 
 LOCAL_IPV4 = os.environ['LOCAL_IPV4']
 GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
@@ -73,13 +75,98 @@ if os.environ.get('DEBUG'):
 
 
 def der2pem(der):
-  certificate, error = subprocess.Popen(
-      'openssl x509 -inform der'.split(), stdin=subprocess.PIPE,
-      stdout=subprocess.PIPE, stderr=subprocess.PIPE
-  ).communicate(der)
-  if error:
-    raise ValueError(error)
-  return certificate
+  certificate = x509.load_der_x509_certificate(der, default_backend())
+  return certificate.public_bytes(serialization.Encoding.PEM)
+
+
+def createKey():
+  key = rsa.generate_private_key(
+    public_exponent=65537, key_size=2048, backend=default_backend())
+  key_pem = key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.TraditionalOpenSSL,
+    encryption_algorithm=serialization.NoEncryption()
+  )
+  return key, key_pem
+
+
+def createSelfSignedCertificate(common_name):
+  key, key_pem = createKey()
+  subject = issuer = x509.Name([
+    x509.NameAttribute(NameOID.COUNTRY_NAME, u"XX"),
+    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"YY"),
+    x509.NameAttribute(NameOID.LOCALITY_NAME, u"Xx Yy"),
+    x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Xyx Yxy"),
+    x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+  ])
+  certificate = x509.CertificateBuilder().subject_name(
+    subject
+  ).issuer_name(
+    issuer
+  ).public_key(
+    key.public_key()
+  ).serial_number(
+    x509.random_serial_number()
+  ).not_valid_before(
+    datetime.datetime.utcnow() - datetime.timedelta(days=2)
+  ).not_valid_after(
+    datetime.datetime.utcnow() + datetime.timedelta(days=5)
+  ).sign(key, hashes.SHA256(), default_backend())
+  certificate_pem = certificate.public_bytes(serialization.Encoding.PEM)
+  return key, key_pem, certificate, certificate_pem
+
+
+def createCSR(common_name):
+  key, key_pem = createKey()
+  csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+     x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+  ])).sign(key, hashes.SHA256(), default_backend())
+  csr_pem = csr.public_bytes(serialization.Encoding.PEM)
+  return key, key_pem, csr, csr_pem
+
+
+class CertificateAuthority(object):
+  def __init__(self, common_name):
+    self.key, self.key_pem = createKey()
+    public_key = self.key.public_key()
+    builder = x509.CertificateBuilder()
+    builder = builder.subject_name(x509.Name([
+      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+    ]))
+    builder = builder.issuer_name(x509.Name([
+      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+    ]))
+    builder = builder.not_valid_before(
+      datetime.datetime.utcnow() - datetime.timedelta(days=2))
+    builder = builder.not_valid_after(
+      datetime.datetime.utcnow() + datetime.timedelta(days=30))
+    builder = builder.serial_number(x509.random_serial_number())
+    builder = builder.public_key(public_key)
+    builder = builder.add_extension(
+      x509.BasicConstraints(ca=True, path_length=None), critical=True,
+    )
+    self.certificate = builder.sign(
+      private_key=self.key, algorithm=hashes.SHA256(),
+      backend=default_backend()
+    )
+    self.certificate_pem = self.certificate.public_bytes(
+      serialization.Encoding.PEM)
+
+  def signCSR(self, csr):
+    builder = x509.CertificateBuilder(
+      subject_name=csr.subject,
+      issuer_name=self.certificate.subject,
+      not_valid_before=datetime.datetime.utcnow() - datetime.timedelta(days=1),
+      not_valid_after=datetime.datetime.utcnow() + datetime.timedelta(days=30),
+      serial_number=x509.random_serial_number(),
+      public_key=csr.public_key(),
+    )
+    certificate = builder.sign(
+      private_key=self.key,
+      algorithm=hashes.SHA256(),
+      backend=default_backend()
+    )
+    return certificate, certificate.public_bytes(serialization.Encoding.PEM)
 
 
 def isHTTP2(domain, ip):
@@ -365,11 +452,22 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
       TestHandler)
 
+    cls.test_server_ca = CertificateAuthority("Test Server Root CA")
+    key, key_pem, csr, csr_pem = createCSR(
+      "testserver.example.com")
+    _, cls.test_server_certificate_pem = cls.test_server_ca.signCSR(csr)
+
+    cls.test_server_certificate_file = tempfile.NamedTemporaryFile(
+      delete=False
+    )
+
+    cls.test_server_certificate_file.write(
+        cls.test_server_certificate_pem + key_pem
+      )
+    cls.test_server_certificate_file.close()
     server_https.socket = ssl.wrap_socket(
       server_https.socket,
-      certfile=os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        'testserver.example.com.pem'),
+      certfile=cls.test_server_certificate_file.name,
       server_side=True)
 
     cls.backend_url = 'http://%s:%s' % server.server_address
@@ -382,6 +480,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def stopServerProcess(cls):
+    if getattr(cls, 'test_server_certificate_file', None) is None:
+      os.unlink(cls.test_server_certificate_file)
     if getattr(cls, 'server_process', None) is None:
       return
     cls.server_process.terminate()
@@ -413,8 +513,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           slave_instance.getConnectionParameterDict()
 
   @classmethod
+  def createWildcardExampleComCertificate(cls):
+    _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
+      '*.example.com')
+
+  @classmethod
   def setUpClass(cls):
     try:
+      cls.createWildcardExampleComCertificate()
       cls.startServerProcess()
       super(SlaveHttpFrontendTestCase, cls).setUpClass()
       cls.setUpSlaves()
@@ -578,8 +684,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
@@ -590,6 +696,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
     }
+
+  @classmethod
+  def setUpSlaves(cls):
+    cls.ca = CertificateAuthority('TestSlave')
+    _, cls.customdomain_ca_key_pem, csr, _ = createCSR(
+      'customdomainsslcrtsslkeysslcacrt.example.com')
+    _, cls.customdomain_ca_certificate_pem = cls.ca.signCSR(csr)
+    _, cls.customdomain_key_pem, _, cls.customdomain_certificate_pem = \
+        createSelfSignedCertificate('customdomainsslcrtsslkey.example.com')
+    super(TestSlave, cls).setUpSlaves()
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -623,7 +739,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
-        'ssl_proxy_ca_crt': open('testserver.root.ca.crt').read(),
+        'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
       'ssl-proxy-verify-unverified': {
         'url': cls.backend_https_url,
@@ -644,31 +760,31 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkey.example.com',
-        'ssl_crt': open('customdomainsslcrtsslkey.example.com.crt').read(),
-        'ssl_key': open('customdomainsslcrtsslkey.example.com.key').read(),
+        'ssl_crt': cls.customdomain_certificate_pem,
+        'ssl_key': cls.customdomain_key_pem,
       },
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt': {
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
-        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
-        'ssl_key': open('CA.wildcard.example.com.key').read(),
-        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+        'ssl_crt': cls.customdomain_ca_certificate_pem,
+        'ssl_key': cls.customdomain_ca_key_pem,
+        'ssl_ca_crt': cls.ca.certificate_pem,
       },
       'ssl_ca_crt_only': {
         'url': cls.backend_url,
-        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+        'ssl_ca_crt': cls.ca.certificate_pem,
       },
       'ssl_ca_crt_garbage': {
         'url': cls.backend_url,
-        'ssl_crt': open('CA.wildcard.example.com.crt').read(),
-        'ssl_key': open('CA.wildcard.example.com.key').read(),
+        'ssl_crt': cls.customdomain_ca_certificate_pem,
+        'ssl_key': cls.customdomain_ca_key_pem,
         'ssl_ca_crt': 'some garbage',
       },
       'ssl_ca_crt_does_not_match': {
         'url': cls.backend_url,
-        'ssl_crt': open('wildcard.example.com.crt').read(),
-        'ssl_key': open('wildcard.example.com.key').read(),
-        'ssl_ca_crt': open('CA.wildcard.example.com.root.crt').read(),
+        'ssl_crt': cls.certificate_pem,
+        'ssl_key': cls.key_pem,
+        'ssl_ca_crt': cls.ca.certificate_pem,
       },
       'type-zope': {
         'url': cls.backend_url,
@@ -678,7 +794,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_https_url,
         'type': 'zope',
         'ssl-proxy-verify': True,
-        'ssl_proxy_ca_crt': open('testserver.root.ca.crt').read(),
+        'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
       'type-zope-ssl-proxy-verify-unverified': {
         'url': cls.backend_https_url,
@@ -743,7 +859,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'enable_cache': True,
-        'ssl_proxy_ca_crt': open('testserver.root.ca.crt').read(),
+        'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
         'ssl-proxy-verify': True,
       },
       'enable-http2-default': {
@@ -910,7 +1026,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -972,7 +1088,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1039,7 +1155,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result_ipv6.peercert))
 
     self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
@@ -1063,7 +1179,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(
@@ -1092,7 +1208,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], '')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1120,7 +1236,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1129,7 +1245,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1138,7 +1254,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'alias2.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
   def test_server_alias_wildcard(self):
@@ -1160,7 +1276,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1169,7 +1285,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'wild.alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1193,7 +1309,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1202,7 +1318,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'alias3.example.com', parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1227,7 +1343,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1258,7 +1374,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('CA.wildcard.example.com.crt').read(),
+      self.customdomain_ca_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1292,7 +1408,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('CA.wildcard.example.com.crt').read(),
+      self.customdomain_ca_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1317,7 +1433,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1341,7 +1457,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1373,7 +1489,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1398,7 +1514,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1423,7 +1539,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('customdomainsslcrtsslkey.example.com.crt').read(),
+      self.customdomain_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1447,7 +1563,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     try:
@@ -1521,7 +1637,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(
@@ -1551,7 +1667,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -1592,7 +1708,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1632,7 +1748,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1661,7 +1777,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1698,7 +1814,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1729,7 +1845,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1767,7 +1883,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1797,7 +1913,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1835,7 +1951,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -1862,7 +1978,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -1904,7 +2020,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -1946,7 +2062,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -1989,7 +2105,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2082,7 +2198,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       headers={'Pragma': 'no-cache', 'Cache-Control': 'something'})
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2134,7 +2250,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2178,7 +2294,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2227,7 +2343,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2278,7 +2394,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2319,7 +2435,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         ))
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2362,7 +2478,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2460,7 +2576,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2521,7 +2637,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/https/test-path')
@@ -2538,8 +2654,8 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'stopped',
@@ -2579,7 +2695,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -2609,8 +2725,8 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -2699,8 +2815,8 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -2885,8 +3001,8 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -2949,7 +3065,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -3021,8 +3137,8 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
       'enable-quic': 'true',
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
@@ -3075,7 +3191,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -3127,8 +3243,8 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -3247,7 +3363,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -3271,7 +3387,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -3314,7 +3430,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -3334,8 +3450,8 @@ https://www.google.com {}""",
     self.assertEqual(
       {
         'request-error-list': [
-          "custom_domain \'${section:option} afterspace\\\\nafternewline\' "
-          "invalid"]
+          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
+        ]
       },
       parameter_dict
     )
@@ -3399,7 +3515,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(
@@ -3428,7 +3544,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], '')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
@@ -3456,7 +3572,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -3498,7 +3614,7 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      open('wildcard.example.com.crt').read(),
+      self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
@@ -3548,8 +3664,8 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': LOCAL_IPV4,
-      'apache-certificate': open('wildcard.example.com.crt').read(),
-      'apache-key': open('wildcard.example.com.key').read(),
+      'apache-certificate': cls.certificate_pem,
+      'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
