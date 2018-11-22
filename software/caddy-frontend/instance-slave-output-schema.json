@@ -32,7 +32,7 @@
     },
     "request-error-list": {
       "description": "In case if slave has been rejected by master or has error in the request, the list contains information about each problem",
-      "type": "string"
+      "type": "array"
     }
   },
   "type": "object"
