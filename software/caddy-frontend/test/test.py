@@ -233,7 +233,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     cls.software_path = os.path.realpath(os.path.join(
         cls.computer_partition_root_path, 'software_release'))
 
-  def assertLogAccessUrlWithPop(self, parameter_dict, reference):
+  def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
     try:
       log_access_url_json = json.loads(log_access_url)
@@ -873,7 +873,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_empty(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'empty']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'empty')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       parameter_dict,
       {
@@ -935,7 +935,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
-    self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'url.example.com',
@@ -997,7 +997,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_url_ipv6_access(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
-    self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'url.example.com',
@@ -1028,7 +1028,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_zope_path(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-path']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope-path')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopepath.example.com',
@@ -1058,7 +1058,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_zope_default_path(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-default-path']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope-default-path')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopedefaultpath.example.com',
@@ -1087,7 +1087,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_server_alias(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveralias.example.com',
@@ -1128,7 +1128,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_server_alias_wildcard(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias-wildcard']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-wildcard')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliaswildcard.example.com',
@@ -1162,7 +1162,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_server_alias_duplicated(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias-duplicated']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-duplicated')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliasduplicated.example.com',
@@ -1196,8 +1196,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_server_alias_custom_domain_duplicated(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias_custom_domain-duplicated']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'server-alias_custom_domain-duplicated')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'alias4.example.com',
@@ -1227,8 +1226,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_ssl_ca_crt(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
@@ -1264,8 +1262,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_ssl_ca_crt_garbage(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl_ca_crt_garbage']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'ssl_ca_crt_garbage')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtgarbage.example.com',
@@ -1291,8 +1288,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_ssl_ca_crt_does_not_match(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl_ca_crt_does_not_match']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'ssl_ca_crt_does_not_match')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtdoesnotmatch.example.com',
@@ -1318,7 +1314,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_https_only(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'https-only']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'https-only')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'httpsonly.example.com',
@@ -1351,7 +1347,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_custom_domain(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomain.example.com',
@@ -1376,7 +1372,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_custom_domain_wildcard(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain_wildcard']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain_wildcard')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '*.customdomain.example.com',
@@ -1402,7 +1398,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_custom_domain_ssl_crt_ssl_key(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'custom_domain_ssl_crt_ssl_key']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'custom_domain_ssl_crt_key')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomainsslcrtsslkey.example.com',
@@ -1427,7 +1423,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_zope(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-zope')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezope.example.com',
@@ -1473,8 +1469,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_zope_virtualhostroot_http_port(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-virtualhostroot-http-port']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'type-zope-virtualhostroot-http-port')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopevirtualhostroothttpport.example.com',
@@ -1501,8 +1496,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_zope_virtualhostroot_https_port(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-virtualhostroot-https-port']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'type-zope-virtualhostroot-https-port')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopevirtualhostroothttpsport.example.com',
@@ -1533,7 +1527,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_notebook(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-notebook']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-notebook')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typenotebook.nginx.example.com',
@@ -1575,7 +1569,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     #        opens for many clients ?
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-eventsource']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-eventsource')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typeeventsource.nginx.example.com',
@@ -1617,7 +1611,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_type_redirect(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-redirect']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'type-redirect')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typeredirect.example.com',
@@ -1646,8 +1640,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl-proxy-verify_ssl_proxy_ca_crt']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'ssl-proxy-verify_ssl_proxy_ca_crt')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslproxyverifysslproxycacrt.example.com',
@@ -1684,8 +1677,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'ssl-proxy-verify-unverified']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'ssl-proxy-verify-unverified')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslproxyverifyunverified.example.com',
@@ -1714,8 +1706,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablecachesslproxyverifysslproxycacrt.example.com',
@@ -1754,8 +1745,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache-ssl-proxy-verify-unverified']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'enable_cache-ssl-proxy-verify-unverified')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablecachesslproxyverifyunverified.example.com',
@@ -1785,8 +1775,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopesslproxyverifysslproxycacrt.example.com',
@@ -1824,8 +1813,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'type-zope-ssl-proxy-verify-unverified']
 
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'type-zope-ssl-proxy-verify-unverified')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'typezopesslproxyverifyunverified.example.com',
@@ -1854,7 +1842,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_monitor_ipv6_test(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv6-test']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv6test.example.com',
@@ -1897,7 +1885,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_monitor_ipv4_test(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv4-test']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv4test.example.com',
@@ -1940,7 +1928,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_re6st_optimal_test(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       're6st-optimal-test']
-    self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 're6stoptimaltest.example.com',
@@ -1984,7 +1972,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_cache(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable_cache')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablecache.example.com',
@@ -2075,8 +2063,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_cache_disable_no_cache_request(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache-disable-no-cache-request']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'enable_cache-disable-no-cache-request')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablecachedisablenocacherequest.example.com',
@@ -2129,8 +2116,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_cache_disable_via_header(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable_cache-disable-via-header']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'enable_cache-disable-via-header')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablecachedisableviaheader.example.com',
@@ -2175,7 +2161,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
@@ -2225,7 +2211,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_http2_default(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-default']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -2275,8 +2261,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_prefer_gzip_encoding_to_backend(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'prefer-gzip-encoding-to-backend']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'prefer-gzip-encoding-to-backend')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'prefergzipencodingtobackend.example.com',
@@ -2315,7 +2300,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_disabled_cookie_list(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'disabled-cookie-list']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'disabled-cookie-list')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'disabledcookielist.example.com',
@@ -2369,8 +2354,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_apache_custom_http_s_accepted(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'apache_custom_http_s-accepted']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'apache_custom_http_s-accepted')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
       parameter_dict
@@ -2468,8 +2452,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_caddy_custom_http_s_accepted(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'caddy_custom_http_s-accepted']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'caddy_custom_http_s-accepted')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
       parameter_dict
@@ -2525,7 +2508,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_https_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url_https-url']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'url_https-url')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'urlhttpsurl.example.com',
@@ -2584,7 +2567,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'replicate']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'replicate')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
@@ -2658,7 +2641,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_default(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-default']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -2678,7 +2661,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
@@ -2698,7 +2681,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_true(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-true']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -2750,7 +2733,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_default(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-default']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-default')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -2770,7 +2753,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_false(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-false']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-false')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
@@ -2790,7 +2773,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def test_enable_http2_true(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'enable-http2-true']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'enable-http2-true')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -2831,7 +2814,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
   def test_default(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'default')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'default.None',
@@ -2881,7 +2864,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
   def test_default(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'default')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'default.None',
@@ -2962,7 +2945,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
   def test_empty(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'empty']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'empty')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'empty.example.com',
@@ -3092,7 +3075,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_url(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'url'].copy()
-    self.assertLogAccessUrlWithPop(parameter_dict, 'url')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'url.example.com',
@@ -3258,7 +3241,7 @@ https://www.google.com {}""",
   def test_server_alias_same(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'server-alias-same']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'server-alias-same')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliassame.example.com',
@@ -3283,7 +3266,7 @@ https://www.google.com {}""",
   def test_re6st_optimal_test_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       're6st-optimal-test-unsafe']
-    self.assertLogAccessUrlWithPop(parameter_dict, 're6st-optimal-test-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 're6stoptimaltestunsafe.example.com',
@@ -3327,8 +3310,7 @@ https://www.google.com {}""",
   def test_re6st_optimal_test_nocomma(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       're6st-optimal-test-nocomma']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 're6st-optimal-test-nocomma')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 're6stoptimaltestnocomma.example.com',
@@ -3387,8 +3369,7 @@ https://www.google.com {}""",
   def test_virtualhostroot_http_port_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'virtualhostroot-http-port-unsafe']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'virtualhostroot-http-port-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'virtualhostroothttpportunsafe.example.com',
@@ -3415,8 +3396,7 @@ https://www.google.com {}""",
   def test_virtualhostroot_https_port_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'virtualhostroot-https-port-unsafe']
-    self.assertLogAccessUrlWithPop(
-      parameter_dict, 'virtualhostroot-https-port-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'virtualhostroothttpsportunsafe.example.com',
@@ -3447,7 +3427,7 @@ https://www.google.com {}""",
   def default_path_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'default-path-unsafe']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'default-path-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
@@ -3476,7 +3456,7 @@ https://www.google.com {}""",
   def test_monitor_ipv4_test_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv4-test-unsafe']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv4-test-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv4testunsafe.example.com',
@@ -3519,7 +3499,7 @@ https://www.google.com {}""",
   def test_monitor_ipv6_test_unsafe(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'monitor-ipv6-test-unsafe']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'monitor-ipv6-test-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv6testunsafe.example.com',
@@ -3652,7 +3632,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_site_2(self):
     parameter_dict = self.slave_connection_parameter_dict_dict[
       'site_2']
-    self.assertLogAccessUrlWithPop(parameter_dict, 'site_2')
+    self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'duplicate.example.com',
