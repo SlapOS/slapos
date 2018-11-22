@@ -235,14 +235,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
-    try:
-      log_access_url_json = json.loads(log_access_url)
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (log_access_url,))
 
-    self.assertTrue(len(log_access_url_json) >= 1)
+    self.assertTrue(len(log_access_url) >= 1)
     # check only the first one, as second frontend will be stopped
-    log_access = log_access_url_json[0]
+    log_access = log_access_url[0]
     entry = log_access.split(': ')
     if len(entry) != 2:
       self.fail('Cannot parse %r' % (log_access,))
@@ -266,6 +262,22 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
     self.assertEqual(value, j[key])
 
+  def parseParameterDict(self, parameter_dict):
+    parsed_parameter_dict = {}
+    for key, value in parameter_dict.items():
+      if key in [
+        'rejected-slave-dict',
+        'request-error-list',
+        'log-access-url']:
+        value = json.loads(value)
+      parsed_parameter_dict[key] = value
+    return parsed_parameter_dict
+
+  def parseConnectionParameterDict(self):
+    return self.parseParameterDict(
+      self.computer_partition.getConnectionParameterDict()
+    )
+
 
 class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -279,7 +291,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertEqual(
       {
@@ -288,7 +300,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-dict': '{}'},
+        'rejected-slave-dict': {}},
       parameter_dict
     )
 
@@ -312,7 +324,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
     self.assertEqual(
@@ -322,7 +334,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
-        'rejected-slave-dict': '{}'
+        'rejected-slave-dict': {}
       },
       parameter_dict
     )
@@ -488,6 +500,13 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   def tearDown(self):
     self.unpatchRequests()
+
+  def parseSlaveParameterDict(self, key):
+    return self.parseParameterDict(
+      self.slave_connection_parameter_dict_dict[
+        key
+      ]
+    )
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -792,7 +811,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
   def test_master_partition_state(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
     expected_parameter_dict = {
@@ -801,12 +820,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'accepted-slave-amount': '40',
       'rejected-slave-amount': '4',
       'slave-amount': '44',
-      'rejected-slave-dict':
-      '{"_apache_custom_http_s-rejected": ["slave not authorized"], '
-      '"_caddy_custom_http_s": ["slave not authorized"], '
-      '"_caddy_custom_http_s-rejected": ["slave not authorized"], '
-      '"_ssl_ca_crt_only": ["ssl_ca_crt is present, so ssl_crt and ssl_key '
-      'are required"]}'
+      'rejected-slave-dict': {
+        "_apache_custom_http_s-rejected": ["slave not authorized"],
+        "_caddy_custom_http_s": ["slave not authorized"],
+        "_caddy_custom_http_s-rejected": ["slave not authorized"],
+        "_ssl_ca_crt_only": ["ssl_ca_crt is present, so ssl_crt and ssl_key "
+                             "are required"]}
     }
 
     self.assertEqual(
@@ -871,8 +890,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_empty(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'empty']
+    parameter_dict = self.parseSlaveParameterDict('empty')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       parameter_dict,
@@ -933,8 +951,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_url(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'url'].copy()
+    parameter_dict = self.parseSlaveParameterDict('url')
+
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -995,8 +1013,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'url'].copy()
+    parameter_dict = self.parseSlaveParameterDict('url')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1026,8 +1043,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result_ipv6, 'Path', '/test-path')
 
   def test_type_zope_path(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-path']
+    parameter_dict = self.parseSlaveParameterDict('type-zope-path')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1056,8 +1072,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_zope_default_path(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-default-path']
+    parameter_dict = self.parseSlaveParameterDict('type-zope-default-path')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1085,8 +1100,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_server_alias(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias']
+    parameter_dict = self.parseSlaveParameterDict('server-alias')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1126,8 +1140,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
   def test_server_alias_wildcard(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias-wildcard']
+    parameter_dict = self.parseSlaveParameterDict('server-alias-wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1160,8 +1173,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_duplicated(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias-duplicated']
+    parameter_dict = self.parseSlaveParameterDict('server-alias-duplicated')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1194,8 +1206,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_custom_domain_duplicated(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias_custom_domain-duplicated']
+    parameter_dict = self.parseSlaveParameterDict(
+      'server-alias_custom_domain-duplicated')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1224,8 +1236,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     raise NotImplementedError(self.id())
 
   def test_ssl_ca_crt(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt']
+    parameter_dict = self.parseSlaveParameterDict(
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1250,18 +1262,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_ca_crt_only(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl_ca_crt_only']
+    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
     self.assertEqual(
       parameter_dict,
       {
-        'request-error-list': '["ssl_ca_crt is present, so ssl_crt and '
-        'ssl_key are required"]'}
+        'request-error-list': [
+          "ssl_ca_crt is present, so ssl_crt and ssl_key are required"]}
     )
 
   def test_ssl_ca_crt_garbage(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl_ca_crt_garbage']
+    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_garbage')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1286,8 +1296,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_ca_crt_does_not_match(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl_ca_crt_does_not_match']
+    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1312,8 +1321,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_https_only(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'https-only']
+    parameter_dict = self.parseSlaveParameterDict('https-only')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1345,8 +1353,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_custom_domain(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'custom_domain']
+    parameter_dict = self.parseSlaveParameterDict('custom_domain')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1370,8 +1377,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_wildcard(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'custom_domain_wildcard']
+    parameter_dict = self.parseSlaveParameterDict('custom_domain_wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1396,8 +1402,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_ssl_crt_ssl_key(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'custom_domain_ssl_crt_ssl_key']
+    parameter_dict = self.parseSlaveParameterDict(
+      'custom_domain_ssl_crt_ssl_key')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1421,8 +1427,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_type_zope(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope']
+    parameter_dict = self.parseSlaveParameterDict('type-zope')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1467,8 +1472,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_zope_virtualhostroot_http_port(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-virtualhostroot-http-port']
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-virtualhostroot-http-port')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1494,8 +1499,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_zope_virtualhostroot_https_port(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-virtualhostroot-https-port']
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-virtualhostroot-https-port')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1525,8 +1530,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_notebook(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-notebook']
+    parameter_dict = self.parseSlaveParameterDict('type-notebook')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1567,8 +1571,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     #        Caddy as a proxy in front of nginx-push-stream . If we have a
     #        "central shared" caddy instance, can it handle keeping connections
     #        opens for many clients ?
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-eventsource']
+    parameter_dict = self.parseSlaveParameterDict('type-eventsource')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1609,8 +1612,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_redirect(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-redirect']
+    parameter_dict = self.parseSlaveParameterDict('type-redirect')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1637,8 +1639,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl-proxy-verify_ssl_proxy_ca_crt']
+    parameter_dict = self.parseSlaveParameterDict(
+      'ssl-proxy-verify_ssl_proxy_ca_crt')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1674,8 +1676,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_ssl_proxy_verify_unverified(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl-proxy-verify-unverified']
+    parameter_dict = self.parseSlaveParameterDict(
+      'ssl-proxy-verify-unverified')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1703,8 +1705,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_enable_cache_ssl_proxy_verify_ssl_proxy_ca_crt(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt']
+    parameter_dict = self.parseSlaveParameterDict(
+      'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1742,8 +1744,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable_cache-ssl-proxy-verify-unverified']
+    parameter_dict = self.parseSlaveParameterDict(
+      'enable_cache-ssl-proxy-verify-unverified')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1772,8 +1774,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_zope_ssl_proxy_verify_ssl_proxy_ca_crt(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt']
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1810,8 +1812,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'type-zope-ssl-proxy-verify-unverified']
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-ssl-proxy-verify-unverified')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1840,8 +1842,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_monitor_ipv6_test(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'monitor-ipv6-test']
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1883,8 +1884,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_monitor_ipv4_test(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'monitor-ipv4-test']
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1926,8 +1926,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_re6st_optimal_test(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      're6st-optimal-test']
+    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1970,8 +1969,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_enable_cache(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable_cache']
+    parameter_dict = self.parseSlaveParameterDict('enable_cache')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2061,8 +2059,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_enable_cache_disable_no_cache_request(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable_cache-disable-no-cache-request']
+    parameter_dict = self.parseSlaveParameterDict(
+      'enable_cache-disable-no-cache-request')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2114,8 +2112,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse('pragma' in j['Incoming Headers'].keys())
 
   def test_enable_cache_disable_via_header(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable_cache-disable-via-header']
+    parameter_dict = self.parseSlaveParameterDict(
+      'enable_cache-disable-via-header')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2159,8 +2157,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_enable_http2_false(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-false']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2209,8 +2206,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_enable_http2_default(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-default']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2259,8 +2255,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_prefer_gzip_encoding_to_backend(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'prefer-gzip-encoding-to-backend']
+    parameter_dict = self.parseSlaveParameterDict(
+      'prefer-gzip-encoding-to-backend')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2298,8 +2294,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_disabled_cookie_list(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'disabled-cookie-list']
+    parameter_dict = self.parseSlaveParameterDict('disabled-cookie-list')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2331,11 +2326,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'Coffee=present', result.json()['Incoming Headers']['cookie'])
 
   def test_apache_custom_http_s_rejected(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'apache_custom_http_s-rejected']
+    parameter_dict = self.parseSlaveParameterDict(
+      'apache_custom_http_s-rejected')
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorized"]'
+        'request-error-list': ["slave not authorized"]
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
@@ -2352,8 +2347,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual([], configuration_file_with_custom_http_list)
 
   def test_apache_custom_http_s_accepted(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'apache_custom_http_s-accepted']
+    parameter_dict = self.parseSlaveParameterDict(
+      'apache_custom_http_s-accepted')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
@@ -2408,11 +2403,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
   def test_caddy_custom_http_s_rejected(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'caddy_custom_http_s-rejected']
+    parameter_dict = self.parseSlaveParameterDict(
+      'caddy_custom_http_s-rejected')
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorized"]'
+        'request-error-list': ["slave not authorized"]
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
@@ -2429,11 +2424,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual([], configuration_file_with_custom_http_list)
 
   def test_caddy_custom_http_s(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'caddy_custom_http_s']
+    parameter_dict = self.parseSlaveParameterDict(
+      'caddy_custom_http_s')
     self.assertEqual(
       {
-        'request-error-list': '["slave not authorized"]'
+        'request-error-list': ["slave not authorized"]
       },
       parameter_dict)
     slave_configuration_file_list = glob.glob(os.path.join(
@@ -2450,8 +2445,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual([], configuration_file_with_custom_http_list)
 
   def test_caddy_custom_http_s_accepted(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'caddy_custom_http_s-accepted']
+    parameter_dict = self.parseSlaveParameterDict(
+      'caddy_custom_http_s-accepted')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
@@ -2506,8 +2501,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
   def test_https_url(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'url_https-url']
+    parameter_dict = self.parseSlaveParameterDict('url_https-url')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2565,8 +2559,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'replicate']
+    parameter_dict = self.parseSlaveParameterDict('replicate')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2639,8 +2632,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_enable_http2_default(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-default']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2659,8 +2651,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_enable_http2_false(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-false']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2679,8 +2670,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_enable_http2_true(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-true']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2731,8 +2721,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_enable_http2_default(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-default']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2751,8 +2740,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_enable_http2_false(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-false']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2771,8 +2759,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
   def test_enable_http2_true(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'enable-http2-true']
+    parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2812,8 +2799,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_default(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'default']
+    parameter_dict = self.parseSlaveParameterDict('default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2862,8 +2848,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_default(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'default']
+    parameter_dict = self.parseSlaveParameterDict('default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2922,7 +2907,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_master_partition_state(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
     expected_parameter_dict = {
@@ -2931,10 +2916,11 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
       'slave-amount': '3',
-      'rejected-slave-dict':
-      '{"_https-url": ["slave https-url \\"https://[fd46::c2ae]:!py!u\'123123'
-      '\'\\" invalid"], "_url": ["slave url \\"https://[fd46::c2ae]:!py!u\''
-      '123123\'\\" invalid"]}'
+      'rejected-slave-dict': {
+        '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
+                       ' invalid'],
+        '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid']
+      }
     }
 
     self.assertEqual(
@@ -2943,8 +2929,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     )
 
   def test_empty(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'empty']
+    parameter_dict = self.parseSlaveParameterDict('empty')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -2968,23 +2953,21 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
   def test_url(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'url'].copy()
+    parameter_dict = self.parseSlaveParameterDict('url')
     self.assertEqual(
       {
-        'request-error-list': '["slave url \\"https://[fd46::c2ae]:!py!'
-        'u\'123123\'\\" invalid"]'
+        'request-error-list': [
+          "slave url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
       },
       parameter_dict
     )
 
   def test_https_url(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'https-url'].copy()
+    parameter_dict = self.parseSlaveParameterDict('https-url')
     self.assertEqual(
       {
-        'request-error-list': '["slave https-url \\"https://[fd46::c2ae]:'
-        '!py!u\'123123\'\\" invalid"]'
+        'request-error-list': [
+          "slave https-url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
       },
       parameter_dict
     )
@@ -3006,8 +2989,7 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'test']
+    parameter_dict = self.parseSlaveParameterDict('test')
     self.assertKeyWithPop('log-access-url', parameter_dict)
     self.assertEqual(
       {
@@ -3073,8 +3055,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
   def test_url(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'url'].copy()
+    parameter_dict = self.parseSlaveParameterDict('url')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3214,7 +3195,7 @@ https://www.google.com {}""",
     }
 
   def test_master_partition_state(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
     expected_parameter_dict = {
@@ -3223,14 +3204,21 @@ https://www.google.com {}""",
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '4',
       'slave-amount': '12',
-      'rejected-slave-dict':
-      '{"_caddy_custom_http_s-reject": ["slave caddy_custom_http '
-      'configuration invalid", "slave caddy_custom_https configuration '
-      'invalid"], "_server-alias-unsafe": ["server-alias \'${section:option}\''
-      ' not valid", "server-alias \'afterspace\' not valid"], '
-      '"_custom_domain-unsafe": ["custom_domain \'${section:option} '
-      'afterspace\\\\nafternewline\' invalid"], "_ssl_key-ssl_crt-unsafe": '
-      '["slave ssl_key and ssl_crt does not match"]}'
+      'rejected-slave-dict': {
+        '_caddy_custom_http_s-reject': [
+          'slave caddy_custom_http configuration invalid',
+          'slave caddy_custom_https configuration invalid'],
+        '_custom_domain-unsafe': [
+          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
+        ],
+        '_server-alias-unsafe': [
+          "server-alias '${section:option}' not valid",
+          "server-alias 'afterspace' not valid"
+        ],
+        '_ssl_key-ssl_crt-unsafe': [
+          'slave ssl_key and ssl_crt does not match'
+        ]
+      }
     }
 
     self.assertEqual(
@@ -3239,8 +3227,7 @@ https://www.google.com {}""",
     )
 
   def test_server_alias_same(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias-same']
+    parameter_dict = self.parseSlaveParameterDict('server-alias-same')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3264,8 +3251,7 @@ https://www.google.com {}""",
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_re6st_optimal_test_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      're6st-optimal-test-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3308,8 +3294,7 @@ https://www.google.com {}""",
     )
 
   def test_re6st_optimal_test_nocomma(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      're6st-optimal-test-nocomma']
+    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-nocomma')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3343,32 +3328,30 @@ https://www.google.com {}""",
     )
 
   def test_custom_domain_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'custom_domain-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
     self.assertEqual(
       {
-        'request-error-list':
-        '["custom_domain \'${section:option} afterspace\\\\nafternewline\' '
-        'invalid"]'
+        'request-error-list': [
+          "custom_domain \'${section:option} afterspace\\\\nafternewline\' "
+          "invalid"]
       },
       parameter_dict
     )
 
   def test_server_alias_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'server-alias-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('server-alias-unsafe')
     self.assertEqual(
       {
-        'request-error-list':
-        '["server-alias \'${section:option}\' not valid", "server-alias '
-        '\'afterspace\' not valid"]'
+        'request-error-list': [
+          "server-alias '${section:option}' not valid", "server-alias "
+          "'afterspace' not valid"]
       },
       parameter_dict
     )
 
   def test_virtualhostroot_http_port_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'virtualhostroot-http-port-unsafe']
+    parameter_dict = self.parseSlaveParameterDict(
+      'virtualhostroot-http-port-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3394,8 +3377,8 @@ https://www.google.com {}""",
     )
 
   def test_virtualhostroot_https_port_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'virtualhostroot-https-port-unsafe']
+    parameter_dict = self.parseSlaveParameterDict(
+      'virtualhostroot-https-port-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3425,8 +3408,7 @@ https://www.google.com {}""",
     )
 
   def default_path_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'default-path-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('default-path-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3454,8 +3436,7 @@ https://www.google.com {}""",
     )
 
   def test_monitor_ipv4_test_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'monitor-ipv4-test-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3497,8 +3478,7 @@ https://www.google.com {}""",
     )
 
   def test_monitor_ipv6_test_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'monitor-ipv6-test-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3540,21 +3520,20 @@ https://www.google.com {}""",
     )
 
   def test_ssl_key_ssl_crt_unsafe(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl_key-ssl_crt-unsafe']
+    parameter_dict = self.parseSlaveParameterDict('ssl_key-ssl_crt-unsafe')
     self.assertEqual(
-      {'request-error-list': '["slave ssl_key and ssl_crt does not match"]'},
+      {'request-error-list': ["slave ssl_key and ssl_crt does not match"]},
       parameter_dict
     )
 
   def test_caddy_custom_http_s_reject(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'caddy_custom_http_s-reject']
+    parameter_dict = self.parseSlaveParameterDict('caddy_custom_http_s-reject')
     self.assertEqual(
       {
-        'request-error-list':
-        '["slave caddy_custom_http configuration invalid", '
-        '"slave caddy_custom_https configuration invalid"]'
+        'request-error-list': [
+          "slave caddy_custom_http configuration invalid",
+          "slave caddy_custom_https configuration invalid"
+        ]
       },
       parameter_dict
     )
@@ -3598,7 +3577,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   def test_master_partition_state(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
 
     expected_parameter_dict = {
@@ -3607,10 +3586,11 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
-      'rejected-slave-dict':
-      '{"_site_4": ["custom_domain \'duplicate.example.com\' clashes"], '
-      '"_site_1": ["custom_domain \'duplicate.example.com\' clashes"], '
-      '"_site_3": ["server-alias \'duplicate.example.com\' clashes"]}'
+      'rejected-slave-dict': {
+        '_site_1': ["custom_domain 'duplicate.example.com' clashes"],
+        '_site_3': ["server-alias 'duplicate.example.com' clashes"],
+        '_site_4': ["custom_domain 'duplicate.example.com' clashes"]
+      }
     }
 
     self.assertEqual(
@@ -3619,19 +3599,16 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_site_1(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'site_1']
+    parameter_dict = self.parseSlaveParameterDict('site_1')
     self.assertEqual(
       {
-        'request-error-list':
-        '["custom_domain \'duplicate.example.com\' clashes"]'
+        'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
       },
       parameter_dict
     )
 
   def test_site_2(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'site_2']
+    parameter_dict = self.parseSlaveParameterDict('site_2')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -3646,23 +3623,19 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_site_3(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'site_3']
+    parameter_dict = self.parseSlaveParameterDict('site_3')
     self.assertEqual(
       {
-        'request-error-list':
-        '["server-alias \'duplicate.example.com\' clashes"]'
+        'request-error-list': ["server-alias 'duplicate.example.com' clashes"]
       },
       parameter_dict,
     )
 
   def test_site_4(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'site_4']
+    parameter_dict = self.parseSlaveParameterDict('site_4')
     self.assertEqual(
       {
-        'request-error-list':
-        '["custom_domain \'duplicate.example.com\' clashes"]'
+        'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
       },
       parameter_dict
     )
