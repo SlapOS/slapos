@@ -2,7 +2,6 @@ Generally things to be done with ``caddy-frontend``:
 
  * return warning on not implemented keys (from ``apache-frontend`` perspective) in master and slave request
  * tests: add assertion with results of promises in etc/promise for each partition
- * tests: swich to `cryptography <https://pypi.org/project/cryptography/>`_ for certificate management
  * README: cleanup the documentation, explain various specifics
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
  * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
