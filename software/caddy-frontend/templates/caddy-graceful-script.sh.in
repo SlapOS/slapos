@@ -9,7 +9,7 @@ CADDY_SIGNATURE_FILE=$RUN_DIR/caddy_configuration.signature
 NCADDY_SIGNATURE_FILE=$RUN_DIR/ncaddy_configuration.signature
 
 touch $CADDY_SIGNATURE_FILE
-sha256sum {{ master_certificate }} $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-*.d/*.conf $AUTOCERT_DIR/*/* | sort -k 66 > $NCADDY_SIGNATURE_FILE
+sha256sum {{ master_certificate }} $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-*.d/*.conf $ETC_DIR/caddy-*.d/ssl/*.*key $AUTOCERT_DIR/*/* | sort -k 66 > $NCADDY_SIGNATURE_FILE
 
 # If no diff, no restart for now
 if diff "$CADDY_SIGNATURE_FILE" "$NCADDY_SIGNATURE_FILE"; then
