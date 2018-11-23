@@ -4,10 +4,20 @@ import {{frontend_configuration.get('log-access-configuration')}}
 import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
+{%- set ssl = {} -%}
+{%- if os_module.path.exists(master_certificate) -%}
+{%-   do ssl.__setitem__('certificate', master_certificate) -%}
+{%-   do ssl.__setitem__('key', master_certificate) -%}
+{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
+{%- elif os_module.path.getsize(apache_certificate) > 0 and os_module.path.getsize(apache_key) > 0 -%}
+{%-   do ssl.__setitem__('certificate', apache_certificate) -%}
+{%-   do ssl.__setitem__('key', apache_key) -%}
+{%- endif -%}
+{#- BBB: SlapOS Master non-zero knowledge END -#}
 # Catch-all and 404 for not configured instances
-{% if os_module.path.exists(master_certificate) %}
+{% if 'key' in ssl %}
 :{{ https_port }} {
-  tls {{ master_certificate }} {{ master_certificate }}
+  tls {{ ssl['certificate'] }} {{ ssl['key'] }}
   bind {{ local_ipv4 }}
   # Compress the output
   gzip

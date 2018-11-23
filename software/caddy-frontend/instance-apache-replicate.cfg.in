@@ -123,6 +123,20 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
+{# BBB: SlapOS Master non-zero knowledge BEGIN #}
+{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
+{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
+{%   endif %}
+{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%     set key_popen = popen([parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
+{%     set crt_popen = popen([parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     if not key_modulus or key_modulus != crt_modulus  %}
+{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
+{%     endif %}
+{%   endif %}
+{# BBB: SlapOS Master non-zero knowledge END #}
 {%   if slave.get('custom_domain') %}
 {%     if slave['custom_domain'].startswith('*.') %}
 {%       set clean_custom_domain = slave['custom_domain'][2:] %}
@@ -184,6 +198,12 @@ sla-{{ parameter }} = {{ value }}
 {%   endif %}
 {% endfor %}
 
+{%  set warning_list = [] %}
+{%  for key in ['apache-certificate', 'apache-key'] %}
+{%    if len(slapparameter_dict[key].strip()) > 0 %}
+{%      do warning_list.append('%s is obsolete, please use kedifa-caucase-url' % (key, )) %}
+{%    endif %}
+{%  endfor %}
 
 [publish-information]
 <= monitor-publish
@@ -196,6 +216,9 @@ rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+{% if len(warning_list) > 0 %}
+warning-list = {{ dumps(json_module.dumps(warning_list)) }}
+{% endif %}
 {% if not aikc_enabled %}
 kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
 kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
