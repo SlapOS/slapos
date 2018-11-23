@@ -260,7 +260,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
 
   @classmethod
-  def runComputerPartition(cls):
+  def runComputerPartition(cls, max_quantity=None):
     """Instanciate the software.
 
     This is the equivalent of doing:
@@ -272,6 +272,9 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     This can be called by tests to simulate re-request with different parameters.
     """
+    run_cp_kw = {}
+    if max_quantity is not None:
+      run_cp_kw['max_quantity'] = max_quantity
     logger = logging.getLogger()
     logger.level = logging.DEBUG
     stream = StringIO.StringIO()
@@ -286,7 +289,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
         cls.config,
         cluster_configuration=instance_parameter_dict,
-        environment=os.environ)
+        environment=os.environ,
+        **run_cp_kw)
       stream.seek(0)
       stream.flush()
       message = ''.join(stream.readlines()[-100:])
