@@ -123,6 +123,20 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
+{# BBB: SlapOS Master non-zero knowledge BEGIN #}
+{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
+{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
+{%   endif %}
+{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%     set key_popen = popen([parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
+{%     set crt_popen = popen([parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     if not key_modulus or key_modulus != crt_modulus  %}
+{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
+{%     endif %}
+{%   endif %}
+{# BBB: SlapOS Master non-zero knowledge END #}
 {%   if slave.get('custom_domain') %}
 {%     if slave['custom_domain'].startswith('*.') %}
 {%       set clean_custom_domain = slave['custom_domain'][2:] %}
