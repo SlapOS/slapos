@@ -288,6 +288,12 @@ extra-context =
     key service_directory directory:service
     key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key custom_ssl_directory caddy-directory:custom-ssl-directory
+    key apache_certificate apache-certificate:rendered
+    key apache_key apache-key:rendered
+    key apache_ca_certificate apache-ca-certificate:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [dynamic-virtualhost-template-slave]
 <= jinja2-template-base
@@ -328,6 +334,11 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key apache_certificate apache-certificate:rendered
+    key apache_key apache-key:rendered
+    key apache_ca_certificate apache-ca-certificate:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -368,6 +379,9 @@ slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
+# BBB: SlapOS Master non-zero knowledge BEGIN
+custom-ssl-directory = ${:slave-configuration}/ssl
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -387,6 +401,36 @@ ssl-cache-through-port = 26012
 recipe = slapos.cookbook:wrapper
 command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
+
+# BBB: SlapOS Master non-zero knowledge BEGIN
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+certs = ${directory:ca-dir}/certs/
+
+[apache-key]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${cadirectory:certs}/frontend.key
+content = ${configuration:apache-key}
+extra-context =
+    key content :content
+
+[apache-certificate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${cadirectory:certs}/frontend.crt
+content = ${configuration:apache-certificate}
+extra-context =
+    key content :content
+
+[apache-ca-certificate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${cadirectory:certs}/frontend.ca.crt
+apache-ca-certificate = ${configuration:apache-ca-certificate}
+extra-context =
+    key content :apache-ca-certificate
+# BBB: SlapOS Master non-zero knowledge END
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -777,6 +821,10 @@ extra-context =
   key access_log nginx-configuration:access_log
   key not_found_file caddy-configuration:not-found-file
   key master_certificate caddy-configuration:master-certificate
+# BBB: SlapOS Master non-zero knowledge BEGIN
+  key ssl_certificate nginx-configuration:ssl_certificate
+  key ssl_key nginx-configuration:ssl_key
+# BBB: SlapOS Master non-zero knowledge END
 
 [nginx-configuration]
 access_log = ${directory:log}/nginx-access.log
@@ -791,6 +839,10 @@ slave-configuration-directory = ${caddy-directory:nginx-slave-configuration}
 pid-file = ${directory:run}/nginx.pid 
 nginx-graceful-command = ${:nginx-configuration-verification} && kill -USR1 $(cat ${:pid-file})
 nginx-configuration-verification = ${frontend-nginx-validate:rendered}
+# BBB: SlapOS Master non-zero knowledge BEGIN
+ssl_certificate = ${apache-certificate:rendered}
+ssl_key = ${apache-key:rendered}
+# BBB: SlapOS Master non-zero knowledge END
 
 [promise-nginx-configuration]
 recipe = slapos.cookbook:wrapper
