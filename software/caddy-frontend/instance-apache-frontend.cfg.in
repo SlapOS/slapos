@@ -81,6 +81,9 @@ cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
 ca-dir = ${:srv}/ssl
+# BBB: SlapOS Master non-zero knowledge BEGIN
+bbb-ssl-dir = ${:srv}/bbb-ssl
+# BBB: SlapOS Master non-zero knowledge END
 
 varnginx = ${:var}/nginx
 
@@ -133,6 +136,7 @@ command =
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
 extra-context =
 slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
@@ -214,7 +218,6 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 < = jinja2-template-base
 template = {{ parameter_dict['template_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
-extensions = jinja2.ext.do
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
@@ -288,12 +291,16 @@ extra-context =
     key service_directory directory:service
     key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key custom_ssl_directory caddy-directory:custom-ssl-directory
+    key apache_certificate apache-certificate:rendered
+    key apache_key apache-key:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [dynamic-virtualhost-template-slave]
 <= jinja2-template-base
 template = {{ parameter_dict['template_slave_configuration'] }}
 rendered = ${directory:template}/slave-virtualhost.conf.in
-extensions = jinja2.ext.do
 # BBB: apache_custom_https and apache_custom_http
 extra-context =
     key https_port configuration:port
@@ -328,6 +335,10 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key apache_certificate apache-certificate:rendered
+    key apache_key apache-key:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -368,6 +379,9 @@ slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
+# BBB: SlapOS Master non-zero knowledge BEGIN
+custom-ssl-directory = ${:slave-configuration}/ssl
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -387,6 +401,24 @@ ssl-cache-through-port = 26012
 recipe = slapos.cookbook:wrapper
 command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
+
+# BBB: SlapOS Master non-zero knowledge BEGIN
+[apache-key]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bbb-ssl-dir}/frontend.key
+content = ${configuration:apache-key}
+extra-context =
+    key content :content
+
+[apache-certificate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bbb-ssl-dir}/frontend.crt
+content = ${configuration:apache-certificate}
+extra-context =
+    key content :content
+# BBB: SlapOS Master non-zero knowledge END
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -563,8 +595,8 @@ mode = 700
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
-# XXX: Fix path_list for direct ssl ${caddy-directory:vh-ssl}/*.proxy_ca_crt
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem
+
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${caddy-directory:bbb-ssl-dir}/*.key ${caddy-directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/caddy_graceful_signature
 extra-context =
@@ -578,8 +610,7 @@ extra-context =
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
 mode = 0700
-# XXX: Fix path_list for direct ssl ${caddy-directory:vh-ssl}/*.proxy_ca_crt
-path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem
+path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${caddy-directory:bbb-ssl-dir}/*.key ${caddy-directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/nginx_graceful_signature
 extra-context =
@@ -770,6 +801,10 @@ extra-context =
   key access_log nginx-configuration:access_log
   key not_found_file caddy-configuration:not-found-file
   key master_certificate caddy-configuration:master-certificate
+# BBB: SlapOS Master non-zero knowledge BEGIN
+  key apache_certificate apache-certificate:rendered
+  key apache_key apache-key:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [nginx-configuration]
 access_log = ${directory:log}/nginx-access.log
