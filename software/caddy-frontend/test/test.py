@@ -3514,3 +3514,14 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'Show that old style certificate is used from slave partition '
       'until something is uploaded to KeDifa. Assert that warning is '
       'emitted to the requester.')
+
+  def test_type_notebook_ssl_from_master(self):
+    raise NotImplementedError(
+      'Show that old style certificate is used from master partition '
+      'until something is uploaded to KeDiFa.')
+
+  def test_type_notebook_ssl_from_slave(self):
+    raise NotImplementedError(
+      'Show that old style certificate is used from slave partition '
+      'until something is uploaded to KeDifa. Assert that warning is '
+      'emitted to the requester.')
