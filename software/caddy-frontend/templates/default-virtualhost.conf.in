@@ -26,12 +26,25 @@
 {%- set default_path = slave_parameter.get('default-path', '') | urlencode %}
 
 # SSL enabled hosts
+{% set ssl = {} %}
 {% if os_module.path.exists(slave_parameter['certificate']) %}
+{%   do ssl.__setitem__('certificate', slave_parameter['certificate']) %}
+{%   do ssl.__setitem__('key', slave_parameter['certificate']) %}
+{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
+{% elif 'path_to_ssl_crt' in slave_parameter and 'path_to_ssl_key' in slave_parameter %}
+{%   do ssl.__setitem__('certificate', slave_parameter['path_to_ssl_crt']) %}
+{%   do ssl.__setitem__('key', slave_parameter['path_to_ssl_key']) %}
+{% elif os_module.path.getsize(slave_parameter['apache_certificate']) > 0 and os_module.path.getsize(slave_parameter['apache_key']) > 0 %}
+{%   do ssl.__setitem__('certificate', slave_parameter['apache_certificate']) %}
+{%   do ssl.__setitem__('key', slave_parameter['apache_key']) %}
+{% endif %}
+{#- BBB: SlapOS Master non-zero knowledge END -#}
+{% if 'key' in ssl %}
 {{ https_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-  tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
+  tls {{ ssl['certificate'] }} {{ ssl['key'] }} {
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1
