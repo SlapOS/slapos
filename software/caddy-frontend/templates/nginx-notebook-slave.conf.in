@@ -5,7 +5,20 @@
 {%-   set https_upstream = https_url.split("/")[2] %}
 
 # SSL-enabled
+{% set ssl = {} %}
 {% if os_module.path.exists(slave_parameter['certificate']) %}
+{%   do ssl.__setitem__('certificate', slave_parameter['certificate']) %}
+{%   do ssl.__setitem__('key', slave_parameter['certificate']) %}
+{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
+{% elif 'path_to_ssl_crt' in slave_parameter and 'path_to_ssl_key' in slave_parameter %}
+{%   do ssl.__setitem__('certificate', slave_parameter['path_to_ssl_crt']) %}
+{%   do ssl.__setitem__('key', slave_parameter['path_to_ssl_key']) %}
+{% elif os_module.path.getsize(slave_parameter['apache_certificate']) > 0 and os_module.path.getsize(slave_parameter['apache_key']) > 0 %}
+{%   do ssl.__setitem__('certificate', slave_parameter['apache_certificate']) %}
+{%   do ssl.__setitem__('key', slave_parameter['apache_key']) %}
+{% endif %}
+{#- BBB: SlapOS Master non-zero knowledge END -#}
+{% if 'key' in ssl %}
 https://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_https_port'] }} {
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
