@@ -37,6 +37,16 @@ sharedscripts = true
 notifempty = true
 create = true
 
+# BBB: SlapOS Master non-zero knowledge BEGIN
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = {{ custom_ssl_directory }}/requests/
+private = {{ custom_ssl_directory }}/private/
+certs = {{ custom_ssl_directory }}/certs/
+newcerts = {{ custom_ssl_directory }}/newcerts/
+crl = {{ custom_ssl_directory }}/crl/
+# BBB: SlapOS Master non-zero knowledge END
+
 {% if master_key_download_url %}
 {%   do part_list.append('master-key-download') %}
 [master-key-download]
@@ -176,6 +186,64 @@ command =
     rm -f ${:used}
   fi
 update-command = ${:command}
+
+# BBB: SlapOS Master non-zero knowledge BEGIN
+{# Set ssl certificates for each slave #}
+{%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
+{%     if cert_name in slave_instance %}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%       do part_list.append(cert_title) %}
+{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
+{%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
+{# Store certificates on fs #}
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+# Store certificate in config
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif %}
+{%   endfor %}
+
+{#-   Set Up Certs #}
+{%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
+{%   do slave_instance.__setitem__('apache_key', apache_key) %}
+{%   do slave_instance.__setitem__('apache_ca_crt', apache_ca_certificate) %}
+{%   do slave_parameter_dict.__setitem__('ssl_crt', apache_certificate) %}
+{%   do slave_parameter_dict.__setitem__('ssl_key', apache_key) %}
+{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
+{%     set cert_title = '%s-crt' % (slave_reference) %}
+{%     set key_title = '%s-key' % (slave_reference) %}
+{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) %}
+{%     do part_list.append(cert_title) %}
+{%     do part_list.append(key_title) %}
+{%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
+{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) %}
+
+[{{key_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ key_file }}
+key-content = {{ dumps(slave_instance.get('ssl_key')) }}
+extra-context =
+    key content :key-content
+
+[{{cert_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
+extra-context =
+    key content :cert-content
+{%     endif %}
+# BBB: SlapOS Master non-zero knowledge END
 
 {# ########################################## #}
 {# Set Slave Configuration                    #}
@@ -365,6 +433,10 @@ https_port = {{ dumps(https_port) }}
 http_port = {{ dumps(http_port) }}
 ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
 ip_access_key = {{ frontend_configuration.get('ip-access-key') }}
+# BBB: SlapOS Master non-zero knowledge BEGIN
+apache_certificate = {{ dumps(apache_certificate) }}
+apache_key = {{ dumps(apache_key) }}
+# BBB: SlapOS Master non-zero knowledge END
 access_log = {{ dumps(access_log) }}
 error_log = {{ dumps(error_log) }}
 not_found_file = {{ dumps(not_found_file) }}
