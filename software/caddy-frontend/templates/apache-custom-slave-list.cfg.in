@@ -195,6 +195,61 @@ command =
   fi
 update-command = ${:command}
 
+# BBB: SlapOS Master non-zero knowledge BEGIN
+{# Set ssl certificates for each slave #}
+{%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
+{%     if cert_name in slave_instance %}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%       do part_list.append(cert_title) %}
+{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
+{%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
+{# Store certificates on fs #}
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+# Store certificate in config
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif %}
+{%   endfor %}
+
+{#-   Set Up Certs #}
+{%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
+{%   do slave_instance.__setitem__('apache_key', apache_key) %}
+{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
+{%     set cert_title = '%s-crt' % (slave_reference) %}
+{%     set key_title = '%s-key' % (slave_reference) %}
+{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) %}
+{%     do part_list.append(cert_title) %}
+{%     do part_list.append(key_title) %}
+{%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
+{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
+{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) %}
+
+[{{key_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ key_file }}
+key-content = {{ dumps(slave_instance.get('ssl_key')) }}
+extra-context =
+    key content :key-content
+
+[{{cert_title}}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
+extra-context =
+    key content :cert-content
+{%     endif %}
+# BBB: SlapOS Master non-zero knowledge END
+
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
