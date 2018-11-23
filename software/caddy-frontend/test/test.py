@@ -3505,11 +3505,48 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
   def test_ssl_from_master(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl_from_master']
+    self.assertLogAccessUrlWithPop(parameter_dict, 'ssl_from_master')
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    hostname = 'ssl_from_master'.translate(None, '_-')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': LOCAL_IPV4
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      open('wildcard.example.com.crt').read(),
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
     raise NotImplementedError(
       'Show that old style certificate is used from master partition '
       'until something is uploaded to KeDiFa.')
 
   def test_ssl_from_slave(self):
+    raise NotImplementedError(
+      'Show that old style certificate is used from slave partition '
+      'until something is uploaded to KeDifa. Assert that warning is '
+      'emitted to the requester.')
+
+  def test_type_notebook_ssl_from_master(self):
+    raise NotImplementedError(
+      'Show that old style certificate is used from master partition '
+      'until something is uploaded to KeDiFa.')
+
+  def test_type_notebook_ssl_from_slave(self):
     raise NotImplementedError(
       'Show that old style certificate is used from slave partition '
       'until something is uploaded to KeDifa. Assert that warning is '
