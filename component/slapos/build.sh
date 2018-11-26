@@ -29,7 +29,7 @@ unset CONFIG_SITE
 # Bootstrap SlapOS, using forked version of buildout.
 #
 wget https://bootstrap.pypa.io/bootstrap-buildout.py
-python -S bootstrap-buildout.py --buildout-version 2.5.2+slapos009 \
+python -S bootstrap-buildout.py --buildout-version 2.5.2+slapos013 \
   -f http://www.nexedi.org/static/packages/source/slapos.buildout/
 
 #

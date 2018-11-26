@@ -1,0 +1,123 @@
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[fontconfig-conf]
+recipe = slapos.recipe.template
+url = ${font.conf:output}
+output = $${directory:etc}/font.conf
+
+fonts = $${directory:fonts}
+fontcache = $${directory:fontcache}
+installed-fonts =
+  ${liberation-fonts:location}
+  ${ipaex-fonts:location}
+  ${ipa-fonts:location}
+  ${ocrb-fonts:location}
+  ${android-fonts:location}
+  ${dejavu-fonts:location}
+
+[tomcat-server-xml]
+recipe = slapos.recipe.template
+url = ${tomcat-server-xml:output}
+output = $${directory:catalina_conf}/server.xml
+ip = $${instance-parameter:ipv6-random}
+port = 8899
+scheme = https
+
+[tomcat-web-xml]
+recipe = plone.recipe.command
+command = [ -f $${:location} ] || cp ${tomcat9:location}/conf/web.xml $${:location}
+location = $${directory:catalina_conf}/web.xml
+
+[tomcat-keystore]
+recipe = plone.recipe.command
+command =
+  ${java-re-8-output:keytool} \
+    -genkeypair \
+    -alias "tomcat" \
+    -keyalg RSA \
+    -keypass "$${:pass}" \
+    -dname "CN=Web Server,OU=Unit,O=Organization,L=City,S=State,C=Country" \
+    -keystore "$${:file}" \
+    -storepass "$${:pass}"
+file = $${directory:catalina_base}/.keystore
+pass = insecure
+
+[tomcat-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = ${tomcat9:location}/bin/catalina.sh run
+environment =
+  JRE_HOME=${java-re-8:location}
+  CATALINA_BASE=$${directory:catalina_base}
+  GRAPHVIZ_DOT=${graphviz:location}/bin/dot
+  FONTCONFIG_FILE=$${fontconfig-conf:output}
+  LD_LIBRARY_PATH=${fontconfig:location}/lib:${freetype:location}/lib
+# XXX java is still loading system fonts ... ( even with $JAVA_FONTS or -Djava.awt.fonts )
+# related links:
+#   https://docs.oracle.com/javase/8/docs/technotes/guides/intl/fontconfig.html
+#   https://bugs.openjdk.java.net/browse/JDK-7175487
+hash-files =
+  $${buildout:directory}/software_release/buildout.cfg
+  $${tomcat-server-xml:output}
+
+ip =  $${tomcat-server-xml:ip}
+port =  $${tomcat-server-xml:port}
+scheme = $${tomcat-server-xml:scheme}
+hostname =  [$${:ip}]
+url = $${:scheme}://$${:hostname}:$${:port}
+needs = $${tomcat-web-xml:location}
+
+[promises]
+recipe =
+instance-promises =
+  $${tomcat-listen-promise:path}
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/$${:_buildout_section_name_}
+
+[tomcat-listen-promise]
+<= check-port-listening-promise
+hostname= $${tomcat-instance:ip}
+port = $${tomcat-instance:port}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${tomcat-instance:url}
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+services = $${:etc}/service
+promises = $${:etc}/promise
+
+fonts = $${:srv}/fonts/
+fontcache = $${buildout:directory}/.fontcache/
+
+# tomcat directories
+catalina_base = $${:var}/tomcat
+catalina_logs = $${:catalina_base}/logs
+catalina_temp = $${:catalina_base}/temp
+catalina_webapps = $${:catalina_base}/webapps
+catalina_work = $${:catalina_base}/work
+catalina_conf = $${:catalina_base}/conf

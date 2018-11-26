@@ -61,16 +61,15 @@ class SlapOSInstanceTestCase(unittest.TestCase):
   on the class.
 
   All tests from the test class will run with the same instance.
-
+  
   The following class attributes are available:
 
-    * `computer_partition`:  the computer partition instance, implementing
-    `slapos.slap.interface.slap.IComputerPartition`.
+    * `computer_partition`:  the `slapos.core.XXX` computer partition instance.
 
-    * `computer_partition_root_path`: the path of the instance root directory.
-
+    * `computer_partition_root_path`: the path of the instance root directory,
+        
   """
-
+  
   # Methods to be defined by subclasses.
   @classmethod
   def getSoftwareURLList(cls):
@@ -118,7 +117,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     """Setup the class, build software and request an instance.
-
+    
     If you have to override this method, do not forget to call this method on
     parent class.
     """
@@ -138,8 +137,9 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       # cls.createInstances()
       # cls.requestInstances()
 
-    except Exception:
+    except BaseException:
       cls.stopSlapOSProcesses()
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
   @classmethod
@@ -206,7 +206,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     for sr in getSoftwareURLList; do
       slapos supply $SR $COMP
     done
-    """
+    """ 
     cls._process_manager = ProcessManager()
 
     # XXX this code is copied from testnode code
@@ -260,7 +260,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
 
   @classmethod
-  def runComputerPartition(cls, max_quantity=None):
+  def runComputerPartition(cls):
     """Instanciate the software.
 
     This is the equivalent of doing:
@@ -272,9 +272,6 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     This can be called by tests to simulate re-request with different parameters.
     """
-    run_cp_kw = {}
-    if max_quantity is not None:
-      run_cp_kw['max_quantity'] = max_quantity
     logger = logging.getLogger()
     logger.level = logging.DEBUG
     stream = StringIO.StringIO()
@@ -289,8 +286,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
         cls.config,
         cluster_configuration=instance_parameter_dict,
-        environment=os.environ,
-        **run_cp_kw)
+        environment=os.environ)
       stream.seek(0)
       stream.flush()
       message = ''.join(stream.readlines()[-100:])

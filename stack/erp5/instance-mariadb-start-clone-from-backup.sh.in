@@ -88,6 +88,7 @@ zcat "$BACKUP" | "$CLIENT" -u root
 
 echo "Configuring server as slave..."
 if [ "$MASTER_USE_GTID" -eq 1 ]; then
+  "$CLIENT" -u root -e "$SQL_SET_GTID"
   MASTER_USE_GTID_SQL="current_pos"
 else
   MASTER_USE_GTID_SQL="NO"
@@ -104,8 +105,14 @@ fi
   MASTER_SSL_VERIFY_SERVER_CERT=1,
   MASTER_USE_GTID=$MASTER_USE_GTID_SQL;
 "
-"$CLIENT" -u root -e "$SQL_CHANGE_MASTER"
-test "$MASTER_USE_GTID" -eq 1 && "$CLIENT" -u root -e "$SQL_SET_GTID"
+if [ "$MASTER_USE_GTID" -eq 0 ]; then
+  # No GTID, use binlog name & offset as provided by backup file.
+  # Example: CHANGE MASTER TO MASTER_LOG_FILE='binlog.003447', MASTER_LOG_POS=360;
+  # Notes:
+  # - Must happen after setting MASTER_HOST & MASTER_PORT.
+  # - Implicitly sets MASTER_USE_GTID=NO if it was set before.
+  "$CLIENT" -u root -e "$SQL_CHANGE_MASTER"
+fi
 "$CLIENT" -u root -e "START SLAVE;"
 
 echo "Stopping mariadb..."

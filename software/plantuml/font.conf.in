@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <cachedir>$${:fontcache}</cachedir>
+  <!-- installed fonts: $${:installed-fonts} -->
+  <dir>${fonts:location}</dir>
+  <dir>$${:fonts}</dir>
+  <include>${fontconfig:location}/etc/fonts/conf.d</include>
+</fontconfig>
