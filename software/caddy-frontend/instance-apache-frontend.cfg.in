@@ -226,7 +226,6 @@ extra-context =
     key public_ipv4 configuration:public-ipv4
     key slave_instance_list :slave_instance_list
     key extra_slave_instance_list :extra_slave_instance_list
-    key custom_ssl_directory caddy-directory:vh-ssl
     key master_key_download_url :master_key_download_url
     key slave_kedifa_information :slave_kedifa_information
     key autocert caddy-directory:autocert
@@ -252,9 +251,6 @@ extra-context =
     key promise_directory monitor-directory:promises
     key report_directory monitor-directory:reports
     key bin_directory :bin_directory
-    key login_certificate apache-certificate:rendered
-    key login_key apache-key:rendered
-    key login_ca_crt apache-ca-certificate:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
@@ -262,6 +258,12 @@ extra-context =
     key service_directory directory:service
     key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key custom_ssl_directory caddy-directory:custom-ssl-directory
+    key login_certificate apache-certificate:rendered
+    key login_key apache-key:rendered
+    key login_ca_crt apache-ca-certificate:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [dynamic-virtualhost-template-slave]
 <= jinja2-template-base
@@ -287,9 +289,6 @@ extra-context =
     key httpd_home software-release-path:caddy-location
     key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
-    key login_certificate apache-certificate:rendered
-    key login_key apache-key:rendered
-    key login_ca_crt apache-ca-certificate:rendered
     key master_certificate caddy-configuration:master-certificate
     key access_log caddy-configuration:access-log
     key slave_configuration_directory caddy-directory:slave-configuration
@@ -305,6 +304,11 @@ extra-context =
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key login_certificate apache-certificate:rendered
+    key login_key apache-key:rendered
+    key login_ca_crt apache-ca-certificate:rendered
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -338,11 +342,13 @@ slave-configuration = ${directory:etc}/caddy-slave-conf.d/
 slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
-vh-ssl = ${:slave-configuration}/ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
+# BBB: SlapOS Master non-zero knowledge BEGIN
+custom-ssl-directory = ${:slave-configuration}/ssl
+# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -734,8 +740,6 @@ rendered = ${directory:etc}/nginx.cfg
 mode = 0600
 extra-context =
   key port nginx-configuration:port
-  key ssl_certificate nginx-configuration:ssl_certificate
-  key ssl_key nginx-configuration:ssl_key
   key local_ip nginx-configuration:local_ip
   key plain_port nginx-configuration:plain_port
   key slave_configuration_directory nginx-configuration:slave-configuration-directory
@@ -743,6 +747,10 @@ extra-context =
   key access_log nginx-configuration:access_log
   key not_found_file caddy-configuration:not-found-file
   key master_certificate caddy-configuration:master-certificate
+# BBB: SlapOS Master non-zero knowledge BEGIN
+  key ssl_certificate nginx-configuration:ssl_certificate
+  key ssl_key nginx-configuration:ssl_key
+# BBB: SlapOS Master non-zero knowledge END
 
 [nginx-configuration]
 access_log = ${directory:log}/nginx-access.log
