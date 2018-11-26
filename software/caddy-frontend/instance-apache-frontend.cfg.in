@@ -11,10 +11,7 @@ parts =
   logrotate
   cron
   cron-entry-logrotate
-  ca-frontend
-  ca-frontend-service
   certificate-authority
-  certificate-authority-service
   logrotate-entry-caddy
   logrotate-entry-nginx
   caddy-frontend
@@ -381,12 +378,6 @@ ca-certs = ${cadirectory:certs}
 ca-newcerts = ${cadirectory:newcerts}
 ca-crl = ${cadirectory:crl}
 
-[certificate-authority-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${certificate-authority:wrapper}
-wrapper-path = ${directory:service}/certificate_authority
-hash-files = ${buildout:directory}/software_release/buildout.cfg
-
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
 requests = ${directory:ca-dir}/requests/
@@ -395,23 +386,25 @@ certs = ${directory:ca-dir}/certs/
 newcerts = ${directory:ca-dir}/newcerts/
 crl = ${directory:ca-dir}/crl/
 
-[ca-frontend]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-key-file = ${cadirectory:certs}/frontend.key
-cert-file = ${cadirectory:certs}/frontend.crt
-executable = ${directory:service}/frontend_caddy
-wrapper = ${directory:bin}/frontend_caddy
-key-content = ${configuration:apache-key}
-cert-content = ${configuration:apache-certificate}
-# Put domain name
-name = ${configuration:domain}
+[apache-key]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${cadirectory:certs}/frontend.key
+content = ${configuration:apache-key}
+extra-context =
+    key content :content
 
-[ca-frontend-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${ca-frontend:wrapper}
-wrapper-path = ${directory:service}/frontend_caddy
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+[apache-certificate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${cadirectory:certs}/frontend.crt
+content = ${configuration:apache-certificate}
+extra-context =
+    key content :content
+
+[ca-frontend]
+key-file = ${apache-key:rendered}
+cert-file = ${apache-certificate:rendered}
 
 [ca-custom-frontend]
 < = jinja2-template-base
