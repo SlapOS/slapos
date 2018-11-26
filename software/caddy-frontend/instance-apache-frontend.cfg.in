@@ -12,7 +12,6 @@ parts =
   cron
   cron-entry-logrotate
   ca-frontend
-  ca-frontend-service
   certificate-authority
   certificate-authority-service
   logrotate-entry-caddy
@@ -328,8 +327,9 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 
 [caddy-frontend]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
+command-line = ${ca-frontend:wrapper} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -406,12 +406,6 @@ key-content = ${configuration:apache-key}
 cert-content = ${configuration:apache-certificate}
 # Put domain name
 name = ${configuration:domain}
-
-[ca-frontend-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${ca-frontend:wrapper}
-wrapper-path = ${directory:service}/frontend_caddy
-hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ca-custom-frontend]
 < = jinja2-template-base
