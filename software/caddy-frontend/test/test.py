@@ -382,6 +382,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def stopServerProcess(cls):
+    if getattr(cls, 'server_process', None) is None:
+      return
     cls.server_process.terminate()
     cls.server_https_process.terminate()
 
