@@ -425,8 +425,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
         shared=True
       )
-    # run partition 4 more times for slaves to be setup
-    cls.runComputerPartition(max_quantity=4)
+    # run partition 5 more times for slaves to be setup
+    cls.runComputerPartition(max_quantity=5)
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
