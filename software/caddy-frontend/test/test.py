@@ -66,9 +66,6 @@ MONITOR_HTTPD_PORT = '13000'
 MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 
-MASTER_KEY = open('wildcard.example.com.crt').read() + \
-    open('wildcard.example.com.key').read()
-
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('DEBUG'):
@@ -523,7 +520,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     assert auth.status_code == httplib.CREATED
     upload = requests.put(
       parameter_dict['master-key-upload-url'] + auth.text,
-      data=MASTER_KEY,
+      data=cls.key_pem + cls.certificate_pem,
       verify=cls.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
 
