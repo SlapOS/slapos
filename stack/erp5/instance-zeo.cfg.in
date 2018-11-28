@@ -117,7 +117,7 @@ rendered = ${directory:srv}/exporter.exclude
 # It excludes repozo files as they already include a hash function
 # used to check backups when rebuilding the datafs
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate" --exclude-path "srv/backup/zodb"
+command-line = {{ bin_directory }}/backup-identity-script-excluding-path --exclude-path "srv/backup/logrotate/**" --exclude-path "srv/backup/zodb/*/*fsz"
 wrapper-path = ${directory:srv}/.backup_identity_script
 mode = 770
 
