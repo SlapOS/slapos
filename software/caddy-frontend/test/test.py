@@ -183,6 +183,19 @@ def isHTTP2(domain, ip):
   return 'Using HTTP2, server supports multi-use' in err
 
 
+def getQUIC(url, ip, port):
+  quic_client_command = 'quic_client --disable-certificate-verification '\
+    '--port=%(port) --host=%(host) %(url)' %
+    dict(port=port, host=ip, url=url)
+  prc = subprocess.Popen(
+    quic_client_command.split(), stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE)
+  out, err = prc.communicate()
+  assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
+    quic_client_command, out, err)
+  return out
+
+
 class TestDataMixin(object):
   @staticmethod
   def generateHashFromFiles(file_list):
@@ -3205,35 +3218,17 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Date', result.headers)
     self.assertKeyWithPop('Content-Length', result.headers)
 
-    self.assertEqual(
-      {'Content-Encoding': 'gzip',
-       'Alt-Svc': 'quic=":11443"; ma=2592000; v="39"',  # QUIC advertises
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Vary': 'Accept-Encoding',
-       'Server': 'Caddy, BaseHTTP/0.3 Python/2.7.14',
-       'Content-Type': 'application/json'},
-      result.headers
+    quic_result = getQUIC(
+      '%s/%s' % (parameter_dict['domain'], 'test-path',
+      parameter_dict['public-ipv4'],
+      HTTPS_PORT
     )
-
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
     try:
-      j = result_http.json()
+      j = json_loads(result_quic)
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertEqual(
-      'gzip',
-      result_http.headers['Content-Encoding']
-    )
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_http.headers['Set-Cookie']
-    )
+    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
+    self.assertEqual('/test-path', j['Path'])
 
 
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
