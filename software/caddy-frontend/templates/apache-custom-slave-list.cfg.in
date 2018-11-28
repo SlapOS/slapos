@@ -393,6 +393,9 @@ extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
     section parameter_dict caddy-log-access-parameters
+    raw certificate {{frontend_configuration.get('log-access-certificate')}}
+    raw key {{frontend_configuration.get('log-access-key')}}
+
 
 {# Publish information for the instance #}
 [publish-caddy-information]

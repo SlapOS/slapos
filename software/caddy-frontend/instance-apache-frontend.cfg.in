@@ -94,9 +94,34 @@ single-custom-personal = ${dynamic-custom-personal-template-slave-list:rendered}
 [frontend-configuration]
 template-log-access = {{ parameter_dict['template_log_access'] }}
 log-access-configuration = ${directory:etc}/log-access.conf
+log-access-certificate = ${log-access-self-signed:certificate}
+log-access-key = ${log-access-self-signed:key}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+
+[log-access-self-signed]
+recipe = plone.recipe.command
+update-command = ${:command}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv4 = {{instance_parameter['ipv4-random']}}
+key = ${caddy-directory:vh-ssl}/log-access-${:ipv4}-${:ipv6}.key
+certificate = ${caddy-directory:vh-ssl}/log-access-${:ipv4}-${:ipv6}.crt
+stop-on-error = True
+command =
+  [ -f ${:key} ] && [ -f ${:certificate} ] && exit 0
+  rm -f ${:key} ${:certificate}
+  /bin/bash -c ' \
+  {{ parameter_dict['openssl'] }}/bin/openssl req \
+     -new -newkey rsa:2048 -sha256 \
+     -nodes -x509 -days 36500 \
+     -keyout ${:key} \
+     -subj "/CN=Log Access" \
+     -reqexts SAN \
+     -extensions SAN \
+     -config <(cat {{ parameter_dict['openssl'] }}/etc/ssl/openssl.cnf \
+         <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
+     -out ${:certificate}'
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
