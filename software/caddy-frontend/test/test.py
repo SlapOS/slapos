@@ -185,8 +185,8 @@ def isHTTP2(domain, ip):
 
 def getQUIC(url, ip, port):
   quic_client_command = 'quic_client --disable-certificate-verification '\
-    '--port=%(port) --host=%(host) %(url)' %
-    dict(port=port, host=ip, url=url)
+    '--port=%(port)s --host=%(host)s %(url)s' % dict(
+      port=port, host=ip, url=url)
   prc = subprocess.Popen(
     quic_client_command.split(), stdout=subprocess.PIPE,
     stderr=subprocess.PIPE)
@@ -3219,16 +3219,17 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Content-Length', result.headers)
 
     quic_result = getQUIC(
-      '%s/%s' % (parameter_dict['domain'], 'test-path',
+      '%s/%s' % (parameter_dict['domain'], 'test-path'),
       parameter_dict['public-ipv4'],
       HTTPS_PORT
     )
     try:
-      j = json_loads(result_quic)
+      j = json.loads(quic_result)
     except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+      raise ValueError('JSON decode problem in:\n%s' % (quic_result,))
+    key = 'Path'
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-    self.assertEqual('/test-path', j['Path'])
+    self.assertEqual('/test-path', j[key])
 
 
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
