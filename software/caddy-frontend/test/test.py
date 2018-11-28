@@ -90,19 +90,21 @@ def createKey():
   return key, key_pem
 
 
-def createSelfSignedCertificate(common_name):
+def createSelfSignedCertificate(name_list):
   key, key_pem = createKey()
+  subject_alternative_name_list = x509.SubjectAlternativeName(
+    [x509.DNSName(unicode(q)) for q in name_list]
+  )
   subject = issuer = x509.Name([
-    x509.NameAttribute(NameOID.COUNTRY_NAME, u"XX"),
-    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"YY"),
-    x509.NameAttribute(NameOID.LOCALITY_NAME, u"Xx Yy"),
-    x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Xyx Yxy"),
-    x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+    x509.NameAttribute(NameOID.COMMON_NAME, u'Test Self Signed Certificate'),
   ])
   certificate = x509.CertificateBuilder().subject_name(
     subject
   ).issuer_name(
     issuer
+  ).add_extension(
+      subject_alternative_name_list,
+      critical=False,
   ).public_key(
     key.public_key()
   ).serial_number(
@@ -181,6 +183,17 @@ def isHTTP2(domain, ip):
   assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
     curl_command, out, err)
   return 'Using HTTP2, server supports multi-use' in err
+
+
+def getQUIC(url, ip, port):
+  quic_client_command = 'quic_client --disable-certificate-verification '\
+    '--port=%(port)s --host=%(host)s %(url)s' % dict(
+      port=port, host=ip, url=url)
+  try:
+    return True, subprocess.check_output(
+      quic_client_command.split(), stderr=subprocess.STDOUT)
+  except subprocess.CalledProcessError as e:
+    return False, e.output
 
 
 class TestDataMixin(object):
@@ -515,7 +528,12 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def createWildcardExampleComCertificate(cls):
     _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
-      '*.example.com')
+      [
+        '*.customdomain.example.com',
+        '*.example.com',
+        '*.nginx.example.com',
+        '*.alias1.example.com',
+      ])
 
   @classmethod
   def setUpClass(cls):
@@ -704,7 +722,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'customdomainsslcrtsslkeysslcacrt.example.com')
     _, cls.customdomain_ca_certificate_pem = cls.ca.signCSR(csr)
     _, cls.customdomain_key_pem, _, cls.customdomain_certificate_pem = \
-        createSelfSignedCertificate('customdomainsslcrtsslkey.example.com')
+        createSelfSignedCertificate(['customdomainsslcrtsslkey.example.com'])
     super(TestSlave, cls).setUpSlaves()
 
   @classmethod
@@ -1404,14 +1422,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict
     )
 
-    result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.customdomain_ca_certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    with self.assertRaises(requests.exceptions.SSLError):
+      self.fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
   def test_ssl_ca_crt_does_not_match(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
@@ -3205,35 +3218,26 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Date', result.headers)
     self.assertKeyWithPop('Content-Length', result.headers)
 
-    self.assertEqual(
-      {'Content-Encoding': 'gzip',
-       'Alt-Svc': 'quic=":11443"; ma=2592000; v="39"',  # QUIC advertises
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Vary': 'Accept-Encoding',
-       'Server': 'Caddy, BaseHTTP/0.3 Python/2.7.14',
-       'Content-Type': 'application/json'},
-      result.headers
+    quic_status, quic_result = getQUIC(
+      'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
+      parameter_dict['public-ipv4'],
+      HTTPS_PORT
     )
 
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+    self.assertTrue(quic_status, quic_result)
 
     try:
-      j = result_http.json()
+      quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
     except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertEqual(
-      'gzip',
-      result_http.headers['Content-Encoding']
-    )
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_http.headers['Set-Cookie']
-    )
+      raise ValueError('JSON not found at all in QUIC result:\n%s' % (
+        quic_result,))
+    try:
+      j = json.loads(quic_jsoned)
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
+    key = 'Path'
+    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
+    self.assertEqual('/test-path', j[key])
 
 
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
