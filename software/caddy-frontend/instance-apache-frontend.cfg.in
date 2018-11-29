@@ -86,6 +86,9 @@ ca-dir = ${:srv}/ssl
 
 varnginx = ${:var}/nginx
 
+frontend_cluster = ${:var}/frontend_cluster
+nginx_cluster = ${:var}/nginx_cluster
+
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -224,6 +227,8 @@ extra-context =
 
 [caddy-wrapper]
 recipe = slapos.cookbook:wrapper
+environment =
+  CADDYPATH=${directory:frontend_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
   -log stdout
@@ -648,6 +653,8 @@ curl_path = {{ parameter_dict['curl'] }}/bin/curl
 #
 [nginx-wrapper]
 recipe = slapos.cookbook:wrapper
+environment =
+  CADDYPATH=${directory:nginx_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
   -log stdout
