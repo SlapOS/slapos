@@ -1,0 +1,18 @@
+#!/bin/sh
+
+RUN_DIR={{ directory_run }}
+ETC_DIR={{ directory_etc }}
+BIN_DIR={{ directory_bin }}
+
+CADDY_SIGNATURE_FILE=$RUN_DIR/caddy_validate.signature
+NCADDY_SIGNATURE_FILE=$RUN_DIR/ncaddy_validate.signature
+
+touch $CADDY_SIGNATURE_FILE
+sha256sum $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-.d/*.conf $ETC_DIR/caddy-*.d/ssl/*.*key $ETC_DIR/caddy-*.d/ssl/*.*crt* | sort -k 66 > $NCADDY_SIGNATURE_FILE
+
+if diff "$CADDY_SIGNATURE_FILE" "$NCADDY_SIGNATURE_FILE"; then
+  exit 0
+fi
+
+mv "$NCADDY_SIGNATURE_FILE" "$CADDY_SIGNATURE_FILE"
+exec {{ caddy_validate_command }}
