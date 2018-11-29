@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+SIGNATURE_FILE={{ signature_file }}
+NSIGNATURE_FILE={{ signature_file }}.tmp
+SIGNATURE_STATUS={{ signature_file }}.status
+
+touch $SIGNATURE_FILE
+{{ sha256sum }} {{ path_list }} | sort -k 66 > $NSIGNATURE_FILE
+
+if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE"; then
+  rm -f "$NSIGNATURE_FILE"
+else
+  mv "$NSIGNATURE_FILE" "$SIGNATURE_FILE"
+  {{ wrapper }} -validate
+  echo $? > $SIGNATURE_STATUS
+fi
+exit `cat $SIGNATURE_STATUS`
