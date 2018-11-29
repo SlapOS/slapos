@@ -187,11 +187,11 @@ def getQUIC(url, ip, port):
   quic_client_command = 'quic_client --disable-certificate-verification '\
     '--port=%(port)s --host=%(host)s %(url)s' % dict(
       port=port, host=ip, url=url)
-  prc = subprocess.Popen(
-    quic_client_command.split(), stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT)
-  out, err = prc.communicate()
-  return prc.returncode == 0, out
+  try:
+    return True, subprocess.check_output(
+      quic_client_command.split(), stderr=subprocess.STDOUT)
+  except subprocess.CalledProcessError as e:
+    return False, e.output
 
 
 class TestDataMixin(object):
