@@ -3217,7 +3217,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Content-Length', result.headers)
 
     quic_status, quic_result = getQUIC(
-      '%s/%s' % (parameter_dict['domain'], 'test-path'),
+      'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
       parameter_dict['public-ipv4'],
       HTTPS_PORT
     )
@@ -3225,9 +3225,14 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertTrue(quic_status, quic_result)
 
     try:
-      j = json.loads(quic_result)
+      quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
     except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (quic_result,))
+      raise ValueError('JSON not found at all in QUIC result:\n%s' % (
+        quic_result,))
+    try:
+      j = json.loads(quic_jsoned)
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
     key = 'Path'
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
     self.assertEqual('/test-path', j[key])
