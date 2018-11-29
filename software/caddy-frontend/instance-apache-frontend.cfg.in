@@ -525,6 +525,26 @@ extra-context =
     key directory_bin directory:bin
     key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
 
+[frontend-caddy-validate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_caddy_validate_script'] }}
+rendered = ${directory:etc-run}/frontend-caddy-validate-graceful
+mode = 0700
+extra-context =
+    key directory_run directory:run
+    key directory_etc directory:etc
+    key directory_bin directory:bin
+
+[frontend-nginx-validate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_nginx_validate_script'] }}
+rendered = ${directory:etc-run}/frontend-nginx-validate-graceful
+mode = 0700
+extra-context =
+    key directory_run directory:run
+    key directory_etc directory:etc
+    key directory_bin directory:bin
+
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
 template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
