@@ -86,6 +86,9 @@ ca-dir = ${:srv}/ssl
 
 varnginx = ${:var}/nginx
 
+frontend_cluster = ${:var}/frontend_cluster
+nginx_cluster = ${:var}/nginx_cluster
+
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -240,6 +243,8 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
+environment =
+  CADDYPATH=${directory:frontend_cluster}
 wait-for-files =
 	       ${ca-frontend:cert-file}
 	       ${ca-frontend:key-file}
@@ -660,6 +665,8 @@ wrapper-path = ${directory:bin}/nginx-wrapper
 [nginx-frontend]
 recipe = slapos.cookbook:wrapper
 command-line = ${nginx-wrapper:wrapper-path} -pidfile ${nginx-configuration:pid-file}
+environment =
+  CADDYPATH=${directory:nginx_cluster}
 wrapper-path = ${directory:service}/frontend_nginx
 hash-files = ${buildout:directory}/software_release/buildout.cfg
 
