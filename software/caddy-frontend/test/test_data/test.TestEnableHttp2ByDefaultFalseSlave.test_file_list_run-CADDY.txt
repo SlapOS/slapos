@@ -1,8 +1,14 @@
 TestEnableHttp2ByDefaultFalseSlave-0/var/run/monitor-httpd.pid
 TestEnableHttp2ByDefaultFalseSlave-0/var/run/monitor/monitor-bootstrap.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/caddy_configuration.signature
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/caddy_graceful_signature
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/caddy_graceful_signature.tmp
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/caddy_validate_signature
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/caddy_validate_signature.status
 TestEnableHttp2ByDefaultFalseSlave-1/var/run/httpd.pid
 TestEnableHttp2ByDefaultFalseSlave-1/var/run/monitor-httpd.pid
 TestEnableHttp2ByDefaultFalseSlave-1/var/run/monitor/monitor-bootstrap.pid
-TestEnableHttp2ByDefaultFalseSlave-1/var/run/ncaddy_configuration.signature
 TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx.pid
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx_graceful_signature
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx_graceful_signature.tmp
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx_validate_signature
+TestEnableHttp2ByDefaultFalseSlave-1/var/run/nginx_validate_signature.status
