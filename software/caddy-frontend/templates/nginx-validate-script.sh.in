@@ -1,0 +1,25 @@
+#!/bin/sh
+
+RUN_DIR={{ config['directory_run'] }}
+ETC_DIR={{ config['directory_etc'] }}
+
+NGINX_SIGNATURE_FILE=$RUN_DIR/nginx_validate.signature
+NNGINX_SIGNATURE_FILE=$RUN_DIR/nnginx_validate.signature
+
+touch $NGINX_SIGNATURE_FILE
+{{ config['sha256sum'] }} $ETC_DIR/nginx.cfg $ETC_DIR/nginx-slave-conf.d/*.conf | sort -k 66 > $NNGINX_SIGNATURE_FILE
+
+if diff "$NGINX_SIGNATURE_FILE" "$NNGINX_SIGNATURE_FILE"; then
+  mv "$NNGINX_SIGNATURE_FILE" "$NGINX_SIGNATURE_FILE"
+  exit 0
+else
+  mv "$NNGINX_SIGNATURE_FILE" "$NGINX_SIGNATURE_FILE"
+fi
+
+if {{ wrapper }} -validate ; then
+  exit 0
+else
+  # in case of error with validation always revalidate
+  rm $NGINX_SIGNATURE_FILE
+  exit 1
+fi

@@ -3,19 +3,23 @@
 RUN_DIR={{ config['directory_run'] }}
 ETC_DIR={{ config['directory_etc'] }}
 
-CADDY_SIGNATURE_FILE=$RUN_DIR/caddy_configuration.signature
-NCADDY_SIGNATURE_FILE=$RUN_DIR/ncaddy_configuration.signature
+CADDY_SIGNATURE_FILE=$RUN_DIR/caddy_validate.signature
+NCADDY_SIGNATURE_FILE=$RUN_DIR/ncaddy_validate.signature
 
 touch $CADDY_SIGNATURE_FILE
 {{ config['sha256sum'] }} $ETC_DIR/Caddyfile $ETC_DIR/log-access.conf $ETC_DIR/caddy-*.d/*.conf $ETC_DIR/caddy-*.d/ssl/*.*key $ETC_DIR/caddy-*.d/ssl/*.*crt* | sort -k 66 > $NCADDY_SIGNATURE_FILE
 
-# If no diff, no restart for now
 if diff "$CADDY_SIGNATURE_FILE" "$NCADDY_SIGNATURE_FILE"; then
-  echo "Nothing Changed, so nothing to reload"
+  mv "$NCADDY_SIGNATURE_FILE" "$CADDY_SIGNATURE_FILE"
   exit 0
+else
+  mv "$NCADDY_SIGNATURE_FILE" "$CADDY_SIGNATURE_FILE"
 fi
-echo "Reloading caddy.."
 
-{{ caddy_graceful_reload_command }}
-
-mv "$NCADDY_SIGNATURE_FILE" "$CADDY_SIGNATURE_FILE"
+if {{ wrapper }} -validate ; then
+  exit 0
+else
+  # in case of error with validation always revalidate
+  rm $CADDY_SIGNATURE_FILE
+  exit 1
+fi
