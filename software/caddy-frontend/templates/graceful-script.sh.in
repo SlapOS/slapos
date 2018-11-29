@@ -1,0 +1,18 @@
+#!/bin/sh
+
+SIGNATURE_FILE={{ signature_file }}
+NSIGNATURE_FILE={{ signature_file }}.tmp
+
+touch $SIGNATURE_FILE
+{{ sha256sum }} {{ path_list }} | sort -k 66 > $NSIGNATURE_FILE
+
+# If no diff, no restart for now
+if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE"; then
+  echo "Nothing changed, so nothing to reload"
+  exit 0
+fi
+echo "Reloading.."
+
+{{ graceful_reload_command }}
+
+mv "$NSIGNATURE_FILE" "$SIGNATURE_FILE"
