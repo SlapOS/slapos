@@ -379,8 +379,8 @@ local_ipv4 = {{ dumps(local_ipv4) }}
 global_ipv6 = {{ dumps(global_ipv6) }}
 https_port = {{ dumps(https_port) }}
 http_port = {{ dumps(http_port) }}
-login_certificate = {{ dumps(login_certificate) }}
-login_key = {{ dumps(login_key) }}
+ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
+ip_access_key = {{ frontend_configuration.get('ip-access-key') }}
 access_log = {{ dumps(access_log) }}
 error_log = {{ dumps(error_log) }}
 not_found_file = {{ dumps(not_found_file) }}
@@ -393,8 +393,6 @@ extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
     section parameter_dict caddy-log-access-parameters
-    raw certificate {{frontend_configuration.get('log-access-certificate')}}
-    raw key {{frontend_configuration.get('log-access-key')}}
 
 
 {# Publish information for the instance #}

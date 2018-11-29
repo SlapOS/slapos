@@ -3,7 +3,7 @@ https://[{{ parameter_dict['global_ipv6'] }}]:{{ parameter_dict['https_port'] }}
   bind {{ parameter_dict['local_ipv4'] }}
   root {{ directory }}/
   browse
-  tls {{ certificate }} {{ key }}
+  tls {{ parameter_dict['ip_access_certificate'] }} {{ parameter_dict['ip_access_key'] }}
   basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
     "Log Access {{ slave }}"
     /
