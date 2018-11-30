@@ -226,7 +226,7 @@ extra-context =
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
-  -log ${caddy-configuration:error-log}
+  -log stdout
   -http2=true
 {% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
   -quic
@@ -650,7 +650,7 @@ curl_path = {{ parameter_dict['curl'] }}/bin/curl
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
-  -log ${nginx-configuration:error_log}
+  -log stdout
   -http2=true
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
