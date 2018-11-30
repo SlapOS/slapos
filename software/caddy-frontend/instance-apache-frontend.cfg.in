@@ -506,14 +506,6 @@ mode = 700
 ### End of ATS sections
 
 ### Caddy Graceful and promises
-[frontend-caddy-graceful-bin]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:bin}/frontend-caddy-safe-graceful
-mode = 0700
-extra-context =
-    key content caddy-configuration:frontend-graceful-command
-
 [frontend-caddy-graceful]
 < = jinja2-template-base
 template = {{ parameter_dict['template_caddy_graceful_script'] }}
