@@ -525,6 +525,17 @@ extra-context =
     key directory_bin directory:bin
     key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
 
+[frontend-nginx-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_nginx_graceful_script'] }}
+rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
+mode = 0700
+extra-context =
+    key directory_run directory:run
+    key directory_etc directory:etc
+    key directory_bin directory:bin
+    key nginx_graceful_reload_command nginx-configuration:nginx-graceful-command
+
 [frontend-caddy-validate]
 < = jinja2-template-base
 template = {{ parameter_dict['template_caddy_validate_script'] }}
@@ -720,14 +731,6 @@ nginx-graceful-command = ${:nginx-configuration-verification}; if [ $? -eq 0 ]; 
 nginx-configuration-verification = ${frontend-nginx-validate:rendered}
 ssl_certificate = ${ca-frontend:cert-file}
 ssl_key = ${ca-frontend:key-file}
-
-[frontend-nginx-graceful]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
-mode = 0700
-extra-context =
-    key content nginx-configuration:nginx-graceful-command
 
 [promise-nginx-configuration]
 recipe = slapos.cookbook:wrapper
