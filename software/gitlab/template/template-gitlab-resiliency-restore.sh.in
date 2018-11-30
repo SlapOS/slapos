@@ -69,7 +69,7 @@ trap "echo 'kill $postgres_pid" EXIT TERM INT
 echo "Starting Redis server..."
 $redis_executable &
 redis_pid=$!
-trap "kill $redis_pid" EXIT TERM INT
+trap "kill $postgres_pid $redis_pid" EXIT TERM INT
 echo "[OK]"
 echo "Restoring gitlab data..."
 
@@ -86,11 +86,11 @@ $promise_check/gitlab-app
 echo "Starting Unicorn to check gitlab-shell promise..."
 $unicorn_script &
 unicorn_pid=$!
-trap "kill $unicorn_pid" EXIT TERM INT
+trap "kill $postgres_pid $redis_pid $unicorn_pid" EXIT TERM INT
 sleep 60
 if [ -s "$run_location/unicorn.pid" ]; then
   unicorn_ppid=$(head -n 1 $run_location/unicorn.pid) > /dev/null 2>&1
-  trap "kill $unicorn_ppid" EXIT TERM INT
+  trap "kill $postgres_pid $redis_pid $unicorn_ppid" EXIT TERM INT
 fi
 $promise_check/gitlab-shell
 
