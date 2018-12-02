@@ -33,7 +33,7 @@ wrapper-path = $${create-directory:bin}/runTestSuite
 command-line =
   ${buildout:bin-directory}/runTestSuite
   --python_interpreter=${buildout:bin-directory}/${eggs:interpreter}
-  --source_code_path_list=$${slapos:location}/software/seleniumrunner/test
+  --source_code_path_list=$${slapos:location}/software/seleniumserver/test
 
 
 # XXX we need "standard" path entries to compile softwares inside test
