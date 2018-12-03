@@ -3,7 +3,7 @@
 {% set caucase_url = slapparameter_dict.get('caucase-url', '') -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set shared_ca_path = slapparameter_dict['shared-certificate-authority-path'] -%}
+{% set shared_ca_path = slapparameter_dict.get('shared-certificate-authority-path') -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -104,6 +104,7 @@ ipv4 = {{ ipv4 }}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
 {%   set zope_family_address_list = [] -%}
+{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
@@ -162,7 +163,6 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
 {% endfor -%}
 
