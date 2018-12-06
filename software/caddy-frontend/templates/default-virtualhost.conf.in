@@ -30,9 +30,6 @@
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
-    status 501 /
-{%- endif %} {#- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter #}
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
 {%- if enable_h2 %}
     # Allow HTTP2
@@ -79,8 +76,9 @@
     transparent
     timeout 600s
 {%-   if ssl_proxy_verify %}
-{%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-     endif %} {#-     if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
+{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
 {%-   else %} {#-   if ssl_proxy_verify #}
     insecure_skip_verify
 {%-   endif %} {#-   if ssl_proxy_verify #}
@@ -136,8 +134,9 @@
     transparent
     timeout 600s
 {%-     if ssl_proxy_verify %}
-{%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-       endif %} {#-       if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
+{%-       endif %} {#-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
 {%-     else %} {#-     if ssl_proxy_verify #}
     insecure_skip_verify
 {%-     endif %} {#-     if ssl_proxy_verify #}
@@ -152,9 +151,6 @@
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
-    status 501 /
-{%- endif %} {#- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter #}
 
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
@@ -201,8 +197,9 @@
     transparent
     timeout 600s
 {%-   if ssl_proxy_verify %}
-{%-     if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-     endif %} {#-     if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
+{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
 {%-   else %} {#-   if ssl_proxy_verify #}
     insecure_skip_verify
 {%-   endif %} {#-   if ssl_proxy_verify #}
@@ -252,8 +249,9 @@
     transparent
     timeout 600s
 {%-     if ssl_proxy_verify %}
-{%-       if 'ssl_proxy_ca_crt' in slave_parameter %}
-{%-       endif %} {#-       if 'ssl_proxy_ca_crt' in slave_parameter #}
+{%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
+{%-       endif %} {#-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
 {%-     else %} {#-     if ssl_proxy_verify #}
     insecure_skip_verify
 {%-     endif %} {#-     if ssl_proxy_verify #}
