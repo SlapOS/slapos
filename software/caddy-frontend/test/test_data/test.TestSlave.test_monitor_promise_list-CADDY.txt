@@ -28,6 +28,8 @@ TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify-unverified-
 TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_https-only-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_https-only-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_monitor-ipv4-test-error-log-last-day
@@ -53,6 +55,8 @@ TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-las
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_does_not_match-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_does_not_match-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_ssl_ca_crt_garbage-error-log-last-day
@@ -73,6 +77,8 @@ TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify-unverified-err
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-virtualhostroot-http-port-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-zope-virtualhostroot-http-port-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-virtualhostroot-https-port-error-log-last-day

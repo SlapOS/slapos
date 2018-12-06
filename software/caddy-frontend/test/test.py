@@ -40,6 +40,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
+import ipaddress
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -118,11 +119,24 @@ def createSelfSignedCertificate(name_list):
   return key, key_pem, certificate, certificate_pem
 
 
-def createCSR(common_name):
+def createCSR(common_name, ip=None):
   key, key_pem = createKey()
+  subject_alternative_name_list = []
+  if ip is not None:
+    subject_alternative_name_list.append(
+      x509.IPAddress(ipaddress.ip_address(unicode(ip)))
+    )
   csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
-  ])).sign(key, hashes.SHA256(), default_backend())
+  ]))
+
+  if len(subject_alternative_name_list):
+    csr = csr.add_extension(
+      x509.SubjectAlternativeName(subject_alternative_name_list),
+      critical=False
+    )
+
+  csr = csr.sign(key, hashes.SHA256(), default_backend())
   csr_pem = csr.public_bytes(serialization.Encoding.PEM)
   return key, key_pem, csr, csr_pem
 
@@ -157,6 +171,7 @@ class CertificateAuthority(object):
   def signCSR(self, csr):
     builder = x509.CertificateBuilder(
       subject_name=csr.subject,
+      extensions=csr.extensions,
       issuer_name=self.certificate.subject,
       not_valid_before=datetime.datetime.utcnow() - datetime.timedelta(days=1),
       not_valid_after=datetime.datetime.utcnow() + datetime.timedelta(days=30),
@@ -465,9 +480,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
       TestHandler)
 
+    cls.another_server_ca = CertificateAuthority("Another Server Root CA")
     cls.test_server_ca = CertificateAuthority("Test Server Root CA")
     key, key_pem, csr, csr_pem = createCSR(
-      "testserver.example.com")
+      "testserver.example.com", LOCAL_IPV4)
     _, cls.test_server_certificate_pem = cls.test_server_ca.signCSR(csr)
 
     cls.test_server_certificate_file = tempfile.NamedTemporaryFile(
@@ -759,6 +775,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
+      'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': cls.another_server_ca.certificate_pem,
+      },
       'ssl-proxy-verify-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -813,6 +834,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'type': 'zope',
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
+      },
+      'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
+        'url': cls.backend_https_url,
+        'type': 'zope',
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': cls.another_server_ca.certificate_pem,
       },
       'type-zope-ssl-proxy-verify-unverified': {
         'url': cls.backend_https_url,
@@ -878,6 +905,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_https_url,
         'enable_cache': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
+        'ssl-proxy-verify': True,
+      },
+      'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
+        'url': cls.backend_https_url,
+        'enable_cache': True,
+        'ssl_proxy_ca_crt': cls.another_server_ca.certificate_pem,
         'ssl-proxy-verify': True,
       },
       'enable-http2-default': {
@@ -953,9 +986,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '40',
+      'accepted-slave-amount': '43',
       'rejected-slave-amount': '4',
-      'slave-amount': '44',
+      'slave-amount': '47',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
@@ -1769,6 +1802,45 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result.headers['Location']
     )
 
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
+
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'sslproxyverifysslproxycacrtunverified.example.com',
+        'replication_number': '1',
+        'url': 'http://sslproxyverifysslproxycacrtunverified.example.com',
+        'site_url':
+        'http://sslproxyverifysslproxycacrtunverified.example.com',
+        'secure_access':
+        'https://sslproxyverifysslproxycacrtunverified.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result.status_code
+    )
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result_http.status_code
+    )
+
   def test_ssl_proxy_verify_ssl_proxy_ca_crt(self):
     parameter_dict = self.parseSlaveParameterDict(
       'ssl-proxy-verify_ssl_proxy_ca_crt')
@@ -1793,17 +1865,42 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
     self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result.status_code
+      'gzip',
+      result.headers['Content-Encoding']
+    )
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result.headers['Set-Cookie']
     )
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+
+    try:
+      j = result_http.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result_http.status_code
+      'gzip',
+      result_http.headers['Content-Encoding']
+    )
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result_http.headers['Set-Cookie']
     )
 
   def test_ssl_proxy_verify_unverified(self):
@@ -1835,6 +1932,47 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result.status_code
     )
 
+  def test_enable_cache_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
+
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain':
+        'enablecachesslproxyverifysslproxycacrtunverified.example.com',
+        'replication_number': '1',
+        'url':
+        'http://enablecachesslproxyverifysslproxycacrtunverified.example.com',
+        'site_url':
+        'http://enablecachesslproxyverifysslproxycacrtunverified.example.com',
+        'secure_access':
+        'https://enablecachesslproxyverifysslproxycacrtunverified.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result.status_code
+    )
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result_http.status_code
+    )
+
   def test_enable_cache_ssl_proxy_verify_ssl_proxy_ca_crt(self):
     parameter_dict = self.parseSlaveParameterDict(
       'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt')
@@ -1861,17 +1999,72 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Via', headers)
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
     self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result.status_code
+      {'Content-type': 'application/json',
+       'Set-Cookie': 'secured=value;secure, nonsecured=value',
+       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      headers
     )
 
-    result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    result_direct = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      port=26011)
+
+    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
+
+    try:
+      j = result_direct.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result_http.status_code
+      'gzip',
+      result_direct.headers['Content-Encoding']
+    )
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result_direct.headers['Set-Cookie']
+    )
+
+    result_direct_https_backend = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      port=26012)
+
+    self.assertEqualResultJson(
+      result_direct_https_backend, 'Path', '/test-path')
+
+    try:
+      j = result_direct_https_backend.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (
+        result_direct_https_backend.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(
+      'gzip',
+      result_direct_https_backend.headers['Content-Encoding']
+    )
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result_direct_https_backend.headers['Set-Cookie']
     )
 
   def test_enable_cache_ssl_proxy_verify_unverified(self):
@@ -1904,6 +2097,46 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result.status_code
     )
 
+  def test_type_zope_ssl_proxy_verify_ssl_proxy_ca_crt_unverified(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
+
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'typezopesslproxyverifysslproxycacrtunverified.example.com',
+        'replication_number': '1',
+        'url':
+        'http://typezopesslproxyverifysslproxycacrtunverified.example.com',
+        'site_url':
+        'http://typezopesslproxyverifysslproxycacrtunverified.example.com',
+        'secure_access':
+        'https://typezopesslproxyverifysslproxycacrtunverified.example.com',
+        'public-ipv4': LOCAL_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result.status_code
+    )
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      httplib.BAD_GATEWAY,
+      result_http.status_code
+    )
+
   def test_type_zope_ssl_proxy_verify_ssl_proxy_ca_crt(self):
     parameter_dict = self.parseSlaveParameterDict(
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt')
@@ -1929,17 +2162,29 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result.status_code
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopesslproxyverifysslproxycacrt.example.com:443/'
+      '/VirtualHostRoot/test-path'
     )
 
-    result_http = self.fakeHTTPResult(
+    result = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-    self.assertEqual(
-      httplib.NOT_IMPLEMENTED,
-      result_http.status_code
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopesslproxyverifysslproxycacrt.example.com:80/'
+      '/VirtualHostRoot/test-path'
     )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
