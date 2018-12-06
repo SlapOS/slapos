@@ -131,12 +131,12 @@
     },
     "ssl-proxy-verify": {
       "default": "false",
-      "description": "[NOT Implemented] If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
       "enum": [
         "false",
         "true"
       ],
-      "title": "[NOT Implemented] Verify Backend Certificates",
+      "title": "Verify Backend Certificates",
       "type": "string"
     },
     "ssl_ca_crt": {
@@ -162,8 +162,8 @@
     },
     "ssl_proxy_ca_crt": {
       "default": "",
-      "description": "[NOT Implemented] Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
-      "title": "[NOT Implemented] SSL Backend Authority's Certificate",
+      "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
+      "title": "SSL Backend Authority's Certificate",
       "type": "string"
     },
     "type": {
