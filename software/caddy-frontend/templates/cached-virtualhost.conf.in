@@ -19,9 +19,6 @@
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
-    status 501 /
-{%- endif %}
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
@@ -30,7 +27,8 @@
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
-{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
 {%-   endif %}
 {%- else %}
     insecure_skip_verify
@@ -43,16 +41,14 @@
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-{%- if ssl_proxy_verify and 'ssl_proxy_ca_crt' in slave_parameter %}
-    status 501 /
-{%- endif %}
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}
-{%-   if 'ssl_proxy_ca_crt' in slave_parameter %}
+{%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
 {%-   endif %}
 {%- else %}
     insecure_skip_verify

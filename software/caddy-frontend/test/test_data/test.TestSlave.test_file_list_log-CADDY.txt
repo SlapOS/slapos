@@ -27,6 +27,8 @@ TestSlave-1/var/log/httpd/_enable_cache-disable-via-header_access_log
 TestSlave-1/var/log/httpd/_enable_cache-disable-via-header_error_log
 TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify-unverified_error_log
+TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified_access_log
+TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified_error_log
 TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt_access_log
 TestSlave-1/var/log/httpd/_enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt_error_log
 TestSlave-1/var/log/httpd/_enable_cache_access_log
@@ -51,6 +53,8 @@ TestSlave-1/var/log/httpd/_server-alias_custom_domain-duplicated_error_log
 TestSlave-1/var/log/httpd/_server-alias_error_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify-unverified_error_log
+TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt-unverified_access_log
+TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt-unverified_error_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt_access_log
 TestSlave-1/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt_error_log
 TestSlave-1/var/log/httpd/_ssl_ca_crt_does_not_match_access_log
@@ -67,6 +71,8 @@ TestSlave-1/var/log/httpd/_type-zope-path_access_log
 TestSlave-1/var/log/httpd/_type-zope-path_error_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify-unverified_error_log
+TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified_access_log
+TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified_error_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt_access_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt_error_log
 TestSlave-1/var/log/httpd/_type-zope-virtualhostroot-http-port_access_log
