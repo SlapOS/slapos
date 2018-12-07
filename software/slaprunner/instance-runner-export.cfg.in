@@ -23,6 +23,7 @@ parts +=
   runner-sshkeys-authority
   runner-sshkeys-authority-service
   runner-sshkeys-sshd
+  runner-sshkeys-sshd-service
   runtestsuite
   symlinks
   shellinabox
