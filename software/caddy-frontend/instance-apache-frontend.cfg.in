@@ -620,8 +620,8 @@ extra-context =
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
 mode = 0700
-# XXX: Fix path_list for direct ssl
-path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf
+# XXX: Fix path_list for direct ssl ${caddy-directory:vh-ssl}/*.proxy_ca_crt
+path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/nginx_graceful_signature
 extra-context =
