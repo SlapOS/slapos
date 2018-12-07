@@ -184,8 +184,13 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 {% if use_nat == 'true' and nat_rule_list -%}
 {%   for port in nat_rule_list.split(' ') -%}
+{%     if ':' in port -%}
+{%       set proto, port = port.split(':') -%}
+{%     else -%}
+{%       set proto, port = 'tcp', port -%}
+{%     endif -%}
 {%     set external_port = 10000 + port|int() -%}
-{%     set section_name = '6tunnel-' ~ external_port -%}
+{%     set section_name = '6tunnel-' ~ proto ~ '-' ~ external_port -%}
 [{{ section_name }}]
 <= tunnel-6to4-base
 ipv4-port = {{ external_port }}
@@ -419,8 +424,13 @@ maximum-extra-disk-amount = {{ disk_number }}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
 {%     for port in nat_rule_list.split(' ') -%}
+{%       if ':' in port -%}
+{%         set proto, port = port.split(':') -%}
+{%       else -%}
+{%         set proto, port = 'tcp', port -%}
+{%       endif -%}
 {%       set external_port = 10000 + port|int() -%}
-nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{external_port}}:ipv6-port}
+nat-rule-port-{{proto}}-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{proto}}-{{external_port}}:ipv6-port}
 {%       if slapparameter_dict.get('publish-nat-url', False) -%}
 nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{external_port}}:ipv6-port}
 {%       endif -%}
