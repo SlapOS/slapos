@@ -112,21 +112,21 @@ recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter['ipv4-random']}}
-key = ${caddy-directory:vh-ssl}/ip-access-${:ipv6}-${:ipv4}.key
-certificate = ${caddy-directory:vh-ssl}/ip-access-${:ipv6}-${:ipv4}.crt
+key = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.key
+certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 stop-on-error = True
 command =
   [ -f ${:key} ] && [ -f ${:certificate} ] && exit 0
   rm -f ${:key} ${:certificate}
   /bin/bash -c ' \
-  {{ parameter_dict['openssl'] }}/bin/openssl req \
+  {{ parameter_dict['openssl'] }} req \
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:key} \
      -subj "/CN=Self Signed IP Access" \
      -reqexts SAN \
      -extensions SAN \
-     -config <(cat {{ parameter_dict['openssl'] }}/etc/ssl/openssl.cnf \
+     -config <(cat {{ parameter_dict['openssl_cnf'] }} \
          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
      -out ${:certificate}'
 
