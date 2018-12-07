@@ -89,18 +89,8 @@ class Recipe(object):
       One of the IPv4 addresses.
     ipv6-random
       One of the IPv6 addresses.
-    tap
-      Set of TAP interfaces.
-    tap-network-information-dict
-      Dict of set of all TAP network information
-    tap-ipv4
-      ipv4 allowed for this TAP
-    tap-gateway
-      ipv4 of gateway interface of this TAP
-    tap-netmask
-      ipv4 netmask address of this TAP
-    tap-network
-      ipv4 network address of this TAP
+    global_ipv4_network
+      The global IPv4 network
     configuration
       Dict of all parameters.
     storage-dict
@@ -112,6 +102,8 @@ class Recipe(object):
       anyway, and are available through "configuration" output key.
     instance-state
       The instance state.
+
+    Also note that all information from resource file will be appended
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
@@ -215,20 +207,6 @@ class Recipe(object):
           options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
       if ipv6_set:
           options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
-      if route_ipv4_set:
-        options['tap-ipv4'] = list(route_ipv4_set)[0].encode('UTF-8')
-        options['tap-network-information-dict'] = dict(ipv4=route_ipv4_set,
-                                    netmask=route_mask_set,
-                                    gateway=route_gw_set,
-                                    network=route_network_set)
-      else:
-        options['tap-network-information-dict'] = {}
-      if route_gw_set:
-        options['tap-gateway'] = list(route_gw_set)[0].encode('UTF-8')
-      if route_mask_set:
-        options['tap-netmask'] = list(route_mask_set)[0].encode('UTF-8')
-      if route_network_set:
-        options['tap-network'] = list(route_network_set)[0].encode('UTF-8')
 
       storage_home = options.get('storage-home')
       storage_dict = {}
@@ -244,8 +222,6 @@ class Recipe(object):
               os.symlink(storage_path, storage_link)
             storage_dict[filename] = storage_link
       options['storage-dict'] = storage_dict
-
-      options['tap'] = tap_set
 
       # The external information transfered from Slap Master has been processed
       # so we extend with information gathered from partition resource file
