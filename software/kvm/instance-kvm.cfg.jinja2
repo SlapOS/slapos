@@ -87,7 +87,7 @@ nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
 nbd2-port = ${slap-parameter:nbd2-port}
 
-tap-interface = ${slap-network-information:network-interface}
+tap-interface = {{ tap_name }}
 
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
@@ -132,7 +132,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if enable_http == 'true' or ( use_tap == 'true' and tap_network_dict.has_key('ipv4') ) -%}
+{% if enable_http == 'true' or ( use_tap == 'true' and tap_ipv4_addr != "") -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
@@ -438,7 +438,7 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{ex
 {%   endif -%}
 {% endif -%}
 {% if use_tap == 'true' -%}
-tap-ipv4 = ${slap-network-information:tap-ipv4}
+tap-ipv4 = {{tap_ipv4_addr}}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
@@ -451,7 +451,7 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%   endif %}
 {% endif %}
 
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
+{% if use_tap == 'true' and tap_ipv4_addr != "" -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
 2_info = ${network-config:ifconfig}
 3_info = ${network-config:route-iface}
@@ -464,15 +464,15 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 [network-config]
 recipe = plone.recipe.command
 path = ${directory:public}/netconfig.sh
-ifconfig = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
-route-iface = route add ${slap-network-information:tap-gateway} dev {{ iface }}
-route-network = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
+ifconfig = ifconfig {{ iface }} {{tap_ipv4_addr}} netmask {{tap_ipv4_netmask}}
+route-iface = route add {{tap_ipv4_gateway}} dev {{ iface }}
+route-network = route add -net {{tap_ipv4_network}} netmask {{tap_ipv4_netmask}} gw {{tap_ipv4_gateway}}
 {%   if iface == 'eth0' -%}
-route-default = route add default gw ${slap-network-information:tap-gateway}
+route-default = route add default gw {{tap_ipv4_gateway}}
 {%   elif nat_restrict == 'true' -%}
-route-default = route add default gw ${slap-network-information:tap-gateway} dev {{ iface }}
+route-default = route add default gw {{tap_ipv4_gateway}} dev {{ iface }}
 {%   elif global_ipv4_prefix -%}
-route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
+route-default = ip route add {{ global_ipv4_prefix }} via {tap_ipv4_gateway}} dev {{ iface }} src {{tap_ipv4_addr}}
 {% else -%}
 route-default =
 {%   endif -%}
@@ -513,11 +513,11 @@ mode = {{ mode }}
 [publish-host-config]
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
-local-ipv4 = ${slap-network-information:tap-ipv4}
-gateway = ${slap-network-information:tap-gateway}
-netmask = ${slap-network-information:tap-network}
-network = ${slap-network-information:tap-netmask}
+{% if use_tap == 'true' and tap_ipv4_addr != "" -%}
+local-ipv4 = {{tap_ipv4_addr}}
+gateway = {{tap_ipv4_gateway}}
+netmask = {{tap_ipv4_network}}
+network = {{tap_ipv4_netmask}}
 {% else -%}
 local-ipv4 = 127.0.0.1
 gateway =
@@ -576,7 +576,7 @@ template = {{ ansible_promise_tpl }}
 rendered = ${directory:promises}/ansible_{{ name }}
 extensions = jinja2.ext.do
 context =
-  key host slap-network-information:tap-ipv4
+  key host {{ tap_ipv4_addr }}
   raw logs ${directory:public}/ansible
   raw name {{ name }}
 
