@@ -1560,14 +1560,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     auth = requests.get(
       generate_auth,
       verify=self.ca_certificate_file)
-    assert auth.status_code == httplib.CREATED
-    data = open('customdomainsslcrtsslkey.example.com.crt').read() + \
-        open('customdomainsslcrtsslkey.example.com.key').read()
+    self.assertEqual(httplib.CREATED, auth.status_code)
+    data = self.customdomain_certificate_pem + \
+        self.customdomain_key_pem
     upload = requests.put(
       upload_url + auth.text,
       data=data,
       verify=self.ca_certificate_file)
-    assert upload.status_code == httplib.CREATED
+    self.assertEqual(httplib.CREATED, upload.status_code)
 
     # after partitions being processed the key will be used for this slave
     self.runComputerPartition(max_quantity=1)
