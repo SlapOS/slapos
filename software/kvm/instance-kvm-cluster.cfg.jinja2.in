@@ -136,7 +136,7 @@ return =
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
-{% do publish_dict.__setitem__(instance_name ~ '-lan' ~ , '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-lan', '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
