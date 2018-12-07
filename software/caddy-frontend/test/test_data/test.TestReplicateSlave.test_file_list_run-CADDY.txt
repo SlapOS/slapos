@@ -1,0 +1,12 @@
+TestReplicateSlave-0/var/run/monitor-httpd.pid
+TestReplicateSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestReplicateSlave-1/var/run/kedifa.pid
+TestReplicateSlave-2/var/run/caddy_graceful_signature
+TestReplicateSlave-2/var/run/caddy_validate_signature
+TestReplicateSlave-2/var/run/caddy_validate_signature.status
+TestReplicateSlave-2/var/run/httpd.pid
+TestReplicateSlave-2/var/run/monitor-httpd.pid
+TestReplicateSlave-2/var/run/monitor/monitor-bootstrap.pid
+TestReplicateSlave-2/var/run/nginx.pid
+TestReplicateSlave-2/var/run/nginx_graceful_signature
+TestReplicateSlave-2/var/run/nginx_graceful_signature.tmp

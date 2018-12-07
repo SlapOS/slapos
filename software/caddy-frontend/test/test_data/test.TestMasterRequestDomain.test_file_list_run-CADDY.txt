@@ -1,0 +1,10 @@
+TestMasterRequestDomain-0/var/run/monitor-httpd.pid
+TestMasterRequestDomain-0/var/run/monitor/monitor-bootstrap.pid
+TestMasterRequestDomain-1/var/run/kedifa.pid
+TestMasterRequestDomain-2/var/run/caddy_graceful_signature
+TestMasterRequestDomain-2/var/run/caddy_graceful_signature.tmp
+TestMasterRequestDomain-2/var/run/caddy_validate_signature
+TestMasterRequestDomain-2/var/run/monitor/monitor-bootstrap.pid
+TestMasterRequestDomain-2/var/run/nginx.pid
+TestMasterRequestDomain-2/var/run/nginx_graceful_signature
+TestMasterRequestDomain-2/var/run/nginx_graceful_signature.tmp

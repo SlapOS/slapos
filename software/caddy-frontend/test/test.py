@@ -1512,6 +1512,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_custom_domain_wildcard(self):
     parameter_dict = self.parseSlaveParameterDict('custom_domain_wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '*.customdomain.example.com',
@@ -1833,6 +1834,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt-unverified')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain':
