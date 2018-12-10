@@ -23,3 +23,4 @@ default = neo-cluster:rendered
 # BBB
 RootSoftwareInstance = ${:default}
 neo = neo-storage-mysql:rendered
+neo-sqlite = neo-storage-sqlite:rendered

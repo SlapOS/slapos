@@ -41,3 +41,10 @@ extra-context =
     key admin_cfg neo-admin:rendered
     raw mariadb_location {{ mariadb_location }}
     raw template_neo_my_cnf {{ template_neo_my_cnf }}
+
+[neo-storage-sqlite]
+<= jinja2-template-base 
+template = {{ neo_storage_sqlite }} 
+extra-context =
+    key master_cfg neo-master:rendered
+    key admin_cfg neo-admin:rendered
