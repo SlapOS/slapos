@@ -418,9 +418,9 @@ backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?hos
 url = ${request-slave-frontend:connection-url}/vnc.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
-{% set iface = 'eth0' -%}
+{% set iface = 'ens3' -%}
 {% if use_nat == 'true' -%}
-{%   set iface = 'eth1' -%}
+{%   set iface = 'ens4' -%}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
 {%     for port in nat_rule_list.split(' ') -%}
@@ -439,6 +439,7 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{ex
 {% endif -%}
 {% if use_tap == 'true' -%}
 tap-ipv4 = {{tap_ipv4_addr}}
+tap-ipv6 = {{tap_ipv6_addr}}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
@@ -447,19 +448,25 @@ tap-ipv4 = {{tap_ipv4_addr}}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
-7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
+key_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
 
-{% if use_tap == 'true' and tap_ipv4_addr != "" -%}
-1_info = Use these configurations below to configure interface {{ iface }} in your VM.
-2_info = ${network-config:ifconfig}
-3_info = ${network-config:route-iface}
-4_info = ${network-config:route-network}
-5_info = ${network-config:route-default}
-{% if enable_http == 'true' %}
-6_info = Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
-{% endif %}
+{% if use_tap == 'true' -%}
+blank_line =
+network_info =
+  Use these configurations below to configure interface {{ iface }} in your VM.
+  ${network-config:ifconfig}
+  ${network-config:route-iface}
+  ${network-config:route-network}
+  ${network-config:route-default}
+  ${:blank_line}
+  ${network-config:ipv6-add-address}
+  ${network-config:ipv6-add-default-route}
+{%- if enable_http == 'true' %}
+  ${:blank_line}
+  Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+{%- endif %}
 
 [network-config]
 recipe = plone.recipe.command
@@ -473,9 +480,11 @@ route-default = route add default gw {{tap_ipv4_gateway}}
 route-default = route add default gw {{tap_ipv4_gateway}} dev {{ iface }}
 {%   elif global_ipv4_prefix -%}
 route-default = ip route add {{ global_ipv4_prefix }} via {tap_ipv4_gateway}} dev {{ iface }} src {{tap_ipv4_addr}}
-{% else -%}
+{%   else -%}
 route-default =
 {%   endif -%}
+ipv6-add-address = ip -6 address add {{tap_ipv6_network }} dev {{ iface }}
+ipv6-add-default-route = ip -6 route del default ; ip -6 route add default dev {{ iface }} via {{tap_ipv6_gateway}}
 command =
   echo "#!/bin/sh" > ${:path}
   echo "" >> ${:path}
@@ -483,6 +492,8 @@ command =
   echo "${:route-iface}" >> ${:path}
   echo "${:route-network}" >> ${:path}
   echo "${:route-default}" >> ${:path}
+  echo "${:ipv6-add-address}" >> ${:path}
+  echo "${:ipv6-add-default-route}" >> ${:path}
 update-command = ${:command}
 {% endif -%}
 
