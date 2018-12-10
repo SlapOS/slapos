@@ -842,9 +842,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt': {
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
-        'ssl_crt': cls.customdomain_ca_certificate_pem,
-        'ssl_key': cls.customdomain_ca_key_pem,
-        'ssl_ca_crt': cls.ca.certificate_pem,
       },
       'ssl_ca_crt_only': {
         'url': cls.backend_url,
@@ -1407,7 +1404,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.parseSlaveParameterDict(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
     self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
+    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
@@ -1421,6 +1418,25 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict
     )
 
+    # as now the place to put the key is known put the key there
+    auth = requests.get(
+      generate_auth,
+      verify=self.ca_certificate_file)
+    self.assertEqual(httplib.CREATED, auth.status_code)
+
+    data = self.customdomain_ca_certificate_pem + \
+        self.customdomain_ca_key_pem + \
+        self.ca.certificate_pem
+
+    upload = requests.put(
+      upload_url + auth.text,
+      data=data,
+      verify=self.ca_certificate_file)
+    self.assertEqual(httplib.CREATED, upload.status_code)
+
+    # after partitions being processed the key will be used for this slave
+    self.runComputerPartition(max_quantity=1)
+
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
@@ -1429,6 +1445,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    raise NotImplementedError('ssl_ca_crt assertion presence is missing, '
+                              'only cert...')
 
   def test_ssl_ca_crt_only(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
