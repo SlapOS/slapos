@@ -86,6 +86,9 @@ ca-dir = ${:srv}/ssl
 
 varnginx = ${:var}/nginx
 
+frontend_cluster = ${:var}/frontend_cluster
+nginx_cluster = ${:var}/nginx_cluster
+
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -94,9 +97,35 @@ single-custom-personal = ${dynamic-custom-personal-template-slave-list:rendered}
 [frontend-configuration]
 template-log-access = {{ parameter_dict['template_log_access'] }}
 log-access-configuration = ${directory:etc}/log-access.conf
+ip-access-certificate = ${self-signed-ip-access:certificate}
+ip-access-key = ${self-signed-ip-access:key}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+
+[self-signed-ip-access]
+# Self Signed certificate for HTTPS IP accesses to the frontend
+recipe = plone.recipe.command
+update-command = ${:command}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv4 = {{instance_parameter['ipv4-random']}}
+key = ${caddy-directory:vh-ssl}/ip-access-${:ipv6}-${:ipv4}.key
+certificate = ${caddy-directory:vh-ssl}/ip-access-${:ipv6}-${:ipv4}.crt
+stop-on-error = True
+command =
+  [ -f ${:key} ] && [ -f ${:certificate} ] && exit 0
+  rm -f ${:key} ${:certificate}
+  /bin/bash -c ' \
+  {{ parameter_dict['openssl'] }}/bin/openssl req \
+     -new -newkey rsa:2048 -sha256 \
+     -nodes -x509 -days 36500 \
+     -keyout ${:key} \
+     -subj "/CN=Self Signed IP Access" \
+     -reqexts SAN \
+     -extensions SAN \
+     -config <(cat {{ parameter_dict['openssl'] }}/etc/ssl/openssl.cnf \
+         <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
+     -out ${:certificate}'
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -224,9 +253,11 @@ extra-context =
 
 [caddy-wrapper]
 recipe = slapos.cookbook:wrapper
+environment =
+  CADDYPATH=${directory:frontend_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
-  -log ${caddy-configuration:error-log}
+  -log stdout
   -http2=true
 {% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
   -quic
@@ -267,7 +298,7 @@ frontend-configuration = ${directory:etc}/Caddyfile
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
-frontend-configuration-verification = ${caddy-wrapper:wrapper-path} -validate > /dev/null
+frontend-configuration-verification = ${frontend-caddy-validate:rendered}
 frontend-graceful-command = ${:frontend-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${:pid-file}); fi
 not-found-file = ${caddy-directory:document-root}/notfound.html
 # Communication with ATS
@@ -277,7 +308,7 @@ ssl-cache-through-port = 26012
 
 [configtest]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:wrapper-path} -validate
+command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
 
 [certificate-authority]
@@ -501,24 +532,59 @@ mode = 700
 ### End of ATS sections
 
 ### Caddy Graceful and promises
-[frontend-caddy-graceful-bin]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:bin}/frontend-caddy-safe-graceful
-mode = 0700
-extra-context =
-    key content caddy-configuration:frontend-graceful-command
-
 [frontend-caddy-graceful]
 < = jinja2-template-base
-template = {{ parameter_dict['template_caddy_graceful_script'] }}
+template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:vh-ssl}/*.key ${caddy-directory:vh-ssl}/*.crt ${caddy-directory:vh-ssl}/*.proxy_ca_crt
+sha256sum = {{ parameter_dict['sha256sum'] }}
+signature_file = ${directory:run}/caddy_graceful_signature
 extra-context =
-    key directory_run directory:run
-    key directory_etc directory:etc
-    key directory_bin directory:bin
-    key caddy_graceful_reload_command caddy-configuration:frontend-graceful-command
+    key graceful_reload_command caddy-configuration:frontend-graceful-command
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[frontend-nginx-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_graceful_script'] }}
+rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
+mode = 0700
+path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf
+sha256sum = {{ parameter_dict['sha256sum'] }}
+signature_file = ${directory:run}/nginx_graceful_signature
+extra-context =
+    key graceful_reload_command nginx-configuration:nginx-graceful-command
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[frontend-caddy-validate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/frontend-caddy-validate
+mode = 0700
+sha256sum = {{ parameter_dict['sha256sum'] }}
+signature_file = ${directory:run}/caddy_validate_signature
+extra-context =
+    key wrapper caddy-wrapper:wrapper-path
+    key path_list frontend-caddy-graceful:path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[frontend-nginx-validate]
+< = jinja2-template-base
+template = {{ parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/frontend-nginx-validate
+mode = 0700
+sha256sum = {{ parameter_dict['sha256sum'] }}
+signature_file = ${directory:run}/nginx_validate_signature
+extra-context =
+    key wrapper nginx-wrapper:wrapper-path
+    key path_list frontend-nginx-graceful:path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
 
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
@@ -534,12 +600,9 @@ extra-context =
 
 # Promises checking configuration:
 [promise-frontend-caddy-configuration]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:promise}/frontend-caddy-configuration-promise
-mode = 0700
-extra-context =
-    key content caddy-configuration:frontend-configuration-verification
+recipe = slapos.cookbook:wrapper
+command-line = ${caddy-configuration:frontend-configuration-verification}
+wrapper-path = ${directory:promise}/frontend-caddy-configuration-promise
 
 [promise-caddy-frontend-v4-https]
 recipe = slapos.cookbook:check_port_listening
@@ -648,9 +711,11 @@ curl_path = {{ parameter_dict['curl'] }}/bin/curl
 #
 [nginx-wrapper]
 recipe = slapos.cookbook:wrapper
+environment =
+  CADDYPATH=${directory:nginx_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
-  -log ${nginx-configuration:error_log}
+  -log stdout
   -http2=true
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
@@ -690,26 +755,15 @@ worker_processes = 4
 worker_connections = 1024
 slave-configuration-directory = ${caddy-directory:nginx-slave-configuration}
 pid-file = ${directory:run}/nginx.pid 
-nginx-graceful-command = ${:nginx-configuration-verification}; if [ $? -eq 0 ]; then kill -HUP $(cat ${:pid-file}); fi
-nginx-configuration-verification = ${nginx-wrapper:wrapper-path} -validate
+nginx-graceful-command = ${:nginx-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${:pid-file}); fi
+nginx-configuration-verification = ${frontend-nginx-validate:rendered}
 ssl_certificate = ${ca-frontend:cert-file}
 ssl_key = ${ca-frontend:key-file}
 
-[frontend-nginx-graceful]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
-mode = 0700
-extra-context =
-    key content nginx-configuration:nginx-graceful-command
-
 [promise-nginx-configuration]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${directory:promise}/nginx-configuration-promise
-mode = 0700
-extra-context =
-    key content nginx-configuration:nginx-configuration-verification
+recipe = slapos.cookbook:wrapper
+command-line = ${nginx-configuration:nginx-configuration-verification}
+wrapper-path = ${directory:promise}/nginx-configuration-promise
 
 [promise-nginx-frontend-v4-https]
 recipe = slapos.cookbook:check_port_listening

@@ -195,7 +195,9 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+{%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+{%   endif -%}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
@@ -365,9 +367,11 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}
-{% for zope_family_name in zope_family_name_list -%}
+{% if test_runner_enabled -%}
+{%   for zope_family_name in zope_family_name_list -%}
 {{ zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
-{% endfor -%}
+{%   endfor -%}
+{% endif -%}
 
 
 [publish-early]
@@ -378,9 +382,11 @@ recipe = slapos.cookbook:publish-early
 {%- if has_posftix %}
   smtpd-sasl-password gen-smtpd-sasl-password:passwd
 {%- endif %}
-{% for zope_family_name in zope_family_name_list %}
+{% if test_runner_enabled -%}
+{%   for zope_family_name in zope_family_name_list %}
   {{ zope_family_name }}-test-runner-url-list default-balancer-test-runner-url-list:default
-{% endfor -%}
+{%   endfor -%}
+{% endif -%}
 {%- if neo %}
   neo-cluster gen-neo-cluster:name
 {%-  if neo[0] %}

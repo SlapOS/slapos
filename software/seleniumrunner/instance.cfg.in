@@ -1,20 +1,9 @@
 [buildout]
 parts =
-  switch-softwaretype
+# this sofware has no instance, it's only intended to make programs
+# available for erp5testnode from its software.
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = ${template-selenium:output}
-
-[slap-connection]
-# part to migrate to new - separated words
-computer-id = $${slap_connection:computer_id}
-partition-id = $${slap_connection:partition_id}
-server-url = $${slap_connection:server_url}
-software-release-url = $${slap_connection:software_release_url}
-key-file = $${slap_connection:key_file}
-cert-file = $${slap_connection:cert_file}

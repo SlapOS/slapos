@@ -1,8 +1,14 @@
 TestSlaveBadParameters-0/var/run/monitor-httpd.pid
 TestSlaveBadParameters-0/var/run/monitor/monitor-bootstrap.pid
-TestSlaveBadParameters-1/var/run/caddy_configuration.signature
+TestSlaveBadParameters-1/var/run/caddy_graceful_signature
+TestSlaveBadParameters-1/var/run/caddy_graceful_signature.tmp
+TestSlaveBadParameters-1/var/run/caddy_validate_signature
+TestSlaveBadParameters-1/var/run/caddy_validate_signature.status
 TestSlaveBadParameters-1/var/run/httpd.pid
 TestSlaveBadParameters-1/var/run/monitor-httpd.pid
 TestSlaveBadParameters-1/var/run/monitor/monitor-bootstrap.pid
-TestSlaveBadParameters-1/var/run/ncaddy_configuration.signature
 TestSlaveBadParameters-1/var/run/nginx.pid
+TestSlaveBadParameters-1/var/run/nginx_graceful_signature
+TestSlaveBadParameters-1/var/run/nginx_graceful_signature.tmp
+TestSlaveBadParameters-1/var/run/nginx_validate_signature
+TestSlaveBadParameters-1/var/run/nginx_validate_signature.status
