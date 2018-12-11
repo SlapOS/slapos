@@ -314,6 +314,9 @@ class TestDataMixin(object):
     self._test_file_list('run', [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
+      # may appear or not
+      'var/run/caddy_graceful_signature.tmp',
+      'var/run/nginx_graceful_signature.tmp',
     ])
 
   def test_supervisor_state(self):
