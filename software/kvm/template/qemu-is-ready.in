@@ -1,6 +1,10 @@
 #!{{ dash }}
 
 FILE="{{ qemu_ready_path }}"
+QEMU_SERVICE_PATH="{{ qemu_service_path }}"
+log_file="{{ qemu_log_prefix }}"$(basename $QEMU_SERVICE_PATH-*)".log"
+echo "Log file: $log_file"
+
 # don't start checks too fast
 sleep 2
 if [ -f "$FILE" ]; then
@@ -12,7 +16,7 @@ if [ -f "$FILE" ]; then
     exit 1
   fi
 else
-  log_file="{{ qemu_service_log_file }}"
+  log_file="{{ qemu_log_prefix }}"$(basename $QEMU_SERVICE_PATH-*)".log"
   >&2 echo "Qemu process is not correctly started."
   if [ -f "$log_file" ]; then
     >&2 echo "** Latest ouput logs **"
