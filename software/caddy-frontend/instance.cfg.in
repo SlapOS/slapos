@@ -96,6 +96,8 @@ configuration.plain_http_port = 8080
 configuration.plain_nginx_port = 8081
 configuration.nginx_port = 9443
 configuration.kedifa_port = 7879
+# Warning: Caucase takes also cacuase_port+1
+configuration.caucase_port = 8890
 # BBB: apache_custom_https and apache_custom_http
 configuration.apache_custom_https = ""
 configuration.apache_custom_http = ""

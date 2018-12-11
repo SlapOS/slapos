@@ -238,6 +238,8 @@ config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
+config-kedifa_port = {{ dumps(slapparameter_dict.get('kedifa_port')) }}
+config-caucase_port = {{ dumps(slapparameter_dict.get('caucase_port')) }}
 config-slave-list = {{ dumps(slave_instance_list) }}
 config-cluster-identification = {{ cluster_identification }}
 

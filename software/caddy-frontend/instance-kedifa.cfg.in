@@ -16,8 +16,7 @@ parts =
   expose-csr_id
 
 {%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
-{%  set caucase_port = 8890 -%}
-{%  set caucase_netloc = caucase_host ~ ':' ~ caucase_port -%}
+{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
