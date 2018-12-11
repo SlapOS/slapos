@@ -258,7 +258,8 @@ mode = 700
 context =
   raw dash {{ dash_executable_location }}
   raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
-  raw qemu_service_log_file ${buildout:directory}/.${slap-connection:partition-id}_kvm.log
+  raw qemu_log_prefix ${buildout:directory}/.${slap-connection:partition-id}_
+  raw qemu_service_path ${kvm-instance:wrapper-path}
 
 [novnc-instance]
 recipe = slapos.cookbook:novnc
