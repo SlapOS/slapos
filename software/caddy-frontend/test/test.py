@@ -423,6 +423,8 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       'nginx_port': NGINX_HTTPS_PORT,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -453,6 +455,8 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       'nginx_port': NGINX_HTTPS_PORT,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -768,6 +772,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
@@ -2750,6 +2756,8 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -2818,6 +2826,8 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -2909,6 +2919,8 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -2997,6 +3009,8 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -3047,6 +3061,8 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       're6st-verification-url': 'some-re6st-verification-url',
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
@@ -3101,6 +3117,8 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
@@ -3243,6 +3261,8 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
@@ -3339,6 +3359,8 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
@@ -3765,6 +3787,8 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
@@ -3944,6 +3968,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'automatic-internal-kedifa-caucase-csr': 'true',
     }
