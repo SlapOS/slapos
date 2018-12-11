@@ -39,5 +39,7 @@ command-line =
 environment =
   PATH=${buildout:bin-directory}:/usr/bin/:/bin/
   LOCAL_IPV4=$${slap-configuration:ipv4-random}
+  SLAPOS_TEST_IPV4=$${slap-configuration:ipv4-random}
   GLOBAL_IPV6=$${slap-configuration:ipv6-random}
+  SLAPOS_TEST_IPV6=$${slap-configuration:ipv6-random}
   SLAPOS_TEST_WORKING_DIR=$${create-directory:working-dir}
