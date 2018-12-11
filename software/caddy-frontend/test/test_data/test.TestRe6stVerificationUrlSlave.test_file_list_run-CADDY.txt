@@ -3,6 +3,7 @@ TestRe6stVerificationUrlSlave-0/var/run/monitor/monitor-bootstrap.pid
 TestRe6stVerificationUrlSlave-1/var/run/caddy_graceful_signature
 TestRe6stVerificationUrlSlave-1/var/run/caddy_graceful_signature.tmp
 TestRe6stVerificationUrlSlave-1/var/run/caddy_validate_signature
+TestRe6stVerificationUrlSlave-1/var/run/caddy_validate_signature.status
 TestRe6stVerificationUrlSlave-1/var/run/httpd.pid
 TestRe6stVerificationUrlSlave-1/var/run/monitor-httpd.pid
 TestRe6stVerificationUrlSlave-1/var/run/monitor/monitor-bootstrap.pid
@@ -10,3 +11,4 @@ TestRe6stVerificationUrlSlave-1/var/run/nginx.pid
 TestRe6stVerificationUrlSlave-1/var/run/nginx_graceful_signature
 TestRe6stVerificationUrlSlave-1/var/run/nginx_graceful_signature.tmp
 TestRe6stVerificationUrlSlave-1/var/run/nginx_validate_signature
+TestRe6stVerificationUrlSlave-1/var/run/nginx_validate_signature.status
