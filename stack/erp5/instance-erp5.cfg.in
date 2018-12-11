@@ -118,7 +118,7 @@ return =
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
-{% set bt5_default_list = 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_run_my_doc' -%}
+{% set bt5_default_list = 'erp5_full_text_mroonga_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_run_my_doc' -%}
 {% if has_jupyter -%}
 {%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
 {% endif -%}
