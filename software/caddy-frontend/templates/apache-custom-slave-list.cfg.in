@@ -340,6 +340,7 @@ ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
 <= tunnel-6to4-base

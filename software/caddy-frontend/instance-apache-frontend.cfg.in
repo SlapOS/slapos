@@ -370,6 +370,7 @@ crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
 catcher = ${cron-simplelogger:wrapper}
 binary = ${directory:service}/crond
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
