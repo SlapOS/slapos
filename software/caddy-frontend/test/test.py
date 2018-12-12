@@ -7,7 +7,7 @@
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
 # guarantees and support are strongly advised to contract a Free Software
-# Service Company
+# Service Companyre
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -4048,6 +4048,12 @@ class AutoRestartTestCase(SlaveHttpFrontendTestCase):
       'trafficserver-{hash}-on-watch',
       'certificate_authority-{hash}-on-watch',
       'crond-{hash}',
+      '6tunnel-8081-{hash}-on-watch',
+      '6tunnel-4443-{hash}-on-watch',
+      '6tunnel-8080-{hash}-on-watch',
+      '6tunnel-9443-{hash}-on-watch',
+      '6tunnel-26011-{hash}-on-watch',
+      '6tunnel-26012-{hash}-on-watch',
     ]
 
     supervisor = self.getSupervisorRPCServer().supervisor
