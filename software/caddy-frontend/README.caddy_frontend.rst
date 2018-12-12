@@ -458,6 +458,8 @@ QUIC Protocol
 
 Note: QUIC support in Caddy is really experimental. It can result with silently having problems with QUIC connections or hanging Caddy process. So in case of QUIC error ``QUIC_NETWORK_IDLE_TIMEOUT`` or ``QUIC_PEER_GOING_AWAY`` it is required to restart caddy process.
 
+Note: Chrome will refuse to connect to QUIC on different port then HTTPS has been served. As Caddy binds to high ports, if QUIC is wanted, the browser need to connect to high port too.
+
 Experimental QUIC available in Caddy is not configurable. If caddy is configured to bind to HTTPS port ``${port}``, QUIC is going to be advertised on this port only. It is not possible to configure another public port in case of port rewriting.
 
 So it is required to ``DNAT`` from ``${public IP}`` of the computer to the computer partition running caddy ``${local IP}`` with configured port::
