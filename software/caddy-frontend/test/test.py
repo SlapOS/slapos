@@ -7,7 +7,7 @@
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
 # guarantees and support are strongly advised to contract a Free Software
-# Service Companyre
+# Service Company
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
