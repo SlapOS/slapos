@@ -68,10 +68,12 @@ context =
 {% set authorized_slave_string_list = slapparameter_dict.pop('-frontend-authorized-slave-string', '').split() %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
+{% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% set unauthorized_message = 'slave not authorized' %}
 {% for slave in slave_instance_list %}
 {%   set slave_error_list = [] %}
+{%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
 {%   set custom_domain = slave.get('custom_domain') %}
@@ -124,6 +126,11 @@ context =
 {%     endif %}
 {%   endif %}
 {# BBB: SlapOS Master non-zero knowledge BEGIN #}
+{%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
+{%     if key in slave %}
+{%       do slave_warning_list.append('%s is obsolete, use key-upload-url' % (key,)) %}
+{%     endif %}
+{%   endfor %}
 {%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
 {%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
 {%   endif %}
@@ -151,6 +158,9 @@ context =
 {%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
+{%   endif %}
+{%   if len(slave_warning_list) > 0 %}
+{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
 {%   endif %}
 {% endfor %}
 
@@ -201,7 +211,7 @@ sla-{{ parameter }} = {{ value }}
 {%  set warning_list = [] %}
 {%  for key in ['apache-certificate', 'apache-key'] %}
 {%    if len(slapparameter_dict[key].strip()) > 0 %}
-{%      do warning_list.append('%s is obsolete, please use kedifa-caucase-url' % (key, )) %}
+{%      do warning_list.append('%s is obsolete, please use master-key-upload-url' % (key, )) %}
 {%    endif %}
 {%  endfor %}
 
@@ -218,6 +228,9 @@ master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-a
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 {% if len(warning_list) > 0 %}
 warning-list = {{ dumps(json_module.dumps(warning_list)) }}
+{% endif %}
+{% if len(warning_slave_dict) > 0 %}
+warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict)) }}
 {% endif %}
 {% if not aikc_enabled %}
 kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
@@ -269,6 +282,11 @@ return = slave-kedifa-information master-key-generate-auth-url master-key-upload
 {{ slave_id }} = {{ dumps(json_module.dumps(rejected_list)) }}
 {% endfor %}
 
+[warning-slave-information]
+{% for slave_id, warning_list in warning_slave_dict.iteritems() %}
+{{ slave_id }} = {{ dumps(json_module.dumps(warning_list)) }}
+{% endfor %}
+
 [slave-information]
 {% for frontend_section in frontend_section_list %}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
@@ -282,6 +300,7 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
     section rejected_slave_information rejected-slave-information
+    section warning_slave_information warning-slave-information
     key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
 
 [monitor-conf-parameters]
