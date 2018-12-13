@@ -17,7 +17,7 @@ ${util-linux:location}/bin/flock $${:status_log}.lock \
   $${:exclude_string} \
   --include='$${:include}' \
   --exclude='**' \
-  --remote-schema '${openssh-output:ssh} -6 -q -T -y -o "StrictHostKeyChecking no" -i $${:sshkey} -p $${:connection_port} %s $${:remote_schema}' \
+  --remote-schema '${openssh-output:ssh} -q -T -y -o "StrictHostKeyChecking no" -i $${:sshkey} -p $${:connection_port} %s $${:remote_schema}' \
   $${:connection}::/ ./
 
 RESULT=$?
