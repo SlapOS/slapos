@@ -13,7 +13,7 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
 {%-   do ssl.__setitem__('certificate', apache_certificate) -%}
 {%-   do ssl.__setitem__('key', apache_key) -%}
 {%- endif -%}
-{#- BBB: SlapOS Master non-zero knowledge END -#}
+{#- BBB: SlapOS Master non-zero knowledge END #}
 # Catch-all and 404 for not configured instances
 {% if 'key' in ssl %}
 :{{ https_port }} {
