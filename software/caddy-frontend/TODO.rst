@@ -11,38 +11,6 @@ Generally things to be done with ``caddy-frontend``:
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
 
  * move out ``test/utils.py`` and use it from shared python distribution
- * provide various tricks for older browsers::
-
-    # The following directives modify normal HTTP response behavior to
-    # handle known problems with browser implementations.
-
-    BrowserMatch "Mozilla/2" nokeepalive
-    BrowserMatch ".*MSIE.*" nokeepalive ssl-unclean-shutdown \
-                            downgrade-1.0 force-response-1.0
-    BrowserMatch "RealPlayer 4\.0" force-response-1.0
-    BrowserMatch "Java/1\.0" force-response-1.0
-    BrowserMatch "JDK/1\.0" force-response-1.0
-    # The following directive disables redirects on non-GET requests for
-    # a directory that does not include the trailing slash.  This fixes a
-    # problem with Microsoft WebFolders which does not appropriately handle
-    # redirects for folders with DAV methods.
-    # Same deal with Apple's DAV filesystem and Gnome VFS support for DAV.
-    BrowserMatch "Microsoft Data Access Internet Publishing Provider" redirect-carefully
-    BrowserMatch "MS FrontPage" redirect-carefully
-    BrowserMatch "^WebDrive" redirect-carefully
-    BrowserMatch "^WebDAVFS/1.[0123]" redirect-carefully
-    BrowserMatch "^gnome-vfs" redirect-carefully
-    BrowserMatch "^XML Spy" redirect-carefully
-    BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
- * check, and if needed apply, Apache-like SSL configuration switches::
-
-    # SSL Configuration
-    SSLProtocol all -SSLv2 -SSLv3
-    SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
-    SSLHonorCipherOrder on
-    <FilesMatch "\.(cgi|shtml|phtml|php)$">
-          SSLOptions +StdEnvVars
-    </FilesMatch>
  * reduce the time of configuration validation (in ``instance-apache-frontend.cfg.in`` sections ``[configtest]``, ``[caddy-configuration]``, ``[nginx-configuration]``), as it is not scalable on frontend with 2000+ slaves (takes few minutes instead of few, < 5, seconds), issue posted `upstream <https://github.com/mholt/caddy/issues/2220>`_
  * drop ``6tunnel`` and use ``bind`` in Caddy configuration, as soon as multiple binds will be possible, tracked in upstream `bind: support multiple values <https://github.com/mholt/caddy/pull/2128>`_ and `ipv6: does not bind on ipv4 and ipv6 for sites that resolve to both <https://github.com/mholt/caddy/issues/864>`_
  * use caddy-frontend in `standalone style playbooks <https://lab.nexedi.com/nexedi/slapos.package/tree/master/playbook/roles/standalone-shared>`_
