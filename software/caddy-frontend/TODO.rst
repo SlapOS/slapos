@@ -16,9 +16,3 @@ Generally things to be done with ``caddy-frontend``:
  * use caddy-frontend in `standalone style playbooks <https://lab.nexedi.com/nexedi/slapos.package/tree/master/playbook/roles/standalone-shared>`_
  * in ``templates/apache-custom-slave-list.cfg.in`` avoid repetetive ``part_list.append`` and use macro like in ERP5 SR (cf `Vincent's comment <https://lab.nexedi.com/nexedi/slapos/merge_requests/373#note_64362>`_)
  * **Jérome Perrin**: consider privacy implications/GDPR compliance of https://caddyserver.com/docs/telemetry and decide if we should leave it enabled.
-
-Things which can't be implemented:
-
- * use certificates valid forever in tests using `cryptography <https://pypi.org/project/cryptography/>`_, with `available example <https://lab.nexedi.com/nexedi/caucase/blob/1c9b9b6dfb062551549566d9792a1608f5e0c2d9/caucase/ca.py#L460-552>`_
-
-   * **REASON**: it is impossible to generate certificate without `Not Valid After`, even with `cryptography <https://pypi.org/project/cryptography/>`_
