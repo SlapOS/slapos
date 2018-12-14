@@ -46,7 +46,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from utils import SlapOSInstanceTestCase, findFreeTCPPort
 
-debug_mode = os.environ.get('DEBUG')
+debug_mode = os.environ.get('SLAPOS_TEST_DEBUG')
 # for development: debugging logs and install Ctrl+C handler
 if debug_mode:
   import logging
@@ -103,7 +103,7 @@ class WebServerMixin(object):
         ''' % (form['q'].value, file_data))
 
     super(WebServerMixin, self).setUp()
-    ip = os.environ.get('LOCAL_IPV4', '127.0.1.1')
+    ip = os.environ.get('SLAPOS_TEST_IPV4', '127.0.1.1')
     port = findFreeTCPPort(ip)
     server = HTTPServer((ip, port), TestHandler)
     self.server_process = multiprocessing.Process(target=server.serve_forever)
