@@ -1,24 +1,15 @@
 Generally things to be done with ``caddy-frontend``:
 
- * return warning on not implemented keys (from ``apache-frontend`` perspective) in master and slave request
  * tests: add assertion with results of promises in etc/promise for each partition
  * README: cleanup the documentation, explain various specifics
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
- * ``apache-ca-certificate`` shall be merged with ``apache-certificate``
-
-   * ``apache-ca-certificate`` shall be appended to ``apache-certificate`` if not already there
  * BUG?? check that changing ``apache-certificate`` on master partition results in reloading slave partition
- * provide ``apache-frontend`` to ``caddy-frontend`` migration information
  * (new) ``type:websocket`` slave
  * ``type:eventsource``:
 
    * **Jérome Perrin**: *For event source, if I understand https://github.com/mholt/caddy/issues/1355 correctly, we could use caddy as a proxy in front of nginx-push-stream . If we have a "central shared" caddy instance, can it handle keeping connections opens for many clients ?*
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
  * cover test suite like resilient tests for KVM and prove it works the same way as Caddy
- * have ``caddy-frontend`` specific parameters, with backward compatibility to ``apache-frontend`` ones:
-
-  * ``apache-ca-certificate``
-  * ``apache-certificate`` and ``apache-key``
 
  * use `slapos!326 <https://lab.nexedi.com/nexedi/slapos/merge_requests/326>`_, and especially `note about complex restart scenarios <https://lab.nexedi.com/nexedi/slapos/merge_requests/326#note_60198>`_, instead of self-developed graceful restart scripts
  * move out ``test/utils.py`` and use it from shared python distribution
