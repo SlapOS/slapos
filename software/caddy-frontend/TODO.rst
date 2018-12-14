@@ -9,7 +9,6 @@ Generally things to be done with ``caddy-frontend``:
 
    * **Jérome Perrin**: *For event source, if I understand https://github.com/mholt/caddy/issues/1355 correctly, we could use caddy as a proxy in front of nginx-push-stream . If we have a "central shared" caddy instance, can it handle keeping connections opens for many clients ?*
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
- * cover test suite like resilient tests for KVM and prove it works the same way as Caddy
 
  * move out ``test/utils.py`` and use it from shared python distribution
  * provide various tricks for older browsers::
