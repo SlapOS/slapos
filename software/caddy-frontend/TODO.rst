@@ -11,7 +11,6 @@ Generally things to be done with ``caddy-frontend``:
  * ``check-error-on-caddy-log`` like ``check-error-on-apache-log``
  * cover test suite like resilient tests for KVM and prove it works the same way as Caddy
 
- * use `slapos!326 <https://lab.nexedi.com/nexedi/slapos/merge_requests/326>`_, and especially `note about complex restart scenarios <https://lab.nexedi.com/nexedi/slapos/merge_requests/326#note_60198>`_, instead of self-developed graceful restart scripts
  * move out ``test/utils.py`` and use it from shared python distribution
  * provide various tricks for older browsers::
 
