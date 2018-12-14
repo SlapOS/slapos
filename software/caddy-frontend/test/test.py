@@ -55,8 +55,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-LOCAL_IPV4 = os.environ['LOCAL_IPV4']
-GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
+SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
+SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -69,7 +69,7 @@ MONITOR_F2_HTTPD_PORT = '13002'
 
 
 # for development: debugging logs and install Ctrl+C handler
-if os.environ.get('DEBUG'):
+if os.environ.get('SLAPOS_TEST_DEBUG'):
   import logging
   logging.basicConfig(level=logging.DEBUG)
   import unittest
@@ -337,7 +337,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getSoftwareURLList(cls):
-    return [os.path.realpath(os.environ['TEST_SR'])]
+    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
   @classmethod
   def setUpClass(cls):
@@ -477,17 +477,17 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
-      (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
+      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
       TestHandler)
 
     server_https = HTTPServer(
-      (LOCAL_IPV4, findFreeTCPPort(LOCAL_IPV4)),
+      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
       TestHandler)
 
     cls.another_server_ca = CertificateAuthority("Another Server Root CA")
     cls.test_server_ca = CertificateAuthority("Test Server Root CA")
     key, key_pem, csr, csr_pem = createCSR(
-      "testserver.example.com", LOCAL_IPV4)
+      "testserver.example.com", SLAPOS_TEST_IPV4)
     _, cls.test_server_certificate_pem = cls.test_server_ca.signCSR(csr)
 
     cls.test_server_certificate_file = tempfile.NamedTemporaryFile(
@@ -721,7 +721,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string':
@@ -1073,7 +1073,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       }
     )
 
@@ -1134,7 +1134,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1195,17 +1195,17 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
 
     result_ipv6 = self.fakeHTTPSResult(
-      parameter_dict['domain'], GLOBAL_IPV6, 'test-path',
-      source_ip=GLOBAL_IPV6)
+      parameter_dict['domain'], SLAPOS_TEST_IPV6, 'test-path',
+      source_ip=SLAPOS_TEST_IPV6)
 
     self.assertEqual(
-       GLOBAL_IPV6,
+       SLAPOS_TEST_IPV6,
        result_ipv6.json()['Incoming Headers']['x-forwarded-for']
     )
 
@@ -1225,7 +1225,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typezopepath.example.com',
         'site_url': 'http://typezopepath.example.com',
         'secure_access': 'https://typezopepath.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1254,7 +1254,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typezopedefaultpath.example.com',
         'site_url': 'http://typezopedefaultpath.example.com',
         'secure_access': 'https://typezopedefaultpath.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1282,7 +1282,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://serveralias.example.com',
         'site_url': 'http://serveralias.example.com',
         'secure_access': 'https://serveralias.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1322,7 +1322,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://serveraliaswildcard.example.com',
         'site_url': 'http://serveraliaswildcard.example.com',
         'secure_access': 'https://serveraliaswildcard.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1355,7 +1355,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://serveraliasduplicated.example.com',
         'site_url': 'http://serveraliasduplicated.example.com',
         'secure_access': 'https://serveraliasduplicated.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1389,7 +1389,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://alias4.example.com',
         'site_url': 'http://alias4.example.com',
         'secure_access': 'https://alias4.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1420,7 +1420,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1454,7 +1454,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslcacrtgarbage.example.com',
         'secure_access':
         'https://sslcacrtgarbage.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1474,7 +1474,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslcacrtdoesnotmatch.example.com',
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1498,7 +1498,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://httpsonly.example.com',
         'site_url': 'http://httpsonly.example.com',
         'secure_access': 'https://httpsonly.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1530,7 +1530,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://customdomain.example.com',
         'site_url': 'http://customdomain.example.com',
         'secure_access': 'https://customdomain.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1554,7 +1554,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://*.customdomain.example.com',
         'site_url': 'http://*.customdomain.example.com',
         'secure_access': 'https://*.customdomain.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1580,7 +1580,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://customdomainsslcrtsslkey.example.com',
         'site_url': 'http://customdomainsslcrtsslkey.example.com',
         'secure_access': 'https://customdomainsslcrtsslkey.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1604,7 +1604,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typezope.example.com',
         'site_url': 'http://typezope.example.com',
         'secure_access': 'https://typezope.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1651,7 +1651,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopevirtualhostroothttpport.example.com',
         'secure_access':
         'https://typezopevirtualhostroothttpport.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1678,7 +1678,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopevirtualhostroothttpsport.example.com',
         'secure_access':
         'https://typezopevirtualhostroothttpsport.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1707,7 +1707,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typenotebook.nginx.example.com',
         'site_url': 'http://typenotebook.nginx.example.com',
         'secure_access': 'https://typenotebook.nginx.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1748,7 +1748,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typeeventsource.nginx.example.com',
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1789,7 +1789,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typeredirect.example.com',
         'site_url': 'http://typeredirect.example.com',
         'secure_access': 'https://typeredirect.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1820,7 +1820,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://sslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://sslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1857,7 +1857,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://sslproxyverifysslproxycacrt.example.com',
         'site_url': 'http://sslproxyverifysslproxycacrt.example.com',
         'secure_access': 'https://sslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1919,7 +1919,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://sslproxyverifyunverified.example.com',
         'site_url': 'http://sslproxyverifyunverified.example.com',
         'secure_access': 'https://sslproxyverifyunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1952,7 +1952,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://enablecachesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -1991,7 +1991,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://enablecachesslproxyverifysslproxycacrt.example.com',
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2084,7 +2084,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablecachesslproxyverifyunverified.example.com',
         'secure_access':
         'https://enablecachesslproxyverifyunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2116,7 +2116,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://typezopesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2154,7 +2154,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopesslproxyverifysslproxycacrt.example.com',
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrt.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2204,7 +2204,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://typezopesslproxyverifyunverified.example.com',
         'secure_access':
         'https://typezopesslproxyverifyunverified.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2231,7 +2231,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://monitoripv6test.example.com',
         'site_url': 'http://monitoripv6test.example.com',
         'secure_access': 'https://monitoripv6test.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2273,7 +2273,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://monitoripv4test.example.com',
         'site_url': 'http://monitoripv4test.example.com',
         'secure_access': 'https://monitoripv4test.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2315,7 +2315,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://re6stoptimaltest.example.com',
         'site_url': 'http://re6stoptimaltest.example.com',
         'secure_access': 'https://re6stoptimaltest.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2358,7 +2358,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://enablecache.example.com',
         'site_url': 'http://enablecache.example.com',
         'secure_access': 'https://enablecache.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2450,7 +2450,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablecachedisablenocacherequest.example.com',
         'secure_access':
         'https://enablecachedisablenocacherequest.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2503,7 +2503,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablecachedisableviaheader.example.com',
         'secure_access':
         'https://enablecachedisableviaheader.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2547,7 +2547,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2596,7 +2596,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2646,7 +2646,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://prefergzipencodingtobackend.example.com',
         'secure_access':
         'https://prefergzipencodingtobackend.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2683,7 +2683,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://disabledcookielist.example.com',
         'site_url': 'http://disabledcookielist.example.com',
         'secure_access': 'https://disabledcookielist.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2731,7 +2731,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'apache_custom_http_s-accepted')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
+      {'replication_number': '1', 'public-ipv4': SLAPOS_TEST_IPV4},
       parameter_dict
     )
 
@@ -2829,7 +2829,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'caddy_custom_http_s-accepted')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': LOCAL_IPV4},
+      {'replication_number': '1', 'public-ipv4': SLAPOS_TEST_IPV4},
       parameter_dict
     )
 
@@ -2890,7 +2890,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://urlhttpsurl.example.com',
         'site_url': 'http://urlhttpsurl.example.com',
         'secure_access': 'https://urlhttpsurl.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2915,7 +2915,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       '-frontend-quantity': 2,
@@ -2948,7 +2948,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -2986,7 +2986,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'enable-http2-by-default': 'false',
@@ -3022,7 +3022,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3041,7 +3041,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3060,7 +3060,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3076,7 +3076,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -3111,7 +3111,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3130,7 +3130,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3149,7 +3149,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3262,7 +3262,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -3318,7 +3318,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3386,9 +3386,9 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd.conf')).read()
 
     self.assertTrue(
-      'Listen [%s]:8196' % (GLOBAL_IPV6,) in master_monitor_conf)
+      'Listen [%s]:8196' % (SLAPOS_TEST_IPV6,) in master_monitor_conf)
     self.assertTrue(
-      'Listen [%s]:8072' % (GLOBAL_IPV6,) in slave_monitor_conf)
+      'Listen [%s]:8072' % (SLAPOS_TEST_IPV6,) in slave_monitor_conf)
 
 
 class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -3397,7 +3397,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'enable-quic': 'true',
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
@@ -3444,7 +3444,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3507,7 +3507,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
@@ -3619,7 +3619,7 @@ https://www.google.com {}""",
         'url': 'http://serveraliassame.example.com',
         'site_url': 'http://serveraliassame.example.com',
         'secure_access': 'https://serveraliassame.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3643,7 +3643,7 @@ https://www.google.com {}""",
         'url': 'http://re6stoptimaltestunsafe.example.com',
         'site_url': 'http://re6stoptimaltestunsafe.example.com',
         'secure_access': 'https://re6stoptimaltestunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3686,7 +3686,7 @@ https://www.google.com {}""",
         'url': 'http://re6stoptimaltestnocomma.example.com',
         'site_url': 'http://re6stoptimaltestnocomma.example.com',
         'secure_access': 'https://re6stoptimaltestnocomma.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3744,7 +3744,7 @@ https://www.google.com {}""",
         'site_url': 'http://virtualhostroothttpportunsafe.example.com',
         'secure_access':
         'https://virtualhostroothttpportunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3771,7 +3771,7 @@ https://www.google.com {}""",
         'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
         'secure_access':
         'https://virtualhostroothttpsportunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3800,7 +3800,7 @@ https://www.google.com {}""",
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3828,7 +3828,7 @@ https://www.google.com {}""",
         'url': 'http://monitoripv4testunsafe.example.com',
         'site_url': 'http://monitoripv4testunsafe.example.com',
         'secure_access': 'https://monitoripv4testunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3870,7 +3870,7 @@ https://www.google.com {}""",
         'url': 'http://monitoripv6testunsafe.example.com',
         'site_url': 'http://monitoripv6testunsafe.example.com',
         'secure_access': 'https://monitoripv6testunsafe.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
@@ -3928,7 +3928,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
-      'public-ipv4': LOCAL_IPV4,
+      'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
@@ -4000,7 +4000,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://duplicate.example.com',
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
-        'public-ipv4': LOCAL_IPV4,
+        'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
     )
