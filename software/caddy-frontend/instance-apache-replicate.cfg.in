@@ -210,7 +210,7 @@ sla-{{ parameter }} = {{ value }}
 
 {%  set warning_list = [] %}
 {%  for key in ['apache-certificate', 'apache-key'] %}
-{%    if len(slapparameter_dict[key].strip()) > 0 %}
+{%    if key in slapparameter_dict %}
 {%      do warning_list.append('%s is obsolete, please use master-key-upload-url' % (key, )) %}
 {%    endif %}
 {%  endfor %}
