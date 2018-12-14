@@ -39,12 +39,12 @@ import psutil
 
 import utils
 
-LOCAL_IPV4 = os.environ['LOCAL_IPV4']
-GLOBAL_IPV6 = os.environ['GLOBAL_IPV6']
+SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
+SLAPOS_TEST_IPV6 = os.environ['GLOBAL_IPV6']
 
 
 # for development: debugging logs and install Ctrl+C handler
-if os.environ.get('DEBUG'):
+if os.environ.get('SLAPOS_TEST_DEBUG'):
   import logging
   logging.basicConfig(level=logging.DEBUG)
   import unittest
