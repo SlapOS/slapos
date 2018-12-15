@@ -84,6 +84,11 @@
             "default": false,
             "type": "boolean"
           },
+          "storage-type": {
+              "description": "Storage type. Defaults to MySQL if available, else SQLite.",
+              "enum": ["MySQL", "SQLite"],
+              "type": "string"
+          },
           "mysql": {
             "description": "Dictionary containing parameters for MySQL.",
             "default": {},
