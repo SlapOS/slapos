@@ -68,7 +68,7 @@ MONITOR_F2_HTTPD_PORT = '13002'
 
 
 # for development: debugging logs and install Ctrl+C handler
-if os.environ.get('DEBUG'):
+if os.environ.get('SLAPOS_TEST_DEBUG'):
   import logging
   logging.basicConfig(level=logging.DEBUG)
   import unittest
