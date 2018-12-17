@@ -40,7 +40,7 @@ import psutil
 import utils
 
 SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
-SLAPOS_TEST_IPV6 = os.environ['GLOBAL_IPV6']
+SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
 
 
 # for development: debugging logs and install Ctrl+C handler
