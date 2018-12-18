@@ -35,6 +35,7 @@ import multiprocessing
 import subprocess
 from unittest import skip
 import ssl
+import signal
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
 from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
@@ -3466,26 +3467,38 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('Date', result.headers)
     self.assertKeyWithPop('Content-Length', result.headers)
 
-    quic_status, quic_result = getQUIC(
-      'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
-      parameter_dict['public-ipv4'],
-      HTTPS_PORT
-    )
+    def assertQUIC():
+      quic_status, quic_result = getQUIC(
+        'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
+        parameter_dict['public-ipv4'],
+        HTTPS_PORT
+      )
 
-    self.assertTrue(quic_status, quic_result)
+      self.assertTrue(quic_status, quic_result)
 
-    try:
-      quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
-    except Exception:
-      raise ValueError('JSON not found at all in QUIC result:\n%s' % (
-        quic_result,))
-    try:
-      j = json.loads(quic_jsoned)
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
-    key = 'Path'
-    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-    self.assertEqual('/test-path', j[key])
+      try:
+        quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
+      except Exception:
+        raise ValueError('JSON not found at all in QUIC result:\n%s' % (
+          quic_result,))
+      try:
+        j = json.loads(quic_jsoned)
+      except Exception:
+        raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
+      key = 'Path'
+      self.assertTrue(key in j, 'No key %r in %s' % (key, j))
+      self.assertEqual('/test-path', j[key])
+
+    assertQUIC()
+    # https://github.com/mholt/caddy/issues/2394
+    # after sending USR1 to Caddy QUIC does not work, check current behaviour
+    caddy_pid = [
+      q['pid'] for q
+      in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()
+      if 'frontend_caddy' in q['name']][0]
+    os.kill(caddy_pid, signal.SIGUSR1)
+
+    assertQUIC()
 
 
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
