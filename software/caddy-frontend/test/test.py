@@ -609,10 +609,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
       log_access_ready = 'log-access-url' in parameter_dict
       key = 'key-generate-auth-url'
-      if key not in parameter_dict:
-        key_generate_auth_ready = False
-      elif 'NotReadyYet' not in parameter_dict[key]:
-        key_generate_auth_ready = True
+      key_generate_auth_ready = key in parameter_dict \
+          and 'NotReadyYet' not in parameter_dict[key]
       if log_access_ready and key_generate_auth_ready:
         return True
     return False
