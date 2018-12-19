@@ -11,7 +11,7 @@ BASENAME=${coreutils-output:basename}
 for status in $STATUS_DIR/*.txt
 do
   NAME=`$BASENAME $status`
-  $TAIL -n 1 $status | $PYTHON $STATUS2RSS "Backup status $NAME" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$NAME.rss" > $RSS_DIR/$NAME.rss
+  $TAIL -n 1 -q $status | $PYTHON $STATUS2RSS "Backup status $NAME" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$NAME.rss" > $RSS_DIR/$NAME.rss
 done
 
-$TAIL -n 1 $STATUS_DIR/*.txt | $PYTHON $STATUS2RSS "Full backup status $${:global_rss}" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$${:global_rss}" > $RSS_DIR/$${:global_rss}
+$TAIL -n 1 -q $STATUS_DIR/*.txt | $PYTHON $STATUS2RSS "Full backup status $${:global_rss}" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$${:global_rss}" > $RSS_DIR/$${:global_rss}
