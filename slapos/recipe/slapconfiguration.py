@@ -264,6 +264,8 @@ class Recipe(object):
           # be very careful with overriding master's information
           for key, value in flatten_dict(partition_params).items():
             if key not in options:
+              if isinstance(value, unicode):
+                value = value.encode('UTF-8')  # XXX: Hardcoded encoding
               options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))

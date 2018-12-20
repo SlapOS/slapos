@@ -190,12 +190,15 @@ class Recipe(object):
 
     # Then try to get all the parameters. In case of problem, put empty string.
     for param in return_parameters:
-      options['connection-%s' % param] = ''
+      value = ''
       try:
-        options['connection-%s' % param] = return_parameter_dict[param]
+        value = return_parameter_dict[param]
       except KeyError:
         if self.failed is None:
           self.failed = param
+      if isinstance(value, unicode):
+        value = value.encode('UTF-8')  # XXX: Hardcoded encoding
+      options['connection-%s' % param] = value
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw
