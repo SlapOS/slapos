@@ -1062,6 +1062,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       open(os.path.join(partition_path, 'bin', 'nginx-wrapper'), 'r').read()
     )
 
+  def test_monitor_conf(self):
+    monitor_conf_list = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'monitor.conf'
+      ))
+    self.assertEqual(2, len(monitor_conf_list))
+    expected = [(False, q) for q in monitor_conf_list]
+    got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
+    # check that no monitor.conf in generated configuratio has magic !py!
+    self.assertEqual(
+      expected,
+      got
+    )
+
   def test_empty(self):
     parameter_dict = self.parseSlaveParameterDict('empty')
     self.assertLogAccessUrlWithPop(parameter_dict)
