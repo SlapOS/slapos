@@ -69,6 +69,8 @@ TestSlave-1/var/log/httpd/_type-zope-default-path_access_log
 TestSlave-1/var/log/httpd/_type-zope-default-path_error_log
 TestSlave-1/var/log/httpd/_type-zope-path_access_log
 TestSlave-1/var/log/httpd/_type-zope-path_error_log
+TestSlave-1/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend_access_log
+TestSlave-1/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend_error_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify-unverified_access_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify-unverified_error_log
 TestSlave-1/var/log/httpd/_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-unverified_access_log

@@ -337,7 +337,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+    return (
+      os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
   @classmethod
   def setUpClass(cls):
@@ -831,6 +833,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       'type-zope': {
         'url': cls.backend_url,
+        'type': 'zope',
+      },
+      'type-zope-prefer-gzip-encoding-to-backend': {
+        'url': cls.backend_url,
+        'prefer-gzip-encoding-to-backend': 'true',
         'type': 'zope',
       },
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt': {
@@ -1638,6 +1645,93 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       '/VirtualHostBase/http//typezope.example.com:80/'
       '/VirtualHostRoot/test-path'
     )
+
+  def test_type_zope_prefer_gzip_encoding_to_backend(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-prefer-gzip-encoding-to-backend')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'typezopeprefergzipencodingtobackend.example.com',
+        'replication_number': '1',
+        'url': 'http://typezopeprefergzipencodingtobackend.example.com',
+        'site_url': 'http://typezopeprefergzipencodingtobackend.example.com',
+        'secure_access':
+        'https://typezopeprefergzipencodingtobackend.example.com',
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostRoot/test-path'
+    )
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackend.example.com:80/'
+      '/VirtualHostRoot/test-path'
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostRoot/test-path'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackend.example.com:80/'
+      '/VirtualHostRoot/test-path'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_type_zope_virtualhostroot_http_port(self):
     parameter_dict = self.parseSlaveParameterDict(
@@ -2672,6 +2766,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_disabled_cookie_list(self):
     parameter_dict = self.parseSlaveParameterDict('disabled-cookie-list')
