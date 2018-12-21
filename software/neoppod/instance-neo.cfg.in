@@ -2,6 +2,11 @@
 {% set part_list = [] -%}
 {% set init_list = [] -%}
 
+{% set storage_type = slapparameter_dict.get('storage-type') or (
+     'MySQL' if mariadb_location is defined else 'SQLite') -%}
+{% set mysql = storage_type == 'MySQL' -%}
+{% if mysql -%}
+
 [mysqld]
 recipe = slapos.cookbook:generic.mysql.wrap_mysqld
 output = ${directory:etc_run}/mariadb
@@ -33,6 +38,8 @@ recipe = slapos.cookbook:wrapper
 command-line = ${mysqld:mysql-base-directory}/bin/${:command} --defaults-file=${my-cnf:rendered}
 wrapper-path = ${directory:bin}/${:command}
 command = mysql
+
+{% endif -%}
 
 [{{ section('binary-neolog') }}]
 recipe = slapos.cookbook:symbolic.link
@@ -95,7 +102,7 @@ ip = ${publish:ip}
 ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
-database-adapter = MySQL
+database-adapter = {{ storage_type }}
 wait-database = -1
 engine = {{ slapparameter_dict.get('engine', '') }}
 dedup = {{ dumps(bool(slapparameter_dict.get('data-deduplication'))) }}
@@ -107,8 +114,15 @@ disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-par
 < = neo-storage
 wrapper = ${directory:etc_run}/{{ 'neostorage-' ~ i }}
 logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
-{%   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') -%}
+{%- if mysql %}
+{%-   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') %}
 database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+{%- else %}
+database-parameters = ${directory:db-{{i}}}/db.sqlite
+
+[directory]
+db-{{i}} = ${buildout:directory}/srv/{{ storage_id }}
+{%- endif %}
 
 [{{ section('logrotate-storage-' ~ i) }}]
 < = logrotate-entry-base
@@ -117,12 +131,6 @@ log = {{ '${' +  storage_id + ':logfile}' }}
 post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostorage -l ${:log}
 
 {% endfor -%}
-[init-script]
-recipe = slapos.recipe.template:jinja2
-# XXX: is there a better location ?
-rendered = ${directory:etc}/mariadb_initial_setup.sql
-template = inline:
-  {{ init_list | join('\n\t') }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -132,11 +140,19 @@ etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 etc_run =  ${:etc}/run
 var_run =  ${:var}/run
-srv_mariadb = ${buildout:directory}/srv/mariadb
 log = ${buildout:directory}/var/log
 tmp = ${buildout:directory}/tmp
+{% if mysql -%}
+srv_mariadb = ${buildout:directory}/srv/mariadb
 
-[logrotate-mysql]
+[init-script]
+recipe = slapos.recipe.template:jinja2
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+template = inline:
+  {{ init_list | join('\n\t') }}
+
+[{{ section('logrotate-mysql') }}]
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
@@ -154,7 +170,9 @@ context =
     section my_cnf_parameters my-cnf-parameters
     raw     bin_directory     {{ bin_directory }}
     raw     prepend_path      ${mysqld:mysql-base-directory}/bin
-{% endif -%}
+{%- endif %}
+
+{%- endif %}
 
 [buildout]
 extends =
@@ -167,4 +185,3 @@ extends =
 {%- endif %}
 parts +=
   {{ '\n  '.join(part_list) }}
-  logrotate-mysql

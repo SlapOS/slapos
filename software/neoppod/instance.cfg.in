@@ -12,14 +12,16 @@ extra-context =
 import-list =
     rawfile root_common {{ root_common }}
 
-[neo-storage-mysql]
+{% if mariadb_location is defined -%}
+[neo]
 extra-context +=
     raw runTestSuite_in {{ runTestSuite_in }}
 
+{% endif -%}
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 default = neo-cluster:rendered
 # BBB
 RootSoftwareInstance = ${:default}
-neo = neo-storage-mysql:rendered
+neo = neo:rendered

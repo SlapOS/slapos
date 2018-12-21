@@ -39,4 +39,7 @@ class Recipe(GenericBaseRecipe):
     for path in sorted(self.directory.itervalues()):
       if path and not os.path.isdir(path):
         os.makedirs(path, self.mode)
+    # WARNING: This recipe is currently used to create directories that will
+    #          contain user data  (e.g. NEO db). Such directories must never
+    #          be purged by the uninstallation of a recipe.
     return []

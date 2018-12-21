@@ -3,15 +3,15 @@
 STATUS_DIR=$${directory:status}
 RSS_DIR=$${directory:www}
 
-CAT=${coreutils-output:cat}
+TAIL=${coreutils-output:tail}
 PYTHON=${buildout:directory}/bin/${extra-eggs:interpreter}
 STATUS2RSS=${status2rss:output}
 BASENAME=${coreutils-output:basename}
 
-for status in $STATUS_DIR/*
+for status in $STATUS_DIR/*.txt
 do
   NAME=`$BASENAME $status`
-  $CAT $status | $PYTHON $STATUS2RSS "Backup status $NAME" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$NAME.rss" > $RSS_DIR/$NAME.rss
+  $TAIL -n 1 -q $status | $PYTHON $STATUS2RSS "Backup status $NAME" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$NAME.rss" > $RSS_DIR/$NAME.rss
 done
 
-$CAT $STATUS_DIR/* | $PYTHON $STATUS2RSS "Full backup status $${:global_rss}" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$${:global_rss}" > $RSS_DIR/$${:global_rss}
+$TAIL -n 1 -q $STATUS_DIR/*.txt | $PYTHON $STATUS2RSS "Full backup status $${:global_rss}" "https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$${:global_rss}" > $RSS_DIR/$${:global_rss}

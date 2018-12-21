@@ -456,11 +456,15 @@ the proxy::
 QUIC Protocol
 =============
 
-Experimental QUIC available in Caddy is not configurable, thus it is required to open port ``udp:11443`` on the machine, like::
+Note: QUIC support in Caddy is really experimental. It can result with silently having problems with QUIC connections or hanging Caddy process. So in case of QUIC error ``QUIC_NETWORK_IDLE_TIMEOUT`` or ``QUIC_PEER_GOING_AWAY`` it is required to restart caddy process.
 
-  iptables -I INPUT -p udp --dport 11443 --destination ${ip} -j ACCEPT
+Note: Chrome will refuse to connect to QUIC on different port then HTTPS has been served. As Caddy binds to high ports, if QUIC is wanted, the browser need to connect to high port too.
 
-where ``${ip}`` is the IP of the partition with running caddy process.
+Experimental QUIC available in Caddy is not configurable. If caddy is configured to bind to HTTPS port ``${port}``, QUIC is going to be advertised on this port only. It is not possible to configure another public port in case of port rewriting.
+
+So it is required to ``DNAT`` from ``${public IP}`` of the computer to the computer partition running caddy ``${local IP}`` with configured port::
+
+  iptables -A DNAT -d ${public IP}/32 -p udp -m udp --dport ${port} -j DNAT --to-destination ${local IP}:${port}
 
 
 Notes

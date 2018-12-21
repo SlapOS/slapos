@@ -1,38 +1,32 @@
 #!${dash-output:dash}
 
-# trap "echo Backing up failed for $${:hostname}" ERR
+# don't run if rdiff-backup is still running
+# in that case, the promise will detect that previous rdiff backup took too long and report an error
+${util-linux:location}/bin/flock --nb $${:status_log}.lock true || exit
 
 export HOME=$${directory:home}
 
-# Clean status file (no history needed)
-${coreutils-output:rm} -f $${:status_log}
-${coreutils-output:rm} -f $${:statistic_log}
-
 # Inform about beginning of backup
-${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log}, $${:hostname} backup running" >> $${:status_log}
-${coreutils-output:echo} "Available only if backup succeed." >> $${:statistic_log}
+${coreutils-output:echo} "`${coreutils-output:date} --iso-8601=seconds -u`, $${:statistic_log}, $${:hostname}, backup running" > $${:status_log}
+${coreutils-output:echo} "Available only if backup succeed." > $${:statistic_log}
 
 # set -e
 cd $${:datadirectory}
-${rdiff-backup-output:rdiff-backup} \
+${util-linux:location}/bin/flock $${:status_log}.lock \
+  ${rdiff-backup-output:rdiff-backup} \
   $${:exclude_string} \
   --include='$${:include}' \
   --exclude='**' \
-  --remote-schema '${openssh-output:ssh} -6 -q -T -y -o "StrictHostKeyChecking no" -i $${:sshkey} -p $${:connection_port} %s $${:remote_schema}' \
+  --remote-schema '${openssh-output:ssh} -q -T -y -o "StrictHostKeyChecking no" -i $${:sshkey} -p $${:connection_port} %s $${:remote_schema}' \
   $${:connection}::/ ./
 
 RESULT=$?
  
 # Inform about backup status
-${coreutils-output:rm} -f $${:status_log}
 if [ $RESULT -eq 0 ]
 then
-  ${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log},$${:hostname} backup success" >> $${:status_log}
-  ${coreutils-output:rm} -f $${:statistic_log}
-  ${findutils-output:find} rdiff-backup-data/ -maxdepth 1 -name "session_statistic*" | ${coreutils-output:sort} | ${coreutils-output:tail} -n 1 | ${findutils-output:xargs} ${rdiff-backup-output:rdiff-backup} --calculate-average >> $${:statistic_log}
+  ${coreutils-output:echo} "`${coreutils-output:date} --iso-8601=seconds -u`, $${:statistic_log}, $${:hostname}, backup success" >> $${:status_log}
+  ${findutils-output:find} rdiff-backup-data/ -maxdepth 1 -name "session_statistic*" | ${coreutils-output:sort} | ${coreutils-output:tail} -n 1 | ${findutils-output:xargs} ${rdiff-backup-output:rdiff-backup} --calculate-average > $${:statistic_log}
 else
-  ${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log},$${:hostname} backup failed" >> $${:status_log}
+  ${coreutils-output:echo} "`${coreutils-output:date} --iso-8601=seconds -u`, $${:statistic_log}, $${:hostname}, backup failed" >> $${:status_log}
 fi
-
-# python scripts/verify_with_sudo.py ./ $${:connection}:/
-
