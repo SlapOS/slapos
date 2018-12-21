@@ -28,7 +28,7 @@
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
+  e Compress the output
   gzip
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
 {%- if enable_h2 %}
@@ -42,12 +42,12 @@
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{%- if prefer_gzip %}
+{%- if prefer_gzip and not (slave_type == 'zope' and backend_url) %}
   rewrite {
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip{uri}
   }
-{%- endif %} {#- if prefer_gzip #}
+{%- endif %} {#- if prefer_gzip and not (slave_type == 'zope' and backend_url) #}
 
 {%- if slave_type ==  'zope' and backend_url %}
   # Zope configuration
@@ -91,6 +91,10 @@
   } {# redir #}
   {%- endif %} {#- if default_path #}
   rewrite {
+{%- if prefer_gzip  %}
+    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /prefer-gzip{uri}
+{%- endif %} {#- if prefer_gzip #}
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   } {# rewrite #}
@@ -155,12 +159,12 @@
   log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
-{%- if prefer_gzip %}
+{%- if prefer_gzip and not (slave_type == 'zope' and backend_url) %}
   rewrite {
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip{uri}
   }
-{%- endif %} {#- if prefer_gzip #}
+{%- endif %} {#- if prefer_gzip and not (slave_type == 'zope' and backend_url) #}
 
 {%- if https_only %}
   # Enforced redirection to SSL-enabled host
@@ -212,6 +216,10 @@
   } {# redir #}
 {%-   endif %} {#-   if default_path #}
   rewrite {
+{%- if prefer_gzip  %}
+    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /prefer-gzip{uri}
+{%- endif %} {#- if prefer_gzip #}
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
   } {# rewrite #}
