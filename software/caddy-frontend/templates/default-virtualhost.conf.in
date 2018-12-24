@@ -28,7 +28,7 @@
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
-  e Compress the output
+  # Compress the output
   gzip
   tls {{ slave_parameter.get('path_to_ssl_crt', slave_parameter.get('login_certificate')) }} {{ slave_parameter.get('path_to_ssl_key', slave_parameter.get('login_key')) }} {
 {%- if enable_h2 %}
