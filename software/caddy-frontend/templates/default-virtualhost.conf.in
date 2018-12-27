@@ -225,8 +225,8 @@
 {%- else %}
     regexp (.*)
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '') }}%2FVirtualHostRoot/{1}
-  } {# rewrite #}
 {% endif %} {#- if prefer_gzip #}
+  } {# rewrite #}
 {%- else %} {#- if https_only #}
   # Default configuration
 {%-   if default_path %}
