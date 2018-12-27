@@ -167,15 +167,22 @@ if 1:
 EOF
 )
 
-db_query "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
-db_query "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
+# Slap proxy table contain version number, find the table name dynamically.
+# This is known to work with version 11 or 12 of tables, but it will probably
+# work with earlier versions as well.
+DB_PARTITION_TABLE=$(db_query ".table partition__")
+DB_PARTITION_NETWORK_TABLE=$(db_query ".table partition\_network__")
+DB_SOFTWARE_TABLE=$(db_query ".table software__")
+
+db_query "update $DB_PARTITION_TABLE set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+db_query "update $DB_SOFTWARE_TABLE set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from $DB_SOFTWARE_TABLE where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
-db_query "update partition11 set requested_state='stopped';"
+db_query "update $DB_PARTITION_TABLE set requested_state='stopped';"
 # Change slapproxy database to get correct IPs
 IPV4='{{ ipv4 }}'
 IPV6='{{ ipv6 }}'
-db_query "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
-db_query "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
+db_query "update $DB_PARTITION_NETWORK_TABLE set address='$IPV4' where netmask='255.255.255.255';"
+db_query "update $DB_PARTITION_NETWORK_TABLE set address='$IPV6' where netmask='ffff:ffff:ffff::';"
 
 MASTERURL='http://{{ ipv4 }}:{{ proxy_port }}'
 
@@ -189,7 +196,7 @@ SLAPGRIDCPLOG='{{ supervisord["slapgrid-cp-log"] }}'
 
 contain_software_release=0
 
-SOFTWARE_RELEASES_COUNT=$("$SQLITE3" "$DATABASE" 'SELECT count(1) FROM software11 WHERE url != "";')
+SOFTWARE_RELEASES_COUNT=$(db_query "SELECT count(1) FROM $DB_SOFTWARE_TABLE WHERE url != '';")
 if [ $SOFTWARE_RELEASES_COUNT -gt 0 ]; then
   contain_software_release=1
 fi
