@@ -1147,13 +1147,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
       j = result.json()
@@ -1172,8 +1173,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+    self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
 
     try:
       j = result_http.json()
@@ -1238,7 +1240,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
@@ -1248,7 +1251,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result,
       'Path',
       '/VirtualHostBase/https//'
-      'typezopepath.example.com:443/path/VirtualHostRoot/test-path'
+      'typezopepath.example.com:443/path/VirtualHostRoot/test-path/deeper'
     )
 
   def test_type_zope_default_path(self):
@@ -1295,25 +1298,28 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = self.fakeHTTPSResult(
-      'alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
+      'alias1.example.com', parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = self.fakeHTTPSResult(
-      'alias2.example.com', parameter_dict['public-ipv4'], 'test-path')
+      'alias2.example.com', parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
@@ -1511,19 +1517,21 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
-      'https://httpsonly.example.com/test-path',
+      'https://httpsonly.example.com/test-path/deeper',
       result_http.headers['Location']
     )
 
@@ -1617,7 +1625,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
@@ -1633,17 +1642,18 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result,
       'Path',
       '/VirtualHostBase/https//typezope.example.com:443/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
 
     result = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(
       result,
       'Path',
       '/VirtualHostBase/http//typezope.example.com:80/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
 
   def test_type_zope_prefer_gzip_encoding_to_backend(self):
@@ -1664,7 +1674,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
@@ -1681,22 +1692,24 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'Path',
       '/VirtualHostBase/https//'
       'typezopeprefergzipencodingtobackend.example.com:443/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
 
     result = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(
       result,
       'Path',
       '/VirtualHostBase/http//'
       'typezopeprefergzipencodingtobackend.example.com:80/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
@@ -1714,13 +1727,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'Path',
       '/VirtualHostBase/https//'
       'typezopeprefergzipencodingtobackend.example.com:443/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqualResultJson(
@@ -1728,7 +1742,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'Path',
       '/VirtualHostBase/http//'
       'typezopeprefergzipencodingtobackend.example.com:80/'
-      '/VirtualHostRoot/test-path'
+      '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
@@ -1807,14 +1821,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
       NGINX_HTTPS_PORT)
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   @skip('Feature postponed')
   def test_type_websocket(self):
@@ -1889,14 +1904,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqual(
-      '%s/test-path' % (self.backend_url,),
+      '%s/test-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
 
@@ -2052,7 +2068,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2064,7 +2081,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deeper')
 
     self.assertEqual(
       httplib.BAD_GATEWAY,
@@ -2091,13 +2109,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     headers = result.headers.copy()
 
@@ -2458,13 +2477,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     headers = result.headers.copy()
 
@@ -2746,40 +2766,44 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'deflate'})
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   def test_disabled_cookie_list(self):
     parameter_dict = self.parseSlaveParameterDict('disabled-cookie-list')
@@ -3004,17 +3028,19 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/https/test-path')
+    self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
 
     result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/http/test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+    self.assertEqualResultJson(result_http, 'Path', '/http/test-path/deeper')
 
 
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
