@@ -172,7 +172,7 @@
 
 {%- if https_only %}
   # Enforced redirection to SSL-enabled host
-  redir / https://{host}{uri}
+  redir 302 { / https://{host}{uri} }
 {%- elif slave_type ==  'redirect' and slave_parameter.get('url', '') %} {#- if https_only #}
   # Redirect configuration
   redir 302 {
