@@ -1147,13 +1147,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result = self.fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path')
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
       j = result.json()
@@ -1172,8 +1173,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     result_http = self.fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+    self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
 
     try:
       j = result_http.json()
