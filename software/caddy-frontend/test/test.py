@@ -1274,6 +1274,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqual(
+      httplib.MOVED_PERMANENTLY,
+      result.status_code
+    )
+
+    self.assertEqual(
       'https://typezopedefaultpath.example.com:%s/default-path' % (
         HTTPS_PORT,),
       result.headers['Location']
@@ -1521,6 +1526,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
 
     self.assertEqual(
       'https://httpsonly.example.com/test-path',
@@ -1894,6 +1904,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
 
     self.assertEqual(
       '%s/test-path' % (self.backend_url,),
@@ -3919,6 +3934,11 @@ https://www.google.com {}""",
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.MOVED_PERMANENTLY,
+      result.status_code
+    )
 
     self.assertEqual(
       'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
