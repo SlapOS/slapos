@@ -33,7 +33,7 @@ from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skip
+from unittest import skip, expectedFailure
 import ssl
 import signal
 from BaseHTTPServer import HTTPServer
@@ -3542,6 +3542,9 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
+  # It is known problem that QUIC does not work after sending reload signal,
+  # SIGUSR1, see https://github.com/mholt/caddy/issues/2394
+  @expectedFailure
   def test_url(self):
     parameter_dict = self.parseSlaveParameterDict('url')
     self.assertLogAccessUrlWithPop(parameter_dict)
