@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.0.84 (2018-12-28)
+1.0.85 (2018-12-28)
 -----------------------
 
 * Drop ``slapos.recipe:xvfb``, use simple ``slapos.recipe:wrapper`` instead.
