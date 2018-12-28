@@ -181,3 +181,28 @@ Listen {{ ip }}:{{ port }}
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
 </VirtualHost>
 {% endfor -%}
+
+
+{% for (ip, port), (enable_authentication, path_mapping) in parameter_dict.get('zope-virtualhost-monster-backend-dict', {}).items() -%}
+Listen {{ ip }}:{{ port }}
+<VirtualHost {{ ip }}:{{ port }}>
+  SSLEngine on
+{%   if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
+  SSLVerifyClient require
+  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+  SSLCARevocationCheck chain
+  SSLCARevocationFile {{ parameter_dict['crl'] }}
+
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+
+  # We would like to separate the the authentificated logs.
+  # XXX filename ? is it log-rotated ?
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-service-virtual-host-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-virtual-host-access.log" combined
+{%   endif -%}
+
+{%   for path, backend in path_mapping.items() %}
+  RewriteRule ^/{{path}}(.*) {{ backend }}/VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ path }}$1 [L,P]
+{%   endfor -%}
+</VirtualHost>
+{% endfor -%}

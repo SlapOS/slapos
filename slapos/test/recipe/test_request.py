@@ -83,6 +83,7 @@ class RecipeTestMixin(object):
     result = recipe.install()
     self.assertEqual([], result)
     self.assertEqual(options['connection-anything'], 'done')
+    self.assertIsInstance(options['connection-anything'], str)
     self.request_instance.assert_called_with(
       '', 'RootSoftwareInstance', '', filter_kw={},
       partition_parameter_kw=self.called_partition_parameter_kw,

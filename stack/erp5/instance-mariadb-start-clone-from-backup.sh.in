@@ -89,7 +89,7 @@ zcat "$BACKUP" | "$CLIENT" -u root
 echo "Configuring server as slave..."
 if [ "$MASTER_USE_GTID" -eq 1 ]; then
   "$CLIENT" -u root -e "$SQL_SET_GTID"
-  MASTER_USE_GTID_SQL="current_pos"
+  MASTER_USE_GTID_SQL="slave_pos"
 else
   MASTER_USE_GTID_SQL="NO"
 fi

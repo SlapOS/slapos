@@ -18,7 +18,7 @@ class SlapConfigurationTest(unittest.TestCase):
     self.resource_file = os.path.join(self.instance_root, slapformat.Partition.resource_file)
     self.resource = {
       "tun": {
-        "ipv4": "192.168.0.1"
+        "ipv4": u"192.168.0.1"
       },
       "address_list": [
         10, 20
@@ -48,6 +48,7 @@ class SlapConfigurationTest(unittest.TestCase):
 
     self.assertEqual(options['tun-ipv4'], "192.168.0.1",
       "Folded attrs should be separated by -")
+    self.assertIsInstance(options['tun-ipv4'], str)
 
     self.assertEqual(options['address-list'], [10, 20],
       "All underscores should be replaced with -")

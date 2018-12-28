@@ -1,12 +1,14 @@
 Changes
 =======
 
-1.0.75-dev (unreleased)
+1.0.84 (2018-12-28)
 -----------------------
 
 * Drop ``slapos.recipe:xvfb``, use simple ``slapos.recipe:wrapper`` instead.
 * Drop ``slapos.recipe:seleniumrunner`` and ``slapos.recipe:firefox``, they
   were not used.
+* Encode unicode to UTF-8 on ``slapos.recipe:request`` and 
+  ``slapos.recipe:slapconfiguration`` 
 
 1.0.75 (2018-09-04)
 -------------------

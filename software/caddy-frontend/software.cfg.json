@@ -35,6 +35,15 @@
       "shared": true,
       "software-type": "default",
       "title": "Default (slave)"
+    },
+    "default-simplified-slave": {
+      "description": "Default",
+      "index": 5,
+      "request": "instance-slave-caddy-simplified-input-schema.json",
+      "response": "instance-output-schema.json",
+      "shared": true,
+      "software-type": "default",
+      "title": "Default Basic (slave)"
     }
   }
 }

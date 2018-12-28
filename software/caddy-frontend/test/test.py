@@ -33,7 +33,7 @@ from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skip
+from unittest import skip, expectedFailure
 import ssl
 import signal
 from BaseHTTPServer import HTTPServer
@@ -337,7 +337,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+    return (
+      os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
   @classmethod
   def setUpClass(cls):
@@ -833,6 +835,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'type': 'zope',
       },
+      'type-zope-prefer-gzip-encoding-to-backend': {
+        'url': cls.backend_url,
+        'prefer-gzip-encoding-to-backend': 'true',
+        'type': 'zope',
+      },
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'type': 'zope',
@@ -990,9 +997,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '43',
+      'accepted-slave-amount': '44',
       'rejected-slave-amount': '4',
-      'slave-amount': '47',
+      'slave-amount': '48',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
@@ -1638,6 +1645,93 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       '/VirtualHostBase/http//typezope.example.com:80/'
       '/VirtualHostRoot/test-path'
     )
+
+  def test_type_zope_prefer_gzip_encoding_to_backend(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'type-zope-prefer-gzip-encoding-to-backend')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'typezopeprefergzipencodingtobackend.example.com',
+        'replication_number': '1',
+        'url': 'http://typezopeprefergzipencodingtobackend.example.com',
+        'site_url': 'http://typezopeprefergzipencodingtobackend.example.com',
+        'secure_access':
+        'https://typezopeprefergzipencodingtobackend.example.com',
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostRoot/test-path'
+    )
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackend.example.com:80/'
+      '/VirtualHostRoot/test-path'
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostRoot/test-path'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackend.example.com:80/'
+      '/VirtualHostRoot/test-path'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_type_zope_virtualhostroot_http_port(self):
     parameter_dict = self.parseSlaveParameterDict(
@@ -2673,6 +2767,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
   def test_disabled_cookie_list(self):
     parameter_dict = self.parseSlaveParameterDict('disabled-cookie-list')
     self.assertLogAccessUrlWithPop(parameter_dict)
@@ -3434,6 +3542,9 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
+  # It is known problem that QUIC does not work after sending reload signal,
+  # SIGUSR1, see https://github.com/mholt/caddy/issues/2394
+  @expectedFailure
   def test_url(self):
     parameter_dict = self.parseSlaveParameterDict('url')
     self.assertLogAccessUrlWithPop(parameter_dict)

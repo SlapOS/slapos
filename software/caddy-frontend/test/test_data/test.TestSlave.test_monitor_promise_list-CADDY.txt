@@ -73,6 +73,8 @@ TestSlave-1/etc/monitor-promise/check-_type-zope-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-zope-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-path-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-zope-path-error-log-last-hour
+TestSlave-1/etc/monitor-promise/check-_type-zope-prefer-gzip-encoding-to-backend-error-log-last-day
+TestSlave-1/etc/monitor-promise/check-_type-zope-prefer-gzip-encoding-to-backend-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify-unverified-error-log-last-day
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify-unverified-error-log-last-hour
 TestSlave-1/etc/monitor-promise/check-_type-zope-ssl-proxy-verify_ssl_proxy_ca_crt-error-log-last-day
