@@ -32,6 +32,9 @@ import os
 import tempfile
 import unittest
 import urlparse
+import base64
+import hashlib
+import contextlib
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from io import BytesIO
 
@@ -343,20 +346,46 @@ class TestSSHServer(SeleniumServerTestCase):
     self.assertEqual('ssh', parsed.scheme)
 
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.client.WarningPolicy)
-    client.connect(
-      username=urlparse.urlparse(ssh_url).username,
-      hostname=urlparse.urlparse(ssh_url).hostname,
-      port=urlparse.urlparse(ssh_url).port,
-      pkey=self.ssh_key,
-    )
-    channel = client.invoke_shell()
-    channel.settimeout(30)
-    # apparently we sometimes need to send something on the first ssh connection
-    channel.send('\n')
-    # openssh prints a warning 'Attempt to write login records by non-root user (aborting)'
-    # so we received more than the lenght of the asserted message.
-    self.assertIn("Welcome to SlapOS Selenium Server.", channel.recv(100))
+    class TestKeyPolicy(object):
+      """Accept server key and keep it in self.key for inspection
+      """
+      def missing_host_key(self, client, hostname, key):
+        self.key = key
+    key_policy = TestKeyPolicy()
+    client.set_missing_host_key_policy(key_policy)
+
+    with contextlib.closing(client):
+      client.connect(
+        username=urlparse.urlparse(ssh_url).username,
+        hostname=urlparse.urlparse(ssh_url).hostname,
+        port=urlparse.urlparse(ssh_url).port,
+        pkey=self.ssh_key,
+      )
+
+      # Check fingerprint from server matches the published one.
+      # The publish format is the raw output of ssh-keygen and is something like this:
+      #   521 SHA256:9aZruv3LmFizzueIFdkd78eGtzghDoPSCBXFkkrHqXE user@hostname (ECDSA)
+      # we only want to parse SHA256:9aZruv3LmFizzueIFdkd78eGtzghDoPSCBXFkkrHqXE
+      _, fingerprint_string, _, key_type = parameter_dict['ssh-fingerprint'].split()
+      self.assertEqual(key_type, '(ECDSA)')
+
+      fingerprint_algorithm, fingerprint = fingerprint_string.split(':', 1)
+      self.assertEqual(fingerprint_algorithm, 'SHA256')
+      # Paramiko does not allow to get the fingerprint as SHA256 easily yet
+      # https://github.com/paramiko/paramiko/pull/1103
+      self.assertEqual(
+        fingerprint,
+        # XXX with sha256, we need to remove that trailing =
+        base64.b64encode(hashlib.new(fingerprint_algorithm, key_policy.key.asbytes()).digest())[:-1]
+      )
+
+      channel = client.invoke_shell()
+      channel.settimeout(30)
+      # apparently we sometimes need to send something on the first ssh connection
+      channel.send('\n')
+      # openssh prints a warning 'Attempt to write login records by non-root user (aborting)'
+      # so we received more than the lenght of the asserted message.
+      self.assertIn("Welcome to SlapOS Selenium Server.", channel.recv(100))
 
 
 class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
