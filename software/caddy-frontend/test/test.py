@@ -1164,7 +1164,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       open(os.path.join(partition_path, 'bin', 'nginx-wrapper'), 'r').read()
     )
 
-<<<<<<< HEAD
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
       os.path.join(
