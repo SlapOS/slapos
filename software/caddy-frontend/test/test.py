@@ -505,10 +505,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       certfile=cls.test_server_certificate_file.name,
       server_side=True)
 
-    cls.backend_url = 'http://%s:%s' % server.server_address
+    cls.backend_url = 'http://%s:%s/' % server.server_address
     cls.server_process = multiprocessing.Process(target=server.serve_forever)
     cls.server_process.start()
-    cls.backend_https_url = 'https://%s:%s' % server_https.server_address
+    cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     cls.server_https_process = multiprocessing.Process(
       target=server_https.serve_forever)
     cls.server_https_process.start()
@@ -756,8 +756,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
       },
       'url_https-url': {
-        'url': cls.backend_url + '/http',
-        'https-url': cls.backend_url + '/https',
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
       },
       'server-alias': {
         'url': cls.backend_url,
@@ -870,12 +870,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-zope-path': {
         'url': cls.backend_url,
         'type': 'zope',
-        'path': 'path',
+        'path': '///path/to/some/resource///',
       },
       'type-zope-default-path': {
         'url': cls.backend_url,
         'type': 'zope',
-        'default-path': 'default-path',
+        'default-path': '///default-path/to/some/resource///',
       },
       'type-notebook': {
         'url': cls.backend_url,
@@ -1264,8 +1264,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopepath.example.com:443/path/VirtualHostRoot/test-path/deeper'
+      '/VirtualHostBase/'
+      'https//typezopepath.example.com:443/path/to/some/resource'
+      '/VirtualHostRoot/'
+      'test-path/deeper'
     )
 
   def test_type_zope_default_path(self):
@@ -1296,7 +1298,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://typezopedefaultpath.example.com:%s/default-path' % (
+      'https://typezopedefaultpath.example.com:%s/'
+      'default-path/to/some/resource' % (
         HTTPS_PORT,),
       result.headers['Location']
     )
@@ -1952,7 +1955,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      '%s/test-path/deeper' % (self.backend_url,),
+      '%stest-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
 
