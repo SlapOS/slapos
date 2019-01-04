@@ -595,8 +595,8 @@ mode = 700
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
-# XXX: Fix path_list for direct ssl ${caddy-directory:vh-ssl}/*.proxy_ca_crt
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem
+
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/caddy_graceful_signature
 extra-context =
@@ -610,8 +610,7 @@ extra-context =
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
 mode = 0700
-# XXX: Fix path_list for direct ssl ${caddy-directory:vh-ssl}/*.proxy_ca_crt
-path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem
+path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/nginx_graceful_signature
 extra-context =
