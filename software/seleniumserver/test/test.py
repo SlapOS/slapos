@@ -352,6 +352,8 @@ class TestSSHServer(SeleniumServerTestCase):
     )
     channel = client.invoke_shell()
     channel.settimeout(30)
+    # apparently we sometimes need to send something on the first ssh connection
+    channel.send('\n')
     # openssh prints a warning 'Attempt to write login records by non-root user (aborting)'
     # so we received more than the lenght of the asserted message.
     self.assertIn("Welcome to SlapOS Selenium Server.", channel.recv(100))
