@@ -1,2 +1,2 @@
-TestDuplicateSiteKeyProtection-1/etc/monitor-promise/check-_site_2-error-log-last-day
-TestDuplicateSiteKeyProtection-1/etc/monitor-promise/check-_site_2-error-log-last-hour
+TestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-day
+TestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-hour
