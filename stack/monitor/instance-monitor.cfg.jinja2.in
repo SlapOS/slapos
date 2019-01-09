@@ -28,7 +28,7 @@ monitor = ${:srv}/monitor
 recipe = slapos.cookbook:mkdirectory
 bin = ${directory:bin}
 etc = ${directory:etc}
-promises = ${directory:etc}/monitor-promise
+# XXX remove reports when not used because it doesn't work anymore
 reports = ${directory:etc}/monitor-report
 pids = ${directory:run}/monitor
 webdav = ${directory:monitor}/webdav
