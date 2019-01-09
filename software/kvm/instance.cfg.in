@@ -74,15 +74,7 @@ extra-context =
 template = ${template-kvm:location}/instance-kvm.cfg.jinja2
 filename = template-kvm.cfg
 extra-context =
-  key tap_ipv4_addr slap-configuration:tap-ipv4-addr
-  key tap_ipv4_gateway slap-configuration:tap-ipv4-gateway
-  key tap_ipv4_netmask slap-configuration:tap-ipv4-netmask
-  key tap_ipv4_network slap-configuration:tap-ipv4-network
-  key tap_ipv6_addr slap-configuration:tap-ipv6-addr
-  key tap_ipv6_gateway slap-configuration:tap-ipv6-gateway
-  key tap_ipv6_netmask slap-configuration:tap-ipv6-netmask
-  key tap_ipv6_network slap-configuration:tap-ipv6-network
-  key tap_name slap-configuration:tap-name
+  section slap_configuration slap-configuration
   raw ansible_promise_tpl ${template-ansible-promise:location}/${template-ansible-promise:filename}
   raw curl_executable_location ${curl:location}/bin/curl
   raw dash_executable_location ${dash:location}/bin/dash
