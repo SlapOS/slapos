@@ -139,7 +139,7 @@ return =
 {{ '  ' }}ipv6-network-info
 
 {% do publish_dict.__setitem__(instance_name ~ '-ipv4', '${' ~ section ~ ':connection-tap-ipv4}') -%}
-{% do publish_dict.__setitem__(instance_name ~ '-ipv6', '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv6', '${' ~ section ~ ':connection-tap-ipv6}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-ipv6-info', '${' ~ section ~ ':connection-ipv6-network-info}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
