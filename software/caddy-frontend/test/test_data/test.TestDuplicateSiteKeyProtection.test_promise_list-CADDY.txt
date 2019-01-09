@@ -8,6 +8,7 @@ TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv4_https
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv6_http
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv6_https
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_ssl_cached
+TestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-hour
 TestDuplicateSiteKeyProtection-1/etc/promise/frontend-caddy-configuration-promise
 TestDuplicateSiteKeyProtection-1/etc/promise/monitor-http-frontend
 TestDuplicateSiteKeyProtection-1/etc/promise/monitor-httpd-listening-on-tcp
@@ -20,4 +21,4 @@ TestDuplicateSiteKeyProtection-1/etc/promise/promise-monitor-httpd-is-process-ol
 TestDuplicateSiteKeyProtection-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
 TestDuplicateSiteKeyProtection-1/etc/promise/re6st-connectivity
 TestDuplicateSiteKeyProtection-1/etc/promise/trafficserver-cache-availability
-TestDuplicateSiteKeyProtection-1/etc/promise/trafficserver-port-listening
+TestDuplicateSiteKeyProtection-1/etc/promise/trafficserver-port-listeningTestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-day
