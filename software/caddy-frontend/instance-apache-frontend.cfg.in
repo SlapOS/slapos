@@ -54,9 +54,6 @@ parts =
 
 ## Monitor for Caddy
   monitor-base
-  monitor-ats-cache-stats-wrapper
-  monitor-traffic-summary-last-stats-wrapper
-  monitor-caddy-server-status-wrapper
   monitor-verify-re6st-connectivity
 
 # Create all needed directories
@@ -194,8 +191,7 @@ extra-context =
     section caddy_configuration caddy-configuration
     section nginx_configuration nginx-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
-    key promise_directory monitor-directory:promises
-    key report_directory monitor-directory:reports
+    key promise_directory directory:promises
     key bin_directory :bin_directory
     key login_certificate ca-frontend:cert-file
     key login_key ca-frontend:key-file
@@ -661,43 +657,6 @@ monitor-httpd-port = {{ monitor_httpd_port | int }}
 [monitor-conf-parameters]
 private-path-list += 
   ${directory:logrotate-backup}
-
-
-[monitor-traffic-summary-last-stats-wrapper]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${monitor-directory:reports}/traffic-summary-last-stats_every_1_hour
-mode = 0700
-command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ parameter_dict['trafficserver'] }}/bin/traffic_logstats -f ${trafficserver-directory:log}/squid.blog)</pre>"
-extra-context =
-  key content monitor-traffic-summary-last-stats-wrapper:command
-
-# Produce ATS Cache stats
-[monitor-ats-cache-stats-wrapper]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${monitor-directory:reports}/ats-cache-stats_every_1_hour
-mode = 0700
-command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ parameter_dict['trafficserver'] }}/bin/traffic_shell ${monitor-ats-cache-stats-config:rendered})</pre>"
-extra-context =
-  key content monitor-ats-cache-stats-wrapper:command
-
-[monitor-caddy-server-status-wrapper]
-< = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
-rendered = ${monitor-directory:reports}/monitor-caddy-server-status-wrapper
-mode = 0700
-command = {{ parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
-extra-context =
-  key content monitor-caddy-server-status-wrapper:command
-
-[monitor-ats-cache-stats-config]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
-rendered = ${trafficserver-configuration-directory:target}/cache-config.stats
-mode = 644
-context =
-    raw content show:cache-stats
 
 [monitor-verify-re6st-connectivity]
 recipe = slapos.cookbook:check_url_available
