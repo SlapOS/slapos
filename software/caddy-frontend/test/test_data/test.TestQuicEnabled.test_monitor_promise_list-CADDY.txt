@@ -1,2 +1,2 @@
-TestQuicEnabled-1/etc/monitor-promise/check-_url-error-log-last-day
-TestQuicEnabled-1/etc/monitor-promise/check-_url-error-log-last-hour
+TestQuicEnabled-1/etc/promise/check-_url-error-log-last-day
+TestQuicEnabled-1/etc/promise/check-_url-error-log-last-hour

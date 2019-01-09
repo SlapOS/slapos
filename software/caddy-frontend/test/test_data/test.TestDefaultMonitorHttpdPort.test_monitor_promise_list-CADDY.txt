@@ -1,2 +1,2 @@
-TestDefaultMonitorHttpdPort-1/etc/monitor-promise/check-_test-error-log-last-day
-TestDefaultMonitorHttpdPort-1/etc/monitor-promise/check-_test-error-log-last-hour
+TestDefaultMonitorHttpdPort-1/etc/promise/check-_test-error-log-last-day
+TestDefaultMonitorHttpdPort-1/etc/promise/check-_test-error-log-last-hour
