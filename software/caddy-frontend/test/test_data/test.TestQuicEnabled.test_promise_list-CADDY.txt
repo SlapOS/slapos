@@ -8,6 +8,8 @@ TestQuicEnabled-1/etc/promise/caddy_frontend_ipv4_https
 TestQuicEnabled-1/etc/promise/caddy_frontend_ipv6_http
 TestQuicEnabled-1/etc/promise/caddy_frontend_ipv6_https
 TestQuicEnabled-1/etc/promise/caddy_ssl_cached
+TestQuicEnabled-1/etc/promise/check-_url-error-log-last-day
+TestQuicEnabled-1/etc/promise/check-_url-error-log-last-hour
 TestQuicEnabled-1/etc/promise/frontend-caddy-configuration-promise
 TestQuicEnabled-1/etc/promise/monitor-http-frontend
 TestQuicEnabled-1/etc/promise/monitor-httpd-listening-on-tcp

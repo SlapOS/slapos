@@ -8,6 +8,8 @@ TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/caddy_ssl_cached
+TestRe6stVerificationUrlDefaultSlave-1/etc/promise/check-_default-error-log-last-day
+TestRe6stVerificationUrlDefaultSlave-1/etc/promise/check-_default-error-log-last-hour
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/monitor-http-frontend
 TestRe6stVerificationUrlDefaultSlave-1/etc/promise/monitor-httpd-listening-on-tcp

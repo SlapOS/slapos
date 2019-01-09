@@ -8,6 +8,8 @@ TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv4_https
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv6_http
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_frontend_ipv6_https
 TestDuplicateSiteKeyProtection-1/etc/promise/caddy_ssl_cached
+TestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-day
+TestDuplicateSiteKeyProtection-1/etc/promise/check-_site_2-error-log-last-hour
 TestDuplicateSiteKeyProtection-1/etc/promise/frontend-caddy-configuration-promise
 TestDuplicateSiteKeyProtection-1/etc/promise/monitor-http-frontend
 TestDuplicateSiteKeyProtection-1/etc/promise/monitor-httpd-listening-on-tcp
