@@ -15,7 +15,7 @@ pid_file = '{{ parameter_dict.get("pid-file") }}'
 vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
 status_path = '{{ parameter_dict.get("kvm-status-path") }}'
 cpu_amount = {{ parameter_dict.get("cpu-count") }}
-cpu_model = '{{ parameter_dict.get("cpu-model", "qemu64-x86_64-cpu") }}'
+cpu_model = '{{ parameter_dict.get("cpu-model", "qemu64") }}'
 slot_hotplug_size = {{ parameter_dict.get("ram-hotplug-slot-size", 512) }}
 ram_size = {{ parameter_dict.get("ram-size") }}
 enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
@@ -48,7 +48,7 @@ def update():
       qemu_wrapper.updateDevice({
         'device': 'cpu',
         'amount': cpu_amount,
-        'model': cpu_model
+        'model': "%s-x86_64-cpu" % cpu_model
       })
       qemu_wrapper.updateDevice({
         'device': 'memory',

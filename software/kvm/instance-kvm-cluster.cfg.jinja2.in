@@ -74,7 +74,7 @@ config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
 config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 {{ setconfig('disk-aio', kvm_parameter_dict.get('disk-aio', '')) }}
-{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', '')) }}
+{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', 'host')) }}
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 {{ setconfig('disk-device-path', kvm_parameter_dict.get('disk-device-path', '')) }}
 
