@@ -275,13 +275,6 @@ class TestDataMixin(object):
 
     self.assertTestData(runtime_data)
 
-  def test_monitor_promise_list(self):
-    runtime_data = '\n'.join(sorted([
-      q[len(self.instance_path) + 1:]
-      for q in glob.glob(os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise', '*'))]))
-    self.assertTestData(runtime_data)
-
   def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
     runtime_data = []
     for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
@@ -1033,10 +1026,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       set([
         q for q in os.listdir(os.path.join(partition_path, 'etc', 'plugin'))
         if not q.endswith('.pyc')]))
-
-    self.assertEqual(
-      set(),
-      set(os.listdir(os.path.join(partition_path, 'etc', 'monitor-promise'))))
 
     # check that monitor cors domains are correctly setup by file presence, as
     # we trust monitor stack being tested in proper place and it is too hard
@@ -2412,7 +2401,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_monitor-ipv6-test-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a monitor-ipv6-test',
@@ -2454,7 +2443,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_monitor-ipv4-test-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a monitor-ipv4-test',
@@ -2497,7 +2486,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_re6st-optimal-test-re6st-optimal-test'))[0]
     self.assertEqual(
       '-4 ipv4 -6 ipv6',
@@ -3845,7 +3834,7 @@ https://www.google.com {}""",
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_re6st-optimal-test-unsafe-re6st-optimal-test'))[0]
 
     # Note: The result is a bit differnt from the request (newlines stripped),
@@ -3883,7 +3872,7 @@ https://www.google.com {}""",
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_re6st-optimal-test-nocomma-re6st-optimal-test'))
     self.assertEqual(
       [],
@@ -4038,7 +4027,7 @@ https://www.google.com {}""",
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a ${section:option} afternewline ipv4',
@@ -4080,7 +4069,7 @@ https://www.google.com {}""",
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'monitor-promise',
+        self.instance_path, '*', 'etc', 'promise',
         'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a ${section:option} afternewline ipv6',

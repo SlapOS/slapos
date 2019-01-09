@@ -1,4 +1,0 @@
-TestReplicateSlave-1/etc/monitor-promise/check-_replicate-error-log-last-day
-TestReplicateSlave-1/etc/monitor-promise/check-_replicate-error-log-last-hour
-TestReplicateSlave-2/etc/monitor-promise/check-_replicate-error-log-last-day
-TestReplicateSlave-2/etc/monitor-promise/check-_replicate-error-log-last-hour

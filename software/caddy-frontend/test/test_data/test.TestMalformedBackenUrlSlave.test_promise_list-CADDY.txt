@@ -8,6 +8,7 @@ TestMalformedBackenUrlSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestMalformedBackenUrlSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestMalformedBackenUrlSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestMalformedBackenUrlSlave-1/etc/promise/caddy_ssl_cached
+TestMalformedBackenUrlSlave-1/etc/promise/check-_empty-error-log-last-hour
 TestMalformedBackenUrlSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestMalformedBackenUrlSlave-1/etc/promise/monitor-http-frontend
 TestMalformedBackenUrlSlave-1/etc/promise/monitor-httpd-listening-on-tcp
@@ -20,4 +21,4 @@ TestMalformedBackenUrlSlave-1/etc/promise/promise-monitor-httpd-is-process-older
 TestMalformedBackenUrlSlave-1/etc/promise/promise-nginx-is-process-older-than-dependency-set
 TestMalformedBackenUrlSlave-1/etc/promise/re6st-connectivity
 TestMalformedBackenUrlSlave-1/etc/promise/trafficserver-cache-availability
-TestMalformedBackenUrlSlave-1/etc/promise/trafficserver-port-listening
+TestMalformedBackenUrlSlave-1/etc/promise/trafficserver-port-listeningTestMalformedBackenUrlSlave-1/etc/promise/check-_empty-error-log-last-day
