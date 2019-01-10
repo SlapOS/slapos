@@ -1,0 +1,8 @@
+TestSlaveGlobalDisableHttp2-0/etc/plugin/__init__.py
+TestSlaveGlobalDisableHttp2-0/etc/plugin/buildout-TestSlaveGlobalDisableHttp2-0-status.py
+TestSlaveGlobalDisableHttp2-0/etc/plugin/check-free-disk-space.py
+TestSlaveGlobalDisableHttp2-0/etc/plugin/monitor-bootstrap-status.py
+TestSlaveGlobalDisableHttp2-1/etc/plugin/__init__.py
+TestSlaveGlobalDisableHttp2-1/etc/plugin/buildout-TestSlaveGlobalDisableHttp2-1-status.py
+TestSlaveGlobalDisableHttp2-1/etc/plugin/check-free-disk-space.py
+TestSlaveGlobalDisableHttp2-1/etc/plugin/monitor-bootstrap-status.py
