@@ -45,6 +45,16 @@
       "title": "Enable HTTP2 by Default",
       "type": "string"
     },
+    "disable-http2": {
+      "default": "false",
+      "description": "In some loaded environments it is better to run Caddy without any HTTP2 capabilities.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Fully disable HTTP2 in Caddy",
+      "type": "string"
+    },
     "mpm-graceful-shutdown-timeout": {
       "default": 5,
       "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
