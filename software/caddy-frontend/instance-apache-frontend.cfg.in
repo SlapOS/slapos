@@ -201,6 +201,7 @@ extra-context =
     key login_key ca-frontend:key-file
     key login_ca_crt ca-custom-frontend:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
+    key global_disable_http2 configuration:global-disable-http2
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
@@ -258,7 +259,11 @@ environment =
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
   -log stdout
+{% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
+  -http2=false
+{% else %}
   -http2=true
+{% endif %}
 {% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
   -quic
 {% endif %}
@@ -716,7 +721,11 @@ environment =
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
   -log stdout
+{% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
+  -http2=false
+{% else %}
   -http2=true
+{% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
   -disable-tls-sni-challenge
