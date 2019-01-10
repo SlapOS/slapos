@@ -64,6 +64,7 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {#   Pass HTTP2 switch #}
 {%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
+{%   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
 
 {#   Set Up log files #}
 {%   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
