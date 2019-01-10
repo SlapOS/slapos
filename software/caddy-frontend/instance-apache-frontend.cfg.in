@@ -258,7 +258,9 @@ environment =
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
   -log stdout
+{% if instance_parameter['configuration.global-disable-http2'].lower() not in TRUE_VALUES %}
   -http2=true
+{% endif %}
 {% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
   -quic
 {% endif %}
@@ -716,7 +718,9 @@ environment =
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
   -log stdout
+{% if instance_parameter['configuration.global-disable-http2'].lower() not in TRUE_VALUES %}
   -http2=true
+{% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
   -disable-tls-sni-challenge
