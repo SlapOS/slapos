@@ -154,7 +154,7 @@ disk-cache = ${slap-parameter:disk-cache}
 disk-aio = ${slap-parameter:disk-aio}
 auto-ballooning = ${slap-parameter:auto-ballooning}
 machine-options = ${slap-parameter:machine-options}
-cpu-hotplug-slot-size = ${slap-parameter:cpu-model}
+cpu-model = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
@@ -470,8 +470,8 @@ ipv4-network-info =
 {% endif %}
 {% endif %}
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
 ipv6-network-info =
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
   Use these configurations below to configure IPv6 on interface {{ iface }} in your VM.
   IFACE={{ iface }}
   ${network-config-ipv6:ipv6-add-address}
@@ -502,8 +502,8 @@ command =
   #!/bin/sh
   IFACE={{ iface }}
   #try to be compatible with OS with old names
-  grep eth0 /etc/network/interfaces &> /dev/null && [ \$IFACE = ens3 ] && IFACE=eth0
-  grep eth1 /etc/network/interfaces &> /dev/null && [ \$IFACE = ens4 ] && IFACE=eth1
+  ip a | grep eth0: && [ \$IFACE = ens3 ] && IFACE=eth0
+  ip a | grep eth1: && [ \$IFACE = ens4 ] && IFACE=eth1
   ${:ifconfig}
   ${:route-iface}
   ${:route-network}
@@ -619,7 +619,6 @@ template = {{ ansible_promise_tpl }}
 rendered = ${directory:promises}/ansible_{{ name }}
 extensions = jinja2.ext.do
 context =
-  key host {{ slap_configuration.get('tap-ipv4-addr', '') }}
   raw logs ${directory:public}/ansible
   raw name {{ name }}
 
@@ -661,7 +660,7 @@ disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
 machine-options =
-cpu-model =
+cpu-model = host
 
 nat-rules = 22 80 443
 use-nat = True

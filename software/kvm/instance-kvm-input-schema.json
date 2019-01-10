@@ -126,7 +126,8 @@
     "cpu-model": {
       "title": "CPU model.",
       "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
-      "type": "string"
+      "type": "string",
+      "default": "host"
     },
     "keyboard-layout-language": {
       "title": "Use keyboard layout language",
@@ -166,7 +167,8 @@
         "sv",
         "th",
         "tr"
-      ]
+      ],
+      "default": "fr"
     },
     "nbd-host": {
       "title": "NBD hostname",
