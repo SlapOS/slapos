@@ -1,0 +1,12 @@
+TestSlaveGlobalDisableHttp2-0/var/run/monitor-httpd.pid
+TestSlaveGlobalDisableHttp2-0/var/run/monitor/monitor-bootstrap.pid
+TestSlaveGlobalDisableHttp2-1/var/run/caddy_graceful_signature
+TestSlaveGlobalDisableHttp2-1/var/run/caddy_validate_signature
+TestSlaveGlobalDisableHttp2-1/var/run/caddy_validate_signature.status
+TestSlaveGlobalDisableHttp2-1/var/run/httpd.pid
+TestSlaveGlobalDisableHttp2-1/var/run/monitor-httpd.pid
+TestSlaveGlobalDisableHttp2-1/var/run/monitor/monitor-bootstrap.pid
+TestSlaveGlobalDisableHttp2-1/var/run/nginx.pid
+TestSlaveGlobalDisableHttp2-1/var/run/nginx_graceful_signature
+TestSlaveGlobalDisableHttp2-1/var/run/nginx_validate_signature
+TestSlaveGlobalDisableHttp2-1/var/run/nginx_validate_signature.status
