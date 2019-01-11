@@ -70,6 +70,7 @@ socket-path = ${directory:var}/qmp_socket
 pid-file = ${directory:run}/pid_file
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
+cpu-model = ${slap-parameter:cpu-model}
 ram-hotplug-slot-size = ${slap-parameter:ram-hotplug-slot-size}
 ram-size = ${slap-parameter:ram-size}
 enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
@@ -557,7 +558,7 @@ mode = {{ mode }}
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "" -%}
-local-ipv4 = {{ slap_configuration('tap-ipv4-addr') }}
+local-ipv4 = {{ slap_configuration['tap-ipv4-addr'] }}
 gateway = {{ slap_configuration.get('tap-ipv4-gateway') }}
 netmask = {{ slap_configuration.get('tap-ipv4-network') }}
 network = {{ slap_configuration.get('tap-ipv4-netmask') }}
