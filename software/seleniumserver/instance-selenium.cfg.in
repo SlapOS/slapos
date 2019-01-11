@@ -114,8 +114,10 @@ bytes = 12
 [selenium-server-frontend-config]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}
+# Catch-all simple frontend, as it can serve on different interface then accessed one, by
+# using "*" as hostname
 template = inline:
-  https://$${:hostname}:$${:port} {
+  https://*:$${:port} {
     bind $${:ip}
     tls self_signed # TODO
     proxy / $${selenium-server-hub-instance:base-url} {
