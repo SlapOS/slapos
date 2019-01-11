@@ -410,7 +410,7 @@ depends =
   ${monitor-collect-cron-entry:name}
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
-  ${certificate-authority-service:wrapper}
+  ${certificate-authority-service:wrapper-path}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
