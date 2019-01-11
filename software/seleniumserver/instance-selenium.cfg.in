@@ -131,7 +131,8 @@ template = inline:
     }
   }
 ip = $${instance-parameter:ipv6-random}
-hostname = [$${:ip}]
+# Catch-all simple frontend, as it can serve on different interface then accessed one
+hostname = *
 port = 9443
 path-admin = /grid/console
 path-hub = /wd/hub
