@@ -283,6 +283,9 @@ recipe = slapos.cookbook:wrapper
 command-line = ${websockify-sighandler:wrapper-path}
 wrapper-path = ${directory:services}/websockify
 hash-files = ${buildout:directory}/software_release/buildout.cfg
+wait-for-files =
+  ${ca-novnc:key-file}
+  ${ca-novnc:cert-file}
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
