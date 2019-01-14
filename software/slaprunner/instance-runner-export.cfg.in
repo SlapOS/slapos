@@ -123,7 +123,7 @@ configuration-file-path = ${buildout:directory}/knowledge0.cfg
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
 template = {{ monitor_check_resilient_feed_template_path }}
-rendered = ${monitor-directory:reports}/check-create-resilient-feed-files
+rendered = ${monitor-directory:bin}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds

@@ -8,6 +8,12 @@ TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/caddy_ssl_cached
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-default-error-log-last-day
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-default-error-log-last-hour
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-false-error-log-last-day
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-false-error-log-last-hour
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-true-error-log-last-day
+TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/check-_enable-http2-true-error-log-last-hour
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/monitor-http-frontend
 TestEnableHttp2ByDefaultFalseSlave-1/etc/promise/monitor-httpd-listening-on-tcp

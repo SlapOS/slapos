@@ -8,6 +8,8 @@ TestDefaultMonitorHttpdPort-1/etc/promise/caddy_frontend_ipv4_https
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy_frontend_ipv6_http
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy_frontend_ipv6_https
 TestDefaultMonitorHttpdPort-1/etc/promise/caddy_ssl_cached
+TestDefaultMonitorHttpdPort-1/etc/promise/check-_test-error-log-last-day
+TestDefaultMonitorHttpdPort-1/etc/promise/check-_test-error-log-last-hour
 TestDefaultMonitorHttpdPort-1/etc/promise/frontend-caddy-configuration-promise
 TestDefaultMonitorHttpdPort-1/etc/promise/monitor-http-frontend
 TestDefaultMonitorHttpdPort-1/etc/promise/monitor-httpd-listening-on-tcp

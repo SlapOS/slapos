@@ -1,5 +1,5 @@
 TestDefaultMonitorHttpdPort-0:bootstrap-monitor EXITED
-TestDefaultMonitorHttpdPort-0:certificate_authority-on-watch RUNNING
+TestDefaultMonitorHttpdPort-0:certificate_authority-{hash}-on-watch RUNNING
 TestDefaultMonitorHttpdPort-0:crond-{hash} RUNNING
 TestDefaultMonitorHttpdPort-0:monitor-httpd-{hash}-on-watch EXITED
 TestDefaultMonitorHttpdPort-0:monitor-httpd-graceful EXITED

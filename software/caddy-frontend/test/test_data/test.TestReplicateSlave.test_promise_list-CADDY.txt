@@ -8,6 +8,8 @@ TestReplicateSlave-1/etc/promise/caddy_frontend_ipv4_https
 TestReplicateSlave-1/etc/promise/caddy_frontend_ipv6_http
 TestReplicateSlave-1/etc/promise/caddy_frontend_ipv6_https
 TestReplicateSlave-1/etc/promise/caddy_ssl_cached
+TestReplicateSlave-1/etc/promise/check-_replicate-error-log-last-day
+TestReplicateSlave-1/etc/promise/check-_replicate-error-log-last-hour
 TestReplicateSlave-1/etc/promise/frontend-caddy-configuration-promise
 TestReplicateSlave-1/etc/promise/monitor-http-frontend
 TestReplicateSlave-1/etc/promise/monitor-httpd-listening-on-tcp
@@ -28,6 +30,8 @@ TestReplicateSlave-2/etc/promise/caddy_frontend_ipv4_https
 TestReplicateSlave-2/etc/promise/caddy_frontend_ipv6_http
 TestReplicateSlave-2/etc/promise/caddy_frontend_ipv6_https
 TestReplicateSlave-2/etc/promise/caddy_ssl_cached
+TestReplicateSlave-2/etc/promise/check-_replicate-error-log-last-day
+TestReplicateSlave-2/etc/promise/check-_replicate-error-log-last-hour
 TestReplicateSlave-2/etc/promise/frontend-caddy-configuration-promise
 TestReplicateSlave-2/etc/promise/monitor-http-frontend
 TestReplicateSlave-2/etc/promise/monitor-httpd-listening-on-tcp

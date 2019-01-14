@@ -1,5 +1,5 @@
 TestMalformedBackenUrlSlave-0:bootstrap-monitor EXITED
-TestMalformedBackenUrlSlave-0:certificate_authority-on-watch RUNNING
+TestMalformedBackenUrlSlave-0:certificate_authority-{hash}-on-watch RUNNING
 TestMalformedBackenUrlSlave-0:crond-{hash} RUNNING
 TestMalformedBackenUrlSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestMalformedBackenUrlSlave-0:monitor-httpd-graceful EXITED

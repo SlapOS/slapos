@@ -28,8 +28,6 @@ monitor = ${:srv}/monitor
 recipe = slapos.cookbook:mkdirectory
 bin = ${directory:bin}
 etc = ${directory:etc}
-promises = ${directory:etc}/monitor-promise
-reports = ${directory:etc}/monitor-report
 pids = ${directory:run}/monitor
 webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
@@ -53,11 +51,17 @@ recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_executable_location }}
 ca-dir = ${ca-directory:root}
 requests-directory = ${ca-directory:requests}
-wrapper = ${directory:services}/certificate_authority
+wrapper = ${directory:bin}/certificate_authority
 ca-private = ${ca-directory:private}
 ca-certs = ${ca-directory:certs}
 ca-newcerts = ${ca-directory:newcerts}
 ca-crl = ${ca-directory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ca-monitor-httpd]
 <= certificate-authority
@@ -86,12 +90,12 @@ log-folder = ${monitor-directory:log}
 document-folder = ${monitor-directory:documents}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 
-public-path-list = 
+public-path-list =
 private-path-list = ${directory:log}
 monitor-url-list = ${monitor-instance-parameter:monitor-url-list}
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
-parameter-list = 
+parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
@@ -146,8 +150,8 @@ stop-on-error = true
 password-file = ${directory:etc}/.monitor_pwd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 # Keep multiple lines as password can end with newline char.
-command = 
-  if [ ! -s "${:htpasswd-path}" ]; then 
+command =
+  if [ ! -s "${:htpasswd-path}" ]; then
     {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
   fi
   if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
@@ -172,7 +176,7 @@ key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:rendered}
-httpd-include-file = 
+httpd-include-file =
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -226,7 +230,7 @@ mode = 700
 
 [promise-monitor-httpd-is-process-older-than-dependency-set]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/is-process-older-than-dependency-set ${monitor-httpd-conf-parameter:pid-file} 
+command-line = {{ bin_directory }}/is-process-older-than-dependency-set ${monitor-httpd-conf-parameter:pid-file}
 wrapper-path = ${directory:promises}/promise-monitor-httpd-is-process-older-than-dependency-set
 
 [monitor-globalstate-wrapper]
@@ -364,7 +368,7 @@ recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
 file = ${monitor-conf-parameters:promise-output-file}
-content = 
+content =
   from slapos.promise.plugin.monitor_bootstrap_status import RunPromise
 output = ${directory:plugins}/monitor-bootstrap-status.py
 mode = 600
@@ -377,7 +381,7 @@ recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
 output = ${directory:plugins}/buildout-${slap-connection:partition-id}-status.py
-content = 
+content =
   from slapos.promise.plugin.check_partition_deployment_state import RunPromise
 config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 mode = 600
@@ -387,7 +391,7 @@ recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
 output = ${directory:plugins}/check-free-disk-space.py
-content = 
+content =
   from slapos.promise.plugin.check_free_disk_space import RunPromise
 mode = 600
 config-collectordb = ${monitor-instance-parameter:collector-db}
@@ -398,7 +402,7 @@ config-threshold-file = ${directory:etc}/min-free-disk-size
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
 command = true
-update-command = 
+update-command =
 base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
@@ -406,7 +410,7 @@ depends =
   ${monitor-collect-cron-entry:name}
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
-  ${certificate-authority:wrapper}
+  ${certificate-authority-service:wrapper-path}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
@@ -426,5 +430,5 @@ monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_c
 
 [buildout]
 
-extends = 
+extends =
   {{ template_logrotate_base }}

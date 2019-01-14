@@ -1,5 +1,5 @@
 TestReplicateSlave-0:bootstrap-monitor EXITED
-TestReplicateSlave-0:certificate_authority-on-watch RUNNING
+TestReplicateSlave-0:certificate_authority-{hash}-on-watch RUNNING
 TestReplicateSlave-0:crond-{hash} RUNNING
 TestReplicateSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestReplicateSlave-0:monitor-httpd-graceful EXITED

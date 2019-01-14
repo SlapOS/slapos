@@ -387,6 +387,20 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
 {% endif -%}
 
+{% if longrequest_logger_interval > 0 -%}
+[{{ section('promise-check-' ~name ~ '-longrequest-error-log') }}]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+output = ${directory:plugins}/{{'check-' ~ name ~ '-longrequest-error-log.py'}}
+content =
+  from slapos.promise.plugin.check_error_on_zope_longrequest_log import RunPromise
+config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
+config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
+config-maximum-delay = {{ slapparameter_dict["zope-longrequest-logger-maximum-delay"] }}
+mode = 600
+{% endif -%}
+
 [{{ section('logrotate-entry-' ~ name) }}]
 < = logrotate-entry-base
 name = {{ name }}

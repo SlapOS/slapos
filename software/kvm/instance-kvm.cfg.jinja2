@@ -70,6 +70,7 @@ socket-path = ${directory:var}/qmp_socket
 pid-file = ${directory:run}/pid_file
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
+cpu-model = ${slap-parameter:cpu-model}
 ram-hotplug-slot-size = ${slap-parameter:ram-hotplug-slot-size}
 ram-size = ${slap-parameter:ram-size}
 enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
@@ -87,7 +88,7 @@ nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
 nbd2-port = ${slap-parameter:nbd2-port}
 
-tap-interface = ${slap-network-information:network-interface}
+tap-interface = {{ slap_configuration.get('tap-name', '') }}
 
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
@@ -132,7 +133,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if enable_http == 'true' or ( use_tap == 'true' and tap_network_dict.has_key('ipv4') ) -%}
+{% if enable_http == 'true' or ( use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "") -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
@@ -154,7 +155,7 @@ disk-cache = ${slap-parameter:disk-cache}
 disk-aio = ${slap-parameter:disk-aio}
 auto-ballooning = ${slap-parameter:auto-ballooning}
 machine-options = ${slap-parameter:machine-options}
-cpu-hotplug-slot-size = ${slap-parameter:cpu-model}
+cpu-model = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
@@ -282,6 +283,9 @@ recipe = slapos.cookbook:wrapper
 command-line = ${websockify-sighandler:wrapper-path}
 wrapper-path = ${directory:services}/websockify
 hash-files = ${buildout:directory}/software_release/buildout.cfg
+wait-for-files =
+  ${ca-novnc:key-file}
+  ${ca-novnc:cert-file}
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -410,6 +414,10 @@ password = {{ slapparameter_dict['monitor-password'] }}
 {% endif -%}
 interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
 
+# this helper just gives a blank line to insert in multiline values
+[helper]
+blank-line =
+
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
@@ -418,9 +426,9 @@ backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?hos
 url = ${request-slave-frontend:connection-url}/vnc.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
-{% set iface = 'eth0' -%}
+{% set iface = 'ens3' -%}
 {% if use_nat == 'true' -%}
-{%   set iface = 'eth1' -%}
+{%   set iface = 'ens4' -%}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
 {%     for port in nat_rule_list.split(' ') -%}
@@ -438,7 +446,8 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{ex
 {%   endif -%}
 {% endif -%}
 {% if use_tap == 'true' -%}
-tap-ipv4 = ${slap-network-information:tap-ipv4}
+tap-ipv4 = {{ slap_configuration.get('tap-ipv4-addr', '') }}
+tap-ipv6 = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
@@ -447,42 +456,80 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
-7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
+key_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
 
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
-1_info = Use these configurations below to configure interface {{ iface }} in your VM.
-2_info = ${network-config:ifconfig}
-3_info = ${network-config:route-iface}
-4_info = ${network-config:route-network}
-5_info = ${network-config:route-default}
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "" -%}
+ipv4-network-info =
+  Use these configurations below to configure IPv4 on interface {{ iface }} in your VM.
+  IFACE={{ iface }}
+  ${network-config-ipv4:ifconfig}
+  ${network-config-ipv4:route-iface}
+  ${network-config-ipv4:route-network}
+  ${network-config-ipv4:route-default}
 {% if enable_http == 'true' %}
-6_info = Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+  ${helper:blank-line}
+  Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+{% endif %}
 {% endif %}
 
-[network-config]
+ipv6-network-info =
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
+  Use these configurations below to configure IPv6 on interface {{ iface }} in your VM.
+  IFACE={{ iface }}
+  ${network-config-ipv6:ipv6-add-address}
+  ${network-config-ipv6:ipv6-add-default-route}
+{% if enable_http == 'true' %}
+  ${helper:blank-line}
+  Or run in your VM the command: wget -O- {{ kvm_http }}/ipv6_config.sh | /bin/sh -
+{% endif %}
+{% endif %}
+
+
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "" -%}
+[network-config-ipv4]
 recipe = plone.recipe.command
 path = ${directory:public}/netconfig.sh
-ifconfig = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
-route-iface = route add ${slap-network-information:tap-gateway} dev {{ iface }}
-route-network = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
-{%   if iface == 'eth0' -%}
-route-default = route add default gw ${slap-network-information:tap-gateway}
-{%   elif nat_restrict == 'true' -%}
-route-default = route add default gw ${slap-network-information:tap-gateway} dev {{ iface }}
+ifconfig = ifconfig \$IFACE {{ slap_configuration.get('tap-ipv4-addr') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }}
+route-iface = route add {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
+route-network = route add -net {{ slap_configuration.get('tap-ipv4-network') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }} gw {{ slap_configuration.get('tap-ipv4-gateway') }}
+{%   if nat_restrict == 'true' -%}
+route-default = route add default gw {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
 {%   elif global_ipv4_prefix -%}
-route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
-{% else -%}
+route-default = ip route add {{ global_ipv4_prefix }} via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE src {{ slap_configuration.get('tap-ipv4-addr') }}
+{%   else -%}
 route-default =
 {%   endif -%}
 command =
-  echo "#!/bin/sh" > ${:path}
-  echo "" >> ${:path}
-  echo "${:ifconfig}" >> ${:path}
-  echo "${:route-iface}" >> ${:path}
-  echo "${:route-network}" >> ${:path}
-  echo "${:route-default}" >> ${:path}
+  cat > ${:path} << EOF
+  #!/bin/sh
+  IFACE={{ iface }}
+  #try to be compatible with OS with old names
+  ip a | grep eth0: && [ \$IFACE = ens3 ] && IFACE=eth0
+  ip a | grep eth1: && [ \$IFACE = ens4 ] && IFACE=eth1
+  ${:ifconfig}
+  ${:route-iface}
+  ${:route-network}
+  ${:route-default}
+  EOF
+update-command = ${:command}
+{% endif -%}
+
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
+[network-config-ipv6]
+recipe = plone.recipe.command
+path = ${directory:public}/ipv6_config.sh
+ipv6-add-address = ip -6 address add {{ slap_configuration.get('tap-ipv6-network') }} dev \$IFACE
+ipv6-add-default-route =
+  ip -6 route del default ; ip -6 route add default dev \$IFACE via {{ slap_configuration.get('tap-ipv6-gateway') }}
+command =
+  cat > ${:path} << EOF
+  #!/bin/sh
+  IFACE={{ iface }}
+  ${:ipv6-add-address}
+  ${:ipv6-add-default-route}
+  EOF
 update-command = ${:command}
 {% endif -%}
 
@@ -513,11 +560,11 @@ mode = {{ mode }}
 [publish-host-config]
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
-local-ipv4 = ${slap-network-information:tap-ipv4}
-gateway = ${slap-network-information:tap-gateway}
-netmask = ${slap-network-information:tap-network}
-network = ${slap-network-information:tap-netmask}
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "" -%}
+local-ipv4 = {{ slap_configuration['tap-ipv4-addr'] }}
+gateway = {{ slap_configuration.get('tap-ipv4-gateway') }}
+netmask = {{ slap_configuration.get('tap-ipv4-network') }}
+network = {{ slap_configuration.get('tap-ipv4-netmask') }}
 {% else -%}
 local-ipv4 = 127.0.0.1
 gateway =
@@ -576,7 +623,6 @@ template = {{ ansible_promise_tpl }}
 rendered = ${directory:promises}/ansible_{{ name }}
 extensions = jinja2.ext.do
 context =
-  key host slap-network-information:tap-ipv4
   raw logs ${directory:public}/ansible
   raw name {{ name }}
 
@@ -618,7 +664,7 @@ disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
 machine-options =
-cpu-model =
+cpu-model = host
 
 nat-rules = 22 80 443
 use-nat = True

@@ -74,7 +74,7 @@ config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
 config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 {{ setconfig('disk-aio', kvm_parameter_dict.get('disk-aio', '')) }}
-{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', '')) }}
+{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', 'host')) }}
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 {{ setconfig('disk-device-path', kvm_parameter_dict.get('disk-device-path', '')) }}
 
@@ -135,8 +135,12 @@ return =
 {{ '  ' }}monitor-base-url
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
+{{ '  ' }}tap-ipv6
+{{ '  ' }}ipv6-network-info
 
-{% do publish_dict.__setitem__(instance_name ~ '-lan', '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv4', '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv6', '${' ~ section ~ ':connection-tap-ipv6}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv6-info', '${' ~ section ~ ':connection-ipv6-network-info}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}

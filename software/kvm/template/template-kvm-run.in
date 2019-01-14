@@ -88,7 +88,7 @@ if disk_device_path.startswith("/dev/"):
 smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
-cpu_model = '{{ parameter_dict.get("cpu-model", "host") }}'.strip()
+cpu_model = '{{ parameter_dict.get("cpu-model") }}'.strip()
 
 enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
 
