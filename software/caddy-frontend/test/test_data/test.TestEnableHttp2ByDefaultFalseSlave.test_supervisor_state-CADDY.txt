@@ -1,5 +1,5 @@
 TestEnableHttp2ByDefaultFalseSlave-0:bootstrap-monitor EXITED
-TestEnableHttp2ByDefaultFalseSlave-0:certificate_authority-on-watch RUNNING
+TestEnableHttp2ByDefaultFalseSlave-0:certificate_authority-{hash}-on-watch RUNNING
 TestEnableHttp2ByDefaultFalseSlave-0:crond-{hash} RUNNING
 TestEnableHttp2ByDefaultFalseSlave-0:monitor-httpd-{hash}-on-watch RUNNING
 TestEnableHttp2ByDefaultFalseSlave-0:monitor-httpd-graceful EXITED
