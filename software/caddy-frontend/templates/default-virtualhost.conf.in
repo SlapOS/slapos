@@ -109,6 +109,11 @@
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
   }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+  }
 {%- else %}
   rewrite {
     regexp (.*)
@@ -252,6 +257,11 @@
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+  }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
   }
 {%- else %}
   rewrite {
