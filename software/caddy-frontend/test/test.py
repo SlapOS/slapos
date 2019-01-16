@@ -571,6 +571,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     if headers is None:
       headers = {}
     headers.setdefault('REMOTE_USER', 'SOME_REMOTE_USER')
+    # workaround request problem of setting Accept-Encoding
+    # https://github.com/requests/requests/issues/2234
+    headers.setdefault('Accept-Encoding', 'dummy')
     session = requests.Session()
     session.mount(
       'https://%s:%s' % (domain, port),
@@ -593,6 +596,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     if headers is None:
       headers = {}
     headers.setdefault('REMOTE_USER', 'SOME_REMOTE_USER')
+    # workaround request problem of setting Accept-Encoding
+    # https://github.com/requests/requests/issues/2234
+    headers.setdefault('Accept-Encoding', 'dummy')
     headers['Host'] = domain
     return requests.get(
       'http://%s:%s/%s' % (real_ip, port, path),
@@ -1165,10 +1171,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -1186,10 +1189,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_http.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result_http.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2019,10 +2019,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2039,10 +2036,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_http.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2164,9 +2158,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      {'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
       headers
     )
 
@@ -2182,10 +2177,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_direct.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result_direct.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2206,10 +2198,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         result_direct_https_backend.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_direct_https_backend.headers['Content-Encoding']
-    )
+    self.assertFalse(
+      'Content-Encoding' in result_direct_https_backend.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2532,9 +2522,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      {'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+       },
       headers
     )
 
@@ -2550,10 +2541,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_direct.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result_direct.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2574,10 +2562,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         result_direct_https_backend.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
-    self.assertEqual(
-      'gzip',
-      result_direct_https_backend.headers['Content-Encoding']
-    )
+    self.assertFalse('Content-Encoding' in result_direct_https_backend.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2625,9 +2610,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      {'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value'
+      },
       headers
     )
 
@@ -2676,9 +2662,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     headers.pop('Keep-Alive', None)
 
     self.assertEqual(
-      {'Content-type': 'application/json',
-       'Set-Cookie': 'secured=value;secure, nonsecured=value',
-       'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding'},
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+      },
       headers
     )
 
@@ -2720,10 +2707,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       {
-        'Vary': 'Accept-Encoding',
         'Content-Type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Content-Encoding': 'gzip',
       },
       headers
     )
@@ -2769,10 +2754,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       {
-        'Vary': 'Accept-Encoding',
         'Content-type': 'application/json',
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Content-Encoding': 'gzip',
       },
       headers
     )
