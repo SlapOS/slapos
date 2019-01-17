@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate Pure-FTPd",
+  "additionalProperties": false,
+  "properties": {
+    "port": {
+      "title": "FTP port",
+      "description": "Port number to listen to - default to 8021",
+      "type": "number"
+    }
+  }
+}
