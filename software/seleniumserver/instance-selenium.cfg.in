@@ -114,8 +114,10 @@ bytes = 12
 [selenium-server-frontend-config]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}
+# Catch-all simple frontend, as it can serve on different interface then accessed one, by
+# using "*" as hostname
 template = inline:
-  https://$${:hostname}:$${:port} {
+  https://*:$${:port} {
     bind $${:ip}
     tls self_signed # TODO
     proxy / $${selenium-server-hub-instance:base-url} {
@@ -175,6 +177,19 @@ extra-args=-t dsa
 [ssh-host-ecdsa-key]
 <=ssh-keygen-base
 extra-args=-t ecdsa -b 521
+
+[ssh-key-fingerprint-command]
+recipe = plone.recipe.command
+# recent openssh client display ECDSA key's fingerprint as SHA256
+command = ${openssh-output:keygen} -lf $${ssh-host-ecdsa-key:output}
+
+[ssh-key-fingerprint]
+recipe = collective.recipe.shelloutput
+# XXX because collective.recipe.shelloutput ignore errors, we run the same
+# command in a plone.recipe.command so that if fails if something goes wrong.
+commands =
+  fingerprint = $${ssh-key-fingerprint-command:command}
+
 
 [sshd-config]
 recipe = slapos.recipe.template:jinja2
@@ -268,6 +283,7 @@ url = $${selenium-server-frontend-instance:url}
 admin-url = $${selenium-server-frontend-instance:admin-url}
 
 ssh-url = $${sshd-service:url}
+ssh-fingerprint = $${ssh-key-fingerprint:fingerprint}
 # to run a local node - useful to see what tests are doing or
 # using to use unsupported browsers like safari or edge or to test
 # on mobile using appium.

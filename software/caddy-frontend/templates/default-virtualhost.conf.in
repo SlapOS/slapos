@@ -7,7 +7,7 @@
 {%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
 {%- endif %} {#- if prefer_gzip #}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
-{%- set enable_h2 = ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
+{%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
 {%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
 {%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
@@ -108,6 +108,11 @@
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+  }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
   }
 {%- else %}
   rewrite {
@@ -252,6 +257,11 @@
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+  }
+  rewrite {
+    regexp (.*)
+    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
   }
 {%- else %}
   rewrite {
