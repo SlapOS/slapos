@@ -1,0 +1,117 @@
+[buildout]
+extends =
+  {{ monitor_rendered }}
+
+parts =
+  promises
+  publish-connection-parameter
+  monitor-base
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.port = 8021
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+run = ${:var}/run
+log = ${:var}/log
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+plugin = ${:etc}/plugin
+pureftpd-dir = ${:srv}/pureftpd/
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+output = ${directory:plugin}/${:_buildout_section_name_}
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+
+[pureftpd-listen-promise]
+<= check-port-listening-promise
+config-hostname = ${pureftpd:ipv6}
+config-port = ${pureftpd:ftp-port}
+
+[pureftpd-userinfo]
+recipe = slapos.cookbook:userinfo
+
+[pureftpd-password]
+recipe = slapos.cookbook:generate.password
+username = nexedi_cdn
+bytes = 12
+
+[pureftpd]
+ipv6 = ${slap-configuration:ipv6-random}
+ipv4 = ${slap-configuration:ipv4-random}
+host = ${:ipv6}
+ftp-port = ${slap-configuration:configuration.port}
+url = ftp://[${:host}]:${:ftp-port}
+data-dir = ${directory:pureftpd-dir}
+pid-file=${directory:run}/pureftpd.pid
+auth-user-file=${auth-user-file:output}
+
+recipe =slapos.recipe.template:jinja2
+# WARNING pure-uploadscript must be launched AFTER pure-ftpd so keep them in the same wrapper
+# and make sure they are both killed if one of them is killed.
+template = inline:
+  #!{{ bash_location }}/bin/bash
+  {{ pureftpd_bin }} --uploadscript --customerproof --bind ${:host},${:ftp-port} --login puredb:${:auth-user-file} --pidfile ${:pid-file} &
+  while ! [ -p ${directory:run}/pure-ftpd.upload.pipe ]
+  do
+    sleep 1
+  done
+  {{ pureuploadscript_bin }} -r /opt/pureftpd/upload_script &
+  wait -n
+  kill 0
+rendered = ${directory:service}/pureftpd
+wrapper-path = ${:rendered}
+
+[pure-pw]
+# command line to add a user, invoke with:
+#   pure-pw useradd bob
+# it will prompt for password twice
+recipe = slapos.cookbook:wrapper
+wrapper-path =${buildout:bin-directory}/${:_buildout_section_name_}
+command-line =
+  {{ purepw_bin }} useradd ${pureftpd-password:username} -d ${pureftpd:data-dir} -u ${pureftpd-userinfo:pw-uid} -g ${pureftpd-userinfo:gr-gid} -f ${auth-user-file:passwd-file} "$@"
+
+
+[auth-user-file]
+recipe = plone.recipe.command
+passwd-file = ${directory:etc}/pureftpd.passwd
+output = ${directory:etc}/pureftpd.pdb
+command = 
+  if [ -f ${:passwd-file} ] && {{ purepw_bin }} show ${pureftpd-password:username} -f ${:passwd-file}
+  then
+    ( echo ${pureftpd-password:passwd} ; echo ${pureftpd-password:passwd}) | {{ purepw_bin }} passwd ${pureftpd-password:username} -f ${:passwd-file}
+  else
+    ( echo ${pureftpd-password:passwd} ; echo ${pureftpd-password:passwd}) | ${pure-pw:wrapper-path}
+  fi
+  {{ purepw_bin }} mkdb ${:output} -f ${:passwd-file}
+update-command = ${:command}
+
+
+[promises]
+recipe =
+instance-promises =
+  ${pureftpd-listen-promise:output}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${pureftpd:url}
+username = ${pureftpd-password:username}
+password = ${pureftpd-password:passwd}
+videos = To see the videos, go to http://nexedi-cdndemo-cdn-p.hexaglobe.net/ and enter the name "${pureftpd-userinfo:pw-name}-[video_name_without_extension]"
