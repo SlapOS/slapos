@@ -1,0 +1,117 @@
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.port = 8021
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+run = ${:var}/run
+log = ${:var}/log
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+plugin = ${:etc}/plugin
+pureftpd-dir = ${:srv}/pureftpd/
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+output = ${directory:plugin}/${:_buildout_section_name_}
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+
+[pureftpd-listen-promise]
+<= check-port-listening-promise
+config-hostname = ${pureftpd:ipv6}
+config-port = ${pureftpd:ftp-port}
+
+[pureftpd-userinfo]
+recipe = slapos.cookbook:userinfo
+
+[pureftpd-password]
+recipe = slapos.cookbook:generate.password
+username = nexedi_cdn
+bytes = 12
+
+[pureftpd]
+ipv6 = ${slap-configuration:ipv6-random}
+ipv4 = ${slap-configuration:ipv4-random}
+host = ${:ipv6}
+ftp-port = ${slap-configuration:configuration.port}
+url = ftp://[${:host}]:${:ftp-port}
+data-dir = ${directory:pureftpd-dir}
+pid-file=${directory:run}/pureftpd.pid
+auth-user-file=${auth-user-file:output}
+
+recipe =slapos.recipe.template:jinja2
+# WARNING pure-uploadscript must be launched AFTER pure-ftpd so keep them in the same wrapper
+# and make sure they are both killed if one of them is killed.
+template = inline:
+  #!{{ bash_location }}/bin/bash
+  {{ pureftpd_bin }} --uploadscript --customerproof --bind ${:host},${:ftp-port} --login puredb:${:auth-user-file} --pidfile ${:pid-file} &
+  sleep 5
+  {{ pureuploadscript_bin }} -r /opt/pureftpd/upload_script &
+  wait -n
+  kill 0
+rendered = ${directory:service}/pureftpd
+wrapper-path = ${:rendered}
+
+[pure-pw]
+# command line to add a user, invoke with:
+#   pure-pw useradd bob
+# it will prompt for password twice
+recipe = slapos.recipe.template:jinja2
+mode = 0700
+extensions = jinja2.ext.do
+rendered = ${buildout:bin-directory}/${:_buildout_section_name_}
+wrapper-path = ${:rendered}
+# XXX: to workaround bug that pw-uid and gr-gir slapos.cookbook:userinfo cannot
+# be used in a buildout part (as they are returned as int and not strings), we
+# use slapos.recipe.template:jinja2 and not a simple slapos.cookbook:wrapper,
+# because only the former is compatible with userinfo.
+# Because we are already in a jinja template, we have to escape jinja template
+# with {% raw %} / {% endraw %}
+template = inline:
+  #!/bin/sh
+  {{ purepw_bin }} useradd ${pureftpd-password:username} -d ${pureftpd:data-dir} -u {% raw %}{{ pw_uid }} -g {{ gr_gid }}{% endraw %} -f ${auth-user-file:passwd-file} "$@"
+context =
+  key pw_uid pureftpd-userinfo:pw-uid
+  key gr_gid pureftpd-userinfo:gr-gid
+
+[auth-user-file]
+recipe = plone.recipe.command
+passwd-file = ${directory:etc}/pureftpd.passwd
+output = ${directory:etc}/pureftpd.pdb
+command = 
+  rm ${:passwd-file}
+  ( echo ${pureftpd-password:passwd} ; echo ${pureftpd-password:passwd}) | ${pure-pw:wrapper-path}
+  {{ purepw_bin }} mkdb ${:output} -f ${:passwd-file}
+update-command = ${:command}
+
+
+[promises]
+recipe =
+instance-promises =
+  ${pureftpd-listen-promise:output}
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${pureftpd:url}
+username = ${pureftpd-password:username}
+password = ${pureftpd-password:passwd}

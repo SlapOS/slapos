@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Pure-FTPd instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "url": {
+      "description": "URL of the FTP service",
+      "pattern": "^sftp://",
+      "type": "string"
+    },
+    "username": {
+      "description": "Default username",
+      "type": "string",
+      "optional": true
+    },
+    "password": {
+      "description": "Password for default username",
+      "type": "string",
+      "optional": true
+    }
+  },
+  "type": "object"
+}
