@@ -90,23 +90,10 @@ port = ${proftpd:sftp-port}
 # command line to add a user, invoke with:
 #   ftpasswd --name=bob
 # to prompt for password, or --stdin to read password from stdin
-recipe = slapos.recipe.template:jinja2
-mode = 0700
-extensions = jinja2.ext.do
-rendered = ${buildout:bin-directory}/${:_buildout_section_name_}
-wrapper-path = ${:rendered}
-# XXX: to workaround bug that pw-uid and gr-gir slapos.cookbook:userinfo cannot
-# be used in a buildout part (as they are returned as int and not strings), we
-# use slapos.recipe.template:jinja2 and not a simple slapos.cookbook:wrapper,
-# because only the former is compatible with userinfo.
-# Because we are already in a jinja template, we have to escape jinja template
-# with {% raw %} / {% endraw %}
-template = inline:
-  #!/bin/bash
-  {{ perl_bin }} {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid={% raw %}{{ pw_uid }} --gid={{ gr_gid }}{% endraw %} --file ${auth-user-file:output} $@
-context =
-  key pw_uid proftpd-userinfo:pw-uid
-  key gr_gid proftpd-userinfo:gr-gid
+recipe = slapos.cookbook:wrapper
+wrapper-path =${buildout:bin-directory}/${:_buildout_section_name_}
+command-line =
+  {{ perl_bin }} {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid=${proftpd-userinfo:pw-uid} --gid=${proftpd-userinfo:gr-gid}  --file ${auth-user-file:output}
 
 [auth-user-file]
 recipe = plone.recipe.command
