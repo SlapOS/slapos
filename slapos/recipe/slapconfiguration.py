@@ -31,6 +31,7 @@ import os
 
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
+import six
 from six import iteritems
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
@@ -254,7 +255,7 @@ class Recipe(object):
           # be very careful with overriding master's information
           for key, value in flatten_dict(partition_params).items():
             if key not in options:
-              if isinstance(value, unicode):
+              if six.PY2 and isinstance(value, unicode):
                 value = value.encode('UTF-8')
               options[key] = value
       # print out augmented options to see what we are passing

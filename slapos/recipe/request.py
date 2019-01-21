@@ -198,7 +198,7 @@ class Recipe(object):
       except KeyError:
         if self.failed is None:
           self.failed = param
-      if isinstance(value, unicode):
+      if six.PY2 and isinstance(value, unicode):
         value = value.encode('UTF-8')
       options['connection-%s' % param] = value
 
