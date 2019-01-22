@@ -1,0 +1,34 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = $${:validator}
+validator = ${template-validator:output}
+
+[slap-connection]
+# part to migrate to new - separated words
+computer-id = $${slap_connection:computer_id}
+partition-id = $${slap_connection:partition_id}
+server-url = $${slap_connection:server_url}
+software-release-url = $${slap_connection:software_release_url}
+key-file = $${slap_connection:key_file}
+cert-file = $${slap_connection:cert_file}
+
+# [slap-parameter]
+# slave-instance-list = []
+
+[instance-parameter]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
