@@ -475,9 +475,10 @@ ipv4-network-info =
 {% endif %}
 
 ipv6-network-info =
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
+{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" %}
   Use these configurations below to configure IPv6 on interface {{ iface }} in your VM.
   IFACE={{ iface }}
+  ip link set dev $IFACE up
   ${network-config-ipv6:ipv6-add-address}
   ${network-config-ipv6:ipv6-add-default-route}
 {% if enable_http == 'true' %}
