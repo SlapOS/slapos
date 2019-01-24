@@ -43,6 +43,9 @@ extensions = jinja2.ext.do
 extra-context =
   section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type single-custom-personal
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+import-list =
+  file caucase :caucase-jinja2-library
 
 [dynamic-template-caddy-replicate]
 < = jinja2-template-base
@@ -69,10 +72,10 @@ extra-context =
 template = {{ template_kedifa }}
 filename = instance-kedifa.cfg
 extensions = jinja2.ext.do
-caucase-jinja2-library = {{ caucase_jinja2_library }}
 extra-context =
   section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type kedifa
+caucase-jinja2-library = {{ caucase_jinja2_library }}
 import-list =
   file caucase :caucase-jinja2-library
 

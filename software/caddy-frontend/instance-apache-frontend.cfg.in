@@ -1,4 +1,5 @@
 {%- if slap_software_type == software_type -%}
+{% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
 extends =
@@ -188,7 +189,7 @@ stop-on-error = True
 
 {{ caucase.updater(
      prefix='caucase-updater',
-     buildout_bin_directory=parameter_dict['bin-directory'],
+     buildout_bin_directory=parameter_dict['bin_directory'],
      updater_path='${directory:service}/kedifa-login-certificate-caucase-updater',
      url=slapparameter_dict['kedifa-caucase-url'],
      data_dir='${directory:srv}/caucase-updater',

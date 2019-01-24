@@ -94,7 +94,7 @@ stop-on-error = True
 
 {{ caucase.updater(
      prefix='caucase-updater',
-     buildout_bin_directory=parameter_dict['bin-directory'],
+     buildout_bin_directory=parameter_dict['bin_directory'],
      updater_path='${directory:service}/caucase-updater',
      url=caucase_url,
      data_dir='${directory:srv}/caucase-updater',
