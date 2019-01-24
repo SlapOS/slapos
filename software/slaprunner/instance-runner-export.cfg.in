@@ -76,6 +76,10 @@ instance-configuration =
   httpdcors cors-domain ${slaprunner-httpd-cors:location} ${httpd-graceful-wrapper:output}
 configuration-file-path = ${buildout:directory}/knowledge0.cfg
 
+[monitor-conf-parameters]
+private-path-list +=
+  $${logrotate-directory:logrotate-backup}
+
 # Extends publish section with resilient parameters
 [publish-connection-information]
 <= resilient-publish-connection-parameter
