@@ -3,10 +3,7 @@
 parts =
   publish-connection-information
   pbs
-  logrotate
   logrotate-entry-notifier
-  cron
-  cron-entry-logrotate
   pbs-sshkeys-authority
   sshkeys-openssh
   resilient-genstatrss-wrapper
@@ -49,8 +46,6 @@ notifier = $${rootdirectory:etc}/notifier
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-logrotate-entries = $${rootdirectory:etc}/logrotate.d
-logrotate-backup = $${basedirectory:backup}/logrotate
 cronstamps = $${rootdirectory:etc}/cronstamps
 cron-entries = $${rootdirectory:etc}/cron.d
 crontabs = $${rootdirectory:etc}/crontabs
@@ -151,69 +146,13 @@ name = resilient-pbs-status-feed
 frequency = */5 * * * *
 command = $${pbs-resilient-status-feed:wrapper-path}
 
-#----------------
-#--
-#-- Deploy cron.
-
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
-catcher = $${cron-simplelogger:wrapper}
-binary = $${basedirectory:services}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = $${rootdirectory:bin}/cron_simplelogger
-log = $${basedirectory:log}/crond.log
-
-
-#----------------
-#--
-#-- Deploy logrotate.
-
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = $${logrotate:wrapper}
-
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = ${gzip:location}/bin/gzip
-gunzip-binary = ${gzip:location}/bin/gunzip
-# Directories
-wrapper = $${rootdirectory:bin}/logrotate
-conf = $${rootdirectory:etc}/logrotate.conf
-logrotate-entries = $${directory:logrotate-entries}
-backup = $${directory:logrotate-backup}
-state-file = $${rootdirectory:srv}/logrotate.status
-
-[logrotate-entry-cron]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = cron
-log = $${cron-simplelogger:log}
-frequency = daily
-rotate-num = 30
-
 [logrotate-entry-notifier]
-recipe = collective.recipe.template
-mode = 600
-input = inline:
-  $${directory:notifier-feeds}/* {
-    rotate 5
-    weekly
-    nocompress
-    missingok
-    olddir $${directory:logrotate-backup}
-  }
-output = $${logrotate:logrotate-entries}/notifier
+<= logrotate-entry-base
+name = notifier
+log = $${directory:notifier-feeds}/*
+rotate-num = 5
+frequency = weekly
+nocompress = true
 
 #----------------
 #--
