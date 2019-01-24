@@ -8,9 +8,6 @@ extends =
 parts =
   directory
   configtest
-  logrotate
-  cron
-  cron-entry-logrotate
   ca-frontend
   ca-frontend-service
   certificate-authority
@@ -76,12 +73,6 @@ service = ${:etc}/service
 etc-run = ${:etc}/run
 promise = ${:etc}/promise
 
-logrotate-backup = ${:backup}/logrotate
-logrotate-entries = ${:etc}/logrotate.d
-
-cron-entries = ${:etc}/cron.d
-crontabs = ${:etc}/crontabs
-cronstamps = ${:etc}/cronstamps
 ca-dir = ${:srv}/ssl
 
 varnginx = ${:var}/nginx
@@ -367,64 +358,19 @@ apache-ca-certificate = ${configuration:apache-ca-certificate}
 extra-context =
     key content :apache-ca-certificate
 
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = {{ parameter_dict['dcron'] }}/sbin/crond
-cron-entries = ${directory:cron-entries}
-crontabs = ${directory:crontabs}
-cronstamps = ${directory:cronstamps}
-catcher = ${cron-simplelogger:wrapper}
-binary = ${directory:service}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = ${directory:bin}/cron_simplelogger
-log = ${directory:log}/cron.log
-
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = ${logrotate:wrapper}
-
-# Deploy Logrotate
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = {{ parameter_dict['logrotate'] }}/sbin/logrotate
-gzip-binary = {{ parameter_dict['gzip'] }}/bin/gzip
-gunzip-binary = {{ parameter_dict['gzip'] }}/bin/gunzip
-# Directories
-wrapper = ${directory:bin}/logrotate
-conf = ${directory:etc}/logrotate.conf
-logrotate-entries = ${directory:logrotate-entries}
-backup = ${directory:logrotate-backup}
-state-file = ${directory:srv}/logrotate.status
-
 [logrotate-entry-caddy]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = caddy
 log = ${caddy-configuration:error-log} ${caddy-configuration:access-log}
-frequency = daily
-rotatep-num = 30
+rotate-num = 30
 post = ${frontend-caddy-lazy-graceful:rendered} &
-sharedscripts = true
-notifempty = true
-create = true
 
 [logrotate-entry-nginx]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = caddy-nginx
 log = ${nginx-configuration:error_log} ${nginx-configuration:access_log}
-frequency = daily
-rotatep-num = 30
+rotate-num = 30
 post = ${nginx-configuration:nginx-graceful-command}
-sharedscripts = true
-notifempty = true
-create = true
 
 #################
 # Trafficserver
