@@ -1,5 +1,5 @@
-compresscmd {{ parameter_dict['gzip-binary'] }}
+compresscmd {{ parameter_dict['xz-binary'] }}
 compressoptions -9
-uncompresscmd {{ parameter_dict['gunzip-binary'] }}
+uncompresscmd {{ parameter_dict['unxz-binary'] }}
 include {{ parameter_dict['logrotate-entries'] }}
 

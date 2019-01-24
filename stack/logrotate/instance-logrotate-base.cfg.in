@@ -28,8 +28,8 @@ wrapper = ${logrotate-directory:bin}/cron_simplelogger
 log = ${logrotate-directory:log}/cron.log
 
 [logrotate-conf-parameter]
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
+xz-binary = {{ xz_location }}/bin/xz
+unxz-binary = {{ xz_location }}/bin/unxz
 logrotate-entries = ${logrotate-directory:logrotate-entries}
 
 [logrotate-conf]
