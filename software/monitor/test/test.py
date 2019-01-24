@@ -72,7 +72,7 @@ class ServicesTestCase(InstanceTestCase):
     ]
     expected_process_names = [
       'monitor-httpd-{hash}-on-watch',
-      'crond-{hash}',
+      'crond-{hash}-on-watch',
     ]
 
     supervisor = self.getSupervisorRPCServer().supervisor
