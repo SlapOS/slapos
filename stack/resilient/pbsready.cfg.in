@@ -56,8 +56,6 @@ notifier-status-items = $${basedirectory:notifier}/status-items
 cron-entries = $${rootdirectory:etc}/cron.d
 crontabs = $${rootdirectory:etc}/crontabs
 cronstamps = $${rootdirectory:etc}/cronstamps
-logrotate-entries = $${rootdirectory:etc}/logrotate.d
-logrotate-backup = $${basedirectory:backup}/logrotate
 cgi-bin = $${rootdirectory:srv}/cgi-bin
 monitor-resilient = $${monitor-directory:private}/resilient
 

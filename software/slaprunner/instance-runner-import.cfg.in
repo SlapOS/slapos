@@ -189,7 +189,7 @@ configuration-file-path = ${buildout:directory}/knowledge0.cfg
 
 [monitor-conf-parameters]
 private-path-list +=
-  ${directory:logrotate-backup}
+  $${logrotate-directory:logrotate-backup}
 
 [post-notification-run]
 recipe = slapos.cookbook:wrapper
