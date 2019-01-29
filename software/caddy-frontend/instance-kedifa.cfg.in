@@ -118,7 +118,7 @@ update-command = ${:command}
 command =
   {{ parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ caucase_url }} \
-    --ca-crt ${kedifa-config:cas-ca-certificate} \
+    --ca-crt ${kedifa-config:ca-certificate} \
     --crl ${kedifa-config:crl} \
     --mode service \
     --send-csr ${kedifa-csr:csr} > ${:csr_work_path} && \
@@ -195,8 +195,7 @@ port = {{ instance_parameter['configuration.kedifa_port'] }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
-ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
-cas-ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
+ca-certificate = ${directory:etc-kedifa}/cas-ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 csr = ${directory:etc-kedifa}/csr.pem
 pidfile = ${directory:run}/kedifa.pid
