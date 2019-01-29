@@ -322,7 +322,7 @@ caucase-url = ${request-kedifa:connection-caucase-url}
 
 csr = ${directory:aikc}/csr.pem
 key = ${directory:aikc}/key.pem
-ca-certificate = ${directory:aikc}/ca-certificate.pem
+ca-certificate = ${directory:aikc}/cas-ca-certificate.pem
 crl = ${directory:aikc}/crl.pem
 user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
 user-crl = ${directory:aikc}/user-crl.pem
