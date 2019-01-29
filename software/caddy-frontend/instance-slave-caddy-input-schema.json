@@ -163,6 +163,7 @@
     "ssl_proxy_ca_crt": {
       "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
+      "textarea": true,
       "title": "SSL Backend Authority's Certificate",
       "type": "string"
     },
