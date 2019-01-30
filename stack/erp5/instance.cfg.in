@@ -118,7 +118,6 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
-    raw openssl_bin {{ openssl_location}}/bin
 
 [dynamic-template-kumofs-parameters]
 <= default-dynamic-template-parameters
