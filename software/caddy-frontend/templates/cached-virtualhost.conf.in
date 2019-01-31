@@ -21,6 +21,8 @@
   gzip
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -42,6 +44,8 @@
   # Compress the output
   gzip
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
     transparent
