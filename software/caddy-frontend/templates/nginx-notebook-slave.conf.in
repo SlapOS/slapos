@@ -17,6 +17,7 @@ https://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_htt
   }
 
   proxy / {{ https_upstream }} {
+    try_duration 5s
     transparent
     insecure_skip_verify
   }
@@ -25,6 +26,7 @@ https://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_htt
     to /proxy/{1}
   }
   proxy /proxy/ {{ https_upstream }} {
+    try_duration 5s
     header_upstream X-Real-IP {remote}
     header_upstream Host {host}
     websocket
@@ -42,6 +44,7 @@ http://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_http
   errors {{ slave_parameter.get('error_log') }}
 
   proxy / {{ upstream }} {
+    try_duration 5s
     transparent
     insecure_skip_verify
   }
@@ -50,6 +53,7 @@ http://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_http
     to /proxy/{1}
   }
   proxy /proxy/ {{ upstream }} {
+    try_duration 5s
     header_upstream X-Real-IP {remote}
     header_upstream Host {host}
     websocket

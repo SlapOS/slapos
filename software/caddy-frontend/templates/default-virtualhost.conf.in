@@ -67,6 +67,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -138,6 +139,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -216,6 +218,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -281,6 +284,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ slave_parameter.get('url', '') }} {
+    try_duration 5s
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
