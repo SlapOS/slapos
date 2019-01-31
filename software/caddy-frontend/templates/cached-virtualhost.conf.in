@@ -21,6 +21,9 @@
   gzip
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
 
@@ -42,6 +45,9 @@
   # Compress the output
   gzip
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
     transparent
