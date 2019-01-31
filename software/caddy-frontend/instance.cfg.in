@@ -102,3 +102,5 @@ configuration.enable-quic = false
 configuration.mpm-graceful-shutdown-timeout = 5
 configuration.monitor-httpd-port = 8072
 configuration.frontend-name =
+configuration.proxy-try-duration = 5
+configuration.proxy-try-interval = 250
