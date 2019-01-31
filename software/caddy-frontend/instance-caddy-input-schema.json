@@ -86,6 +86,18 @@
       ],
       "title": "Enable QUIC",
       "type": "string"
+    },
+    "proxy-try-duration": {
+      "default": 5,
+      "description": "A time during which Caddy will try to establish connection with a backend. Setting it to 0 will result with immediate return of 502 EOF error to the browser, even if it would be possible to (re)connect to the backend during few moments. More info in https://caddyserver.com/docs/proxy try_durtion.",
+      "title": "Duration in seconds of trying a backend",
+      "type": "integer"
+    },
+    "proxy-try-interval": {
+      "default": 250,
+      "description": "How often Caddy will try to establish connection with a backend during proxy-try-duration. More info in https://caddyserver.com/docs/proxy try_interval",
+      "title": "Interval in milliseconds of tries during proxy-try-duration",
+      "type": "integer"
     }
   },
   "title": "Input Parameters",
