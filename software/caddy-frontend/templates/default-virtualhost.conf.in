@@ -67,6 +67,9 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -138,6 +141,9 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -216,6 +222,9 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -281,6 +290,9 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ slave_parameter.get('url', '') }} {
+    try_duration 5s  # will retry during 5 seconds in case if the backend is unavailable
+                     # so random network issues will not result with 502 EOF to client
+                     # default try_interval 250ms is kept
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
