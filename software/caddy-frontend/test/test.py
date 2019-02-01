@@ -456,6 +456,8 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
+    timeout = int(self.headers.dict.get('Timeout', '0'))
+    time.sleep(timeout)
     self.send_response(200)
     self.send_header("Content-type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
@@ -1157,7 +1159,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
+      'test-path/deep/.././deeper',
+      headers={'Timeout': '10'}  # more than default proxy-try-duration == 5
+    )
 
     self.assertEqual(
       self.certificate_pem,
@@ -1170,6 +1174,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(j['Incoming Headers']['timeout'], '10')
 
     self.assertFalse('Content-Encoding' in result.headers)
 
@@ -1195,6 +1201,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'secured=value;secure, nonsecured=value',
       result_http.headers['Set-Cookie']
     )
+
+    # check that try_duration == 5 in the test_url slave
+    slave_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', '*slave-conf.d', '_url.conf'))[0]
+    with open(slave_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue('try_duration 5s' in content)
+      self.assertTrue('try_interval 250ms' in content)
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
