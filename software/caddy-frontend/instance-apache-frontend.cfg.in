@@ -161,7 +161,7 @@ template-nginx-notebook-slave-virtualhost = {{ parameter_dict['template_nginx_no
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
-csr = ${:d}/kedifa-login-csr.pem
+template-csr = ${:d}/kedifa-login-template-csr.pem
 key = ${:d}/kedifa-login-certificate.pem
 certificate = ${:key}
 ca-certificate = ${:d}/kedifa-caucase-ca.pem
@@ -174,16 +174,16 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
-  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
-      -out ${:csr}
+      -out ${:template-csr}
   fi
 {% endif %}
-  test -f ${:key} && test -f ${:csr}
+  test -f ${:key} && test -f ${:template-csr}
 update-command = ${:command}
-csr = ${kedifa-login-config:csr}
+template-csr = ${kedifa-login-config:template-csr}
 key = ${kedifa-login-config:key}
 stop-on-error = True
 
@@ -197,7 +197,7 @@ stop-on-error = True
      ca_path='${kedifa-login-config:ca-certificate}',
      crl_path='${kedifa-login-config:crl}',
      key_path='${kedifa-login-csr:key}',
-     template_csr='${kedifa-login-csr:csr}',
+     template_csr='${kedifa-login-csr:template-csr}',
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 
@@ -236,7 +236,7 @@ extra-context =
     key directory_caddy_csr_id_log directory:caddy-csr_id-log
     key certificate_organization kedifa-login-csr:organization
     key certificate_organizational_unit kedifa-login-csr:organizational_unit
-    key csr_id_csr kedifa-login-csr:csr
+    key csr_id_csr caucase-updater-csr:csr
     key csr_crl kedifa-login-config:crl
     key csr_cas_ca_certificate kedifa-login-config:cas-ca-certificate
     key http_port configuration:plain_http_port

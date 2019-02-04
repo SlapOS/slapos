@@ -78,17 +78,17 @@ recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational_unit = Kedifa Partition
 command =
-  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -reqexts SAN \
       -config <(cat {{ parameter_dict['openssl_cnf'] }} \
       <(printf "\n[SAN]\nsubjectAltName=IP:${kedifa-config:ip}")) \
-      -out ${:csr}'
+      -out ${:template-csr}'
   fi
 update-command = ${:command}
-csr = ${kedifa-config:csr}
+template-csr = ${kedifa-config:template-csr}
 key = ${kedifa-config:key}
 stop-on-error = True
 
@@ -103,7 +103,7 @@ stop-on-error = True
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
      on_renew='${kedifa-reloader:wrapper-path}',
-     template_csr='${kedifa-csr:csr}',
+     template_csr='${kedifa-csr:template-csr}',
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 
@@ -121,7 +121,9 @@ command =
     --ca-crt ${kedifa-config:ca-certificate} \
     --crl ${kedifa-config:crl} \
     --mode service \
-    --send-csr ${kedifa-csr:csr} > ${:csr_work_path} && \
+{#- XXX: Need to use caucase-updater-csr:csr, as there is no way to obatin csr_id from caucase-updater -#}
+{#- XXX: nor directly path to the generated CSR #}
+    --send-csr ${caucase-updater-csr:csr} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
 [certificate-csr_id]
@@ -197,7 +199,7 @@ certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
 ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
-csr = ${directory:etc-kedifa}/csr.pem
+template-csr = ${directory:etc-kedifa}/template-csr.pem
 pidfile = ${directory:run}/kedifa.pid
 
 [kedifa-reloader]
