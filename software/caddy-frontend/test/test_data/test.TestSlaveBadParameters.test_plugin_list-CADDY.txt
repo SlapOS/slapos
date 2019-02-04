@@ -2,7 +2,17 @@ TestSlaveBadParameters-0/etc/plugin/__init__.py
 TestSlaveBadParameters-0/etc/plugin/buildout-TestSlaveBadParameters-0-status.py
 TestSlaveBadParameters-0/etc/plugin/check-free-disk-space.py
 TestSlaveBadParameters-0/etc/plugin/monitor-bootstrap-status.py
+TestSlaveBadParameters-0/etc/plugin/monitor-http-frontend.py
+TestSlaveBadParameters-0/etc/plugin/monitor-httpd-listening-on-tcp.py
 TestSlaveBadParameters-1/etc/plugin/__init__.py
 TestSlaveBadParameters-1/etc/plugin/buildout-TestSlaveBadParameters-1-status.py
+TestSlaveBadParameters-1/etc/plugin/caddy_cached.py
+TestSlaveBadParameters-1/etc/plugin/caddy_ssl_cached.py
 TestSlaveBadParameters-1/etc/plugin/check-free-disk-space.py
+TestSlaveBadParameters-1/etc/plugin/frontend-caddy-configuration-promise.py
 TestSlaveBadParameters-1/etc/plugin/monitor-bootstrap-status.py
+TestSlaveBadParameters-1/etc/plugin/monitor-http-frontend.py
+TestSlaveBadParameters-1/etc/plugin/monitor-httpd-listening-on-tcp.py
+TestSlaveBadParameters-1/etc/plugin/nginx-configuration-promise.py
+TestSlaveBadParameters-1/etc/plugin/trafficserver-cache-availability.py
+TestSlaveBadParameters-1/etc/plugin/trafficserver-port-listening.py
