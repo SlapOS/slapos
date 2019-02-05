@@ -304,14 +304,21 @@ rotate-num = 0
 frequency = weekly
 pre = {{ monitor_statistic }} --history_folder ${monitor-directory:public}
 
+[monitor-promise-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+mode = 600
+output = ${directory:plugins}/${:name}
+
 [monitor-httpd-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/${:filename}
-filename = monitor-httpd-listening-on-tcp
-url = ${monitor-httpd-conf-parameter:url}
-check-secure = 1
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
+<= monitor-promise-base
+module = check_url_available
+name = monitor-httpd-listening-on-tcp.py
+config-url = ${monitor-httpd-conf-parameter:url}
+config-check-secure = 1
 
 [monitor-publish-parameters]
 # XXX depends on monitor-base section
@@ -356,47 +363,33 @@ config-https-only = true
 return = domain secure_access
 
 [monitor-frontend-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/monitor-http-frontend
+<= monitor-promise-base
+module = check_url_available
+name = monitor-http-frontend.py
 url = ${monitor-frontend:connection-secure_access}
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
-check-secure = 1
+config-url = ${:url}
+config-check-secure = 1
 
 [monitor-bootstrap-promise]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-file = ${monitor-conf-parameters:promise-output-file}
-content =
-  from slapos.promise.plugin.monitor_bootstrap_status import RunPromise
-output = ${directory:plugins}/monitor-bootstrap-status.py
-mode = 600
+<= monitor-promise-base
+module = monitor_bootstrap_status
+name = monitor-bootstrap-status.py
 config-process-pid-file = ${monitor-conf-parameters:pid-file}
 config-process-name = ${start-monitor:name}
-config-status-file = ${:file}
+config-status-file = ${monitor-conf-parameters:promise-output-file}
 
 [promise-check-slapgrid]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-output = ${directory:plugins}/buildout-${slap-connection:partition-id}-status.py
-content =
-  from slapos.promise.plugin.check_partition_deployment_state import RunPromise
+<= monitor-promise-base
+module = check_partition_deployment_state
+name = buildout-${slap-connection:partition-id}-status.py
 config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
-mode = 600
 
 [promise-check-free-disk-space]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-output = ${directory:plugins}/check-free-disk-space.py
-content =
-  from slapos.promise.plugin.check_free_disk_space import RunPromise
-mode = 600
+<= monitor-promise-base
+module = check_free_disk_space
+name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
 config-threshold-file = ${directory:etc}/min-free-disk-size
-
 
 [monitor-base]
 # create dependencies between required monitor parts
@@ -414,8 +407,8 @@ depends =
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
-  ${monitor-httpd-promise:filename}
-  ${monitor-bootstrap-promise:file}
+  ${monitor-httpd-promise:name}
+  ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
