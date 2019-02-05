@@ -75,6 +75,7 @@ run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
 promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 
 logrotate-backup = ${:backup}/logrotate
 logrotate-entries = ${:etc}/logrotate.d
@@ -194,6 +195,7 @@ extra-context =
     section caddy_configuration caddy-configuration
     section nginx_configuration nginx-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
+    key plugin_directory directory:plugin
     key promise_directory directory:promises
     key report_directory directory:bin
     key bin_directory :bin_directory
@@ -510,11 +512,21 @@ filename = plugin.config
 context =
     key content trafficserver-variable:plugin-config
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+
+
 [trafficserver-promise-listen-port]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/trafficserver-port-listening
-hostname = ${trafficserver-variable:local-ip}
-port = ${trafficserver-variable:input-port}
+<= promise-plugin-base
+module = check_port_listening
+name = trafficserver-port-listening.py
+config-hostname = ${trafficserver-variable:local-ip}
+config-port = ${trafficserver-variable:input-port}
 
 [trafficserver-line]
 recipe = slapos.cookbook:wrapper
@@ -523,18 +535,10 @@ wrapper-path = ${directory:bin}/traffic_line
 environment = TS_ROOT=${buildout:directory}
 
 [trafficserver-promise-cache-availability]
-recipe = collective.recipe.template
-input =
-  inline:#!${buildout:executable}
-  import subprocess
-  import sys
-  traffic_line = "${trafficserver-line:wrapper-path}"
-  result = float(subprocess.check_output([traffic_line, '-r',  'proxy.node.cache.percent_free' ]))
-  if result != 0: sys.exit(0)
-  sys.stderr.write("Cache not available, availability: %s" % result)
-  sys.exit(127)
-output = ${directory:promise}/trafficserver-cache-availability
-mode = 700
+<= promise-plugin-base
+module = trafficserver_cache_availability
+name = trafficserver-cache-availability.py
+config-wrapper-path = ${trafficserver-line:wrapper-path}
 
 ### End of ATS sections
 
@@ -607,45 +611,52 @@ extra-context =
 
 # Promises checking configuration:
 [promise-frontend-caddy-configuration]
-recipe = slapos.cookbook:wrapper
-command-line = ${caddy-configuration:frontend-configuration-verification}
-wrapper-path = ${directory:promise}/frontend-caddy-configuration-promise
+<= promise-plugin-base
+module = validate_frontend_configuration
+name = frontend-caddy-configuration-promise.py
+config-verification-script = ${caddy-configuration:frontend-configuration-verification}
 
 [promise-caddy-frontend-v4-https]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_frontend_ipv4_https
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${configuration:port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv4_https.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_frontend_ipv4_http
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${configuration:plain_http_port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv4_http.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_frontend_ipv6_https
-hostname = {{ instance_parameter['ipv6-random'] }}
-port = ${configuration:port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv6_https.py
+config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_frontend_ipv6_http
-hostname = {{ instance_parameter['ipv6-random'] }}
-port = ${configuration:plain_http_port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv6_http.py
+config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-cached]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_cached
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${caddy-configuration:cache-through-port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_cached.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${caddy-configuration:cache-through-port}
 
 [promise-caddy-frontend-ssl-cached]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/caddy_ssl_cached
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${caddy-configuration:ssl-cache-through-port}
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_ssl_cached.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${caddy-configuration:ssl-cache-through-port}
 
 [promise-caddy-is-process-older-than-dependency-set]
 recipe = slapos.cookbook:wrapper
@@ -707,11 +718,10 @@ context =
     raw content show:cache-stats
 
 [monitor-verify-re6st-connectivity]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promise}/re6st-connectivity
-url = ${configuration:re6st-verification-url}
-dash_path = {{ parameter_dict['dash'] }}/bin/dash
-curl_path = {{ parameter_dict['curl'] }}/bin/curl
+<= promise-plugin-base
+module = check_url_available
+name = re6st-connectivity.py
+config-url = ${configuration:re6st-verification-url}
 
 #######################
 # Nginx
@@ -772,33 +782,38 @@ ssl_certificate = ${ca-frontend:cert-file}
 ssl_key = ${ca-frontend:key-file}
 
 [promise-nginx-configuration]
-recipe = slapos.cookbook:wrapper
-command-line = ${nginx-configuration:nginx-configuration-verification}
-wrapper-path = ${directory:promise}/nginx-configuration-promise
+<= promise-plugin-base
+module = validate_frontend_configuration
+name = nginx-configuration-promise.py
+config-verification-script = ${nginx-configuration:nginx-configuration-verification}
 
 [promise-nginx-frontend-v4-https]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/nginx_frontend_ipv4_https
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${configuration:nginx_port}
+<= promise-plugin-base
+module = check_port_listening
+name = nginx_frontend_ipv4_https.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${configuration:nginx_port}
 
 [promise-nginx-frontend-v4-http]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/nginx_frontend_ipv4_http
-hostname = {{ instance_parameter['ipv4-random'] }}
-port = ${configuration:plain_nginx_port}
+<= promise-plugin-base
+module = check_port_listening
+name = nginx_frontend_ipv4_http.py
+config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-port = ${configuration:plain_nginx_port}
 
 [promise-nginx-frontend-v6-https]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/nginx_frontend_ipv6_https
-hostname = {{ instance_parameter['ipv6-random'] }}
-port = ${configuration:nginx_port}
+<= promise-plugin-base
+module = check_port_listening
+name = nginx_frontend_ipv6_https.py
+config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-port = ${configuration:nginx_port}
 
 [promise-nginx-frontend-v6-http]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/nginx_frontend_ipv6_http
-hostname = {{ instance_parameter['ipv6-random'] }}
-port = ${configuration:plain_nginx_port}
+<= promise-plugin-base
+module = check_port_listening
+name = nginx_frontend_ipv6_http.py
+config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-port = ${configuration:plain_nginx_port}
 
 [promise-nginx-is-process-older-than-dependency-set]
 recipe = slapos.cookbook:wrapper

@@ -44,6 +44,14 @@ certs = {{ custom_ssl_directory }}/certs/
 newcerts = {{ custom_ssl_directory }}/newcerts/
 crl = {{ custom_ssl_directory }}/crl/
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = {{ plugin_directory }}/${:name}
+
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
 {%   set slave_reference = slave_instance.get('slave_reference') %}
@@ -276,28 +284,36 @@ extra-context =
 {%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') %}
 {%   do part_list.append(check_error_log_section_title) %}
 [{{ check_error_log_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600
-filename = {{ check_error_log_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
+<= promise-plugin-base
+module = check_error_on_http_log
+name = {{ check_error_log_section_title }}.py
+config-log-file = {{ slave_instance.get('error_log') }}
+config-maximum-delay = 3600
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
 
 {%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') %}
 {%   do part_list.append(check_error_log_section_title) %}
 [{{ check_error_log_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 86400
-filename = {{ check_error_log_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
+<= promise-plugin-base
+module = check_error_on_http_log
+name = {{ check_error_log_section_title }}.py
+config-log-file = {{ slave_instance.get('error_log') }}
+config-maximum-delay = 86400
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
 
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
 {%     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -a ' ~ monitor_ipv6_test) }}
-filename = {{ monitor_ipv6_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
+<= promise-plugin-base
+module = check_icmp_packet_lost
+name = {{ monitor_ipv6_section_title }}.py
+config-address = {{ dumps(monitor_ipv6_test) }}
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
 {%   endif %}
 
 {%   set monitor_ipv4_test = slave_instance.get('monitor-ipv4-test', '') %}
@@ -305,10 +321,13 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     set monitor_ipv4_section_title = 'check-%s-ipv4-packet-list-test' % slave_instance.get('slave_reference') %}
 {%     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ dumps(bin_directory ~ '/is-icmp-packet-lost -4 -a ' ~ monitor_ipv4_test) }}
-filename = {{ monitor_ipv4_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
+<= promise-plugin-base
+module = check_icmp_packet_lost
+name = {{ monitor_ipv4_section_title }}.py
+config-address = {{ dumps(monitor_ipv4_test) }}
+config-ipv4 = true
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
 {%   endif %}
 
 {%   set re6st_optimal_test = '' ~ slave_instance.get('re6st-optimal-test', '') %}
@@ -322,10 +341,13 @@ wrapper-path = {{ promise_directory }}/${:filename}
 {%     do part_list.append(re6st_optimal_test_section_title) %}
 
 [{{ re6st_optimal_test_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ dumps(bin_directory ~ '/check-re6st-optimal-status -4 ' ~ re6st_ipv4 ~ ' -6 ' ~ re6st_ipv6) }}
-filename = {{ re6st_optimal_test_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
+<= promise-plugin-base
+module = check_re6st_optimal_status
+name = {{ re6st_optimal_test_section_title }}.py
+config-ipv4 = {{ dumps(re6st_ipv4) }}
+config-ipv6 = {{ dumps(re6st_ipv6) }}
+# promise frequency in minutes (2 times/day)
+config-frequency = 720
 {%   endif %}
 
 
