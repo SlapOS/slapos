@@ -73,7 +73,7 @@ KEDIFA_IPV6_BASE = 'https://[%s]:%s' % (SLAPOS_TEST_IPV6, KEDIFA_PORT)
 
 
 # for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
+if 1 or os.environ.get('SLAPOS_TEST_DEBUG'):  # XXX: NOT FOR MERGE
   import logging
   logging.basicConfig(level=logging.DEBUG)
   import unittest
