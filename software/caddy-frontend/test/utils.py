@@ -215,13 +215,13 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         cls.config
     )
 
-    slapproxy_log = os.path.join(cls.config['log_directory'], 'slapproxy.log')
+    cls.slapproxy_log = os.path.join(cls.config['log_directory'], 'slapproxy.log')
     logger = logging.getLogger(__name__)
-    logger.debug('Configured slapproxy log to %r', slapproxy_log)
+    logger.debug('Configured slapproxy log to %r', cls.slapproxy_log)
 
     cls.software_url_list = cls.getSoftwareURLList()
     cls.slapos_controler.initializeSlapOSControler(
-        slapproxy_log=slapproxy_log,
+        slapproxy_log=cls.slapproxy_log,
         process_manager=cls._process_manager,
         reset_software=False,
         software_path_list=cls.software_url_list)
@@ -286,11 +286,21 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     instance_parameter_dict = cls.getInstanceParameterDict()
     try:
-      cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
-        cls.config,
-        cluster_configuration=instance_parameter_dict,
-        environment=os.environ,
-        **run_cp_kw)
+      try:
+        cls.instance_status_dict = cls.slapos_controler.runComputerPartition(
+          cls.config,
+          cluster_configuration=instance_parameter_dict,
+          environment=os.environ,
+          **run_cp_kw)
+      except Exception:
+        try:
+          slapproxy_log = open(cls.slapproxy_log).read()
+        except Exception:
+          slapproxy_log = ''
+        logger.exception(
+          'Irrecoverable problem during runComputerPartition '
+          ', slapproxy_log:\n%s' % (slapproxy_log,))
+        raise
       stream.seek(0)
       stream.flush()
       message = ''.join(stream.readlines()[-100:])
