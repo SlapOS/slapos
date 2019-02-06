@@ -152,6 +152,10 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init)
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
+# increase size of storage quota for chrome guest mode to make big offline apps work
+CHROME_EBUILD_DIR="${CHROMIUM_OVERLAY}/chromeos-base/chromeos-chrome"
+cp {{ patch_dir }}/0001-chrome-incognito-increase-storage-quota.patch "${CHROME_EBUILD_DIR}/files/"
+sed -i 's|^PATCHES=()$|PATCHES=( "${FILESDIR}/0001-chrome-incognito-increase-storage-quota.patch" )|' ${CHROME_EBUILD_DIR}/chromeos-chrome*.ebuild
 
 # bashrc modifications
 BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
