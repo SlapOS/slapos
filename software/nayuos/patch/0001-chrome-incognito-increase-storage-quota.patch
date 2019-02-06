@@ -1,0 +1,20 @@
+--- a/src/storage/browser/quota/quota_settings.cc	2019-02-06 13:24:04.369171634 +0100
++++ b/src/storage/browser/quota/quota_settings.cc	2019-02-06 13:37:59.993187709 +0100
+@@ -24,7 +24,7 @@
+   base::ScopedBlockingCall scoped_blocking_call(base::BlockingType::MAY_BLOCK);
+   const int64_t kMBytes = 1024 * 1024;
+   const int kRandomizedPercentage = 10;
+-  if (is_incognito) {
++  /*if (is_incognito) {
+     // The incognito pool size is a fraction of the amount of system memory,
+     // and the amount is capped to a hard limit.
+     const double kIncognitoPoolSizeRatio = 0.1;  // 10%
+@@ -38,7 +38,7 @@
+     settings.session_only_per_host_quota = settings.per_host_quota;
+     settings.refresh_interval = base::TimeDelta::Max();
+     return settings;
+-  }
++  }*/
+   // The fraction of the device's storage the browser is willing to
+   // use for temporary storage.
+   // Check Finch for an experimental value to use as temporary pool size ratio

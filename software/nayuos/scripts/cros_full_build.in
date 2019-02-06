@@ -158,6 +158,11 @@ BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
 if ! grep "BEGIN NayuOS configuration" "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
   cat >> "${BASH_EBUILD_DIR}/files/dot-bashrc" <<EOF
 
+# increase size of storage quota for chrome guest mode to make big offline apps work
+CHROME_EBUILD_DIR="${CHROMIUM_OVERLAY}/chromeos-base/chromeos-chrome"
+cp {{ patch_dir }}/0001-chrome-incognito-increase-storage-quota.patch "${CHROME_EBUILD_DIR}/files/"
+sed -i 's|^PATCHES=()$|PATCHES=( "${FILESDIR}/0001-chrome-incognito-increase-storage-quota.patch" )|' ${CHROME_EBUILD_DIR}/chromeos-chrome*.ebuild
+
 # ----- BEGIN NayuOS configuration -----
 
 # use vim as default editor if nano does not exist
