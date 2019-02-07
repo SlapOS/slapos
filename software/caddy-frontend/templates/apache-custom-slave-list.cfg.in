@@ -50,7 +50,6 @@ eggs =
   slapos.toolbox
 content =
   from slapos.promise.plugin.${:module} import RunPromise
-mode = 600
 output = {{ plugin_directory }}/${:name}
 
 {# Loop thought slave list to set up slaves #}
