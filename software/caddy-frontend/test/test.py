@@ -735,7 +735,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
@@ -3572,7 +3572,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
