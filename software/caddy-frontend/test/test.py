@@ -735,7 +735,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
@@ -3081,7 +3081,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
-      '-frontend-quantity': 2,
+      '-frontend-quantity': '2',
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
@@ -3572,7 +3572,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
@@ -3683,7 +3683,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
@@ -4109,7 +4109,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
+      'mpm-graceful-shutdown-timeout': '2',
     }
 
   @classmethod
