@@ -219,13 +219,13 @@ extra-context =
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-https_port = {{ dumps(https_port) }}
-http_port = {{ dumps(http_port) }}
-local_ipv4 = {{ dumps(local_ipv4) }}
-nginx_http_port = {{ dumps(nginx_http_port) }}
-nginx_https_port = {{ dumps(nginx_https_port) }}
-cached_port = {{ dumps(cached_port) }}
-ssl_cached_port = {{ (ssl_cached_port) }}
+https_port = {{ dumps('' ~ https_port) }}
+http_port = {{ dumps('' ~ http_port) }}
+local_ipv4 = {{ dumps('' ~ local_ipv4) }}
+nginx_http_port = {{ dumps('' ~ nginx_http_port) }}
+nginx_https_port = {{ dumps('' ~ nginx_https_port) }}
+cached_port = {{ dumps('' ~ cached_port) }}
+ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
 {%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}
@@ -244,7 +244,7 @@ caddy_custom_https = {{ dumps(caddy_custom_https) }}
 {{ '\n' }}
 {%     for key, value in slave_instance.iteritems() %}
 {%       if value is not none %}
-{{ key }} = {{ dumps(value) }}
+{{ key }} = {{ dumps('' ~ value) }}
 {%       endif %}
 {%     endfor %}
 
