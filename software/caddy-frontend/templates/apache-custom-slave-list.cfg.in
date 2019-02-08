@@ -227,13 +227,25 @@ nginx_https_port = {{ dumps(nginx_https_port) }}
 cached_port = {{ dumps(cached_port) }}
 ssl_cached_port = {{ (ssl_cached_port) }}
 {# BBB: apache_custom_https and apache_custom_http #}
-{%     set caddy_custom_http = ((slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', ''))) % slave_parameter_dict) %}
-{%     set caddy_custom_https = ((slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', ''))) % slave_parameter_dict) %}
+{%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
+{%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}
+{%     if caddy_custom_http_template is not none %}
+{%       set caddy_custom_http = ('' ~ caddy_custom_http_template) % slave_parameter_dict %}
 caddy_custom_http = {{ dumps(caddy_custom_http) }}
+{%     else %}
+{%       set caddy_custom_http = None %}
+{%     endif %}
+{%     if caddy_custom_https_template is not none %}
+{%       set caddy_custom_https = ('' ~ caddy_custom_https_template) % slave_parameter_dict %}
 caddy_custom_https = {{ dumps(caddy_custom_https) }}
+{%     else %}
+{%       set caddy_custom_https = None %}
+{%     endif %}
 {{ '\n' }}
 {%     for key, value in slave_instance.iteritems() %}
+{%       if value is not none %}
 {{ key }} = {{ dumps(value) }}
+{%       endif %}
 {%     endfor %}
 
 [{{ slave_section_title }}]
