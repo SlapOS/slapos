@@ -80,19 +80,19 @@ context =
 {%      do used_host_list.append(custom_domain) %}
 {%   endif %}
 {%   if slave.get('server-alias') %}
-{%     for slave_alias in slave['server-alias'].split() %}
+{%     for slave_alias in ('' ~ slave['server-alias']).split() %}
 {%       if slave_alias.startswith('*.') %}
 {%         set clean_slave_alias = slave_alias[2:] %}
 {%       else %}
 {%         set clean_slave_alias = slave_alias %}
 {%       endif %}
 {%       if not validators.domain(clean_slave_alias) %}
-{%         do slave_error_list.append('server-alias %r not valid' % (slave_alias,)) %}
+{%         do slave_error_list.append('server-alias \'%s\' not valid' % (slave_alias,)) %}
 {%       else %}
 {%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
 {#           optionally do something about reporting back that server-alias has been unclashed #}
 {%         elif slave_alias in used_host_list %}
-{%           do slave_error_list.append('server-alias %r clashes' % (slave_alias,)) %}
+{%           do slave_error_list.append('server-alias \'%s\' clashes' % (slave_alias,)) %}
 {%         else %}
 {%           do slave_server_alias_unclashed.append(slave_alias) %}
 {%           do used_host_list.append(slave_alias) %}
@@ -107,18 +107,18 @@ context =
 {%         if not unauthorized_message in slave_error_list %}
 {%           do slave_error_list.append(unauthorized_message) %}
 {%         endif %}
-{%       elif subprocess_module.call([caddy_custom_http_validator, slave[key]]) == 1 %}
+{%       elif subprocess_module.call([caddy_custom_http_validator, '' ~ slave[key]]) == 1 %}
 {%         do slave_error_list.append('slave %s configuration invalid' % (key,)) %}
 {%       endif %}
 {%     endif %}
 {%   endfor %} {# for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] #}
 {%   if slave.get('url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, slave['url']]) == 1 %}
+{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['url']]) == 1 %}
 {%       do slave_error_list.append('slave url %r invalid' % (slave['url'],)) %}
 {%     endif %}
 {%   endif %}
 {%   if slave.get('https-url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, slave['https-url']]) == 1 %}
+{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['https-url']]) == 1 %}
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
@@ -128,17 +128,18 @@ context =
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
 {%     set key_popen = popen([openssl, 'rsa', '-noout', '-modulus']) %}
 {%     set crt_popen = popen([openssl, 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     set key_modulus = key_popen.communicate('' ~ slave['ssl_key'])[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate('' ~ slave['ssl_crt'])[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
 {%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
 {%     endif %}
 {%   endif %}
 {%   if slave.get('custom_domain') %}
-{%     if slave['custom_domain'].startswith('*.') %}
-{%       set clean_custom_domain = slave['custom_domain'][2:] %}
+{%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
+{%     if slave_custom_domain.startswith('*.') %}
+{%       set clean_custom_domain = slave_custom_domain[2:] %}
 {%     else %}
-{%       set clean_custom_domain = slave['custom_domain'] %}
+{%       set clean_custom_domain = slave_custom_domain %}
 {%     endif %}
 {%     if not validators.domain(clean_custom_domain) %}
 {%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}

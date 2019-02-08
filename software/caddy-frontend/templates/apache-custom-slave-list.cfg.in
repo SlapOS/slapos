@@ -162,7 +162,7 @@ bytes = 8
 
 {# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
-{%     if cert_name in slave_instance %}
+{%     if slave_instance.get(cert_name) %}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
 {%       do part_list.append(cert_title) %}
@@ -187,7 +187,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
 {%   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
 {%   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
-{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
+{%   if slave_instance.get('ssl_key') and slave_instance.get('ssl_crt') %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
 {%     set key_title = '%s-key' % (slave_reference) %}
 {%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
@@ -211,7 +211,7 @@ extra-context =
 < = jinja2-template-base
 template = {{ empty_template }}
 rendered = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
+cert-content = {{ dumps('%s\n%s' % (slave_instance.get('ssl_crt'), slave_instance.get('ssl_ca_crt', '') or '')) }}
 extra-context =
     key content :cert-content
 {%     endif %}
@@ -219,21 +219,33 @@ extra-context =
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-https_port = {{ dumps(https_port) }}
-http_port = {{ dumps(http_port) }}
-local_ipv4 = {{ dumps(local_ipv4) }}
-nginx_http_port = {{ dumps(nginx_http_port) }}
-nginx_https_port = {{ dumps(nginx_https_port) }}
-cached_port = {{ dumps(cached_port) }}
-ssl_cached_port = {{ (ssl_cached_port) }}
+https_port = {{ dumps('' ~ https_port) }}
+http_port = {{ dumps('' ~ http_port) }}
+local_ipv4 = {{ dumps('' ~ local_ipv4) }}
+nginx_http_port = {{ dumps('' ~ nginx_http_port) }}
+nginx_https_port = {{ dumps('' ~ nginx_https_port) }}
+cached_port = {{ dumps('' ~ cached_port) }}
+ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
 {# BBB: apache_custom_https and apache_custom_http #}
-{%     set caddy_custom_http = ((slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', ''))) % slave_parameter_dict) %}
-{%     set caddy_custom_https = ((slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', ''))) % slave_parameter_dict) %}
+{%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
+{%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}
+{%     if caddy_custom_http_template is not none %}
+{%       set caddy_custom_http = ('' ~ caddy_custom_http_template) % slave_parameter_dict %}
 caddy_custom_http = {{ dumps(caddy_custom_http) }}
+{%     else %}
+{%       set caddy_custom_http = None %}
+{%     endif %}
+{%     if caddy_custom_https_template is not none %}
+{%       set caddy_custom_https = ('' ~ caddy_custom_https_template) % slave_parameter_dict %}
 caddy_custom_https = {{ dumps(caddy_custom_https) }}
+{%     else %}
+{%       set caddy_custom_https = None %}
+{%     endif %}
 {{ '\n' }}
 {%     for key, value in slave_instance.iteritems() %}
-{{ key }} = {{ dumps(value) }}
+{%       if value is not none %}
+{{ key }} = {{ dumps('' ~ value) }}
+{%       endif %}
 {%     endfor %}
 
 [{{ slave_section_title }}]
@@ -299,7 +311,7 @@ filename = {{ monitor_ipv4_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
 
-{%   set re6st_optimal_test = slave_instance.get('re6st-optimal-test', '') %}
+{%   set re6st_optimal_test = '' ~ slave_instance.get('re6st-optimal-test', '') %}
 {%   set re6st_ipv6 = None %}
 {%   set re6st_ipv4 = None %}
 {%   if ',' in re6st_optimal_test %}
