@@ -187,6 +187,18 @@ class CertificateAuthority(object):
     return certificate, certificate.public_bytes(serialization.Encoding.PEM)
 
 
+def subprocess_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs
+  )
+
+  out, err = prc.communicate()
+  return out
+
+
 def isHTTP2(domain, ip):
   curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
     'https://%(domain)s:%(https_port)s/ '\
@@ -2395,7 +2407,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_monitor-ipv6-test-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a monitor-ipv6-test',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_monitor_ipv4_test(self):
@@ -2437,7 +2449,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_monitor-ipv4-test-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a monitor-ipv4-test',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_re6st_optimal_test(self):
@@ -2480,7 +2492,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_re6st-optimal-test-re6st-optimal-test'))[0]
     self.assertEqual(
       '-4 ipv4 -6 ipv6',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_enable_cache(self):
@@ -3825,7 +3837,7 @@ https://www.google.com {}""",
     #       correctly passed to the script.
     self.assertEqual(
       '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_re6st_optimal_test_nocomma(self):
@@ -4014,7 +4026,7 @@ https://www.google.com {}""",
         'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a ${section:option} afternewline ipv4',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_monitor_ipv6_test_unsafe(self):
@@ -4056,7 +4068,7 @@ https://www.google.com {}""",
         'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a ${section:option} afternewline ipv6',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_ssl_key_ssl_crt_unsafe(self):
