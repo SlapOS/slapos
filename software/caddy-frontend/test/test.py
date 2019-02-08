@@ -42,6 +42,7 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+import importlib
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -223,6 +224,9 @@ def getQUIC(url, ip, port):
   except subprocess.CalledProcessError as e:
     return False, e.output
 
+def importPluginPromise(plugin_dir, filename):
+  os.chdir(plugin_dir)
+  return importlib.import_module(os.path.splitext(filename)[0])
 
 class TestDataMixin(object):
   @staticmethod
@@ -1059,8 +1063,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result = set([
         subprocess.call(q) for q in glob.glob(
           os.path.join(
-            self.instance_path, '*', 'etc', 'promise',
-            'monitor-httpd-listening-on-tcp'))])
+            self.instance_path, '*', 'etc', 'plugin',
+            'monitor-httpd-listening-on-tcp.py'))])
       self.assertEqual(
         set([0]),
         result
@@ -2410,19 +2414,18 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv6-test-ipv6-packet-list-test'))[0]
-    self.assertEqual(
-      '-a monitor-ipv6-test',
-      subprocess_output(monitor_file).strip()
-    )
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    promise_module = importPluginPromise(os.path.dirname(monitor_file),
+                                         os.path.basename(monitor_file))
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'frequency': '720',
+      'address', 'monitor-ipv6-test'
+    })
 
   def test_monitor_ipv4_test(self):
     parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test')
@@ -2452,19 +2455,19 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv4-test-ipv4-packet-list-test'))[0]
-    self.assertEqual(
-      '-4 -a monitor-ipv4-test',
-      subprocess_output(monitor_file).strip()
-    )
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    promise_module = importPluginPromise(os.path.dirname(monitor_file),
+                                         os.path.basename(monitor_file))
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'frequency': '720',
+      'ipv4': 'true',
+      'address': 'monitor-ipv4-test',
+    })
 
   def test_re6st_optimal_test(self):
     parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test')
@@ -2494,20 +2497,19 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(
-        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-re6st-optimal-test'))[0]
-    self.assertEqual(
-      '-4 ipv4 -6 ipv6',
-      subprocess_output(monitor_file).strip()
-    )
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-re6st-optimal-test.py'))[0]
+    # get promise module and check that parameters are ok
+    promise_module = importPluginPromise(os.path.dirname(monitor_file),
+                                         os.path.basename(monitor_file))
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'frequency': '720',
+      'ipv4': 'ivp4',
+      'ipv6', 'ipv6'
+    })
 
   def test_enable_cache(self):
     parameter_dict = self.parseSlaveParameterDict('enable_cache')
@@ -3843,8 +3845,8 @@ https://www.google.com {}""",
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-unsafe-re6st-optimal-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-unsafe-re6st-optimal-test.py'))[0]
 
     # Note: The result is a bit differnt from the request (newlines stripped),
     #       but good enough to prove, that ${esection:eoption} has been
@@ -3881,8 +3883,8 @@ https://www.google.com {}""",
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-nocomma-re6st-optimal-test'))
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-nocomma-re6st-optimal-test.py'))
     self.assertEqual(
       [],
       monitor_file_list
@@ -4029,19 +4031,19 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
-    self.assertEqual(
-      '-4 -a ${section:option} afternewline ipv4',
-      subprocess_output(monitor_file).strip()
-    )
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    promise_module = importPluginPromise(os.path.dirname(monitor_file),
+                                         os.path.basename(monitor_file))
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'frequency': '720',
+      'ipv4': 'true',
+      'address': '${section:option} afternewline ipv4',
+    })
 
   def test_monitor_ipv6_test_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
@@ -4071,19 +4073,18 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
-    self.assertEqual(
-      '-a ${section:option} afternewline ipv6',
-      subprocess_output(monitor_file).strip()
-    )
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    promise_module = importPluginPromise(os.path.dirname(monitor_file),
+                                         os.path.basename(monitor_file))
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'frequency': '720',
+      'address', '${section:option} afternewline ipv6'
+    })
 
   def test_ssl_key_ssl_crt_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_key-ssl_crt-unsafe')
