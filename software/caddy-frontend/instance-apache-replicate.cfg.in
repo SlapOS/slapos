@@ -87,7 +87,7 @@ context =
 {%         set clean_slave_alias = slave_alias %}
 {%       endif %}
 {%       if not validators.domain(clean_slave_alias) %}
-{%         do slave_error_list.append('server-alias %r not valid' % (slave_alias,)) %}
+{%         do slave_error_list.append('server-alias '%s' not valid' % (slave_alias,)) %}
 {%       else %}
 {%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
 {#           optionally do something about reporting back that server-alias has been unclashed #}
