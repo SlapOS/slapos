@@ -121,7 +121,10 @@ class Recipe(GenericBaseRecipe):
     config_string = ""
     for key in self.options:
       if key.startswith('config-'):
-        config_string += "  '%s': '%s',\n" % (key[7:], self.options[key])
+        config_string += "  '%s': '%s',\n" % (
+          key[7:],
+          self.options[key].replace('\n', '\\n').replace("'", "\'")
+        )
 
     option_dict = dict(path=path_list_string.strip(),
                        content=content_string,
