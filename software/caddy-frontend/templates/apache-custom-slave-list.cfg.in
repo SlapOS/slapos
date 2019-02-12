@@ -311,7 +311,7 @@ config-frequency = 720
 <= promise-plugin-base
 module = check_icmp_packet_lost
 name = {{ monitor_ipv6_section_title }}.py
-config-address = {{ monitor_ipv6_test }}
+config-address = {{ dumps(monitor_ipv6_test) }}
 # promise frequency in minutes (2 times/day)
 config-frequency = 720
 {%   endif %}
@@ -324,7 +324,7 @@ config-frequency = 720
 <= promise-plugin-base
 module = check_icmp_packet_lost
 name = {{ monitor_ipv4_section_title }}.py
-config-address = {{ monitor_ipv4_test }}
+config-address = {{ dumps(monitor_ipv4_test) }}
 config-ipv4 = true
 # promise frequency in minutes (2 times/day)
 config-frequency = 720
@@ -344,8 +344,8 @@ config-frequency = 720
 <= promise-plugin-base
 module = check_re6st_optimal_status
 name = {{ re6st_optimal_test_section_title }}.py
-config-ipv4 = {{ re6st_ipv4 }}
-config-ipv6 = {{ re6st_ipv6 }}
+config-ipv4 = {{ dumps(re6st_ipv4) }}
+config-ipv6 = {{ dumps(re6st_ipv6) }}
 # promise frequency in minutes (2 times/day)
 config-frequency = 720
 {%   endif %}
