@@ -3380,11 +3380,16 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         're6st-connectivity.py'))
 
     self.assertEqual(1, len(re6st_connectivity_promise_list))
+    re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    self.assertTrue(
-      'URL="http://[2001:67c:1254:4::1]/index.html"' in
-      open(re6st_connectivity_promise_list[0]).read()
+    promise_module = importPluginPromise(
+      os.path.dirname(re6st_connectivity_promise_file),
+      os.path.basename(re6st_connectivity_promise_file)
     )
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'url': 'http://[2001:67c:1254:4::1]/index.html',
+    })
 
 
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
@@ -3429,11 +3434,16 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         're6st-connectivity.py'))
 
     self.assertEqual(1, len(re6st_connectivity_promise_list))
+    re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    self.assertTrue(
-      'URL="some-re6st-verification-url"' in
-      open(re6st_connectivity_promise_list[0]).read()
+    promise_module = importPluginPromise(
+      os.path.dirname(re6st_connectivity_promise_file),
+      os.path.basename(re6st_connectivity_promise_file)
     )
+
+    self.assertEqual(promise_module.extra_config_dict, {
+      'url': 'some-re6st-verification-url',
+    })
 
 
 class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
