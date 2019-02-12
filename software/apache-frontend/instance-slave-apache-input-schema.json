@@ -97,6 +97,7 @@
       "title": "SSL Backend Authority's Certificate",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "monitor-ipv6-test": {

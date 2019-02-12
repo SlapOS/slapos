@@ -202,6 +202,8 @@ extra-context =
     key login_ca_crt ca-custom-frontend:rendered
     key enable_http2_by_default configuration:enable-http2-by-default
     key global_disable_http2 configuration:global-disable-http2
+    key proxy_try_duration configuration:proxy-try-duration
+    key proxy_try_interval configuration:proxy-try-interval
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable

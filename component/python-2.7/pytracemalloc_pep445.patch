@@ -1,6 +1,6 @@
-diff -urN Python-2.7.10.ORIG/Include/objimpl.h Python-2.7.10/Include/objimpl.h
---- Python-2.7.10.ORIG/Include/objimpl.h	2015-05-24 01:08:59.000000000 +0900
-+++ Python-2.7.10/Include/objimpl.h	2015-10-13 17:31:13.771317208 +0900
+diff -Naru a/Include/objimpl.h b/Include/objimpl.h
+--- a/Include/objimpl.h	2018-04-30 06:47:33.000000000 +0800
++++ b/Include/objimpl.h	2018-10-31 11:59:39.000000000 +0800
 @@ -98,10 +98,8 @@
  PyAPI_FUNC(void *) PyObject_Realloc(void *, size_t);
  PyAPI_FUNC(void) PyObject_Free(void *);
@@ -48,9 +48,9 @@ diff -urN Python-2.7.10.ORIG/Include/objimpl.h Python-2.7.10/Include/objimpl.h
  
  /* for source compatibility with 2.2 */
  #define _PyObject_Del           PyObject_Free
-diff -urN Python-2.7.10.ORIG/Include/pymem.h Python-2.7.10/Include/pymem.h
---- Python-2.7.10.ORIG/Include/pymem.h	2015-05-24 01:09:00.000000000 +0900
-+++ Python-2.7.10/Include/pymem.h	2015-10-13 17:31:13.771317208 +0900
+diff -Naru a/Include/pymem.h b/Include/pymem.h
+--- a/Include/pymem.h	2018-04-30 06:47:33.000000000 +0800
++++ b/Include/pymem.h	2018-10-31 12:00:33.000000000 +0800
 @@ -11,6 +11,11 @@
  extern "C" {
  #endif
@@ -96,9 +96,9 @@ diff -urN Python-2.7.10.ORIG/Include/pymem.h Python-2.7.10/Include/pymem.h
  /* Returns NULL to indicate error if a negative size or size larger than
     Py_ssize_t can represent is supplied.  Helps prevents security holes. */
 -#define PyMem_MALLOC(n)		((size_t)(n) > (size_t)PY_SSIZE_T_MAX ? NULL \
--				: malloc((n) ? (n) : 1))
+-				: malloc(((n) != 0) ? (n) : 1))
 -#define PyMem_REALLOC(p, n)	((size_t)(n) > (size_t)PY_SSIZE_T_MAX  ? NULL \
--				: realloc((p), (n) ? (n) : 1))
+-				: realloc((p), ((n) != 0) ? (n) : 1))
 -#define PyMem_FREE		free
 -
 -#endif	/* PYMALLOC_DEBUG */
@@ -176,10 +176,10 @@ diff -urN Python-2.7.10.ORIG/Include/pymem.h Python-2.7.10/Include/pymem.h
  #ifdef __cplusplus
  }
  #endif
-diff -urN Python-2.7.10.ORIG/Objects/object.c Python-2.7.10/Objects/object.c
---- Python-2.7.10.ORIG/Objects/object.c	2015-05-24 01:09:22.000000000 +0900
-+++ Python-2.7.10/Objects/object.c	2015-10-13 17:31:13.771317208 +0900
-@@ -2335,27 +2335,6 @@
+diff -Naru a/Objects/object.c b/Objects/object.c
+--- a/Objects/object.c	2018-04-30 06:47:33.000000000 +0800
++++ b/Objects/object.c	2018-10-31 12:00:49.000000000 +0800
+@@ -2340,27 +2340,6 @@
  Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
  
  
@@ -206,10 +206,10 @@ diff -urN Python-2.7.10.ORIG/Objects/object.c Python-2.7.10/Objects/object.c
 -
  /* These methods are used to control infinite recursion in repr, str, print,
     etc.  Container objects that may recursively contain themselves,
-    e.g. builtin dictionaries and lists, should used Py_ReprEnter() and
-diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
---- Python-2.7.10.ORIG/Objects/obmalloc.c	2015-05-24 01:09:22.000000000 +0900
-+++ Python-2.7.10/Objects/obmalloc.c	2015-10-13 17:37:24.665726972 +0900
+    e.g. builtin dictionaries and lists, should use Py_ReprEnter() and
+diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
+--- a/Objects/obmalloc.c	2018-04-30 06:47:33.000000000 +0800
++++ b/Objects/obmalloc.c	2018-10-31 12:01:05.000000000 +0800
 @@ -18,6 +18,281 @@
   #endif
  #endif
@@ -492,6 +492,15 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  #ifdef WITH_PYMALLOC
  
  #ifdef HAVE_MMAP
+@@ -214,7 +489,7 @@
+  * Arenas are allocated with mmap() on systems supporting anonymous memory
+  * mappings to reduce heap fragmentation.
+  */
+-#define ARENA_SIZE              (256 << 10)     /* 256KiB */
++#define ARENA_SIZE              (256 << 10)     /* 256KB */
+ 
+ #ifdef WITH_MEMORY_LIMITS
+ #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
 @@ -581,7 +856,7 @@
              return NULL;                /* overflow */
  #endif
@@ -529,10 +538,12 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
       * This implicitly redirects malloc(0).
       */
      if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
-@@ -983,15 +1248,14 @@
+@@ -981,17 +1246,13 @@
+      * last chance to serve the request) or when the max memory limit
+      * has been reached.
       */
-     if (nbytes == 0)
-         nbytes = 1;
+-    if (nbytes == 0)
+-        nbytes = 1;
 -    return (void *)malloc(nbytes);
 +    return PyMem_Malloc(nbytes);
  }
@@ -540,7 +551,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  /* free */
  
 -#undef PyObject_Free
- ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+-ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 -void
 -PyObject_Free(void *p)
 +static void
@@ -548,7 +559,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  {
      poolp pool;
      block *lastfree;
-@@ -1211,7 +1475,7 @@
+@@ -1211,7 +1472,7 @@
  redirect:
  #endif
      /* We didn't allocate this address. */
@@ -557,12 +568,12 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  }
  
  /* realloc.  If p is NULL, this acts like malloc(nbytes).  Else if nbytes==0,
-@@ -1219,10 +1483,9 @@
+@@ -1219,10 +1480,8 @@
   * return a non-NULL result.
   */
  
 -#undef PyObject_Realloc
- ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+-ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 -void *
 -PyObject_Realloc(void *p, size_t nbytes)
 +static void *
@@ -570,7 +581,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  {
      void *bp;
      poolp pool;
-@@ -1232,16 +1495,7 @@
+@@ -1232,16 +1491,7 @@
  #endif
  
      if (p == NULL)
@@ -588,7 +599,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  
  #ifdef WITH_VALGRIND
      /* Treat running_on_valgrind == -1 the same as 0 */
-@@ -1269,10 +1523,10 @@
+@@ -1269,10 +1519,10 @@
              }
              size = nbytes;
          }
@@ -601,7 +612,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
          }
          return bp;
      }
-@@ -1290,40 +1544,17 @@
+@@ -1290,40 +1540,17 @@
       * at p.  Instead we punt:  let C continue to manage this block.
       */
      if (nbytes)
@@ -644,7 +655,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  #endif /* WITH_PYMALLOC */
  
  #ifdef PYMALLOC_DEBUG
-@@ -1343,10 +1574,6 @@
+@@ -1343,10 +1570,6 @@
  #define DEADBYTE       0xDB    /* dead (newly freed) memory */
  #define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
  
@@ -655,7 +666,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
  
  /* serialno is always incremented via calling this routine.  The point is
-@@ -1429,58 +1656,18 @@
+@@ -1429,58 +1652,18 @@
  p[2*S+n: 2*S+n+S]
      Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
  p[2*S+n+S: 2*S+n+2*S]
@@ -719,7 +730,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
      uchar *p;           /* base address of malloc'ed block */
      uchar *tail;        /* p + 2*SST + nbytes == pointer to tail pad bytes */
      size_t total;       /* nbytes + 4*SST */
-@@ -1491,14 +1678,14 @@
+@@ -1491,14 +1674,14 @@
          /* overflow:  can't represent total as a size_t */
          return NULL;
  
@@ -737,7 +748,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  
      if (nbytes > 0)
          memset(p + 2*SST, CLEANBYTE, nbytes);
-@@ -1516,35 +1703,37 @@
+@@ -1516,35 +1699,37 @@
     Then fills the original bytes with DEADBYTE.
     Then calls the underlying free.
  */
@@ -784,11 +795,11 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
      bumpserialno();
      original_nbytes = read_size_t(q - 2*SST);
      total = nbytes + 4*SST;
-@@ -1552,24 +1741,26 @@
+@@ -1552,16 +1737,12 @@
          /* overflow:  can't represent total as a size_t */
          return NULL;
  
--    if (nbytes < original_nbytes) {
+-    if (nbytes <= original_nbytes) {
 -        /* shrinking:  mark old extra memory dead */
 -        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes + 2*SST);
 -    }
@@ -800,10 +811,14 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
 -    q = (uchar *)PyObject_Realloc(q - 2*SST, total);
 +    oldq = q;
 +    q = (uchar *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-     if (q == NULL)
+     if (q == NULL) {
+         if (nbytes <= original_nbytes) {
+             /* bpo-31626: the memset() above expects that realloc never fails
+@@ -1571,11 +1752,17 @@
          return NULL;
+     }
  
-+    if (q == oldq && nbytes < original_nbytes) {
++    if (q == oldq && nbytes <= original_nbytes) {
 +        /* shrinking:  mark old extra memory dead */
 +        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
 +    }
@@ -818,7 +833,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
      tail = q + nbytes;
      memset(tail, FORBIDDENBYTE, SST);
      write_size_t(tail + SST, serialno);
-@@ -1588,8 +1779,8 @@
+@@ -1594,8 +1781,8 @@
   * and call Py_FatalError to kill the program.
   * The API id, is also checked.
   */
@@ -829,7 +844,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
  {
      const uchar *q = (const uchar *)p;
      char msgbuf[64];
-@@ -1935,3 +2126,44 @@
+@@ -1941,3 +2128,44 @@
             arenas[arenaindex_temp].address != 0;
  }
  #endif
@@ -838,7 +853,7 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
 +#if defined(WITH_PYMALLOC) && defined(PYMALLOC_DEBUG)
 +/* Dummy functions only present to keep the same ABI with the vanilla Python
 +   compiled in debug mode: they are not used in practice. See issue:
-+   https://github.com/haypo/pytracemalloc/issues/1 */
++   https://github.com/vstinner/pytracemalloc/issues/1 */
 +
 +void* _PyMem_DebugMalloc(size_t nbytes)
 +{ return PyMem_RawMalloc(nbytes); }
@@ -874,11 +889,11 @@ diff -urN Python-2.7.10.ORIG/Objects/obmalloc.c Python-2.7.10/Objects/obmalloc.c
 +{}
 +#endif
 +
-diff -urN Python-2.7.10.ORIG/Python/pythonrun.c Python-2.7.10/Python/pythonrun.c
---- Python-2.7.10.ORIG/Python/pythonrun.c	2015-05-24 01:09:24.000000000 +0900
-+++ Python-2.7.10/Python/pythonrun.c	2015-10-13 17:31:13.771317208 +0900
-@@ -137,6 +137,41 @@
-     return flag;
+diff -Naru a/Python/pythonrun.c b/Python/pythonrun.c
+--- a/Python/pythonrun.c	2018-04-30 06:47:33.000000000 +0800
++++ b/Python/pythonrun.c	2018-10-31 12:01:31.000000000 +0800
+@@ -158,6 +158,42 @@
+     return 0;
  }
  
 +static void
@@ -916,15 +931,16 @@ diff -urN Python-2.7.10.ORIG/Python/pythonrun.c Python-2.7.10/Python/pythonrun.c
 +    Py_XDECREF(res);
 +}
 +
++
  void
  Py_InitializeEx(int install_sigs)
  {
-@@ -266,6 +301,8 @@
-     _PyGILState_Init(interp, tstate);
- #endif /* WITH_THREAD */
- 
-+    inittracemalloc();
-+
+@@ -290,6 +326,8 @@
      if (!Py_NoSiteFlag)
          initsite(); /* Module site */
  
++    inittracemalloc();
++
+     if ((p = Py_GETENV("PYTHONIOENCODING")) && *p != '\0') {
+         p = icodeset = codeset = strdup(p);
+         free_codeset = 1;

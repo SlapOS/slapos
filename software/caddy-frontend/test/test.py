@@ -187,6 +187,18 @@ class CertificateAuthority(object):
     return certificate, certificate.public_bytes(serialization.Encoding.PEM)
 
 
+def subprocess_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs
+  )
+
+  out, err = prc.communicate()
+  return out
+
+
 def isHTTP2(domain, ip):
   curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
     'https://%(domain)s:%(https_port)s/ '\
@@ -456,6 +468,8 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
+    timeout = int(self.headers.dict.get('Timeout', '0'))
+    time.sleep(timeout)
     self.send_response(200)
     self.send_header("Content-type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
@@ -1157,7 +1171,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
+      'test-path/deep/.././deeper',
+      headers={'Timeout': '10'}  # more than default proxy-try-duration == 5
+    )
 
     self.assertEqual(
       self.certificate_pem,
@@ -1170,6 +1186,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqual(j['Incoming Headers']['timeout'], '10')
 
     self.assertFalse('Content-Encoding' in result.headers)
 
@@ -1195,6 +1213,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'secured=value;secure, nonsecured=value',
       result_http.headers['Set-Cookie']
     )
+
+    # check that try_duration == 5 in the test_url slave
+    slave_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', '*slave-conf.d', '_url.conf'))[0]
+    with open(slave_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue('try_duration 5s' in content)
+      self.assertTrue('try_interval 250ms' in content)
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
@@ -2395,7 +2421,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_monitor-ipv6-test-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a monitor-ipv6-test',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_monitor_ipv4_test(self):
@@ -2437,7 +2463,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_monitor-ipv4-test-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a monitor-ipv4-test',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_re6st_optimal_test(self):
@@ -2480,7 +2506,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-_re6st-optimal-test-re6st-optimal-test'))[0]
     self.assertEqual(
       '-4 ipv4 -6 ipv6',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_enable_cache(self):
@@ -3825,7 +3851,7 @@ https://www.google.com {}""",
     #       correctly passed to the script.
     self.assertEqual(
       '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_re6st_optimal_test_nocomma(self):
@@ -4014,7 +4040,7 @@ https://www.google.com {}""",
         'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
     self.assertEqual(
       '-4 -a ${section:option} afternewline ipv4',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_monitor_ipv6_test_unsafe(self):
@@ -4056,7 +4082,7 @@ https://www.google.com {}""",
         'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
     self.assertEqual(
       '-a ${section:option} afternewline ipv6',
-      subprocess.check_output(monitor_file).strip()
+      subprocess_output(monitor_file).strip()
     )
 
   def test_ssl_key_ssl_crt_unsafe(self):

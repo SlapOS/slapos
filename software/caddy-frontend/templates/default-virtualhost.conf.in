@@ -1,16 +1,16 @@
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES %}
-{%- set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES %}
-{%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES %}
+{%- set disable_no_cache_header = slave_parameter.get('disable-no-cache-request', '').lower() in TRUE_VALUES %}
+{%- set disable_via_header = slave_parameter.get('disable-via-header', '').lower() in TRUE_VALUES %}
+{%- set prefer_gzip = slave_parameter.get('prefer-gzip-encoding-to-backend', '').lower() in TRUE_VALUES %}
 {%- set proxy_append_list = [('', 'Default proxy configuration')] %}
 {%- if prefer_gzip %}
 {%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
 {%- endif %} {#- if prefer_gzip #}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
-{%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and ('' ~ slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default'])).lower() in TRUE_VALUES %}
-{%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES %}
+{%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default']).lower() in TRUE_VALUES %}
+{%- set ssl_proxy_verify = slave_parameter.get('ssl-proxy-verify', '').lower() in TRUE_VALUES %}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
-{%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES %}
+{%- set https_only = slave_parameter.get('https-only', '').lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
 {%- set host_list = server_alias_list %}
 {%- if slave_parameter.get('custom_domain') not in host_list %}
@@ -67,6 +67,8 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -138,6 +140,8 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -216,6 +220,8 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -281,6 +287,8 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ slave_parameter.get('url', '') }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
