@@ -27,7 +27,6 @@
 
 import glob
 import os
-import sys
 import requests
 import httplib
 from requests_toolbelt.adapters import source
@@ -225,11 +224,26 @@ def getQUIC(url, ip, port):
   except subprocess.CalledProcessError as e:
     return False, e.output
 
-def importPluginPromise(plugin_dir, filename):
-  if sys.path[0] != plugin_dir:
-    sys.path[0:0] = [plugin_dir]
+def getPluginParameterDict(software_path, filepath):
+  bin_file = os.path.join(software_path, 'bin', 'test-plugin-promise')
+  with open(bin_file, 'w') as f:
+    f.write("""#!%s/bin/pythonwitheggs
+import os
+import importlib
+import sys
+import json
 
-  return importlib.import_module(os.path.splitext(filename)[0])
+filepath = sys.argv[1]
+sys.path[0:0] = [os.path.dirname(filepath)]
+filename = os.path.basename(filepath)
+module = importlib.import_module(os.path.splitext(filename)[0])
+
+print json.dumps(module.extra_config_dict)
+    """ % software_path)
+
+  os.chmod(bin_file, 0755)
+
+  return json.loads(subprocess_output([bin_file, filepath]).strip())
 
 class TestDataMixin(object):
   @staticmethod
@@ -1064,18 +1078,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
   def test_promise_monitor_httpd_listening_on_tcp(self):
 
-    promise_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'monitor-httpd-listening-on-tcp.py'))[0]
-
-    promise_module = importPluginPromise(os.path.dirname(promise_file),
-                                         os.path.basename(promise_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'check-secure': '1',
-      'url': 'https://[%s]:8072' % SLAPOS_TEST_IPV6
-    })
+    runpromise_bin = os.path.join(self.software_path, 'bin',
+      'monitor.runpromise')
+    result = set([
+      subprocess.call([runpromise_bin, '-c',
+          os.path.join(os.path.dirname(q),
+            '../monitor.conf'),
+          '--run-only',
+          'monitor-httpd-listening-on-tcp.py']
+        ) for q in glob.glob(
+          os.path.join(
+            self.instance_path, '*', 'etc', 'plugin',
+            'monitor-httpd-listening-on-tcp.py'))])
+    self.assertEqual(
+      set([0]),
+      result
+    )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
@@ -2426,13 +2444,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'etc', 'plugin',
         'check-_monitor-ipv6-test-ipv6-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
-    promise_module = importPluginPromise(os.path.dirname(monitor_file),
-                                         os.path.basename(monitor_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'frequency': '720',
-      'address': 'monitor-ipv6-test'
-    })
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'address': 'monitor-ipv6-test'
+      }
+    )
 
   def test_monitor_ipv4_test(self):
     parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test')
@@ -2467,14 +2485,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'etc', 'plugin',
         'check-_monitor-ipv4-test-ipv4-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
-    promise_module = importPluginPromise(os.path.dirname(monitor_file),
-                                         os.path.basename(monitor_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'frequency': '720',
-      'ipv4': 'true',
-      'address': 'monitor-ipv4-test',
-    })
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': 'monitor-ipv4-test',
+      }
+    )
 
   def test_re6st_optimal_test(self):
     parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test')
@@ -2509,14 +2527,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'etc', 'plugin',
         'check-_re6st-optimal-test-re6st-optimal-test.py'))[0]
     # get promise module and check that parameters are ok
-    promise_module = importPluginPromise(os.path.dirname(monitor_file),
-                                         os.path.basename(monitor_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'frequency': '720',
-      'ipv4': 'ivp4',
-      'ipv6': 'ipv6'
-    })
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'ipv4',
+        'ipv6': 'ipv6'
+      }
+    )
 
   def test_enable_cache(self):
     parameter_dict = self.parseSlaveParameterDict('enable_cache')
@@ -3385,14 +3403,12 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(1, len(re6st_connectivity_promise_list))
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    promise_module = importPluginPromise(
-      os.path.dirname(re6st_connectivity_promise_file),
-      os.path.basename(re6st_connectivity_promise_file)
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, re6st_connectivity_promise_file),
+      {
+        'url': 'http://[2001:67c:1254:4::1]/index.html',
+      }
     )
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'url': 'http://[2001:67c:1254:4::1]/index.html',
-    })
 
 
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
@@ -3439,14 +3455,12 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(1, len(re6st_connectivity_promise_list))
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    promise_module = importPluginPromise(
-      os.path.dirname(re6st_connectivity_promise_file),
-      os.path.basename(re6st_connectivity_promise_file)
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, re6st_connectivity_promise_file),
+      {
+        'url': 'some-re6st-verification-url',
+      }
     )
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'url': 'some-re6st-verification-url',
-    })
 
 
 class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
@@ -4053,14 +4067,15 @@ https://www.google.com {}""",
         self.instance_path, '*', 'etc', 'plugin',
         'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
-    promise_module = importPluginPromise(os.path.dirname(monitor_file),
-                                         os.path.basename(monitor_file))
 
-    self.assertEqual(promise_module.extra_config_dict, {
-      'frequency': '720',
-      'ipv4': 'true',
-      'address': '${section:option} afternewline ipv4',
-    })
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': '${section:option}\nafternewline ipv4',
+      }
+    )
 
   def test_monitor_ipv6_test_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
@@ -4095,13 +4110,13 @@ https://www.google.com {}""",
         self.instance_path, '*', 'etc', 'plugin',
         'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
-    promise_module = importPluginPromise(os.path.dirname(monitor_file),
-                                         os.path.basename(monitor_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'frequency': '720',
-      'address': '${section:option} afternewline ipv6'
-    })
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'address': '${section:option} afternewline ipv6'
+      }
+    )
 
   def test_ssl_key_ssl_crt_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_key-ssl_crt-unsafe')
