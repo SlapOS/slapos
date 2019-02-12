@@ -226,10 +226,13 @@ def getQUIC(url, ip, port):
     return False, e.output
 
 def importPluginPromise(plugin_dir, filename):
-  if sys.path[0] != plugin_dir:
-    sys.path[0:0] = [plugin_dir]
-
-  return importlib.import_module(os.path.splitext(filename)[0])
+  try:
+    if sys.path[0] != plugin_dir:
+      sys.path[0:0] = [plugin_dir]
+    module = importlib.import_module(os.path.splitext(filename)[0])
+  finally:
+    del sys.path[0]
+  return module
 
 class TestDataMixin(object):
   @staticmethod
@@ -1064,18 +1067,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
   def test_promise_monitor_httpd_listening_on_tcp(self):
 
-    promise_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'monitor-httpd-listening-on-tcp.py'))[0]
-
-    promise_module = importPluginPromise(os.path.dirname(promise_file),
-                                         os.path.basename(promise_file))
-
-    self.assertEqual(promise_module.extra_config_dict, {
-      'check-secure': '1',
-      'url': 'https://[%s]:8072' % SLAPOS_TEST_IPV6
-    })
+    runpromise_bin = os.path.join(self.software_path, 'bin',
+      'monitor.runpromise')
+    result = set([
+      subprocess.call([runpromise_bin, '-c',
+          os.path.join(os.path.dirname(q),
+            '../monitor.conf'),
+          '--run-only',
+          'monitor-httpd-listening-on-tcp.py']
+        ) for q in glob.glob(
+          os.path.join(
+            self.instance_path, '*', 'etc', 'plugin',
+            'monitor-httpd-listening-on-tcp.py'))])
+    self.assertEqual(
+      set([0]),
+      result
+    )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
@@ -2514,7 +2521,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(promise_module.extra_config_dict, {
       'frequency': '720',
-      'ipv4': 'ivp4',
+      'ipv4': 'ipv4',
       'ipv6': 'ipv6'
     })
 
