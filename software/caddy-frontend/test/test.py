@@ -242,8 +242,11 @@ print json.dumps(module.extra_config_dict)
     """ % software_path)
 
   os.chmod(bin_file, 0755)
-
-  return json.loads(subprocess_output([bin_file, filepath]).strip())
+  result = subprocess_output([bin_file, filepath]).strip()
+  try:
+    return json.loads(result)
+  except ValueError, e:
+    raise ValueError("%s\nResult was: %s" % (e, result))
 
 class TestDataMixin(object):
   @staticmethod
@@ -3868,12 +3871,6 @@ https://www.google.com {}""",
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(
-        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
-    ).write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
         self.instance_path, '*', 'etc', 'plugin',
@@ -3883,8 +3880,12 @@ https://www.google.com {}""",
     #       but good enough to prove, that ${esection:eoption} has been
     #       correctly passed to the script.
     self.assertEqual(
-      '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'new\\line\n[s${esection:eoption}',
+        'ipv6': 'new\nline;rm -fr ~;',
+      }
     )
 
   def test_re6st_optimal_test_nocomma(self):
@@ -4114,7 +4115,7 @@ https://www.google.com {}""",
       getPluginParameterDict(self.software_path, monitor_file),
       {
         'frequency': '720',
-        'address': '${section:option} afternewline ipv6'
+        'address': '${section:option}\nafternewline ipv6'
       }
     )
 
