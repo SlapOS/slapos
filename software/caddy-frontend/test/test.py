@@ -359,6 +359,12 @@ class TestDataMixin(object):
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value=h)
 
+  def test_exposeInstanceInfo(self):
+    print 'Ports used for test %s' % (self.id(),)
+    print subprocess_output('lsof -Pni -a -sTCP:LISTEN'.split())
+    print 'Socket opened for test %s' % (self.id(),)
+    print subprocess_output('lsof -Pn -U'.split())
+
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
