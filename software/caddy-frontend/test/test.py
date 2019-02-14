@@ -2411,9 +2411,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
@@ -2453,9 +2453,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
@@ -2495,10 +2495,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(
-        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(
+      self.software_path, 'bin', 'check-re6st-optimal-status')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
@@ -3836,10 +3836,10 @@ https://www.google.com {}""",
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(
-        self.software_path, 'bin', 'check-re6st-optimal-status'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(
+      self.software_path, 'bin', 'check-re6st-optimal-status')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
@@ -4030,9 +4030,10 @@ https://www.google.com {}""",
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(
+      self.software_path, 'bin', 'is-icmp-packet-lost')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
@@ -4072,9 +4073,10 @@ https://www.google.com {}""",
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
     # rewrite SR/bin/is-icmp-packet-lost
-    open(
-      os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost'), 'w'
-    ).write('echo "$@"')
+    fname = os.path.join(
+      self.software_path, 'bin', 'is-icmp-packet-lost')
+    self.assertTrue(os.path.isfile(fname))
+    open(fname, 'w').write('echo "$@"')
     # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
