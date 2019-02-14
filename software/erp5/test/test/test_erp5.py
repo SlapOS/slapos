@@ -31,10 +31,23 @@ import glob
 import urlparse
 import logging
 import time
+import subprocess
 
 import requests
 
 from utils import SlapOSInstanceTestCase
+
+
+def subprocess_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs
+  )
+
+  out, err = prc.communicate()
+  return out
 
 
 class TestDataMixin(object):
@@ -182,6 +195,18 @@ class TestPublishedURLIsReachableMixin(object):
       break
 
     self.assertIn("ERP5", r.text)
+
+  def test_exposeInstanceInfo(self):
+    result = []
+    ipv4 = os.environ['SLAPOS_TEST_IPV4']
+    ipv6 = os.environ['SLAPOS_TEST_IPV6']
+    result.append('IPv4 ports on %s' % (ipv4,))
+    result.append(
+      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (ipv4,)).split()))
+    result.append('IPv6 ports on %s' % (ipv6,))
+    result.append(
+      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (ipv6,)).split()))
+    self.fail('\n'.join(result))
 
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.
