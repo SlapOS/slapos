@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import json
+import re
 import logging, os
 import zc.buildout.easy_install
 from slapos.recipe.librecipe import GenericBaseRecipe
@@ -75,11 +76,15 @@ class Recipe(GenericBaseRecipe):
     )
     if cache_storage is None:
       cache_storage = {}
-      setattr(
-        self.buildout,
-        self._WORKING_SET_CACHE_NAME,
-        cache_storage
-      )
+      try:
+        setattr(
+          self.buildout,
+          self._WORKING_SET_CACHE_NAME,
+          cache_storage
+        )
+      except AttributeError:
+        # failed to set attribute, cache not used
+        pass
     return cache_storage
 
   def install(self):
@@ -98,20 +103,29 @@ class Recipe(GenericBaseRecipe):
       develop_eggs_dir,
     )
     if cache_key not in cache_storage:
-      working_set = zc.buildout.easy_install.working_set(
-        egg_list,
-        [develop_eggs_dir, eggs_dir]
-      )
-      cache_storage[cache_key] = working_set
+      if develop_eggs_dir and eggs_dir:
+        working_set = zc.buildout.easy_install.working_set(
+          egg_list,
+          [develop_eggs_dir, eggs_dir]
+        )
+        cache_storage[cache_key] = working_set
+      else:
+        working_set = set()
     else:
       working_set = cache_storage[cache_key]
 
+    regex = r"^[\w_\-\.\s]+$"
     module = self.options.get('module', '').strip()
     if module:
+      if not re.search(regex, module):
+        raise ValueError("%r is not a valid module name" % module)
       content_string = "from slapos.promise.plugin.%s import RunPromise" % module
     else:
       # old parameter for compatibility
       content_string = self.options['content'].strip()
+      if not re.search(regex, module):
+        raise ValueError("Promise content %r is not valid" % content_string)
+
     output = self.options['output']
     mode = self.options.get('mode', '0600')
     path_list = []
@@ -125,7 +139,7 @@ class Recipe(GenericBaseRecipe):
 
     option_dict = dict(path=json.dumps(path_list, indent=2),
                        content=content_string,
-                       config=json.dumps(config_dict, indent=2))
+                       config=json.dumps(config_dict, indent=2, sort_keys=True))
     with open(output, 'w') as f:
       f.write(script_template % option_dict)
 
