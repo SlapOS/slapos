@@ -359,6 +359,8 @@ for nbd_ip, nbd_port in nbd_list:
       print 'Warning : Nbd is not available.'
     else:
       # NBD is available
+      # We close the NBD socket else qemu won't be able to use it apparently
+      s.close()
       kvm_argument_list.extend([
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
