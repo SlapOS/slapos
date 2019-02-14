@@ -565,7 +565,21 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       ])
 
   @classmethod
+  def exposeInstanceInfo(cls):
+    import logging
+    logger = logging.getLogger()
+    ipv4 = os.environ['SLAPOS_TEST_IPV4']
+    ipv6 = os.environ['SLAPOS_TEST_IPV6']
+    logger.warning('IPv4 ports on %s' % (ipv4,))
+    logger.warning(
+      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (ipv4,)).split()))
+    logger.warning('IPv6 ports on %s' % (ipv6,))
+    logger.warning(
+      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (ipv6,)).split()))
+
+  @classmethod
   def setUpClass(cls):
+    cls.exposeInstanceInfo()
     try:
       cls.createWildcardExampleComCertificate()
       cls.startServerProcess()

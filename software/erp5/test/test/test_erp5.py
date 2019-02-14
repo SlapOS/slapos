@@ -31,10 +31,23 @@ import glob
 import urlparse
 import logging
 import time
+import subprocess
 
 import requests
 
 from utils import SlapOSInstanceTestCase
+
+
+def subprocess_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs
+  )
+
+  out, err = prc.communicate()
+  return out
 
 
 class TestDataMixin(object):
@@ -142,8 +155,22 @@ class ERP5TestCase(SlapOSInstanceTestCase):
   """Test the remote driver on a minimal web server.
   """
   logger = logging.getLogger(__name__)
+
+  @classmethod
+  def exposeInstanceInfo(cls):
+    logger = cls.logger
+    ipv4 = os.environ['SLAPOS_TEST_IPV4']
+    ipv6 = os.environ['SLAPOS_TEST_IPV6']
+    logger.warning('IPv4 ports on %s' % (ipv4,))
+    logger.warning(
+      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (ipv4,)).split()))
+    logger.warning('IPv6 ports on %s' % (ipv6,))
+    logger.warning(
+      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (ipv6,)).split()))
+
   @classmethod
   def setUpClass(cls):
+    cls.exposeInstanceInfo()
     super(ERP5TestCase, cls).setUpClass()
     # expose instance directory
     cls.instance_path = os.path.join(
