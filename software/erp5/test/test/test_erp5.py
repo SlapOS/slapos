@@ -37,10 +37,119 @@ import requests
 from utils import SlapOSInstanceTestCase
 
 
+class TestDataMixin(object):
+  @staticmethod
+  def generateHashFromFiles(file_list):
+    import hashlib
+    hasher = hashlib.md5()
+    for path in file_list:
+      with open(path, 'r') as afile:
+        buf = afile.read()
+      hasher.update("%s\n" % len(buf))
+      hasher.update(buf)
+    hash = hasher.hexdigest()
+    return hash
+
+  def getTrimmedProcessInfo(self):
+    return '\n'.join(sorted([
+      '%(group)s:%(name)s %(statename)s' % q for q
+      in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
+
+  def assertTestData(self, runtime_data, hash_value=None):
+    filename = '%s.txt' % (self.id(),)
+    test_data_file = os.path.join(
+      os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
+    try:
+      test_data = open(test_data_file).read().strip()
+    except IOError:
+      test_data = ''
+
+    if hash_value is not None:
+      runtime_data = runtime_data.replace(hash_value, '{hash}')
+
+    maxDiff = self.maxDiff
+    self.maxDiff = None
+    try:
+      self.assertMultiLineEqual(
+        test_data,
+        runtime_data
+      )
+    except AssertionError:
+      if os.environ.get('SAVE_TEST_DATA', '0') == '1':
+        open(test_data_file, 'w').write(runtime_data.strip())
+      raise
+    finally:
+      self.maxDiff = maxDiff
+
+  def test_plugin_list(self):
+    runtime_data = '\n'.join(sorted([
+      q[len(self.instance_path) + 1:]
+      for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'plugin', '*'))
+      if not q.endswith('pyc')  # ignore compiled python
+    ]))
+
+    self.assertTestData(runtime_data)
+
+  def test_promise_list(self):
+    runtime_data = '\n'.join(sorted([
+      q[len(self.instance_path) + 1:]
+      for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'promise', '*'))]))
+
+    self.assertTestData(runtime_data)
+
+  def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
+    runtime_data = []
+    for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
+      for entry in os.walk(os.path.join(slave_var, slave_dir)):
+        for filename in entry[2]:
+          path = os.path.join(
+            entry[0][len(self.instance_path) + 1:], filename)
+          if not any([path.endswith(q) for q in IGNORE_PATH_LIST]):
+            runtime_data.append(path)
+    runtime_data = '\n'.join(sorted(runtime_data))
+    self.assertTestData(runtime_data)
+
+  def test_file_list_log(self):
+    self._test_file_list('log', [
+      # no control at all when cron would kick in, ignore it
+      'cron.log',
+    ])
+
+  def test_file_list_run(self):
+    self._test_file_list('run', [
+      # run by cron from time to time
+      'monitor/monitor-collect.pid',
+    ])
+
+  def test_supervisor_state(self):
+    # give a chance for etc/run scripts to finish
+    time.sleep(1)
+
+    hash_files = [
+      'software_release/buildout.cfg',
+    ]
+    hash_files = [os.path.join(self.computer_partition_root_path, path)
+                  for path in hash_files]
+    h = self.generateHashFromFiles(hash_files)
+
+    runtime_data = self.getTrimmedProcessInfo()
+    self.assertTestData(runtime_data, hash_value=h)
+
+
 class ERP5TestCase(SlapOSInstanceTestCase):
   """Test the remote driver on a minimal web server.
   """
   logger = logging.getLogger(__name__)
+  @classmethod
+  def setUpClass(cls):
+    super(ERP5TestCase, cls).setUpClass()
+    # expose instance directory
+    cls.instance_path = os.path.join(
+        cls.config['working_directory'],
+        'inst')
+
   @classmethod
   def getSoftwareURLList(cls):
     return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')), )
@@ -89,13 +198,15 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin,
+                            TestDataMixin):
   """Test ERP5 can be instanciated with no parameters
   """
   __partition_reference__ = 'defp'
 
 
-class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin,
+                            TestDataMixin):
   """Test ERP5 can be instanciated without test runner.
   """
   __partition_reference__ = 'distr'
