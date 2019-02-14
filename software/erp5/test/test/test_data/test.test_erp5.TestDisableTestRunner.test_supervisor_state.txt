@@ -44,7 +44,7 @@ distr-6:bootstrap-monitor EXITED
 distr-6:caucase-updater-on-watch RUNNING
 distr-6:certificate_authority-{hash} RUNNING
 distr-6:crond-{hash} RUNNING
-distr-6:haproxy-5cbe094052381be4bd3a3ce43ad4a974 RUNNING
+distr-6:haproxy-{hash} RUNNING
 distr-6:monitor-httpd-{hash} RUNNING
 distr-6:monitor-httpd-graceful EXITED
 watchdog:watchdog RUNNING
