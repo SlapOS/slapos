@@ -71,17 +71,17 @@ url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
 disk_cache = '{{ parameter_dict.get("disk-cache", "writeback") }}'.strip()
-disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe", 
+disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe",
               "directsync", "writethrough"] else "writeback"
 disk_aio = '{{ parameter_dict.get("disk-aio", "threads") }}'.strip()
 disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
 
-# If a device (ie.: /dev/sdb) is provided, use it instead 
+# If a device (ie.: /dev/sdb) is provided, use it instead
 # the disk_path with disk_format
 disk_device_path = '{{ parameter_dict.get("disk-device-path", "") }}'
 if disk_device_path.startswith("/dev/"):
-  disk_path = disk_device_path 
-  disk_format = "raw" 
+  disk_path = disk_device_path
+  disk_format = "raw"
   disk_aio = "native"
   disk_cache = "none"
 
@@ -153,7 +153,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
 
   if id_list:
     if not map_f_exist:
-      # shuffle the list to not write disk in data1, data2, ... everytime 
+      # shuffle the list to not write disk in data1, data2, ... everytime
       shuffle(id_list)
     if external_disk_number < last_amount:
       # Drop created disk is not allowed
@@ -359,6 +359,8 @@ for nbd_ip, nbd_port in nbd_list:
       print 'Warning : Nbd is not available.'
     else:
       # NBD is available
+      # We close the NBD socket else qemu won't be able to use it apparently
+      s.close()
       kvm_argument_list.extend([
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
