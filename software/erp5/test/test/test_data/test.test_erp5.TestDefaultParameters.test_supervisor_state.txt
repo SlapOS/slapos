@@ -44,7 +44,7 @@ defp-6:bootstrap-monitor EXITED
 defp-6:caucase-updater-on-watch RUNNING
 defp-6:certificate_authority-{hash} RUNNING
 defp-6:crond-{hash} RUNNING
-defp-6:haproxy-4a45e33e310e1edba48cfd6a745de7e1 RUNNING
+defp-6:haproxy-{hash} RUNNING
 defp-6:monitor-httpd-{hash} RUNNING
 defp-6:monitor-httpd-graceful EXITED
 watchdog:watchdog RUNNING
