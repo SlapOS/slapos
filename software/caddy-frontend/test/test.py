@@ -569,13 +569,13 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     ipv4 = os.environ['SLAPOS_TEST_IPV4']
     ipv6 = os.environ['SLAPOS_TEST_IPV6']
     result.append('IPv4 ports on %s' % (ipv4,))
-    result.extend(
+    result.append(
       subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (
-        ipv4,)).splitlines()))
+        ipv4,)).split()))
     result.append('IPv6 ports on %s' % (ipv6,))
-    result.extend(
+    result.append(
       subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (
-        ipv6,)).splitlines()))
+        ipv6,)).split()))
     self.fail('\n'.join(result))
 
   @classmethod
