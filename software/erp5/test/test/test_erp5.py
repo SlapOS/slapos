@@ -157,18 +157,6 @@ class ERP5TestCase(SlapOSInstanceTestCase):
   logger = logging.getLogger(__name__)
 
   @classmethod
-  def exposeInstanceInfo(cls):
-    logger = cls.logger
-    ipv4 = os.environ['SLAPOS_TEST_IPV4']
-    ipv6 = os.environ['SLAPOS_TEST_IPV6']
-    logger.warning('IPv4 ports on %s' % (ipv4,))
-    logger.warning(
-      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (ipv4,)).split()))
-    logger.warning('IPv6 ports on %s' % (ipv6,))
-    logger.warning(
-      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (ipv6,)).split()))
-
-  @classmethod
   def setUpClass(cls):
     cls.exposeInstanceInfo()
     super(ERP5TestCase, cls).setUpClass()
@@ -209,6 +197,18 @@ class TestPublishedURLIsReachableMixin(object):
       break
 
     self.assertIn("ERP5", r.text)
+
+  def test_exposeInstanceInfo(self):
+    result = []
+    ipv4 = os.environ['SLAPOS_TEST_IPV4']
+    ipv6 = os.environ['SLAPOS_TEST_IPV6']
+    result.append('IPv4 ports on %s' % (ipv4,))
+    result.extend(
+      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (ipv4,)).splitlines()))
+    result.append('IPv6 ports on %s' % (ipv6,))
+    result.extend(
+      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (ipv6,)).splitlines()))
+    self.fail('\n'.join(result))
 
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.
