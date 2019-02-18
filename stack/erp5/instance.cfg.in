@@ -97,6 +97,7 @@ zope-conf-template = {{ template_zope_conf }}
 run-zelenium-template = {{ template_run_zelenium }}
 6tunnel = {{ sixtunnel_location }}
 coreutils = {{ coreutils_location }}
+sqlbench_path = {{ mariadb_location }}/sql-bench
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
