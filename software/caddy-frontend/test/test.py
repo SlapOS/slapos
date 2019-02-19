@@ -335,6 +335,20 @@ class TestDataMixin(object):
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value=h)
 
+  def test_exposeInstanceInfo(self):
+    result = []
+    ipv4 = os.environ['SLAPOS_TEST_IPV4']
+    ipv6 = os.environ['SLAPOS_TEST_IPV6']
+    result.append('IPv4 ports on %s' % (ipv4,))
+    result.append(
+      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (
+        ipv4,)).split()))
+    result.append('IPv6 ports on %s' % (ipv6,))
+    result.append(
+      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (
+        ipv6,)).split()))
+    self.fail('\n'.join(result))
+
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
@@ -563,20 +577,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         '*.nginx.example.com',
         '*.alias1.example.com',
       ])
-
-  def test_exposeInstanceInfo(self):
-    result = []
-    ipv4 = os.environ['SLAPOS_TEST_IPV4']
-    ipv6 = os.environ['SLAPOS_TEST_IPV6']
-    result.append('IPv4 ports on %s' % (ipv4,))
-    result.append(
-      subprocess_output(('lsof -Pni@%s -a -sTCP:LISTEN' % (
-        ipv4,)).split()))
-    result.append('IPv6 ports on %s' % (ipv6,))
-    result.append(
-      subprocess_output(('lsof -Pni@[%s] -a -sTCP:LISTEN' % (
-        ipv6,)).split()))
-    self.fail('\n'.join(result))
 
   @classmethod
   def setUpClass(cls):
