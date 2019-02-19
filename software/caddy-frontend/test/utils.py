@@ -153,6 +153,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
   def stopSlapOSProcesses(cls):
     if hasattr(cls, '_process_manager'):
       cls._process_manager.killPreviousRun()
+    time.sleep(10)  # give supervisord time to stop everything
 
   @classmethod
   def setUpWorkingDirectory(cls):
