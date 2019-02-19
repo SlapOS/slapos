@@ -443,7 +443,6 @@ wrapper-path = ${buildout:bin-directory}/runTestSuite
 < = run-common
 environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
-  SLAPOS_SOFTWARE_HOME=${buildout:directory}/software_release
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
 instance-home = ${directory:unit-test-path}
