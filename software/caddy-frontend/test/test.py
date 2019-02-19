@@ -410,11 +410,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
 
-  def assertEqualResultJson(self, result, key, value):
+  def assertEqualResultJson(self, result, key, value, additional_error=''):
     try:
       j = result.json()
     except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+      raise ValueError('JSON decode problem in:\n%s\nAdditional error:\n%s' % (
+        result.text, additional_error))
     self.assertTrue(key in j, 'No key %r in %s' % (key, j))
     self.assertEqual(value, j[key])
 
@@ -2568,7 +2569,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    trafficserver_log_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'var', 'log', 'trafficserver', 'manager.log'))
+
+    additional_error = ''
+    for trafficserver_log in trafficserver_log_list:
+      additional_error += '\n'.join([
+        trafficserver_log, open(trafficserver_log).read()])
+    self.assertEqualResultJson(
+      result, 'Path', '/test-path/deeper', additional_error)
 
     headers = result.headers.copy()
 
