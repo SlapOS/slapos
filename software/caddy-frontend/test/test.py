@@ -2548,7 +2548,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     trafficserver_log_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'var', 'log', 'manager.log'))
+      self.instance_path, '*', 'var', 'log', 'trafficserver', 'manager.log'))
 
     additional_error = ''
     for trafficserver_log in trafficserver_log_list:
