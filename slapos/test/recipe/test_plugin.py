@@ -44,7 +44,7 @@ in multi line
       param3=self.options['config-param3'],
       param4=self.options['config-param4'],
     )
-    self.assertIn('extra_config_dict = json.loads("""%s""")' % json.dumps(expected_dict, indent=2, sort_keys=True), content)
+    self.assertIn('extra_config_dict = json.loads("""%s""", strict=False)' % json.dumps(expected_dict, indent=2, sort_keys=True), content)
 
   def test_no_module_set(self):
     recipe = makeRecipe(
@@ -67,7 +67,7 @@ in multi line
     with open(self.output) as f:
       content = f.read()
     self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
-    self.assertIn('extra_config_dict = json.loads("""{}""")', content)
+    self.assertIn('extra_config_dict = json.loads("""{}""", strict=False)', content)
 
 
   def test_bad_parameters(self):

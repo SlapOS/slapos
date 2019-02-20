@@ -35,7 +35,7 @@ import json
 import sys
 sys.path[0:0] = %(path)s
 
-extra_config_dict = json.loads("""%(config)s""")
+extra_config_dict = json.loads("""%(config)s""", strict=False)
 
 # We want to cleanup all imported modules from slapos namespace, because
 # they will conflict with slapos.core.
