@@ -1,5 +1,9 @@
 Changes
 =======
+1.0.92 (2019-02-21)
+-------------------
+
+* plugin recipe: improve recipe to correctly generate promise with parameters which contain control characters
 
 1.0.85 (2018-12-28)
 -----------------------
