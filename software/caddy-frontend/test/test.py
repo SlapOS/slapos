@@ -58,6 +58,10 @@ from cryptography.x509.oid import NameOID
 SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
 SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
 
+# internal ports
+HTTP_SERVER_PORT = 43080
+HTTPS_SERVER_PORT = 43443
+
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
@@ -501,11 +505,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
-      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
+      (SLAPOS_TEST_IPV4, HTTP_SERVER_PORT),
       TestHandler)
 
     server_https = HTTPServer(
-      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
+      (SLAPOS_TEST_IPV4, HTTPS_SERVER_PORT),
       TestHandler)
 
     cls.another_server_ca = CertificateAuthority("Another Server Root CA")

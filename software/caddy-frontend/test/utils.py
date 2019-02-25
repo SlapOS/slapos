@@ -38,6 +38,8 @@ from erp5.util.testnode.SlapOSControler import SlapOSControler
 from erp5.util.testnode.ProcessManager import ProcessManager
 
 
+SLAPOS_PROXY_PORT = 43880
+
 # Utility functions
 def findFreeTCPPort(ip=''):
   """Find a free TCP port to listen to.
@@ -193,7 +195,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
 
     cls.config['proxy_host'] = cls.config['ipv4_address'] = ipv4_address
     cls.config['ipv6_address'] = ipv6_address
-    cls.config['proxy_port'] = findFreeTCPPort(ipv4_address)
+    cls.config['proxy_port'] = SLAPOS_PROXY_PORT
     cls.config['master_url'] = 'http://{proxy_host}:{proxy_port}'.format(
       **cls.config)
 
