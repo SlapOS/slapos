@@ -185,6 +185,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       'partition_reference': cls.__name__,
       # "proper" slapos command must be in $PATH
       'slapos_binary': 'slapos',
+      "node_quantity": "3",
     }
     # Some tests are expecting that local IP is not set to 127.0.0.1
     ipv4_address = os.environ.get('SLAPOS_TEST_IPV4', '127.0.1.1')
