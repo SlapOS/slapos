@@ -32,6 +32,7 @@ from contextlib import closing
 import logging
 import StringIO
 import xmlrpclib
+import signal
 
 import supervisor.xmlrpc
 from erp5.util.testnode.SlapOSControler import SlapOSControler
@@ -148,9 +149,42 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     """
     cls.stopSlapOSProcesses()
 
+  @classmethod
+  def stopSupervisorGracefully(cls):
+    timeout = 10
+
+    def stopSupervisor():
+      # stop supervisor nicely
+      while True:
+        try:
+          cls.getSupervisorRPCServer().supervisor.shutdown()
+        except Exception:
+          break
+
+    def timeout_handler(*args, **kwargs):
+      try:
+        cls.getSupervisorRPCServer().supervisor.shutdown()
+      except Exception:
+        pass
+      else:
+        try:
+          state = cls.getSupervisorRPCServer().supervisor.getState()
+        except Exception as e:
+          state = e
+        raise ValueError('After %ss supervisor still in state %r' (
+          timeout, state))
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
+    try:
+      stopSupervisor()
+    finally:
+      signal.alarm(0)
+
   # Implementation
   @classmethod
   def stopSlapOSProcesses(cls):
+    cls.stopSupervisorGracefully()
     if hasattr(cls, '_process_manager'):
       cls._process_manager.killPreviousRun()
 
