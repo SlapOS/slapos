@@ -161,7 +161,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
         except Exception:
           break
 
-    def timeout_handler():
+    def timeout_handler(signum, frame):
       try:
         cls.getSupervisorRPCServer().supervisor.shutdown()
       except Exception:
