@@ -366,6 +366,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def setUpClass(cls):
+    print 'XXX DEBUG INFO LUKE SHALL APPEAR'
     super(HttpFrontendTestCase, cls).setUpClass()
     # extra class attributes used in HttpFrontendTestCase
 
