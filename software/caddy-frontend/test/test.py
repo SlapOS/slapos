@@ -524,10 +524,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def stopServerProcess(cls):
     if getattr(cls, 'test_server_certificate_file', None) is not None:
       os.unlink(cls.test_server_certificate_file.name)
-    if getattr(cls, 'server_process', None) is None:
-      return
-    cls.server_process.terminate()
-    cls.server_https_process.terminate()
+    for server in ['server_process', 'server_https_process']:
+      process = getattr(cls, server, None)
+      if process is not None:
+        process.terminate()
 
   @classmethod
   def setUpSlaves(cls):
