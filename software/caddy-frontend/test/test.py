@@ -42,7 +42,6 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
-import importlib
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -224,6 +223,7 @@ def getQUIC(url, ip, port):
   except subprocess.CalledProcessError as e:
     return False, e.output
 
+
 def getPluginParameterDict(software_path, filepath):
   bin_file = os.path.join(software_path, 'bin', 'test-plugin-promise')
   with open(bin_file, 'w') as f:
@@ -247,6 +247,7 @@ print json.dumps(module.extra_config_dict)
     return json.loads(result)
   except ValueError, e:
     raise ValueError("%s\nResult was: %s" % (e, result))
+
 
 class TestDataMixin(object):
   @staticmethod
@@ -1081,12 +1082,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
   def test_promise_monitor_httpd_listening_on_tcp(self):
 
-    runpromise_bin = os.path.join(self.software_path, 'bin',
-      'monitor.runpromise')
+    runpromise_bin = os.path.join(
+      self.software_path, 'bin', 'monitor.runpromise')
     result = set([
-      subprocess.call([runpromise_bin, '-c',
-          os.path.join(os.path.dirname(q),
-            '../monitor.conf'),
+      subprocess.call([
+          runpromise_bin, '-c',
+          os.path.join(os.path.dirname(q), '../monitor.conf'),
           '--run-only',
           'monitor-httpd-listening-on-tcp.py']
         ) for q in glob.glob(
@@ -3407,7 +3408,8 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
     self.assertEqual(
-      getPluginParameterDict(self.software_path, re6st_connectivity_promise_file),
+      getPluginParameterDict(
+        self.software_path, re6st_connectivity_promise_file),
       {
         'url': 'http://[2001:67c:1254:4::1]/index.html',
       }
@@ -3459,7 +3461,8 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
     self.assertEqual(
-      getPluginParameterDict(self.software_path, re6st_connectivity_promise_file),
+      getPluginParameterDict(
+        self.software_path, re6st_connectivity_promise_file),
       {
         'url': 'some-re6st-verification-url',
       }
