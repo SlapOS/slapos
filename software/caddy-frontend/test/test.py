@@ -187,16 +187,18 @@ class CertificateAuthority(object):
     return certificate, certificate.public_bytes(serialization.Encoding.PEM)
 
 
-def subprocess_output(*args, **kwargs):
+def subprocess_status_output(*args, **kwargs):
   prc = subprocess.Popen(
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
     *args,
-    **kwargs
-  )
-
+    **kwargs)
   out, err = prc.communicate()
-  return out
+  return prc.returncode, out
+
+
+def subprocess_output(*args, **kwargs):
+  return subprocess_status_output(*args, **kwargs)[1]
 
 
 def isHTTP2(domain, ip):
@@ -294,24 +296,6 @@ class TestDataMixin(object):
     finally:
       self.maxDiff = maxDiff
 
-  def test_plugin_list(self):
-    runtime_data = '\n'.join(sorted([
-      q[len(self.instance_path) + 1:]
-      for q in glob.glob(os.path.join(
-        self.instance_path, '*', 'etc', 'plugin', '*'))
-      if not q.endswith('pyc')  # ignore compiled python
-    ]))
-
-    self.assertTestData(runtime_data)
-
-  def test_promise_list(self):
-    runtime_data = '\n'.join(sorted([
-      q[len(self.instance_path) + 1:]
-      for q in glob.glob(os.path.join(
-        self.instance_path, '*', 'etc', 'promise', '*'))]))
-
-    self.assertTestData(runtime_data)
-
   def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
     runtime_data = []
     for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
@@ -359,6 +343,56 @@ class TestDataMixin(object):
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value=h)
+
+  def test_promise_run_plugin(self):
+    ignored_plugin_list = [
+      '__init__.py',  # that's not a plugin
+      'monitor-http-frontend.py',  # can't check w/o functioning frontend
+    ]
+    runpromise_bin = os.path.join(
+      self.software_path, 'bin', 'monitor.runpromise')
+    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
+    promise_status_list = []
+    for partition_path in sorted(partition_path_list):
+      plugin_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'plugin', '*.py')
+      ))
+      strip = len(os.path.join(partition_path, 'etc', 'plugin')) + 1
+      for plugin_path in plugin_path_list:
+        monitor_conf = os.path.join(partition_path, 'etc', 'monitor.conf')
+        plugin = plugin_path[strip:]
+        if plugin in ignored_plugin_list:
+          continue
+        plugin_status, plugin_result = subprocess_status_output([
+          runpromise_bin,
+          '-c', monitor_conf,
+          '--run-only', plugin
+        ])
+        # sanity check
+        if 'Checking promise %s' % plugin not in plugin_result:
+          plugin_status = 1
+        promise_status_list.append(
+          '%s: %s' % (
+            plugin_path[len(self.instance_path) + 1:],
+            plugin_status == 0 and 'OK' or 'ERROR'))
+
+    self.assertTestData('\n'.join(promise_status_list))
+
+  def test_promise_run_promise(self):
+    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
+    promise_status_list = []
+    for partition_path in sorted(partition_path_list):
+      promise_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'promise', '*')
+      ))
+      for promise_path in promise_path_list:
+        promise_result = subprocess.call([promise_path])
+        promise_status_list.append(
+          '%s: %s' % (
+            promise_path[len(self.instance_path) + 1:],
+            promise_result == 0 and 'OK' or 'ERROR'))
+
+    self.assertTestData('\n'.join(promise_status_list))
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
@@ -1079,25 +1113,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       open(
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
-
-  def test_promise_monitor_httpd_listening_on_tcp(self):
-
-    runpromise_bin = os.path.join(
-      self.software_path, 'bin', 'monitor.runpromise')
-    result = set([
-      subprocess.call([
-          runpromise_bin, '-c',
-          os.path.join(os.path.dirname(q), '../monitor.conf'),
-          '--run-only',
-          'monitor-httpd-listening-on-tcp.py']
-        ) for q in glob.glob(
-          os.path.join(
-            self.instance_path, '*', 'etc', 'plugin',
-            'monitor-httpd-listening-on-tcp.py'))])
-    self.assertEqual(
-      set([0]),
-      result
-    )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
