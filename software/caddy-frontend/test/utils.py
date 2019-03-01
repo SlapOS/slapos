@@ -54,11 +54,11 @@ def findFreeTCPPort(ip=''):
 class SlapOSInstanceTestCase(unittest.TestCase):
   """Install one slapos instance.
 
-  This test case install software(s) and request one instance during `setUpClass`
-  and destroy the instance during `tearDownClass`.
+  This test case install software(s) and request one instance during
+  `setUpClass` and destroy the instance during `tearDownClass`.
 
-  Software Release URL, Instance Software Type and Instance Parameters can be defined
-  on the class.
+  Software Release URL, Instance Software Type and Instance Parameters can be
+  defined on the class.
 
   All tests from the test class will run with the same instance.
 
