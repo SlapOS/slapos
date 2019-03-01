@@ -36,18 +36,21 @@
 
 # Publish information for each slave
 {% for slave_reference, slave_information in slave_information_dict.iteritems() %}
-{%   set publish_section_title = 'publish-%s' % slave_reference %}
-{%   do part_list.append(publish_section_title) %}
+{#   Filter out destroyed, so not existing anymore, slaves #}
+{%   if slave_reference in active_slave_instance_dict %}
+{%     set publish_section_title = 'publish-%s' % slave_reference %}
+{%     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
-{% set log_access_url = slave_information.pop('log-access-urls', None) %}
-{% if log_access_url %}
+{%     set log_access_url = slave_information.pop('log-access-urls', None) %}
+{%     if log_access_url %}
 log-access-url = {{ dumps(json_module.dumps(log_access_url)) }}
-{% endif %}
-{%   for key, value in slave_information.iteritems() %}
+{%     endif %}
+{%     for key, value in slave_information.iteritems() %}
 {{ key }} = {{ dumps(value) }}
-{%   endfor %}
+{%     endfor %}
+{%   endif %}
 {% endfor %}
 
 [buildout]
