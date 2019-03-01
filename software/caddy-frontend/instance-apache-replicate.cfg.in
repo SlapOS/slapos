@@ -223,6 +223,13 @@ custom-group = ${dynamic-publish-slave-information:rendered}
 {{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
 {% endfor %}
 
+[active-slave-instance]
+{% for slave_instance in slave_instance_list %}
+{# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
+{# Note: This functionality is not yet covered by tests, please modify with care #}
+{{ slave_instance['slave_title'] }} = active
+{% endfor %}
+
 [dynamic-publish-slave-information]
 < = jinja2-template-base
 template = {{ template_publish_slave_information }}
@@ -231,6 +238,7 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
     section rejected_slave_information rejected-slave-information
+    section active_slave_instance_dict active-slave-instance
 
 [monitor-conf-parameters]
 monitor-url-list +=
