@@ -1,8 +1,0 @@
-TestEnableHttp2ByDefaultDefaultSlave-0/etc/plugin/__init__.py
-TestEnableHttp2ByDefaultDefaultSlave-0/etc/plugin/buildout-TestEnableHttp2ByDefaultDefaultSlave-0-status.py
-TestEnableHttp2ByDefaultDefaultSlave-0/etc/plugin/check-free-disk-space.py
-TestEnableHttp2ByDefaultDefaultSlave-0/etc/plugin/monitor-bootstrap-status.py
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/plugin/__init__.py
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/plugin/buildout-TestEnableHttp2ByDefaultDefaultSlave-1-status.py
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/plugin/check-free-disk-space.py
-TestEnableHttp2ByDefaultDefaultSlave-1/etc/plugin/monitor-bootstrap-status.py

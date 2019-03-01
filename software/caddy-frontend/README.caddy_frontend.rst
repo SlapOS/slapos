@@ -467,6 +467,18 @@ So it is required to ``DNAT`` from ``${public IP}`` of the computer to the compu
   iptables -A DNAT -d ${public IP}/32 -p udp -m udp --dport ${port} -j DNAT --to-destination ${local IP}:${port}
 
 
+Promises
+========
+
+Note that in some cases promises will fail:
+
+ * not possible to request frontend slave for monitoring (monitoring frontend promise)
+ * no slaves present (configuration promise and others)
+ * no cached slave present (configuration promise and others)
+ * no nginx style slave present (websocket, notebook) (configuration promise and others)
+
+This is known issue and shall be tackled soon.
+
 Notes
 =====
 

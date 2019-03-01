@@ -53,7 +53,7 @@ class Recipe(GenericBaseRecipe):
         for line in (self.options.get('environment') or '').splitlines():
           line = line.strip()
           if line:
-            k, v = line.split('=')
+            k, v = line.split('=', 1)
             environment[k.rstrip()] = v.lstrip()
 
         kw = {}

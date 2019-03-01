@@ -1,8 +1,0 @@
-TestRe6stVerificationUrlDefaultSlave-0/etc/plugin/__init__.py
-TestRe6stVerificationUrlDefaultSlave-0/etc/plugin/buildout-TestRe6stVerificationUrlDefaultSlave-0-status.py
-TestRe6stVerificationUrlDefaultSlave-0/etc/plugin/check-free-disk-space.py
-TestRe6stVerificationUrlDefaultSlave-0/etc/plugin/monitor-bootstrap-status.py
-TestRe6stVerificationUrlDefaultSlave-1/etc/plugin/__init__.py
-TestRe6stVerificationUrlDefaultSlave-1/etc/plugin/buildout-TestRe6stVerificationUrlDefaultSlave-1-status.py
-TestRe6stVerificationUrlDefaultSlave-1/etc/plugin/check-free-disk-space.py
-TestRe6stVerificationUrlDefaultSlave-1/etc/plugin/monitor-bootstrap-status.py

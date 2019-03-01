@@ -1,8 +1,0 @@
-TestMalformedBackenUrlSlave-0/etc/plugin/__init__.py
-TestMalformedBackenUrlSlave-0/etc/plugin/buildout-TestMalformedBackenUrlSlave-0-status.py
-TestMalformedBackenUrlSlave-0/etc/plugin/check-free-disk-space.py
-TestMalformedBackenUrlSlave-0/etc/plugin/monitor-bootstrap-status.py
-TestMalformedBackenUrlSlave-1/etc/plugin/__init__.py
-TestMalformedBackenUrlSlave-1/etc/plugin/buildout-TestMalformedBackenUrlSlave-1-status.py
-TestMalformedBackenUrlSlave-1/etc/plugin/check-free-disk-space.py
-TestMalformedBackenUrlSlave-1/etc/plugin/monitor-bootstrap-status.py

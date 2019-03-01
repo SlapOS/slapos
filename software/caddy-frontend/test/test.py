@@ -187,16 +187,18 @@ class CertificateAuthority(object):
     return certificate, certificate.public_bytes(serialization.Encoding.PEM)
 
 
-def subprocess_output(*args, **kwargs):
+def subprocess_status_output(*args, **kwargs):
   prc = subprocess.Popen(
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
     *args,
-    **kwargs
-  )
-
+    **kwargs)
   out, err = prc.communicate()
-  return out
+  return prc.returncode, out
+
+
+def subprocess_output(*args, **kwargs):
+  return subprocess_status_output(*args, **kwargs)[1]
 
 
 def isHTTP2(domain, ip):
@@ -222,6 +224,31 @@ def getQUIC(url, ip, port):
       quic_client_command.split(), stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as e:
     return False, e.output
+
+
+def getPluginParameterDict(software_path, filepath):
+  bin_file = os.path.join(software_path, 'bin', 'test-plugin-promise')
+  with open(bin_file, 'w') as f:
+    f.write("""#!%s/bin/pythonwitheggs
+import os
+import importlib
+import sys
+import json
+
+filepath = sys.argv[1]
+sys.path[0:0] = [os.path.dirname(filepath)]
+filename = os.path.basename(filepath)
+module = importlib.import_module(os.path.splitext(filename)[0])
+
+print json.dumps(module.extra_config_dict)
+    """ % software_path)
+
+  os.chmod(bin_file, 0755)
+  result = subprocess_output([bin_file, filepath]).strip()
+  try:
+    return json.loads(result)
+  except ValueError, e:
+    raise ValueError("%s\nResult was: %s" % (e, result))
 
 
 class TestDataMixin(object):
@@ -268,24 +295,6 @@ class TestDataMixin(object):
       raise
     finally:
       self.maxDiff = maxDiff
-
-  def test_plugin_list(self):
-    runtime_data = '\n'.join(sorted([
-      q[len(self.instance_path) + 1:]
-      for q in glob.glob(os.path.join(
-        self.instance_path, '*', 'etc', 'plugin', '*'))
-      if not q.endswith('pyc')  # ignore compiled python
-    ]))
-
-    self.assertTestData(runtime_data)
-
-  def test_promise_list(self):
-    runtime_data = '\n'.join(sorted([
-      q[len(self.instance_path) + 1:]
-      for q in glob.glob(os.path.join(
-        self.instance_path, '*', 'etc', 'promise', '*'))]))
-
-    self.assertTestData(runtime_data)
 
   def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
     runtime_data = []
@@ -334,6 +343,56 @@ class TestDataMixin(object):
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value=h)
+
+  def test_promise_run_plugin(self):
+    ignored_plugin_list = [
+      '__init__.py',  # that's not a plugin
+      'monitor-http-frontend.py',  # can't check w/o functioning frontend
+    ]
+    runpromise_bin = os.path.join(
+      self.software_path, 'bin', 'monitor.runpromise')
+    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
+    promise_status_list = []
+    for partition_path in sorted(partition_path_list):
+      plugin_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'plugin', '*.py')
+      ))
+      strip = len(os.path.join(partition_path, 'etc', 'plugin')) + 1
+      for plugin_path in plugin_path_list:
+        monitor_conf = os.path.join(partition_path, 'etc', 'monitor.conf')
+        plugin = plugin_path[strip:]
+        if plugin in ignored_plugin_list:
+          continue
+        plugin_status, plugin_result = subprocess_status_output([
+          runpromise_bin,
+          '-c', monitor_conf,
+          '--run-only', plugin
+        ])
+        # sanity check
+        if 'Checking promise %s' % plugin not in plugin_result:
+          plugin_status = 1
+        promise_status_list.append(
+          '%s: %s' % (
+            plugin_path[len(self.instance_path) + 1:],
+            plugin_status == 0 and 'OK' or 'ERROR'))
+
+    self.assertTestData('\n'.join(promise_status_list))
+
+  def test_promise_run_promise(self):
+    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
+    promise_status_list = []
+    for partition_path in sorted(partition_path_list):
+      promise_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'promise', '*')
+      ))
+      for promise_path in promise_path_list:
+        promise_result = subprocess.call([promise_path])
+        promise_status_list.append(
+          '%s: %s' % (
+            promise_path[len(self.instance_path) + 1:],
+            promise_result == 0 and 'OK' or 'ERROR'))
+
+    self.assertTestData('\n'.join(promise_status_list))
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
@@ -1030,8 +1089,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqual(
       set([
-        'monitor-http-frontend',
-        'monitor-httpd-listening-on-tcp',
         'promise-monitor-httpd-is-process-older-than-dependency-set',
       ]),
       set(os.listdir(os.path.join(partition_path, 'etc', 'promise'))))
@@ -1040,6 +1097,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       set([
         'monitor-bootstrap-status.py',
         'check-free-disk-space.py',
+        'monitor-http-frontend.py',
+        'monitor-httpd-listening-on-tcp.py',
         'buildout-%s-0-status.py' % (type(self).__name__,),
         '__init__.py',
       ]),
@@ -1054,17 +1113,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       open(
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
-
-  def test_promise_monitor_httpd_listening_on_tcp(self):
-      result = set([
-        subprocess.call(q) for q in glob.glob(
-          os.path.join(
-            self.instance_path, '*', 'etc', 'promise',
-            'monitor-httpd-listening-on-tcp'))])
-      self.assertEqual(
-        set([0]),
-        result
-      )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
@@ -2410,18 +2458,17 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv6-test-ipv6-packet-list-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
     self.assertEqual(
-      '-a monitor-ipv6-test',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'address': 'monitor-ipv6-test'
+      }
     )
 
   def test_monitor_ipv4_test(self):
@@ -2452,18 +2499,18 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(self.software_path, 'bin', 'is-icmp-packet-lost')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv4-test-ipv4-packet-list-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
     self.assertEqual(
-      '-4 -a monitor-ipv4-test',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': 'monitor-ipv4-test',
+      }
     )
 
   def test_re6st_optimal_test(self):
@@ -2494,19 +2541,18 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(
-      self.software_path, 'bin', 'check-re6st-optimal-status')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-re6st-optimal-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-re6st-optimal-test.py'))[0]
+    # get promise module and check that parameters are ok
     self.assertEqual(
-      '-4 ipv4 -6 ipv6',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'ipv4',
+        'ipv6': 'ipv6'
+      }
     )
 
   def test_enable_cache(self):
@@ -3370,14 +3416,18 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
 
     re6st_connectivity_promise_list = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        're6st-connectivity'))
+        self.instance_path, '*', 'etc', 'plugin',
+        're6st-connectivity.py'))
 
     self.assertEqual(1, len(re6st_connectivity_promise_list))
+    re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    self.assertTrue(
-      'URL="http://[2001:67c:1254:4::1]/index.html"' in
-      open(re6st_connectivity_promise_list[0]).read()
+    self.assertEqual(
+      getPluginParameterDict(
+        self.software_path, re6st_connectivity_promise_file),
+      {
+        'url': 'http://[2001:67c:1254:4::1]/index.html',
+      }
     )
 
 
@@ -3419,14 +3469,18 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
 
     re6st_connectivity_promise_list = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        're6st-connectivity'))
+        self.instance_path, '*', 'etc', 'plugin',
+        're6st-connectivity.py'))
 
     self.assertEqual(1, len(re6st_connectivity_promise_list))
+    re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
-    self.assertTrue(
-      'URL="some-re6st-verification-url"' in
-      open(re6st_connectivity_promise_list[0]).read()
+    self.assertEqual(
+      getPluginParameterDict(
+        self.software_path, re6st_connectivity_promise_file),
+      {
+        'url': 'some-re6st-verification-url',
+      }
     )
 
 
@@ -3716,7 +3770,7 @@ https://www.google.com {}""",
       },
       're6st-optimal-test-unsafe': {
         're6st-optimal-test':
-        'new\nline;rm -fr ~;,new\\line\n[s${esection:eoption}',
+        'new\nline;rm -fr ~;,new line\n[s${esection:eoption}',
       },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
@@ -3835,23 +3889,21 @@ https://www.google.com {}""",
 
     self.assertEqual(httplib.NOT_FOUND, result.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(
-      self.software_path, 'bin', 'check-re6st-optimal-status')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-unsafe-re6st-optimal-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-unsafe-re6st-optimal-test.py'))[0]
 
     # Note: The result is a bit differnt from the request (newlines stripped),
     #       but good enough to prove, that ${esection:eoption} has been
     #       correctly passed to the script.
     self.assertEqual(
-      '-4 newline [s${esection:eoption} -6 new line;rm -fr ~;',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'new line\n[s${esection:eoption}',
+        'ipv6': 'new\nline;rm -fr ~;',
+      }
     )
 
   def test_re6st_optimal_test_nocomma(self):
@@ -3881,8 +3933,8 @@ https://www.google.com {}""",
     # assert that there is no nocomma file
     monitor_file_list = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_re6st-optimal-test-nocomma-re6st-optimal-test'))
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_re6st-optimal-test-nocomma-re6st-optimal-test.py'))
     self.assertEqual(
       [],
       monitor_file_list
@@ -4029,19 +4081,19 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(
-      self.software_path, 'bin', 'is-icmp-packet-lost')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+
     self.assertEqual(
-      '-4 -a ${section:option} afternewline ipv4',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': '${section:option}\nafternewline ipv4',
+      }
     )
 
   def test_monitor_ipv6_test_unsafe(self):
@@ -4072,19 +4124,17 @@ https://www.google.com {}""",
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
 
-    # rewrite SR/bin/is-icmp-packet-lost
-    fname = os.path.join(
-      self.software_path, 'bin', 'is-icmp-packet-lost')
-    self.assertTrue(os.path.isfile(fname))
-    open(fname, 'w').write('echo "$@"')
-    # call the monitor for this partition
     monitor_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'etc', 'promise',
-        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test'))[0]
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
     self.assertEqual(
-      '-a ${section:option} afternewline ipv6',
-      subprocess_output(monitor_file).strip()
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'address': '${section:option}\nafternewline ipv6'
+      }
     )
 
   def test_ssl_key_ssl_crt_unsafe(self):
