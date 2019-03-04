@@ -348,6 +348,7 @@ class TestDataMixin(object):
     ignored_plugin_list = [
       '__init__.py',  # that's not a plugin
       'monitor-http-frontend.py',  # can't check w/o functioning frontend
+      'trafficserver-cache-availability.py',  # randomly passing when done
     ]
     runpromise_bin = os.path.join(
       self.software_path, 'bin', 'monitor.runpromise')
