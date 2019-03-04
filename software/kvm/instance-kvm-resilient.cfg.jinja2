@@ -68,12 +68,14 @@ return =
 # KVM related parameters
 # XXX: return ALL parameters (like nat rules), through jinja
   backend-url url ip
+{{ '  ' }}ipv6-network-info
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
 ipv6 = ${request-kvm:connection-ip}
+ipv6-network-info = ${request-kvm:connection-ipv6-network-info}
 monitor-password = ${publish-early:monitor-password}
 monitor-user = ${monitor-publish-parameters:monitor-user}
 {% if monitor_dict -%}
