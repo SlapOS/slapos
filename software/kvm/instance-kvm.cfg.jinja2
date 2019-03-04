@@ -466,7 +466,7 @@ key_info = Get the publick key file in your VM with the command: wget {{ kvm_htt
 
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr', '') != "" -%}
 ipv4-network-info =
-  Use these configurations below to configure IPv4 on interface {{ iface }} in your VM.
+  Use this configuration in /etc/network/interface to configure IPv4 on interface {{ iface }} in your VM.
   IFACE={{ iface }}
   ${network-config-ipv4:ifconfig}
   ${network-config-ipv4:route-iface}
@@ -480,14 +480,15 @@ ipv4-network-info =
 
 ipv6-network-info =
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" %}
-  Use these configurations below to configure IPv6 on interface {{ iface }} in your VM.
-  IFACE={{ iface }}
-  ip link set dev $IFACE up
-  ${network-config-ipv6:ipv6-add-address}
-  ${network-config-ipv6:ipv6-add-default-route}
+  Use this configuration in /etc/network/interfaces to configure IPv6 on interface {{ iface }} in your VM.
+  auto {{ iface }}
+  iface {{ iface }} inet6 static
+  	address {{ slap_configuration.get('tap-ipv6-gateway') }}
+  	netmask {{ slap_configuration.get('tap-ipv6-network').split('/')[1] }}
+  	gateway {{ slap_configuration.get('tap-ipv6-addr') }}
 {% if enable_http == 'true' %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/ipv6_config.sh | /bin/sh -
+  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -
 {% endif %}
 {% endif %}
 
@@ -524,16 +525,19 @@ update-command = ${:command}
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr', '') != "" -%}
 [network-config-ipv6]
 recipe = plone.recipe.command
-path = ${directory:public}/ipv6_config.sh
-ipv6-add-address = ip -6 address add {{ slap_configuration.get('tap-ipv6-network') }} dev \$IFACE
+filename = ipv6_config.sh
+path = ${directory:public}/${:filename}
+ipv6-add-address = ip -6 address add {{ slap_configuration.get('tap-ipv6-gateway') }}/{{ slap_configuration.get('tap-ipv6-network').split('/')[1] }} dev \$IFACE
 ipv6-add-default-route =
-  ip -6 route del default ; ip -6 route add default dev \$IFACE via {{ slap_configuration.get('tap-ipv6-gateway') }}
+  ip -6 route del default ; ip -6 route add default dev \$IFACE via {{ slap_configuration.get('tap-ipv6-addr') }}
+ipv6-set-link-up = ip link set dev \$IFACE up
 command =
   cat > ${:path} << EOF
   #!/bin/sh
   IFACE={{ iface }}
   ${:ipv6-add-address}
   ${:ipv6-add-default-route}
+  ${:ipv6-set-link-up}
   EOF
 update-command = ${:command}
 {% endif -%}
