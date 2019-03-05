@@ -25,5 +25,4 @@ TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/nginx_fronte
 TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/nginx_frontend_ipv6_http.py: OK
 TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/nginx_frontend_ipv6_https.py: OK
 TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/re6st-connectivity.py: OK
-TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/trafficserver-cache-availability.py: ERROR
 TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2-1/etc/plugin/trafficserver-port-listening.py: OK

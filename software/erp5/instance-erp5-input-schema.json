@@ -384,7 +384,7 @@
         "ssl": {
           "description": "HTTPS certificate generation parameters",
           "properties": {
-            "caucase-url":{
+            "caucase-url": {
               "title": "Caucase URL",
               "description": "URL of caucase service to use. If not set, global setting will be used.",
               "type": "string"
