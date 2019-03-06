@@ -25,7 +25,9 @@
 #
 ##############################################################################
 
+import os
 import shlex
+import glob
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -68,7 +70,13 @@ class Recipe(GenericBaseRecipe):
         if hash_files:
           hash_file_list = hash_files.split()
           hash = self.generateHashFromFiles(hash_file_list)
+          wrapper_path_list = glob.glob('%s-*' % wrapper_path)
           wrapper_path = "%s-%s" % (wrapper_path, hash)
+          # len(wrapper_path_list) should be 1
+          for path in wrapper_path_list:
+            # if path != wrapper_path, then hash changed, we remove old hash
+            if path != wrapper_path:
+              os.unlink(path)
 
         return self.createWrapper(wrapper_path, args, environment, **kw)
 
