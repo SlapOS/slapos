@@ -182,7 +182,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       "log_directory": cls.working_directory,
       "computer_id": 'slapos.test',  # XXX
       'proxy_database': os.path.join(cls.working_directory, 'proxy.db'),
-      'partition_reference': cls.__name__,
+      'partition_reference': 'T',  # minimise path length, see https://github.com/apache/trafficserver/issues/2421
       # "proper" slapos command must be in $PATH
       'slapos_binary': 'slapos',
       'node_quantity': '3',
