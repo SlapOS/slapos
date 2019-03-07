@@ -2,49 +2,9 @@
 extends = {{ template_runner_path }}
           {{ pbsready_export_template_path }}
 
-parts +=
-  nginx_conf
-  nginx-launcher
-  certificate-authority
-  ca-nginx
-  certificate-authority-service
-  ca-nginx-service
-  logrotate-entry-nginx
-  gunicorn-launcher
-  gunicorn-graceful
-  publish-connection-information
-  slaprunner-promise
-  apache-httpd-promise
-  logrotate-entry-apache-httpd
-  slaprunner-supervisord-wrapper
-  runner-sshd-add-authorized-key
-  runner-sshd-graceful
-  runner-sshd-promise
-  runner-sshkeys-authority
-  runner-sshkeys-authority-service
-  runner-sshkeys-sshd
-  runner-sshkeys-sshd-service
-  runtestsuite
-  symlinks
-  shellinabox
-  shellinabox-service
-  slapos-cfg
-  cron-entry-prepare-software
-  deploy-instance-parameters
-  instance-software
-  instance-software-type
-  minishell-cwd
-  bash-profile
-  supervisord-wrapper
-  supervisord-promise
-  logrotate-entry-supervisord
-  logrotate-entry-slapgrid
-  httpd-graceful-wrapper
-## Monitoring part
-## Monitor for runner
-  monitor-base
-  monitor-check-resilient-feed-file
-  monitor-check-webrunner-internal-instance
+# parts from {{ template_runner_path }} are overriden by
+# {{ pbsready_export_template_path }} so we reinclude them here
+parts += ${:common-runner-parts}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
