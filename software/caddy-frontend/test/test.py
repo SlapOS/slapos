@@ -825,7 +825,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     return {
       'empty': {
       },
-      'url': {
+      'Url': {
         'url': cls.backend_url,
       },
       'url_https-url': {
@@ -1203,7 +1203,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
+    parameter_dict = self.parseSlaveParameterDict('Url')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1265,7 +1265,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     # check that try_duration == 5 in the test_url slave
     slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_url.conf'))[0]
+      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
     with open(slave_configuration_file) as fh:
       content = fh.read()
       self.assertTrue('try_duration 5s' in content)
