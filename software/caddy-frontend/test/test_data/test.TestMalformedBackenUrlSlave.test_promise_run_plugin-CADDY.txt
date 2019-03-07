@@ -1,8 +1,8 @@
-T-0/etc/plugin/buildout-TestMalformedBackenUrlSlave-0-status.py: OK
+T-0/etc/plugin/buildout-T-0-status.py: OK
 T-0/etc/plugin/check-free-disk-space.py: OK
 T-0/etc/plugin/monitor-bootstrap-status.py: OK
 T-0/etc/plugin/monitor-httpd-listening-on-tcp.py: OK
-T-1/etc/plugin/buildout-TestMalformedBackenUrlSlave-1-status.py: OK
+T-1/etc/plugin/buildout-T-1-status.py: OK
 T-1/etc/plugin/caddy_cached.py: ERROR
 T-1/etc/plugin/caddy_frontend_ipv4_http.py: OK
 T-1/etc/plugin/caddy_frontend_ipv4_https.py: OK
