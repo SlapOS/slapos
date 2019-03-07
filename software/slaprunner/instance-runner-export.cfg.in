@@ -14,8 +14,8 @@ parts +=
   gunicorn-graceful
   publish-connection-information
   slaprunner-promise
-  apache-httpd-promise
   logrotate-entry-apache-httpd
+  apache-httpd-promise
   slaprunner-supervisord-wrapper
   runner-sshd-add-authorized-key
   runner-sshd-graceful
@@ -40,11 +40,19 @@ parts +=
   logrotate-entry-supervisord
   logrotate-entry-slapgrid
   httpd-graceful-wrapper
+{% if slapparameter_dict.get('no-ipv4-frontend', 'false') == 'false' %}
+  slaprunner-frontend-promise
+  httpd-frontend-promise
+{% endif %}
+{% if slapparameter_dict.get('custom-frontend-backend-url') and slapparameter_dict.get('check-custom-frontend-promise', 'false') == 'true' %}
+  custom-frontend-promise
+{% endif %}
 ## Monitoring part
-## Monitor for runner
   monitor-base
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
+## Usability part
+  template-slapuser-script
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
