@@ -1100,7 +1100,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-free-disk-space.py',
         'monitor-http-frontend.py',
         'monitor-httpd-listening-on-tcp.py',
-        'buildout-%s-0-status.py' % (type(self).__name__,),
+        'buildout-T-0-status.py',
         '__init__.py',
       ]),
       set([
@@ -3609,10 +3609,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict
     )
     master_monitor_conf = open(os.path.join(
-      self.instance_path, 'TestDefaultMonitorHttpdPort-0', 'etc',
+      self.instance_path, 'T-0', 'etc',
       'monitor-httpd.conf')).read()
     slave_monitor_conf = open(os.path.join(
-      self.instance_path, 'TestDefaultMonitorHttpdPort-1', 'etc',
+      self.instance_path, 'T-1', 'etc',
       'monitor-httpd.conf')).read()
 
     self.assertTrue(
