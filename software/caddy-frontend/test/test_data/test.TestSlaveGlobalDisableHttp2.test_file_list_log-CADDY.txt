@@ -1,6 +1,8 @@
 T-0/var/log/monitor-httpd-error.log
 T-1/var/log/frontend-access.log
 T-1/var/log/frontend-error.log
+T-1/var/log/httpd/_Url_access_log
+T-1/var/log/httpd/_Url_error_log
 T-1/var/log/httpd/_apache_custom_http_s-accepted_access_log
 T-1/var/log/httpd/_apache_custom_http_s-accepted_error_log
 T-1/var/log/httpd/_caddy_custom_http_s-accepted_access_log
@@ -83,8 +85,6 @@ T-1/var/log/httpd/_type-zope-virtualhostroot-https-port_access_log
 T-1/var/log/httpd/_type-zope-virtualhostroot-https-port_error_log
 T-1/var/log/httpd/_type-zope_access_log
 T-1/var/log/httpd/_type-zope_error_log
-T-1/var/log/httpd/_url_access_log
-T-1/var/log/httpd/_url_error_log
 T-1/var/log/httpd/_url_https-url_access_log
 T-1/var/log/httpd/_url_https-url_error_log
 T-1/var/log/monitor-httpd-error.log

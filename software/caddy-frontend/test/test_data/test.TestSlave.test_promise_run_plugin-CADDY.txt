@@ -9,6 +9,8 @@ T-1/etc/plugin/caddy_frontend_ipv4_https.py: OK
 T-1/etc/plugin/caddy_frontend_ipv6_http.py: OK
 T-1/etc/plugin/caddy_frontend_ipv6_https.py: OK
 T-1/etc/plugin/caddy_ssl_cached.py: OK
+T-1/etc/plugin/check-_Url-error-log-last-day.py: OK
+T-1/etc/plugin/check-_Url-error-log-last-hour.py: OK
 T-1/etc/plugin/check-_apache_custom_http_s-accepted-error-log-last-day.py: OK
 T-1/etc/plugin/check-_apache_custom_http_s-accepted-error-log-last-hour.py: OK
 T-1/etc/plugin/check-_caddy_custom_http_s-accepted-error-log-last-day.py: OK
@@ -96,8 +98,6 @@ T-1/etc/plugin/check-_type-zope-virtualhostroot-http-port-error-log-last-day.py:
 T-1/etc/plugin/check-_type-zope-virtualhostroot-http-port-error-log-last-hour.py: OK
 T-1/etc/plugin/check-_type-zope-virtualhostroot-https-port-error-log-last-day.py: OK
 T-1/etc/plugin/check-_type-zope-virtualhostroot-https-port-error-log-last-hour.py: OK
-T-1/etc/plugin/check-_url-error-log-last-day.py: OK
-T-1/etc/plugin/check-_url-error-log-last-hour.py: OK
 T-1/etc/plugin/check-_url_https-url-error-log-last-day.py: OK
 T-1/etc/plugin/check-_url_https-url-error-log-last-hour.py: OK
 T-1/etc/plugin/check-free-disk-space.py: OK
