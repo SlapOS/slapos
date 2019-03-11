@@ -1,5 +1,5 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
-{% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
+{% set use_tap = slapparameter_dict.get('use-tap', 'True').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', 'False').lower() -%}
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
@@ -677,7 +677,7 @@ cpu-model = host
 
 nat-rules = 22 80 443
 use-nat = True
-use-tap = False
+use-tap = True
 nat-restrict-mode = False
 enable-vhost = False
 
