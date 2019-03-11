@@ -3588,6 +3588,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       '-frontend-1-state': 'stopped',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
     }
 
   @classmethod
