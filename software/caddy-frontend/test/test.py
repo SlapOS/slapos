@@ -825,7 +825,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     return {
       'empty': {
       },
-      'url': {
+      'Url': {
         'url': cls.backend_url,
       },
       'url_https-url': {
@@ -1100,7 +1100,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'check-free-disk-space.py',
         'monitor-http-frontend.py',
         'monitor-httpd-listening-on-tcp.py',
-        'buildout-%s-0-status.py' % (type(self).__name__,),
+        'buildout-T-0-status.py',
         '__init__.py',
       ]),
       set([
@@ -1203,7 +1203,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
+    parameter_dict = self.parseSlaveParameterDict('Url')
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertEqual(
@@ -1265,7 +1265,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     # check that try_duration == 5 in the test_url slave
     slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_url.conf'))[0]
+      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
     with open(slave_configuration_file) as fh:
       content = fh.read()
       self.assertTrue('try_duration 5s' in content)
@@ -3588,6 +3588,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       '-frontend-1-state': 'stopped',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'nginx_port': NGINX_HTTPS_PORT,
+      'plain_nginx_port': NGINX_HTTP_PORT,
     }
 
   @classmethod
@@ -3609,10 +3613,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict
     )
     master_monitor_conf = open(os.path.join(
-      self.instance_path, 'TestDefaultMonitorHttpdPort-0', 'etc',
+      self.instance_path, 'T-0', 'etc',
       'monitor-httpd.conf')).read()
     slave_monitor_conf = open(os.path.join(
-      self.instance_path, 'TestDefaultMonitorHttpdPort-1', 'etc',
+      self.instance_path, 'T-1', 'etc',
       'monitor-httpd.conf')).read()
 
     self.assertTrue(

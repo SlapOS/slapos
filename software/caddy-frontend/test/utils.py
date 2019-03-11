@@ -182,9 +182,10 @@ class SlapOSInstanceTestCase(unittest.TestCase):
       "log_directory": cls.working_directory,
       "computer_id": 'slapos.test',  # XXX
       'proxy_database': os.path.join(cls.working_directory, 'proxy.db'),
-      'partition_reference': cls.__name__,
+      'partition_reference': 'T',  # minimise path length, see https://github.com/apache/trafficserver/issues/2421
       # "proper" slapos command must be in $PATH
       'slapos_binary': 'slapos',
+      'node_quantity': '3',
     }
     # Some tests are expecting that local IP is not set to 127.0.0.1
     ipv4_address = os.environ.get('SLAPOS_TEST_IPV4', '127.0.1.1')

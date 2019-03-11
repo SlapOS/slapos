@@ -1,6 +1,6 @@
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-default-error-log-last-day
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-default-error-log-last-hour
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-false-error-log-last-day
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-false-error-log-last-hour
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-true-error-log-last-day
-TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2-1/etc/monitor-promise/check-_enable-http2-true-error-log-last-hour
+T-1/etc/monitor-promise/check-_enable-http2-default-error-log-last-day
+T-1/etc/monitor-promise/check-_enable-http2-default-error-log-last-hour
+T-1/etc/monitor-promise/check-_enable-http2-false-error-log-last-day
+T-1/etc/monitor-promise/check-_enable-http2-false-error-log-last-hour
+T-1/etc/monitor-promise/check-_enable-http2-true-error-log-last-day
+T-1/etc/monitor-promise/check-_enable-http2-true-error-log-last-hour

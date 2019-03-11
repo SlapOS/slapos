@@ -87,7 +87,7 @@ output = {{ plugin_directory }}/${:name}
 {#   Add slave log directory to the slave log access dict #}
 {%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
 
-{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
+{%   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
 {%   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}

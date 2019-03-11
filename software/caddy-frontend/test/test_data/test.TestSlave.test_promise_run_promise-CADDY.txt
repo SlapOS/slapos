@@ -1,4 +1,4 @@
-TestSlave-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
-TestSlave-1/etc/promise/caddy-frontend-is-running-actual-software-release: OK
-TestSlave-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
-TestSlave-1/etc/promise/promise-nginx-is-process-older-than-dependency-set: OK
+T-0/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
+T-1/etc/promise/caddy-frontend-is-running-actual-software-release: OK
+T-1/etc/promise/promise-monitor-httpd-is-process-older-than-dependency-set: OK
+T-1/etc/promise/promise-nginx-is-process-older-than-dependency-set: OK

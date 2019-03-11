@@ -224,11 +224,13 @@ custom-group = ${dynamic-publish-slave-information:rendered}
 {% endfor %}
 
 [active-slave-instance]
+{% set active_slave_instance_list = [] %}
 {% for slave_instance in slave_instance_list %}
 {# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
-{{ slave_instance['slave_title'] }} = active
+{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
 {% endfor %}
+active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list) }}
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
