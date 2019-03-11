@@ -3,12 +3,12 @@ T-0:certificate_authority-{hash}-on-watch RUNNING
 T-0:crond-{hash} RUNNING
 T-0:monitor-httpd-{hash}-on-watch EXITED
 T-0:monitor-httpd-graceful EXITED
+T-1:6tunnel-11080-{hash}-on-watch STOPPED
+T-1:6tunnel-11443-{hash}-on-watch STOPPED
+T-1:6tunnel-12080-{hash}-on-watch STOPPED
+T-1:6tunnel-12443-{hash}-on-watch STOPPED
 T-1:6tunnel-26011-{hash}-on-watch STOPPED
 T-1:6tunnel-26012-{hash}-on-watch STOPPED
-T-1:6tunnel-4443-{hash}-on-watch STOPPED
-T-1:6tunnel-8080-{hash}-on-watch STOPPED
-T-1:6tunnel-8081-{hash}-on-watch STOPPED
-T-1:6tunnel-9443-{hash}-on-watch STOPPED
 T-1:bootstrap-monitor STOPPED
 T-1:certificate_authority-{hash}-on-watch STOPPED
 T-1:crond-{hash} STOPPED
