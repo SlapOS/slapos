@@ -59,8 +59,8 @@ KVM instance parameters:
     For port forwarding to IPv6 of slapos partition
 - use-nat (default: True)
     Add one interface using qemu User Network (NAT), this interface support nat-rules.
-- use-tap (default: False)
-    Add One interface that use tap interface
+- use-tap (default: True)
+    Add one interface that uses tap interface from the host
 - enable-vhost (default: False)
     Increase network speed by enabling vhost on qemu. (To use if the module is loaded on host machine)
 

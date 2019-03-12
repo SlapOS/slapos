@@ -266,9 +266,9 @@
     },
     "use-tap": {
       "title": "Use QEMU TAP network interface",
-      "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
+      "description": "Use QEMU TAP network interface, requires taps creation on SlapOS Node.",
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "use-nat": {
       "title": "Use QEMU USER Mode interface (NAT)",
@@ -278,7 +278,7 @@
     },
     "nat-rules": {
       "title": "List of rules for NAT of QEMU user mode network stack.",
-      "description": "List of rules for NAT of QEMU user mode network stack, as space-separated list of ports (with optional protocol). For each port specified, it will redirect port x of the VM (example: \"80 udp:53\") to the port x + 10000 of the public IPv6 of the host (example: \"10080 udp:10053\"). Ignored if \"use-tap\" parameter is enabled.",
+      "description": "List of rules for NAT of QEMU user mode network stack, as space-separated list of ports (with optional protocol). For each port specified, it will redirect port x of the VM (example: \"80 udp:53\") to the port x + 10000 of the public IPv6 of the host (example: \"10080 udp:10053\").",
       "type": "string",
       "default": "22 80 443"
     },
