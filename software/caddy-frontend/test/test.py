@@ -521,7 +521,6 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   def test(self):
@@ -557,7 +556,6 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   def test(self):
@@ -912,7 +910,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3020,7 +3017,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3090,7 +3086,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3183,7 +3178,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3273,7 +3267,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3330,7 +3323,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       're6st-verification-url': 'some-re6st-verification-url',
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3389,7 +3381,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3487,7 +3478,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'plain_nginx_port': NGINX_HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3541,7 +3531,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -3654,7 +3643,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -4076,7 +4064,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -4338,7 +4325,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -4462,7 +4448,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
-      'automatic-internal-kedifa-caucase-csr': 'true',
     }
 
   @classmethod
@@ -5235,7 +5220,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
     'mpm-graceful-shutdown-timeout': 2,
-    'automatic-internal-kedifa-caucase-csr': 'true',
   }
 
   @classmethod
