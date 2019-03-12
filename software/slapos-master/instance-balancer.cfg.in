@@ -27,10 +27,10 @@ mode = 644
      updater_path='${directory:services-on-watch}/caucase-updater',
      url=ssl_parameter_dict['caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
-     crt_path='${apache-conf-ssl:cert}',
+     crt_path='${apache-conf-ssl:caucase-cert}',
      ca_path='${apache-conf-ssl:ca-cert}',
      crl_path='${apache-conf-ssl:crl}',
-     key_path='${apache-conf-ssl:key}',
+     key_path='${apache-conf-ssl:caucase-key}',
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
      template_csr_pem=ssl_parameter_dict.get('csr'),
@@ -119,8 +119,24 @@ hash-files = ${haproxy-cfg:rendered}
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
 key = ${directory:apache-conf}/apache.pem
+# XXX caucase certificate is not supported by caddy for now
+caucase-cert = ${directory:apache-conf}/apache-caucase.crt
+caucase-key = ${directory:apache-conf}/apache-caucase.pem
 ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
+
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
+{%- endif %}
 
 [apache-conf-parameter-dict]
 backend-list = {{ dumps(apache_dict.values()) }}
@@ -133,8 +149,8 @@ access-log = ${directory:log}/apache-access.log
 # Apache 2.4's default value (60 seconds) can be a bit too short
 timeout = 300
 # Basic SSL server configuration
-cert = ${apache-conf-ssl:cert}
-key = ${apache-conf-ssl:key}
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 # Client x509 auth
@@ -218,6 +234,7 @@ services-on-watch = ${:etc}/service
 var = ${buildout:directory}/var
 run = ${:var}/run
 log = ${:var}/log
+srv = ${buildout:directory}/srv
 ca-dir = ${buildout:directory}/srv/ssl
 requests = ${:ca-dir}/requests
 private = ${:ca-dir}/private
