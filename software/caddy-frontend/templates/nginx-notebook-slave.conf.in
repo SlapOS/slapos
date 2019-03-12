@@ -23,7 +23,7 @@ https://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_htt
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
   tls {{ ssl['certificate'] }} {{ ssl['key'] }} {
@@ -57,7 +57,7 @@ http://{{ slave_parameter.get('custom_domain') }}:{{ slave_parameter['nginx_http
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
   proxy / {{ upstream }} {

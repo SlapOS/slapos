@@ -1268,7 +1268,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} SOME_REMOTE_USER ' \
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - SOME_REMOTE_USER ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
                  r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
                  r'"python-requests.*" \d+'
