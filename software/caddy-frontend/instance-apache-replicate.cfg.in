@@ -1,6 +1,6 @@
 {% if slap_software_type in software_type %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', '').lower() in TRUE_VALUES %}
+{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
