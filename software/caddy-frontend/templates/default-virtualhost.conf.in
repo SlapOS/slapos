@@ -53,7 +53,7 @@
     alpn http/1.1
 {%- endif %} {#- if enable_h2 #}
   } {# tls #}
-  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
 {%- if not (slave_type == 'zope' and backend_url) %}
@@ -197,7 +197,7 @@
   # Compress the output
   gzip
 
-  log / {{ slave_parameter.get('access_log') }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ slave_parameter.get('error_log') }}
 
 {%- if not (slave_type == 'zope' and backend_url) %}
