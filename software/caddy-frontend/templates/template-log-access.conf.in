@@ -8,7 +8,7 @@ https://[{{ parameter_dict['global_ipv6'] }}]:{{ parameter_dict['https_port'] }}
     "Log Access {{ slave }}"
     /
   }
-  log / {{ parameter_dict['access_log'] }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ parameter_dict['access_log'] }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ parameter_dict['error_log'] }} {
     * {{ parameter_dict['not_found_file'] }}
   }
