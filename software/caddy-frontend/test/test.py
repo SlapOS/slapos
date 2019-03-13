@@ -376,7 +376,8 @@ class TestDataMixin(object):
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
-          '--run-only', plugin
+          '--run-only', plugin,
+          '--force'
         ])
         # sanity check
         if 'Checking promise %s' % plugin not in plugin_result:
