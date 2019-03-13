@@ -269,7 +269,7 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, hash_value=None):
+  def assertTestData(self, runtime_data, hash_value=None, msg=None):
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -284,10 +284,13 @@ class TestDataMixin(object):
 
     maxDiff = self.maxDiff
     self.maxDiff = None
+    longMessage = self.longMessage
+    self.longMessage = True
     try:
       self.assertMultiLineEqual(
         test_data,
-        runtime_data
+        runtime_data,
+        msg=msg
       )
     except AssertionError:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
@@ -295,6 +298,7 @@ class TestDataMixin(object):
       raise
     finally:
       self.maxDiff = maxDiff
+      self.longMessage = longMessage
 
   def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
     runtime_data = []
