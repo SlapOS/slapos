@@ -358,6 +358,7 @@ class TestDataMixin(object):
       self.software_path, 'bin', 'monitor.runpromise')
     partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
     promise_status_list = []
+    msg = []
     for partition_path in sorted(partition_path_list):
       plugin_path_list = sorted(glob.glob(
           os.path.join(partition_path, 'etc', 'plugin', '*.py')
@@ -376,12 +377,15 @@ class TestDataMixin(object):
         # sanity check
         if 'Checking promise %s' % plugin not in plugin_result:
           plugin_status = 1
+          msg.append(plugin_result)
         promise_status_list.append(
           '%s: %s' % (
             plugin_path[len(self.instance_path) + 1:],
             plugin_status == 0 and 'OK' or 'ERROR'))
 
-    self.assertTestData('\n'.join(promise_status_list))
+    if not msg:
+      msg = None
+    self.assertTestData('\n'.join(promise_status_list), msg=''.join(msg))
 
   def test_promise_run_promise(self):
     partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
