@@ -154,9 +154,11 @@ fi
 # Slap proxy table contain version number, find the table name dynamically.
 # This is known to work with version 11 or 12 of tables, but it will probably
 # work with earlier versions as well.
-DB_PARTITION_TABLE=$(db_query ".table partition__")
-DB_PARTITION_NETWORK_TABLE=$(db_query ".table partition\_network__")
-DB_SOFTWARE_TABLE=$(db_query ".table software__")
+# When database is automatically migrated, the old tables are left around, so
+# we use xargs|sort|tail to get only the latest table
+DB_PARTITION_TABLE=$(db_query ".table partition__" | xargs -n1 | sort | tail -n1 )
+DB_PARTITION_NETWORK_TABLE=$(db_query ".table partition\_network__" | xargs -n1 | sort | tail -n1 )
+DB_SOFTWARE_TABLE=$(db_query ".table software__" | xargs -n1 | sort | tail -n1 )
 
 # Change slapproxy database to point instances to new software release
 # XXX hardcoded
