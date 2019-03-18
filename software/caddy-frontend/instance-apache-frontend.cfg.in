@@ -44,6 +44,8 @@ parts =
   trafficserver-remap-config
   trafficserver-plugin-config
   trafficserver-storage-config
+  trafficserver-ip-allow-config
+  trafficserver-logging-config
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
 
@@ -495,12 +497,14 @@ hostname = ${configuration:frontend-name}
 remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:ssl-cache-through-port}
   map / http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:cache-through-port}
 
-plugin-config = {{ parameter_dict['trafficserver'] }}/libexec/trafficserver/rfc5861.so
+plugin-config =
+ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 cache-path = ${trafficserver-directory:cache-path}
 disk-cache-size = ${configuration:disk-cache-size}
-autoconf-port = ${configuration:trafficserver-autoconf-port}
+synthetic-port = ${configuration:trafficserver-synthetic-port}
 mgmt-port = ${configuration:trafficserver-mgmt-port}
 ram-cache-size = ${configuration:ram-cache-size}
+templates-dir = {{ parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
@@ -543,6 +547,11 @@ extra-context =
 template = {{ parameter_dict['template_trafficserver_storage_config_location'] }}/{{ parameter_dict['template_trafficserver_storage_config_filename'] }}
 filename = storage.config
 
+[trafficserver-logging-config]
+< = trafficserver-jinja2-template-base
+template = {{ parameter_dict['template_trafficserver_logging_config_location'] }}/{{ parameter_dict['template_trafficserver_logging_config_filename'] }}
+filename = logging.config
+
 [trafficserver-remap-config]
 < = trafficserver-jinja2-template-base
 template = {{ parameter_dict['template_empty'] }}
@@ -556,6 +565,13 @@ template = {{ parameter_dict['template_empty'] }}
 filename = plugin.config
 context =
     key content trafficserver-variable:plugin-config
+
+[trafficserver-ip-allow-config]
+< = trafficserver-jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+filename = ip_allow.config
+context =
+    key content trafficserver-variable:ip-allow-config
 
 [promise-plugin-base]
 recipe = slapos.cookbook:promise.plugin

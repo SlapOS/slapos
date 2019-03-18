@@ -5,6 +5,28 @@
 ##############################################################################
 
 ##############################################################################
+# SlapOS Specific configuration
+##############################################################################
+CONFIG proxy.config.proxy_name STRING {{ ats_configuration['hostname'] }}
+CONFIG proxy.config.local_state_dir {{ ats_directory['local-state'] }}
+CONFIG proxy.config.config_dir STRING {{ ats_directory['configuration'] }}
+CONFIG proxy.config.bin_path STRING {{ ats_directory['bin_path'] }}
+CONFIG proxy.config.env_prep STRING example_prep.sh
+CONFIG proxy.config.alarm_email STRING nobody
+CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
+CONFIG proxy.config.output.logfile STRING traffic.out
+CONFIG proxy.config.snapshot_dir STRING snapshots
+CONFIG proxy.config.admin.user_id STRING {{ '#%s' % os_module.geteuid() }}
+CONFIG proxy.config.admin.number_config_bak INT 0
+CONFIG proxy.config.process_manager.mgmt_port INT {{ ats_configuration['mgmt-port'] }}
+CONFIG proxy.config.admin.synthetic_port INT {{ ats_configuration['synthetic-port'] }}
+LOCAL proxy.local.incoming_ip_to_bind STRING {{ ats_configuration['local-ip'] }}
+CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
+# Implement RFC 5861 with core
+CONFIG proxy.config.http.cache.open_write_fail_action INT 3
+CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
+
+##############################################################################
 # Thread configurations. Docs:
 #    https://docs.trafficserver.apache.org/records.config#thread-variables
 ##############################################################################
@@ -20,7 +42,7 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
 #    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
-CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
+CONFIG proxy.config.http.server_ports STRING {{ ats_configuration['local-ip'] + ':' + ats_configuration['input-port'] }}
 
 ##############################################################################
 # Via: headers. Docs:
@@ -126,7 +148,7 @@ CONFIG proxy.config.net.max_connections_active_in INT 10000
 #    https://docs.trafficserver.apache.org/records.config#ram-cache
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
 ##############################################################################
-CONFIG proxy.config.cache.ram_cache.size INT -1
+CONFIG proxy.config.cache.ram_cache.size INT {{ ats_configuration.get('ram-cache-size', '1G') }}
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
     # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
 CONFIG proxy.config.cache.limits.http.max_alts INT 5
@@ -155,7 +177,7 @@ CONFIG proxy.config.log.periodic_tasks_interval INT 5
 ##############################################################################
 CONFIG proxy.config.url_remap.remap_required INT 1
     # https://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
-CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
+CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
     # https://docs.trafficserver.apache.org/records.config#reverse-proxy
 CONFIG proxy.config.reverse_proxy.enabled INT 1
 
