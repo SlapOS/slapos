@@ -316,10 +316,13 @@ class TestDataMixin(object):
     self._test_file_list('log', [
       # no control at all when cron would kick in, ignore it
       'cron.log',
-      # appears late, not needed for assertion
+      # appears late and is quite unstable, no need to assert
+      'trafficserver/.diags.log.meta',
+      'trafficserver/.manager.log.meta',
+      'trafficserver/.squid.log.meta'
+      'trafficserver/.traffic.out.meta',
       'trafficserver/diags.log',
-      'trafficserver/squid.blog',
-      'trafficserver/.squid.blog.meta',
+      'trafficserver/squid.log',
       # not important, appears sometimes
       'trafficserver/.error.log.meta',
       'trafficserver/error.log',
@@ -352,7 +355,6 @@ class TestDataMixin(object):
     ignored_plugin_list = [
       '__init__.py',  # that's not a plugin
       'monitor-http-frontend.py',  # can't check w/o functioning frontend
-      'trafficserver-cache-availability.py',  # randomly passing when done
     ]
     runpromise_bin = os.path.join(
       self.software_path, 'bin', 'monitor.runpromise')
@@ -2266,7 +2268,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
@@ -2539,7 +2540,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
@@ -2556,6 +2556,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
        },
       headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
     )
 
     result_direct = self.fakeHTTPResult(
@@ -2614,7 +2622,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Via', headers)
     self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
@@ -2631,6 +2638,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'Set-Cookie': 'secured=value;secure, nonsecured=value'
       },
       headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
     )
 
     try:
@@ -2669,6 +2684,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'Set-Cookie': 'secured=value;secure, nonsecured=value',
       },
       headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
     )
 
   def test_enable_http2_false(self):
