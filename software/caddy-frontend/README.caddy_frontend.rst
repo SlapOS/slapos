@@ -30,7 +30,7 @@ These parameters are :
   * ``-frontend-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
-ex::
+for example::
 
   <parameter id="-frontend-quantity">3</parameter>
   <parameter id="-frontend-type">custom-personal</parameter>
