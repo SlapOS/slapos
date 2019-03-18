@@ -1,0 +1,10 @@
+squid = format {
+   Format = '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>'
+}
+log.ascii {
+   Format = squid,
+   Filename = 'squid',
+   RollingEnabled = 1,
+   RollingIntervalSec = 3600,
+   RollingOffsetHr = 0
+}
