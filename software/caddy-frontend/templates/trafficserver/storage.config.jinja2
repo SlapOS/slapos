@@ -1,1 +1,15 @@
-{{ ats_configuration.get("cache-path") }} {{ ats_configuration.get("disk-cache-size") }} volume={{ ats_configuration.get("hostname") }}
+#
+# storage.config - Storage Configuration file
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
+#
+# The storage configuration is a list of all the storage to
+# be used by the cache.
+#
+#
+#############################################################
+# Using a file for the cache storage
+#
+# <pathname> <size>
+{{ ats_configuration.get("cache-path") }} {{ ats_configuration.get("disk-cache-size") }}
