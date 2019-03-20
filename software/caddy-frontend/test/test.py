@@ -588,6 +588,16 @@ class TestHandler(BaseHTTPRequestHandler):
     timeout = int(self.headers.dict.get('Timeout', '0'))
     time.sleep(timeout)
     self.send_response(200)
+
+    prefix = 'x-reply-header-'
+    lenght = len(prefix)
+    for key, value in self.headers.dict.items():
+      if key.startswith(prefix):
+        self.send_header(
+          '-'.join([q.capitalize() for q in key[lenght:].split('-')]),
+          value.strip()
+        )
+
     self.send_header("Content-type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
     self.send_header('Set-Cookie', 'nonsecured=value')
@@ -2530,7 +2540,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -2553,8 +2565,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       {
         'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-       },
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
       headers
     )
 
@@ -2565,6 +2579,54 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       via,
       r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
     )
+
+    # check stale-if-error support (assumes stale-while-revalidate is same)
+    # wait a bit for max-age to expire
+    time.sleep(2)
+    # real check: cache access provides old data, access cache directly, as
+    # caddy has to be stopped
+    try:
+      # stop caddy, to have error on while connecting to the backend
+      caddy_process_name = [
+        ':'.join([q['group'], q['name']]) for q in
+        self.getSupervisorRPCServer().supervisor.getAllProcessInfo()
+        if 'caddy' in q['name'] and 'on-watch' in q['name']][0]
+      self.getSupervisorRPCServer().supervisor.stopProcess(caddy_process_name)
+      result = self.fakeHTTPResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper', port=23432, headers={
+          'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+          'revalidate=3600, stale-if-error=3600'})
+      self.assertEqual(result.status_code, httplib.OK)
+      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      headers = result.headers.copy()
+      self.assertKeyWithPop('Server', headers)
+      self.assertKeyWithPop('Date', headers)
+      self.assertKeyWithPop('Age', headers)
+      # drop keys appearing randomly in headers
+      headers.pop('Transfer-Encoding', None)
+      headers.pop('Content-Length', None)
+      headers.pop('Connection', None)
+      headers.pop('Keep-Alive', None)
+      self.assertEqual(
+        {
+          'Content-type': 'application/json',
+          'Set-Cookie': 'secured=value;secure, nonsecured=value',
+          'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                           'stale-if-error=3600'
+        },
+        headers
+      )
+      backend_headers = result.json()['Incoming Headers']
+      via = backend_headers.pop('via', None)
+      self.assertNotEqual(via, None)
+      self.assertRegexpMatches(
+        via,
+        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
+      )
+    finally:
+      self.getSupervisorRPCServer().supervisor.startProcess(caddy_process_name)
+    # END: check stale-if-error support
 
     result_direct = self.fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
