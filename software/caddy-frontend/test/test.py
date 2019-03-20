@@ -585,7 +585,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
-    timeout = int(self.headers.dict.get('Timeout', '0'))
+    timeout = int(self.headers.dict.get('timeout', '0'))
     time.sleep(timeout)
     self.send_response(200)
 
