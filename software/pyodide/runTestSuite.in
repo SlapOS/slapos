@@ -57,11 +57,19 @@ def main():
       else:
         start_time = datetime.datetime.now()
         try:
+          dir = '${pyodide:location}' + '-script-test'
+          print(os.path.isdir(dir))
+          print(os.path.isdir('${pyodide:location}'))
+          print(os.path.isdir(dir + '/test'))
+
           result_string = check_output(['pytest', '--timeout=5', './test/test_common.py'],
-                                     cwd='${pyodide:location}',
+                                     cwd='${pyodide:location}' + '-script-test',
                                      env=env) # temporary solution for not block by xfailed tests too long
-        except Exception, e:
+        except OSError, e:
+          result_string = str(e.strerror)
+        except Exception, e: # except CalledProcessError, e:
           result_string = str(e.output)
+        print('${pyodide:location}')
         print(result_string)
         test_result_content = result_string.split('\n')
         print('---------------------')
