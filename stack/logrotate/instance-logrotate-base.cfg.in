@@ -46,11 +46,12 @@ context =
 # User may override keys:
 # - "post" with commands to execute after rotation
 # - "pre" with commands to execute before rotation
+# - "backup" with directory where to store logs
 recipe = slapos.recipe.template:jinja2
 template = {{ logrotate_entry_template }}
 rendered = ${logrotate-conf-parameter:logrotate-entries}/${:name}
 context =
-  key backup logrotate-directory:logrotate-backup
+  key backup :backup
   key log :log
   key post :post
   key pre :pre
@@ -61,6 +62,7 @@ post =
 pre =
 frequency = daily
 rotate-num = 3650
+backup = ${logrotate-directory:logrotate-backup}
 nocompress =
 
 [logrotate]
