@@ -34,9 +34,7 @@ def main():
     ##########################
     # Run all tests
     ##########################
-    path_var = os.pathsep.join([os.environ.get('PATH', os.defpath), '${python3.7.2:location}/bin'])
-    path_var = os.pathsep.join([os.environ.get('PATH', os.defpath), '${geckodriver:location}'])
-    path_var = os.pathsep.join([os.environ.get('PATH', os.defpath), '${firefox-wrapper:location}'])
+    path_var = os.pathsep.join([os.environ.get('PATH', os.defpath), '${python3.7.2:location}/bin', '${geckodriver:location}', '${firefox-wrapper:location}'])
     env = dict(os.environ, PATH=path_var)
     test_list = ['test_common', ]
     failed = 0
@@ -47,37 +45,42 @@ def main():
       failed = 0
       result_string = None
       duration = 0
+
       try:
-        pass
-        # sys.path.append('${python3.7.2:location}/')
-        # test_module = importlib.import_module(test_name)
-      except ImportError as e:
-          failed = 1
-          stdout = str(e)
-      else:
-        start_time = datetime.datetime.now()
-        try:
-          result_string = check_output(['pytest', '--timeout=5', './test/test_common.py'],
-                                     cwd='${pyodide:location}',
-                                     env=env) # temporary solution for not block by xfailed tests too long
-        except Exception, e:
-          result_string = str(e.output)
-        print(result_string)
-        test_result_content = result_string.split('\n')
-        print('---------------------')
-        print('---------------------')
-        print('---------------------')
-        test_result_statistic_line = test_result_content[-2]
-        print(test_result_statistic_line)
-        # use magic code, something like
-        # === 21 passed, 1 warnings, 42 error in 130.43 seconds ===
-        test_result_statistic = test_result_statistic_line.split(' ')
-        print(test_result_statistic)
-        # result_string = test_module.run(env, 'firefox --help')
-        # end_time = datetime.datetime.now()
-        duration = test_result_statistic[-3] # (end_time - start_time).total_seconds()
-        failed = 0 #result_string['failed']
-        stdout = result_string # result_string['stdout']
+        dir = '${pyodide:location}' + '-script-test'
+        print(os.path.isdir(dir))
+        print(os.path.isdir('${pyodide:location}'))
+        print(os.path.isdir(dir + '/test'))
+        print(path_var)
+        print(env)
+
+        result_string = check_output(['pytest', '--timeout=5', './test/test_common.py'],
+                                   cwd=dir,
+                                   env=env) # temporary solution for not block by xfailed tests too long
+      except OSError, e:
+        print("We get an OSError here")
+        result_string = str(e.strerror)
+      except Exception, e: # except CalledProcessError, e:
+        print("We get a generic error:")
+        print(e)
+        result_string = str(e.output)
+      print('${pyodide:location}')
+      print(result_string)
+      test_result_content = result_string.split('\n')
+      print('---------------------')
+      print('---------------------')
+      print('---------------------')
+      test_result_statistic_line = test_result_content[-2]
+      print(test_result_statistic_line)
+      # use magic code, something like
+      # === 21 passed, 1 warnings, 42 error in 130.43 seconds ===
+      test_result_statistic = test_result_statistic_line.split(' ')
+      print(test_result_statistic)
+      # result_string = test_module.run(env, 'firefox --help')
+      # end_time = datetime.datetime.now()
+      duration = test_result_statistic[-3] # (end_time - start_time).total_seconds()
+      failed = 0 #result_string['failed']
+      stdout = result_string # result_string['stdout']
       test_line_dict['%s: %s' % ('Pyodide test', test_name)] = {
           'test_count': int(test_result_statistic[1]),
           'error_count': 0,
