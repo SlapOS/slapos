@@ -24,12 +24,6 @@ context =
     raw common_profile {{ common_profile }}
     ${:extra-context}
 
-{% do logrotate_dict.pop('recipe') %}
-[logrotate]
-{% for key, value in logrotate_dict.iteritems() %}
-{{ key }} = {{ value }}
-{% endfor %}
-
 post = {{ frontend_lazy_graceful_reload }} &
 frequency = daily
 rotatep-num = 30
@@ -82,7 +76,7 @@ output = {{ plugin_directory }}/${:name}
 {%   do part_list.extend([slave_ln_section]) %}
 {%   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 
-{%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" %}
+{%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 
 {#   Pass HTTP2 switch #}
 {%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
@@ -161,8 +155,7 @@ extra-context =
 
 {# Set slave logrotate entry #}
 [{{slave_logrotate_section}}]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
@@ -501,7 +494,10 @@ csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configu
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 
 [buildout]
-extends = {{ common_profile }}
+extends =
+  {{ common_profile }}
+  {{ logrotate_base_instance }} 
+
 parts +=
 {% for part in part_list %}
 {{ '    %s' % part }}
