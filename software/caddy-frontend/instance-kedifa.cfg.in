@@ -51,9 +51,6 @@ service = ${:etc}/service
 etc-run = ${:etc}/run
 promise = ${:etc}/promise
 
-logrotate-backup = ${:backup}/logrotate
-logrotate-entries = ${:etc}/logrotate.d
-
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
