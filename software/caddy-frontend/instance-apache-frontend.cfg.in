@@ -212,7 +212,8 @@ bin_directory = {{ parameter_dict['bin_directory'] }}
 caddy_executable = {{ parameter_dict['caddy'] }}
 caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
-kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
+kedifa-updater-mapping-file = ${directory:var}/kedifa_updater_mapping.txt
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
@@ -222,7 +223,8 @@ extra-context =
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
-    key kedifa_getter :kedifa-getter
+    key kedifa_updater :kedifa-updater
+    key kedifa_updater_mapping_file :kedifa-updater-mapping-file
     key kedifa_csr :kedifa-csr
     key caddy_executable :caddy_executable
     key caucase_url :caucase_url
@@ -259,6 +261,7 @@ extra-context =
     key template_notebook_slave_configuration software-release-path:template-nginx-notebook-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
+    key frontend_graceful_reload caddy-configuration:frontend-graceful-command
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     section nginx_configuration nginx-configuration
