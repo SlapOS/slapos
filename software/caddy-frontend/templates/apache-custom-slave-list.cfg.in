@@ -1,5 +1,6 @@
 {% if software_type == slap_software_type %}
 
+{% set kedifa_updater_mapping = [] %}
 {% set cached_server_dict = {} %}
 {% set part_list = [] %}
 {% set cache_port = caddy_configuration.get('cache-port') %}
@@ -32,6 +33,7 @@ notifempty = true
 create = true
 
 {% if master_key_download_url %}
+{%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate)) %}
 {%   do part_list.append('master-key-download') %}
 [master-key-download]
 recipe = plone.recipe.command
@@ -183,6 +185,7 @@ cert = {{ autocert_dir }}
 {% set certificate = '%s/certificate.pem' % (autocert_dir, ) %}
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
 
+{%   do kedifa_updater_mapping.append((key_download_url, '${' + slave_reference + '-path:cert}/downloaded.pem')) %}
 [{{ slave_reference }}-key-download]
 recipe = plone.recipe.command
 destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
@@ -493,12 +496,36 @@ monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 
+[kedifa-updater]
+recipe = slapos.cookbook:wrapper
+command-line = {{ kedifa_updater }}
+  --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
+  --identity {{ kedifa_login_certificate }}
+  --fallback-certificate {{ master_certificate }}
+  --on-update /bin/true
+  ${kedifa-updater-mapping:file}
+
+wrapper-path = {{ service_directory }}/kedifa-updater
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[kedifa-updater-mapping]
+# simplistic approach for mapping file creation
+recipe = plone.recipe.command
+update-command = ${:command}
+file = {{ kedifa_updater_mapping_file }}
+command =
+  rm -f ${:file}
+{% for mapping in kedifa_updater_mapping %}
+  echo "{{ mapping[0] }} {{ mapping[1] }}" >> ${:file}
+{% endfor %}
+
 [buildout]
 extends =
   {{ common_profile }}
   {{ logrotate_base_instance }} 
 
 parts +=
+    kedifa-updater
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}

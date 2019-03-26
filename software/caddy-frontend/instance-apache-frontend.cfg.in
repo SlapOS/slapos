@@ -213,8 +213,10 @@ caddy_executable = {{ parameter_dict['caddy'] }}
 caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
+kedifa-updater-mapping-file = ${caddy-directory:kedifa-updater-mapping}/file
 extra-context =
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
@@ -223,6 +225,8 @@ extra-context =
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_getter :kedifa-getter
+    key kedifa_updater :kedifa-updater
+    key kedifa_updater_mapping_file :kedifa-updater-mapping-file
     key kedifa_csr :kedifa-csr
     key caddy_executable :caddy_executable
     key caucase_url :caucase_url
@@ -364,6 +368,7 @@ document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/caddy-slave-conf.d/
 slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
+kedifa-updater-mapping = ${directory:var}/kedifa-updater-mapping
 mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
