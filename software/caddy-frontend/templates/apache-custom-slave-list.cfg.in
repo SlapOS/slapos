@@ -20,14 +20,9 @@ recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
 extra-context =
 context =
+    import os_module os
     raw common_profile {{ common_profile }}
     ${:extra-context}
-
-{% do logrotate_dict.pop('recipe') %}
-[logrotate]
-{% for key, value in logrotate_dict.iteritems() %}
-{{ key }} = {{ value }}
-{% endfor %}
 
 post = {{ frontend_lazy_graceful_reload }} &
 frequency = daily
@@ -36,13 +31,20 @@ sharedscripts = true
 notifempty = true
 create = true
 
-[cadirectory]
-recipe = slapos.cookbook:mkdirectory
-requests = {{ custom_ssl_directory }}/requests/
-private = {{ custom_ssl_directory }}/private/
-certs = {{ custom_ssl_directory }}/certs/
-newcerts = {{ custom_ssl_directory }}/newcerts/
-crl = {{ custom_ssl_directory }}/crl/
+{% if master_key_download_url %}
+{%   do part_list.append('master-key-download') %}
+[master-key-download]
+recipe = plone.recipe.command
+destination = {{ master_certificate }}
+command = {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ master_key_download_url }}
+update-command = ${:command}
+{% endif %}
+
+{% if slave_kedifa_information %}
+{%   set slave_kedifa_information = json_module.loads(slave_kedifa_information) %}
+{% else %}
+{%   set slave_kedifa_information = {} %}
+{% endif %}
 
 [promise-plugin-base]
 recipe = slapos.cookbook:promise.plugin
@@ -55,6 +57,12 @@ output = {{ plugin_directory }}/${:name}
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
 {%   set slave_reference = slave_instance.get('slave_reference') %}
+{%   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
+{%   if slave_kedifa %}
+{%     set key_download_url = slave_kedifa.get('key-download-url') %}
+{%   else %}
+{%     set key_download_url = '' %}
+{%   endif %}
 {%   set slave_type = slave_instance.get('type', '') %}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() %}
@@ -68,7 +76,7 @@ output = {{ plugin_directory }}/${:name}
 {%   do part_list.extend([slave_ln_section]) %}
 {%   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 
-{%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" %}
+{%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 
 {#   Pass HTTP2 switch #}
 {%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
@@ -147,8 +155,7 @@ extra-context =
 
 {# Set slave logrotate entry #}
 [{{slave_logrotate_section}}]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
@@ -167,10 +174,37 @@ bytes = 8
 
 {# ################################################## #}
 {# Set Slave Certificates if needed                   #}
+{%   set cert_dirname = slave_reference.replace('-','.') %}
+{%   set autocert_dir = '/'.join([autocert, cert_dirname]) %}
+[{{ slave_reference }}-path]
+recipe = slapos.cookbook:mkdirectory
+cert = {{ autocert_dir }}
+{# Set certificate key for custom configuration #}
+{% set certificate = '%s/certificate.pem' % (autocert_dir, ) %}
+{% do slave_parameter_dict.__setitem__('certificate', certificate )%}
 
+[{{ slave_reference }}-key-download]
+recipe = plone.recipe.command
+destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
+used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
+source-master = ${master-key-download:destination}
+command =
+  {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ key_download_url }}
+  if [ -f ${:destination} ] ; then
+    # if the slave specific certificate is available, use it
+    ln -sf ${:destination} ${:used}
+  elif [ -f ${:source-master} ] ; then
+    # if the master provided certificate is available, use it
+    ln -sf ${:source-master} ${:used}
+  else
+    rm -f ${:used}
+  fi
+update-command = ${:command}
+
+# BBB: SlapOS Master non-zero knowledge BEGIN
 {# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
-{%     if slave_instance.get(cert_name) %}
+{%     if cert_name in slave_instance %}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
 {%       do part_list.append(cert_title) %}
@@ -190,12 +224,9 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   endfor %}
 
 {#-   Set Up Certs #}
-{%   do slave_instance.__setitem__('login_certificate', login_certificate) %}
-{%   do slave_instance.__setitem__('login_key', login_key) %}
-{%   do slave_instance.__setitem__('login_ca_crt', login_ca_crt) %}
-{%   do slave_parameter_dict.__setitem__('ssl_crt', login_certificate) %}
-{%   do slave_parameter_dict.__setitem__('ssl_key', login_key) %}
-{%   if slave_instance.get('ssl_key') and slave_instance.get('ssl_crt') %}
+{%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
+{%   do slave_instance.__setitem__('apache_key', apache_key) %}
+{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
 {%     set key_title = '%s-key' % (slave_reference) %}
 {%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
@@ -219,14 +250,16 @@ extra-context =
 < = jinja2-template-base
 template = {{ empty_template }}
 rendered = {{ cert_file }}
-cert-content = {{ dumps('%s\n%s' % (slave_instance.get('ssl_crt'), slave_instance.get('ssl_ca_crt', '') or '')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
 extra-context =
     key content :cert-content
 {%     endif %}
+# BBB: SlapOS Master non-zero knowledge END
 
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
+certificate = {{ '${' + slave_reference + '-key-download:used}' }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
@@ -457,9 +490,14 @@ private-ipv4 = {{ local_ipv4 }}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
 {% endif %}
 monitor-base-url = {{ monitor_base_url }}
+csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
+csr_id-certificate = ${get-csr_id-certificate:certificate}
 
 [buildout]
-extends = {{ common_profile }}
+extends =
+  {{ common_profile }}
+  {{ logrotate_base_instance }} 
+
 parts +=
 {% for part in part_list %}
 {{ '    %s' % part }}
@@ -471,7 +509,76 @@ parts +=
     tunnel-6to4-base-ssl_cached_port
     tunnel-6to4-base-nginx_http_port
     tunnel-6to4-base-nginx_https_port
+    expose-csr_id
 
 cache-access = {{ cache_access }}
+
+[store-csr_id]
+recipe = plone.recipe.command
+
+csr_id_path = {{ directory_csr_id }}/csr_id.txt
+csr_work_path = {{ directory_tmp }}/${:_buildout_section_name_}
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  {{ bin_directory }}/caucase \
+    --ca-url {{ caucase_url }} \
+    --ca-crt {{ csr_cas_ca_certificate }} \
+    --crl {{ csr_crl }} \
+    --mode service \
+    --send-csr {{ csr_id_csr }} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+
+[certificate-csr_id]
+recipe = plone.recipe.command
+certificate = {{ directory_caddy_csr_id }}/certificate.pem
+key = {{ directory_caddy_csr_id }}/key.pem
+
+stop-on-error = True
+update-command = ${:command}
+command =
+  if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
+    openssl req -new -newkey rsa:2048 -sha256 -subj \
+      "/O={{ certificate_organization }}/OU={{ certificate_organizational_unit }}/CN=${slap-network-information:global-ipv6}" \
+      -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
+  fi
+
+[expose-csr_id-configuration]
+ip = ${slap-network-information:global-ipv6}
+port = 17001
+key = ${certificate-csr_id:key}
+certificate = ${certificate-csr_id:certificate}
+error-log = {{ directory_caddy_csr_id_log }}/expose-csr_id.log
+
+[expose-csr_id-template]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  https://:${expose-csr_id-configuration:port}/ {
+    bind ${expose-csr_id-configuration:ip}
+    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
+    log ${expose-csr_id-configuration:error-log}
+  }
+
+rendered = {{ directory_caddy_csr_id }}/Caddyfile
+
+[expose-csr_id]
+depends = ${store-csr_id:command}
+recipe = slapos.cookbook:wrapper
+command-line = {{ caddy_executable }}
+  -conf ${expose-csr_id-template:rendered}
+  -log ${expose-csr_id-configuration:error-log}
+  -http2=true
+  -disable-http-challenge
+  -disable-tls-sni-challenge
+  -root {{ directory_csr_id }}
+
+wrapper-path = {{ service_directory }}/expose-csr_id
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[get-csr_id-certificate]
+recipe = collective.recipe.shelloutput
+commands =
+  certificate = cat ${certificate-csr_id:certificate}
 
 {% endif %}

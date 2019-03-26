@@ -4,25 +4,37 @@ import {{frontend_configuration.get('log-access-configuration')}}
 import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
+{%- set ssl = {} -%}
+{%- if os_module.path.exists(master_certificate) -%}
+{%-   do ssl.__setitem__('certificate', master_certificate) -%}
+{%-   do ssl.__setitem__('key', master_certificate) -%}
+{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
+{%- elif os_module.path.getsize(apache_certificate) > 0 and os_module.path.getsize(apache_key) > 0 -%}
+{%-   do ssl.__setitem__('certificate', apache_certificate) -%}
+{%-   do ssl.__setitem__('key', apache_key) -%}
+{%- endif -%}
+{#- BBB: SlapOS Master non-zero knowledge END #}
 # Catch-all and 404 for not configured instances
+{% if 'key' in ssl %}
 :{{ https_port }} {
-  tls {{ login_certificate }} {{ login_key }}
+  tls {{ ssl['certificate'] }} {{ ssl['key'] }}
   bind {{ local_ipv4 }}
   # Compress the output
   gzip
   status 404 /
-  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }
 }
+{% endif %}
 
 :{{ http_port }} {
   bind {{ local_ipv4 }}
   # Compress the output
   gzip
   status 404 /
-  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }
@@ -40,7 +52,7 @@ https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv
   }
   expvar
   pprof
-  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }

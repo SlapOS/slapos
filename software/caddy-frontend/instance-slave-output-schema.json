@@ -6,6 +6,14 @@
       "description": "Base domain used by the instance",
       "type": "string"
     },
+    "key-generate-auth-url": {
+      "description": "URL to GET once auth for key-upload-url",
+      "type": "array"
+    },
+    "key-upload-url": {
+      "description": "URL to PUT PEM bundle of certificate and key",
+      "type": "array"
+    },
     "log-access-url": {
       "description": "List of URLs to access logs",
       "type": "array"

@@ -58,24 +58,37 @@
 import {{ slave_configuration_directory }}/*.conf
 
 # Catch-all and 404 for not configured instances
+{%- set ssl = {} -%}
+{%- if os_module.path.exists(master_certificate) -%}
+{%-   do ssl.__setitem__('certificate', master_certificate) -%}
+{%-   do ssl.__setitem__('key', master_certificate) -%}
+{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
+{%- elif os_module.path.getsize(apache_certificate) > 0 and os_module.path.getsize(apache_key) > 0 -%}
+{%-   do ssl.__setitem__('certificate', apache_certificate) -%}
+{%-   do ssl.__setitem__('key', apache_key) -%}
+{%- endif -%}
+{#- BBB: SlapOS Master non-zero knowledge END -#}
+# Catch-all and 404 for not configured instances
+{% if 'key' in ssl %}
 :{{ port }} {
-  tls {{ ssl_certificate }} {{ ssl_key }}
+  tls {{ ssl['certificate'] }} {{ ssl['key'] }}
   bind {{ local_ip }}
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico
   status 404 /
-  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }
 }
+{% endif %}
 
 :{{ plain_port }} {
   bind {{ local_ip }}
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico
   status 404 /
-  log / {{ access_log }} "{remote} {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
   errors {{ error_log }} {
     * {{ not_found_file }}
   }

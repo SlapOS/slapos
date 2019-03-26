@@ -10,6 +10,14 @@
       "description": "Base domain used by the instance",
       "type": "string"
     },
+    "master-key-generate-auth-url": {
+      "description": "URL to GET once auth for master-key-upload-url",
+      "type": "string"
+    },
+    "master-key-upload-url": {
+      "description": "URL to PUT PEM bundle of main certificate and key",
+      "type": "string"
+    },
     "monitor-base-url": {
       "description": "Base url for monitor",
       "type": "string"
@@ -37,6 +45,22 @@
     "slave-amount": {
       "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
       "type": "integer"
+    },
+    "kedifa-csr_id-url": {
+      "description": "URL on which KeDiFa publishes its csr_id sent to caucase.",
+      "type": "string"
+    },
+    "kedifa-csr_id-certificate": {
+      "description": "Certificate used to serve data on kedifa-csr_id-url.",
+      "type": "string"
+    },
+    "caddy-frontend-N-csr_id-url": {
+      "description": "URL on which frontend node number N publishes its csr_id sent to caucase.",
+      "type": "string"
+    },
+    "caddy-frontend-N-csr_id-certificate": {
+      "description": "Certificate used to serve data on caddy-frontend-N-csr_id-url.",
+      "type": "string"
     }
   },
   "type": "object"

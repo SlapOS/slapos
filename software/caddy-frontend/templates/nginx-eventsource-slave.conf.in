@@ -7,9 +7,6 @@
 {%   set https_protocol = https_url.split("/")[0] %}
 {%   set proxy_pass = '%s//%s' % (protocol, slave_parameter.get('slave_reference')) %}
 {%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) %}
-{% set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
-                                 ('ssl_certificate_key', 'path_to_ssl_key')] %}
-
 
 # TODO-Caddy upstream {{ slave_parameter.get('slave_reference') }} {
 # TODO-Caddy  server {{ upstream }};
@@ -74,12 +71,6 @@
 # TODO-Caddy  ssl_ciphers 'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5';
 # TODO-Caddy  ssl_prefer_server_ciphers on;
 # TODO-Caddy  ssl_session_cache shared:SSL:10m;
-
-{% for key, value in ssl_configuration_list %}
-{%   if value in slave_parameter %}
-# TODO-Caddy {{ '  %s' % key }} {{ slave_parameter.get(value) }};
-{% endif %}
-{% endfor %}
 
 # TODO-Caddy  location /pub {
 # TODO-Caddy    push_stream_publisher;
