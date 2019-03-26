@@ -1,5 +1,6 @@
 {% if software_type == slap_software_type %}
 
+{% set kedifa_updater_mapping = [] %}
 {% set cached_server_dict = {} %}
 {% set part_list = [] %}
 {% set cache_port = caddy_configuration.get('cache-port') %}
@@ -32,12 +33,7 @@ notifempty = true
 create = true
 
 {% if master_key_download_url %}
-{%   do part_list.append('master-key-download') %}
-[master-key-download]
-recipe = plone.recipe.command
-destination = {{ master_certificate }}
-command = {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ master_key_download_url }}
-update-command = ${:command}
+{%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -174,34 +170,12 @@ bytes = 8
 
 {# ################################################## #}
 {# Set Slave Certificates if needed                   #}
-{%   set cert_dirname = slave_reference.replace('-','.') %}
-{%   set autocert_dir = '/'.join([autocert, cert_dirname]) %}
-[{{ slave_reference }}-path]
-recipe = slapos.cookbook:mkdirectory
-cert = {{ autocert_dir }}
-{# Set certificate key for custom configuration #}
-{% set certificate = '%s/certificate.pem' % (autocert_dir, ) %}
+{# Set certificate key for custom configuration       #}
+{% set cert_name = slave_reference.replace('-','.') + '.pem' %}
+{% set certificate = '%s/%s' % (autocert, cert_name) %}
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
+{% do kedifa_updater_mapping.append((key_download_url, certificate)) %}
 
-[{{ slave_reference }}-key-download]
-recipe = plone.recipe.command
-destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
-used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
-source-master = ${master-key-download:destination}
-command =
-  {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ key_download_url }}
-  if [ -f ${:destination} ] ; then
-    # if the slave specific certificate is available, use it
-    ln -sf ${:destination} ${:used}
-  elif [ -f ${:source-master} ] ; then
-    # if the master provided certificate is available, use it
-    ln -sf ${:source-master} ${:used}
-  else
-    rm -f ${:used}
-  fi
-update-command = ${:command}
-
-# BBB: SlapOS Master non-zero knowledge BEGIN
 {# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%     if cert_name in slave_instance %}
@@ -217,6 +191,7 @@ template = {{ empty_template }}
 rendered = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
+# BBB: SlapOS Master non-zero knowledge BEGIN
 # Store certificate in config
 [{{ cert_title + '-config' }}]
 value = {{ dumps(slave_instance.get(cert_name)) }}
@@ -225,32 +200,18 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 
 {#-   Set Up Certs #}
 {%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
-{%   do slave_instance.__setitem__('apache_key', apache_key) %}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
-{%     set key_title = '%s-key' % (slave_reference) %}
-{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
-{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) %}
+{%     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
 {%     do part_list.append(cert_title) %}
-{%     do part_list.append(key_title) %}
 {%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
-{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) %}
 {%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
-{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) %}
-
-[{{key_title}}]
-< = jinja2-template-base
-template = {{ empty_template }}
-rendered = {{ key_file }}
-key-content = {{ dumps(slave_instance.get('ssl_key')) }}
-extra-context =
-    key content :key-content
 
 [{{cert_title}}]
 < = jinja2-template-base
 template = {{ empty_template }}
 rendered = {{ cert_file }}
-cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
 extra-context =
     key content :cert-content
 {%     endif %}
@@ -259,7 +220,7 @@ extra-context =
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-certificate = {{ '${' + slave_reference + '-key-download:used}' }}
+certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
@@ -492,12 +453,36 @@ monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 
+[kedifa-updater]
+recipe = slapos.cookbook:wrapper
+command-line = {{ kedifa_updater }}
+  --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
+  --identity {{ kedifa_login_certificate }}
+  --master-certificate {{ master_certificate }}
+  --on-update "{{ frontend_graceful_reload }}"
+  ${kedifa-updater-mapping:file}
+  {{ kedifa_updater_state_file }}
+
+wrapper-path = {{ service_directory }}/kedifa-updater
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[kedifa-updater-mapping]
+recipe = slapos.recipe.template:jinja2
+file = {{ kedifa_updater_mapping_file }}
+template = inline:
+{% for mapping in kedifa_updater_mapping %}
+  {{ mapping[0] }} {{ mapping[1] }}
+{% endfor %}
+
+rendered = ${:file}
+
 [buildout]
 extends =
   {{ common_profile }}
   {{ logrotate_base_instance }} 
 
 parts +=
+    kedifa-updater
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
