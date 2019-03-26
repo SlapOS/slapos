@@ -50,7 +50,7 @@ class TestPublishedURLIsReachableMixin(object):
     # with 503 Service Unavailable.
     # If we can move the "create site" in slapos node instance, then this retry loop
     # would not be necessary.
-    for i in range(1, 20):
+    for i in range(1, 60):
       r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
       if r.status_code == requests.codes.service_unavailable:
         delay = i * 2
