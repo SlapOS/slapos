@@ -25,15 +25,27 @@
 #
 ##############################################################################
 
-import os
-import unittest
+import json
 import logging
+import os
 
-if os.environ.get('DEBUG'):
-  raise ValueError("Don't set DEBUG - it breaks postfix compilation - set SLAPOS_TEST_DEBUG instead.")
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-debug_mode = os.environ.get('SLAPOS_TEST_DEBUG')
-# for development: debugging logs and install Ctrl+C handler
-if debug_mode:
-  logging.basicConfig(level=logging.DEBUG)
-  unittest.installHandler()
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+
+
+class ERP5InstanceTestCase(SlapOSInstanceTestCase):
+  """ERP5 base test case
+  """
+  logger = logging.getLogger(__name__)
+
+  # ERP5 instanciation needs to run several times before being ready, as
+  # the root instance request more instances.
+  instance_max_retry = 7 # XXX how many times ?
+
+  def getRootPartitionConnectionParameterDict(self):
+    """Return the output paramters from the root partition"""
+    return json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])
