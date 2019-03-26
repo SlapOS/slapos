@@ -12,7 +12,7 @@ T-2/etc/plugin/caddy_ssl_cached.py: OK
 T-2/etc/plugin/check-_test-error-log-last-day.py: OK
 T-2/etc/plugin/check-_test-error-log-last-hour.py: OK
 T-2/etc/plugin/check-free-disk-space.py: OK
-T-2/etc/plugin/frontend-caddy-configuration-promise.py: OK
+T-2/etc/plugin/frontend-caddy-configuration-promise.py: ERROR
 T-2/etc/plugin/monitor-bootstrap-status.py: OK
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py: OK
 T-2/etc/plugin/nginx-configuration-promise.py: OK
