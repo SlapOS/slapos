@@ -47,12 +47,14 @@ class TestPublishedURLIsReachableMixin(object):
     # What happens is that instanciation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
     # instanciated, but zope is still busy creating the site and haproxy replies
-    # with 503 Service Unavailable.
+    # with 503 Service Unavailable, sometimes the first request is 404, so we
+    # retry in a loop.
     # If we can move the "create site" in slapos node instance, then this retry loop
     # would not be necessary.
-    for i in range(1, 20):
-      r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
-      if r.status_code == requests.codes.service_unavailable:
+    for i in range(1, 60):
+      r = requests.get(url, verify=False)  # XXX can we get CA from caucase already ?
+      if r.status_code in (requests.codes.service_unavailable,
+                           requests.codes.not_found):
         delay = i * 2
         self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
         time.sleep(delay)
