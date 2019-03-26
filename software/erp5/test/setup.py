@@ -28,7 +28,8 @@ from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
 name = 'slapos.test.erp5'
-long_description = open("README.md").read()
+with open("README.md") as f:
+  long_description = f.read()
 
 setup(name=name,
       version=version,
