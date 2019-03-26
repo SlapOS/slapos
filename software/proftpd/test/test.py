@@ -37,22 +37,15 @@ import psutil
 from paramiko.ssh_exception import SSHException
 from paramiko.ssh_exception import AuthenticationException
 
-import utils
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import findFreeTCPPort
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
-
-
-class ProFTPdTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
-
+class ProFTPdTestCase(SlapOSInstanceTestCase):
   def _getConnection(self, username=None, password=None, hostname=None):
     """Returns a pysftp connection connected to the SFTP
 
@@ -77,7 +70,7 @@ class ProFTPdTestCase(utils.SlapOSInstanceTestCase):
 
 class TestSFTPListen(ProFTPdTestCase):
   def test_listen_on_ipv4(self):
-    self.assertTrue(self._getConnection(hostname=self.config['ipv4_address']))
+    self.assertTrue(self._getConnection(hostname=self._ipv4_address))
 
   def test_does_not_listen_on_all_ip(self):
     with self.assertRaises(SSHException):
@@ -115,20 +108,22 @@ class TestSFTPOperations(ProFTPdTestCase):
 
       # download the file again, it should have same content
       tempdir = tempfile.mkdtemp()
-      self.addCleanup(lambda : shutil.rmtree(tempdir))
+      self.addCleanup(lambda: shutil.rmtree(tempdir))
       local_file = os.path.join(tempdir, 'testfile')
-      retrieve_same_file = sftp.get('testfile', local_file)
+      sftp.get('testfile', local_file)
       with open(local_file) as f:
         self.assertEqual(f.read(), "Hello FTP !")
 
   def test_uploaded_file_not_visible_until_fully_uploaded(self):
     test_self = self
+
     class PartialFile(StringIO.StringIO):
       def read(self, *args):
         # file is not visible yet
         test_self.assertNotIn('destination', os.listdir(test_self.upload_dir))
         # it's just a hidden file
-        test_self.assertEqual(['.in.destination.'], os.listdir(test_self.upload_dir))
+        test_self.assertEqual(
+            ['.in.destination.'], os.listdir(test_self.upload_dir))
         return StringIO.StringIO.read(self, *args)
 
     with self._getConnection() as sftp:
@@ -140,13 +135,16 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_partial_upload_are_deleted(self):
     test_self = self
     with self._getConnection() as sftp:
+
       class ErrorFile(StringIO.StringIO):
         def read(self, *args):
           # at this point, file is already created on server
-          test_self.assertEqual(['.in.destination.'], os.listdir(test_self.upload_dir))
+          test_self.assertEqual(
+              ['.in.destination.'], os.listdir(test_self.upload_dir))
           # simulate a connection closed
           sftp.sftp_client.close()
           return "something that will not be sent to server"
+
       with self.assertRaises(IOError):
         sftp.sftp_client.putfo(ErrorFile(), "destination")
     # no half uploaded file is kept
@@ -164,12 +162,14 @@ class TestSFTPOperations(ProFTPdTestCase):
 
 class TestUserManagement(ProFTPdTestCase):
   def test_user_can_be_added_from_script(self):
-    with self.assertRaisesRegexp(AuthenticationException, 'Authentication failed'):
+    with self.assertRaisesRegexp(AuthenticationException,
+                                 'Authentication failed'):
       self._getConnection(username='bob', password='secret')
 
     subprocess.check_call(
-      'echo secret | %s/bin/ftpasswd --name=bob --stdin' % self.computer_partition_root_path,
-      shell=True)
+        'echo secret | %s/bin/ftpasswd --name=bob --stdin' %
+        self.computer_partition_root_path,
+        shell=True)
     self.assertTrue(self._getConnection(username='bob', password='secret'))
 
 
@@ -177,7 +177,8 @@ class TestBan(ProFTPdTestCase):
   def test_client_are_banned_after_5_wrong_passwords(self):
     # Simulate failed 5 login attempts
     for i in range(5):
-      with self.assertRaisesRegexp(AuthenticationException, 'Authentication failed'):
+      with self.assertRaisesRegexp(AuthenticationException,
+                                   'Authentication failed'):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
@@ -185,17 +186,19 @@ class TestBan(ProFTPdTestCase):
       self._getConnection()
 
     # ban event is logged
-    with open(os.path.join(
-        self.computer_partition_root_path, 'var', 'log', 'proftpd-ban.log')) as ban_log_file:
+    with open(os.path.join(self.computer_partition_root_path,
+                           'var',
+                           'log',
+                           'proftpd-ban.log')) as ban_log_file:
       self.assertRegexpMatches(
-        ban_log_file.readlines()[-1],
-        'login from host .* denied due to host ban')
+          ban_log_file.readlines()[-1],
+          'login from host .* denied due to host ban')
 
 
 class TestInstanceParameterPort(ProFTPdTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    cls.free_port = utils.findFreeTCPPort(cls.config['ipv4_address'])
+    cls.free_port = findFreeTCPPort(cls._ipv4_address)
     return {'port': cls.free_port}
 
   def test_instance_parameter_port(self):
@@ -211,23 +214,26 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
   def setUp(self):
     """sets `self.proftpdProcess` to `psutil.Process` for the running proftpd in the instance.
     """
-    all_process_info = self.getSupervisorRPCServer().supervisor.getAllProcessInfo()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
     # there is only one process in this instance
     process_info, = [p for p in all_process_info if p['name'] != 'watchdog']
     process = psutil.Process(process_info['pid'])
-    self.assertEqual('proftpd', process.name()) # sanity check
+    self.assertEqual('proftpd', process.name())  # sanity check
     self.proftpdProcess = process
 
   def test_only_write_file_in_instance_dir(self):
     self.assertEqual(
         [],
-        [f for f in self.proftpdProcess.open_files()
-         if f.mode != 'r'
-         if not f.path.startswith(self.computer_partition_root_path)])
+        [
+            f for f in self.proftpdProcess.open_files() if f.mode != 'r'
+            if not f.path.startswith(self.computer_partition_root_path)
+        ])
 
   def test_only_unix_socket_in_instance_dir(self):
     self.assertEqual(
         [],
-        [s for s in self.proftpdProcess.connections('unix')
-         if not s.laddr.startswith(self.computer_partition_root_path)])
-
+        [
+            s for s in self.proftpdProcess.connections('unix')
+            if not s.laddr.startswith(self.computer_partition_root_path)
+        ])
