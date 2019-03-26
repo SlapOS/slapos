@@ -691,6 +691,31 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     assert upload.status_code == httplib.CREATED
 
   @classmethod
+  def runKedifaUpdater(cls):
+    kedifa_updater = None
+    for kedifa_updater in sorted(glob.glob(
+        os.path.join(
+          cls.instance_path, '*', 'etc', 'service', 'kedifa-updater*'))):
+      # fetch first kedifa-updater, as by default most of the tests are using
+      # only one running partition; in case if test does not need
+      # kedifa-updater this method can be overridden
+      break
+    if kedifa_updater is not None:
+      # try few times kedifa_updater
+      for i in range(10):
+        return_code, output = subprocess_status_output(
+          [kedifa_updater, '--once'])
+        if return_code == 0:
+          break
+        # wait for the other updater to work
+        time.sleep(2)
+      # assert that in the worst case last run was correct
+      assert return_code == 0, output
+      # give caddy a moment to refresh its config, as sending signal does not
+      # block until caddy is refreshed
+      time.sleep(2)
+
+  @classmethod
   def untilSlavePartitionReady(cls):
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
@@ -724,6 +749,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
+    cls.runKedifaUpdater()
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
@@ -1597,9 +1623,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       data=data,
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -1612,7 +1636,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt', 'certificate.pem'))
+      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -1681,9 +1705,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       verify=self.ca_certificate_file)
 
     self.assertEqual(httplib.CREATED, upload.status_code)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     with self.assertRaises(requests.exceptions.SSLError):
       self.fakeHTTPSResult(
@@ -1691,7 +1713,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_garbage', 'certificate.pem'))
+      '_ssl_ca_crt_garbage.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -1727,9 +1749,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       verify=self.ca_certificate_file)
 
     self.assertEqual(httplib.CREATED, upload.status_code)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -1742,7 +1762,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_does_not_match', 'certificate.pem'))
+      '_ssl_ca_crt_does_not_match.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -1844,9 +1864,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       data=data,
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3575,6 +3593,10 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   @classmethod
+  def runKedifaUpdater(cls):
+    return
+
+  @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'test': {
@@ -4468,9 +4490,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       master_parameter_dict['master-key-upload-url'] + auth.text,
       data=key_pem + certificate_pem,
       verify=self.ca_certificate_file)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -4761,9 +4781,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       data=data,
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
-
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -4855,8 +4873,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -4940,8 +4957,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
@@ -5034,8 +5050,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, upload.status_code)
 
-    # after partitions being processed the key will be used for this slave
-    self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
