@@ -23,6 +23,7 @@ T-2:frontend-nginx-safe-graceful EXITED
 T-2:frontend_caddy-{hash}-on-watch RUNNING
 T-2:frontend_nginx-{hash}-on-watch RUNNING
 T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
+T-2:kedifa-updater-{hash}-on-watch RUNNING
 T-2:monitor-httpd-{hash}-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
 T-2:trafficserver-{hash}-on-watch RUNNING
@@ -42,6 +43,7 @@ T-3:frontend-nginx-safe-graceful STOPPED
 T-3:frontend_caddy-{hash}-on-watch STOPPED
 T-3:frontend_nginx-{hash}-on-watch STOPPED
 T-3:kedifa-login-certificate-caucase-updater-on-watch STOPPED
+T-3:kedifa-updater-{hash}-on-watch STOPPED
 T-3:monitor-httpd-{hash}-on-watch STOPPED
 T-3:monitor-httpd-graceful STOPPED
 T-3:trafficserver-{hash}-on-watch STOPPED

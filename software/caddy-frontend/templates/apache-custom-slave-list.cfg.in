@@ -1,5 +1,6 @@
 {% if software_type == slap_software_type %}
 
+{% set kedifa_updater_mapping = [] %}
 {% set cached_server_dict = {} %}
 {% set part_list = [] %}
 {% set cache_port = caddy_configuration.get('cache-port') %}
@@ -32,12 +33,7 @@ notifempty = true
 create = true
 
 {% if master_key_download_url %}
-{%   do part_list.append('master-key-download') %}
-[master-key-download]
-recipe = plone.recipe.command
-destination = {{ master_certificate }}
-command = {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ master_key_download_url }}
-update-command = ${:command}
+{%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -174,32 +170,11 @@ bytes = 8
 
 {# ################################################## #}
 {# Set Slave Certificates if needed                   #}
-{%   set cert_dirname = slave_reference.replace('-','.') %}
-{%   set autocert_dir = '/'.join([autocert, cert_dirname]) %}
-[{{ slave_reference }}-path]
-recipe = slapos.cookbook:mkdirectory
-cert = {{ autocert_dir }}
-{# Set certificate key for custom configuration #}
-{% set certificate = '%s/certificate.pem' % (autocert_dir, ) %}
+{# Set certificate key for custom configuration       #}
+{% set cert_name = slave_reference.replace('-','.') + '.pem' %}
+{% set certificate = '%s/%s' % (autocert, cert_name) %}
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
-
-[{{ slave_reference }}-key-download]
-recipe = plone.recipe.command
-destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
-used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
-source-master = ${master-key-download:destination}
-command =
-  {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ key_download_url }}
-  if [ -f ${:destination} ] ; then
-    # if the slave specific certificate is available, use it
-    ln -sf ${:destination} ${:used}
-  elif [ -f ${:source-master} ] ; then
-    # if the master provided certificate is available, use it
-    ln -sf ${:source-master} ${:used}
-  else
-    rm -f ${:used}
-  fi
-update-command = ${:command}
+{% do kedifa_updater_mapping.append((key_download_url, certificate)) %}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 {# Set ssl certificates for each slave #}
@@ -259,7 +234,7 @@ extra-context =
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-certificate = {{ '${' + slave_reference + '-key-download:used}' }}
+certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
@@ -493,12 +468,35 @@ monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 
+[kedifa-updater]
+recipe = slapos.cookbook:wrapper
+command-line = {{ kedifa_updater }}
+  --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
+  --identity {{ kedifa_login_certificate }}
+  --master-certificate {{ master_certificate }}
+  --on-update "{{ frontend_graceful_reload }}"
+  ${kedifa-updater-mapping:file}
+
+wrapper-path = {{ service_directory }}/kedifa-updater
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[kedifa-updater-mapping]
+recipe = slapos.recipe.template:jinja2
+file = {{ kedifa_updater_mapping_file }}
+template = inline:
+{% for mapping in kedifa_updater_mapping %}
+  {{ mapping[0] }} {{ mapping[1] }}
+{% endfor %}
+
+rendered = ${:file}
+
 [buildout]
 extends =
   {{ common_profile }}
   {{ logrotate_base_instance }} 
 
 parts +=
+    kedifa-updater
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
