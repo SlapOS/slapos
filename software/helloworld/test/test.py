@@ -27,25 +27,18 @@
 
 import os
 import requests
-import utils
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class HelloWorldTestCase(utils.SlapOSInstanceTestCase):
+class HelloWorldTestCase(SlapOSInstanceTestCase):
   # to be defined by subclasses
   name = None
   kind = None
-
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')),)
 
   @classmethod
   def getInstanceParameterDict(cls):
