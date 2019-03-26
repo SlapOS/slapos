@@ -590,11 +590,11 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_response(200)
 
     prefix = 'x-reply-header-'
-    lenght = len(prefix)
+    length = len(prefix)
     for key, value in self.headers.dict.items():
       if key.startswith(prefix):
         self.send_header(
-          '-'.join([q.capitalize() for q in key[lenght:].split('-')]),
+          '-'.join([q.capitalize() for q in key[length:].split('-')]),
           value.strip()
         )
 
