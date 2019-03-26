@@ -26,60 +26,39 @@
 ##############################################################################
 
 import os
-import shutil
-import urlparse
-import tempfile
 import requests
-import socket
-import StringIO
-import subprocess
 import json
 
-import utils
 from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
-SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
+setUpModule, Re6stnetTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
-
-
-class Re6stnetTestCase(utils.SlapOSInstanceTestCase):
-  def setUp(self):
-    import logging
-
-    utils.SlapOSInstanceTestCase.setUp(self)
-    self.logger = logging.getLogger(__name__)
-
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
 class TestRe6stnetRegistry(Re6stnetTestCase):
-
   def test_listen(self):
     connection_parameters = self.computer_partition.getConnectionParameterDict()
     registry_url = connection_parameters['re6stry-local-url']
 
     _ = requests.get(registry_url)
 
-class TestPortRedirection(Re6stnetTestCase):
 
+class TestPortRedirection(Re6stnetTestCase):
   def test_portredir_config(self):
-    portredir_config_path = os.path.join(self.computer_partition_root_path, '.slapos-port-redirect')
+    portredir_config_path = os.path.join(
+        self.computer_partition_root_path, '.slapos-port-redirect')
     with open(portredir_config_path) as f:
       portredir_config = json.load(f)
 
-    self.assertDictContainsSubset({
-      'srcPort': 9201,
-      'destPort': 9201,
-    }, portredir_config[0])
+    self.assertDictContainsSubset(
+        {
+            'srcPort': 9201,
+            'destPort': 9201,
+        }, portredir_config[0])
+
+
 
 class ServicesTestCase(Re6stnetTestCase):
 
@@ -89,18 +68,21 @@ class ServicesTestCase(Re6stnetTestCase):
 
   def test_hashes(self):
     hash_files = [
-      'software_release/buildout.cfg',
+        'software_release/buildout.cfg',
     ]
     expected_process_names = [
-      'httpd-{hash}-on-watch',
+        'httpd-{hash}-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_names = [process['name']
-                     for process in supervisor.getAllProcessInfo()]
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [
+          process['name'] for process in supervisor.getAllProcessInfo()
+      ]
 
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
+    hash_files = [
+        os.path.join(self.computer_partition_root_path, path)
+        for path in hash_files
+    ]
 
     for name in expected_process_names:
       h = generateHashFromFiles(hash_files)
