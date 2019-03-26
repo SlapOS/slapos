@@ -2638,8 +2638,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       )
     finally:
       self.getSupervisorRPCServer().supervisor.startProcess(caddy_process_name)
-      time.sleep(2)  # give few moments for caddy to start
-                     # XXX: convert to a loop which awaits caddy to be ready
+      # give few moments for caddy to start
+      # XXX: convert to a loop which awaits caddy to be ready
+      time.sleep(2)
     # END: check stale-if-error support
 
     result_direct = self.fakeHTTPResult(
