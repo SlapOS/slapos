@@ -1192,25 +1192,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     partition_path = self.getMasterPartitionPath()
 
-    self.assertEqual(
-      set([
-        'promise-monitor-httpd-is-process-older-than-dependency-set',
-      ]),
-      set(os.listdir(os.path.join(partition_path, 'etc', 'promise'))))
-
-    self.assertEqual(
-      set([
-        'monitor-bootstrap-status.py',
-        'check-free-disk-space.py',
-        'monitor-http-frontend.py',
-        'monitor-httpd-listening-on-tcp.py',
-        'buildout-T-0-status.py',
-        '__init__.py',
-      ]),
-      set([
-        q for q in os.listdir(os.path.join(partition_path, 'etc', 'plugin'))
-        if not q.endswith('.pyc')]))
-
     # check that monitor cors domains are correctly setup by file presence, as
     # we trust monitor stack being tested in proper place and it is too hard
     # to have working monitor with local proxy
