@@ -270,7 +270,15 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:promise}/check-computer-memory
 command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ tcpv4_port + 2 }}
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+    {{ logrotate_cfg }}
+    {{ parameter_dict['template-monitor'] }}
 parts =
     {{ part_list | join('\n  ') }}
