@@ -215,7 +215,7 @@ sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
-kedifa-updater-mapping-file = ${caddy-directory:kedifa-updater-mapping}/file
+kedifa-updater-mapping-file = ${directory:var}/kedifa_updater_mapping.txt
 extra-context =
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
@@ -366,7 +366,6 @@ document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/caddy-slave-conf.d/
 slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
-kedifa-updater-mapping = ${directory:var}/kedifa-updater-mapping
 mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/

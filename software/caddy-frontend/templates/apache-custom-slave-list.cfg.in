@@ -481,15 +481,14 @@ wrapper-path = {{ service_directory }}/kedifa-updater
 hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-mapping]
-# simplistic approach for mapping file creation
-recipe = plone.recipe.command
-update-command = ${:command}
+recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_updater_mapping_file }}
-command =
-  rm -f ${:file}
+template = inline:
 {% for mapping in kedifa_updater_mapping %}
-  echo "{{ mapping[0] }} {{ mapping[1] }}" >> ${:file}
+  {{ mapping[0] }} {{ mapping[1] }}
 {% endfor %}
+
+rendered = ${:file}
 
 [buildout]
 extends =
