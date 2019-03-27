@@ -212,7 +212,6 @@ bin_directory = {{ parameter_dict['bin_directory'] }}
 caddy_executable = {{ parameter_dict['caddy'] }}
 caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
-kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
 kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
@@ -224,7 +223,6 @@ extra-context =
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
-    key kedifa_getter :kedifa-getter
     key kedifa_updater :kedifa-updater
     key kedifa_updater_mapping_file :kedifa-updater-mapping-file
     key kedifa_csr :kedifa-csr

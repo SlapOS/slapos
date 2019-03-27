@@ -34,12 +34,6 @@ create = true
 
 {% if master_key_download_url %}
 {%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate)) %}
-{%   do part_list.append('master-key-download') %}
-[master-key-download]
-recipe = plone.recipe.command
-destination = {{ master_certificate }}
-command = {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ master_key_download_url }}
-update-command = ${:command}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -186,23 +180,6 @@ cert = {{ autocert_dir }}
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
 
 {%   do kedifa_updater_mapping.append((key_download_url, '${' + slave_reference + '-path:cert}/downloaded.pem')) %}
-[{{ slave_reference }}-key-download]
-recipe = plone.recipe.command
-destination = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
-used = {{ '${' + slave_reference + '-path:cert}/certificate.pem' }}
-source-master = ${master-key-download:destination}
-command =
-  {{ kedifa_getter }} --out ${:destination} --server-ca-certificate {{ kedifa_caucase_ca_certificate }} --identity {{ kedifa_login_certificate }} {{ key_download_url }}
-  if [ -f ${:destination} ] ; then
-    # if the slave specific certificate is available, use it
-    ln -sf ${:destination} ${:used}
-  elif [ -f ${:source-master} ] ; then
-    # if the master provided certificate is available, use it
-    ln -sf ${:source-master} ${:used}
-  else
-    rm -f ${:used}
-  fi
-update-command = ${:command}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 {# Set ssl certificates for each slave #}
@@ -262,7 +239,7 @@ extra-context =
 {# ########################################## #}
 {# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-certificate = {{ '${' + slave_reference + '-key-download:used}' }}
+certificate = {{ '${' + slave_reference + '-path:cert}/downloaded.pem' }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
