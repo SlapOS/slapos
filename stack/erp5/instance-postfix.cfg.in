@@ -35,6 +35,7 @@ etc-cyrus = ${:etc}/cyrus
 run = ${:etc}/run
 bin = ${buildout:directory}/bin
 usr = ${buildout:directory}/usr
+srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 var-lib = ${:var}/lib
 var-lib-postfix = ${:var-lib}/postfix
