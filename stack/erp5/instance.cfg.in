@@ -197,7 +197,7 @@ mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
 postfix = dynamic-template-postfix:rendered
 zodb-zeo = dynamic-template-zeo:rendered
-zodb-neo = neo-storage-mysql:rendered
+zodb-neo = neo:rendered
 zope = dynamic-template-zope:rendered
 jupyter = dynamic-template-jupyter:rendered
 
