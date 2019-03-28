@@ -590,11 +590,11 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_response(200)
 
     prefix = 'x-reply-header-'
-    lenght = len(prefix)
+    length = len(prefix)
     for key, value in self.headers.dict.items():
       if key.startswith(prefix):
         self.send_header(
-          '-'.join([q.capitalize() for q in key[lenght:].split('-')]),
+          '-'.join([q.capitalize() for q in key[length:].split('-')]),
           value.strip()
         )
 
@@ -2638,7 +2638,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       )
     finally:
       self.getSupervisorRPCServer().supervisor.startProcess(caddy_process_name)
-      time.sleep(2)  # give few moments for caddy to start
+      # give few moments for caddy to start
+      # XXX: convert to a loop which awaits caddy to be ready
+      time.sleep(2)
     # END: check stale-if-error support
 
     result_direct = self.fakeHTTPResult(
