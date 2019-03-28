@@ -676,7 +676,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
-    cls.runKedifaUpdater()
 
   @classmethod
   def runKedifaUpdater(cls):
@@ -719,6 +718,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
+    cls.runKedifaUpdater()
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
