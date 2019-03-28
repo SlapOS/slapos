@@ -261,6 +261,7 @@ extra-context =
     key template_notebook_slave_configuration software-release-path:template-nginx-notebook-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
+    key frontend_graceful_reload caddy-configuration:frontend-graceful-command
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     section nginx_configuration nginx-configuration

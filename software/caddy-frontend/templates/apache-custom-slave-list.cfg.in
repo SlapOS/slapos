@@ -474,7 +474,7 @@ command-line = {{ kedifa_updater }}
   --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
   --identity {{ kedifa_login_certificate }}
   --master-certificate {{ master_certificate }}
-  --on-update {{ frontend_lazy_graceful_reload }}
+  --on-update "{{ frontend_graceful_reload }}"
   ${kedifa-updater-mapping:file}
 
 wrapper-path = {{ service_directory }}/kedifa-updater
