@@ -683,6 +683,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         os.path.join(
           cls.instance_path, '*', 'etc', 'service', 'kedifa-updater*')):
       os.system(kedifa_updater + ' --once')
+    # give caddy a moment to refresh its config, as sending signal does not
+    # block until caddy is refreshed
+    time.sleep(2)
 
   @classmethod
   def untilSlavePartitionReady(cls):
