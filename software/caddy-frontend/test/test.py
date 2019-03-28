@@ -1608,7 +1608,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt', 'certificate.pem'))
+      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -1685,7 +1685,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_garbage', 'certificate.pem'))
+      '_ssl_ca_crt_garbage.certificate.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -1734,7 +1734,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_does_not_match', 'certificate.pem'))
+      '_ssl_ca_crt_does_not_match.certificate.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
