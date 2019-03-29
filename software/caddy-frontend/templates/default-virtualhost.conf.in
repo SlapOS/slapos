@@ -26,25 +26,11 @@
 {%- set default_path = slave_parameter.get('default-path', '').strip('/') | urlencode %}
 
 # SSL enabled hosts
-{% set ssl = {} %}
-{% if os_module.path.exists(slave_parameter['certificate']) %}
-{%   do ssl.__setitem__('certificate', slave_parameter['certificate']) %}
-{%   do ssl.__setitem__('key', slave_parameter['certificate']) %}
-{#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
-{% elif 'path_to_ssl_crt' in slave_parameter  %}
-{%   do ssl.__setitem__('certificate', slave_parameter['path_to_ssl_crt']) %}
-{%   do ssl.__setitem__('key', slave_parameter['path_to_ssl_crt']) %}
-{% elif os_module.path.getsize(slave_parameter['apache_certificate']) > 0 %}
-{%   do ssl.__setitem__('certificate', slave_parameter['apache_certificate']) %}
-{%   do ssl.__setitem__('key', slave_parameter['apache_certificate']) %}
-{% endif %}
-{#- BBB: SlapOS Master non-zero knowledge END -#}
-{% if 'key' in ssl %}
 {{ https_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
-  tls {{ ssl['certificate'] }} {{ ssl['key'] }} {
+  tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1
@@ -189,7 +175,6 @@
 {%-   endif %} {#-   if backend_url #}
 {%- endif %} {#- if slave_type ==  'zope' and backend_url #}
 }  {# https_host_list|join(', ') #}
-{% endif %}
 
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
