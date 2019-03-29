@@ -462,6 +462,7 @@ command-line = {{ kedifa_updater }}
   --master-certificate {{ master_certificate }}
   --on-update "{{ frontend_graceful_reload }}"
   ${kedifa-updater-mapping:file}
+  {{ kedifa_updater_state_file }}
 
 wrapper-path = {{ service_directory }}/kedifa-updater
 hash-files = ${buildout:directory}/software_release/buildout.cfg
