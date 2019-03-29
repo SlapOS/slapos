@@ -9,9 +9,9 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
 {%-   do ssl.__setitem__('certificate', master_certificate) -%}
 {%-   do ssl.__setitem__('key', master_certificate) -%}
 {#- BBB: SlapOS Master non-zero knowledge BEGIN -#}
-{%- elif os_module.path.getsize(apache_certificate) > 0 and os_module.path.getsize(apache_key) > 0 -%}
+{%- elif os_module.path.getsize(apache_certificate) > 0 -%}
 {%-   do ssl.__setitem__('certificate', apache_certificate) -%}
-{%-   do ssl.__setitem__('key', apache_key) -%}
+{%-   do ssl.__setitem__('key', apache_certificate) -%}
 {%- endif -%}
 {#- BBB: SlapOS Master non-zero knowledge END #}
 # Catch-all and 404 for not configured instances
