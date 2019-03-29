@@ -373,9 +373,7 @@ slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
-# BBB: SlapOS Master non-zero knowledge BEGIN
 custom-ssl-directory = ${:slave-configuration}/ssl
-# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
