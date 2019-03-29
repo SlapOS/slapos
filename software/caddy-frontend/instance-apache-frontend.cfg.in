@@ -283,7 +283,6 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key custom_ssl_directory caddy-directory:custom-ssl-directory
     key apache_certificate apache-certificate:rendered
-    key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [dynamic-virtualhost-template-slave]
@@ -326,7 +325,6 @@ extra-context =
     key password monitor-htpasswd:passwd
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
-    key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
@@ -396,19 +394,13 @@ command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
-[apache-key]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
-rendered = ${directory:bbb-ssl-dir}/frontend.key
-content = ${configuration:apache-key}
-extra-context =
-    key content :content
-
 [apache-certificate]
 < = jinja2-template-base
 template = {{ parameter_dict['template_empty'] }}
 rendered = ${directory:bbb-ssl-dir}/frontend.crt
-content = ${configuration:apache-certificate}
+content =
+  ${configuration:apache-certificate}
+  ${configuration:apache-key}
 extra-context =
     key content :content
 # BBB: SlapOS Master non-zero knowledge END
@@ -777,7 +769,6 @@ extra-context =
   key master_certificate caddy-configuration:master-certificate
 # BBB: SlapOS Master non-zero knowledge BEGIN
   key apache_certificate apache-certificate:rendered
-  key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [nginx-configuration]
