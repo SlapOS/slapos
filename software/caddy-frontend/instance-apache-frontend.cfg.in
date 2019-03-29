@@ -214,6 +214,7 @@ caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
+kedifa-updater-state-file = ${directory:var}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
@@ -225,6 +226,7 @@ extra-context =
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_updater :kedifa-updater
     key kedifa_updater_mapping_file :kedifa-updater-mapping-file
+    key kedifa_updater_state_file :kedifa-updater-state-file
     key kedifa_csr :kedifa-csr
     key caddy_executable :caddy_executable
     key caucase_url :caucase_url
