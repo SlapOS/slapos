@@ -33,7 +33,7 @@ notifempty = true
 create = true
 
 {% if master_key_download_url %}
-{%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate)) %}
+{%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -174,7 +174,6 @@ bytes = 8
 {% set cert_name = slave_reference.replace('-','.') + '.pem' %}
 {% set certificate = '%s/%s' % (autocert, cert_name) %}
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
-{% do kedifa_updater_mapping.append((key_download_url, certificate)) %}
 
 {# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
@@ -199,13 +198,12 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   endfor %}
 
 {#-   Set Up Certs #}
-{%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
 {%     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
+{% do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
 {%     do part_list.append(cert_title) %}
 {%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
-{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
 
 [{{cert_title}}]
 < = jinja2-template-base
@@ -214,7 +212,9 @@ rendered = {{ cert_file }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.get('ssl_ca_crt', '') + '\n' + slave_instance.get('ssl_key')) }}
 extra-context =
     key content :cert-content
-{%     endif %}
+{%   else %}
+{% do kedifa_updater_mapping.append((key_download_url, certificate, '')) %}
+{%   endif %}
 # BBB: SlapOS Master non-zero knowledge END
 
 {# ########################################## #}
@@ -472,7 +472,7 @@ recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_updater_mapping_file }}
 template = inline:
 {% for mapping in kedifa_updater_mapping %}
-  {{ mapping[0] }} {{ mapping[1] }}
+  {{ mapping[0] }} {{ mapping[1] }} {{ mapping[2] }}
 {% endfor %}
 
 rendered = ${:file}
