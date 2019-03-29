@@ -1,7 +1,7 @@
 T-0:bootstrap-monitor EXITED
 T-0:certificate_authority-{hash}-on-watch RUNNING
 T-0:crond-{hash}-on-watch RUNNING
-T-0:monitor-httpd-{hash}-on-watch EXITED
+T-0:monitor-httpd-{hash}-on-watch RUNNING
 T-0:monitor-httpd-graceful EXITED
 T-1:caucase-updater-on-watch RUNNING
 T-1:caucased-{hash}-on-watch RUNNING

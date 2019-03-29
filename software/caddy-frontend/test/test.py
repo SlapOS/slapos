@@ -737,6 +737,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
     cls.runKedifaUpdater()
+    # run once more slapos node instance, as kedifa-updater sets up
+    # certificates needed for caddy-frontend, and on this moment it can be
+    # not started yet
+    cls.runComputerPartition(max_quantity=1)
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
@@ -5126,23 +5130,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     certificate_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
+      self.instance_path, '*', 'srv', 'bbb-ssl',
       '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
+      expected = self.customdomain_ca_certificate_pem + '\n' + \
+        self.ca.certificate_pem + '\n' + self.customdomain_ca_key_pem
       self.assertEqual(
-        self.customdomain_ca_certificate_pem + '\n' + self.ca.certificate_pem,
-        out.read()
-      )
-    key_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.key'))
-    self.assertEqual(1, len(key_file_list))
-    key_file = key_file_list[0]
-    with open(key_file) as out:
-      self.assertEqual(
-        self.customdomain_ca_key_pem,
+        expected,
         out.read()
       )
 
@@ -5169,6 +5165,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
@@ -5179,23 +5176,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     certificate_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
+      self.instance_path, '*', 'srv', 'bbb-ssl',
       '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
+      expected = customdomain_ca_certificate_pem + '\n' + ca.certificate_pem \
+        + '\n' + customdomain_ca_key_pem
       self.assertEqual(
-        customdomain_ca_certificate_pem + '\n' + ca.certificate_pem,
-        out.read()
-      )
-    key_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.key'))
-    self.assertEqual(1, len(key_file_list))
-    key_file = key_file_list[0]
-    with open(key_file) as out:
-      self.assertEqual(
-        customdomain_ca_key_pem,
+        expected,
         out.read()
       )
 
@@ -5254,23 +5243,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       der2pem(result.peercert))
 
     certificate_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
+      self.instance_path, '*', 'srv', 'bbb-ssl',
       '_ssl_ca_crt_does_not_match.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
+      expected = self.certificate_pem + '\n' + self.ca.certificate_pem + \
+        '\n' + self.key_pem
       self.assertEqual(
-        self.certificate_pem + '\n' + self.ca.certificate_pem,
-        out.read()
-      )
-    key_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'caddy-slave-conf.d', 'ssl',
-      '_ssl_ca_crt_does_not_match.key'))
-    self.assertEqual(1, len(key_file_list))
-    key_file = key_file_list[0]
-    with open(key_file) as out:
-      self.assertEqual(
-        self.key_pem,
+        expected,
         out.read()
       )
 
