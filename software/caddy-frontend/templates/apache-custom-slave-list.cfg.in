@@ -176,7 +176,6 @@ bytes = 8
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
 {% do kedifa_updater_mapping.append((key_download_url, certificate)) %}
 
-# BBB: SlapOS Master non-zero knowledge BEGIN
 {# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%     if cert_name in slave_instance %}
@@ -192,6 +191,7 @@ template = {{ empty_template }}
 rendered = {{ cert_file }}
 extra-context =
     key content {{ cert_title + '-config:value' }}
+# BBB: SlapOS Master non-zero knowledge BEGIN
 # Store certificate in config
 [{{ cert_title + '-config' }}]
 value = {{ dumps(slave_instance.get(cert_name)) }}
@@ -202,7 +202,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   do slave_instance.__setitem__('apache_certificate', apache_certificate) %}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
-{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
 {%     do part_list.append(cert_title) %}
 {%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
 {%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) %}
