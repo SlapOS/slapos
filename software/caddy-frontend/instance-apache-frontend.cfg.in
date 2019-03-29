@@ -127,6 +127,25 @@ command =
          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
      -out ${:certificate}'
 
+[self-signed-fallback-access]
+# Self Signed certificate for HTTPS access to the frontend with fallback certificate
+recipe = plone.recipe.command
+update-command = ${:command}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv4 = {{instance_parameter['ipv4-random']}}
+certificate = ${caddy-directory:master-autocert-dir}/fallback-access-${:ipv6}-${:ipv4}.crt
+stop-on-error = True
+command =
+  [ -f ${:certificate} ] && exit 0
+  rm -f ${:certificate}
+  /bin/bash -c ' \
+  {{ parameter_dict['openssl'] }} req \
+     -new -newkey rsa:2048 -sha256 \
+     -nodes -x509 -days 36500 \
+     -keyout ${:certificate} \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter['configuration.frontend-name'] }}" \
+     -out ${:certificate}'
+
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -136,7 +155,6 @@ slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
 context =
     import json_module json
-    import os_module os
     raw common_profile {{ parameter_dict['common_profile'] }}
     raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
     key slap_software_type :slap_software_type
@@ -394,16 +412,22 @@ command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
+[get-self-signed-fallback-access]
+recipe = collective.recipe.shelloutput
+commands =
+  certificate = cat ${self-signed-fallback-access:certificate}
+
 [apache-certificate]
 recipe = slapos.recipe.template:jinja2
 template = inline:
 {% raw %}
-  {{ certificate }}
-  {{ key }}
+  {{ certificate or fallback_certificate }}
+  {{ key or '' }}
 {% endraw %}
 context =
   key certificate configuration:apache-certificate
   key key configuration:apache-key
+  key fallback_certificate get-self-signed-fallback-access:certificate
 rendered = ${directory:bbb-ssl-dir}/frontend.crt
 # BBB: SlapOS Master non-zero knowledge END
 
