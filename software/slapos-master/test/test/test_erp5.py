@@ -29,26 +29,15 @@ import os
 import json
 import glob
 import urlparse
-import logging
+import socket
 import time
 
+import psutil
 import requests
 
-from utils import SlapOSInstanceTestCase
-
-
-class ERP5TestCase(SlapOSInstanceTestCase):
-  """Test the remote driver on a minimal web server.
-  """
-  logger = logging.getLogger(__name__)
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')), )
-
-  def getRootPartitionConnectionParameterDict(self):
-    """Return the output paramters from the root partition"""
-    return json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+from . import ERP5InstanceTestCase
+from . import setUpModule
+setUpModule # pyflakes
 
 
 class TestPublishedURLIsReachableMixin(object):
@@ -61,7 +50,7 @@ class TestPublishedURLIsReachableMixin(object):
     # with 503 Service Unavailable.
     # If we can move the "create site" in slapos node instance, then this retry loop
     # would not be necessary.
-    for i in range(1, 20):
+    for i in range(1, 60):
       r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
       if r.status_code == requests.codes.service_unavailable:
         delay = i * 2
@@ -89,13 +78,13 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated with no parameters
   """
   __partition_reference__ = 'defp'
 
 
-class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated without test runner.
   """
   __partition_reference__ = 'distr'
