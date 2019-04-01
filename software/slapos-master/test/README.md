@@ -1,1 +1,1 @@
-Tests for ERP5 software release
+Tests for Slapos Master software release
