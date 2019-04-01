@@ -26,33 +26,17 @@
 ##############################################################################
 
 import os
-import shutil
-import urlparse
-import tempfile
-import requests
-import socket
-import StringIO
-import subprocess
-import json
 
-import utils
 from slapos.recipe.librecipe import generateHashFromFiles
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class InstanceTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
-
-
-class ServicesTestCase(InstanceTestCase):
+class ServicesTestCase(SlapOSInstanceTestCase):
 
   def test_hashes(self):
     hash_files = [
@@ -63,9 +47,9 @@ class ServicesTestCase(InstanceTestCase):
       'crond-{hash}-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_names = [process['name']
-                     for process in supervisor.getAllProcessInfo()]
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
 
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
