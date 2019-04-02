@@ -75,7 +75,7 @@ context =
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% set unauthorized_message = 'slave not authorized' %}
-{% for slave in slave_instance_list %}
+{% for slave in sorted(slave_instance_list) %}
 {%   set slave_error_list = [] %}
 {%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
