@@ -4179,7 +4179,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'rejected-slave-amount': '3',
       'slave-amount': '4',
       'rejected-slave-dict': {
-        '_site_1': ["custom_domain 'duplicate.example.com' clashes"],
+        '_site_2': ["custom_domain 'duplicate.example.com' clashes"],
         '_site_3': ["server-alias 'duplicate.example.com' clashes"],
         '_site_4': ["custom_domain 'duplicate.example.com' clashes"]
       }
@@ -4192,15 +4192,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_site_1(self):
     parameter_dict = self.parseSlaveParameterDict('site_1')
-    self.assertEqual(
-      {
-        'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
-      },
-      parameter_dict
-    )
-
-  def test_site_2(self):
-    parameter_dict = self.parseSlaveParameterDict('site_2')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -4211,6 +4202,15 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
         'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+  def test_site_2(self):
+    parameter_dict = self.parseSlaveParameterDict('site_2')
+    self.assertEqual(
+      {
+        'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
       },
       parameter_dict
     )
