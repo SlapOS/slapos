@@ -200,7 +200,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%     set cert_title = '%s-crt' % (slave_reference) %}
 {%     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
-{% do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
+{%     do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
 {%     do part_list.append(cert_title) %}
 {%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
 
@@ -212,7 +212,7 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.ge
 extra-context =
     key content :cert-content
 {%   else %}
-{% do kedifa_updater_mapping.append((key_download_url, certificate, master_certificate)) %}
+{%     do kedifa_updater_mapping.append((key_download_url, certificate, master_certificate)) %}
 {%   endif %}
 # BBB: SlapOS Master non-zero knowledge END
 
