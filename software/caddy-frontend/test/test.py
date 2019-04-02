@@ -688,7 +688,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       # kedifa-updater this method can be overridden
       break
     if kedifa_updater is not None:
-      assert os.system(kedifa_updater + ' --once') == 0
+      return_code, output = subprocess_status_output(
+        [kedifa_updater, '--once'])
+      assert return_code == 0, output
       # give caddy a moment to refresh its config, as sending signal does not
       # block until caddy is refreshed
       time.sleep(2)
