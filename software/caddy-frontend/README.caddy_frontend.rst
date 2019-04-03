@@ -90,6 +90,8 @@ About SSL and SlapOS Master Zero Knowledge
 
 SSL keys and certificates are directly send to the frontend cluster in order to follow zero knowledge principle of SlapOS Master.
 
+*Note*: Until master partition or slave specific certificate is uploaded each slave is served with fallback certificate.  This fallback certificate is self signed, does not match served hostname and results with lack of response on HTTPs.
+
 Master partition
 ----------------
 
