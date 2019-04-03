@@ -1,6 +1,5 @@
 Generally things to be done with ``caddy-frontend``:
 
- * tests: add assertion with results of promises in etc/promise for each partition
  * README: cleanup the documentation, explain various specifics
  * check the whole frontend slave snippet with ``caddy -validate`` during buildout run, and reject if does not pass validation
  * (new) ``type:websocket`` slave
