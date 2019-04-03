@@ -97,27 +97,6 @@
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
-    "ssl_ca_crt": {
-      "default": "",
-      "description": "Content of the CA certificate file",
-      "textarea": true,
-      "title": "SSL Certificate Authority's Certificate",
-      "type": "string"
-    },
-    "ssl_crt": {
-      "default": "",
-      "description": "Content of the SSL Certificate file",
-      "textarea": true,
-      "title": "SSL Certificate",
-      "type": "string"
-    },
-    "ssl_key": {
-      "default": "",
-      "description": "Content of the SSL Key file",
-      "textarea": true,
-      "title": "SSL Key",
-      "type": "string"
-    }
   },
   "title": "Input Parameters",
   "type": "object"
