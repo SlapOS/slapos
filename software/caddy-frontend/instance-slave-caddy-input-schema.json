@@ -139,13 +139,6 @@
       "title": "Verify Backend Certificates",
       "type": "string"
     },
-    "ssl_ca_crt": {
-      "default": "",
-      "description": "Content of the CA certificate file",
-      "textarea": true,
-      "title": "SSL Certificate Authority's Certificate",
-      "type": "string"
-    },
     "ssl_proxy_ca_crt": {
       "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
