@@ -10,6 +10,8 @@ export PROMPT_COMMAND='echo -en "\033]0;{{-instance_name}}\a"'
 {% endif %}
 export PS1="$ "
 
+export TERMINFO={{- terminfo }}
+
 if [ -f "$HOME/.bashrc" ] ; then
   source $HOME/.bashrc
 fi
@@ -32,5 +34,5 @@ alias la='ls -A'
 alias l='ls -CF'
 
 echo "Welcome to SlapOS slaprunner shell"
-echo 
+echo
 
