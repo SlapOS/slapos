@@ -160,6 +160,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     cls.working_directory = os.environ.get(
         'SLAPOS_TEST_WORKING_DIR',
         os.path.join(os.path.dirname(__file__), '.slapos'))
+    print 'Working in %s' % (cls.working_directory,)
     # To prevent error: Cannot open an HTTP server: socket.error reported
     # AF_UNIX path too long This `working_directory` should not be too deep.
     # Socket path is 108 char max on linux
