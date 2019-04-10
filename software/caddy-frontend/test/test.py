@@ -273,7 +273,7 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, hash_value=None):
+  def assertTestData(self, runtime_data, hash_value=None, msg=None):
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -288,10 +288,13 @@ class TestDataMixin(object):
 
     maxDiff = self.maxDiff
     self.maxDiff = None
+    longMessage = self.longMessage
+    self.longMessage = True
     try:
       self.assertMultiLineEqual(
         test_data,
-        runtime_data
+        runtime_data,
+        msg=msg
       )
     except AssertionError:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
@@ -299,6 +302,7 @@ class TestDataMixin(object):
       raise
     finally:
       self.maxDiff = maxDiff
+      self.longMessage = longMessage
 
   def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
     runtime_data = []
@@ -360,6 +364,7 @@ class TestDataMixin(object):
       self.software_path, 'bin', 'monitor.runpromise')
     partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
     promise_status_list = []
+    msg = []
     for partition_path in sorted(partition_path_list):
       plugin_path_list = sorted(glob.glob(
           os.path.join(partition_path, 'etc', 'plugin', '*.py')
@@ -373,17 +378,25 @@ class TestDataMixin(object):
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
-          '--run-only', plugin
+          '--run-only', plugin,
+          '--force',
+          '--check-anomaly'
         ])
+        if plugin_status == 1:
+          msg.append(plugin_result)
+
         # sanity check
         if 'Checking promise %s' % plugin not in plugin_result:
           plugin_status = 1
+          msg.append(plugin_result)
         promise_status_list.append(
           '%s: %s' % (
             plugin_path[len(self.instance_path) + 1:],
             plugin_status == 0 and 'OK' or 'ERROR'))
 
-    self.assertTestData('\n'.join(promise_status_list))
+    if msg:
+      msg = ''.join(msg).strip()
+    self.assertTestData('\n'.join(promise_status_list), msg=(msg or None))
 
   def test_promise_run_promise(self):
     partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
