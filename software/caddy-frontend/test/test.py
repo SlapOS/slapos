@@ -4782,12 +4782,29 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
   @classmethod
   def setUpSlaves(cls):
-    _, cls.slave_key_pem, _, cls.slave_certificate_pem = \
+    _, cls.ssl_from_slave_key_pem, _, cls.ssl_from_slave_certificate_pem = \
       createSelfSignedCertificate(
         [
-          '*.customdomain.example.com',
-          '*.example.com',
+          'sslfromslave.example.com',
         ])
+    _, cls.ssl_from_slave_kedifa_overrides_key_pem, _, \
+        cls.ssl_from_slave_kedifa_overrides_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'sslfromslavekedifaoverrides.example.com',
+          ])
+    _, cls.type_notebook_ssl_from_slave_key_pem, _, \
+        cls.type_notebook_ssl_from_slave_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'typenotebooksslfromslave.example.com',
+          ])
+    _, cls.type_notebook_ssl_from_slave_kedifa_overrides_key_pem, _, \
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'typenotebooksslfromslavekedifaoverrides.example.com',
+          ])
 
     cls.ca = CertificateAuthority(
       'TestSlaveSlapOSMasterCertificateCompatibility')
@@ -4836,13 +4853,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'ssl_from_slave': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.ssl_from_slave_certificate_pem,
+        'ssl_key': cls.ssl_from_slave_key_pem,
       },
       'ssl_from_slave_kedifa_overrides': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.ssl_from_slave_kedifa_overrides_certificate_pem,
+        'ssl_key': cls.ssl_from_slave_kedifa_overrides_key_pem,
       },
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
@@ -4883,8 +4900,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'type-notebook-ssl_from_slave': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.type_notebook_ssl_from_slave_certificate_pem,
+        'ssl_key': cls.type_notebook_ssl_from_slave_key_pem,
         'type': 'notebook',
       },
       'type-notebook-ssl_from_master_kedifa_overrides': {
@@ -4893,8 +4910,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'type-notebook-ssl_from_slave_kedifa_overrides': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt':
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
+        'ssl_key':
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_slave_key_pem,
         'type': 'notebook',
       }
     }
@@ -5079,7 +5098,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.ssl_from_slave_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5111,7 +5130,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.ssl_from_slave_kedifa_overrides_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5256,7 +5275,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       HTTPS_PORT)
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.type_notebook_ssl_from_slave_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5288,7 +5307,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       HTTPS_PORT)
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
