@@ -3739,7 +3739,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
-      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -3754,16 +3753,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
-      'caddy_custom_http_s-reject': {
-        'caddy_custom_https': """DestroyCaddyHttps
-For sure
-This shall not be valid
-https://www.google.com {}""",
-        'caddy_custom_http': """DestroyCaddyHttp
-For sure
-This shall not be valid
-https://www.google.com {}""",
-      },
       're6st-optimal-test-nocomma': {
         're6st-optimal-test': 'nocomma',
       },
@@ -3818,9 +3807,6 @@ https://www.google.com {}""",
       'rejected-slave-amount': '3',
       'slave-amount': '11',
       'rejected-slave-dict': {
-        '_caddy_custom_http_s-reject': [
-          'slave caddy_custom_http configuration invalid',
-          'slave caddy_custom_https configuration invalid'],
         '_custom_domain-unsafe': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
         ],
@@ -4140,18 +4126,6 @@ https://www.google.com {}""",
       }
     )
 
-  def test_caddy_custom_http_s_reject(self):
-    parameter_dict = self.parseSlaveParameterDict('caddy_custom_http_s-reject')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "slave caddy_custom_http configuration invalid",
-          "slave caddy_custom_https configuration invalid"
-        ]
-      },
-      parameter_dict
-    )
-
 
 class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -4160,7 +4134,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
-      '-frontend-authorized-slave-string': '_caddy_custom_http_s-reject',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
