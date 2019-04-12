@@ -364,7 +364,7 @@ command-line = {{ parameter_dict['caddy'] }}
 {% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
 wrapper-path = ${directory:bin}/caddy-wrapper
 
 [caddy-frontend]
@@ -770,7 +770,7 @@ command-line = {{ parameter_dict['caddy'] }}
 {% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
 wrapper-path = ${directory:bin}/nginx-wrapper
 
 [nginx-frontend]

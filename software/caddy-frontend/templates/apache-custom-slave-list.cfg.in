@@ -553,7 +553,7 @@ command-line = {{ caddy_executable }}
   -log ${expose-csr_id-configuration:error-log}
   -http2=true
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
   -root {{ directory_csr_id }}
 
 wrapper-path = {{ service_directory }}/expose-csr_id
