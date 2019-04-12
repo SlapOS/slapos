@@ -3642,8 +3642,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'enable-quic': 'true',
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'nginx_port': NGINX_HTTPS_PORT,
@@ -3662,20 +3660,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
       },
     }
-
-  def getMasterPartitionPath(self):
-    # partition w/o etc/trafficserver, but with buildout.cfg
-    return [
-      q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(
-        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
-          os.path.join(q, 'buildout.cfg'))][0]
-
-  def getSlavePartitionPath(self):
-    # partition w/ etc/trafficserver
-    return [
-      q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
   # It is known problem that QUIC does not work after sending reload signal,
   # SIGUSR1, see https://github.com/mholt/caddy/issues/2394
