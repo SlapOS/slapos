@@ -341,7 +341,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "caddy_custom_https":'
   https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
     bind %(local_ipv4)s
-    tls %%(certificate)s %%(certificate)s
+    tls %(certificate)s %(certificate)s
 
     log / %(access_log)s {combined}
     errors %(error_log)s
