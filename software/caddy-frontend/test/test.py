@@ -3804,8 +3804,8 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'kedifa-caucase-url': 'http://[%s]:%s' % (
          SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'accepted-slave-amount': '8',
-      'rejected-slave-amount': '3',
-      'slave-amount': '11',
+      'rejected-slave-amount': '2',
+      'slave-amount': '10',
       'rejected-slave-dict': {
         '_custom_domain-unsafe': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
