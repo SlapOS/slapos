@@ -76,19 +76,17 @@ def main():
       # === 21 passed, 1 warnings, 42 error in 130.43 seconds ===
       test_result_statistic = test_result_statistic_line.split(' ')
       print(test_result_statistic)
-      # result_string = test_module.run(env, 'firefox --help')
-      # end_time = datetime.datetime.now()
-      duration = test_result_statistic[-3] # (end_time - start_time).total_seconds()
-      failed = 0 #result_string['failed']
-      stdout = result_string # result_string['stdout']
+      duration = test_result_statistic[-3]
+      failed = int(test_result_statistic[5])
+      stdout = result_string
       test_line_dict['%s: %s' % ('Pyodide test', test_name)] = {
           'test_count': int(test_result_statistic[1]),
           'error_count': 0,
-          'failure_count': 0, #failed,
-          'skip_count': int(test_result_statistic[5]),
+          'failure_count': failed,
+          'skip_count': 0,
           'duration': float(duration),
           'command': '',
-          'stdout': "stdout",
+          'stdout': stdout,
           'stderr': '',
           'html_test_result': '',
         }
