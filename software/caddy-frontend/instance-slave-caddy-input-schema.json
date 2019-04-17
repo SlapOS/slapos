@@ -107,6 +107,12 @@
       "title": "type:zope Backend Path",
       "type": "string"
     },
+    "websocket-path": {
+      "default": "",
+      "description": "Path to the websocket application. If none set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS.",
+      "title": "type:websocket Websocket Application Path",
+      "type": "string"
+    },
     "prefer-gzip-encoding-to-backend": {
       "default": "false",
       "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
@@ -154,6 +160,7 @@
         "zope",
         "redirect",
         "notebook",
+        "websocket",
         "eventsource"
       ],
       "title": "Backend Type",
