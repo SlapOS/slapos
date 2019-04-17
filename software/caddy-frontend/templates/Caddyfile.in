@@ -10,8 +10,11 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
   # Compress the output
   gzip
   status 404 /
-  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
   errors {{ error_log }} {
+    rotate_size 0
     * {{ not_found_file }}
   }
 }
@@ -21,8 +24,11 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
   # Compress the output
   gzip
   status 404 /
-  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
   errors {{ error_log }} {
+    rotate_size 0
     * {{ not_found_file }}
   }
 }
@@ -39,8 +45,11 @@ https://[{{ global_ipv6 }}]:{{ https_port }}/server-status, https://{{ local_ipv
   }
   expvar
   pprof
-  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
   errors {{ error_log }} {
+    rotate_size 0
     * {{ not_found_file }}
   }
 }
