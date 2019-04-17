@@ -30,8 +30,10 @@ import json
 import glob
 import urlparse
 import logging
+import socket
 import time
 
+import psutil
 import requests
 
 from utils import SlapOSInstanceTestCase
@@ -95,6 +97,92 @@ class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
   __partition_reference__ = 'defp'
 
 
+class TestApacheBalancerPorts(ERP5TestCase):
+  """Instanciate with two zope families, this should create for each family:
+   - a balancer entry point with corresponding haproxy
+   - a balancer entry point for test runner
+  """
+  __partition_reference__ = 'ap'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+            json.dumps({
+                "zope-partition-dict": {
+                    "family1": {
+                        "instance-count": 3,
+                        "family": "family1"
+                    },
+                    "family2": {
+                        "instance-count": 5,
+                        "family": "family2"
+                    },
+                },
+            })
+    }
+
+  def checkValidHTTPSURL(self, url):
+    parsed = urlparse.urlparse(url)
+    self.assertEqual(parsed.scheme, 'https')
+    self.assertTrue(parsed.hostname)
+    self.assertTrue(parsed.port)
+
+  def test_published_family_parameters(self):
+    # when we request two families, we have two published family-{family_name} URLs
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    for family_name in ('family1', 'family2'):
+      self.checkValidHTTPSURL(
+          param_dict['family-{family_name}'.format(family_name=family_name)])
+      self.checkValidHTTPSURL(
+          param_dict['family-{family_name}-v6'.format(family_name=family_name)])
+
+  def test_published_test_runner_url(self):
+    # each family's also a list of test test runner URLs, by default 3 per family
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    for family_name in ('family1', 'family2'):
+      family_test_runner_url_list = param_dict[
+          '{family_name}-test-runner-url-list'.format(family_name=family_name)]
+      self.assertEqual(3, len(family_test_runner_url_list))
+      for url in family_test_runner_url_list:
+        self.checkValidHTTPSURL(url)
+
+  def test_zope_listen(self):
+    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8 zope running.
+    all_process_info = self.getSupervisorRPCServer(
+    ).supervisor.getAllProcessInfo()
+    self.assertEqual(
+        3 + 5,
+        len([p for p in all_process_info if p['name'].startswith('zope-')]))
+
+  def test_apache_listen(self):
+    # We have 2 families, apache should listen to a total of 3 ports per family
+    # normal access on ipv4 and ipv6 and test runner access on ipv4 only
+    all_process_info = self.getSupervisorRPCServer(
+    ).supervisor.getAllProcessInfo()
+    process_info, = [p for p in all_process_info if p['name'] == 'apache']
+    apache_process = psutil.Process(process_info['pid'])
+    self.assertEqual(
+        sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
+        sorted([
+            c.family
+            for c in apache_process.connections()
+            if c.status == 'LISTEN'
+        ]))
+
+  def test_haproxy_listen(self):
+    # There is one haproxy per family
+    all_process_info = self.getSupervisorRPCServer(
+    ).supervisor.getAllProcessInfo()
+    process_info, = [
+        p for p in all_process_info if p['name'].startswith('haproxy-')
+    ]
+    haproxy_process = psutil.Process(process_info['pid'])
+    self.assertEqual([socket.AF_INET, socket.AF_INET], [
+        c.family for c in haproxy_process.connections() if c.status == 'LISTEN'
+    ])
+
+
 class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated without test runner.
   """
@@ -114,3 +202,17 @@ class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
     self.assertTrue(bin_programs) # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
     self.assertNotIn('runTestSuite', bin_programs)
+
+  def test_no_apache_testrunner_port(self):
+    # Apache only listen on two ports, there is no apache ports allocated for test runner
+    all_process_info = self.getSupervisorRPCServer(
+    ).supervisor.getAllProcessInfo()
+    process_info, = [p for p in all_process_info if p['name'] == 'apache']
+    apache_process = psutil.Process(process_info['pid'])
+    self.assertEqual(
+        sorted([socket.AF_INET, socket.AF_INET6]),
+        sorted([
+            c.family
+            for c in apache_process.connections()
+            if c.status == 'LISTEN'
+        ]))
