@@ -1,0 +1,376 @@
+diff -ur perl-5.28.1/dist/Storable/Makefile.PL perl-5.28.1.patched/dist/Storable/Makefile.PL
+--- perl-5.28.1/dist/Storable/Makefile.PL	2018-11-01 23:07:44.000000000 +0100
++++ perl-5.28.1.patched/dist/Storable/Makefile.PL	2019-04-18 09:52:34.740115193 +0200
+@@ -14,10 +14,12 @@
+ 
+ unlink "lib/Storable/Limit.pm";
+ 
++my $limit_pm = File::Spec->catfile('lib', 'Storable', 'Limit.pm');
++
+ my $pm = { 'Storable.pm' => '$(INST_ARCHLIB)/Storable.pm' };
+ unless ($ENV{PERL_CORE}) {
+     # the core Makefile takes care of this for core builds
+-    $pm->{"lib/Storable/Limit.pm"} = '$(INST_ARCHLIB)/Storable/Limit.pm';
++    $pm->{$limit_pm} = '$(INST_ARCHLIB)/Storable/Limit.pm';
+ }
+ 
+ WriteMakefile(
+@@ -90,12 +92,18 @@
+         # blib.pm needs arch/lib
+         $extra_deps = ' Storable.pm';
+     }
++    my $whichperl;
++    if ($Config::Config{usecrosscompile}) {
++        $whichperl = '$(PERLRUN)';
++    }
++    else {
++        $whichperl = '$(FULLPERLRUNINST)';
++    }
+     my $linktype = uc($_[0]->{LINKTYPE});
+-    my $limit_pm = File::Spec->catfile('lib', 'Storable', 'Limit.pm');
+     "
+ $limit_pm : stacksize \$(INST_$linktype)$extra_deps
+ 	\$(MKPATH) \$(INST_LIB)
+-	\$(FULLPERLRUNINST) stacksize $options
++	$whichperl stacksize $options
+ 
+ release : dist
+ 	git tag \$(VERSION)
+@@ -111,7 +119,7 @@
+     my $out = $self->SUPER::test(%attr);
+ 
+     if ($ENV{PERL_CORE}) {
+-        $out =~ s!^(test(?:db)?_(?:static|dynamic)\b.*)!$1 lib/Storable/Limit.pm!gm;
++        $out =~ s!^(test(?:db)?_(?:static|dynamic)\b.*)!$1 $limit_pm!gm;
+     }
+ 
+     $out;
+Only in perl-5.28.1.patched/dist/Storable: Makefile.PL.orig
+Only in perl-5.28.1.patched/dist/Storable: Makefile.PL.rej
+diff -ur perl-5.28.1/dist/Storable/stacksize perl-5.28.1.patched/dist/Storable/stacksize
+--- perl-5.28.1/dist/Storable/stacksize	2018-11-01 23:07:44.000000000 +0100
++++ perl-5.28.1.patched/dist/Storable/stacksize	2019-04-18 09:52:41.120113225 +0200
+@@ -7,6 +7,9 @@
+ use File::Spec;
+ use strict;
+ 
++-d "lib" or mkdir "lib";
++-d "lib/Storable" or mkdir "lib/Storable";
++
+ my $fn = "lib/Storable/Limit.pm";
+ my $ptrsize = $Config{ptrsize};
+ my ($bad1, $bad2) = (65001, 25000);
+@@ -29,6 +32,10 @@
+ }
+ 
+ if (is_miniperl()) {
++    if ($Config{usecrosscompile}) {
++        write_limits(500, 265);
++        exit;
++    }
+     die "Should not run during miniperl\n";
+ }
+ my $prefix = "";
+@@ -68,9 +75,6 @@
+     }
+ }
+ 
+--d "lib" or mkdir "lib";
+--d "lib/Storable" or mkdir "lib/Storable";
+-
+ if ($^O eq "MSWin32") {
+     require Win32;
+     my ($str, $major, $minor) = Win32::GetOSVersion();
+@@ -113,7 +117,7 @@
+ sub good {
+     my $i = shift; # this passed
+     my $j = $i + abs(int(($bad - $i) / 2));
+-    print "Storable: determining recursion limit: $i passed, try more $j ...\n" unless QUIET;
++    print "# Storable: determining recursion limit: $i passed, try more $j ...\n" unless QUIET;
+     $good = $i;
+     if ($j <= $i) {
+         $found++;
+@@ -124,7 +128,7 @@
+ sub bad {
+     my $i = shift; # this failed
+     my $j = $i - abs(int(($i - $good) / 2));
+-    print "Storable: determining recursion limit: $i too big, try less $j ...\n" unless QUIET;
++    print "# Storable: determining recursion limit: $i too big, try less $j ...\n" unless QUIET;
+     $bad = $i;
+     if ($j >= $i) {
+         $j = $good;
+@@ -158,7 +162,7 @@
+         $n = bad($n);
+     }
+ }
+-print "MAX_DEPTH = $n\n" unless QUIET;
++print "# MAX_DEPTH = $n\n" unless QUIET;
+ my $max_depth = $n;
+ 
+ ($n, $good, $bad, $found) =
+@@ -182,13 +186,13 @@
+     and $n == $bad2-1)
+ {
+     # more likely the shell. travis docker ubuntu, mingw e.g.
+-    print "Error: Apparently your system(SHELLSTRING) cannot catch stack overflows\n"
++    print "# Apparently your system(SHELLSTRING) cannot catch stack overflows\n"
+       unless QUIET;
+     $max_depth = 512;
+     $n = 256;
+     print "MAX_DEPTH = $max_depth\n" unless QUIET;
+ }
+-print "MAX_DEPTH_HASH = $n\n" unless QUIET;
++print "# MAX_DEPTH_HASH = $n\n" unless QUIET;
+ my $max_depth_hash = $n;
+ 
+ # Previously this calculation was done in the macro, calculate it here
+@@ -199,7 +203,7 @@
+ # several apparently random failures here, eg. working in one
+ # configuration, but not in a very similar configuration.
+ $max_depth = int(0.6 * $max_depth);
+-$max_depth_hash = int(0.6 * $max_depth);
++$max_depth_hash = int(0.6 * $max_depth_hash);
+ 
+ my $stack_reserve = $^O eq "MSWin32" ? 32 : 16;
+ if ($] ge "5.016" && !($^O eq "cygwin" && $ptrsize == 8)) {
+@@ -217,16 +221,11 @@
+ 
+ sub write_limits {
+     my ($max_depth, $max_depth_hash) = @_;
+-    my $f;
+-    open $f, ">", $fn or die "$fn $!";
+-    print $f <<EOS;
++    print <<EOS;
+ # bisected by stacksize
+ \$Storable::recursion_limit = $max_depth
+   unless defined \$Storable::recursion_limit;
+ \$Storable::recursion_limit_hash = $max_depth_hash
+   unless defined \$Storable::recursion_limit_hash;
+-1;
+ EOS
+-    close $f
+-      or die "Failed to close $fn: $!\n";
+ }
+Only in perl-5.28.1.patched/dist/Storable: stacksize.orig
+Only in perl-5.28.1.patched/dist/Storable: stacksize.rej
+diff -ur perl-5.28.1/dist/Storable/__Storable__.pm perl-5.28.1.patched/dist/Storable/__Storable__.pm
+--- perl-5.28.1/dist/Storable/__Storable__.pm	2018-11-01 23:07:44.000000000 +0100
++++ perl-5.28.1.patched/dist/Storable/__Storable__.pm	2019-04-18 09:48:17.864211661 +0200
+@@ -32,8 +32,6 @@
+ our $recursion_limit;
+ our $recursion_limit_hash;
+ 
+-do "Storable/Limit.pm";
+-
+ $recursion_limit = 512
+   unless defined $recursion_limit;
+ $recursion_limit_hash = 256
+@@ -941,13 +939,13 @@
+ 
+ =item *
+ 
+-Since Storable 3.05 we probe for the stack recursion limit for references,
++From Storable 3.05 to 3.13 we probed for the stack recursion limit for references,
+ arrays and hashes to a maximal depth of ~1200-35000, otherwise we might
+ fall into a stack-overflow.  On JSON::XS this limit is 512 btw.  With
+ references not immediately referencing each other there's no such
+ limit yet, so you might fall into such a stack-overflow segfault.
+ 
+-This probing and the checks performed have some limitations:
++This probing and the checks we performed have some limitations:
+ 
+ =over
+ 
+@@ -955,7 +953,9 @@
+ 
+ the stack size at build time might be different at run time, eg. the
+ stack size may have been modified with ulimit(1).  If it's larger at
+-run time Storable may fail the freeze() or thaw() unnecessarily.
++run time Storable may fail the freeze() or thaw() unnecessarily.  If
++it's larger at build time Storable may segmentation fault when
++processing a deep structure at run time.
+ 
+ =item *
+ 
+@@ -970,6 +970,8 @@
+ 
+ =back
+ 
++So these now have simple defaults rather than probing at build-time.
++
+ You can control the maximum array and hash recursion depths by
+ modifying C<$Storable::recursion_limit> and
+ C<$Storable::recursion_limit_hash> respectively.  Either can be set to
+diff -ur perl-5.28.1/dist/Storable/t/recurse.t perl-5.28.1.patched/dist/Storable/t/recurse.t
+--- perl-5.28.1/dist/Storable/t/recurse.t	2018-11-01 23:07:44.000000000 +0100
++++ perl-5.28.1.patched/dist/Storable/t/recurse.t	2019-04-18 09:48:31.304205631 +0200
+@@ -318,9 +318,11 @@
+ # Small 64bit systems fail with 1200 (c++ debugging), with gcc 3000.
+ # Optimized 64bit allows up to 33.000 recursion depth.
+ # with asan the limit is 255 though.
++
++local $Storable::recursion_limit = 30;
++local $Storable::recursion_limit_hash = 20;
+ sub MAX_DEPTH () { Storable::stack_depth() }
+ sub MAX_DEPTH_HASH () { Storable::stack_depth_hash() }
+-sub OVERFLOW () { 35000 }
+ {
+     my $t;
+     print "# max depth ", MAX_DEPTH, "\n";
+diff -ur perl-5.28.1/Makefile.SH perl-5.28.1.patched/Makefile.SH
+--- perl-5.28.1/Makefile.SH	2018-11-04 21:39:04.000000000 +0100
++++ perl-5.28.1.patched/Makefile.SH	2019-04-18 09:48:04.736217717 +0200
+@@ -176,15 +176,11 @@
+ 
+ : is Cwd static or dynamic
+ static_cwd='define'
+-storable_limit_dep=''
+-storable_type=''
+ list_util_dep='$(PERL_EXE)'
+ for f in $dynamic_ext; do
+    case $f in
+        Cwd) static_cwd='undef' ;;
+        List/Util) list_util_dep=lib/auto/List/Util/Util.$dlext ;;
+-       Storable) storable_limit_dep=lib/auto/Storable/Storable.$dlext
+-                 storable_type='dynamic' ;;
+    esac
+ done
+ 
+@@ -221,7 +217,6 @@
+ $this_target: lib/auto/List/Util/Util\$(LIB_EXT)" ;;
+ 	Unicode/Normalize) extra_dep="$extra_dep
+ $this_target: uni.data" ;;
+-        Storable) storable_type='static' ;;
+     esac
+ done
+ 
+@@ -1158,26 +1153,6 @@
+ install: install-all
+ !NO!SUBS!
+ 
+-if test "$storable_type" != "" ; then
+-
+-case "$static_cwd" in
+-undef) storable_limit_dep="$storable_limit_dep lib/auto/Cwd/Cwd.$dlext" ;;
+-esac
+-
+-$spitshell >>$Makefile <<EOT
+-
+-dist/Storable/lib/Storable/Limit.pm : \$(PERL_EXE) dist/Storable/stacksize $storable_limit_dep
+-	cd dist/Storable ; \$(LDLIBPTH) \$(MAKE) lib/Storable/Limit.pm
+-
+-lib/Storable/Limit.pm : dist/Storable/lib/Storable/Limit.pm
+-	test -d lib/Storable || mkdir lib/Storable
+-	cp dist/Storable/lib/Storable/Limit.pm lib/Storable/Limit.pm
+-EOT
+-
+-common_build_deps="$common_build_deps lib/Storable/Limit.pm"
+-
+-fi
+-
+ for name in all notify silent strip verbose; do
+     flags="--$name";
+     flags=`echo $flags | sed -e 's/--all//'`
+Only in perl-5.28.1.patched: Makefile.SH.orig
+diff -ur perl-5.28.1/win32/GNUmakefile perl-5.28.1.patched/win32/GNUmakefile
+--- perl-5.28.1/win32/GNUmakefile	2018-11-04 21:39:04.000000000 +0100
++++ perl-5.28.1.patched/win32/GNUmakefile	2019-04-18 09:48:36.880203173 +0200
+@@ -1168,7 +1168,7 @@
+ 
+ .PHONY: all info
+ 
+-all : info rebasePE Extensions_nonxs $(PERLSTATIC) PostExt
++all : info rebasePE Extensions_nonxs $(PERLSTATIC)
+ 
+ info :
+ 	@echo # CCTYPE=$(CCTYPE)
+@@ -1612,16 +1612,6 @@
+ Extensions_realclean :
+ 	-if exist $(MINIPERL) $(MINIPERL) -I..\lib ..\make_ext.pl "MAKE=$(PLMAKE)" --dir=$(CPANDIR) --dir=$(DISTDIR) --dir=$(EXTDIR) --all --target=realclean
+ 
+-PostExt : ..\lib\Storable\Limit.pm
+-
+-# we need the exe, perl(ver).dll, and the Exporter, Storable, Win32 extensions
+-# rebasePE most of that, including adjustment for static builds, so we
+-# just need non-xs extensions
+-..\lib\Storable\Limit.pm : rebasePE Extensions_nonxs
+-	$(PLMAKE) -C ..\dist\Storable lib\Storable\Limit.pm
+-	if not exist ..\lib\Storable mkdir ..\lib\Storable
+-	copy ..\dist\Storable\lib\Storable\Limit.pm ..\lib\Storable\Limit.pm
+-
+ # all PE files need to be built by the time this target runs, PP files can still
+ # be running in parallel like UNIDATAFILES, this target a placeholder for the
+ # future
+diff -ur perl-5.28.1/win32/Makefile perl-5.28.1.patched/win32/Makefile
+--- perl-5.28.1/win32/Makefile	2018-11-04 21:39:04.000000000 +0100
++++ perl-5.28.1.patched/win32/Makefile	2019-04-18 09:48:44.436199857 +0200
+@@ -939,7 +939,7 @@
+ #
+ 
+ all : .\config.h ..\git_version.h $(GLOBEXE) $(CONFIGPM) \
+-	$(UNIDATAFILES) MakePPPort $(PERLEXE) Extensions_nonxs Extensions PostExt \
++	$(UNIDATAFILES) MakePPPort $(PERLEXE) Extensions_nonxs Extensions \
+ 	$(PERLSTATIC)
+ 	@echo	Everything is up to date. '$(MAKE_BARE) test' to run test suite.
+ 
+@@ -1225,13 +1225,6 @@
+ Extensions_realclean: 
+ 	-if exist $(MINIPERL) $(MINIPERL) -I..\lib ..\make_ext.pl "MAKE=$(MAKE)" --dir=$(CPANDIR) --dir=$(DISTDIR) --dir=$(EXTDIR) --all --target=realclean
+ 
+-PostExt: ..\lib\Storable\Limit.pm
+-
+-..\lib\Storable\Limit.pm: $(PERLEXE) Extensions
+-	cd ..\dist\Storable && $(MAKE) lib\Storable\Limit.pm
+-	if not exist ..\lib\Storable mkdir ..\lib\Storable
+-	copy ..\dist\Storable\lib\Storable\Limit.pm ..\lib\Storable\Limit.pm
+-
+ #-------------------------------------------------------------------------------
+ 
+ doc: $(PERLEXE) ..\pod\perltoc.pod
+@@ -1310,7 +1303,6 @@
+ 	-del /f $(LIBDIR)\Time\HiRes.pm
+ 	-del /f $(LIBDIR)\Unicode\Normalize.pm
+ 	-del /f $(LIBDIR)\Math\BigInt\FastCalc.pm
+-	-del /f $(LIBDIR)\Storable.pm $(LIBDIR)\Storable\Limit.pm
+ 	-del /f $(LIBDIR)\Win32.pm
+ 	-del /f $(LIBDIR)\Win32CORE.pm
+ 	-del /f $(LIBDIR)\Win32API\File.pm
+diff -ur perl-5.28.1/win32/makefile.mk perl-5.28.1.patched/win32/makefile.mk
+--- perl-5.28.1/win32/makefile.mk	2018-11-04 21:39:04.000000000 +0100
++++ perl-5.28.1.patched/win32/makefile.mk	2019-04-18 09:48:54.648195459 +0200
+@@ -1139,7 +1139,7 @@
+ # Top targets
+ #
+ 
+-all : CHECKDMAKE rebasePE Extensions_nonxs $(PERLSTATIC) PostExt
++all : CHECKDMAKE rebasePE Extensions_nonxs $(PERLSTATIC)
+ 
+ ..\regcomp$(o) : ..\regnodes.h ..\regcharclass.h
+ 
+@@ -1563,17 +1563,6 @@
+ .ENDIF
+ 	$(NOOP)
+ 
+-PostExt : ..\lib\Storable\Limit.pm
+-	$(NOOP)
+-
+-# we need the exe, perl(ver).dll, and the Exporter, Storable, Win32 extensions
+-# rebasePE most of that, including adjustment for static builds, so we
+-# just need non-xs extensions
+-..\lib\Storable\Limit.pm : rebasePE Extensions_nonxs
+-	cd ..\dist\Storable && $(MAKE) lib\Storable\Limit.pm
+-	if not exist ..\lib\Storable mkdir ..\lib\Storable
+-	copy ..\dist\Storable\lib\Storable\Limit.pm ..\lib\Storable\Limit.pm
+-
+ #-------------------------------------------------------------------------------
+ 
+ 
+@@ -1648,7 +1637,7 @@
+ 	-del /f $(LIBDIR)\Time\HiRes.pm
+ 	-del /f $(LIBDIR)\Unicode\Normalize.pm
+ 	-del /f $(LIBDIR)\Math\BigInt\FastCalc.pm
+-	-del /f $(LIBDIR)\Storable.pm $(LIBDIR)\Storable\Limit.pm
++	-del /f $(LIBDIR)\Storable.pm
+ 	-del /f $(LIBDIR)\Win32.pm
+ 	-del /f $(LIBDIR)\Win32CORE.pm
+ 	-del /f $(LIBDIR)\Win32API\File.pm
