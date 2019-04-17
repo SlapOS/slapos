@@ -80,6 +80,14 @@ T-2/etc/plugin/check-_type-notebook-error-log-last-day.py: OK
 T-2/etc/plugin/check-_type-notebook-error-log-last-hour.py: OK
 T-2/etc/plugin/check-_type-redirect-error-log-last-day.py: OK
 T-2/etc/plugin/check-_type-redirect-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_type-websocket-error-log-last-day.py: OK
+T-2/etc/plugin/check-_type-websocket-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-path-list-error-log-last-day.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-path-list-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-path-list-websocket-transparent-false-error-log-last-day.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-path-list-websocket-transparent-false-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-transparent-false-error-log-last-day.py: OK
+T-2/etc/plugin/check-_type-websocket-websocket-transparent-false-error-log-last-hour.py: OK
 T-2/etc/plugin/check-_type-zope-default-path-error-log-last-day.py: OK
 T-2/etc/plugin/check-_type-zope-default-path-error-log-last-hour.py: OK
 T-2/etc/plugin/check-_type-zope-error-log-last-day.py: OK
