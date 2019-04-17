@@ -117,7 +117,7 @@ rendered = $${directory:etc}/$${:_buildout_section_name_}
 # Catch-all simple frontend, as it can serve on different interface then accessed one, by
 # using "*" as hostname
 template = inline:
-  https://*:$${:port} {
+  https://[$${:ip}]:$${:port} {
     bind $${:ip}
     tls self_signed # TODO
     proxy / $${selenium-server-hub-instance:base-url} {
