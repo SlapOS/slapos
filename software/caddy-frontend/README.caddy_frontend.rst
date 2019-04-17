@@ -523,7 +523,6 @@ Note that in some cases promises will fail:
  * not possible to request frontend slave for monitoring (monitoring frontend promise)
  * no slaves present (configuration promise and others)
  * no cached slave present (configuration promise and others)
- * no nginx style slave present (websocket, notebook) (configuration promise and others)
 
 This is known issue and shall be tackled soon.
 

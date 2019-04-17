@@ -158,6 +158,26 @@
   redir 302 {
     /  {{ backend_url }}{rewrite_uri}
   } {# redir #}
+{%- elif slave_type == 'notebook' %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    transparent
+    insecure_skip_verify
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Real-IP {remote}
+    header_upstream Host {host}
+    websocket
+    without /proxy/
+    insecure_skip_verify
+  }
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
 {%-   if default_path %}
