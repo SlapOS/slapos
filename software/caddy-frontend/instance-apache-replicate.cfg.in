@@ -82,7 +82,7 @@ context =
 {%   set slave_type = slave.get('type') %}
 {%   if slave_type == 'eventsource' %}
 {%     do slave_error_list.append('type:eventsource is not implemented') %}
-{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook'] %}
+{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
 {%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
 {%   endif %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
