@@ -1090,6 +1090,26 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'type': 'notebook',
       },
+      'type-websocket': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+      },
+      'type-websocket-websocket-path-list': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-path-list': '////ws//// /with%20space/',
+      },
+      'type-websocket-websocket-transparent-false': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-transparent': 'false',
+      },
+      'type-websocket-websocket-path-list-websocket-transparent-false': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-path-list': '////ws//// /with%20space/',
+        'websocket-transparent': 'false',
+      },
       'type-eventsource': {
         'url': cls.backend_url,
         'type': 'eventsource',
@@ -1207,9 +1227,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '44',
+      'accepted-slave-amount': '48',
       'rejected-slave-amount': '4',
-      'slave-amount': '48',
+      'slave-amount': '52',
       'kedifa-caucase-url': 'http://[%s]:%s' % (
         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'rejected-slave-dict': {
@@ -2053,10 +2073,200 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertFalse(
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
-  @skip('Feature postponed')
   def test_type_websocket(self):
-    # Pure websocket configurable frontend
-    raise NotImplementedError
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+
+  def test_type_websocket_websocket_transparent_false(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-transparent-false')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+
+  def test_type_websocket_websocket_path_list(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-path-list')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('connection' in j['Incoming Headers'].keys())
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/ws/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/with%20space/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+  def test_type_websocket_websocket_path_list_websocket_transparent_false(
+    self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-path-list-websocket-transparent-false')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('connection' in j['Incoming Headers'].keys())
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/ws/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/with%20space/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
   @skip('Feature postponed')
   def test_type_eventsource(self):
