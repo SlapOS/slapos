@@ -353,7 +353,8 @@ environment =
   CADDYPATH=${directory:frontend_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
-  -log stdout
+  -log ${caddy-configuration:error-log}
+  -log-roll-mb 0
 {% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false
 {% else %}
@@ -762,7 +763,8 @@ environment =
   CADDYPATH=${directory:nginx_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
-  -log stdout
+  -log ${nginx-configuration:error_log}
+  -log-roll-mb 0
 {% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false
 {% else %}

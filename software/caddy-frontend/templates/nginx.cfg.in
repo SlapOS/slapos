@@ -64,8 +64,11 @@ import {{ slave_configuration_directory }}/*.conf
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico
   status 404 /
-  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
   errors {{ error_log }} {
+    rotate_size 0
     * {{ not_found_file }}
   }
 }
@@ -75,8 +78,11 @@ import {{ slave_configuration_directory }}/*.conf
   # Serve an error 204 (No Content) for favicon.ico
   status 204 /favicon.ico
   status 404 /
-  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}"
+  log / {{ access_log }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
   errors {{ error_log }} {
+    rotate_size 0
     * {{ not_found_file }}
   }
 }
