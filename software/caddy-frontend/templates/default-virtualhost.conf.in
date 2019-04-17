@@ -23,6 +23,10 @@
 {%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
 {%- set default_path = slave_parameter.get('default-path', '').strip('/') | urlencode %}
+{%- if slave_type == 'notebook' %}
+{# notebook needs http 1.1 max #}
+{%-   set enable_h2 = False %}
+{%- endif %}
 
 {%- for tls in [True, False] %}
 {%- if tls %}
@@ -68,12 +72,12 @@
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to {1}
   }
-{%    else %}
+{%    elif slave_type != 'notebook' %}
   rewrite {
     regexp (.*)
     to {1}
   }
-{%    endif %}
+{%    endif %} {#    elif slave_type != 'notebook' #}
 {%- endif %} {#- if not (slave_type == 'zope' and backend_url) #}
 
 {%- if not tls and https_only %}
@@ -158,6 +162,26 @@
   redir 302 {
     /  {{ backend_url }}{rewrite_uri}
   } {# redir #}
+{%- elif slave_type == 'notebook' %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    transparent
+    insecure_skip_verify
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Real-IP {remote}
+    header_upstream Host {host}
+    websocket
+    without /proxy/
+    insecure_skip_verify
+  }
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
 {%-   if default_path %}

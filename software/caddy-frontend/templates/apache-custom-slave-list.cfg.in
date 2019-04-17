@@ -9,7 +9,6 @@
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] %}
 {% set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
 {% set slave_log_dict = {} %}
 {% if extra_slave_instance_list %}
@@ -98,11 +97,7 @@ output = {{ plugin_directory }}/${:name}
 {# Set slave domain if none was defined #}
 {%   if slave_instance.get('custom_domain', None) == None %}
 {%     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
-{%     if slave_type in NGINX_TYPE_LIST %}
-{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('nginx-domain', slapparameter_dict.get('domain')))) %}
-{%     else %}
-{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
-{%     endif %}
+{%     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
 {%   endif %}
 
 {%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
@@ -223,8 +218,6 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
-nginx_http_port = {{ dumps('' ~ nginx_http_port) }}
-nginx_https_port = {{ dumps('' ~ nginx_https_port) }}
 cached_port = {{ dumps('' ~ cached_port) }}
 ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
 {# BBB: apache_custom_https and apache_custom_http #}
@@ -251,19 +244,10 @@ caddy_custom_https = {{ dumps(caddy_custom_https) }}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
-{%   if slave_type in NGINX_TYPE_LIST %}
-rendered = {{ nginx_configuration_directory }}/${:filename}
-{%   else %}
 rendered = {{ caddy_configuration_directory }}/${:filename}
-{%   endif %}
-
 
 {%   if caddy_custom_http or caddy_custom_https %}
 template = {{ template_custom_slave_configuration }}
-{%   elif slave_type == 'eventsource' %}
-template = {{ template_eventsource_slave_configuration }}
-{%   elif slave_type == 'notebook' %}
-template = {{ template_notebook_slave_configuration }}
 {%   else %}
 template = {{ template_default_slave_configuration }}
 {%   endif %}
@@ -407,16 +391,6 @@ ipv6-port = {{ cached_port }}
 ipv4-port = {{ ssl_cached_port }}
 ipv6-port = {{ ssl_cached_port }}
 
-[tunnel-6to4-base-nginx_http_port]
-<= tunnel-6to4-base
-ipv4-port = {{ nginx_http_port }}
-ipv6-port = {{ nginx_http_port }}
-
-[tunnel-6to4-base-nginx_https_port]
-<= tunnel-6to4-base
-ipv4-port = {{ nginx_https_port }}
-ipv6-port = {{ nginx_https_port }}
-
 {# Define log access #}
 [caddy-log-access-parameters]
 caddy_log_directory = {{ dumps(caddy_log_directory) }}
@@ -458,7 +432,7 @@ command-line = {{ kedifa_updater }}
   --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
   --identity {{ kedifa_login_certificate }}
   --master-certificate {{ master_certificate }}
-  --on-update "{{ frontend_graceful_reload }} ; {{ nginx_graceful_reload }}"
+  --on-update "{{ frontend_graceful_reload }}"
   ${kedifa-updater-mapping:file}
   {{ kedifa_updater_state_file }}
 
@@ -498,8 +472,6 @@ parts +=
     tunnel-6to4-base-https_port
     tunnel-6to4-base-cached_port
     tunnel-6to4-base-ssl_cached_port
-    tunnel-6to4-base-nginx_http_port
-    tunnel-6to4-base-nginx_https_port
     expose-csr_id
 
 cache-access = {{ cache_access }}
