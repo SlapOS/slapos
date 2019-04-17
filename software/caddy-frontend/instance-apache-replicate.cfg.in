@@ -79,6 +79,12 @@ context =
 {%   set slave_error_list = [] %}
 {%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
+{%   set slave_type = slave.get('type') %}
+{%   if slave_type == 'eventsource' %}
+{%     do slave_error_list.append('type:eventsource is not implemented') %}
+{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook'] %}
+{%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
+{%   endif %}
 {#   BBB: apache_custom_https AND apache_custom_http #}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}

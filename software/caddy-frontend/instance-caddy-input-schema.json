@@ -46,7 +46,7 @@
     "nginx-domain": {
       "description": "Base Domain for create subdomains (ie.: example2.com) for websocket, notebook and eventsource.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
-      "title": "Nginx Domain",
+      "title": "[NOT IMPLMENTED] Nginx Domain",
       "type": "string"
     },
     "public-ipv4": {
