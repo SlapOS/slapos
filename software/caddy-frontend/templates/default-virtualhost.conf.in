@@ -23,8 +23,18 @@
 {%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
 {%- set default_path = slave_parameter.get('default-path', '').strip('/') | urlencode %}
-{%- if slave_type == 'notebook' %}
-{# notebook needs http 1.1 max #}
+{%- set websocket_path_list = [] %}
+{%- for websocket_path in slave_parameter.get('websocket-path-list', '').split() %}
+{%-   set websocket_path = websocket_path.strip('/') %}
+{#- Unquote the path, so %20 and similar can be represented correctly #}
+{%-   set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
+{%-   if websocket_path %}
+{%-     do websocket_path_list.append(websocket_path) %}
+{%-   endif %}
+{%- endfor %}
+{%- set websocket_transparent = slave_parameter.get('websocket-transparent', 'true').lower() in TRUE_VALUES %}
+{%- if slave_type in ['notebook', 'websocket'] %}
+{# websocket style needs http 1.1 max #}
 {%-   set enable_h2 = False %}
 {%- endif %}
 
@@ -72,7 +82,7 @@
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to {1}
   }
-{%    elif slave_type != 'notebook' %}
+{%    elif slave_type not in ['notebook', 'websocket'] %}
   rewrite {
     regexp (.*)
     to {1}
@@ -182,6 +192,38 @@
     without /proxy/
     insecure_skip_verify
   }
+{%- elif slave_type == 'websocket' %}
+{%-   if websocket_path_list %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+{%-     if websocket_transparent %}
+    transparent
+{%-     endif %}
+    insecure_skip_verify
+  }
+{%-     for websocket_path in websocket_path_list %}
+  proxy /{{ websocket_path }} {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    websocket
+{%-       if websocket_transparent %}
+    transparent
+{%-       endif %}
+    insecure_skip_verify
+  }
+{%-     endfor %}
+{%-   else %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    websocket
+{%-   if websocket_transparent %}
+    transparent
+{%-   endif %}
+    insecure_skip_verify
+  }
+{%-   endif %}
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
 {%-   if default_path %}
