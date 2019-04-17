@@ -9,7 +9,7 @@
     },
     "type": {
       "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect and notebook, not implemneted is eventsource.",
+      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
       "enum": [
         "",
         "zope"
