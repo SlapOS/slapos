@@ -248,13 +248,16 @@ rendered = {{ caddy_configuration_directory }}/${:filename}
 
 {%   if caddy_custom_http or caddy_custom_https %}
 template = {{ template_custom_slave_configuration }}
+extra-context =
+    section slave_parameter {{ slave_configuration_section_name }}
 {%   else %}
 template = {{ template_default_slave_configuration }}
+extra-context =
+    section slave_parameter {{ slave_configuration_section_name }}
+    import urllib_module urllib
 {%   endif %}
 
 filename = {{ '%s.conf' % slave_reference }}
-extra-context =
-    section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
 
 
