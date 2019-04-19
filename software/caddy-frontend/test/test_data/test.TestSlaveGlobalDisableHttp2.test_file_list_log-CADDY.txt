@@ -72,6 +72,10 @@ T-2/var/log/httpd/_type-notebook_access_log
 T-2/var/log/httpd/_type-notebook_error_log
 T-2/var/log/httpd/_type-redirect_access_log
 T-2/var/log/httpd/_type-redirect_error_log
+T-2/var/log/httpd/_type-websocket-websocket-path_access_log
+T-2/var/log/httpd/_type-websocket-websocket-path_error_log
+T-2/var/log/httpd/_type-websocket_access_log
+T-2/var/log/httpd/_type-websocket_error_log
 T-2/var/log/httpd/_type-zope-default-path_access_log
 T-2/var/log/httpd/_type-zope-default-path_error_log
 T-2/var/log/httpd/_type-zope-path_access_log
