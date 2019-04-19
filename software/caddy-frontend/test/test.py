@@ -5514,6 +5514,10 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     })
     self.runComputerPartition(max_quantity=1)
 
+    # give caddy a moment to refresh its config, as sending signal does not
+    # block until caddy is refreshed
+    time.sleep(2)
+
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
