@@ -15,3 +15,4 @@ slapos.cookbook.egg-info
 *.egg/
 TEST_KNOWN_HOSTS
 node_modules
+update-release.sh
