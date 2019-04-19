@@ -159,7 +159,7 @@ command-line = {{ parameter_dict['caddy'] }}
   -log ${expose-csr_id-configuration:error-log}
   -http2=true
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
   -root ${directory:csr_id}
 
 wrapper-path = ${directory:service}/expose-csr_id

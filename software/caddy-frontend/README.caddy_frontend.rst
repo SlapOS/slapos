@@ -90,6 +90,8 @@ About SSL and SlapOS Master Zero Knowledge
 
 SSL keys and certificates are directly send to the frontend cluster in order to follow zero knowledge principle of SlapOS Master.
 
+*Note*: Until master partition or slave specific certificate is uploaded each slave is served with fallback certificate.  This fallback certificate is self signed, does not match served hostname and results with lack of response on HTTPs.
+
 Master partition
 ----------------
 
@@ -218,13 +220,9 @@ caddy_custom_https
 ~~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
 
-*Note*: The system will reject slaves which does not pass validation of caddy configuration, despite them being in ``-frontend-authorized-slave-string``, as otherwise this will lead to the whole frontend to fail.
-
 caddy_custom_http
 ~~~~~~~~~~~~~~~~~
 Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
-
-*Note*: The system will reject slaves which does not pass validation of caddy configuration, despite them being in ``-frontend-authorized-slave-string``, as otherwise this will lead to the whole frontend to fail.
 
 url
 ~~~
@@ -343,7 +341,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "caddy_custom_https":'
   https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
     bind %(local_ipv4)s
-    tls %%(certificate)s %%(certificate)s
+    tls %(certificate)s %(certificate)s
 
     log / %(access_log)s {combined}
     errors %(error_log)s

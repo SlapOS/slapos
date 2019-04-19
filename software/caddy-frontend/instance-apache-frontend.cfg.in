@@ -100,7 +100,6 @@ single-custom-personal = ${dynamic-custom-personal-template-slave-list:rendered}
 template-log-access = {{ parameter_dict['template_log_access'] }}
 log-access-configuration = ${directory:etc}/log-access.conf
 ip-access-certificate = ${self-signed-ip-access:certificate}
-ip-access-key = ${self-signed-ip-access:key}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
@@ -111,22 +110,40 @@ recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter['ipv4-random']}}
-key = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.key
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 stop-on-error = True
 command =
-  [ -f ${:key} ] && [ -f ${:certificate} ] && exit 0
-  rm -f ${:key} ${:certificate}
+  [ -f ${:certificate} ] && exit 0
+  rm -f ${:certificate}
   /bin/bash -c ' \
   {{ parameter_dict['openssl'] }} req \
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
-     -keyout ${:key} \
+     -keyout ${:certificate} \
      -subj "/CN=Self Signed IP Access" \
      -reqexts SAN \
      -extensions SAN \
      -config <(cat {{ parameter_dict['openssl_cnf'] }} \
          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
+     -out ${:certificate}'
+
+[self-signed-fallback-access]
+# Self Signed certificate for HTTPS access to the frontend with fallback certificate
+recipe = plone.recipe.command
+update-command = ${:command}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv4 = {{instance_parameter['ipv4-random']}}
+certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
+stop-on-error = True
+command =
+  [ -f ${:certificate} ] && exit 0
+  rm -f ${:certificate}
+  /bin/bash -c ' \
+  {{ parameter_dict['openssl'] }} req \
+     -new -newkey rsa:2048 -sha256 \
+     -nodes -x509 -days 36500 \
+     -keyout ${:certificate} \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter['configuration.frontend-name'] }}" \
      -out ${:certificate}'
 
 [jinja2-template-base]
@@ -138,7 +155,6 @@ slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
 context =
     import json_module json
-    import os_module os
     raw common_profile {{ parameter_dict['common_profile'] }}
     raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
     key slap_software_type :slap_software_type
@@ -212,7 +228,9 @@ bin_directory = {{ parameter_dict['bin_directory'] }}
 caddy_executable = {{ parameter_dict['caddy'] }}
 caucase_url = {{ slapparameter_dict['kedifa-caucase-url'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
-kedifa-getter = {{ parameter_dict['kedifa-getter'] }}
+kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
+kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
+kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
 extra-context =
@@ -222,7 +240,9 @@ extra-context =
     key nginx_configuration_directory caddy-directory:nginx-slave-configuration
     key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
     key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
-    key kedifa_getter :kedifa-getter
+    key kedifa_updater :kedifa-updater
+    key kedifa_updater_mapping_file :kedifa-updater-mapping-file
+    key kedifa_updater_state_file :kedifa-updater-state-file
     key kedifa_csr :kedifa-csr
     key caddy_executable :caddy_executable
     key caucase_url :caucase_url
@@ -259,6 +279,8 @@ extra-context =
     key template_notebook_slave_configuration software-release-path:template-nginx-notebook-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
+    key frontend_graceful_reload caddy-configuration:frontend-graceful-command
+    key nginx_graceful_reload nginx-configuration:nginx-graceful-command
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     section nginx_configuration nginx-configuration
@@ -277,10 +299,10 @@ extra-context =
     key service_directory directory:service
     key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
-# BBB: SlapOS Master non-zero knowledge BEGIN
     key custom_ssl_directory caddy-directory:custom-ssl-directory
+# BBB: SlapOS Master non-zero knowledge BEGIN
+    key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
-    key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [dynamic-virtualhost-template-slave]
@@ -323,7 +345,6 @@ extra-context =
     key password monitor-htpasswd:passwd
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
-    key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
@@ -332,7 +353,8 @@ environment =
   CADDYPATH=${directory:frontend_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-caddy-frontend-template:rendered}
-  -log stdout
+  -log ${caddy-configuration:error-log}
+  -log-roll-mb 0
 {% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false
 {% else %}
@@ -343,7 +365,7 @@ command-line = {{ parameter_dict['caddy'] }}
 {% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
 wrapper-path = ${directory:bin}/caddy-wrapper
 
 [caddy-frontend]
@@ -369,9 +391,7 @@ slave-log = ${directory:log}/httpd
 nginx-slave-configuration = ${directory:etc}/nginx-slave-conf.d/
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
-# BBB: SlapOS Master non-zero knowledge BEGIN
 custom-ssl-directory = ${:slave-configuration}/ssl
-# BBB: SlapOS Master non-zero knowledge END
 
 [caddy-configuration]
 frontend-configuration = ${directory:etc}/Caddyfile
@@ -393,21 +413,23 @@ command-line = ${frontend-caddy-validate:rendered}
 wrapper-path = ${directory:bin}/caddy-configtest
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
-[apache-key]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
-rendered = ${directory:bbb-ssl-dir}/frontend.key
-content = ${configuration:apache-key}
-extra-context =
-    key content :content
+[get-self-signed-fallback-access]
+recipe = collective.recipe.shelloutput
+commands =
+  certificate = cat ${self-signed-fallback-access:certificate}
 
 [apache-certificate]
-< = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{% raw %}
+  {{ certificate or fallback_certificate }}
+  {{ key or '' }}
+{% endraw %}
+context =
+  key certificate configuration:apache-certificate
+  key key configuration:apache-key
+  key fallback_certificate get-self-signed-fallback-access:certificate
 rendered = ${directory:bbb-ssl-dir}/frontend.crt
-content = ${configuration:apache-certificate}
-extra-context =
-    key content :content
 # BBB: SlapOS Master non-zero knowledge END
 
 [logrotate-entry-caddy]
@@ -415,6 +437,11 @@ extra-context =
 name = caddy
 log = ${caddy-configuration:error-log} ${caddy-configuration:access-log}
 rotate-num = 30
+# Note: Slaves do not define their own reload, as this would be repeated,
+#       because sharedscripts work per entry, and each slave needs its own
+#       olddir
+#       Here we trust that there will be something to be rotated with error
+#       or access log, and that this will trigger postrotate script.
 post = ${frontend-caddy-lazy-graceful:rendered} &
 
 [logrotate-entry-nginx]
@@ -557,7 +584,7 @@ template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.key ${directory:bbb-ssl-dir}/*.crt
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/caddy_graceful_signature
 extra-context =
@@ -571,7 +598,7 @@ extra-context =
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-nginx-safe-graceful
 mode = 0700
-path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*/*.pem ${caddy-directory:custom-ssl-directory}/*.key ${caddy-directory:custom-ssl-directory}/*.crt ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.key ${directory:bbb-ssl-dir}/*.crt
+path_list = ${dynamic-nginx-frontend-template:rendered} ${caddy-directory:nginx-slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 signature_file = ${directory:run}/nginx_graceful_signature
 extra-context =
@@ -741,7 +768,8 @@ environment =
   CADDYPATH=${directory:nginx_cluster}
 command-line = {{ parameter_dict['caddy'] }}
   -conf ${dynamic-nginx-frontend-template:rendered}
-  -log stdout
+  -log ${nginx-configuration:error_log}
+  -log-roll-mb 0
 {% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false
 {% else %}
@@ -749,7 +777,7 @@ command-line = {{ parameter_dict['caddy'] }}
 {% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
   -disable-http-challenge
-  -disable-tls-sni-challenge
+  -disable-tls-alpn-challenge
 wrapper-path = ${directory:bin}/nginx-wrapper
 
 [nginx-frontend]
@@ -774,7 +802,6 @@ extra-context =
   key master_certificate caddy-configuration:master-certificate
 # BBB: SlapOS Master non-zero knowledge BEGIN
   key apache_certificate apache-certificate:rendered
-  key apache_key apache-key:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
 [nginx-configuration]
