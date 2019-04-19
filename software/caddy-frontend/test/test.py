@@ -5353,6 +5353,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     })
     self.runComputerPartition(max_quantity=1)
+    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
