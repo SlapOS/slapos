@@ -1,6 +1,20 @@
-{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
 {% set socket = parameter_dict['socket'] -%}
 {% set extra_dict = parameter_dict['extra-dict'] -%}
+{% set engine = parameter_dict['engine'] -%}
+{% set plugins = [] -%}
+
+{% if not engine or engine == 'InnoDB' -%}
+{% do extra_dict.setdefault('innodb_file_per_table',  '1') -%}
+{% endif -%}
+
+{% if not engine or engine == 'RocksDB' -%}
+{% do plugins.append('ha_rocksdb') -%}
+{% endif -%}
+
+{% if not engine or engine == 'TokuDB' -%}
+{% do plugins.append('ha_tokudb') -%}
+{% endif -%}
+
 [mysqld]
 skip_networking
 socket = {{ socket }}
@@ -14,8 +28,9 @@ slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
 init_file = {{ parameter_dict['init-file'] }}
 log_warnings = 1
 disable-log-bin
-
-plugin-load = ha_tokudb;ha_rocksdb
+{%- if plugins %}
+plugin-load = {{ ';'.join(plugins) }}
+{%- endif %}
 
 ## The following settings come from ERP5 configuration.
 
@@ -32,7 +47,6 @@ innodb_locks_unsafe_for_binlog = 1
 {{x}}sync_frm = 0
 
 # Extra parameters.
-{%- do extra_dict.setdefault('innodb_file_per_table',  '1') %}
 {%- for k, v in extra_dict.iteritems() %}
 {%- do assert('-' not in k) %}
 {{ k }} = {{ v }}
