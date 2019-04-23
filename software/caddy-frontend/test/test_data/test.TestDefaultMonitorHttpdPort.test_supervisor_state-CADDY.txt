@@ -10,8 +10,6 @@ T-1:kedifa-{hash}-on-watch RUNNING
 T-1:kedifa-reloader EXITED
 T-2:6tunnel-11080-{hash}-on-watch STOPPED
 T-2:6tunnel-11443-{hash}-on-watch STOPPED
-T-2:6tunnel-12080-{hash}-on-watch STOPPED
-T-2:6tunnel-12443-{hash}-on-watch STOPPED
 T-2:6tunnel-26011-{hash}-on-watch STOPPED
 T-2:6tunnel-26012-{hash}-on-watch STOPPED
 T-2:bootstrap-monitor STOPPED
@@ -19,9 +17,7 @@ T-2:certificate_authority-{hash}-on-watch STOPPED
 T-2:crond-{hash}-on-watch STOPPED
 T-2:expose-csr_id-{hash}-on-watch STOPPED
 T-2:frontend-caddy-safe-graceful STOPPED
-T-2:frontend-nginx-safe-graceful STOPPED
 T-2:frontend_caddy-{hash}-on-watch STOPPED
-T-2:frontend_nginx-{hash}-on-watch STOPPED
 T-2:kedifa-login-certificate-caucase-updater-on-watch STOPPED
 T-2:kedifa-updater-{hash}-on-watch STOPPED
 T-2:monitor-httpd-{hash}-on-watch STOPPED

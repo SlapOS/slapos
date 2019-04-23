@@ -21,7 +21,5 @@ T-2/var/log/httpd/_virtualhostroot-http-port-unsafe_error_log
 T-2/var/log/httpd/_virtualhostroot-https-port-unsafe_access_log
 T-2/var/log/httpd/_virtualhostroot-https-port-unsafe_error_log
 T-2/var/log/monitor-httpd-error.log
-T-2/var/log/nginx-access.log
-T-2/var/log/nginx-error.log
 T-2/var/log/trafficserver/manager.log
 T-2/var/log/trafficserver/traffic.out

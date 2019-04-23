@@ -61,8 +61,6 @@ SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
-NGINX_HTTP_PORT = '12080'
-NGINX_HTTPS_PORT = '12443'
 MONITOR_HTTPD_PORT = '13000'
 MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
@@ -338,7 +336,6 @@ class TestDataMixin(object):
       'monitor/monitor-collect.pid',
       # may appear or not
       'var/run/caddy_graceful_signature.tmp',
-      'var/run/nginx_graceful_signature.tmp',
     ])
 
   def test_supervisor_state(self):
@@ -533,8 +530,6 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -568,8 +563,6 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -773,7 +766,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       [
         '*.customdomain.example.com',
         '*.example.com',
-        '*.nginx.example.com',
         '*.alias1.example.com',
       ])
 
@@ -954,14 +946,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -1101,6 +1090,26 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'type': 'notebook',
       },
+      'type-websocket': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+      },
+      'type-websocket-websocket-path-list': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-path-list': '////ws//// /with%20space/',
+      },
+      'type-websocket-websocket-transparent-false': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-transparent': 'false',
+      },
+      'type-websocket-websocket-path-list-websocket-transparent-false': {
+        'url': cls.backend_url,
+        'type': 'websocket',
+        'websocket-path-list': '////ws//// /with%20space/',
+        'websocket-transparent': 'false',
+      },
       'type-eventsource': {
         'url': cls.backend_url,
         'type': 'eventsource',
@@ -1218,15 +1227,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '45',
-      'rejected-slave-amount': '3',
-      'slave-amount': '48',
+      'accepted-slave-amount': '48',
+      'rejected-slave-amount': '4',
+      'slave-amount': '52',
       'kedifa-caucase-url': 'http://[%s]:%s' % (
         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
         "_caddy_custom_http_s-rejected": ["slave not authorized"],
+        "_type-eventsource": ["type:eventsource is not implemented"]
       }
     }
 
@@ -1250,11 +1260,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertTrue(
       '-grace 2s' in
       open(os.path.join(partition_path, 'bin', 'caddy-wrapper'), 'r').read()
-    )
-
-    self.assertTrue(
-      '-grace 2s' in
-      open(os.path.join(partition_path, 'bin', 'nginx-wrapper'), 'r').read()
     )
 
   def test_monitor_conf(self):
@@ -2034,11 +2039,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': '%s.nginx.example.com' % (hostname,),
+        'domain': '%s.example.com' % (hostname,),
         'replication_number': '1',
-        'url': 'http://%s.nginx.example.com' % (hostname, ),
-        'site_url': 'http://%s.nginx.example.com' % (hostname, ),
-        'secure_access': 'https://%s.nginx.example.com' % (hostname, ),
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': SLAPOS_TEST_IPV4,
       },
       parameter_dict
@@ -2047,7 +2052,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.certificate_pem,
@@ -2058,18 +2063,210 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test/terminals/websocket/test',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/terminals/websocket')
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
-  @skip('Feature postponed')
   def test_type_websocket(self):
-    # Pure websocket configurable frontend
-    raise NotImplementedError
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+
+  def test_type_websocket_websocket_transparent_false(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-transparent-false')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+
+  def test_type_websocket_websocket_path_list(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-path-list')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('connection' in j['Incoming Headers'].keys())
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/ws/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/with%20space/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+
+  def test_type_websocket_websocket_path_list_websocket_transparent_false(
+    self):
+    parameter_dict = self.assertSlaveBase(
+      'type-websocket-websocket-path-list-websocket-transparent-false')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('connection' in j['Incoming Headers'].keys())
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/ws/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/with%20space/test-path'
+    )
+    self.assertFalse(
+      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertEqual(
+      'Upgrade',
+      j['Incoming Headers']['connection']
+    )
+    self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
   @skip('Feature postponed')
   def test_type_eventsource(self):
@@ -2094,7 +2291,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'pub',
-      NGINX_HTTPS_PORT)
+      #  NGINX_HTTPS_PORT
+    )
 
     self.assertEqual(
       self.certificate_pem,
@@ -3121,15 +3319,12 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
@@ -3193,13 +3388,10 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -3286,12 +3478,9 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -3379,8 +3568,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -3434,8 +3621,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       're6st-verification-url': 'some-re6st-verification-url',
@@ -3489,12 +3674,9 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -3592,8 +3774,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       '-frontend-1-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -3639,13 +3819,10 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'enable-quic': 'true',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -3737,12 +3914,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -4132,12 +4306,9 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -4391,14 +4562,11 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -4489,7 +4657,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         [
           '*.customdomain.example.com',
           '*.example.com',
-          '*.nginx.example.com',
         ])
 
     cls.ca = CertificateAuthority(
@@ -4512,14 +4679,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'nginx-domain': 'nginx.example.com',
       'public-ipv4': SLAPOS_TEST_IPV4,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'nginx_port': NGINX_HTTPS_PORT,
-      'plain_nginx_port': NGINX_HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
       '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -4855,11 +5019,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': '%s.nginx.example.com' % (hostname,),
+        'domain': '%s.example.com' % (hostname,),
         'replication_number': '1',
-        'url': 'http://%s.nginx.example.com' % (hostname, ),
-        'site_url': 'http://%s.nginx.example.com' % (hostname, ),
-        'secure_access': 'https://%s.nginx.example.com' % (hostname, ),
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': SLAPOS_TEST_IPV4
       },
       parameter_dict
@@ -4867,7 +5031,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.certificate_pem,
@@ -4883,11 +5047,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
-        'domain': '%s.nginx.example.com' % (hostname,),
+        'domain': '%s.example.com' % (hostname,),
         'replication_number': '1',
-        'url': 'http://%s.nginx.example.com' % (hostname, ),
-        'site_url': 'http://%s.nginx.example.com' % (hostname, ),
-        'secure_access': 'https://%s.nginx.example.com' % (hostname, ),
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': SLAPOS_TEST_IPV4
       },
       parameter_dict
@@ -4895,7 +5059,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.certificate_pem,
@@ -4924,7 +5088,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       certificate_pem,
@@ -4940,11 +5104,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': '%s.nginx.example.com' % (hostname,),
+        'domain': '%s.example.com' % (hostname,),
         'replication_number': '1',
-        'url': 'http://%s.nginx.example.com' % (hostname, ),
-        'site_url': 'http://%s.nginx.example.com' % (hostname, ),
-        'secure_access': 'https://%s.nginx.example.com' % (hostname, ),
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': SLAPOS_TEST_IPV4,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
@@ -4956,7 +5120,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.slave_certificate_pem,
@@ -4972,11 +5136,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
-        'domain': '%s.nginx.example.com' % (hostname,),
+        'domain': '%s.example.com' % (hostname,),
         'replication_number': '1',
-        'url': 'http://%s.nginx.example.com' % (hostname, ),
-        'site_url': 'http://%s.nginx.example.com' % (hostname, ),
-        'secure_access': 'https://%s.nginx.example.com' % (hostname, ),
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': SLAPOS_TEST_IPV4,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
@@ -4988,7 +5152,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       self.slave_certificate_pem,
@@ -5017,7 +5181,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      NGINX_HTTPS_PORT)
+      HTTPS_PORT)
 
     self.assertEqual(
       certificate_pem,
@@ -5258,12 +5422,9 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
   instance_parameter_dict = {
     'domain': 'example.com',
-    'nginx-domain': 'nginx.example.com',
     'public-ipv4': SLAPOS_TEST_IPV4,
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'nginx_port': NGINX_HTTPS_PORT,
-    'plain_nginx_port': NGINX_HTTP_PORT,
     'monitor-httpd-port': MONITOR_HTTPD_PORT,
     '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
     'kedifa_port': KEDIFA_PORT,
@@ -5343,7 +5504,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       [
         '*.customdomain.example.com',
         '*.example.com',
-        '*.nginx.example.com',
         '*.alias1.example.com',
       ])
 

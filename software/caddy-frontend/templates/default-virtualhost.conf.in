@@ -16,7 +16,6 @@
 {%- if slave_parameter.get('custom_domain') not in host_list %}
 {%-   do host_list.append(slave_parameter.get('custom_domain')) %}
 {%- endif %}
-{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
 {%- for host in host_list %}
@@ -24,12 +23,35 @@
 {%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
 {%- set default_path = slave_parameter.get('default-path', '').strip('/') | urlencode %}
+{%- set websocket_path_list = [] %}
+{%- for websocket_path in slave_parameter.get('websocket-path-list', '').split() %}
+{%-   set websocket_path = websocket_path.strip('/') %}
+{#- Unquote the path, so %20 and similar can be represented correctly #}
+{%-   set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
+{%-   if websocket_path %}
+{%-     do websocket_path_list.append(websocket_path) %}
+{%-   endif %}
+{%- endfor %}
+{%- set websocket_transparent = slave_parameter.get('websocket-transparent', 'true').lower() in TRUE_VALUES %}
+{%- if slave_type in ['notebook', 'websocket'] %}
+{# websocket style needs http 1.1 max #}
+{%-   set enable_h2 = False %}
+{%- endif %}
 
+{%- for tls in [True, False] %}
+{%- if tls %}
+{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
+{%- else %}
+{%- set backend_url = slave_parameter.get('url', '').rstrip('/') %}
+# SSL-disabled hosts
+{{ http_host_list|join(', ') }} {
+{%- endif %}
   bind {{ slave_parameter['local_ipv4'] }}
   # Compress the output
   gzip
+{%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
 {%- if enable_h2 %}
     # Allow HTTP2
@@ -39,6 +61,7 @@
     alpn http/1.1
 {%- endif %} {#- if enable_h2 #}
   } {# tls #}
+{%- endif %} {#- if tls #}
   log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
     rotate_size 0
   }
@@ -59,15 +82,20 @@
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
     to {1}
   }
-{%    else %}
+{%    elif slave_type not in ['notebook', 'websocket'] %}
   rewrite {
     regexp (.*)
     to {1}
   }
-{%    endif %}
+{%    endif %} {#    elif slave_type != 'notebook' #}
 {%- endif %} {#- if not (slave_type == 'zope' and backend_url) #}
 
-{%- if slave_type ==  'zope' and backend_url %}
+{%- if not tls and https_only %}
+  # Enforced redirection to SSL-enabled host
+  redir 302 {
+    / https://{host}{rewrite_uri}
+  }
+{%- elif slave_type ==  'zope' and backend_url %}
   # Zope configuration
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
@@ -114,17 +142,29 @@
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+{%- if tls %}
     to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- else %}
+    to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- endif %}
   }
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
+{%- if tls %}
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- else %}
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- endif %}
   }
 {%- else %}
   rewrite {
     regexp (.*)
+{%- if tls %}
     to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-https-port', '443') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- else %}
+    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
+{%- endif %}
   } {# rewrite #}
 {%- endif %} {#- if prefer_gzip #}
 {%- elif slave_type ==  'redirect' and backend_url %} {#- if slave_type ==  'zope' and backend_url #}
@@ -132,6 +172,58 @@
   redir 302 {
     /  {{ backend_url }}{rewrite_uri}
   } {# redir #}
+{%- elif slave_type == 'notebook' %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    transparent
+    insecure_skip_verify
+  }
+  rewrite {
+    regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
+    to /proxy/{1}
+  }
+  proxy /proxy/ {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Real-IP {remote}
+    header_upstream Host {host}
+    websocket
+    without /proxy/
+    insecure_skip_verify
+  }
+{%- elif slave_type == 'websocket' %}
+{%-   if websocket_path_list %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+{%-     if websocket_transparent %}
+    transparent
+{%-     endif %}
+    insecure_skip_verify
+  }
+{%-     for websocket_path in websocket_path_list %}
+  proxy /{{ websocket_path }} {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    websocket
+{%-       if websocket_transparent %}
+    transparent
+{%-       endif %}
+    insecure_skip_verify
+  }
+{%-     endfor %}
+{%-   else %}
+  proxy / {{ backend_url }} {
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    websocket
+{%-   if websocket_transparent %}
+    transparent
+{%-   endif %}
+    insecure_skip_verify
+  }
+{%-   endif %}
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
   # Default configuration
 {%-   if default_path %}
@@ -180,154 +272,4 @@
 {%-   endif %} {#-   if backend_url #}
 {%- endif %} {#- if slave_type ==  'zope' and backend_url #}
 }  {# https_host_list|join(', ') #}
-
-# SSL-disabled hosts
-{{ http_host_list|join(', ') }} {
-  bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
-  gzip
-
-  log / {{ slave_parameter.get('access_log') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
-    rotate_size 0
-}
-  errors {{ slave_parameter.get('error_log') }} {
-    rotate_size 0
-}
-
-{%- if not (slave_type == 'zope' and backend_url) %}
-{%-   if prefer_gzip  %}
-  rewrite {
-    regexp (.*)
-    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-    to /prefer-gzip{1}
-  }
-  rewrite {
-    regexp (.*)
-    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-    to {1}
-  }
-{%    else %}
-  rewrite {
-    regexp (.*)
-    to {1}
-  }
-{%    endif %}
-{%- endif %} {#- if not (slave_type == 'zope' and backend_url) #}
-
-{%- if https_only %}
-  # Enforced redirection to SSL-enabled host
-  redir 302 {
-    / https://{host}{rewrite_uri}
-  }
-{%- elif slave_type ==  'redirect' and slave_parameter.get('url', '') %} {#- if https_only #}
-  # Redirect configuration
-  redir 302 {
-    /  {{ slave_parameter.get('url', '') }}{rewrite_uri}
-  } {# redir #}
-{%- elif slave_type ==  'zope' and backend_url %} {#- if https_only #}
-  # Zope configuration
-{%-   for (proxy_name, proxy_comment) in proxy_append_list %}
-  # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-{%-     if proxy_name == 'prefer-gzip' %}
-    without /prefer-gzip
-    header_upstream Accept-Encoding gzip
-{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting REMOTE_USER header unset it always
-    header_upstream -REMOTE_USER
-{%- for disabled_cookie in disabled_cookie_list %}
-    # Remove cookie {{ disabled_cookie }} from client Cookies
-    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
-{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
-
-{%-   if disable_via_header %}
-    header_downstream -Via
-{%-   endif %} {#-   if disable_via_header #}
-
-{%-   if disable_no_cache_header %}
-    header_upstream -Cache-Control
-    header_upstream -Pragma
-{%-   endif %} {#-   if disable_no_cache_header #}
-    transparent
-    timeout 600s
-{%-   if ssl_proxy_verify %}
-{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-   else %} {#-   if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-   endif %} {#-   if ssl_proxy_verify #}
-  } {# proxy #}
-{%- endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
-{%-   if default_path %}
-  redir 301 {
-    if {path} is /
-    / {scheme}://{host}/{{ default_path }}
-  } {# redir #}
-{%-   endif %} {#-   if default_path #}
-{%- if prefer_gzip  %}
-  rewrite {
-    regexp (.*)
-    if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-    to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
-  }
-  rewrite {
-    regexp (.*)
-    if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
-  }
-{%- else %}
-  rewrite {
-    regexp (.*)
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter.get('virtualhostroot-http-port', '80') | int }}%2F{{ slave_parameter.get('path', '').strip('/') }}%2FVirtualHostRoot/{1}
-  } {# rewrite #}
-{% endif %} {#- if prefer_gzip #}
-{%- else %} {#- if https_only #}
-  # Default configuration
-{%-   if default_path %}
-  redir 301 {
-    if {path} is /
-    / {scheme}://{host}/{{ default_path }}
-  } {# redir #}
-{%-   endif %} {#-   if default_path #}
-{%-   if slave_parameter.get('url', '') %}
-{%-   for (proxy_name, proxy_comment) in proxy_append_list %}
-  # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ slave_parameter.get('url', '') }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-{%-     if proxy_name == 'prefer-gzip' %}
-    without /prefer-gzip
-    header_upstream Accept-Encoding gzip
-{%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting REMOTE_USER header unset it always
-    header_upstream -REMOTE_USER
-{%- for disabled_cookie in disabled_cookie_list %}
-    # Remove cookie {{ disabled_cookie }} from client Cookies
-    header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
-{%- endfor %} {#- for disabled_cookie in disabled_cookie_list #}
-
-{%-     if disable_via_header %}
-    header_downstream -Via
-{%-     endif %} {#-     if disable_via_header #}
-
-{%-     if disable_no_cache_header %}
-    header_upstream -Cache-Control
-    header_upstream -Pragma
-{%-     endif %} {#-     if disable_no_cache_header #}
-    transparent
-    timeout 600s
-{%-     if ssl_proxy_verify %}
-{%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-       endif %} {#-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-     else %} {#-     if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-     endif %} {#-     if ssl_proxy_verify #}
-  } {# proxy #}
-{%-    endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
-{%-   endif %} {#-   if slave_parameter.get('url', '') #}
-{%- endif %} {#- if https_only #}
-} {# http_host_list|join(', ') #}
+{%- endfor %} {#- for tls in [True, False] #}

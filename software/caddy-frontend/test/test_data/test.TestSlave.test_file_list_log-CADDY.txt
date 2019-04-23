@@ -72,6 +72,14 @@ T-2/var/log/httpd/_type-notebook_access_log
 T-2/var/log/httpd/_type-notebook_error_log
 T-2/var/log/httpd/_type-redirect_access_log
 T-2/var/log/httpd/_type-redirect_error_log
+T-2/var/log/httpd/_type-websocket-websocket-path-list-websocket-transparent-false_access_log
+T-2/var/log/httpd/_type-websocket-websocket-path-list-websocket-transparent-false_error_log
+T-2/var/log/httpd/_type-websocket-websocket-path-list_access_log
+T-2/var/log/httpd/_type-websocket-websocket-path-list_error_log
+T-2/var/log/httpd/_type-websocket-websocket-transparent-false_access_log
+T-2/var/log/httpd/_type-websocket-websocket-transparent-false_error_log
+T-2/var/log/httpd/_type-websocket_access_log
+T-2/var/log/httpd/_type-websocket_error_log
 T-2/var/log/httpd/_type-zope-default-path_access_log
 T-2/var/log/httpd/_type-zope-default-path_error_log
 T-2/var/log/httpd/_type-zope-path_access_log
@@ -93,7 +101,5 @@ T-2/var/log/httpd/_type-zope_error_log
 T-2/var/log/httpd/_url_https-url_access_log
 T-2/var/log/httpd/_url_https-url_error_log
 T-2/var/log/monitor-httpd-error.log
-T-2/var/log/nginx-access.log
-T-2/var/log/nginx-error.log
 T-2/var/log/trafficserver/manager.log
 T-2/var/log/trafficserver/traffic.out
