@@ -1708,8 +1708,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       verify=self.ca_certificate_file)
     self.assertEqual(httplib.CREATED, auth.status_code)
 
-    data = self.customdomain_ca_certificate_pem + \
-        self.customdomain_ca_key_pem + 'some garbage'
+    _, ca_key_pem, csr, _ = createCSR(
+      parameter_dict['domain'])
+    _, ca_certificate_pem = self.ca.signCSR(csr)
+
+    data = ca_certificate_pem + ca_key_pem + 'some garbage'
     upload = requests.put(
       upload_url + auth.text,
       data=data,
@@ -1718,9 +1721,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(httplib.CREATED, upload.status_code)
     self.runKedifaUpdater()
 
-    with self.assertRaises(requests.exceptions.SSLError):
-      self.fakeHTTPSResult(
+    result = self.fakeHTTPSResult(
         parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      ca_certificate_pem,
+      der2pem(result.peercert)
+    )
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
@@ -4666,6 +4675,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'customdomainsslcrtsslkeysslcacrt.example.com')
     _, cls.customdomain_ca_certificate_pem = cls.ca.signCSR(csr)
 
+    _, cls.sslcacrtgarbage_ca_key_pem, csr, _ = createCSR(
+      'sslcacrtgarbage.example.com')
+    _, cls.sslcacrtgarbage_ca_certificate_pem = cls.ca.signCSR(csr)
+
     _, cls.ssl_from_slave_ca_key_pem, csr, _ = createCSR(
       'sslfromslave.example.com')
     _, cls.ssl_from_slave_ca_certificate_pem = cls.ca.signCSR(csr)
@@ -4729,8 +4742,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'ssl_ca_crt_garbage': {
         'url': cls.backend_url,
-        'ssl_crt': cls.customdomain_ca_certificate_pem,
-        'ssl_key': cls.customdomain_ca_key_pem,
+        'ssl_crt': cls.sslcacrtgarbage_ca_certificate_pem,
+        'ssl_key': cls.sslcacrtgarbage_ca_key_pem,
         'ssl_ca_crt': 'some garbage',
       },
       'ssl_ca_crt_does_not_match': {
@@ -5345,9 +5358,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       parameter_dict
     )
 
-    with self.assertRaises(requests.exceptions.SSLError):
-      self.fakeHTTPSResult(
+    result = self.fakeHTTPSResult(
         parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.sslcacrtgarbage_ca_certificate_pem,
+      der2pem(result.peercert)
+    )
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_ssl_ca_crt_does_not_match(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
