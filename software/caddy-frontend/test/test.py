@@ -4936,7 +4936,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     reference = 'ssl_from_slave'
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
-    generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
 
     hostname = reference.translate(None, '_-')
     self.assertEqual(
