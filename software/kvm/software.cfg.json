@@ -33,6 +33,11 @@
       "request": "instance-kvm-cluster-simplified-input-schema.json",
       "response": "instance-kvm-output-schema.json",
       "index": 3
+    },
+    "nbd": {
+      "title": "NBD Server",
+      "description": "Simple NBD server where you can upload one image",
+      "index": 4
     }
   }
 }
