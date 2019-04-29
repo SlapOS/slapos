@@ -1,13 +1,7 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
-  "allOf": [
-    {
-      "$ref": "instance-kvm-nbd-server-input-schema.json#/"
-    },
-    {
-      "properties": {
-      }
-    }
-  ]
+  "title": "Input Parameters For NDB Server",
+  "properties": {
+  }
 }
