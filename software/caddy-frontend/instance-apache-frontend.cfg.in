@@ -24,7 +24,6 @@ parts =
   promise-caddy-frontend-v6-http
   promise-caddy-frontend-cached
   promise-caddy-frontend-ssl-cached
-  promise-caddy-is-process-older-than-dependency-set
 
   trafficserver-launcher
   trafficserver-reload
@@ -633,11 +632,6 @@ module = check_port_listening
 name = caddy_ssl_cached.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
 config-port = ${caddy-configuration:ssl-cache-through-port}
-
-[promise-caddy-is-process-older-than-dependency-set]
-recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['bin_directory'] }}/is-process-older-than-dependency-set ${caddy-configuration:pid-file} 
-wrapper-path = ${directory:promise}/caddy-frontend-is-running-actual-software-release
 
 #######
 # Monitoring sections
