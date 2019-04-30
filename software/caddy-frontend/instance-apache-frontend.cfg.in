@@ -60,7 +60,6 @@ log = ${:var}/log
 run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
-promise = ${:etc}/promise
 plugin = ${:etc}/plugin
 
 ca-dir = ${:srv}/ssl
@@ -260,7 +259,6 @@ extra-context =
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key plugin_directory directory:plugin
-    key promise_directory directory:promises
     key report_directory directory:bin
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
