@@ -105,12 +105,12 @@ Example sessions is::
 
   request(...)
 
-  curl -X GET master-key-generate-auth-url
+  curl -k -X GET master-key-generate-auth-url
   > authtoken
 
   cat certificate.pem key.pem ca-bundle.pem > master.pem
 
-  curl -X PUT --data-binary @master.pem master-key-upload-url+authtoken
+  curl -k -X PUT --data-binary @master.pem master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -133,12 +133,12 @@ Example sessions is::
 
   request(...)
 
-  curl -X GET key-generate-auth-url
+  curl -k -X GET key-generate-auth-url
   > authtoken
 
   cat certificate.pem key.pem ca-bundle.pem > master.pem
 
-  curl -X PUT --data-binary @master.pem key-upload-url+authtoken
+  curl -k -X PUT --data-binary @master.pem key-upload-url+authtoken
 
 This replaces old request parameters:
 
