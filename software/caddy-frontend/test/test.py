@@ -744,7 +744,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
-    cls.runKedifaUpdater()
     # run once more slapos node instance, as kedifa-updater sets up
     # certificates needed for caddy-frontend, and on this moment it can be
     # not started yet
@@ -5532,7 +5531,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     })
     self.runComputerPartition(max_quantity=1)
-    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
