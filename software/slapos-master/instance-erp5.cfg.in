@@ -135,8 +135,7 @@ connection-url = smtp://127.0.0.2:0/
 {%   endif -%}
 {% endfor -%}
 
-{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
-{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {"family": "1"}}) -%}
 {% set zope_address_list_id_dict = {} -%}
 {% if zope_partition_dict -%}
 
