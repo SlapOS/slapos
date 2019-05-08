@@ -96,7 +96,7 @@
       ],
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
-    },
+    }
   },
   "title": "Input Parameters",
   "type": "object"
