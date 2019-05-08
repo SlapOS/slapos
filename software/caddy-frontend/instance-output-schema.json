@@ -54,6 +54,10 @@
       "description": "Certificate used to serve data on kedifa-csr_id-url.",
       "type": "string"
     },
+    "kedifa-caucase-url": {
+      "description": "Url to caucase used by KeDiFa.",
+      "type": "string"
+    },
     "caddy-frontend-N-csr_id-url": {
       "description": "URL on which frontend node number N publishes its csr_id sent to caucase.",
       "type": "string"
@@ -61,6 +65,14 @@
     "caddy-frontend-N-csr_id-certificate": {
       "description": "Certificate used to serve data on caddy-frontend-N-csr_id-url.",
       "type": "string"
+    },
+    "warning-slave-dict": {
+      "description": "Dict of slaves which got warnings. Keys are slave references, values are lists of warnings on slaves.",
+      "type": "array"
+    },
+    "warning-list": {
+      "description": "List of warning found during the request.",
+      "type": "array"
     }
   },
   "type": "object"
