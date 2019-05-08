@@ -17,16 +17,20 @@ import collections
 
 
 def main():
+  exit_code = 0
   for f in sys.argv[1:]:
+    print 'Processing %s' % (f,)
     with open(f, 'rb') as infile:
       try:
         obj = json.load(infile, object_pairs_hook=collections.OrderedDict)
       except ValueError as e:
-        raise SystemExit(e)
-
-    with open(f, 'wb') as outfile:
-      json.dump(obj, outfile, sort_keys=False, indent=2, separators=(',', ': '))
-      outfile.write('\n')
+        exit_code = 1
+        print e
+      else:
+        with open(f, 'wb') as outfile:
+          json.dump(obj, outfile, sort_keys=False, indent=2, separators=(',', ': '))
+          outfile.write('\n')
+  sys.exit(exit_code)
 
 if __name__ == '__main__':
   main()
