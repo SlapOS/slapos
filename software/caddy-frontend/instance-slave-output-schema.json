@@ -41,6 +41,10 @@
     "request-error-list": {
       "description": "In case if slave has been rejected by master or has error in the request, the list contains information about each problem",
       "type": "array"
+    },
+    "kedifa-caucase-url": {
+      "description": "URL to caucase used by KeDiFa",
+      "type": "string"
     }
   },
   "type": "object"
