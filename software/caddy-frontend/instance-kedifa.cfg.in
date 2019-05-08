@@ -222,6 +222,7 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 {%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
 {%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command

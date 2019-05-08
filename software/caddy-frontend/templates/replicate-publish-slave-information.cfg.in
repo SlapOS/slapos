@@ -48,6 +48,7 @@
 {%     endif %}
 {%     do slave_information_dict[slave_reference].__setitem__('key-generate-auth-url', kedifa_dict['key-generate-auth-url']) %}
 {%     do slave_information_dict[slave_reference].__setitem__('key-upload-url', kedifa_dict['key-upload-url']) %}
+{%     do slave_information_dict[slave_reference].__setitem__('kedifa-caucase-url', kedifa_dict['kedifa-caucase-url']) %}
 {%   endif %}
 {% endfor %}
 
