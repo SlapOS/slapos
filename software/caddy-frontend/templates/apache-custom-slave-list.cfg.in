@@ -442,6 +442,13 @@ command-line = {{ kedifa_updater }}
 wrapper-path = {{ service_directory }}/kedifa-updater
 hash-files = ${buildout:directory}/software_release/buildout.cfg
 
+[kedifa-updater-run]
+recipe = plone.recipe.command
+# unfortunately slapos.cookbook:wrapper does not return generated wrapper path
+# so it is needed to access it via service directory globbing
+command = {{ service_directory }}/kedifa-updater* --once
+update-command = ${:command}
+
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_updater_mapping_file }}
@@ -466,6 +473,7 @@ extends =
 
 parts +=
     kedifa-updater
+    kedifa-updater-run
     caddy-log-access-header
 {% for part in part_list %}
 {{ '    %s' % part }}

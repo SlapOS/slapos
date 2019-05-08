@@ -8,11 +8,11 @@
     },
     "key-generate-auth-url": {
       "description": "URL to GET once auth for key-upload-url",
-      "type": "array"
+      "type": "string"
     },
     "key-upload-url": {
       "description": "URL to PUT PEM bundle of certificate and key",
-      "type": "array"
+      "type": "string"
     },
     "log-access-url": {
       "description": "List of URLs to access logs",
@@ -41,6 +41,14 @@
     "request-error-list": {
       "description": "In case if slave has been rejected by master or has error in the request, the list contains information about each problem",
       "type": "array"
+    },
+    "warning-list": {
+      "description": "List of warning found during the request.",
+      "type": "array"
+    },
+    "kedifa-caucase-url": {
+      "description": "URL to caucase used by KeDiFa",
+      "type": "string"
     }
   },
   "type": "object"

@@ -469,6 +469,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       base + r'\?auth=$'
     )
 
+    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
+    self.assertEqual(
+      kedifa_caucase_url,
+      'http://[%s]:%s' % (SLAPOS_TEST_IPV6, CAUCASE_PORT),
+    )
+
     return generate_auth_url, upload_url
 
   def assertKeyWithPop(self, key, d):
@@ -546,8 +552,6 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': None,
         'domain': 'None',
-        'kedifa-caucase-url': 'http://[%s]:%s' % (
-           SLAPOS_TEST_IPV6, CAUCASE_PORT),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -580,8 +584,6 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': None,
         'domain': 'example.com',
-        'kedifa-caucase-url': 'http://[%s]:%s' % (
-           SLAPOS_TEST_IPV6, CAUCASE_PORT),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -744,7 +746,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
-    cls.runKedifaUpdater()
     # run once more slapos node instance, as kedifa-updater sets up
     # certificates needed for caddy-frontend, and on this moment it can be
     # not started yet
@@ -1230,8 +1231,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'accepted-slave-amount': '48',
       'rejected-slave-amount': '4',
       'slave-amount': '52',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-        SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
@@ -3715,8 +3714,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'slave-amount': '3',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
@@ -3984,8 +3981,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '2',
       'slave-amount': '10',
@@ -4351,8 +4346,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
@@ -4795,8 +4788,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         u"_ssl_key-ssl_crt-unsafe":
         [u"slave ssl_key and ssl_crt does not match"]
       },
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
         u'apache-key is obsolete, please use master-key-upload-url',
@@ -5480,8 +5471,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       'rejected-slave-amount': '0',
       'rejected-slave-dict': {},
       'slave-amount': '1',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
         u'apache-key is obsolete, please use master-key-upload-url',
@@ -5532,7 +5521,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     })
     self.runComputerPartition(max_quantity=1)
-    self.runKedifaUpdater()
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')

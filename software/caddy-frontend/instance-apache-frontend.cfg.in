@@ -24,7 +24,6 @@ parts =
   promise-caddy-frontend-v6-http
   promise-caddy-frontend-cached
   promise-caddy-frontend-ssl-cached
-  promise-caddy-is-process-older-than-dependency-set
 
   trafficserver-launcher
   trafficserver-reload
@@ -61,7 +60,6 @@ log = ${:var}/log
 run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
-promise = ${:etc}/promise
 plugin = ${:etc}/plugin
 
 ca-dir = ${:srv}/ssl
@@ -261,7 +259,6 @@ extra-context =
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key plugin_directory directory:plugin
-    key promise_directory directory:promises
     key report_directory directory:bin
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
@@ -633,11 +630,6 @@ module = check_port_listening
 name = caddy_ssl_cached.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
 config-port = ${caddy-configuration:ssl-cache-through-port}
-
-[promise-caddy-is-process-older-than-dependency-set]
-recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['bin_directory'] }}/is-process-older-than-dependency-set ${caddy-configuration:pid-file} 
-wrapper-path = ${directory:promise}/caddy-frontend-is-running-actual-software-release
 
 #######
 # Monitoring sections
