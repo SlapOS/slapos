@@ -32,6 +32,8 @@ create = true
 
 {% if master_key_download_url %}
 {%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
+{% else %}
+{%   do kedifa_updater_mapping.append(('https://notreadyyet', master_certificate, apache_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -55,7 +57,7 @@ output = {{ plugin_directory }}/${:name}
 {%   if slave_kedifa %}
 {%     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%   else %}
-{%     set key_download_url = '' %}
+{%     set key_download_url = 'http://notreadyyet' %}
 {%   endif %}
 {%   set slave_type = slave_instance.get('type', '') %}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
@@ -446,7 +448,7 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = plone.recipe.command
 # unfortunately slapos.cookbook:wrapper does not return generated wrapper path
 # so it is needed to access it via service directory globbing
-command = {{ service_directory }}/kedifa-updater* --once
+command = {{ service_directory }}/kedifa-updater* --prepare-only
 update-command = ${:command}
 
 [kedifa-updater-mapping]
