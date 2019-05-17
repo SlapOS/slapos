@@ -33,7 +33,7 @@ create = true
 {% if master_key_download_url %}
 {%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
 {% else %}
-{%   do kedifa_updater_mapping.append(('https://notreadyyet', master_certificate, apache_certificate)) %}
+{%   do kedifa_updater_mapping.append(('notreadyyet', master_certificate, apache_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -57,7 +57,7 @@ output = {{ plugin_directory }}/${:name}
 {%   if slave_kedifa %}
 {%     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%   else %}
-{%     set key_download_url = 'http://notreadyyet' %}
+{%     set key_download_url = 'notreadyyet' %}
 {%   endif %}
 {%   set slave_type = slave_instance.get('type', '') %}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
