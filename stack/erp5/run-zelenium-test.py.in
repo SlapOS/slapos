@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from urllib import urlopen
+import json
 
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -110,20 +111,29 @@ def main():
       "&__ac_password=%s" % (args.remote_access_url, {{ repr(user) }}, {{ repr(password) }})
     
   # Wait until all activities are finished...
-  wait_url = args.remote_access_url + '/erp5/Zuite_waitForActivities'
+  wait_url = "%s/erp5/ActivityTool_getSqlStatisticList" \
+      "?__ac_name=%s" \
+      "&__ac_password=%s" % (args.remote_access_url,  {{ repr(user) }}, {{ repr(password) }})
   while 1:
     try:
       response = urlopen(wait_url)
       try:
         if response.code == 500:
           sys.exit(-1)
-        if response.code == 200 and response.read() == 'Done.':
-          break
+        if response.code == 200:
+          static_dict = json.loads(response.read())
+          activity_list = []
+          for _, value in static_dict.iteritems():
+            activity_list += value['line_list']
+          if len(activity_list) == 0:
+            break
+          elif all(x['node'] == -2 for x in activity_list):
+            sys.exit(-1)
       finally:
         response.close()
     except Exception:
       traceback.print_exc()
-    time.sleep(10)
+    time.sleep(600)
  
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
   browser = webdriver.Remote(appium_url, capabilities)
