@@ -1266,7 +1266,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       os.path.join(
         self.instance_path, '*', 'etc', 'monitor.conf'
       ))
-    self.assertEqual(2, len(monitor_conf_list))
+    self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
     got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
     # check that no monitor.conf in generated configuratio has magic !py!
