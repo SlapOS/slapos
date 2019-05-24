@@ -22,7 +22,7 @@ query_cache_size = 0
 query_cache_type = 0
 innodb_file_per_table = 0
 
-plugin-load = ha_mroonga.so;handlersocket.so
+plugin-load = ha_mroonga.so
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections
