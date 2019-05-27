@@ -344,7 +344,9 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files =
+  ${buildout:directory}/software_release/buildout.cfg
+  ${caddy-wrapper:wrapper-path}
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link

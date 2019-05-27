@@ -271,7 +271,9 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, hash_value=None, msg=None):
+  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
+    if hash_value_dict is None:
+      hash_value_dict = []
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -281,8 +283,9 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    if hash_value is not None:
-      runtime_data = runtime_data.replace(hash_value, '{hash}')
+    for hash_type, hash_value in hash_value_dict.items():
+      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
+        hash_type),)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -342,15 +345,21 @@ class TestDataMixin(object):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_files = [
-      'software_release/buildout.cfg',
-    ]
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
-    h = self.generateHashFromFiles(hash_files)
+    hash_file_list = [os.path.join(
+        self.computer_partition_root_path, 'software_release/buildout.cfg')]
+    hash_value_dict = {
+      'generic': self.generateHashFromFiles(hash_file_list),
+    }
+    for caddy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'caddy-wrapper')):
+      partition_id = caddy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
+        hash_file_list + [caddy_wrapper_path]
+      )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value=h)
+    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
 
   def test_promise_run_plugin(self):
     ignored_plugin_list = [
