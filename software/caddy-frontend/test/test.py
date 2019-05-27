@@ -1012,6 +1012,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': 'damaged',
+      },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -1238,13 +1243,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '48',
-      'rejected-slave-amount': '4',
-      'slave-amount': '52',
+      'rejected-slave-amount': '5',
+      'slave-amount': '53',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
         "_caddy_custom_http_s-rejected": ["slave not authorized"],
-        "_type-eventsource": ["type:eventsource is not implemented"]
+        "_type-eventsource": ["type:eventsource is not implemented"],
+        "_ssl-proxy-verify_ssl_proxy_ca_crt_damaged": [
+          "ssl_proxy_ca_crt is invalid"]
       }
     }
 
@@ -2434,6 +2441,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
       result_http.headers['Set-Cookie']
+    )
+
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged']
+    self.assertEqual(
+      {'request-error-list': '["ssl_proxy_ca_crt is invalid"]'},
+      parameter_dict
     )
 
   def test_ssl_proxy_verify_unverified(self):
