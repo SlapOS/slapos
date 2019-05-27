@@ -273,7 +273,7 @@ class TestDataMixin(object):
 
   def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
     if hash_value_dict is None:
-      hash_value_dict = []
+      hash_value_dict = {}
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
