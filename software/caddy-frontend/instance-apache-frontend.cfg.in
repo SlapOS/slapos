@@ -36,7 +36,7 @@ parts =
   trafficserver-logging-config
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
-
+  cron-entry-logrotate-trafficserver
 ## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
@@ -427,6 +427,7 @@ local-state = ${directory:var}/trafficserver
 bin_path = {{ parameter_dict['trafficserver'] }}/bin
 log = ${directory:log}/trafficserver
 cache-path = ${directory:srv}/ats_cache
+logrotate-backup = ${logrotate-directory:logrotate-backup}/trafficserver
 
 [trafficserver-variable]
 wrapper-path = ${directory:service}/trafficserver
@@ -540,6 +541,30 @@ environment = TS_ROOT=${buildout:directory}
 module = trafficserver_cache_availability
 name = trafficserver-cache-availability.py
 config-wrapper-path = ${trafficserver-ctl:wrapper-path}
+
+[trafficserver-rotate-script]
+< = jinja2-template-base
+template = {{ parameter_dict['template_rotate_script'] }}
+rendered = ${directory:bin}/trafficserver-rotate
+mode = 0700
+xz_binary = {{ parameter_dict['xz_location'] ~ '/bin/xz' }}
+pattern = *.old
+# days to keep log files
+keep_days = 365
+
+extra-context =
+  key log_dir trafficserver-directory:log
+  key rotate_dir trafficserver-directory:logrotate-backup
+  key xz_binary :xz_binary
+  key keep_days :keep_days
+  key pattern :pattern
+
+[cron-entry-logrotate-trafficserver]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = trafficserver-logrotate
+frequency = 0 0 * * *
+command = ${trafficserver-rotate-script:rendered}
 
 ### End of ATS sections
 
