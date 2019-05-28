@@ -24,6 +24,8 @@ parts =
   promise-caddy-frontend-v6-http
   promise-caddy-frontend-cached
   promise-caddy-frontend-ssl-cached
+  cron-entry-logrotate-caddy-access
+  cron-entry-logrotate-caddy-error
 
   trafficserver-launcher
   trafficserver-reload
@@ -370,6 +372,7 @@ custom-ssl-directory = ${:slave-configuration}/ssl
 frontend-configuration = ${directory:etc}/Caddyfile
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
+logrotate-backup = ${logrotate-directory:logrotate-backup}/caddy
 pid-file = ${directory:run}/httpd.pid
 frontend-configuration-verification = ${frontend-caddy-validate:rendered}
 frontend-graceful-command = ${:frontend-configuration-verification} && kill -USR1 $(cat ${:pid-file})
@@ -416,6 +419,45 @@ rotate-num = 30
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${frontend-caddy-lazy-graceful:rendered} &
+
+[caddy-rotate-script-base]
+< = jinja2-template-base
+template = {{ parameter_dict['template_rotate_script'] }}
+mode = 0700
+xz_binary = {{ parameter_dict['xz_location'] ~ '/bin/xz' }}
+# days to keep log files
+keep_days = 365
+extra-context =
+  key log_dir directory:log
+  key rotate_dir caddy-configuration:logrotate-backup
+  key xz_binary :xz_binary
+  key keep_days :keep_days
+  key pattern :pattern
+
+
+[caddy-access-rotate-script]
+< = caddy-rotate-script-base
+rendered = ${directory:bin}/caddy-access-rotate
+pattern = frontend-access-*.log
+
+[cron-entry-logrotate-caddy-access]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = caddy-access-logrotate
+frequency = 0 0 * * *
+command = ${caddy-access-rotate-script:rendered}
+
+[caddy-error-rotate-script]
+< = caddy-rotate-script-base
+rendered = ${directory:bin}/caddy-error-rotate
+pattern = frontend-error-*.log
+
+[cron-entry-logrotate-caddy-error]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = caddy-error-logrotate
+frequency = 0 0 * * *
+command = ${caddy-error-rotate-script:rendered}
 
 #################
 # Trafficserver
