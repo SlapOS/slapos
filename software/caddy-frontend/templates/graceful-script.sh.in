@@ -4,7 +4,7 @@ SIGNATURE_FILE={{ signature_file }}
 NSIGNATURE_FILE={{ signature_file }}.tmp
 
 touch $SIGNATURE_FILE
-{{ sha256sum }} {{ path_list }} | sort -k 66 > $NSIGNATURE_FILE
+{{ sha256sum }} {{ path_list }} | sort -k 66 > $NSIGNATURE_FILE 2> /dev/null
 
 # If no diff, no restart for now
 if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE" > /dev/null ; then
