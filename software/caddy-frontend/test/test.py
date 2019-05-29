@@ -343,8 +343,6 @@ class TestDataMixin(object):
     self._test_file_list(['var', 'run'], [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
-      # may appear or not
-      'caddy_graceful_signature.tmp',
     ])
 
   def test_file_list_etc_cron_d(self):
@@ -392,6 +390,12 @@ class TestDataMixin(object):
         plugin = plugin_path[strip:]
         if plugin in ignored_plugin_list:
           continue
+        # reset frontend-caddy-configuration-promise.py state
+        if plugin == 'frontend-caddy-configuration-promise.py':
+          validate_path = os.path.join(
+            partition_path, 'bin', 'frontend-caddy-validate')
+          if os.path.exists(validate_path):
+            subprocess_status_output(validate_path)
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
