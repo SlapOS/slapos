@@ -42,6 +42,10 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -1238,6 +1242,58 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
+
+  def test_trafficserver_logrotate(self):
+    ats_partition = [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if os.path.exists(os.path.join(q, 'bin', 'trafficserver-rotate'))][0]
+    ats_log_dir = os.path.join(ats_partition, 'var', 'log', 'trafficserver')
+    ats_logrotate_dir = os.path.join(
+      ats_partition, 'srv', 'backup', 'logrotate', 'trafficserver')
+    ats_rotate = os.path.join(ats_partition, 'bin', 'trafficserver-rotate')
+
+    old_file_name = 'log-old.old'
+    older_file_name = 'log-older.old'
+    with open(os.path.join(ats_log_dir, old_file_name), 'w') as fh:
+      fh.write('old')
+    with open(os.path.join(ats_log_dir, older_file_name), 'w') as fh:
+      fh.write('older')
+
+    # check rotation
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+
+    self.assertEqual(
+      ['log-old.old.xz', 'log-older.old.xz'],
+      os.listdir(ats_logrotate_dir))
+    self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
+    self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
+
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, old_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'old',
+        fh.read()
+      )
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'older',
+        fh.read()
+      )
+
+    # check retention
+    old_time = time.time() - (400 * 24 * 3600)
+    os.utime(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz'),
+      (old_time, old_time))
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+    self.assertEqual(
+      ['log-old.old.xz'],
+      os.listdir(ats_logrotate_dir))
 
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
