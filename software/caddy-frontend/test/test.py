@@ -305,10 +305,12 @@ class TestDataMixin(object):
       self.maxDiff = maxDiff
       self.longMessage = longMessage
 
-  def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
+  def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
+    if IGNORE_PATH_LIST is None:
+      IGNORE_PATH_LIST = []
     runtime_data = []
-    for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
-      for entry in os.walk(os.path.join(slave_var, slave_dir)):
+    for slave_var in glob.glob(os.path.join(self.instance_path, '*')):
+      for entry in os.walk(os.path.join(slave_var, *slave_dir_list)):
         for filename in entry[2]:
           path = os.path.join(
             entry[0][len(self.instance_path) + 1:], filename)
@@ -318,7 +320,7 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data)
 
   def test_file_list_log(self):
-    self._test_file_list('log', [
+    self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
       # appears late and is quite unstable, no need to assert
@@ -334,7 +336,7 @@ class TestDataMixin(object):
     ])
 
   def test_file_list_run(self):
-    self._test_file_list('run', [
+    self._test_file_list(['var', 'run'], [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
       # may appear or not
