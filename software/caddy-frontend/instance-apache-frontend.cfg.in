@@ -586,11 +586,22 @@ extra-context =
     key lazy_command caddy-configuration:frontend-graceful-command
 
 # Promises checking configuration:
+[promise-helper-last-configuration-state]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bin}/frontend-read-last-configuration-state
+mode = 0700
+content =
+  #!/bin/sh
+  exit `cat ${frontend-caddy-validate:last_state_file}`
+context =
+    key content :content
+
 [promise-frontend-caddy-configuration]
 <= promise-plugin-base
 module = validate_frontend_configuration
 name = frontend-caddy-configuration-promise.py
-config-verification-script = ${caddy-configuration:frontend-configuration-verification}
+config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
 <= promise-plugin-base
