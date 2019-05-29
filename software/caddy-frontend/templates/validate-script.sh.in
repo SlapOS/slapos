@@ -2,21 +2,16 @@
 
 set -e
 
-SIGNATURE_FILE={{ signature_file }}
-NSIGNATURE_FILE={{ signature_file }}.tmp
-SIGNATURE_STATUS={{ signature_file }}.status
+LAST_STATE_FILE={{ last_state_file }}
 
-touch $SIGNATURE_FILE
-{{ sha256sum }} {{ path_list }} 2> /dev/null | sort -k 66 > $NSIGNATURE_FILE
-
-if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE" > /dev/null; then
-  rm -f "$NSIGNATURE_FILE"
-else
-  mv "$NSIGNATURE_FILE" "$SIGNATURE_FILE"
+# force validation each 2 hours
+[ -f $LAST_STATE_FILE ] && find $LAST_STATE_FILE -mmin +120 -delete
+configuration_state=$({{ caddy_configuration_state }})
+if [ ! -f $LAST_STATE_FILE ] || $configuration_state ; then
   # do not catch errors during validation
   set +e
   {{ wrapper }} -validate
-  echo $? > $SIGNATURE_STATUS
+  echo $? > $LAST_STATE_FILE
   set -e
 fi
-exit `cat $SIGNATURE_STATUS`
+exit `cat $LAST_STATE_FILE`
