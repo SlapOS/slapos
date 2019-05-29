@@ -338,7 +338,7 @@ class TestDataMixin(object):
       # run by cron from time to time
       'monitor/monitor-collect.pid',
       # may appear or not
-      'var/run/caddy_graceful_signature.tmp',
+      'var/run/caddy_configuration_state_signature.tmp',
     ])
 
   def test_supervisor_state(self):
