@@ -44,8 +44,7 @@
       "description": "Disk size, in GB.",
       "type": "integer",
       "default": 10,
-      "minimum": 1,
-      "maximum": 1000
+      "minimum": 1
     },
     "disk-type": {
       "title": "Disk type",
@@ -110,8 +109,7 @@
       "description": "Specifies the maximum number of CPUs.",
       "type": "integer",
       "default": 24,
-      "minimum": 1,
-      "maximum": 64
+      "minimum": 1
     },
     "numa": {
       "title": "Simulate a multi node NUMA system.",
@@ -233,7 +231,6 @@
       "description": "Specify the size of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
       "type": "integer",
       "minimum": 10,
-      "maximum": 1000,
       "default": 20
     },
     "external-disk-format": {
@@ -261,8 +258,7 @@
       "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
       "type": "integer",
       "default": 1,
-      "minimum": 1,
-      "maximum": 5
+      "minimum": 1
     },
     "use-tap": {
       "title": "Use QEMU TAP network interface",
