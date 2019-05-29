@@ -304,8 +304,7 @@
               "description": "Specifies the maximum number of CPUs.",
               "type": "integer",
               "default": 24,
-              "minimum": 1,
-              "maximum": 64
+              "minimum": 1
             },
             "numa": {
               "title": "Simulate a multi node NUMA system.",
@@ -441,8 +440,7 @@
               "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
               "type": "integer",
               "default": 1,
-              "minimum": 1,
-              "maximum": 5
+              "minimum": 1
             },
             "use-tap": {
               "title": "Enable QEMU TAP network interface",
