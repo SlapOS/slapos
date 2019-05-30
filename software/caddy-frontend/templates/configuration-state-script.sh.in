@@ -8,6 +8,7 @@ touch $SIGNATURE_FILE
 {{ sha256sum }} {{ path_list }} 2> /dev/null | sort -k 66 > $NSIGNATURE_FILE
 
 if diff "$SIGNATURE_FILE" "$NSIGNATURE_FILE" > /dev/null ; then
+  rm -f ${NSIGNATURE_FILE}
   exit 1
 else
   mv "$NSIGNATURE_FILE" "$SIGNATURE_FILE"

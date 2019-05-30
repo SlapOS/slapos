@@ -6,7 +6,8 @@ LAST_STATE_FILE={{ last_state_file }}
 
 # force validation each 2 hours
 [ -f $LAST_STATE_FILE ] && find $LAST_STATE_FILE -mmin +120 -delete
-if [ ! -f $LAST_STATE_FILE ] || {{ caddy_configuration_state }} ; then
+configuration_state=$({{ caddy_configuration_state }})
+if [ ! -f $LAST_STATE_FILE ] || $configuration_state ; then
   # do not catch errors during validation
   set +e
   {{ wrapper }} -validate

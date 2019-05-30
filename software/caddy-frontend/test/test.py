@@ -343,8 +343,6 @@ class TestDataMixin(object):
     self._test_file_list(['var', 'run'], [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
-      # may appear or not
-      'caddy_configuration_state_signature.tmp',
     ])
 
   def test_file_list_etc_cron_d(self):

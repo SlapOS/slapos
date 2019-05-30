@@ -565,7 +565,7 @@ command = ${trafficserver-rotate-script:rendered}
 [frontend-caddy-configuration-state]
 < = jinja2-template-base
 template = {{ parameter_dict['template_configuration_state_script'] }}
-rendered = ${directory:bin}/frontend-caddy-configuration-state
+rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
 path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
