@@ -392,6 +392,12 @@ class TestDataMixin(object):
         plugin = plugin_path[strip:]
         if plugin in ignored_plugin_list:
           continue
+        # reset frontend-caddy-configuration-promise.py state
+        if plugin == 'frontend-caddy-configuration-promise.py':
+          validate_path = os.path.join(
+            partition_path, 'bin', 'frontend-caddy-validate')
+          if os.path.exists(validate_path):
+            subprocess_status_output(validate_path)
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
