@@ -36,6 +36,13 @@
     insecure_skip_verify
 {%- endif %}
   }
+  log / {{ slave_parameter.get('access_log_cache_direct') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
+
+  errors {{ slave_parameter.get('error_log_cache_direct') }} {
+    rotate_size 0
+  }
 }
 
 # SSL-enabled backends
@@ -57,5 +64,12 @@
 {%- else %}
     insecure_skip_verify
 {%- endif %}
+  }
+  log / {{ slave_parameter.get('access_log_cache_direct') }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
+    rotate_size 0
+  }
+
+  errors {{ slave_parameter.get('error_log_cache_direct') }} {
+    rotate_size 0
   }
 }
