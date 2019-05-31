@@ -1,3 +1,5 @@
+{% set wsgi = slapparameter_dict['wsgi'] -%}
+{% set webdav = slapparameter_dict['webdav'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
@@ -182,7 +184,11 @@ pem = {{dumps(storage_dict.pop(k))}}
 [runzope-base]
 <= run-common
 instance-home = ${directory:instance}
+{% if wsgi -%}
+wrapped-command-line = '{{ bin_directory }}/runwsgi' {% if webdav %}-w{% endif %} {{ ipv4 }}:${:port} '${:configuration-file}'
+{% else -%}
 wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+{%- endif %}
 private-dev-shm = {{ slapparameter_dict['private-dev-shm'] }}
 
 [{{ section('zcml') }}]
@@ -249,13 +255,13 @@ tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% set thread_amount = slapparameter_dict['thread-amount'] -%}
 {% set large_file_threshold = slapparameter_dict['large-file-threshold']  -%}
 thread-amount = {{ thread_amount }}
-{% set webdav = slapparameter_dict['webdav'] -%}
 webdav = {{ dumps(webdav) }}
 {% if webdav -%}
 {%   set timerserver_interval = 0 -%}
 {% else -%}
 {%   set timerserver_interval = slapparameter_dict['timerserver-interval'] -%}
 {%- endif %}
+wsgi = {{ dumps(wsgi) }}
 timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
@@ -315,6 +321,9 @@ context =
 < = runzope-base
 wrapper-path = ${directory:service-on-watch}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
+{%- if wsgi %}
+port = {{ port }}
+{%- endif %}
 
 [{{ section("promise-" ~ name) }}]
 recipe = slapos.cookbook:check_port_listening
