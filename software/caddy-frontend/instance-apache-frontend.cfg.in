@@ -244,6 +244,7 @@ extra-context =
     key autocert caddy-directory:autocert
     key master_certificate caddy-configuration:master-certificate
     key caddy_log_directory caddy-directory:slave-log
+    key caddy_log_cache_direct_directory caddy-directory:slave-log-cache-direct
     key local_ipv4 :local_ipv4
     key local_ipv6 :local_ipv6
     key global_ipv6 slap-network-information:global-ipv6
@@ -361,6 +362,7 @@ slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
+slave-log-cache-direct = ${directory:log}/httpd-cache-direct
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
 custom-ssl-directory = ${:slave-configuration}/ssl
