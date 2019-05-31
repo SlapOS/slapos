@@ -1265,8 +1265,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(0, result)
 
     self.assertEqual(
-      ['log-old.old.xz', 'log-older.old.xz'],
-      os.listdir(ats_logrotate_dir))
+      set(['log-old.old.xz', 'log-older.old.xz']),
+      set(os.listdir(ats_logrotate_dir)))
     self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
     self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
 
