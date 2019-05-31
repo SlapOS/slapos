@@ -1,8 +1,9 @@
 T-0/var/run/monitor-httpd.pid
 T-0/var/run/monitor/monitor-bootstrap.pid
 T-1/var/run/kedifa.pid
-T-2/var/run/caddy_graceful_signature
-T-2/var/run/caddy_validate_signature
-T-2/var/run/caddy_validate_signature.status
+T-1/var/run/monitor/monitor-bootstrap.pid
+T-2/var/run/caddy_configuration_last_state
+T-2/var/run/graceful_configuration_state_signature
 T-2/var/run/httpd.pid
 T-2/var/run/monitor/monitor-bootstrap.pid
+T-2/var/run/validate_configuration_state_signature

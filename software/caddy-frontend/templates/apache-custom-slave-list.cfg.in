@@ -446,9 +446,8 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
 recipe = plone.recipe.command
-# unfortunately slapos.cookbook:wrapper does not return generated wrapper path
-# so it is needed to access it via service directory globbing
-command = {{ service_directory }}/kedifa-updater* --prepare-only
+stop-on-error = True
+command = {{ kedifa_updater }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_graceful_reload }}"
 update-command = ${:command}
 
 [kedifa-updater-mapping]
@@ -486,6 +485,7 @@ parts +=
     tunnel-6to4-base-cached_port
     tunnel-6to4-base-ssl_cached_port
     expose-csr_id
+    promise-expose-csr_id-ip-port
 
 cache-access = {{ cache_access }}
 
@@ -537,6 +537,13 @@ template = inline:
   }
 
 rendered = {{ directory_caddy_csr_id }}/Caddyfile
+
+[promise-expose-csr_id-ip-port]
+<= promise-plugin-base
+module = check_port_listening
+name = expose-csr_id-ip-port-listening.py
+config-hostname = ${expose-csr_id-configuration:ip}
+config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]
 depends = ${store-csr_id:command}

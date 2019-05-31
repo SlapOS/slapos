@@ -2,6 +2,12 @@ T-0/etc/plugin/buildout-T-0-status.py: OK
 T-0/etc/plugin/check-free-disk-space.py: OK
 T-0/etc/plugin/monitor-bootstrap-status.py: OK
 T-0/etc/plugin/monitor-httpd-listening-on-tcp.py: OK
+T-1/etc/plugin/buildout-T-1-status.py: OK
+T-1/etc/plugin/check-free-disk-space.py: OK
+T-1/etc/plugin/expose-csr_id-ip-port-listening.py: OK
+T-1/etc/plugin/kedifa-ip-port-listening.py: OK
+T-1/etc/plugin/monitor-bootstrap-status.py: OK
+T-1/etc/plugin/monitor-httpd-listening-on-tcp.py: OK
 T-2/etc/plugin/buildout-T-2-status.py: OK
 T-2/etc/plugin/caddy_cached.py: OK
 T-2/etc/plugin/caddy_frontend_ipv4_http.py: OK
@@ -109,6 +115,7 @@ T-2/etc/plugin/check-_type-zope-virtualhostroot-https-port-error-log-last-hour.p
 T-2/etc/plugin/check-_url_https-url-error-log-last-day.py: OK
 T-2/etc/plugin/check-_url_https-url-error-log-last-hour.py: OK
 T-2/etc/plugin/check-free-disk-space.py: OK
+T-2/etc/plugin/expose-csr_id-ip-port-listening.py: OK
 T-2/etc/plugin/frontend-caddy-configuration-promise.py: OK
 T-2/etc/plugin/monitor-bootstrap-status.py: OK
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py: OK

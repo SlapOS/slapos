@@ -29,7 +29,7 @@
     },
     "global-disable-http2": {
       "default": "false",
-      "description": "Disables globally HTTP2 in Caddy, thus enable-http2-by-default here and enable-http2 have no effect. Rational is that in some loaded environments it is better to run Caddy without any HTTP2 capabilities.",
+      "description": "Disables globally HTTP2 in Caddy, thus enable-http2-by-default here and enable-http2 have no effect. Rational is that in some loaded environments it is better to run Caddy without any HTTP2 capabilities. Warning: Changing the parameter will result in restarting Caddy process.",
       "enum": [
         "true",
         "false"
@@ -40,7 +40,7 @@
     "mpm-graceful-shutdown-timeout": {
       "default": 5,
       "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
-      "title": "Duration of the graceful shutdown period",
+      "title": "Duration of the graceful shutdown period. Warning: Changing the parameter will result in restarting Caddy process.",
       "type": "integer"
     },
     "nginx-domain": {
@@ -61,7 +61,7 @@
     },
     "enable-quic": {
       "default": "false",
-      "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour.",
+      "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour. Warning: Changing the parameter will result in restarting Caddy process.",
       "enum": [
         "true",
         "false"

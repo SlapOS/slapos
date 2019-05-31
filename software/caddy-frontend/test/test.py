@@ -42,6 +42,10 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -271,7 +275,9 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, hash_value=None, msg=None):
+  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
+    if hash_value_dict is None:
+      hash_value_dict = {}
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -281,8 +287,9 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    if hash_value is not None:
-      runtime_data = runtime_data.replace(hash_value, '{hash}')
+    for hash_type, hash_value in hash_value_dict.items():
+      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
+        hash_type),)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -302,10 +309,12 @@ class TestDataMixin(object):
       self.maxDiff = maxDiff
       self.longMessage = longMessage
 
-  def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
+  def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
+    if IGNORE_PATH_LIST is None:
+      IGNORE_PATH_LIST = []
     runtime_data = []
-    for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
-      for entry in os.walk(os.path.join(slave_var, slave_dir)):
+    for slave_var in glob.glob(os.path.join(self.instance_path, '*')):
+      for entry in os.walk(os.path.join(slave_var, *slave_dir_list)):
         for filename in entry[2]:
           path = os.path.join(
             entry[0][len(self.instance_path) + 1:], filename)
@@ -315,7 +324,7 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data)
 
   def test_file_list_log(self):
-    self._test_file_list('log', [
+    self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
       # appears late and is quite unstable, no need to assert
@@ -331,26 +340,33 @@ class TestDataMixin(object):
     ])
 
   def test_file_list_run(self):
-    self._test_file_list('run', [
+    self._test_file_list(['var', 'run'], [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
-      # may appear or not
-      'var/run/caddy_graceful_signature.tmp',
     ])
+
+  def test_file_list_etc_cron_d(self):
+    self._test_file_list(['etc', 'cron.d'])
 
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_files = [
-      'software_release/buildout.cfg',
-    ]
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
-    h = self.generateHashFromFiles(hash_files)
+    hash_file_list = [os.path.join(
+        self.computer_partition_root_path, 'software_release/buildout.cfg')]
+    hash_value_dict = {
+      'generic': self.generateHashFromFiles(hash_file_list),
+    }
+    for caddy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'caddy-wrapper')):
+      partition_id = caddy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
+        hash_file_list + [caddy_wrapper_path]
+      )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value=h)
+    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
 
   def test_promise_run_plugin(self):
     ignored_plugin_list = [
@@ -374,6 +390,12 @@ class TestDataMixin(object):
         plugin = plugin_path[strip:]
         if plugin in ignored_plugin_list:
           continue
+        # reset frontend-caddy-configuration-promise.py state
+        if plugin == 'frontend-caddy-configuration-promise.py':
+          validate_path = os.path.join(
+            partition_path, 'bin', 'frontend-caddy-validate')
+          if os.path.exists(validate_path):
+            subprocess_status_output(validate_path)
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
@@ -1003,6 +1025,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': 'damaged',
+      },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -1220,6 +1247,58 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
+  def test_trafficserver_logrotate(self):
+    ats_partition = [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if os.path.exists(os.path.join(q, 'bin', 'trafficserver-rotate'))][0]
+    ats_log_dir = os.path.join(ats_partition, 'var', 'log', 'trafficserver')
+    ats_logrotate_dir = os.path.join(
+      ats_partition, 'srv', 'backup', 'logrotate', 'trafficserver')
+    ats_rotate = os.path.join(ats_partition, 'bin', 'trafficserver-rotate')
+
+    old_file_name = 'log-old.old'
+    older_file_name = 'log-older.old'
+    with open(os.path.join(ats_log_dir, old_file_name), 'w') as fh:
+      fh.write('old')
+    with open(os.path.join(ats_log_dir, older_file_name), 'w') as fh:
+      fh.write('older')
+
+    # check rotation
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+
+    self.assertEqual(
+      set(['log-old.old.xz', 'log-older.old.xz']),
+      set(os.listdir(ats_logrotate_dir)))
+    self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
+    self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
+
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, old_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'old',
+        fh.read()
+      )
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'older',
+        fh.read()
+      )
+
+    # check retention
+    old_time = time.time() - (400 * 24 * 3600)
+    os.utime(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz'),
+      (old_time, old_time))
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+    self.assertEqual(
+      ['log-old.old.xz'],
+      os.listdir(ats_logrotate_dir))
+
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
@@ -1229,13 +1308,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '48',
-      'rejected-slave-amount': '4',
-      'slave-amount': '52',
+      'rejected-slave-amount': '5',
+      'slave-amount': '53',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
         "_caddy_custom_http_s-rejected": ["slave not authorized"],
-        "_type-eventsource": ["type:eventsource is not implemented"]
+        "_type-eventsource": ["type:eventsource is not implemented"],
+        "_ssl-proxy-verify_ssl_proxy_ca_crt_damaged": [
+          "ssl_proxy_ca_crt is invalid"]
       }
     }
 
@@ -1266,7 +1347,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       os.path.join(
         self.instance_path, '*', 'etc', 'monitor.conf'
       ))
-    self.assertEqual(2, len(monitor_conf_list))
+    self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
     got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
     # check that no monitor.conf in generated configuratio has magic !py!
@@ -2425,6 +2506,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
       result_http.headers['Set-Cookie']
+    )
+
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged']
+    self.assertEqual(
+      {'request-error-list': '["ssl_proxy_ca_crt is invalid"]'},
+      parameter_dict
     )
 
   def test_ssl_proxy_verify_unverified(self):
