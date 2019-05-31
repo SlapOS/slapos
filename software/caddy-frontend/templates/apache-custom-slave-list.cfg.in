@@ -125,22 +125,6 @@ output = {{ plugin_directory }}/${:name}
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
 
-[slave-log-directories]
-<= slave-log-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
-{% do part_list.append('slave-log-directories') %}
-
-[caddy-log-access]
-< = jinja2-template-base
-template = {{frontend_configuration.get('template-log-access')}}
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-extra-context =
-    section slave_log_directory slave-log-directory-dict
-    section slave_password slave-password
-    section parameter_dict caddy-log-access-parameters
-
-{% do part_list.append('caddy-log-access') %}
 
 [slave-password]
 {{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
@@ -349,6 +333,23 @@ recipe = slapos.cookbook:publish
 
 {# End of the main for loop#}
 {% endfor %}
+
+[slave-log-directories]
+<= slave-log-directory-dict
+recipe = slapos.cookbook:mkdirectory
+
+{% do part_list.append('slave-log-directories') %}
+
+[caddy-log-access]
+< = jinja2-template-base
+template = {{frontend_configuration.get('template-log-access')}}
+rendered = {{frontend_configuration.get('log-access-configuration')}}
+extra-context =
+    section slave_log_directory slave-log-directory-dict
+    section slave_password slave-password
+    section parameter_dict caddy-log-access-parameters
+
+{% do part_list.append('caddy-log-access') %}
 
 ###############################################
 ### Prepare virtualhost for slaves using cache
