@@ -99,7 +99,8 @@ class SlapOSInstanceTestCase(unittest.TestCase):
     return "default"
 
   # Utility methods.
-  def getSupervisorRPCServer(self):
+  @classmethod
+  def getSupervisorRPCServer(cls):
     """Returns a XML-RPC connection to the supervisor used by slapos node
 
     Refer to http://supervisord.org/api.html for details of available methods.
@@ -112,7 +113,7 @@ class SlapOSInstanceTestCase(unittest.TestCase):
            None,
            # XXX hardcoded socket path
            serverurl="unix://{working_directory}/inst/supervisord.socket".format(
-             **self.config)))
+             **cls.config)))
 
   # Unittest methods
   @classmethod
