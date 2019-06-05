@@ -18,6 +18,7 @@ T-2/etc/plugin/caddy_ssl_cached.py: ERROR
 T-2/etc/plugin/check-_ssl_from_master-error-log-last-day.py: OK
 T-2/etc/plugin/check-_ssl_from_master-error-log-last-hour.py: OK
 T-2/etc/plugin/check-free-disk-space.py: OK
+T-2/etc/plugin/check-http-access-_ssl_from_master-url.py: OK
 T-2/etc/plugin/expose-csr_id-ip-port-listening.py: OK
 T-2/etc/plugin/frontend-caddy-configuration-promise.py: OK
 T-2/etc/plugin/monitor-bootstrap-status.py: OK

@@ -35,6 +35,10 @@ T-2/etc/plugin/check-_virtualhostroot-http-port-unsafe-error-log-last-hour.py: O
 T-2/etc/plugin/check-_virtualhostroot-https-port-unsafe-error-log-last-day.py: OK
 T-2/etc/plugin/check-_virtualhostroot-https-port-unsafe-error-log-last-hour.py: OK
 T-2/etc/plugin/check-free-disk-space.py: OK
+T-2/etc/plugin/check-http-access-_default-path-unsafe-url.py: OK
+T-2/etc/plugin/check-http-access-_server-alias-same-url.py: OK
+T-2/etc/plugin/check-http-access-_virtualhostroot-http-port-unsafe-url.py: OK
+T-2/etc/plugin/check-http-access-_virtualhostroot-https-port-unsafe-url.py: OK
 T-2/etc/plugin/expose-csr_id-ip-port-listening.py: OK
 T-2/etc/plugin/frontend-caddy-configuration-promise.py: OK
 T-2/etc/plugin/monitor-bootstrap-status.py: OK
