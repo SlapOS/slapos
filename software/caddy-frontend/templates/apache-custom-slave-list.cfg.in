@@ -172,10 +172,14 @@ bytes = 8
 {% do slave_parameter_dict.__setitem__('certificate', certificate )%}
 
 {# Set ssl certificates for each slave #}
+{%   set ssl_proxy_ca_crt_file = None %}
 {%   for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%     if cert_name in slave_instance %}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%       if cert_name == 'ssl_proxy_ca_crt' %}
+{%         set ssl_proxy_ca_crt_file = cert_file %}
+{%       endif %}
 {%       do part_list.append(cert_title) %}
 {%       do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
 {%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
@@ -262,6 +266,20 @@ extra-context =
 filename = {{ '%s.conf' % slave_reference }}
 {{ '\n' }}
 
+{%   for k in ['url', 'https-url'] %}
+{%     set v = slave_instance.get(k) %}
+{%     if v %}
+{%       set check_url_access_section_title = 'check-%s-%s-access' % (slave_instance.get('slave_reference'), k) %}
+{%       do part_list.append(check_url_access_section_title) %}
+[{{ check_url_access_section_title }}]
+<= promise-plugin-base
+module = check_http_access
+name = {{ check_url_access_section_title }}.py
+config-url = {{ v }}
+config-ssl-proxy-verify = {{ slave_instance.get('ssl-proxy-verify', '').lower() in TRUE_VALUES }}
+config-ssl-proxy-ca-crt-file = {{ ssl_proxy_ca_crt_file or '' }}
+{%     endif %}
+{%   endfor %}
 
 {%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') %}
 {%   do part_list.append(check_error_log_section_title) %}

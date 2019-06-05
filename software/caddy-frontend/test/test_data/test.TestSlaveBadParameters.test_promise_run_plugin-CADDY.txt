@@ -17,6 +17,7 @@ T-2/etc/plugin/caddy_frontend_ipv6_https.py: OK
 T-2/etc/plugin/caddy_ssl_cached.py: ERROR
 T-2/etc/plugin/check-_default-path-unsafe-error-log-last-day.py: OK
 T-2/etc/plugin/check-_default-path-unsafe-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_default-path-unsafe-url-access.py: OK
 T-2/etc/plugin/check-_monitor-ipv4-test-unsafe-error-log-last-day.py: OK
 T-2/etc/plugin/check-_monitor-ipv4-test-unsafe-error-log-last-hour.py: OK
 T-2/etc/plugin/check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py: OK
@@ -30,10 +31,13 @@ T-2/etc/plugin/check-_re6st-optimal-test-unsafe-error-log-last-hour.py: OK
 T-2/etc/plugin/check-_re6st-optimal-test-unsafe-re6st-optimal-test.py: OK
 T-2/etc/plugin/check-_server-alias-same-error-log-last-day.py: OK
 T-2/etc/plugin/check-_server-alias-same-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_server-alias-same-url-access.py: OK
 T-2/etc/plugin/check-_virtualhostroot-http-port-unsafe-error-log-last-day.py: OK
 T-2/etc/plugin/check-_virtualhostroot-http-port-unsafe-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_virtualhostroot-http-port-unsafe-url-access.py: OK
 T-2/etc/plugin/check-_virtualhostroot-https-port-unsafe-error-log-last-day.py: OK
 T-2/etc/plugin/check-_virtualhostroot-https-port-unsafe-error-log-last-hour.py: OK
+T-2/etc/plugin/check-_virtualhostroot-https-port-unsafe-url-access.py: OK
 T-2/etc/plugin/check-free-disk-space.py: OK
 T-2/etc/plugin/expose-csr_id-ip-port-listening.py: OK
 T-2/etc/plugin/frontend-caddy-configuration-promise.py: OK
