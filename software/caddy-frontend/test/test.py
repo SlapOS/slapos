@@ -776,10 +776,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
-    # run once more slapos node instance, as kedifa-updater sets up
-    # certificates needed for caddy-frontend, and on this moment it can be
-    # not started yet
-    cls.runComputerPartition(max_quantity=1)
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
