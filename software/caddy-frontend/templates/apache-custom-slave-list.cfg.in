@@ -276,7 +276,7 @@ filename = {{ '%s.conf' % slave_reference }}
 module = check_http_access
 name = {{ check_url_access_section_title }}.py
 config-url = {{ v }}
-config-ssl-proxy-verify = {{ slave_instance.get('ssl-proxy-verify', '').lower() in TRUE_VALUES }}
+config-ssl-proxy-verify = {{ slave_instance.get('ssl-proxy-verify') }}
 config-ssl-proxy-ca-crt-file = {{ ssl_proxy_ca_crt_file or '' }}
 {%     endif %}
 {%   endfor %}
