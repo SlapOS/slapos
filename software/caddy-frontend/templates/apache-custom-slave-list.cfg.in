@@ -270,28 +270,6 @@ filename = {{ '%s.conf' % slave_reference }}
 {{ '\n' }}
 
 
-{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') %}
-{%   do part_list.append(check_error_log_section_title) %}
-[{{ check_error_log_section_title }}]
-<= promise-plugin-base
-module = check_error_on_http_log
-name = {{ check_error_log_section_title }}.py
-config-log-file = {{ slave_instance.get('error_log') }}
-config-maximum-delay = 3600
-# promise frequency in minutes (2 times/day)
-config-frequency = 720
-
-{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') %}
-{%   do part_list.append(check_error_log_section_title) %}
-[{{ check_error_log_section_title }}]
-<= promise-plugin-base
-module = check_error_on_http_log
-name = {{ check_error_log_section_title }}.py
-config-log-file = {{ slave_instance.get('error_log') }}
-config-maximum-delay = 86400
-# promise frequency in minutes (2 times/day)
-config-frequency = 720
-
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
