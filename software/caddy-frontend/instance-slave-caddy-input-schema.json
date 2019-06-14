@@ -155,6 +155,20 @@
       "title": "Verify Backend Certificates",
       "type": "string"
     },
+    "ssl_crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate file. Obsolete, please use key-upload-url.",
+      "textarea": true,
+      "title": "[OBSOLETE] SSL Certificate",
+      "type": "string"
+    },
+    "ssl_key": {
+      "default": "",
+      "description": "Content of the SSL Key file. Obsolete, please use key-upload-url.",
+      "textarea": true,
+      "title": "[OBSOLETE] SSL Key",
+      "type": "string"
+    },
     "ssl_proxy_ca_crt": {
       "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",

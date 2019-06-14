@@ -11,6 +11,18 @@
       "title": "Frontend Replication Quantity",
       "type": "integer"
     },
+    "apache-certificate": {
+      "description": "SSL Certificate used by the server. Obsolete, please use master-key-upload-url.",
+      "textarea": true,
+      "title": "[OBSOLETE] SSL Certificate",
+      "type": "string"
+    },
+    "apache-key": {
+      "description": "SSL Key used by the server. Obsolete, please use master-key-upload-url.",
+      "textarea": true,
+      "title": "[OBSOLETE] SSL Key",
+      "type": "string"
+    },
     "domain": {
       "description": "Base Domain for create subdomains (ie.: example.com).",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
