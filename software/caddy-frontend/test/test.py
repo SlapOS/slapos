@@ -258,6 +258,25 @@ print json.dumps(module.extra_config_dict)
 
 
 class TestDataMixin(object):
+  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+    rejected_slave_promise_url = parameter_dict.pop(
+      'rejected-slave-promise-url')
+
+    try:
+      result = requests.get(rejected_slave_promise_url, verify=False)
+      if result.text == '':
+        result_json = {}
+      else:
+        result_json = result.json()
+      self.assertEqual(
+        parameter_dict['rejected-slave-dict'],
+        result_json
+      )
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
+
   @staticmethod
   def generateHashFromFiles(file_list):
     import hashlib
@@ -363,6 +382,16 @@ class TestDataMixin(object):
       hash_value_dict[
         'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
         hash_file_list + [caddy_wrapper_path]
+      )
+    for rejected_slave_publish_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      partition_id = rejected_slave_publish_path.split('/')[-3]
+      rejected_slave_pem_path = os.path.join(
+        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
+      hash_value_dict[
+        'rejected-slave-publish'
+      ] = self.generateHashFromFiles(
+        hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
       )
 
     runtime_data = self.getTrimmedProcessInfo()
@@ -570,6 +599,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': None,
@@ -601,6 +631,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     self.assertEqual(
       {
@@ -1307,6 +1338,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -3801,6 +3833,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -4070,6 +4103,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -4435,6 +4469,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -4868,6 +4903,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -5556,6 +5592,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
