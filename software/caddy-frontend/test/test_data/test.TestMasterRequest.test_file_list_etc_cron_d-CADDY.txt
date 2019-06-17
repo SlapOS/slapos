@@ -6,8 +6,3 @@ T-1/etc/cron.d/logrotate
 T-1/etc/cron.d/monitor-configurator
 T-1/etc/cron.d/monitor-globalstate
 T-1/etc/cron.d/monitor_collect
-T-2/etc/cron.d/logrotate
-T-2/etc/cron.d/monitor-configurator
-T-2/etc/cron.d/monitor-globalstate
-T-2/etc/cron.d/monitor_collect
-T-2/etc/cron.d/trafficserver-logrotate
