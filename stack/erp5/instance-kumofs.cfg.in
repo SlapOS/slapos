@@ -1,8 +1,7 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
 extends =
-  {{ logrotate_cfg }}
-  {{ parameter_dict['template-monitor'] }}
+  {{ template_monitor }}
 parts +=
   publish
   kumofs-instance

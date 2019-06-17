@@ -18,7 +18,6 @@ postfix-location = {{ postfix_location }}
 template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
-template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-postfix]
 < = jinja2-template-base
@@ -33,7 +32,6 @@ extra-context =
 default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
 jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
-template-monitor = {{ dumps(template_monitor) }}
 
 [context]
 root-common = {{ root_common }}
@@ -47,7 +45,6 @@ extra-context =
     key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
-    key template_monitor dynamic-template-erp5-parameters:template-monitor
     key openssl_location :openssl-location
     import urlparse urlparse
 import-list =
@@ -66,7 +63,6 @@ run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
-template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-balancer]
 <= jinja2-template-base
@@ -80,7 +76,6 @@ import-list =
 
 [dynamic-template-zeo-parameters]
 <= default-dynamic-template-parameters
-template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -105,7 +100,6 @@ jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
 site-zcml = {{ site_zcml }}
-template-monitor = {{ dumps(template_monitor) }}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 erp5-location = {{ erp5_location }}
@@ -129,7 +123,6 @@ dcron-location = {{ dcron_location }}
 gzip-location = {{ gzip_location }}
 kumo-location = {{ kumo_location }}
 logrotate-location = {{ logrotate_location }}
-template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-kumofs]
 <= jinja2-template-base
@@ -154,7 +147,6 @@ mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
 mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
-template-monitor = {{ template_monitor }}
 unixodbc-location = {{ unixodbc_location }}
 
 [dynamic-template-mariadb]

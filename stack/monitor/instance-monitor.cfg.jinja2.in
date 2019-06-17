@@ -97,7 +97,7 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
-  htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  htpasswd monitor-password ${monitor-htpasswd:storage-path} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
@@ -147,17 +147,13 @@ bytes = 8
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 # Keep multiple lines as password can end with newline char.
 command =
   if [ ! -s "${:htpasswd-path}" ]; then
-    {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
+    {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${monitor-instance-parameter:username} ${monitor-instance-parameter:password}
   fi
-  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
-user = ${monitor-instance-parameter:username}
-password = ${monitor-instance-parameter:password}
 
 [monitor-symlink]
 recipe = cns.recipe.symlink
@@ -399,7 +395,6 @@ depends =
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
   ${certificate-authority-service:wrapper-path}
-  ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:name}
