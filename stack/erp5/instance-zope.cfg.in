@@ -521,8 +521,7 @@ password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =
-  {{ logrotate_cfg }}
-  {{ parameter_dict['template-monitor'] }}
+  {{ template_monitor }}
 parts +=
   {{ '\n  '.join(part_list) }}
   publish
