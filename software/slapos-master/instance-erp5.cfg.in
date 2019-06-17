@@ -204,7 +204,7 @@ software-type = zope
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
-{%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
+{%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
 {%   if not jupyter_zope_family_default -%}
