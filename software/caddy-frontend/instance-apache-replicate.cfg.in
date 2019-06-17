@@ -72,6 +72,7 @@ context =
 {% set authorized_slave_string_list = slapparameter_dict.pop('-frontend-authorized-slave-string', '').split() %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
+{% set rejected_slave_title_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% set unauthorized_message = 'slave not authorized' %}
@@ -175,6 +176,7 @@ context =
 {%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
+{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
@@ -239,7 +241,7 @@ domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
-rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict)) }}
+rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict)) }}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -463,6 +465,33 @@ update-command = ${:command}
 {% endfor %}
 {% endif %}
 
+[rejected-slave-json]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:run}/rejected-slave.json
+template = {{ parameter_dict['template_empty'] }}
+{% if rejected_slave_title_dict %}
+content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2)) }}
+{% else %}
+content =
+{% endif %}
+context =
+  key content :content
+
+[directory]
+plugin = ${:etc}/plugin
+
+[rejected-slave-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+module = check_file_state
+name = rejected-slave.py
+config-filename = ${rejected-slave-json:rendered}
+config-state = empty
+
 [buildout]
 extends =
   {{ common_profile }}
@@ -472,6 +501,7 @@ parts =
   publish-slave-information
   publish-information
   request-kedifa
+  rejected-slave-promise
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}

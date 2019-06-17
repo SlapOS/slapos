@@ -1,5 +1,6 @@
 T-0/var/run/monitor-httpd.pid
 T-0/var/run/monitor/monitor-bootstrap.pid
+T-0/var/run/rejected-slave.json
 T-1/var/run/kedifa.pid
 T-1/var/run/monitor/monitor-bootstrap.pid
 T-2/var/run/caddy_configuration_last_state
