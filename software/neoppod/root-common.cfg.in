@@ -35,13 +35,10 @@ parts =
 {{- assert(not sla_dict, sla_dict) }}
 {% endmacro -%}
 
-{% macro request_neo(parameter_dict, software_type, prefix='node-') -%}
+{% macro request_neo(parameter_dict, software_type, prefix='node-', monitor_base_url_dict=None) -%}
 {% set section_id_list = [] -%}
 [{{ prefix }}request-common]
 <= request-common-base
-return =
-  master
-  admin
 config-masters = {{ '${' ~ prefix ~ 'cluster:masters}' }}
 config-cluster = {{ parameter_dict['cluster'] }}
 {% set replicas = parameter_dict.get('replicas', 0) -%}
@@ -73,8 +70,18 @@ config-autostart = {{ dumps(sum(storage_count)) }}
 [{{section_id}}]
 <= {{ prefix }}request-common
 name = {{ section_id }}
+return =
+  master
+  admin
 {%-   if node.get('admin') != 0 %}
-{%-     do admin_list.append(node) %}
+  monitor-base-url
+{%-     if monitor_base_url_dict != None %}
+{%-       do monitor_base_url_dict.__setitem__('neo',
+            '${' ~ section_id ~ ':connection-monitor-base-url}') %}
+{%-     endif %}
+{%-     do admin_list.append(section_id) %}
+config-monitor-passwd = ${monitor-htpasswd:passwd}
+config-monitor = {{ dumps(parameter_dict.get('monitor', {})) }}
 {%-   endif %}
 {%-   for k, v in node.iteritems() %}
 config-{{ k }} = {{ dumps(v) }}

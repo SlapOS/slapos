@@ -1,6 +1,5 @@
 [buildout]
 parts +=
-  neo-master-promise
   logrotate-master
 
 [neo-master]
@@ -22,12 +21,6 @@ autostart = {{ slapparameter_dict['autostart'] }}
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
 # this default value is required.
 masters = {{ dumps(slapparameter_dict['masters']) }}
-
-[neo-master-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${neo-master:ip}
-port = ${neo-master:port}
-path = ${directory:promises}/neo-master-promise
 
 [logrotate-master]
 < = logrotate-entry-base

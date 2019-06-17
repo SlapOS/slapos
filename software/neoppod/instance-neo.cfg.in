@@ -51,7 +51,7 @@ recipe = slapos.cookbook:publish.serialised
 # TODO: make port a partition parameter
 ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
 {% set admin = slapparameter_dict.get('admin', 2050) -%}
-{% set master = slapparameter_dict.get('master', 2051) -%}
+{% set master = slapparameter_dict.get('master', 2052) -%}
 {% if master -%}
 port-master = {{ master }}
 master = ${:ip}:${:port-master}
@@ -61,6 +61,7 @@ master =
 {% if admin -%}
 port-admin = {{ admin }}
 admin = ${:ip}:${:port-admin}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 {% else -%}
 admin =
 {% endif -%}
@@ -119,7 +120,6 @@ post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostor
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-promises = ${buildout:directory}/etc/promises
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
@@ -162,11 +162,11 @@ context =
 [buildout]
 extends =
   {{ logrotate_cfg }}
-{%- if master %}
-  {{ master_cfg }}
-{%- endif %}
 {%- if admin %}
   {{ admin_cfg }}
+{%- endif %}
+{%- if master %}
+  {{ master_cfg }}
 {%- endif %}
 parts +=
   {{ '\n  '.join(part_list) }}
