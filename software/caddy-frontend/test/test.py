@@ -364,6 +364,16 @@ class TestDataMixin(object):
         'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
         hash_file_list + [caddy_wrapper_path]
       )
+    for rejected_slave_publish_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      partition_id = rejected_slave_publish_path.split('/')[-3]
+      rejected_slave_pem_path = os.path.join(
+        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
+      hash_value_dict[
+        'rejected-slave-publish'
+      ] = self.generateHashFromFiles(
+        hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
+      )
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
