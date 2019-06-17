@@ -72,6 +72,8 @@ CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
 
 KEDIFA_IPV6_BASE = 'https://[%s]:%s' % (SLAPOS_TEST_IPV6, KEDIFA_PORT)
+REJECTED_SLAVE_PROMISE_URL = 'https://admin:{rejected-slave-promise-url-'\
+  'password}@[%s]:14455/rejected-slave.json' % SLAPOS_TEST_IPV6
 
 
 # for development: debugging logs and install Ctrl+C handler
@@ -258,6 +260,13 @@ print json.dumps(module.extra_config_dict)
 
 
 class TestDataMixin(object):
+  def _getRejectedSlavePromiseUrl(self):
+    url = REJECTED_SLAVE_PROMISE_URL
+    with open(glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', '.rejected-slave.passwd'))[0]) as fh:
+      password = fh.read().strip()
+    return url.replace('{rejected-slave-promise-url-password}', password)
+
   @staticmethod
   def generateHashFromFiles(file_list):
     import hashlib
@@ -363,6 +372,16 @@ class TestDataMixin(object):
       hash_value_dict[
         'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
         hash_file_list + [caddy_wrapper_path]
+      )
+    for rejected_slave_publish_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      partition_id = rejected_slave_publish_path.split('/')[-3]
+      rejected_slave_pem_path = os.path.join(
+        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
+      hash_value_dict[
+        'rejected-slave-publish'
+      ] = self.generateHashFromFiles(
+        hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
       )
 
     runtime_data = self.getTrimmedProcessInfo()
@@ -576,6 +595,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
+        'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
         'slave-amount': '0',
         'rejected-slave-dict': {}},
       parameter_dict
@@ -609,6 +629,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
+        'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
         'rejected-slave-dict': {}
       },
       parameter_dict
@@ -1314,6 +1335,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'accepted-slave-amount': '48',
       'rejected-slave-amount': '5',
       'slave-amount': '53',
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
@@ -3807,6 +3829,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'slave-amount': '3',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
@@ -4077,6 +4100,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '2',
       'slave-amount': '10',
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'rejected-slave-dict': {
         '_custom_domain-unsafe': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
@@ -4442,6 +4466,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'rejected-slave-dict': {
         '_site_2': ["custom_domain 'duplicate.example.com' clashes"],
         '_site_3': ["server-alias 'duplicate.example.com' clashes"],
@@ -4875,6 +4900,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '2',
       'slave-amount': '14',
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'rejected-slave-dict': {
         u"_ssl_ca_crt_only":
         [u"ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
@@ -5563,6 +5589,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
       'rejected-slave-dict': {},
+      'rejected-slave-promise-url': self._getRejectedSlavePromiseUrl(),
       'slave-amount': '1',
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
