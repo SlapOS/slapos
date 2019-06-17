@@ -26,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import errno
 import io
 import logging
 import os
@@ -33,6 +34,7 @@ import sys
 import inspect
 import re
 import shutil
+import stat
 import urllib
 import urlparse
 
@@ -92,9 +94,27 @@ class GenericBaseRecipe(object):
     """Create a file with content
 
     The parent directory should exists, else it would raise IOError"""
-    with open(name, 'w') as fileobject:
-      fileobject.write(content)
-      os.chmod(fileobject.name, mode)
+    if not isinstance(content, bytes):
+      content = content.encode('utf-8')
+    # Try to reuse existing file. This is particularly
+    # important to avoid excessive IO during update.
+    try:
+      with open(name, 'rb') as f:
+        if f.read(len(content)+1) == content:
+          if None is not mode != stat.S_IMODE(os.fstat(f.fileno()).st_mode):
+            os.fchmod(f.fileno(), mode)
+          return os.path.abspath(name)
+    except (IOError, OSError) as e:
+      pass
+    try:
+      os.unlink(name)
+    except OSError as e:
+      if e.errno != errno.ENOENT:
+        raise
+    with open(name, 'wb') as f:
+      if mode is not None:
+        os.fchmod(f.fileno(), mode)
+      f.write(content)
     return os.path.abspath(name)
 
   def createExecutable(self, name, content, mode=0700):
