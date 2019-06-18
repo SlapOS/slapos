@@ -42,7 +42,7 @@ def getLatestBackupDate():
   if not db.keys():
     result = False
   else:
-    last_backup = db[db.keys()[0]]
+    last_backup = db[db.keys()[-1]]
     for callback in db.keys():
       timestamp = float(db[callback])
       if timestamp < last_backup:
