@@ -242,6 +242,7 @@ slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict)) }}
+rejected-slave-promise-url = ${rejected-slave-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -467,7 +468,9 @@ update-command = ${:command}
 
 [rejected-slave-json]
 recipe = slapos.recipe.template:jinja2
-rendered = ${directory:run}/rejected-slave.json
+filename = rejected-slave.json
+directory = ${directory:promise-output}
+rendered = ${:directory}/${:filename}
 template = {{ parameter_dict['template_empty'] }}
 {% if rejected_slave_title_dict %}
 content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2)) }}
@@ -479,7 +482,49 @@ context =
 
 [directory]
 plugin = ${:etc}/plugin
+service = ${:etc}/service
+promise-output = ${:srv}/promise-output
 
+[rejected-slave-publish-configuration]
+ip = {{ instance_parameter['ipv6-random'] }}
+port = 17000
+#key = ${certificate-csr_id:key}
+#certificate = ${certificate-csr_id:certificate}
+error-log = ${directory:log}/rejected-slave-publish.log
+
+[rejected-slave-publish]
+directory = ${rejected-slave-json:directory}
+url = https://user:password@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['caddy'] }}
+  -conf ${rejected-slave-template:rendered}
+  -log ${rejected-slave-publish-configuration:error-log}
+  -http2=true
+  -disable-http-challenge
+  -disable-tls-alpn-challenge
+  -root ${:directory}
+
+wrapper-path = ${directory:service}/rejected-slave-publish
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[rejected-slave-template]
+#tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  http://:${rejected-slave-publish-configuration:port}/ {
+    bind ${rejected-slave-publish-configuration:ip}
+    log ${rejected-slave-publish-configuration:error-log}
+  }
+ 
+rendered = ${directory:etc}/Caddyfile-rejected-slave
+ 
+[promise-expose-csr_id-ip-port]
+<= promise-plugin-base
+module = check_port_listening
+name = expose-csr_id-ip-port-listening.py
+config-hostname = ${expose-csr_id-configuration:ip}
+config-port = ${expose-csr_id-configuration:port}
+ 
 [rejected-slave-promise]
 recipe = slapos.cookbook:promise.plugin
 eggs =
@@ -491,6 +536,7 @@ module = check_file_state
 name = rejected-slave.py
 config-filename = ${rejected-slave-json:rendered}
 config-state = empty
+config-url = ${rejected-slave-publish:url}
 
 [buildout]
 extends =
