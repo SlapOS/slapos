@@ -453,9 +453,6 @@ name = neo-${gen-neo-cluster-base:passwd}
 [gen-smtpd-sasl-password]
 < = gen-password
 
-[monitor-instance-parameter]
-monitor-httpd-port = 8386
-
 {{ root_common.common_section() }}
 
 [monitor-conf-parameters]
