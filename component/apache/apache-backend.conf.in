@@ -131,13 +131,11 @@ SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:EC
 SSLSessionCache shmcb:{{ parameter_dict['ssl-session-cache'] }}(512000)
 SSLProxyEngine On
 
-# As backend is trusting REMOTE_USER header unset it always
-RequestHeader unset REMOTE_USER
-RequestHeader unset SSL_CLIENT_SERIAL
+# As backend is trusting Remote-User header unset it always
+RequestHeader unset Remote-User
 {% if parameter_dict['ca-cert'] -%}
 SSLVerifyClient optional
-RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
-RequestHeader set SSL_CLIENT_SERIAL "%{SSL_CLIENT_M_SERIAL}s"
+RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
 SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
 {%   if parameter_dict['crl'] -%}
 SSLCARevocationCheck chain
