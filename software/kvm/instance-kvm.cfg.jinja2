@@ -444,7 +444,7 @@ maximum-extra-disk-amount = {{ disk_number }}
 {%       set external_port = 10000 + port|int() -%}
 nat-rule-port-{{proto}}-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{proto}}-{{external_port}}:ipv6-port}
 {%       if slapparameter_dict.get('publish-nat-url', False) -%}
-nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{external_port}}:ipv6-port}
+nat-rule-url-{{proto}}-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{proto}}-{{external_port}}:ipv6-port}
 {%       endif -%}
 {%     endfor -%}
 {%   endif -%}

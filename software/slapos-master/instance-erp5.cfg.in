@@ -290,7 +290,7 @@ certs = ${:ca-dir}/certs
 newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 
-[apache-certificate-authority]
+[{{root_common.section('apache-certificate-authority')}}]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_location }}/bin/openssl
 ca-dir = ${directory:ca-dir}
@@ -308,7 +308,7 @@ company = {{ dumps(slapparameter_dict.get('company', 'Compagny')) }}
 
 # XXX - Big hack: Change access for certificate authority configuration
 #       To allow apache to read openssl.cnf in this folder
-[fix-ca-folder]
+[{{root_common.section('fix-ca-folder')}}]
 recipe = plone.recipe.command
 stop-on-error = true
 command =
@@ -456,14 +456,6 @@ name = neo-${gen-neo-cluster-base:passwd}
 monitor-httpd-port = 8386
 
 {{ root_common.common_section() }}
-
-[buildout]
-extends = {{ template_monitor }}
-
-parts +=
-  apache-certificate-authority
-  fix-ca-folder
-  monitor-base
 
 [monitor-conf-parameters]
 monitor-title = ERP5

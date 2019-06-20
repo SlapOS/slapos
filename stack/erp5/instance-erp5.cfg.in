@@ -414,12 +414,6 @@ monitor-httpd-port = 8386
 
 {{ root_common.common_section() }}
 
-[buildout]
-extends = {{ template_monitor }}
-
-parts +=
-  monitor-base
-
 [monitor-conf-parameters]
 monitor-title = ERP5
 password = ${monitor-htpasswd:passwd}

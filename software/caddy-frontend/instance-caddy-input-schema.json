@@ -12,9 +12,9 @@
       "type": "integer"
     },
     "apache-certificate": {
-      "description": "SSL Certificate used by the server. Deprecated, please use master-key-upload-url.",
+      "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
       "textarea": true,
-      "title": "[DEPRECATED] SSL Certificate",
+      "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
       "type": "string"
     },
     "apache-key": {
