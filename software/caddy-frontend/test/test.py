@@ -1086,6 +1086,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'custom_domain': '*.customdomain.example.com',
       },
+      'custom_domain_server_alias': {
+        'url': cls.backend_url,
+        'custom_domain': 'mycustomdomainserveralias.example.com',
+        'server-alias': 'mycustomdomainserveralias1.example.com',
+      },
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
         'custom_domain': 'customdomainsslcrtsslkey.example.com',
@@ -1961,6 +1966,43 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_custom_domain_server_alias(self):
+    reference = 'custom_domain_server_alias'
+    hostname = 'mycustomdomainserveralias'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      'mycustomdomainserveralias1.example.com', parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
