@@ -117,7 +117,9 @@ output = {{ plugin_directory }}/${:name}
 
 {%   if enable_cache and 'url' in slave_instance %}
 {%     if 'domain' in slave_instance %}
-{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%       if not slave_instance.get('custom_domain') %}
+{%         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%       endif %}
 {%     endif %}
 {%     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %}
 {%     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %}
