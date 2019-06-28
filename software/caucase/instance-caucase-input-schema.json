@@ -11,10 +11,7 @@
       "default": 8009
     },
     "external-url": {
-      "title": "External URL of base port",
-      "description": "When provided, this URL will be added to issued certificate as the CRL distribution point.",
-      "type": "string",
-      "format": "uri"
+      "$comment": "(deprecated)"
     },
     "service-auto-approve-amount": {
       "title": "Number of service certificate requests to automatically approve",
