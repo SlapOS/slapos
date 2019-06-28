@@ -115,12 +115,17 @@
       ],
       "default": "false"
     },
-    "monitor-port": {
-      "title": "Monitor Port",
-      "description": "Allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server (default 9684)",
+    "slaprunner-httpd-port": {
+      "title": "Webrunner Server Port",
+      "description": "Port of the Apache server serving the Webrunner interface.",
       "type": "integer",
-      "minimum": 9683,
-      "exclusiveMinimum": true
+      "default": 9686
+    },
+    "monitor-httpd-port": {
+      "title": "Monitor Port",
+      "description": "Port of the Apache server serving the monitoring interface.",
+      "type": "integer",
+      "default": 8386
     },
     "monitor-interface-url": {
       "title": "Monitor Web Interface URL",

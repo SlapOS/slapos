@@ -68,16 +68,6 @@ mod-ssl = ${:cache}/httpd_mod_ssl
 system-log = ${:private}/system-log
 consumption = ${:log}/consumption
 
-[monitor-httpd-configuration-file]
-context =
-  import json_module json
-  section directory monitor-directory
-  section monitor_parameters monitor-parameters
-  section httpd_configuration monitor-httpd-configuration
-  section monitor_rewrite_rule monitor-rewrite-rule
-  section slave_information slap-configuration
-  key monitor_private_hash slap-configuration:private-hash  
-
 [python-symlink]
 recipe = plone.recipe.command
 command = ln -sf {{ buildout_bin }}/pythonwitheggs ${monitor-directory:bin}/python
