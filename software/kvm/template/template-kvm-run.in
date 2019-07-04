@@ -302,7 +302,7 @@ kvm_argument_list = [qemu_path,
                                                  disk_aio, additional_disk_options),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',
-  '-qmp', 'unix:%s,server' % socket_path,
+  '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
 ]

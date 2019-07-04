@@ -97,6 +97,16 @@ class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
   __partition_reference__ = 'defp'
 
 
+class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 WSGI server
+  """
+  __partition_reference__ = 'wsgi'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'wsgi': True})}
+
+
 class TestApacheBalancerPorts(ERP5TestCase):
   """Instanciate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
