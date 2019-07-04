@@ -4240,6 +4240,10 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'frontend_caddy' in q['name']][0]
     os.kill(caddy_pid, signal.SIGUSR1)
 
+    # give caddy a moment to refresh its config, as sending signal does not
+    # block until caddy is refreshed
+    time.sleep(2)
+
     assertQUIC()
 
 
