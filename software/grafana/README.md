@@ -1,30 +1,27 @@
 # grafana / telegraf / influxdb
 
- 
+This is an experimental integration, mainly to evaluate these solutions.
+
 ## Custom telegraf plugins
 
 
 See https://github.com/influxdata/telegraf to learn about plugins.
 
 Useful plugins in this context are probably
-[exec](https://github.com/influxdata/telegraf/tree/1.5.1/plugins/inputs/exec)
+[exec](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/exec),
+[logparser](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/logparser)
 or
-[httpjson](https://github.com/influxdata/telegraf/tree/1.5.1/plugins/inputs/httpjson).
+[http](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/http).
 
 Telegraf will save in the `telegraf` database from the embedded influxdb server.
 
 
 ## Grafana
 
-You'll have to add yourself the influxdb data source in grafana, using the
-parameters published by the slapos instance.
+A default user is created, username and password are published as connection
+parameters. You can add more users in grafana interface.
 
-http://docs.grafana.org/features/datasources/influxdb/
-
-When adding datasource, use *proxy* option, otherwise Grafana makes your
-browser query influxdb directly, which also uses a self signed certificate.
-One workaround is to configure your browser to also accept influxdb certificate
-before using grafana, but using proxy seems easier.
+Datasources should be automatically added.
 
 ## Influxdb
 
@@ -34,8 +31,32 @@ One important thing to notice is that the backup protocol is enabled on ipv4
 provided by slapos, so make sure this ip is not reachable from untrusted
 sources.
 
-## TODO
+# Ingesting/Visualizing logs
 
-* influxdb and telegraf runs with very low priority, this could become an option
-* make one partition for each service and use switch software type
-* make it easier to add custom configuration (how ?)
+Eventhough main feature is visualizing metrics, Grafana has a feature called "Explore" to view logs for a time frame.
+The following backend can be used:
+
+## Loki
+
+See `TestLoki` in test for an example.
+
+## Influxdb
+
+Influxdb logs only have tags and there does not seem to be a way to search (except than tag and time frame).
+
+To inject log files containing:
+```
+INFO the message
+WARN another message
+```
+
+use config like:
+
+```
+[[inputs.logparser]]
+  files = ["/tmp/x*.log", "/tmp/aaa.log"]
+
+  [inputs.logparser.grok]
+  measurement = "logs"
+  patterns = ['^%{WORD:level:tag} %{GREEDYDATA:message:string}']
+```
