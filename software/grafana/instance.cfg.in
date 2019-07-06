@@ -41,11 +41,14 @@ grafana-data-dir = ${:grafana-dir}/data
 grafana-logs-dir = ${:var}/log
 grafana-plugins-dir = ${:grafana-dir}/plugins
 grafana-provisioning-config-dir = ${:grafana-dir}/provisioning-config
-grafana-provisioning-datasources = ${:grafana-provisioning-config-dir}/datasources
-grafana-provisioning-dashboards = ${:grafana-provisioning-config-dir}/dashboards
+grafana-provisioning-datasources-dir = ${:grafana-provisioning-config-dir}/datasources
+grafana-provisioning-dashboards-dir = ${:grafana-provisioning-config-dir}/dashboards
 telegraf-dir = ${:srv}/telegraf
 telegraf-extra-config-dir = ${:telegraf-dir}/extra-config
-
+loki-dir = ${:srv}/loki
+loki-storage-boltdb-dir = ${:loki-dir}/index/
+loki-storage-filesystem-dir = ${:loki-dir}/chunks/
+promtail-dir = ${:srv}/promtail
 
 # macros
 [generate-certificate]
@@ -75,7 +78,11 @@ extensions = jinja2.ext.do
 module = check_port_listening
 name = ${:_buildout_section_name_}.py
 
-
+[check-url-available-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promise}/${:_buildout_section_name_}
+dash_path = {{ dash_bin }}
+curl_path = {{ curl_bin }}
 
 [influxdb]
 ipv6 = ${instance-parameter:ipv6-random}
@@ -133,6 +140,7 @@ data-dir = ${directory:grafana-data-dir}
 logs-dir = ${directory:grafana-logs-dir}
 plugins-dir = ${directory:grafana-plugins-dir}
 provisioning-config-dir = ${directory:grafana-provisioning-config-dir}
+provisioning-datasources-dir = ${directory:grafana-provisioning-datasources-dir}
 admin-user = ${grafana-password:username}
 admin-password = ${grafana-password:passwd}
 secret-key = ${grafana-secret-key:passwd}
@@ -160,6 +168,15 @@ context =
   section grafana grafana
   section apache_frontend apache-frontend
   key slapparameter_dict slap-configuration:configuration
+depends =
+  ${grafana-provisioning-config-file:rendered}
+
+[grafana-provisioning-config-file]
+<= config-file
+rendered = ${grafana:provisioning-datasources-dir}/datasource.yaml
+context =
+  section influxdb influxdb
+  section loki loki
 
 [grafana-listen-promise]
 <= check-port-listening-promise
@@ -183,6 +200,53 @@ context =
   section telegraf telegraf
 
 
+[loki]
+recipe = slapos.cookbook:wrapper
+command-line =
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} -config.file=${loki-config-file:rendered}'
+wrapper-path = ${directory:service}/loki
+
+storage-boltdb-dir = ${directory:loki-storage-boltdb-dir}
+storage-filesystem-dir = ${directory:loki-storage-filesystem-dir}
+ip = ${instance-parameter:ipv4-random}
+port = 3100
+url = http://${:ip}:${:port}
+
+
+[loki-config-file]
+<= config-file
+context =
+  section loki loki
+
+[loki-listen-promise]
+<= check-url-available-promise
+url = ${loki:url}/ready
+
+[promtail]
+recipe = slapos.cookbook:wrapper
+command-line =
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:rendered}'
+wrapper-path = ${directory:service}/promtail
+
+dir = ${directory:promtail-dir}
+http_port = 19080
+ip = ${instance-parameter:ipv4-random}
+url = http://${:ip}:${:http_port}
+
+[promtail-config-file]
+<= config-file
+context =
+  section promtail promtail
+  section loki loki
+  key slapparameter_dict slap-configuration:configuration
+
+[promtail-listen-promise]
+<= check-port-listening-promise
+hostname= ${promtail:ip}
+port = ${promtail:http_port}
+
+
+
 [apache-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -201,6 +265,8 @@ instance-promises =
   ${influxdb-listen-promise:path}
   ${influxdb-password-promise:wrapper-path}
   ${grafana-listen-promise:path}
+  ${loki-listen-promise:path}
+  ${promtail-listen-promise:path}
 
 
 [publish-connection-parameter]
@@ -213,4 +279,6 @@ telegraf-extra-config-dir = ${telegraf:extra-config-dir}
 grafana-url = ${grafana:url}
 grafana-username = ${grafana:admin-user}
 grafana-password = ${grafana:admin-password}
+loki-url = ${loki:url}
+promtail-url = ${promtail:url}
 url = ${apache-frontend:connection-secure_access}

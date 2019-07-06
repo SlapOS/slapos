@@ -28,6 +28,11 @@
       "description": "Name used in From: header of emails",
       "default": "Grafana",
       "type": "string"
+    },
+    "promtail-extra-scrape-config": {
+      "description": "Raw promtail config (experimental parameter, see https://github.com/grafana/loki/blob/master/docs/promtail.md#scrape-configs for detail)",
+      "default": "",
+      "type": "string"
     }
   }
 }
