@@ -295,7 +295,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = kedifa
 name = kedifa
-return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url csr_id-url csr_id-certificate
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url csr_id-url csr_id-certificate  monitor-base-url
 {% set sla_kedifa_key = "-sla-kedifa-" %}
 {% set sla_kedifa_key_length = sla_kedifa_key | length %}
 {% for key in slapparameter_dict.keys() %}
@@ -342,6 +342,7 @@ extra-context =
 
 [monitor-conf-parameters]
 monitor-url-list +=
+  ${request-kedifa:connection-monitor-base-url}
 {% for frontend in frontend_section_list %}
 {{ '  ${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
