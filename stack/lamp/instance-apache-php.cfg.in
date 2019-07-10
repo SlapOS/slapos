@@ -7,14 +7,11 @@ extends =
 parts =
   monitor-base
   certificate-authority
-  ca-stunnel
   logrotate-entry-apache
-  logrotate-entry-stunnel
   promise
 
   php.ini-conf
   apache-php-service
-  frontend-promise
   publish-connection-information
   {{ parameter_dict['application-part-list'] }}
 
@@ -46,7 +43,6 @@ httpd-log = ${:log}/apache
 php-ini-dir = ${:etc}/php
 tmp-php = ${:tmp}/php
 upload-tmp = ${:tmp}/upload
-stunnel-conf = ${:etc}/stunnel
 www = ${:srv}/www/
 apache.d = ${:etc}/apache.d
 
@@ -80,14 +76,6 @@ command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
 hash-files = ${buildout:directory}/software_release/buildout.cfg
 
-[ca-stunnel]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-executable = ${stunnel:wrapper}
-wrapper = ${directory:services}/stunnel
-key-file = ${stunnel:key-file}
-cert-file = ${stunnel:cert-file}
-
 [ca-apache-php]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
@@ -116,7 +104,7 @@ stop-on-error = true
 
 [mariadb-urlparse]
 recipe = slapos.cookbook:urlparse
-url = {{ slap_parameter['database-list'][0] }}
+url = {{ slapparameter_dict['database-list'][0] }}
 
 
 
@@ -124,7 +112,7 @@ url = {{ slap_parameter['database-list'][0] }}
 #--
 #-- Common network parameters
 [apache-network-configuration]
-listening-ip = {{ ipv6 }}
+listening-ip = {{ (ipv6 | list)[0] }}
 listening-port = 9988
 
 
@@ -196,8 +184,8 @@ mode = 0644
 db-user = ${mariadb-urlparse:username}
 db-password = ${mariadb-urlparse:password}
 db-name = ${mariadb-urlparse:path}
-db-host = ${stunnel:local-host}
-db-port = ${stunnel:local-port}
+db-host = ${mariadb-urlparse:host}
+db-port = ${mariadb-urlparse:port}
 document-root = ${apache-php-configuration:document-root}
 backend-url = ${apache-php-configuration:url}
 php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
@@ -206,29 +194,12 @@ php-ini = ${php.ini-conf:rendered}
 
 #----------------
 #--
-#-- Request frontend.
-
-[request-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
-config-url = https://[ ${apache-network-configuration:listening-ip}]:${apache-network-configuration:listening-port}/
-return = site_url
-config-custom_domain = ${slap-parameter:domain}
-
-
-#----------------
-#--
 #-- Publish instance parameters.
 
 [publish-connection-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 backend-url = ${apache-php-configuration:url}
-url = ${request-frontend:connection-site_url}
 
 
 #----------------
@@ -251,15 +222,3 @@ name = apache-httpd-port-listening
 config-hostname = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}
 
-[frontend-promise]
-<= promise-base
-module = check_url_available
-name = apache-httpd-listening-on-tcp.py
-config-url = ${request-frontend:connection-site_url}
-config-check-secure = 1
-
-
-[slap-parameter]
-# Default value if no domain is specified
-domain =
-mariadb-url =

@@ -1,0 +1,106 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
+{% set monitor_base_url_dict = {} -%}
+{% set mariadb_dict = {} -%}
+
+[request-common]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+
+[request-apache]
+<= request-common
+software-type = apache
+name = apache-php
+sla-computer_guid = {{ dumps(slapparameter_dict.get('computer-guid', '')) }}
+config-domain = {{ dumps(slapparameter_dict.get('domain', '')) }}
+{% for key, value in slapparameter_dict.items() -%}
+{%  if key.startswith('instance.') -%}
+config-{{ key }} = {{ value }}
+{%  endif -%}
+{% endfor -%}
+config-database-list = ${request-mariadb:connection-database-list}
+return =
+  backend-url
+  monitor-base-url
+
+{% do part_list.append('request-apache') -%}
+{% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
+{% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
+
+
+{% do mariadb_dict.__setitem__('database-list', [{'name': 'nextcloud', 'user': 'nextcloud', 'password': 'insecure'}]) -%}
+{% do mariadb_dict.__setitem__('test-database-amount', 0) -%}
+{% do mariadb_dict.__setitem__('tcpv4-port', 2099) -%}
+{% do mariadb_dict.__setitem__('max-slowqueries-threshold', 1000) -%}
+{% do mariadb_dict.__setitem__('slowest-query-threshold', '') -%}
+{% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
+{% do mariadb_dict.__setitem__('monitor-passwd', 0) -%}
+{% do mariadb_dict.__setitem__('name', 'Mariadb') -%}
+
+[request-mariadb]
+<= request-common
+software-type = mariadb
+name = Mariadb
+sla-computer_guid = {{ dumps(slapparameter_dict.get('computer-guid', '')) }}
+{% for key, value in mariadb_dict.items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+return = 
+  database-list
+  monitor-base-url
+
+{% do part_list.append('request-mariadb') -%}
+{% do publish_dict.__setitem__('mariadb-url-list', '${request-mariadb:connection-database-list}') -%}
+{% do monitor_base_url_dict.__setitem__('mariadb', '${request-mariadb:connection-monitor-base-url}') -%}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8060
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+username = admin
+password = ${monitor-htpasswd:passwd}
+
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
+[monitor-conf-parameters]
+#private-path-list += 
+#  ${directory:webroot}/
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
+{% endfor %}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
+monitor-password = ${publish-early:monitor-password}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+{% do part_list.append('monitor-base') -%}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+
+parts =
+  publish-connection-information
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+ 
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
