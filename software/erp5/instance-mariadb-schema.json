@@ -97,6 +97,11 @@
       "default": 1,
       "type": "number"
     },
+    "max-connection-count": {
+      "description": "See MariaDB documentation on max_connections. If not provided, a value suitable for the number of request Zope processes is chosen.",
+      "minimum": 0,
+      "type": "integer"
+    },
     "relaxed-writes": {
       "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
       "default": false,
