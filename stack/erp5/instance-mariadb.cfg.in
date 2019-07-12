@@ -133,6 +133,7 @@ pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
 long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
+max-connection-count = {{ dumps(slapparameter_dict.get('max-connection-count', 1000)) }}
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
 innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
