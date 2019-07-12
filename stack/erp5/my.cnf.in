@@ -66,8 +66,13 @@ server_id = {{ parameter_dict['server-id'] }}
 {{x}}sync_frm = 0
 
 # Force utf8 usage
+{% if parameter_dict['enable-4byte'] -%}
+character_set_server = utf8mb4
+collation_server = utf8mb4_general_ci
+{% else -%}
 collation_server = utf8_unicode_ci
 character_set_server = utf8
+{% endif -%}
 skip_character_set_client_handshake
 
 {% if 'ssl-key' in parameter_dict -%}

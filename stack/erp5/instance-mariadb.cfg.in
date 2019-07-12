@@ -138,6 +138,7 @@ innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-po
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
+enable-4byte = {{ dumps(slapparameter_dict.get('enable-4byte', False)) }}
 {% if incremental_backup_retention_days > -1 -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
