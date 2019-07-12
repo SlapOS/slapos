@@ -9,7 +9,6 @@ extends =
 
 parts =
   directory
-  configtest
   logrotate-entry-caddy
   caddy-frontend
   switch-caddy-softwaretype
@@ -36,7 +35,7 @@ parts =
   trafficserver-logging-config
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
-
+  cron-entry-logrotate-trafficserver
 ## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
@@ -245,6 +244,7 @@ extra-context =
     key autocert caddy-directory:autocert
     key master_certificate caddy-configuration:master-certificate
     key caddy_log_directory caddy-directory:slave-log
+    key caddy_log_cache_direct_directory caddy-directory:slave-log-cache-direct
     key local_ipv4 :local_ipv4
     key local_ipv6 :local_ipv6
     key global_ipv6 slap-network-information:global-ipv6
@@ -344,7 +344,9 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files =
+  ${buildout:directory}/software_release/buildout.cfg
+  ${caddy-wrapper:wrapper-path}
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -360,6 +362,7 @@ slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
+slave-log-cache-direct = ${directory:log}/httpd-cache-direct
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
 custom-ssl-directory = ${:slave-configuration}/ssl
@@ -369,19 +372,13 @@ frontend-configuration = ${directory:etc}/Caddyfile
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
-frontend-configuration-verification = ${frontend-caddy-validate:rendered}
-frontend-graceful-command = ${:frontend-configuration-verification} && kill -USR1 $(cat ${:pid-file})
+frontend-graceful-command = ${frontend-caddy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
 not-found-file = ${caddy-directory:document-root}/notfound.html
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
 cache-through-port = 26011
 ssl-cache-through-port = 26012
-
-[configtest]
-recipe = slapos.cookbook:wrapper
-command-line = ${frontend-caddy-validate:rendered}
-wrapper-path = ${directory:bin}/caddy-configtest
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -425,6 +422,7 @@ local-state = ${directory:var}/trafficserver
 bin_path = {{ parameter_dict['trafficserver'] }}/bin
 log = ${directory:log}/trafficserver
 cache-path = ${directory:srv}/ats_cache
+logrotate-backup = ${logrotate-directory:logrotate-backup}/trafficserver
 
 [trafficserver-variable]
 wrapper-path = ${directory:service}/trafficserver
@@ -539,36 +537,75 @@ module = trafficserver_cache_availability
 name = trafficserver-cache-availability.py
 config-wrapper-path = ${trafficserver-ctl:wrapper-path}
 
+[trafficserver-rotate-script]
+< = jinja2-template-base
+template = {{ parameter_dict['template_rotate_script'] }}
+rendered = ${directory:bin}/trafficserver-rotate
+mode = 0700
+xz_binary = {{ parameter_dict['xz_location'] ~ '/bin/xz' }}
+pattern = *.old
+# days to keep log files
+keep_days = 365
+
+extra-context =
+  key log_dir trafficserver-directory:log
+  key rotate_dir trafficserver-directory:logrotate-backup
+  key xz_binary :xz_binary
+  key keep_days :keep_days
+  key pattern :pattern
+
+[cron-entry-logrotate-trafficserver]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = trafficserver-logrotate
+frequency = 0 0 * * *
+command = ${trafficserver-rotate-script:rendered}
+
 ### End of ATS sections
 
 ### Caddy Graceful and promises
+[frontend-caddy-configuration-state]
+< = jinja2-template-base
+template = {{ parameter_dict['template_configuration_state_script'] }}
+rendered = ${directory:bin}/${:_buildout_section_name_}
+mode = 0700
+
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+sha256sum = {{ parameter_dict['sha256sum'] }}
+
+extra-context =
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[frontend-caddy-configuration-state-graceful]
+< = frontend-caddy-configuration-state
+signature_file = ${directory:run}/graceful_configuration_state_signature
+
+[frontend-caddy-configuration-state-validate]
+< = frontend-caddy-configuration-state
+signature_file = ${directory:run}/validate_configuration_state_signature
+
 [frontend-caddy-graceful]
 < = jinja2-template-base
 template = {{ parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
-sha256sum = {{ parameter_dict['sha256sum'] }}
-signature_file = ${directory:run}/caddy_graceful_signature
 extra-context =
     key graceful_reload_command caddy-configuration:frontend-graceful-command
-    key path_list :path_list
-    key sha256sum :sha256sum
-    key signature_file :signature_file
+    key caddy_configuration_state frontend-caddy-configuration-state-graceful:rendered
 
 [frontend-caddy-validate]
 < = jinja2-template-base
 template = {{ parameter_dict['template_validate_script'] }}
 rendered = ${directory:bin}/frontend-caddy-validate
 mode = 0700
-sha256sum = {{ parameter_dict['sha256sum'] }}
-signature_file = ${directory:run}/caddy_validate_signature
+last_state_file = ${directory:run}/caddy_configuration_last_state
 extra-context =
     key wrapper caddy-wrapper:wrapper-path
-    key path_list frontend-caddy-graceful:path_list
-    key sha256sum :sha256sum
-    key signature_file :signature_file
+    key caddy_configuration_state frontend-caddy-configuration-state-validate:rendered
+    key last_state_file :last_state_file
 
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
@@ -583,11 +620,22 @@ extra-context =
     key lazy_command caddy-configuration:frontend-graceful-command
 
 # Promises checking configuration:
+[promise-helper-last-configuration-state]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bin}/frontend-read-last-configuration-state
+mode = 0700
+content =
+  #!/bin/sh
+  exit `cat ${frontend-caddy-validate:last_state_file}`
+context =
+    key content :content
+
 [promise-frontend-caddy-configuration]
 <= promise-plugin-base
 module = validate_frontend_configuration
 name = frontend-caddy-configuration-promise.py
-config-verification-script = ${caddy-configuration:frontend-configuration-verification}
+config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
 <= promise-plugin-base

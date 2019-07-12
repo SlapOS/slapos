@@ -27,6 +27,7 @@ computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 
 [buildout]
+extends = {{ template_monitor }}
 parts =
   publish
   {{ part_list | join('\n\t') }}

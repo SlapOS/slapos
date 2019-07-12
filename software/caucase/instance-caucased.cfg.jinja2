@@ -1,6 +1,5 @@
 {% import "caucase" as caucase with context %}
-{% set ipv6 = (ipv6_set | list)[0] -%}
-{% set netloc = '[' ~ ipv6 ~ ']:' ~ slapparameter_dict.get('base-port', 8009) -%}
+{% set netloc = '[' ~ (ipv6_set | list)[0] ~ ']:' ~ slapparameter_dict.get('base-port', 8009) -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory

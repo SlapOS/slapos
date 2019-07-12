@@ -22,6 +22,7 @@ context =
     key ipv6_set slap-configuration:ipv6
     key slapparameter_dict slap-configuration:configuration
     raw logrotate_cfg {{ template_logrotate_base }}
+    raw template_monitor {{ template_monitor }}
     raw bin_directory {{ bin_directory }}
     ${:extra-context}
 

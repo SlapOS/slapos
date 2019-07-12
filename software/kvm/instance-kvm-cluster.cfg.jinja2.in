@@ -129,7 +129,12 @@ return =
   backend-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
-{{ '  ' }}nat-rule-url-{{ port }}
+{%     if ':' in port -%}
+{%       set proto, port = port.split(':') -%}
+{%     else -%}
+{%       set proto, port = 'tcp', port -%}
+{%     endif -%}
+{{ '  ' }}nat-rule-url-{{proto}}-{{ port }}
 {%   endfor -%}
 {% endif -%}
 {{ '  ' }}monitor-base-url

@@ -32,6 +32,8 @@ create = true
 
 {% if master_key_download_url %}
 {%   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
+{% else %}
+{%   do kedifa_updater_mapping.append(('notreadyyet', master_certificate, apache_certificate)) %}
 {% endif %}
 
 {% if slave_kedifa_information %}
@@ -48,16 +50,20 @@ content =
   from slapos.promise.plugin.${:module} import RunPromise
 output = {{ plugin_directory }}/${:name}
 
+# empty section if no cached slaves are available
+[slave-log-cache-direct-directory-dict]
+
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
+{%   set slave_type = slave_instance.get('type', '') %}
+{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%   set slave_reference = slave_instance.get('slave_reference') %}
 {%   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
 {%   if slave_kedifa %}
 {%     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%   else %}
-{%     set key_download_url = '' %}
+{%     set key_download_url = 'notreadyyet' %}
 {%   endif %}
-{%   set slave_type = slave_instance.get('type', '') %}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() %}
 {%   set slave_publish_dict = {} %}
@@ -71,6 +77,9 @@ output = {{ plugin_directory }}/${:name}
 {%   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 
 {%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
+{%   if enable_cache %}
+{%     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-cache-direct-logs" %}
+{%   endif %}
 
 {#   Pass HTTP2 switch #}
 {%   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
@@ -85,6 +94,12 @@ output = {{ plugin_directory }}/${:name}
 {%   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
 {%   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
+{%   if enable_cache %}
+{%     do slave_parameter_dict.__setitem__('access_log_cache_direct', '/'.join([caddy_log_cache_direct_directory, '%s_access_log' % slave_reference])) %}
+{%     do slave_parameter_dict.__setitem__('error_log_cache_direct', '/'.join([caddy_log_cache_direct_directory, '%s_error_log' % slave_reference])) %}
+{%     do slave_instance.__setitem__('access_log_cache_direct', slave_parameter_dict.get('access_log_cache_direct')) %}
+{%     do slave_instance.__setitem__('error_log_cache_direct', slave_parameter_dict.get('error_log_cache_direct')) %}
+{%   endif %}
 
 {#   Add slave log directory to the slave log access dict #}
 {%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
@@ -100,10 +115,11 @@ output = {{ plugin_directory }}/${:name}
 {%     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
 {%   endif %}
 
-{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%   if enable_cache and 'url' in slave_instance %}
 {%     if 'domain' in slave_instance %}
-{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%       if not slave_instance.get('custom_domain') %}
+{%         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%       endif %}
 {%     endif %}
 {%     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %}
 {%     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %}
@@ -123,22 +139,10 @@ output = {{ plugin_directory }}/${:name}
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
 
-[slave-log-directories]
-<= slave-log-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
-{% do part_list.append('slave-log-directories') %}
-
-[caddy-log-access]
-< = jinja2-template-base
-template = {{frontend_configuration.get('template-log-access')}}
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-extra-context =
-    section slave_log_directory slave-log-directory-dict
-    section slave_password slave-password
-    section parameter_dict caddy-log-access-parameters
-
-{% do part_list.append('caddy-log-access') %}
+{%   if enable_cache %}
+[slave-log-cache-direct-directory-dict]
+{{slave_reference}}_cache_direct = {{ slave_log_cache_direct_folder }}
+{%   endif %}
 
 [slave-password]
 {{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
@@ -149,6 +153,13 @@ extra-context =
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
+{%    if enable_cache %}
+[{{slave_logrotate_section}}_cache_direct]
+<= logrotate-entry-base
+name = ${:_buildout_section_name_}
+log = {{slave_parameter_dict.get('access_log_cache_direct')}} {{slave_parameter_dict.get('error_log_cache_direct')}}
+backup = {{ slave_log_cache_direct_folder }}
+{%    endif %}
 
 {# integrate current logs inside #}
 [{{slave_ln_section}}]
@@ -261,28 +272,6 @@ filename = {{ '%s.conf' % slave_reference }}
 {{ '\n' }}
 
 
-{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') %}
-{%   do part_list.append(check_error_log_section_title) %}
-[{{ check_error_log_section_title }}]
-<= promise-plugin-base
-module = check_error_on_http_log
-name = {{ check_error_log_section_title }}.py
-config-log-file = {{ slave_instance.get('error_log') }}
-config-maximum-delay = 3600
-# promise frequency in minutes (2 times/day)
-config-frequency = 720
-
-{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') %}
-{%   do part_list.append(check_error_log_section_title) %}
-[{{ check_error_log_section_title }}]
-<= promise-plugin-base
-module = check_error_on_http_log
-name = {{ check_error_log_section_title }}.py
-config-log-file = {{ slave_instance.get('error_log') }}
-config-maximum-delay = 86400
-# promise frequency in minutes (2 times/day)
-config-frequency = 720
-
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
@@ -347,6 +336,29 @@ recipe = slapos.cookbook:publish
 
 {# End of the main for loop#}
 {% endfor %}
+
+[slave-log-directories]
+<= slave-log-directory-dict
+recipe = slapos.cookbook:mkdirectory
+
+{% do part_list.append('slave-log-directories') %}
+
+[slave-log-cache-direct-directories]
+<= slave-log-cache-direct-directory-dict
+recipe = slapos.cookbook:mkdirectory
+
+{% do part_list.append('slave-log-cache-direct-directories') %}
+
+[caddy-log-access]
+< = jinja2-template-base
+template = {{frontend_configuration.get('template-log-access')}}
+rendered = {{frontend_configuration.get('log-access-configuration')}}
+extra-context =
+    section slave_log_directory slave-log-directory-dict
+    section slave_password slave-password
+    section parameter_dict caddy-log-access-parameters
+
+{% do part_list.append('caddy-log-access') %}
 
 ###############################################
 ### Prepare virtualhost for slaves using cache
@@ -442,6 +454,12 @@ command-line = {{ kedifa_updater }}
 wrapper-path = {{ service_directory }}/kedifa-updater
 hash-files = ${buildout:directory}/software_release/buildout.cfg
 
+[kedifa-updater-run]
+recipe = plone.recipe.command
+stop-on-error = True
+command = {{ kedifa_updater }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_graceful_reload }}"
+update-command = ${:command}
+
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
 file = {{ kedifa_updater_mapping_file }}
@@ -466,6 +484,7 @@ extends =
 
 parts +=
     kedifa-updater
+    kedifa-updater-run
     caddy-log-access-header
 {% for part in part_list %}
 {{ '    %s' % part }}
@@ -476,6 +495,7 @@ parts +=
     tunnel-6to4-base-cached_port
     tunnel-6to4-base-ssl_cached_port
     expose-csr_id
+    promise-expose-csr_id-ip-port
 
 cache-access = {{ cache_access }}
 
@@ -527,6 +547,13 @@ template = inline:
   }
 
 rendered = {{ directory_caddy_csr_id }}/Caddyfile
+
+[promise-expose-csr_id-ip-port]
+<= promise-plugin-base
+module = check_port_listening
+name = expose-csr_id-ip-port-listening.py
+config-hostname = ${expose-csr_id-configuration:ip}
+config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]
 depends = ${store-csr_id:command}

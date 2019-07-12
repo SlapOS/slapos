@@ -45,6 +45,10 @@
     "warning-list": {
       "description": "List of warning found during the request.",
       "type": "array"
+    },
+    "kedifa-caucase-url": {
+      "description": "URL to caucase used by KeDiFa",
+      "type": "string"
     }
   },
   "type": "object"

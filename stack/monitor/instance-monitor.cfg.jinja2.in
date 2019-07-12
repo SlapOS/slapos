@@ -142,22 +142,18 @@ wrapper-path = ${directory:scripts}/${:name}
 [monitor-htpasswd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.monitor_pwd
-bytes = 8
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${directory:etc}/.monitor_pwd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
-# Keep multiple lines as password can end with newline char.
 command =
-  if [ ! -s "${:htpasswd-path}" ]; then
-    {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
-  fi
-  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
-update-command = ${:command}
-user = ${monitor-instance-parameter:username}
-password = ${monitor-instance-parameter:password}
+  echo "${monitor-instance-parameter:password}" >${:password-file}
+  [ -s "${:htpasswd-path}" ] ||
+    {{ apache_location }}/bin/htpasswd -ci ${:htpasswd-path} "${monitor-instance-parameter:username}" <${:password-file}
+update-command =
+  [ -s "${:password-file}" ] || ${:command}
 
 [monitor-symlink]
 recipe = cns.recipe.symlink
@@ -399,7 +395,6 @@ depends =
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
   ${certificate-authority-service:wrapper-path}
-  ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:name}

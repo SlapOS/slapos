@@ -92,6 +92,27 @@ SSL keys and certificates are directly send to the frontend cluster in order to 
 
 *Note*: Until master partition or slave specific certificate is uploaded each slave is served with fallback certificate.  This fallback certificate is self signed, does not match served hostname and results with lack of response on HTTPs.
 
+Obtaining CA for KeDiFa
+-----------------------
+
+KeDiFa uses caucase and so it is required to obtain caucase CA certificate used to sign KeDiFa SSL certificate, in order to be sure that certificates are sent to valid KeDiFa.
+
+The easiest way to do so is to use caucase.
+
+On some secure and trusted box which will be used to upload certificate to master or slave frontend partition install caucase https://pypi.org/project/caucase/
+
+Master and slave partition will return key ``kedifa-caucase-url``, so then create and start a ``caucase-updater`` service::
+
+  caucase-updater \
+    --ca-url "${kedifa-caucase-url}" \
+    --cas-ca "${frontend_name}.caucased.ca.crt" \
+    --ca "${frontend_name}.ca.crt" \
+    --crl "${frontend_name}.crl"
+
+where ``frontend_name`` is a frontend cluster to which you will upload the certificate (it can be just one slave).
+
+Make sure it is automatically started when trusted machine reboots: you want to have it running so you can forget about it. It will keep KeDiFa's CA certificate up to date when it gets renewed so you know you are still talking to the same service as when you previously uploaded the certificate, up to the original upload.
+
 Master partition
 ----------------
 
@@ -105,12 +126,12 @@ Example sessions is::
 
   request(...)
 
-  curl -k -X GET master-key-generate-auth-url
+  curl -g -X GET --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" master-key-generate-auth-url
   > authtoken
 
   cat certificate.pem key.pem ca-bundle.pem > master.pem
 
-  curl -k -X PUT --data-binary @master.pem master-key-upload-url+authtoken
+  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @master.pem master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -133,12 +154,12 @@ Example sessions is::
 
   request(...)
 
-  curl -k -X GET key-generate-auth-url
+  curl -g -X GET --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" key-generate-auth-url
   > authtoken
 
   cat certificate.pem key.pem ca-bundle.pem > master.pem
 
-  curl -k -X PUT --data-binary @master.pem key-upload-url+authtoken
+  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @master.pem key-upload-url+authtoken
 
 This replaces old request parameters:
 

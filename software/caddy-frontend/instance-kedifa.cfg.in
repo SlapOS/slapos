@@ -7,13 +7,16 @@ extends =
   {{ parameter_dict['monitor_template'] }}
 
 parts =
+  monitor-base
   directory
   kedifa
+  promise-kedifa-http-reply
   slave-kedifa-information
   caucased
   caucased-promise
   caucase-updater
   expose-csr_id
+  promise-expose-csr_id-ip-port
 
 [caucased]
 hash-files = ${buildout:directory}/software_release/buildout.cfg
@@ -50,6 +53,7 @@ run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
 promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 
 # KeDiFa directories
 kedifa = ${:srv}/kedifa
@@ -151,6 +155,13 @@ template = inline:
 
 rendered = ${directory:caddy-csr_id}/Caddyfile
 
+[promise-expose-csr_id-ip-port]
+<= promise-plugin-base
+module = check_port_listening
+name = expose-csr_id-ip-port-listening.py
+config-hostname = ${expose-csr_id-configuration:ip}
+config-port = ${expose-csr_id-configuration:port}
+
 [expose-csr_id]
 depends = ${store-csr_id:command}
 recipe = slapos.cookbook:wrapper
@@ -184,6 +195,14 @@ context =
     section directory directory
     ${:extra-context}
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+
 [kedifa-config]
 ip = {{ instance_parameter['ipv6-random'] }}
 port = {{ instance_parameter['configuration.kedifa_port'] }}
@@ -199,6 +218,15 @@ pidfile = ${directory:run}/kedifa.pid
 recipe = slapos.cookbook:wrapper
 command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
 wrapper-path = ${directory:etc-run}/kedifa-reloader
+
+[promise-kedifa-http-reply]
+<= promise-plugin-base
+module = check_url_available
+name = kedifa-http-reply.py
+# Kedifa replies 500 on /, so use it to be sure that Kedifa replied
+config-http_code = 500
+config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
+config-ca-cert-file = ${kedifa-config:ca-certificate}
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
@@ -222,6 +250,7 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
 {%-   do slave_dict.__setitem__('key-generate-auth-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}/generateauth' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-upload-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}?auth=' % (slave_reference,)) -%}
 {%-   do slave_dict.__setitem__('key-download-url', 'https://[${kedifa-config:ip}]:${kedifa-config:port}/${%s-auth-random:passwd}' % (slave_reference,)) -%}
+{%-   do slave_dict.__setitem__('kedifa-caucase-url', caucase_url ) -%}
 {%-   do slave_kedifa_information.__setitem__(slave_reference, slave_dict) %}
 [{{ slave_reference }}-auth-random-generate]
 recipe = plone.recipe.command

@@ -203,7 +203,7 @@ software-type = zope
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
-{%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
+{%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
 {%   if not jupyter_zope_family_default -%}
@@ -227,6 +227,7 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', False)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 {%   endif -%}
@@ -409,16 +410,7 @@ name = neo-${gen-neo-cluster-base:passwd}
 [gen-smtpd-sasl-password]
 < = gen-password
 
-[monitor-instance-parameter]
-monitor-httpd-port = 8386
-
 {{ root_common.common_section() }}
-
-[buildout]
-extends = {{ template_monitor }}
-
-parts +=
-  monitor-base
 
 [monitor-conf-parameters]
 monitor-title = ERP5

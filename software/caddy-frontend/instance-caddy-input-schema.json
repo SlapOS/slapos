@@ -11,6 +11,18 @@
       "title": "Frontend Replication Quantity",
       "type": "integer"
     },
+    "apache-certificate": {
+      "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
+      "type": "string"
+    },
+    "apache-key": {
+      "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
+      "textarea": true,
+      "title": "[DEPRECATED] SSL Key",
+      "type": "string"
+    },
     "domain": {
       "description": "Base Domain for create subdomains (ie.: example.com).",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
@@ -29,7 +41,7 @@
     },
     "global-disable-http2": {
       "default": "false",
-      "description": "Disables globally HTTP2 in Caddy, thus enable-http2-by-default here and enable-http2 have no effect. Rational is that in some loaded environments it is better to run Caddy without any HTTP2 capabilities.",
+      "description": "Disables globally HTTP2 in Caddy, thus enable-http2-by-default here and enable-http2 have no effect. Rational is that in some loaded environments it is better to run Caddy without any HTTP2 capabilities. Warning: Changing the parameter will result in restarting Caddy process.",
       "enum": [
         "true",
         "false"
@@ -40,7 +52,7 @@
     "mpm-graceful-shutdown-timeout": {
       "default": 5,
       "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
-      "title": "Duration of the graceful shutdown period",
+      "title": "Duration of the graceful shutdown period. Warning: Changing the parameter will result in restarting Caddy process.",
       "type": "integer"
     },
     "nginx-domain": {
@@ -61,7 +73,7 @@
     },
     "enable-quic": {
       "default": "false",
-      "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour.",
+      "description": "Enables QUIC - Quick UDP Internet Connections. Note that this is experimental feature, thus can result in undefined behaviour. Warning: Changing the parameter will result in restarting Caddy process.",
       "enum": [
         "true",
         "false"

@@ -1,5 +1,6 @@
 port  {{ parameter_dict['port'] }}
 4  {{ parameter_dict['ipv4'] }}
+authorized-origin  {{ parameter_dict['ipv4'] }}
 # 6  {{ parameter_dict['ipv6'] }}
 db  {{ parameter_dict['db'] }}
 ca  {{ parameter_dict['ca'] }}

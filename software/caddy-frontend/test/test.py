@@ -42,6 +42,10 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 
 from utils import SlapOSInstanceTestCase
 from utils import findFreeTCPPort
@@ -254,6 +258,25 @@ print json.dumps(module.extra_config_dict)
 
 
 class TestDataMixin(object):
+  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+    rejected_slave_promise_url = parameter_dict.pop(
+      'rejected-slave-promise-url')
+
+    try:
+      result = requests.get(rejected_slave_promise_url, verify=False)
+      if result.text == '':
+        result_json = {}
+      else:
+        result_json = result.json()
+      self.assertEqual(
+        parameter_dict['rejected-slave-dict'],
+        result_json
+      )
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
+
   @staticmethod
   def generateHashFromFiles(file_list):
     import hashlib
@@ -271,7 +294,9 @@ class TestDataMixin(object):
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.getSupervisorRPCServer().supervisor.getAllProcessInfo()]))
 
-  def assertTestData(self, runtime_data, hash_value=None, msg=None):
+  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
+    if hash_value_dict is None:
+      hash_value_dict = {}
     filename = '%s-%s.txt' % (self.id(), 'CADDY')
     test_data_file = os.path.join(
       os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
@@ -281,8 +306,9 @@ class TestDataMixin(object):
     except IOError:
       test_data = ''
 
-    if hash_value is not None:
-      runtime_data = runtime_data.replace(hash_value, '{hash}')
+    for hash_type, hash_value in hash_value_dict.items():
+      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
+        hash_type),)
 
     maxDiff = self.maxDiff
     self.maxDiff = None
@@ -302,10 +328,12 @@ class TestDataMixin(object):
       self.maxDiff = maxDiff
       self.longMessage = longMessage
 
-  def _test_file_list(self, slave_dir, IGNORE_PATH_LIST):
+  def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
+    if IGNORE_PATH_LIST is None:
+      IGNORE_PATH_LIST = []
     runtime_data = []
-    for slave_var in glob.glob(os.path.join(self.instance_path, '*', 'var')):
-      for entry in os.walk(os.path.join(slave_var, slave_dir)):
+    for slave_var in glob.glob(os.path.join(self.instance_path, '*')):
+      for entry in os.walk(os.path.join(slave_var, *slave_dir_list)):
         for filename in entry[2]:
           path = os.path.join(
             entry[0][len(self.instance_path) + 1:], filename)
@@ -315,7 +343,7 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data)
 
   def test_file_list_log(self):
-    self._test_file_list('log', [
+    self._test_file_list(['var', 'log'], [
       # no control at all when cron would kick in, ignore it
       'cron.log',
       # appears late and is quite unstable, no need to assert
@@ -331,26 +359,43 @@ class TestDataMixin(object):
     ])
 
   def test_file_list_run(self):
-    self._test_file_list('run', [
+    self._test_file_list(['var', 'run'], [
       # run by cron from time to time
       'monitor/monitor-collect.pid',
-      # may appear or not
-      'var/run/caddy_graceful_signature.tmp',
     ])
+
+  def test_file_list_etc_cron_d(self):
+    self._test_file_list(['etc', 'cron.d'])
 
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
 
-    hash_files = [
-      'software_release/buildout.cfg',
-    ]
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
-    h = self.generateHashFromFiles(hash_files)
+    hash_file_list = [os.path.join(
+        self.computer_partition_root_path, 'software_release/buildout.cfg')]
+    hash_value_dict = {
+      'generic': self.generateHashFromFiles(hash_file_list),
+    }
+    for caddy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'caddy-wrapper')):
+      partition_id = caddy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
+        hash_file_list + [caddy_wrapper_path]
+      )
+    for rejected_slave_publish_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      partition_id = rejected_slave_publish_path.split('/')[-3]
+      rejected_slave_pem_path = os.path.join(
+        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
+      hash_value_dict[
+        'rejected-slave-publish'
+      ] = self.generateHashFromFiles(
+        hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
+      )
 
     runtime_data = self.getTrimmedProcessInfo()
-    self.assertTestData(runtime_data, hash_value=h)
+    self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
 
   def test_promise_run_plugin(self):
     ignored_plugin_list = [
@@ -374,6 +419,12 @@ class TestDataMixin(object):
         plugin = plugin_path[strip:]
         if plugin in ignored_plugin_list:
           continue
+        # reset frontend-caddy-configuration-promise.py state
+        if plugin == 'frontend-caddy-configuration-promise.py':
+          validate_path = os.path.join(
+            partition_path, 'bin', 'frontend-caddy-validate')
+          if os.path.exists(validate_path):
+            subprocess_status_output(validate_path)
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
@@ -469,6 +520,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       base + r'\?auth=$'
     )
 
+    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
+    self.assertEqual(
+      kedifa_caucase_url,
+      'http://[%s]:%s' % (SLAPOS_TEST_IPV6, CAUCASE_PORT),
+    )
+
     return generate_auth_url, upload_url
 
   def assertKeyWithPop(self, key, d):
@@ -542,12 +599,11 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': None,
         'domain': 'None',
-        'kedifa-caucase-url': 'http://[%s]:%s' % (
-           SLAPOS_TEST_IPV6, CAUCASE_PORT),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -575,13 +631,12 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     self.assertEqual(
       {
         'monitor-base-url': None,
         'domain': 'example.com',
-        'kedifa-caucase-url': 'http://[%s]:%s' % (
-           SLAPOS_TEST_IPV6, CAUCASE_PORT),
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -712,6 +767,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def untilSlavePartitionReady(cls):
+    # all on-watch services shall not be exited
+    for process in cls.getSupervisorRPCServer()\
+      .supervisor.getAllProcessInfo():
+      if process['name'].endswith('-on-watch') and \
+        process['statename'] == 'EXITED':
+        if process['name'].startswith('monitor-http'):
+          continue
+        return False
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       parameter_dict = cls.slapos_controler.slap.registerOpenOrder().request(
@@ -744,11 +807,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
-    cls.runKedifaUpdater()
-    # run once more slapos node instance, as kedifa-updater sets up
-    # certificates needed for caddy-frontend, and on this moment it can be
-    # not started yet
-    cls.runComputerPartition(max_quantity=1)
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
@@ -1002,6 +1060,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': 'damaged',
+      },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -1017,11 +1080,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       'custom_domain': {
         'url': cls.backend_url,
-        'custom_domain': 'customdomain.example.com',
+        'custom_domain': 'mycustomdomain.example.com',
       },
       'custom_domain_wildcard': {
         'url': cls.backend_url,
         'custom_domain': '*.customdomain.example.com',
+      },
+      'custom_domain_server_alias': {
+        'url': cls.backend_url,
+        'custom_domain': 'mycustomdomainserveralias.example.com',
+        'server-alias': 'mycustomdomainserveralias1.example.com',
       },
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
@@ -1122,6 +1190,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'enable_cache': True,
       },
+      'enable_cache_custom_domain': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+        'custom_domain': 'customdomainenablecache.example.com',
+      },
+      'enable_cache_server_alias': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+        'server-alias': 'enablecacheserveralias1.example.com',
+      },
       'enable_cache-disable-no-cache-request': {
         'url': cls.backend_url,
         'enable_cache': True,
@@ -1219,24 +1297,77 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
       if os.path.exists(os.path.join(q, 'etc', 'trafficserver'))][0]
 
+  def test_trafficserver_logrotate(self):
+    ats_partition = [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if os.path.exists(os.path.join(q, 'bin', 'trafficserver-rotate'))][0]
+    ats_log_dir = os.path.join(ats_partition, 'var', 'log', 'trafficserver')
+    ats_logrotate_dir = os.path.join(
+      ats_partition, 'srv', 'backup', 'logrotate', 'trafficserver')
+    ats_rotate = os.path.join(ats_partition, 'bin', 'trafficserver-rotate')
+
+    old_file_name = 'log-old.old'
+    older_file_name = 'log-older.old'
+    with open(os.path.join(ats_log_dir, old_file_name), 'w') as fh:
+      fh.write('old')
+    with open(os.path.join(ats_log_dir, older_file_name), 'w') as fh:
+      fh.write('older')
+
+    # check rotation
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+
+    self.assertEqual(
+      set(['log-old.old.xz', 'log-older.old.xz']),
+      set(os.listdir(ats_logrotate_dir)))
+    self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
+    self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
+
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, old_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'old',
+        fh.read()
+      )
+    with lzma.open(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz')) as fh:
+      self.assertEqual(
+        'older',
+        fh.read()
+      )
+
+    # check retention
+    old_time = time.time() - (400 * 24 * 3600)
+    os.utime(
+      os.path.join(ats_logrotate_dir, older_file_name + '.xz'),
+      (old_time, old_time))
+    result, output = subprocess_status_output([ats_rotate])
+
+    self.assertEqual(0, result)
+    self.assertEqual(
+      ['log-old.old.xz'],
+      os.listdir(ats_logrotate_dir))
+
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '48',
-      'rejected-slave-amount': '4',
-      'slave-amount': '52',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-        SLAPOS_TEST_IPV6, CAUCASE_PORT),
+      'accepted-slave-amount': '51',
+      'rejected-slave-amount': '5',
+      'slave-amount': '56',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
         "_caddy_custom_http_s-rejected": ["slave not authorized"],
-        "_type-eventsource": ["type:eventsource is not implemented"]
+        "_type-eventsource": ["type:eventsource is not implemented"],
+        "_ssl-proxy-verify_ssl_proxy_ca_crt_damaged": [
+          "ssl_proxy_ca_crt is invalid"]
       }
     }
 
@@ -1267,7 +1398,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       os.path.join(
         self.instance_path, '*', 'etc', 'monitor.conf'
       ))
-    self.assertEqual(2, len(monitor_conf_list))
+    self.assertEqual(3, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
     got = [('!py!' in open(q).read(), q) for q in monitor_conf_list]
     # check that no monitor.conf in generated configuratio has magic !py!
@@ -1816,7 +1947,22 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
   def test_custom_domain(self):
-    parameter_dict = self.assertSlaveBase('custom_domain')
+    reference = 'custom_domain'
+    hostname = 'mycustomdomain'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
 
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -1826,6 +1972,43 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_custom_domain_server_alias(self):
+    reference = 'custom_domain_server_alias'
+    hostname = 'mycustomdomainserveralias'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+    result = self.fakeHTTPSResult(
+      'mycustomdomainserveralias1.example.com', parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   def test_custom_domain_wildcard(self):
     parameter_dict = self.parseSlaveParameterDict('custom_domain_wildcard')
@@ -2428,6 +2611,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result_http.headers['Set-Cookie']
     )
 
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
+    parameter_dict = self.slave_connection_parameter_dict_dict[
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged']
+    self.assertEqual(
+      {'request-error-list': '["ssl_proxy_ca_crt is invalid"]'},
+      parameter_dict
+    )
+
   def test_ssl_proxy_verify_unverified(self):
     parameter_dict = self.assertSlaveBase('ssl-proxy-verify-unverified')
 
@@ -2758,6 +2949,141 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ipv4': 'ipv4',
         'ipv6': 'ipv6'
       }
+    )
+
+  def test_enable_cache_custom_domain(self):
+    reference = 'enable_cache_custom_domain'
+    hostname = 'customdomainenablecache'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
+    )
+
+  def test_enable_cache_server_alias(self):
+    parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
+
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
+    )
+
+    result = self.fakeHTTPResult(
+      'enablecacheserveralias1.example.com', parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
     )
 
   def test_enable_cache(self):
@@ -3709,14 +4035,13 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'slave-amount': '3',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
@@ -3915,6 +4240,10 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       if 'frontend_caddy' in q['name']][0]
     os.kill(caddy_pid, signal.SIGUSR1)
 
+    # give caddy a moment to refresh its config, as sending signal does not
+    # block until caddy is refreshed
+    time.sleep(2)
+
     assertQUIC()
 
 
@@ -3980,12 +4309,11 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '2',
       'slave-amount': '10',
@@ -4347,12 +4675,11 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
       'slave-amount': '4',
@@ -4661,12 +4988,29 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
   @classmethod
   def setUpSlaves(cls):
-    _, cls.slave_key_pem, _, cls.slave_certificate_pem = \
+    _, cls.ssl_from_slave_key_pem, _, cls.ssl_from_slave_certificate_pem = \
       createSelfSignedCertificate(
         [
-          '*.customdomain.example.com',
-          '*.example.com',
+          'sslfromslave.example.com',
         ])
+    _, cls.ssl_from_slave_kedifa_overrides_key_pem, _, \
+        cls.ssl_from_slave_kedifa_overrides_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'sslfromslavekedifaoverrides.example.com',
+          ])
+    _, cls.type_notebook_ssl_from_slave_key_pem, _, \
+        cls.type_notebook_ssl_from_slave_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'typenotebooksslfromslave.example.com',
+          ])
+    _, cls.type_notebook_ssl_from_slave_kedifa_overrides_key_pem, _, \
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem = \
+        createSelfSignedCertificate(
+          [
+            'typenotebooksslfromslavekedifaoverrides.example.com',
+          ])
 
     cls.ca = CertificateAuthority(
       'TestSlaveSlapOSMasterCertificateCompatibility')
@@ -4715,13 +5059,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'ssl_from_slave': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.ssl_from_slave_certificate_pem,
+        'ssl_key': cls.ssl_from_slave_key_pem,
       },
       'ssl_from_slave_kedifa_overrides': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.ssl_from_slave_kedifa_overrides_certificate_pem,
+        'ssl_key': cls.ssl_from_slave_kedifa_overrides_key_pem,
       },
       'custom_domain_ssl_crt_ssl_key': {
         'url': cls.backend_url,
@@ -4762,8 +5106,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'type-notebook-ssl_from_slave': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt': cls.type_notebook_ssl_from_slave_certificate_pem,
+        'ssl_key': cls.type_notebook_ssl_from_slave_key_pem,
         'type': 'notebook',
       },
       'type-notebook-ssl_from_master_kedifa_overrides': {
@@ -4772,8 +5116,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       },
       'type-notebook-ssl_from_slave_kedifa_overrides': {
         'url': cls.backend_url,
-        'ssl_crt': cls.slave_certificate_pem,
-        'ssl_key': cls.slave_key_pem,
+        'ssl_crt':
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
+        'ssl_key':
+        cls.type_notebook_ssl_from_slave_kedifa_overrides_key_pem,
         'type': 'notebook',
       }
     }
@@ -4782,6 +5128,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -4795,8 +5142,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         u"_ssl_key-ssl_crt-unsafe":
         [u"slave ssl_key and ssl_crt does not match"]
       },
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
         u'apache-key is obsolete, please use master-key-upload-url',
@@ -4959,7 +5304,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.ssl_from_slave_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -4991,7 +5336,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.ssl_from_slave_kedifa_overrides_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5136,7 +5481,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       HTTPS_PORT)
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.type_notebook_ssl_from_slave_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5168,7 +5513,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       HTTPS_PORT)
 
     self.assertEqual(
-      self.slave_certificate_pem,
+      self.type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem,
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
@@ -5472,6 +5817,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': None,
@@ -5480,8 +5826,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       'rejected-slave-amount': '0',
       'rejected-slave-dict': {},
       'slave-amount': '1',
-      'kedifa-caucase-url': 'http://[%s]:%s' % (
-         SLAPOS_TEST_IPV6, CAUCASE_PORT),
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
         u'apache-key is obsolete, please use master-key-upload-url',
