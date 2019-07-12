@@ -22,6 +22,14 @@
 {% set monitor_base_url_dict = {} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set partition_thread_count_list = [] -%}
+{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% for zope_parameter_dict in zope_partition_dict.values() -%}
+{#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
+{%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
+{%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
+{%   do partition_thread_count_list.append(zope_parameter_dict['thread-amount'] * zope_parameter_dict['instance-count']) -%}
+{% endfor -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -94,12 +102,20 @@ backup-caucased = ${:srv}/backup/caucased
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{# Notes on max-connection-count: On a standard ERP5, each transaction
+   can have 4 connections to mariadb: activities, catalog, deferred and
+   transactionless. Count 5 to have some headroom. Multiply by the total
+   number of zope threads for all processes from all partitions to get the
+   expected number of connections. Add 50 for have some more zope-independent
+   headroom (automated probes, replication, ...).
+-#}
 {{ request('mariadb', 'mariadb', 'mariadb',
   {
     'tcpv4-port': 2099,
     'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000),
     'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', ''),
     'test-database-amount': test_runner_total_database_count,
+    'max-connection-count': sum(partition_thread_count_list) * 5 + 50,
   },
   {
     'database-list': True,
@@ -149,7 +165,6 @@ connection-url = smtp://127.0.0.2:0/
 {% endfor -%}
 
 
-{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_address_list_id_dict = {} -%}
 {% if zope_partition_dict -%}
 
@@ -231,9 +246,9 @@ name = {{ partition_name }}
 {% do monitor_base_url_dict.__setitem__(section_name, '${' ~ section_name ~ ':connection-monitor-base-url}') -%}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
-config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
+config-instance-count = {{ dumps(zope_parameter_dict['instance-count']) }}
 config-private-dev-shm = {{ zope_parameter_dict.get('private-dev-shm', '') }}
-config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
+config-thread-amount = {{ dumps(zope_parameter_dict['thread-amount']) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
