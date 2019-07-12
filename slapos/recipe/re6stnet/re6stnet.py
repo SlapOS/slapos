@@ -93,7 +93,7 @@ def requestRemoveToken(client, token_base_path):
       reference = reference_key.split('.')[0]
       try:
         result = client.deleteToken(token)
-      except httplib.NOTFOUND:
+      except httplib.NOT_FOUND:
         # Token is alread removed.
         result = True
       except Exception:

@@ -10,7 +10,7 @@ parts =
   monitor-base
   directory
   kedifa
-  promise-kedifa-listen-ip-port
+  promise-kedifa-http-reply
   slave-kedifa-information
   caucased
   caucased-promise
@@ -219,12 +219,14 @@ recipe = slapos.cookbook:wrapper
 command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
 wrapper-path = ${directory:etc-run}/kedifa-reloader
 
-[promise-kedifa-listen-ip-port]
+[promise-kedifa-http-reply]
 <= promise-plugin-base
-module = check_port_listening
-name = kedifa-ip-port-listening.py
-config-hostname = ${kedifa-config:ip}
-config-port = ${kedifa-config:port}
+module = check_url_available
+name = kedifa-http-reply.py
+# Kedifa replies 500 on /, so use it to be sure that Kedifa replied
+config-http_code = 500
+config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
+config-ca-cert-file = ${kedifa-config:ca-certificate}
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
