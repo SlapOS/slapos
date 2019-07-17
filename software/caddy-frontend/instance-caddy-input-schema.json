@@ -102,6 +102,11 @@
       ],
       "title": "Automatic Internal KeDiFa's Caucase CSR",
       "type": "string"
+    },
+    "ciphers": {
+      "description": "List of ciphers. Empty defaults to Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
+      "title": "Ordered space separated list of ciphers",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
