@@ -13,6 +13,7 @@
 {%- set https_only = slave_parameter.get('https-only', '').lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
 {%- set host_list = server_alias_list %}
+{%- set cipher_list = slave_parameter.get('cipher_list', '').strip() %}
 {%- if slave_parameter.get('custom_domain') not in host_list %}
 {%-   do host_list.append(slave_parameter.get('custom_domain')) %}
 {%- endif %}
@@ -53,6 +54,9 @@
   gzip
 {%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
+{%- if cipher_list %}
+    ciphers {{ cipher_list }}
+{%- endif %}
 {%- if enable_h2 %}
     # Allow HTTP2
     alpn h2 http/1.1

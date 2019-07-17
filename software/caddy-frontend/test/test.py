@@ -938,6 +938,25 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       ]
     )
 
+  def assertSlaveBase(self, reference):
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    hostname = reference.translate(None, '_-').lower()
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': SLAPOS_TEST_IPV4,
+      },
+      parameter_dict
+    )
+
+    return parameter_dict
+
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
@@ -1280,6 +1299,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       're6st-optimal-test': {
         're6st-optimal-test': 'ipv6,ipv4',
+      },
+      'ciphers': {
+        'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
       }
     }
 
@@ -1358,9 +1380,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': None,
       'domain': 'example.com',
-      'accepted-slave-amount': '51',
+      'accepted-slave-amount': '52',
       'rejected-slave-amount': '5',
-      'slave-amount': '56',
+      'slave-amount': '57',
       'rejected-slave-dict': {
         "_apache_custom_http_s-rejected": ["slave not authorized"],
         "_caddy_custom_http_s": ["slave not authorized"],
@@ -1406,25 +1428,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       expected,
       got
     )
-
-  def assertSlaveBase(self, reference):
-    parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, '')
-    hostname = reference.translate(None, '_-').lower()
-    self.assertEqual(
-      {
-        'domain': '%s.example.com' % (hostname,),
-        'replication_number': '1',
-        'url': 'http://%s.example.com' % (hostname, ),
-        'site_url': 'http://%s.example.com' % (hostname, ),
-        'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
-      },
-      parameter_dict
-    )
-
-    return parameter_dict
 
   def test_empty(self):
     parameter_dict = self.assertSlaveBase('empty')
@@ -2951,6 +2954,31 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       }
     )
 
+  def test_ciphers(self):
+    parameter_dict = self.assertSlaveBase('ciphers')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+
+    configuration_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'caddy-slave-conf.d', '_ciphers.conf'
+      ))[0]
+    self.assertTrue(
+      'ciphers RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA'
+      in open(configuration_file).read()
+    )
+
   def test_enable_cache_custom_domain(self):
     reference = 'enable_cache_custom_domain'
     hostname = 'customdomainenablecache'
@@ -4303,6 +4331,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-ipv6-test-unsafe': {
         'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
       },
+      'bad-ciphers': {
+        'ciphers': 'bad ECDHE-ECDSA-AES256-GCM-SHA384 again',
+      }
     }
 
   def test_master_partition_state(self):
@@ -4315,8 +4346,8 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': None,
       'domain': 'example.com',
       'accepted-slave-amount': '8',
-      'rejected-slave-amount': '2',
-      'slave-amount': '10',
+      'rejected-slave-amount': '3',
+      'slave-amount': '11',
       'rejected-slave-dict': {
         '_custom_domain-unsafe': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
@@ -4453,6 +4484,18 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'request-error-list': [
           "server-alias '${section:option}' not valid", "server-alias "
           "'afterspace' not valid"]
+      },
+      parameter_dict
+    )
+
+  def test_bad_ciphers(self):
+    parameter_dict = self.parseSlaveParameterDict('bad-ciphers')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "Cipher 'bad' is not supported.",
+          "Cipher 'again' is not supported."
+        ]
       },
       parameter_dict
     )
@@ -5886,3 +5929,106 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
+
+
+class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': SLAPOS_TEST_IPV4,
+      '-frontend-authorized-slave-string':
+      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+      'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'default_ciphers': {
+        'url': cls.backend_url,
+      },
+      'own_ciphers': {
+        'url': cls.backend_url + 'http',
+        'ciphers': 'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
+      },
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': None,
+      'domain': 'example.com',
+      'accepted-slave-amount': '2',
+      'rejected-slave-amount': '0',
+      'slave-amount': '2',
+      'rejected-slave-dict': {}
+    }
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_default_ciphers(self):
+    parameter_dict = self.assertSlaveBase('default_ciphers')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+
+    configuration_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
+        '_default_ciphers.conf'
+      ))[0]
+    self.assertTrue(
+      'ciphers ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
+      in open(configuration_file).read()
+    )
+
+  def test_own_ciphers(self):
+    parameter_dict = self.assertSlaveBase('own_ciphers')
+
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+
+    result_http = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+
+    configuration_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'caddy-slave-conf.d',
+        '_own_ciphers.conf'
+      ))[0]
+    self.assertTrue(
+      'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256'
+      in open(configuration_file).read()
+    )
