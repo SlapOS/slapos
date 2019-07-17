@@ -55,6 +55,14 @@ output = {{ plugin_directory }}/${:name}
 
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
+{#   Manage ciphers #}
+{%   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
+{%   if slave_ciphers %}
+{%     set slave_cipher_list = ' '.join(slave_ciphers) %}
+{%   else %}
+{%     set slave_cipher_list = ciphers.strip() %}
+{%   endif %}
+{%   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
 {%   set slave_type = slave_instance.get('type', '') %}
 {%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%   set slave_reference = slave_instance.get('slave_reference') %}
