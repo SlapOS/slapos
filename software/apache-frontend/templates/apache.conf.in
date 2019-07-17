@@ -138,7 +138,7 @@ ThreadsPerChild {{ slapparameter_dict.get('mpm-thread-per-child', '25') }}
 GracefulShutdownTimeout {{ slapparameter_dict.get('mpm-graceful-shutdown-timeout', '5') }}
 
 # Deflate
-AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/json application/x-javascript application/javascript
+AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/json application/x-javascript application/javascript application/octet-stream application/wasm
 BrowserMatch ^Mozilla/4 gzip-only-text/html
 BrowserMatch ^Mozilla/4\.0[678] no-gzip
 BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
@@ -160,6 +160,15 @@ SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:EC
 SSLHonorCipherOrder on
 <FilesMatch "\.(cgi|shtml|phtml|php)$">
       SSLOptions +StdEnvVars
+</FilesMatch>
+
+<FilesMatch "\.(wasm|data)$">
+      # Serve correct encoding type.
+      Header append Content-Encoding gzip
+
+  # Force proxies to cache gzipped &
+      # non-gzipped css/js files separately.
+  Header append Vary Accept-Encoding
 </FilesMatch>
 # Accept proxy to sites using self-signed SSL certificates
 SSLProxyCheckPeerCN off
