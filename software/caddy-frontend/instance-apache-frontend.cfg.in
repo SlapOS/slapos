@@ -263,6 +263,7 @@ extra-context =
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
     key global_disable_http2 configuration:global-disable-http2
+    key ciphers configuration:ciphers
     key proxy_try_duration configuration:proxy-try-duration
     key proxy_try_interval configuration:proxy-try-interval
     key access_log caddy-configuration:access-log
