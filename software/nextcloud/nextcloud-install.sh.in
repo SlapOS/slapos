@@ -1,0 +1,142 @@
+#!/bin/bash
+
+set -e
+set -x
+
+php_cmd () {
+  {{ parameter_dict['php-bin'] }} -c {{ parameter_dict['php-ini'] }} $@
+}
+
+status=$(php_cmd {{ parameter_dict['nextcloud'] }}/occ status | grep 'installed: true' || true)
+
+if [ ! -z "$status" ]; then
+  echo "Nextcloud is installed!"
+  exit 1;
+fi
+if [ ! -f "{{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL" ]; then
+  echo "CAN_INSTALL no exists in config, cannot make a new install, Nextcloud is already installed."
+  exit 1
+fi
+
+php_cmd {{ parameter_dict['nextcloud'] }}/occ maintenance:install \
+  --database "mysql" --database-name "{{ parameter_dict['db-name'] }}" --database-user "{{ parameter_dict['db-user'] }}" \
+  --database-pass "{{ parameter_dict['db-password'] }}" --admin-user "{{ parameter_dict['admin-user'] }}" \
+  --database-host "{{ parameter_dict['db-host'] }}:{{ parameter_dict['db-port'] }}" \
+  --admin-pass "{{ parameter_dict['admin-password'] }}" --data-dir "{{ parameter_dict['data-dir'] }}"
+
+{% for trusted_domain in parameter_dict['trusted-domain-list'].split() -%}
+{%   if trusted_domain.strip() -%}
+       php_cmd {{ parameter_dict['nextcloud'] }}/occ config:system:set trusted_domains {{ loop.index - 1 }} --value={{ trusted_domain.strip() }}
+{%   endif -%}
+{% endfor -%}
+
+php_cmd {{ parameter_dict['nextcloud'] }}/occ config:system:set overwrite.cli.url --value={{ parameter_dict['cli-url'] }}
+php_cmd {{ parameter_dict['nextcloud'] }}/occ background:cron
+
+
+sed -i 's/^[ ]*//' {{ parameter_dict['nextcloud'] }}/config/config.php
+sed -i '/);/d' {{ parameter_dict['nextcloud'] }}/config/config.php
+
+cat <<EOF >> {{ parameter_dict['nextcloud'] }}/config/config.php
+'mysql.utf8mb4' => true,
+'mail_smtpmode' => 'smtp',
+'mail_smtpsecure' => 'tls',
+'mail_sendmailmode' => 'smtp',
+'mail_from_address' => '{{ parameter_dict["mail.from"] }}',
+'mail_domain' => '{{ parameter_dict["mail.domain"] }}',
+'mail_smtpauthtype' => '{{ parameter_dict["mail.smtpauthtype"] }}',
+'mail_smtpauth' => {{ parameter_dict["mail.smtpauth"] }},
+'mail_smtpport' => '{{ parameter_dict["mail.smtpport"] }}',
+'mail_smtphost' => '{{ parameter_dict["mail.smtphost"] }}',
+'mail_smtpname' => '{{ parameter_dict["mail.smtpname"] }}',
+'mail_smtppassword' => '{{ parameter_dict["mail.smtppassword"] }}',
+'activity_expire_days' => 14,
+'auth.bruteforce.protection.enabled' => true,
+'forwarded_for_headers' => 
+array (
+  0 => 'HTTP_X_FORWARDED',
+),
+{% set trusted_proxy_list = parameter_dict['trusted-proxy-list'].strip().split(' ') -%}
+{% if len(trusted_proxy_list) > 0 -%}
+'trusted_proxies' =>
+array (
+{%   for proxy in trusted_proxy_list -%}
+{%     if proxy -%}
+         {{ '  ' ~ (loop.index - 1) }} => '{{ proxy }}',
+{%     endif -%}
+{%   endfor -%}
+),
+{% endif -%}
+'blacklisted_files' => 
+array (
+  0 => '.htaccess',
+  1 => 'Thumbs.db',
+  2 => 'thumbs.db',
+),
+'csrf.optout' => 
+array (
+  0 => '/^WebDAVFS/',
+  1 => '/^Microsoft-WebDAV-MiniRedir/',
+  2 => '/^\\.jio_documents/',
+),
+'cron_log' => true,
+'enable_previews' => true,
+'enabledPreviewProviders' => 
+array (
+  0 => 'OC\\Preview\\PNG',
+  1 => 'OC\\Preview\\JPEG',
+  2 => 'OC\\Preview\\GIF',
+  3 => 'OC\\Preview\\BMP',
+  4 => 'OC\\Preview\\XBitmap',
+  5 => 'OC\\Preview\\Movie',
+  6 => 'OC\\Preview\\PDF',
+  7 => 'OC\\Preview\\MP3',
+  8 => 'OC\\Preview\\TXT',
+  9 => 'OC\\Preview\\MarkDown',
+),
+'filesystem_check_changes' => 0,
+'filelocking.enabled' => 'true',
+'htaccess.RewriteBase' => '/',
+'integrity.check.disabled' => false,
+'knowledgebaseenabled' => false,
+'logfile' => '{{ parameter_dict["data-dir"] }}/nextcloud.log',
+'loglevel' => 2,
+'log_rotate_size' => 104857600,
+'maintenance' => false,
+'memcache.local' => '\\OC\\Memcache\\APCu',
+'memcache.locking' => '\\OC\\Memcache\\Redis',
+'memcache.distributed' => '\\OC\\Memcache\\Redis',
+'overwriteprotocol' => 'https',
+'preview_max_x' => 1024,
+'preview_max_y' => 768,
+'preview_max_scale_factor' => 1,
+'redis' => 
+array (
+  'host' => '{{ parameter_dict["redis-socket"] }}',
+  'port' => 0,
+  'timeout' => 0.0,
+),
+'quota_include_external_storage' => false,
+'share_folder' => '/Shares',
+'skeletondirectory' => '',
+'theme' => '',
+'trashbin_retention_obligation' => 'auto, 7',
+'updater.release.channel' => 'stable',
+);
+EOF
+
+# Install some nextcloud app
+php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install spreed
+php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install richdocuments
+php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install calendar
+php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install rainloop
+php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install news
+
+php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set richdocuments wopi_url --value="{{ parameter_dict.get('collabora-url', '') }}"
+php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set spreed stun_servers --value="[\"{{ parameter_dict['stun-server'] }}\"]"
+php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set spreed turn_servers --value="[{\"server\":\"{{ parameter_dict['turn-server'] }}\",\"secret\":\"{{ parameter_dict['turn-secret'] }}\",\"protocols\":\"udp,tcp\"}]"
+sed -i 's#useCronUpdates\s*=.*#useCronUpdates = false#g' {{ parameter_dict['data-dir'] }}/news/config/config.ini
+
+if [ -f "{{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL" ]; then
+  rm {{ parameter_dict['nextcloud'] }}/config/CAN_INSTALL
+fi
