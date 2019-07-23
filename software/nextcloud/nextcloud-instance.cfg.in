@@ -1,0 +1,177 @@
+
+#############
+#   Redis   #
+#############
+[nc-directory]
+recipe  = slapos.cookbook:mkdirectory
+redis     = ${directory:srv}/redis
+redis-log = ${directory:log}/redis
+data      = ${directory:srv}/data
+backup   = ${directory:backup}/nextcloud
+
+[service-redis]
+recipe  = slapos.cookbook:redis.server
+wrapper = ${directory:services}/redis
+promise_wrapper = ${directory:promises}/redis
+server_dir  = ${nc-directory:redis}
+config_file = ${directory:etc}/redis.conf
+log_file    = ${nc-directory:redis-log}/redis.log
+pid_file    = ${directory:run}/redis.pid
+use_passwd  = false
+unixsocket  = ${:server_dir}/redis.socket
+# port = 0 means "don't listen on TCP at all" - listen only on unix socket
+ipv6    = ::1
+port    = 0
+server_bin  = {{ redis_bin }}
+depend  =
+    ${logrotate-entry-redis:recipe}
+
+[logrotate-entry-redis]
+<= logrotate-entry-base
+name = redis
+log     = ${nc-directory:redis-log}/*.log
+frequency = daily
+rotate-num = 30
+
+[instance-parameter]
+nextcloud = ${:document-root}
+admin-user = admin
+admin-password = admin
+trusted-domain-list = 
+  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
+  ${slap-parameter:instance.trusted-domain-1}
+  ${slap-parameter:instance.trusted-domain-2}
+trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
+cli-url = ${slap-parameter:instance.cli-url}
+data-dir = ${nc-directory:data}
+redis-socket = ${service-redis:unixsocket}
+
+#php.ini parameters
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+
+#SMTP settings
+mail.from = ${slap-parameter:instance.mail-from}
+mail.domain = ${slap-parameter:instance.mail-domain}
+mail.smtpauthtype = ${slap-parameter:instance.mail-smtpauthtype}
+mail.smtpauth = ${slap-parameter:instance.mail-smtpauth}
+mail.smtpport = ${slap-parameter:instance.mail-smtpport}
+mail.smtphost = ${slap-parameter:instance.mail-smtphost}
+mail.smtpname = ${slap-parameter:instance.mail-smtpname}
+mail.smtppassword = ${slap-parameter:instance.mail-smtppassword}
+# Instance configuration
+collabora-url = ${slap-parameter:instance.collabora-url}
+stun-server = ${slap-parameter:instance.stun-server}
+turn-server = ${slap-parameter:instance.turn-server}
+turn-secret = ${slap-parameter:instance.turn-secret}
+
+[nextcloud-install.sh]
+recipe = slapos.recipe.template:jinja2
+template = {{ nextcloud_install_sh }}
+rendered = ${directory:scripts}/nextcloud-install
+context =
+  section parameter_dict   instance-parameter
+mode = 744
+depends =
+  ${service-redis:recipe}
+  ${nextcloud-cron:recipe}
+  ${nextcloud-optimize:recipe}
+  ${nextcloud-apache-httpd:recipe}
+  ${nextcloud-backup-cron:recipe}
+  ${nextcloud-news-updater:recipe}
+
+[nextcloud-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+template = {{ nextcloud_apache_httpd }}
+rendered = ${directory:apache.d}/nextcloud.conf
+context =
+  section parameter_dict apache-php-configuration
+mode = 744
+
+[nextcloud-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = nextcloud
+frequency = */5 * * * *
+command = ${php-bin:wrapper-path} -f ${instance-parameter:nextcloud}/cron.php
+
+[nextcloud-optimize-bin]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  {{ redis_cli }} -s ${instance-parameter:redis-socket} <<EOF
+  FLUSHALL
+  quit
+  EOF
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ files:scan --all
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ files:scan-app-data
+  exit 0
+output = ${directory:bin}/nextcloud-optimize
+mode = 744
+
+[nextcloud-backup]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ app:list --output json > ${nc-directory:backup}/app-list.json
+  cp -r ${instance-parameter:nextcloud}/config ${nc-directory:backup}
+  exit 0
+output = ${directory:bin}/nextcloud-backup
+mode = 744
+
+[nextcloud-backup-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = nextcloud-backup
+frequency = 0 0 * * * *
+command = ${nextcloud-backup:output}
+
+[nextcloud-optimize]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = nextcloud-optimize
+frequency = 5 1 * * *
+command = ${nextcloud-optimize-bin:output}
+
+[nextcloud-news-updater]
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  cd {{ news_updater_location }}
+  export PATH={{ php_location }}/bin:$PATH
+  {{ python3_location}}/bin/python3 -m nextcloud_news_updater --phpini ${php.ini-conf:rendered} \
+    --interval 300 --mode endless --loglevel info ${instance-parameter:nextcloud}
+output = ${directory:scripts}/nextcloud-news-updater
+mode = 744
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
+
+[publish-connection-information]
+admin-user = ${instance-parameter:admin-user}
+admin-password = ${instance-parameter:admin-password}
+
+[slap-parameter]
+instance.mail-from = Nextcloud
+instance.mail-domain = nextcloud@example.com
+instance.mail-smtpauthtype = LOGIN
+instance.mail-smtpauth = 1
+instance.mail-smtpport = 587
+instance.mail-smtphost =
+instance.mail-smtpname =
+instance.mail-smtppassword =
+instance.collabora-url = https://collabora.host.vifib.net/
+instance.stun-server = turn.vifib.com:5349
+instance.turn-server =
+instance.turn-secret =
+
+instance.cli-url = ${apache-php-configuration:url}
+instance.trusted-domain-1 = 
+instance.trusted-domain-2 =
+instance.trusted-proxy-list =
