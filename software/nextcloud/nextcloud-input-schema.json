@@ -1,0 +1,128 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"description": "Parameters to instantiate Grafana",
+	"additionalProperties": false,
+	"properties": {
+		"domain": {
+			"title": "Authorized domain on nextcloud",
+			"description": "Trusted domain used to connect to Nextcloud instance.",
+			"type": "string"
+		},
+		"monitor-interface-url": {
+			"title": "Monitor Web Interface URL",
+			"description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+			"type": "string",
+			"format": "uri",
+			"default": "https://monitor.app.officejs.com"
+		},
+		"monitor-cors-domains": {
+			"title": "Monitor CORS domains",
+			"description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+			"type": "string",
+			"default": "monitor.app.officejs.com"
+		},
+		"innodb-file-per-table": {
+			"title": "Enable/disable innodb_file_per_table",
+			"description": "See MariaDB documentation on innodb_file_per_table",
+			"minimum": 0,
+			"maximum": 1,
+			"default": 0,
+			"type": "integer"
+		},
+		"apache-computer-guid": {
+			"title": "Computer ID for Apache Instance.",
+			"description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+			"type": "string"
+		},
+		"mariadb-computer-guid": {
+			"title": "Computer ID for Mariadb Instance.",
+			"description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+			"type": "string"
+		},
+		"instance.mail-from": {
+			"title": "Mail from",
+			"description": "From",
+			"type": "string"
+		},
+		"instance.mail-domain": {
+			"title": "Mail domain name",
+			"description": "Domain name",
+			"type": "string"
+		},
+		"instance.mail-smtpauthtype": {
+			"title": "SMTP Auth type",
+			"description": "Mail SMTP auth type. Default: LOGIN",
+			"type": "string",
+			"default": "LOGIN"
+		},
+		"instance.mail-smtpauth": {
+			"title": "SMTP auth required",
+			"description": "Verify SSL certificate of SMTP server. Default: Yes",
+			"minimum": 0,
+			"maximum": 1,
+			"default": 0,
+			"type": "integer"
+		},
+		"instance.mail-smtpport": {
+			"title": "SMTP port",
+			"description": "Mail SMTP Port. Default: 587",
+			"type": "integer",
+			"default": 587
+		},
+		"instance.mail-smtphost": {
+			"title": "SMTP host",
+			"description": "Mail SMTP host",
+			"type": "string"
+		},
+		"instance.mail-smtpname": {
+			"title": "SMTP name",
+			"description": "Mail SMTP server name.",
+			"type": "string"
+		},
+		"instance.mail-smtppassword": {
+			"title": "SMTP password",
+			"description": "Password to connect to SMTP server.",
+			"type": "string"
+		},
+		"instance.collabora-url": {
+			"title": "Collabora URL",
+			"description": "Collabora server URL",
+			"type": "string",
+			"format": "uri",
+			"default": "https://collabora.host.vifib.net"
+		},
+		"instance.stun-server": {
+			"title": "Stun server address",
+			"description": "Hostname of stun server. Default: turn.vifib.com:5349",
+			"type": "string",
+			"default": "turn.vifib.com:5349"
+		},
+		"instance.turn-server": {
+			"title": "Turn server address",
+			"description": "Hostname of turn server.",
+			"default": "",
+			"type": "string"
+		},
+		"instance.turn-secret": {
+			"title": "Turn server secret",
+			"description": "Turn secret to use for authentification.",
+			"type": "string"
+		},
+		"instance.cli-url": {
+			"title": "Nextcloud cli URL",
+			"description": "Nextcloud cli URL, the default will be Nextcloud url.",
+			"type": "string",
+			"format": "uri"
+		},
+		"instance.trusted-domain-1": {
+			"title": "Authorized domain on nextcloud",
+			"description": "Trusted domain used to connect to Nextcloud instance.",
+			"type": "string"
+		},
+		"instance.trusted-domain-2": {
+			"title": "Second authorized domain on nextcloud",
+			"description": "Trusted domain used to connect to Nextcloud instance.",
+			"type": "string"
+		}
+	}
+}

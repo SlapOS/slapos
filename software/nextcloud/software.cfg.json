@@ -1,0 +1,14 @@
+{
+  "name": "KVM",
+  "description": "KVM",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Instance Nextcloud",
+      "request": "nextcloud-input-schema.json",
+      "response": "nextcloud-output-schema.json",
+      "index": 0
+    }
+  }
+}
