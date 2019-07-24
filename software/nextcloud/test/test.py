@@ -405,6 +405,16 @@ class TestConfigWithParameters(InstanceTestCase):
       '-f',
       php_script
     ])
+    # XXX - debug logs
+    with open(config_file) as f:
+      log_string = f.read()
+      log_string += "\n\n\n=========NEXTCLOUD LOGS=============\n\n\n"
+    with open(os.path.join(instance_folder, 'srv/data/nextcloud.log')) as f:
+      log_string = f.read()
+      log_string += "\n\n\n=========APACHE ERROR LOGS=============\n\n\n"
+    with open(os.path.join(instance_folder, 'var/log/apache/error.log')) as f:
+      log_string = f.read()
+    raise ValueError(log_string)
     config_dict = json.loads(config_result)
     #remove generated values
     config_dict.pop('instanceid')
