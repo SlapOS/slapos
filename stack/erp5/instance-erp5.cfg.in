@@ -106,15 +106,17 @@ backup-caucased = ${:srv}/backup/caucased
    expected number of connections. Add 50 for have some more zope-independent
    headroom (automated probes, replication, ...).
 -#}
+{% set partition_thread_count_list = [] -%}
+{% for partition in zope_partition_dict.values() -%}
+{%   do partition_thread_count_list.append(partition['thread-amount'] * partition['instance-count']) -%}
+{% endfor -%}
 {{ request('mariadb', 'mariadb', 'mariadb',
   {
     'tcpv4-port': 2099,
     'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000),
     'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', ''),
     'test-database-amount': test_runner_total_database_count,
-    'max-connection-count': sum(
-      x['thread-amount'] * x['instance-count'] for x in zope_partition_dict.values(),
-    ) * 5 + 50,
+    'max-connection-count': sum(partition_thread_count_list) * 5 + 50,
   },
   {
     'database-list': True,
