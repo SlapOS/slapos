@@ -22,10 +22,12 @@
 {% set monitor_base_url_dict = {} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set partition_thread_count_list = [] -%}
 {# Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {% for zope_parameter_dict in zope_partition_dict.values() -%}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
 {%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
+{%   do partition_thread_count_list.append(partition['thread-amount'] * partition['instance-count']) -%}
 {% endfor -%}
 [request-common]
 <= request-common-base
@@ -106,10 +108,6 @@ backup-caucased = ${:srv}/backup/caucased
    expected number of connections. Add 50 for have some more zope-independent
    headroom (automated probes, replication, ...).
 -#}
-{% set partition_thread_count_list = [] -%}
-{% for partition in zope_partition_dict.values() -%}
-{%   do partition_thread_count_list.append(partition['thread-amount'] * partition['instance-count']) -%}
-{% endfor -%}
 {{ request('mariadb', 'mariadb', 'mariadb',
   {
     'tcpv4-port': 2099,
