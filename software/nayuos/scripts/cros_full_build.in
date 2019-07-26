@@ -316,7 +316,7 @@ for board in ${BOARDS} ; do
   NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
   # rebuild packages with boot pictures
-  cros_sdk --nouse-image-- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS images
   date >> "${BUILD_LOG}"

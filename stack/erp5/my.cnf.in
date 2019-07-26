@@ -27,7 +27,7 @@ slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
 long_query_time = {{ parameter_dict['long-query-time'] }}
 max_allowed_packet = 128M
 query_cache_size = 32M
-innodb_file_per_table = 0
+innodb_file_per_table = {{ parameter_dict['innodb-file-per-table'] }}
 
 plugin_load = ha_mroonga
 
@@ -66,8 +66,8 @@ server_id = {{ parameter_dict['server-id'] }}
 {{x}}sync_frm = 0
 
 # Force utf8 usage
-collation_server = utf8_unicode_ci
-character_set_server = utf8
+character_set_server = utf8mb4
+collation_server = utf8mb4_general_ci
 skip_character_set_client_handshake
 
 {% if 'ssl-key' in parameter_dict -%}
