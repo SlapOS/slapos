@@ -361,7 +361,7 @@ class ServicesTestCase(InstanceTestCase):
     self.assertEqual(status, 0, msg)
 
 
-class TestConfigWithParameters(InstanceTestCase):
+class ParametersTestCase(InstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -405,17 +405,6 @@ class TestConfigWithParameters(InstanceTestCase):
       '-f',
       php_script
     ])
-    # XXX - debug logs
-    with open(config_file) as f:
-      log_string = f.read()
-      log_string += "\n\n\n=========NEXTCLOUD LOGS=============\n\n\n"
-    with open(os.path.join(instance_folder, 'srv/data/nextcloud.log')) as f:
-      log_string += f.read()
-      log_string += "\n\n\n=========NEXTCLOUD INSTALL LOGS=============\n\n\n"
-    install_log = glob.glob(os.path.join(instance_folder, '.*_nextcloud-install.log'))[0]
-    with open(install_log) as f:
-      log_string += f.read()
-    raise ValueError(log_string)
     config_dict = json.loads(config_result)
     #remove generated values
     config_dict.pop('instanceid')
