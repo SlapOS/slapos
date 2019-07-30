@@ -31,9 +31,7 @@ innodb_file_per_table = {{ parameter_dict['innodb-file-per-table'] }}
 
 plugin_load = ha_mroonga
 
-# By default only 100 connections are allowed, when using zeo
-# we may have much more connections
-max_connections = 1000
+max_connections = {{ parameter_dict['max-connection-count'] }}
 
 {% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
 {% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}

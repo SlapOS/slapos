@@ -474,7 +474,7 @@ ipv4-network-info =
   	gateway {{ slap_configuration.get('tap-ipv4-gateway') }}
 {% if enable_http == 'true' %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -
 {% endif %}
 {% endif %}
 
@@ -496,7 +496,8 @@ ipv6-network-info =
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
 [network-config-ipv4]
 recipe = plone.recipe.command
-path = ${directory:public}/netconfig.sh
+filename = netconfig.sh
+path = ${directory:public}/${:filename}
 ifconfig = ifconfig \$IFACE {{ slap_configuration.get('tap-ipv4-addr') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }}
 route-iface = route add {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
 route-network = route add -net {{ slap_configuration.get('tap-ipv4-network') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }} gw {{ slap_configuration.get('tap-ipv4-gateway') }}
