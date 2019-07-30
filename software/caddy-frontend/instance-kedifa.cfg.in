@@ -5,11 +5,13 @@
 extends =
   {{ parameter_dict['common_profile'] }}
   {{ parameter_dict['monitor_template'] }}
+  {{ parameter_dict['logrotate_base_instance'] }}
 
 parts =
   monitor-base
   directory
   kedifa
+  logrotate-entry-kedifa
   promise-kedifa-http-reply
   slave-kedifa-information
   caucased
@@ -213,6 +215,7 @@ ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 template-csr = ${directory:etc-kedifa}/template-csr.pem
 pidfile = ${directory:run}/kedifa.pid
+logfile = ${directory:log}/kedfia.log
 
 [kedifa-reloader]
 recipe = slapos.cookbook:wrapper
@@ -228,6 +231,12 @@ config-http_code = 500
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
 
+[logrotate-entry-kedifa]
+<= logrotate-entry-base
+name = kedifa
+log = ${kedifa-config:logfile}
+rotate-num = 30
+
 [kedifa]
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['kedifa'] }}
@@ -238,6 +247,7 @@ command-line = {{ parameter_dict['kedifa'] }}
   --ca-certificate ${kedifa-config:ca-certificate}
   --crl ${kedifa-config:crl}
   --pidfile ${kedifa-config:pidfile}
+  --logfile ${kedifa-config:logfile}
 
 wrapper-path = ${directory:service}/kedifa
 hash-files = ${buildout:directory}/software_release/buildout.cfg
