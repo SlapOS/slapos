@@ -24,11 +24,11 @@
 {{   '    "' ~ proxy_list | join('",\n    "') ~ '"' }}
 {% endif -%}
     ],
-    "dbname": "nextcloud",
-    "dbhost": "10.0.151.118:2099",
+    "dbname": "{{ parameter_dict['db-name'] }}",
+    "dbhost": "{{ parameter_dict['db-host'] }}:{{ parameter_dict['db-port'] }}",
     "mysql.utf8mb4": true,
-    "dbuser": "nextcloud",
-    "dbpassword": "insecure",
+    "dbuser": "{{ parameter_dict['db-user'] }}",
+    "dbpassword": "{{ parameter_dict['db-password'] }}",
     "redis": {
       "host": "{{ parameter_dict['redis-socket'] }}", 
       "port": 0, 
