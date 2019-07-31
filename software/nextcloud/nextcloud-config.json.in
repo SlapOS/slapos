@@ -1,0 +1,40 @@
+{% set trusted_domain_list = [] -%}
+{% set proxy_list = [] -%}
+{% for trusted_domain in parameter_dict['trusted-domain-list'].split() -%}
+{%   if trusted_domain.strip() -%}
+{%     do trusted_domain_list.append(trusted_domain.strip()) -%}
+{%   endif -%}
+{% endfor -%}
+{% for proxy in parameter_dict['trusted-proxy-list'].strip().split(' ') -%}
+{%   if proxy -%}
+{%     do proxy_list.append(proxy) -%}
+{%   endif -%}
+{% endfor -%}
+
+{
+  "system": {
+    "overwrite.cli.url": "{{ parameter_dict['cli-url'] }}",
+    "trusted_domains": [
+{% if len(trusted_domain_list) > 0 -%}
+{{   '    "' ~ trusted_domain_list | join('",\n    "') ~ '"' }}
+{% endif -%}
+    ],
+    "trusted_proxies": [
+{% if len(proxy_list) > 0 -%}
+{{   '    "' ~ proxy_list | join('",\n    "') ~ '"' }}
+{% endif -%}
+    ],
+    "dbname": "nextcloud",
+    "dbhost": "10.0.151.118:2099",
+    "mysql.utf8mb4": true,
+    "dbuser": "nextcloud",
+    "dbpassword": "insecure",
+    "redis": {
+      "host": "{{ parameter_dict['redis-socket'] }}", 
+      "port": 0, 
+      "timeout": 0
+    },
+    "logfile": "{{ parameter_dict['data-dir'] }}/nextcloud.log",
+    "datadirectory": "{{ parameter_dict['data-dir'] }}"
+  }
+}

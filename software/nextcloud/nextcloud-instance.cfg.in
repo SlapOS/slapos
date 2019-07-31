@@ -41,6 +41,8 @@ trusted-domain-list =
   [${apache-php-configuration:ip}]:${apache-php-configuration:port}
   ${slap-parameter:instance.trusted-domain-1}
   ${slap-parameter:instance.trusted-domain-2}
+  ${slap-parameter:instance.trusted-domain-3}
+
 trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
 cli-url = ${slap-parameter:instance.cli-url}
 data-dir = ${nc-directory:data}
@@ -86,6 +88,7 @@ depends =
   ${nextcloud-apache-httpd:recipe}
   ${nextcloud-backup-cron:recipe}
   ${nextcloud-news-updater:recipe}
+  ${nextcloud-config-update:recipe}
 
 [nextcloud-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -148,6 +151,26 @@ input = inline:#!/bin/sh
 output = ${directory:scripts}/nextcloud-news-updater
 mode = 744
 
+[nextcloud-config.json]
+recipe = slapos.recipe.template:jinja2
+template = {{ nextcloud_parameter_json }}
+rendered = ${directory:etc}/nextcloud-config.json
+extensions = jinja2.ext.do
+context =
+  section parameter_dict   instance-parameter
+mode = 600
+
+[nextcloud-config-update]
+output = ${directory:scripts}/nextcloud-update
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  if [ -f "${instance-parameter:nextcloud}/config/CAN_INSTALL" ]; then
+    # do not run this script if nextcloud is not installed yet.
+    exit 1;
+  fi
+  ${php-bin:wrapper-path} ${instance-parameter:nextcloud}/occ config:import ${nextcloud-config.json:rendered}
+mode = 744
+
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/php
@@ -172,6 +195,7 @@ instance.turn-server =
 instance.turn-secret =
 
 instance.cli-url = ${apache-php-configuration:url}
-instance.trusted-domain-1 = 
+instance.trusted-domain-1 =
 instance.trusted-domain-2 =
+instance.trusted-domain-3 =
 instance.trusted-proxy-list =
