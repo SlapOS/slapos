@@ -10,8 +10,6 @@ fi
 
 BOARD=$1
 MOUNTPOINT="/tmp/${BOARD}"
-ORIGINAL_GRANDENET_SCRIPT=~/trunk/src/third_party/chromiumos-overlay/net-misc/re6stnet/files/grandenet
-GRANDENET_SCRIPT="usr/local/bin/grandenet"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
 GIT_CORE="usr/local/libexec/git-core/"
@@ -38,13 +36,11 @@ install -d "${MOUNTPOINT}"
 ./mount_gpt_image.sh --safe --most_recent --board ${BOARD} -r ${MOUNTPOINT}
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
-  my_diff=$(diff "${ORIGINAL_GRANDENET_SCRIPT}" "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
   gitcore=$(ls "${MOUNTPOINT}/${GIT_CORE}")
   gitexport=$(grep "${GIT_EXPECTED_EXPORT}" "${MOUNTPOINT}/${BASHRC}")
   virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
   chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
-
 else
   is_empty=1
 fi
@@ -59,15 +55,6 @@ if [[ "${is_empty}" == "1" ]] ; then
   print_result ${FAILURE} "/usr/local is empty."
 else
   print_result ${SUCCESS} "/usr/local is not empty."
-
-  echo "* test grandenet script existence and content"
-  if [[ ${no_grandenet_script} == 1 ]] ; then
-    print_result ${FAILURE} "grandenet script is missing (no file at ${GRANDENET_SCRIPT})."
-  elif [[ ${my_diff} != "" ]] ; then
-    print_result ${FAILURE} "grandenet scripts differs:\n${my_diff}"
-  else
-    print_result ${SUCCESS} "${GRANDENET_SCRIPT} exists and contains what is expected."
-  fi
 
   echo "* test openssh server init script absence"
   if [[ ${opensshd_config} ]] ; then
