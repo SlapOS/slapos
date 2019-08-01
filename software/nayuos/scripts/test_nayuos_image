@@ -35,7 +35,7 @@ function print_result() {
 # MOUNT IMAGE AND GET INFO
 
 install -d "${MOUNTPOINT}"
-./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT}
+./mount_gpt_image.sh --safe --most_recent --board ${BOARD} -r ${MOUNTPOINT}
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
   my_diff=$(diff "${ORIGINAL_GRANDENET_SCRIPT}" "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
@@ -48,7 +48,7 @@ if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
 else
   is_empty=1
 fi
-./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT} -u
+./mount_gpt_image.sh --safe --most_recent --board ${BOARD} -r ${MOUNTPOINT} -u
 rmdir ${MOUNTPOINT}
 
 
