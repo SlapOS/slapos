@@ -108,20 +108,6 @@ cd {{ cros_location }}/{{ branch }}
 # create chroot environment (exit on failure)
 cros_sdk --download || { echo "Problem while entering chroot or downloading chroot environment. PATH is: '${PATH}' Exiting." ; exit 1 ; }
 
-# compile Python with sqlite support (-> change USE flag) for dev-lang/python
-# it is needed by re6st
-# just need to change -sqlite by sqlite on the right line
-# same for IPv6 support
-PACKAGE_USE_FILE="${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use"
-line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
-if [ $line_number ] ; then
-    echo "$line_number"
-    sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
-    if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
-        sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
-    fi
-fi
-
 # add some ebuilds, specific to NayuOS
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
