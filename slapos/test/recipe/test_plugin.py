@@ -1,6 +1,7 @@
 import os, shutil, tempfile, unittest
 from slapos.recipe import promise_plugin
 from slapos.test.utils import makeRecipe
+from pprint import pformat
 import stat, json
 
 class TestPromisePlugin(unittest.TestCase):
@@ -33,7 +34,7 @@ in multi line
     recipe.install()
 
     self.assertTrue(os.path.exists(self.output))
-    with open(self.output) as f:
+    with open(self.output, 'r') as f:
       content = f.read()
     self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
     self.assertEqual(stat.S_IMODE(os.stat(self.output).st_mode), int('644', 8))
@@ -44,7 +45,7 @@ in multi line
       param3=self.options['config-param3'],
       param4=self.options['config-param4'],
     )
-    self.assertIn('extra_config_dict = json.loads("""%s""", strict=False)' % json.dumps(expected_dict, indent=2, sort_keys=True), content)
+    self.assertIn('extra_config_dict = %s' % pformat(expected_dict, indent=2), content)
 
   def test_no_module_set(self):
     recipe = makeRecipe(
@@ -67,7 +68,7 @@ in multi line
     with open(self.output) as f:
       content = f.read()
     self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
-    self.assertIn('extra_config_dict = json.loads("""{}""", strict=False)', content)
+    self.assertIn('extra_config_dict = { }', content)
 
 
   def test_bad_parameters(self):
@@ -84,8 +85,8 @@ in multi line
     with open(self.output) as f:
       content = f.read()
 
-    expected_param1 = '"param1; print \\"toto\\"": "#xxxx\\"\\nimport os; os.stat(f)",'
-    expected_param2 = '"param2\\n@domething": "\\"#$$*PPP\\n\\n p = 2*5; print \\"result is %s\\" % p"'
+    expected_param1 = r"""'param1; print "toto"': '#xxxx"\nimport os; os.stat(f)',"""
+    expected_param2 = r"""'param2\n@domething': '"#$$*PPP\n\n p = 2*5; print "result is %s" % p'"""
     self.assertIn(expected_param1, content)
     self.assertIn(expected_param2, content)
 
