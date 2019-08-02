@@ -360,6 +360,9 @@ class TestDataMixin(object):
 
   def test_file_list_run(self):
     self._test_file_list(['var', 'run'], [
+      # can't be sure regarding its presence
+      'caddy_configuration_last_state',
+      'validate_configuration_state_signature',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
     ])

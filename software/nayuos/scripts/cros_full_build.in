@@ -108,20 +108,6 @@ cd {{ cros_location }}/{{ branch }}
 # create chroot environment (exit on failure)
 cros_sdk --download || { echo "Problem while entering chroot or downloading chroot environment. PATH is: '${PATH}' Exiting." ; exit 1 ; }
 
-# compile Python with sqlite support (-> change USE flag) for dev-lang/python
-# it is needed by re6st
-# just need to change -sqlite by sqlite on the right line
-# same for IPv6 support
-PACKAGE_USE_FILE="${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use"
-line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
-if [ $line_number ] ; then
-    echo "$line_number"
-    sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
-    if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
-        sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
-    fi
-fi
-
 # add some ebuilds, specific to NayuOS
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
@@ -152,6 +138,10 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init)
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
+# increase size of storage quota for chrome guest mode to make big offline apps work
+CHROME_EBUILD_DIR="${CHROMIUM_OVERLAY}/chromeos-base/chromeos-chrome"
+cp {{ patch_dir }}/0001-chrome-incognito-increase-storage-quota.patch "${CHROME_EBUILD_DIR}/files/"
+sed -i 's|^PATCHES=()$|PATCHES=( "${FILESDIR}/0001-chrome-incognito-increase-storage-quota.patch" )|' ${CHROME_EBUILD_DIR}/chromeos-chrome*.ebuild
 
 # bashrc modifications
 BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
@@ -281,6 +271,21 @@ Example:
 safewrite() { __safewrite dd "\$@" ; }
 sudodd() { sudo dd "\$@" ; }
 sudosafewrite() { __safewrite sudodd "\$@" ; }
+
+crew() {
+  if [[ ! -x /usr/local/bin/crew ]] ; then
+    read -p "Chromebrew is not on this machine; do you want to install it? [Y/n] " -r -n 1 crew_install
+    echo ""
+    if [[ ! $crew_install =~ ^[Nn]$ ]] ; then
+        echo "Fetching installation file..."
+              curl -Ls https://lab.nexedi.com/nexedi/chromebrew/raw/nexedi/install.sh | bash
+    else
+      return 1
+    fi
+  else
+    command crew "$@"
+  fi
+}
 
 # ----- END NayuOS configuration -----
 EOF
