@@ -27,7 +27,7 @@ class PBSTest(unittest.TestCase):
                                 local_dir='TEST_LOCAL_DIR',
                                 remote_dir='TEST_REMOTE_DIR',
                                 rdiff_wrapper_path=rdiff_wrapper.name)
-            content = rdiff_wrapper.read()
+            content = open(rdiff_wrapper.name, 'r').read()
             self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
             self.assertIn('TEST_LOCAL_DIR', content)
             self.assertIn('TEST_REMOTE_DIR', content)
@@ -41,7 +41,7 @@ class PBSTest(unittest.TestCase):
                                 remote_dir='TEST_REMOTE_DIR',
                                 rdiff_wrapper_path=rdiff_wrapper.name,
                                 remove_backup_older_than='TEST_OLDER')
-            content = rdiff_wrapper.read()
+            content = open(rdiff_wrapper.name, 'r').read()
             self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
             self.assertIn('TEST_LOCAL_DIR', content)
             self.assertIn('TEST_REMOTE_DIR', content)
