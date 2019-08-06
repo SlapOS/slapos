@@ -314,7 +314,6 @@ context =
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mysqld:rendered
-  key update_executable update-mysql:output
 
 [{{ section('monitor-generate-mariadb-slow-query-report') }}]
 recipe = slapos.cookbook:cron.d
