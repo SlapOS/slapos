@@ -453,6 +453,9 @@ environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
+{%- if wsgi %}
+  erp5_wsgi=1
+{%- endif %}
 instance-home = ${directory:unit-test-path}
 wrapper-path = ${directory:bin}/${:command-name}.real
 command-line =
