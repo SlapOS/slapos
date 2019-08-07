@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import os
+import shlex
 from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
 
@@ -60,6 +61,7 @@ class NeoBaseRecipe(GenericBaseRecipe):
         '--key', etc + 'neo.key',
         )
     args += self._getOptionList()
+    args += shlex.split(options.get('extra-options', ''))
     return self.createWrapper(options['wrapper'], args)
 
   def _getBindingAddress(self):
