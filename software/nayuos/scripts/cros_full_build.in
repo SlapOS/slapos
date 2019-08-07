@@ -283,7 +283,7 @@ crew() {
       return 1
     fi
   else
-    command crew "$@"
+    command crew "\$@"
   fi
 }
 
