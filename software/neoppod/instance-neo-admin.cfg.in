@@ -13,7 +13,7 @@ ip = ${publish:ip}
 port = ${publish:port-admin}
 ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-masters = ${publish:masters}
+masters = {{ dumps(slapparameter_dict['masters']) }}
 
 [neo-admin-promise]
 recipe = slapos.cookbook:check_port_listening
