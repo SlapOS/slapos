@@ -397,11 +397,11 @@ recipe = slapos.cookbook:publish-early
 {%- if has_posftix %}
   smtpd-sasl-password gen-smtpd-sasl-password:passwd
 {%- endif %}
-{% if test_runner_enabled -%}
-{%   for zope_family_name in zope_family_name_list %}
+{%- if test_runner_enabled %}
+{%-   for zope_family_name in zope_family_name_list %}
   {{ zope_family_name }}-test-runner-url-list default-balancer-test-runner-url-list:default
-{%   endfor -%}
-{% endif -%}
+{%-   endfor %}
+{%- endif %}
 {%- if neo %}
   neo-cluster gen-neo-cluster:name
 {%-  if neo[0] %}
