@@ -56,13 +56,15 @@ mode = 644
 {%       endif -%}
 {%       set zope_effective_address = zope_address -%}
 {%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
+{%     endfor -%}
 
-{#       # Generate entries with rewrite rule for test runnners #}
+{#     # Generate entries with rewrite rule for test runnners #}
+{%     set test_runner_address_list = slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', []) %}
+{%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
 {%       set test_runner_apache_url_list = [] %}
 {%       set test_runner_external_port = next_port() %}
-{%       for i, (test_runner_internal_ip, test_runner_internal_port) in
-             enumerate(slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', [])) %}
+{%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
                 'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
@@ -73,8 +75,7 @@ mode = 644
               (ipv4, test_runner_external_port),
               ( ssl_authentication, test_runner_backend_mapping ) ) -%}
 {%       do test_runner_url_dict.__setitem__(family_name, test_runner_apache_url_list) -%}
-
-{%     endfor -%}
+{%     endif -%}
 {%   endfor -%}
 
 {# Make rendering fail artificially if any family has no known backend.
