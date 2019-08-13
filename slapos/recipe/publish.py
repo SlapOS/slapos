@@ -44,9 +44,14 @@ class Recipe(GenericSlapRecipe):
   def _install(self):
     publish_dict = {}
     for name in self._extend_set:
-      for k, v in self.buildout[name].iteritems():
-        if k != 'recipe' and not k.startswith('-'):
-          publish_dict[k] = v
+      section = self.buildout[name]
+      try:
+        publish = section['-publish'].split()
+      except KeyError:
+        publish = (k for k in section
+          if k != 'recipe' and not k.startswith('-'))
+      for k in publish:
+        publish_dict[k] = section[k]
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
     return []
 

@@ -26,8 +26,38 @@
 ##############################################################################
 import os
 import shlex
-from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
+from .librecipe import GenericBaseRecipe
+
+class Cluster(object):
+
+  def __init__(self, buildout, name, options):
+    self.buildout = buildout
+    self.options = options
+
+  def publish_early(self, publish_dict):
+    masters = publish_dict.setdefault('masters', '')
+    result_dict = {
+      'connection-admin': [],
+      'connection-master': [],
+    }
+    node_list = []
+    for node in sorted(self.options['nodes'].split()):
+      node = self.buildout[node]
+      node_list.append(node)
+      for k, v in result_dict.iteritems():
+        x = node[k]
+        if x:
+          v.append(x)
+    publish_dict['admins'] = ' '.join(result_dict.pop('connection-admin'))
+    x = ' '.join(result_dict.pop('connection-master'))
+    if masters != x:
+      publish_dict['masters'] = x
+      for node in node_list:
+        node['config-masters'] = x
+        node.recipe.__init__(self.buildout, node.name, node)
+
+  install = update = lambda self: None
 
 class NeoBaseRecipe(GenericBaseRecipe):
 
