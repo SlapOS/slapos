@@ -2,10 +2,9 @@
 """
 import sys
 import os.path
-from six.moves.configparser import ConfigParser
+from zc.buildout.configparser import parse
 
 import logging
-import six
 
 def makeRecipe(recipe_class, options, name='test', slap_connection=None):
   """Instanciate a recipe of `recipe_class` with `options` with a buildout
@@ -47,14 +46,9 @@ def makeRecipe(recipe_class, options, name='test', slap_connection=None):
   buildout_cfg = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'buildout.cfg')
   if os.path.exists(buildout_cfg):
     with open(buildout_cfg) as f:
-      if six.PY3:
-        parser = ConfigParser(strict=False)
-        parser.read_file(f)
-      else:
-        parser = ConfigParser()
-        parser.readfp(f) # Deprecated since Python 3.2
-    eggs_directory = parser.get('buildout', 'eggs-directory')
-    develop_eggs_directory = parser.get('buildout', 'develop-eggs-directory')
+      parsed_cfg = parse(f, buildout_cfg)
+    eggs_directory = parsed_cfg['buildout']['eggs-directory']
+    develop_eggs_directory = parsed_cfg['buildout']['develop-eggs-directory']
     logging.getLogger(__name__).info(
         'Using eggs-directory (%s) and develop-eggs-directory (%s) from buildout at %s',
         eggs_directory,

@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from slapos.slap.slap import NotFoundError, ConnectionError
 
+import six
+
 
 class Re6stnetTest(unittest.TestCase):
 
@@ -88,7 +90,7 @@ class Re6stnetTest(unittest.TestCase):
     
     recipe.generateCertificate()
     
-    self.assertItemsEqual(os.listdir(self.ssl_dir),
+    six.assertCountEqual(self, os.listdir(self.ssl_dir),
                           ['cert.key', 'cert.crt', 'dh.pem'])
     
     last_time = time.ctime(os.stat(self.options['key-file'])[7])
@@ -143,10 +145,10 @@ class Re6stnetTest(unittest.TestCase):
     
     token_dict = recipe.loadJsonFile(token_file)
     self.assertEqual(len(token_dict), 2)
-    self.assertTrue(token_dict.has_key('SOFTINST-58770'))
-    self.assertTrue(token_dict.has_key('SOFTINST-58778'))
+    self.assertIn('SOFTINST-58770', token_dict)
+    self.assertIn('SOFTINST-58778', token_dict)
         
-    self.assertItemsEqual(os.listdir(self.token_dir),
+    six.assertCountEqual(self, os.listdir(self.token_dir),
                           ['SOFTINST-58770.add', 'SOFTINST-58778.add'])
 
     first_add = recipe.readFile(os.path.join(self.token_dir, 'SOFTINST-58770.add'))
@@ -173,7 +175,7 @@ class Re6stnetTest(unittest.TestCase):
     
     self.assertEqual(len(token_dict), 1)
     self.assertEqual(token_dict['SOFTINST-58770'], first_add)
-    self.assertItemsEqual(os.listdir(self.token_dir),
+    six.assertCountEqual(self, os.listdir(self.token_dir),
                           ['SOFTINST-58770.add', 'SOFTINST-58778.remove'])
     
     second_remove = recipe.readFile(os.path.join(self.token_dir, 'SOFTINST-58778.remove'))
@@ -193,7 +195,7 @@ class Re6stnetTest(unittest.TestCase):
     
     token_content = recipe.readFile(token_file)
     self.assertEqual(token_content, '{}')
-    self.assertItemsEqual(os.listdir(self.options['token-dir']), [])
+    six.assertCountEqual(self, os.listdir(self.options['token-dir']), [])
 
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
 
