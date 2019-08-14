@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+import errno
 import os
 import sys
 import traceback
@@ -51,11 +51,7 @@ def pre_configure_hook(options, buildout):
             universal_newlines=True,
             close_fds=True)
     except OSError as e:
-        errno, _ = e
-        if errno == 2:
-            # No gcc installed, nothing to check
-            pass
-        else:
+        if e.errno != errno.ENOENT: # gcc installed, else nothing to check
             print('Unexpected failure trying to detect gcc version')
             traceback.print_exc()
     else:
