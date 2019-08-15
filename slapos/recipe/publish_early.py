@@ -28,20 +28,14 @@
 from collections import defaultdict
 from .librecipe import unwrap, wrap, GenericSlapRecipe
 
-def patchOptions(options, override):
-  def get(option, *args, **kw):
-    try:
-      return override[option]
-    except KeyError:
-      return options_get(option, *args, **kw)
-  try:
-    options_get = options._get
-  except AttributeError:
-    options_get = options.get
-    options.get = get
-  else:
-    options._get = get
-
+def volatileOptions(options, volatile):
+  def copy():
+    copy = options_copy()
+    for key in volatile:
+      copy.pop(key, None)
+    return copy
+  options_copy = options.copy
+  options.copy = copy
 
 class Recipe(GenericSlapRecipe):
   """
@@ -57,8 +51,6 @@ class Recipe(GenericSlapRecipe):
     -init =
       foo gen-foo:x
       bar gen-bar:y
-    -update =
-      baz update-baz:z
     bar = z
 
     [gen-foo]
@@ -69,72 +61,74 @@ class Recipe(GenericSlapRecipe):
     -extends = publish-early
     ...
 
-  ${publish-early:foo} is initialized with the value of the published
-  parameter 'foo', or ${gen-foo:x} if it hasn't been published yet
-  (and in this case, it is published immediately as a way to save the value).
+  Just before the recipe of [gen-foo] is instantiated, 'x' is overridden with
+  the published value 'foo' if it exists. If its __init__ modifies 'x', the new
+  value is published. To prevent [gen-foo] from being accessed too early, 'x'
+  is then removed and the value can only be accessed with ${publish-early:foo}.
+
+  Generated values don't end up in the buildout installed file, which is good
+  if they're secret. Note however that buildout won't detect if values change
+  and it may only call update().
+
   ${publish-early:bar} is forced to 'z' (${gen-bar:y} ignored):
   a line like 'bar = z' is usually rendered conditionally with Jinja2.
-
-  The '-update' option has the same syntax than '-init'. The recipes of the
-  specified sections must implement 'publish_early(publish_dict)':
-  - it is always called, just before early publishing
-  - publish_dict is a dict with already published values
-  - 'publish_early' can change published values by modifying publish_dict.
-
-  In the above example:
-  - publish_dict is {'z': ...}
-  - during the execution of 'publish_early', other sections can access the
-    value with ${update-baz:z}
-  - once [publish-early] is initialized, the value should be accessed with
-    ${publish-early:bar} ([update-baz] does not have it if it's accessed
-    before [publish-early])
   """
   def __init__(self, buildout, name, options):
     GenericSlapRecipe.__init__(self, buildout, name, options)
     init = defaultdict(dict)
-    update = defaultdict(dict)
-    for d, k in (init, '-init'), (update, '-update'):
-      for line in options.get(k, '').splitlines():
-        if line:
-          k, v = line.split()
-          if k not in options:
-            section, v = v.split(':')
-            d[section][k] = v
-    if init or update:
+    for line in options['-init'].splitlines():
+      if line:
+        k, v = line.split()
+        if k not in options:
+          section, v = v.split(':')
+          init[section][k] = v
+    if init:
       self.slap.initializeConnection(self.server_url, self.key_file,
         self.cert_file)
       computer_partition = self.slap.registerComputerPartition(
         self.computer_id, self.computer_partition_id)
       published_dict = unwrap(computer_partition.getConnectionParameterDict())
 
+      Options = buildout.Options
+      if 'Options' in buildout.__dict__:
+        def revertOptions():
+          buildout.Options = Options
+      else:
+        def revertOptions():
+          try:
+            del buildout.Options
+          except AttributeError:
+            pass
+      def newOptions(buildout, section, data):
+        assert section == init_section, (section, init_section)
+        revertOptions()
+        self = buildout.Options(buildout, section, data)
+        self.update(override)
+        return self
+
       publish = False
       publish_dict = {}
-      for section, init in init.iteritems():
-        for k, v in init.iteritems():
-          try:
-            publish_dict[k] = published_dict[k]
-          except KeyError:
-            publish_dict[k] = buildout[section][v]
+      try:
+        for init_section, init in init.iteritems():
+          override = {}
+          for k, v in init.iteritems():
+            try:
+              override[v] = published_dict[k]
+            except KeyError:
+              pass
+          buildout.Options = newOptions
+          init_section = buildout[init_section]
+          assert buildout.Options is Options
+          new = {}
+          for k, v in init.iteritems():
+            try:
+              publish_dict[k] = new[v] = init_section.pop(v)
+            except KeyError:
+              pass
+          if new != override:
             publish = True
-
-      for section, update in update.iteritems():
-        override = {}
-        for k, v in update.iteritems():
-          try:
-            override[v] = published_dict[k]
-          except KeyError:
-            pass
-        section = buildout[section]
-        patchOptions(section, override)
-        old = override.copy()
-        section.recipe.publish_early(override)
-        if override != old:
-          publish = True
-        for k, v in update.iteritems():
-          try:
-            publish_dict[k] = override[v]
-          except KeyError:
-            pass
+      finally:
+        revertOptions()
 
       if publish:
         computer_partition.setConnectionDict(wrap(publish_dict))
@@ -143,6 +137,7 @@ class Recipe(GenericSlapRecipe):
         if k != 'recipe' and not k.startswith('-')]
       publish += publish_dict
       publish_dict['-publish'] = ' '.join(publish)
-      patchOptions(options, publish_dict)
+      volatileOptions(options, list(publish_dict))
+      options.update(publish_dict)
 
   install = update = lambda self: None

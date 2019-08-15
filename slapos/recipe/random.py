@@ -36,8 +36,8 @@ import errno
 import os
 import random
 import string
-
-from slapos.recipe.librecipe import GenericBaseRecipe
+from .librecipe import GenericBaseRecipe
+from .publish_early import volatileOptions
 
 class Integer(object):
   """
@@ -54,7 +54,9 @@ class Integer(object):
     Resulting integer.
   """
   def __init__(self, buildout, name, options):
-    options['value'] = random.randint(int(options['minimum']), int(options['maximum']))
+    if 'value' not in options:
+      options['value'] = random.randint(int(options['minimum']),
+                                        int(options['maximum']))
 
   def install(self):
     pass
@@ -65,10 +67,9 @@ class Time(object):
   """Generate a random time from a 24h time clock"""
 
   def __init__(self, buildout, name, options):
-    self.name = name
-    self.buildout = buildout
-    self.options = options
-    self.options['time'] = "%d:%d" % (random.randint(0, 23), random.randint(0, 59))
+    if 'time' not in options:
+      options['time'] = "%u:%02u" % (
+        random.randint(0, 23), random.randint(0, 59))
 
   def install(self):
     pass
@@ -76,26 +77,33 @@ class Time(object):
   update = install
 
 
-class Mac(GenericBaseRecipe):
+class Mac(object):
 
   def __init__(self, buildout, name, options):
-    if os.path.exists(options['storage-path']):
-      open_file = open(options['storage-path'], 'r')
-      options['mac-address'] = open_file.read()
-      open_file.close()
-
-    if options.get('mac-address', '') == '':
-      # First octet has to represent a locally administered address
-      octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
-      options['mac-address'] = ':'.join(['%02x' % x for x in octet_list])
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
+    self.storage_path = options['storage-path']
+    mac = options.get('mac-address')
+    if not mac:
+      try:
+        with open(self.storage_path) as f:
+          mac = f.read()
+      except IOError as e:
+        if e.errno != errno.ENOENT:
+          raise
+      if not mac:
+        # First octet has to represent a locally administered address
+        octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
+        mac = ':'.join(['%02x' % x for x in octet_list])
+        self.update = self.install
+      options['mac-address'] = mac
+    self.mac = mac
 
   def install(self):
-    open_file = open(self.options['storage-path'], 'w')
-    open_file.write(self.options['mac-address'])
-    open_file.close()
-    return [self.options['storage-path']]
+    with open(self.storage_path, 'w') as f:
+      f.write(self.mac)
+    return self.storage_path
 
+  def update(self):
+    pass
 
 def generatePassword(length):
   return ''.join(random.SystemRandom().sample(string.ascii_lowercase, length))
@@ -130,30 +138,24 @@ class Password(object):
     except KeyError:
       self.storage_path = options['storage-path'] = os.path.join(
         buildout['buildout']['parts-directory'], name)
-    passwd = None
-    if self.storage_path:
-      try:
-        with open(self.storage_path) as f:
-          passwd = f.read().strip('\n')
-      except IOError as e:
-        if e.errno != errno.ENOENT:
-          raise
+    passwd = options.get('passwd')
     if not passwd:
-      passwd = self.generatePassword(int(options.get('bytes', '8')))
-      self.update = self.install
-    self.passwd = passwd
+      if self.storage_path:
+        try:
+          with open(self.storage_path) as f:
+            passwd = f.read().strip('\n')
+        except IOError as e:
+          if e.errno != errno.ENOENT:
+            raise
+      if not passwd:
+        passwd = self.generatePassword(int(options.get('bytes', '8')))
+        self.update = self.install
+      options['passwd'] = passwd
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
-    def get(option, *args, **kw):
-      return passwd if option == 'passwd' else options_get(option, *args, **kw)
-
-    try:
-      options_get = options._get
-    except AttributeError:
-      options_get = options.get
-      options.get = get
-    else:
-      options._get = get
+    # publish_early already does it, but this recipe may also be used alone.
+    volatileOptions(options, ('passwd',))
+    self.passwd = passwd
 
   generatePassword = staticmethod(generatePassword)
 
@@ -179,4 +181,4 @@ class Password(object):
         return self.storage_path
 
   def update(self):
-    return ()
+    pass
