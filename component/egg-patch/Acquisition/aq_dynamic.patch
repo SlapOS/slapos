@@ -1,7 +1,7 @@
-diff -uNr Acquisition-2.13.12.orig/src/Acquisition/_Acquisition.c Acquisition-2.13.12/src/Acquisition/_Acquisition.c
---- Acquisition-2.13.12.orig/src/Acquisition/_Acquisition.c	2017-12-01 12:01:34.000000000 +0100
-+++ Acquisition-2.13.12/src/Acquisition/_Acquisition.c	2018-04-09 17:10:15.394836944 +0200
-@@ -449,6 +449,64 @@
+diff -uNr Acquisition-4.5.orig/src/Acquisition/_Acquisition.c Acquisition-4.5/src/Acquisition/_Acquisition.c
+--- Acquisition-4.5.orig/src/Acquisition/_Acquisition.c	2018-12-10 14:50:38.607014475 +0100
++++ Acquisition-4.5/src/Acquisition/_Acquisition.c	2018-12-10 15:11:31.902452836 +0100
+@@ -541,6 +541,64 @@
  }
  
  static PyObject *
@@ -17,42 +17,42 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/_Acquisition.c Acquisition-2.
 +  PyObject *d, *m;
 +  PyObject *o;
 +
-+  if (isWrapper (self))
++  if (isWrapper(self))
 +    o = WRAPPER(self)->obj;
 +  else
 +    o = self;
-+  
++
 +  /* Try to get an attribute in the normal way first.  */
 +  r = PyObject_GetAttr(o, attr_name);
 +  if (r)
 +    return r;
 +
 +  /* If an unexpected error happens, return immediately.  */
-+  PyErr_Fetch(&r,&v,&tb);
++  PyErr_Fetch(&r, &v, &tb);
 +  if (r != PyExc_AttributeError)
 +    {
-+      PyErr_Restore(r,v,tb);
++      PyErr_Restore(r, v, tb);
 +      return NULL;
 +    }
 +
 +  /* Try to get _aq_dynamic.  */
 +  m = PyObject_GetAttrString(o, "_aq_dynamic");
-+  if (! m) {
-+    PyErr_Restore(r,v,tb);
++  if (!m) {
++    PyErr_Restore(r, v, tb);
 +    return NULL;
 +  }
 +
 +  /* Call _aq_dynamic in the context of the original acquisition wrapper.  */
-+  if (PyECMethod_Check(m) && PyECMethod_Self(m)==o)
-+    ASSIGN(m,PyECMethod_New(m,OBJECT(self)));
-+  else if (has__of__(m)) ASSIGN(m,__of__(m,OBJECT(self)));
++  if (PyECMethod_Check(m) && PyECMethod_Self(m) == o)
++    ASSIGN(m, PyECMethod_New(m, OBJECT(self)));
++  else if (has__of__(m)) ASSIGN(m, __of__(m,OBJECT(self)));
 +  d = PyObject_CallFunction(m, "O", attr_name);
 +  Py_DECREF(m);
 +
 +  /* In the case of None, assume that the attribute is not found.  */
 +  if (d == Py_None) {
 +    Py_DECREF(d);
-+    PyErr_Restore(r,v,tb);
++    PyErr_Restore(r, v, tb);
 +    return NULL;
 +  }
 +
@@ -63,51 +63,51 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/_Acquisition.c Acquisition-2.
 +}
 +
 +static PyObject *
- Wrapper_acquire(Wrapper *self, PyObject *oname, 
- 		PyObject *filter, PyObject *extra, PyObject *orig,
- 		int explicit, int containment);
-@@ -589,8 +647,8 @@
- 	  Py_XDECREF(r); Py_XDECREF(v); Py_XDECREF(tb);
- 	  r=NULL;
- 	}
--	  /* normal attribute lookup */
--      else if ((r=PyObject_GetAttr(self->obj,oname)))
-+      /* Give _aq_dynamic a chance, then normal attribute lookup */
-+      else if ((r=Wrapper_GetAttr(OBJECT(self),oname,orig)))
- 	{
- 	  if (r==Acquired)
- 	    {
-@@ -714,7 +772,7 @@
-           Py_XDECREF(r); Py_XDECREF(v); Py_XDECREF(tb);
-           r=NULL;
+ Wrapper_acquire(Wrapper *self, PyObject *oname,
+                 PyObject *filter, PyObject *extra, PyObject *orig,
+                 int explicit, int containment);
+@@ -675,8 +733,8 @@
+             return NULL;
+         }
  
--	  if ((r=PyObject_GetAttr(self->container,oname))) {
-+	  if ((r=Wrapper_GetAttr(self->container,oname,orig))) {
- 	    if (r == Acquired) {
- 	      Py_DECREF(r);
- 	    }
-@@ -751,7 +809,7 @@
+-        /* normal attribute lookup */
+-        else if ((r = PyObject_GetAttr(self->obj, oname))) {
++        /* Give _aq_dynamic a chance, then normal attribute lookup */
++        else if ((r = Wrapper_GetAttr(OBJECT(self), oname, orig))) {
+             if (r == Acquired) {
+                 Py_DECREF(r);
+                 return Wrapper_acquire(
+@@ -804,7 +862,7 @@
+             return NULL;
+         }
+ 
+-        if ((r = PyObject_GetAttr(self->container, oname)) == NULL) {
++        if ((r = Wrapper_GetAttr(self->container, oname, orig)) == NULL) {
+             /* May be AttributeError or some other kind of error */
+             return NULL;
+         }
+@@ -828,7 +886,7 @@
+ static PyObject *
  Wrapper_getattro(Wrapper *self, PyObject *oname)
  {
-   if (self->obj || self->container)
 -    return Wrapper_findattr(self, oname, NULL, NULL, NULL, 1, 1, 0, 0);
 +    return Wrapper_findattr(self, oname, NULL, NULL, OBJECT(self), 1, 1, 0, 0);
+ }
  
-   /* Maybe we are getting initialized? */
-   return Py_FindAttr(OBJECT(self),oname);
-@@ -776,7 +834,7 @@
-     result = Py_FindAttr(OBJECT(self),oname);
+ static PyObject *
+@@ -844,7 +902,7 @@
+     if (STR_EQ(PyBytes_AS_STRING(tmp), "acquire")) {
+         result = Py_FindAttr(OBJECT(self), oname);
+     } else {
+-        result = Wrapper_findattr(self, oname, NULL, NULL, NULL, 1, 0, 0, 0);
++        result = Wrapper_findattr(self, oname, NULL, NULL, OBJECT(self), 1, 0, 0, 0);
+     }
  
-   else if (self->obj || self->container)
--    result = Wrapper_findattr(self, oname, NULL, NULL, NULL, 1, 0, 0, 0);
-+    result = Wrapper_findattr(self, oname, NULL, NULL, OBJECT(self), 1, 0, 0, 0);
- 
-   /* Maybe we are getting initialized? */
-   else result = Py_FindAttr(OBJECT(self),oname);
-diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py Acquisition-2.13.12/src/Acquisition/test_dynamic_acquisition.py
---- Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py	1970-01-01 01:00:00.000000000 +0100
-+++ Acquisition-2.13.12/src/Acquisition/test_dynamic_acquisition.py	2018-04-09 17:07:34.863985305 +0200
-@@ -0,0 +1,160 @@
+     Py_DECREF(tmp);
+diff -uNr Acquisition-4.5.orig/src/Acquisition/test_dynamic_acquisition.py Acquisition-4.5/src/Acquisition/test_dynamic_acquisition.py
+--- Acquisition-4.5.orig/src/Acquisition/test_dynamic_acquisition.py	1970-01-01 01:00:00.000000000 +0100
++++ Acquisition-4.5/src/Acquisition/test_dynamic_acquisition.py	2018-12-10 14:45:01.601164033 +0100
+@@ -0,0 +1,161 @@
 +##############################################################################
 +#
 +# Copyright (c) 1996-2002 Zope Corporation and Contributors.
@@ -121,6 +121,8 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +# FOR A PARTICULAR PURPOSE
 +#
 +##############################################################################
++from __future__ import print_function
++
 +import Acquisition
 +
 +def checkContext(self, o):
@@ -148,8 +150,8 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +
 +        def dynmethod():
 +            chain = ' <- '.join(repr(obj) for obj in Acquisition.aq_chain(self))
-+            print repr(self) + '.' + attr
-+            print 'chain:', chain
++            print(repr(self) + '.' + attr)
++            print('chain:', chain)
 +
 +        return dynmethod
 +
@@ -162,7 +164,7 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +        self.name = name
 +
 +    def hi(self):
-+        print self, self.color
++        print(self, self.color)
 +
 +    def _aq_dynamic(self, attr):
 +        return None
@@ -174,7 +176,7 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +    r'''
 +    The _aq_dynamic functionality allows an object to dynamically provide an
 +    attribute.
-+    
++
 +    If an object doesn't have an attribute, Acquisition checks to see if the
 +    object has a _aq_dynamic method, which is then called. It is functionally
 +    equivalent to __getattr__, but _aq_dynamic is called with 'self' as the
@@ -189,11 +191,11 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +        >>> A().hi()
 +        Traceback (most recent call last):
 +        ...
-+        AttributeError: color
-+    
++        AttributeError:...
++
 +    The class B, on the other hand, generates all attributes dynamically,
 +    except if it is called 'bonjour'.
-+    
++
 +    First we need to check that, even if an object provides '_aq_dynamic',
 +    "regular" Aquisition attribute access should still work:
 +
@@ -222,12 +224,12 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +        >>> b.a.bonjour()
 +        Traceback (most recent call last):
 +        ...
-+        AttributeError: bonjour
++        AttributeError:...
 +
 +        >>> a.b.bonjour()
 +        Traceback (most recent call last):
 +        ...
-+        AttributeError: bonjour
++        AttributeError:...
 +
 +    '''
 +
@@ -267,22 +269,21 @@ diff -uNr Acquisition-2.13.12.orig/src/Acquisition/test_dynamic_acquisition.py A
 +        >>> assert not b.c.aq_inContextOf(b.a)
 +        >>> assert not b.a.aq_inContextOf('somestring')
 +'''
-+
-diff -uNr Acquisition-2.13.12.orig/src/Acquisition/tests.py Acquisition-2.13.12/src/Acquisition/tests.py
---- Acquisition-2.13.12.orig/src/Acquisition/tests.py	2017-12-01 12:01:34.000000000 +0100
-+++ Acquisition-2.13.12/src/Acquisition/tests.py	2018-04-09 17:07:34.867985476 +0200
-@@ -2588,6 +2588,7 @@
- def test_suite():
-     return unittest.TestSuite((
+diff -uNr Acquisition-4.5.orig/src/Acquisition/tests.py Acquisition-4.5/src/Acquisition/tests.py
+--- Acquisition-4.5.orig/src/Acquisition/tests.py	2018-12-10 14:50:38.607014475 +0100
++++ Acquisition-4.5/src/Acquisition/tests.py	2018-12-10 15:11:31.902452836 +0100
+@@ -3338,6 +3338,7 @@
+ 
+     suites = [
          DocTestSuite(),
 +        DocTestSuite('Acquisition.test_dynamic_acquisition'),
-         DocFileSuite('README.txt', package='Acquisition'),
-         unittest.makeSuite(TestParent),
-         unittest.makeSuite(TestAcquire),
-diff -uNr Acquisition-2.13.12.orig/src/Acquisition.egg-info/SOURCES.txt Acquisition-2.13.12/src/Acquisition.egg-info/SOURCES.txt
---- Acquisition-2.13.12.orig/src/Acquisition.egg-info/SOURCES.txt	2017-12-01 12:08:29.000000000 +0100
-+++ Acquisition-2.13.12/src/Acquisition.egg-info/SOURCES.txt	2018-04-09 17:07:34.867985476 +0200
-@@ -10,6 +10,7 @@
+         unittest.defaultTestLoader.loadTestsFromName(__name__),
+     ]
+ 
+diff -uNr Acquisition-4.5.orig/src/Acquisition.egg-info/SOURCES.txt Acquisition-4.5/src/Acquisition.egg-info/SOURCES.txt
+--- Acquisition-4.5.orig/src/Acquisition.egg-info/SOURCES.txt	2018-12-10 14:52:53.472554800 +0100
++++ Acquisition-4.5/src/Acquisition.egg-info/SOURCES.txt	2018-12-10 15:02:54.257219665 +0100
+@@ -14,6 +14,7 @@
  src/Acquisition/_Acquisition.c
  src/Acquisition/__init__.py
  src/Acquisition/interfaces.py
