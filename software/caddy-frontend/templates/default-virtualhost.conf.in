@@ -50,8 +50,6 @@
 {{ http_host_list|join(', ') }} {
 {%- endif %}
   bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
-  gzip
 {%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
 {%- if cipher_list %}
