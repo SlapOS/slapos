@@ -1485,7 +1485,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
-      headers={'Timeout': '10'}  # more than default proxy-try-duration == 5
+      headers={
+        'Timeout': '10',  # more than default proxy-try-duration == 5
+        'Accept-Encoding': 'gzip',
+      }
     )
 
     self.assertEqual(
