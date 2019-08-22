@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.92'
+version = '1.0.119'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -134,6 +134,7 @@ setup(name=name,
           'mydumper = slapos.recipe.mydumper:Recipe',
           'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
+          'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',
           'neoppod.master = slapos.recipe.neoppod:Master',
           'neoppod.storage = slapos.recipe.neoppod:Storage',

@@ -129,6 +129,7 @@ port = ${apache-network-configuration:listening-port}
 url = https://[${:ip}]:${:port}/
 error-log = ${directory:httpd-log}/error.log
 access-log = ${directory:httpd-log}/access.log
+log-dir = ${directory:httpd-log}
 php-ini-dir = ${directory:php-ini-dir}
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
@@ -153,7 +154,7 @@ wait-for-files =
 
 [apache-graceful]
 recipe = collective.recipe.template
-output = ${directory:bin}/apache-httpd-graceful
+output = ${directory:scripts}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
@@ -162,7 +163,7 @@ input = inline:
 [logrotate-entry-apache]
 <= logrotate-entry-base
 name = apache
-log = ${apache-php-configuration:error-log} ${apache-php-configuration:access-log}
+log = ${apache-php-configuration:log-dir}/*.log
 frequency = daily
 rotate-num = 30
 

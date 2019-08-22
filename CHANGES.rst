@@ -1,5 +1,25 @@
 Changes
 =======
+
+
+1.0.119 (2019-08-14)
+--------------------
+
+ * publish_early: rework API
+
+
+1.0.118 (2019-08-13)
+--------------------
+
+* NEO: new recipe to fix/optimize propagation of the 'masters' parameter
+* publish_early: new '-update' option, keep published values out of buildout installed file
+* publish: new -publish option to list explicitly options to publish
+* re6stnet: Fix typo
+* librecipe: Try to reuse existing file to avoid excessive IO on update and other minor optimisations
+* certificate_authority: unique_subject = no
+* wrapper: handle "=" in environment variables' content
+ 
+
 1.0.92 (2019-02-21)
 -------------------
 

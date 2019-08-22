@@ -131,7 +131,7 @@ mode = 744
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = nextcloud-backup
-frequency = 0 0 * * * *
+frequency = 0 0 * * *
 command = ${nextcloud-backup:output}
 
 [nextcloud-optimize]

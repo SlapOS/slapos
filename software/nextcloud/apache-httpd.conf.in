@@ -25,4 +25,7 @@
         Dav off
       </IfModule>
   </Directory>
+  ErrorLog "{{ parameter_dict['log-dir'] }}/nextcloud-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/nextcloud-access.log" combined
+
 </VirtualHost>

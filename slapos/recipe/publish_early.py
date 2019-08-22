@@ -25,9 +25,17 @@
 #
 ##############################################################################
 
-import slapos.slap
-from slapos.recipe.librecipe import unwrap, wrap
-from slapos.recipe.librecipe import GenericSlapRecipe
+from collections import defaultdict
+from .librecipe import unwrap, wrap, GenericSlapRecipe
+
+def volatileOptions(options, volatile):
+  def copy():
+    copy = options_copy()
+    for key in volatile:
+      copy.pop(key, None)
+    return copy
+  options_copy = options.copy
+  options.copy = copy
 
 class Recipe(GenericSlapRecipe):
   """
@@ -53,36 +61,83 @@ class Recipe(GenericSlapRecipe):
     -extends = publish-early
     ...
 
-  ${publish-early:foo} is initialized with the value of the published
-  parameter 'foo', or ${gen-foo:x} if it hasn't been published yet
-  (and in this case, it is published immediately as a way to save the value).
+  Just before the recipe of [gen-foo] is instantiated, 'x' is overridden with
+  the published value 'foo' if it exists. If its __init__ modifies 'x', the new
+  value is published. To prevent [gen-foo] from being accessed too early, 'x'
+  is then removed and the value can only be accessed with ${publish-early:foo}.
+
+  Generated values don't end up in the buildout installed file, which is good
+  if they're secret. Note however that buildout won't detect if values change
+  and it may only call update().
+
   ${publish-early:bar} is forced to 'z' (${gen-bar:y} ignored):
   a line like 'bar = z' is usually rendered conditionally with Jinja2.
   """
   def __init__(self, buildout, name, options):
     GenericSlapRecipe.__init__(self, buildout, name, options)
-    published_dict = None
-    publish = False
-    publish_dict = {}
+    init = defaultdict(dict)
     for line in options['-init'].splitlines():
       if line:
         k, v = line.split()
         if k not in options:
-          if published_dict is None:
-            self.slap.initializeConnection(self.server_url, self.key_file,
-              self.cert_file)
-            computer_partition = self.slap.registerComputerPartition(
-              self.computer_id, self.computer_partition_id)
-            published_dict = unwrap(
-              computer_partition.getConnectionParameterDict())
+          section, v = v.split(':')
+          init[section][k] = v
+    if init:
+      self.slap.initializeConnection(self.server_url, self.key_file,
+        self.cert_file)
+      computer_partition = self.slap.registerComputerPartition(
+        self.computer_id, self.computer_partition_id)
+      published_dict = unwrap(computer_partition.getConnectionParameterDict())
+
+      Options = buildout.Options
+      if 'Options' in buildout.__dict__:
+        def revertOptions():
+          buildout.Options = Options
+      else:
+        def revertOptions():
           try:
-            publish_dict[k] = published_dict[k]
-          except KeyError:
-            section, key = v.split(":")
-            publish_dict[k] = self.buildout[section][key]
+            del buildout.Options
+          except AttributeError:
+            pass
+      def newOptions(buildout, section, data):
+        assert section == init_section, (section, init_section)
+        revertOptions()
+        self = buildout.Options(buildout, section, data)
+        self.update(override)
+        return self
+
+      publish = False
+      publish_dict = {}
+      try:
+        for init_section, init in init.iteritems():
+          override = {}
+          for k, v in init.iteritems():
+            try:
+              override[v] = published_dict[k]
+            except KeyError:
+              pass
+          buildout.Options = newOptions
+          init_section = buildout[init_section]
+          assert buildout.Options is Options
+          new = {}
+          for k, v in init.iteritems():
+            try:
+              publish_dict[k] = new[v] = init_section.pop(v)
+            except KeyError:
+              pass
+          if new != override:
             publish = True
-    if publish:
-      computer_partition.setConnectionDict(wrap(publish_dict))
-    options.update(publish_dict)
+      finally:
+        revertOptions()
+
+      if publish:
+        computer_partition.setConnectionDict(wrap(publish_dict))
+
+      publish = [k for k in options
+        if k != 'recipe' and not k.startswith('-')]
+      publish += publish_dict
+      publish_dict['-publish'] = ' '.join(publish)
+      volatileOptions(options, list(publish_dict))
+      options.update(publish_dict)
 
   install = update = lambda self: None
