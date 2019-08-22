@@ -17,8 +17,6 @@
 # SSL-disabled backends
 {{ http_backend_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
-  gzip
 # Rewrite part
   proxy / {{ slave_parameter.get('backend_url', '') }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
@@ -48,8 +46,6 @@
 # SSL-enabled backends
 {{ https_backend_host_list|join(', ') }} {
   bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
-  gzip
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
