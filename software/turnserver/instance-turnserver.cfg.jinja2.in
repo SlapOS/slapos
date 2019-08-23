@@ -1,0 +1,153 @@
+{% set part_list = [] -%}
+{% set server_name = slapparameter_dict.get('server-name', 'turn.example.com') -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promises = ${:etc}/promise
+plugins = ${:etc}/plugin
+ssl = ${:etc}/ssl
+
+[file-base]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+[{{  section_name }}]
+< = file-base
+rendered = {{ file_path }}
+context = key content {{ content_section_name }}:content
+mode = {{ mode }}
+{% do part_list.append(section_name) -%}
+{%- endmacro %}
+
+{% if slapparameter_dict.get('ssl-key') and slapparameter_dict.get('ssl-crt') -%}
+{{ simplefile('ssl-certificate', '${turnserver-ssl:certificate}', slapparameter_dict.get('ssl-crt')) }}
+{{ simplefile('ssl-key', '${turnserver-ssl:key}', slapparameter_dict.get('ssl-key'), 600) }}
+{% else -%}
+{%  do part_list.append('gen-certificate') -%}
+[gen-certificate]
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${turnserver-ssl:key}" -out "${turnserver-ssl:certificate}"
+{% endif -%}
+
+[turnserver-ssl]
+recipe = plone.recipe.command
+certificate = ${directory:ssl}/cert.pem
+key = ${directory:ssl}/key.pem
+dhparam = ${directory:ssl}/dhparam.pem
+command =
+  if [ ! -s "${directory:ssl}//dhparam.pem" ]; then
+    "{{ parameter_dict['openssl'] }}/bin/openssl" dhparam -out ${:dhparam} 4096
+  fi
+
+[gen-secret]
+recipe = plone.recipe.command
+secret-file = ${directory:etc}/.turnsecret
+command =
+  if [ ! -s "${:secret-file}" ]; then
+    cat <<EOF > ${:secret-file}
+    [turnserver]
+    secret = $("{{ parameter_dict['openssl'] }}/bin/openssl" rand -hex 32)
+    EOF
+  fi
+  chmod 600 ${:secret-file}
+
+[read-secret]
+recipe = slapos.cookbook:zero-knowledge.read
+file-path = ${gen-secret:secret-file}
+secret =
+
+{% set turn_port = slapparameter_dict.get('port', 3478) -%}
+{% set turn_tls_port = slapparameter_dict.get('tls-port', 5349) -%}
+{% set listining_ip = slapparameter_dict.get('listening-ip', (ipv4 | list)[0]) -%}
+[turnserver-config]
+recipe = collective.recipe.template
+input = inline:
+  listening-port={{ turn_port }}
+  tls-listening-port={{ turn_tls_port }}
+  fingerprint
+  lt-cred-mech
+  use-auth-secret
+  static-auth-secret=${read-secret:secret}
+  listening-ip={{ listining_ip }}
+{% if slapparameter_dict.get('external-ip', '') %}
+  external-ip={{ slapparameter_dict['external-ip'] }}
+{% endif %}
+  server-name={{ server_name }}
+  realm={{ server_name }}
+  total-quota=100
+  bps-capacity=0
+  stale-nonce=600
+  cert=${turnserver-ssl:certificate}
+  pkey=${turnserver-ssl:key}
+  dh-file=${turnserver-ssl:dhparam}
+  cipher-list="ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AES:RSA+3DES:!ADH:!AECDH:!MD5"
+  no-loopback-peers
+  no-multicast-peers
+  mobility
+  no-tlsv1
+  no-tlsv1_1
+  no-stdout-log
+  log-file=${directory:log}/turnserver.log
+  userdb=${directory:srv}/turndb
+  pidfile=${directory:run}/turnserver.pid
+  verbose
+output = ${directory:etc}/turnserver.conf
+mode = 644
+
+[turnserver-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['turnserver-location'] }}/bin/turnserver
+               -c ${turnserver-config:output}
+wrapper-path = ${directory:services}/turnserver
+hash-files = ${buildout:directory}/software_release/buildout.cfg
+
+[promise-check-turnserver-port]
+<= monitor-promise-base
+module = check_port_listening
+name = turnserver-port-listening.py
+config-hostname = {{ listining_ip }}
+config-port = {{ turn_port }}
+
+[promise-check-turnserver-tls-port]
+<= monitor-promise-base
+module = check_port_listening
+name = turnserver-tls-port-listening.py
+config-hostname = {{ listining_ip }}
+config-port = {{ turn_tls_port }}
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+turn-url = {{ server_name ~ ':' ~ turn_port }}
+turn-tls-url = {{ server_name ~ ':' ~ turn_tls_port }}
+secret = ${read-secret:secret}
+
+[buildout]
+
+extends = {{ template_monitor }}
+
+parts =
+  publish-connection-information
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+# turn server
+  turnserver-wrapper
+  promise-check-turnserver-tls-port
+  promise-check-turnserver-port
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
