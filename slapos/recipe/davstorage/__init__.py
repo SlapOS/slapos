@@ -25,7 +25,7 @@
 #
 ##############################################################################
 import subprocess
-import httplib
+from six.moves import http_client as httplib
 import base64
 import os
 import shutil

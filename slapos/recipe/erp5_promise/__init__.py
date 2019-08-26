@@ -26,7 +26,7 @@
 ##############################################################################
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-import ConfigParser
+from six.moves import configparser
 
 class Recipe(GenericBaseRecipe):
   """
@@ -34,7 +34,7 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-    promise_parser = ConfigParser.RawConfigParser()
+    promise_parser = configparser.RawConfigParser()
     for section_name, option_id_list in (
           ('portal_templates', (
             ('repository', 'bt5-repository-url'),

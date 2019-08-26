@@ -33,7 +33,6 @@ import hashlib
 import sys
 import zc.buildout
 import zc.recipe.egg
-import ConfigParser
 
 class Recipe(BaseSlapRecipe):
   def installLogrotate(self):
