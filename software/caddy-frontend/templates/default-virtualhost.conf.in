@@ -110,8 +110,6 @@
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting Remote-User header unset it always
-    header_upstream -Remote-User
 {%- for disabled_cookie in disabled_cookie_list %}
     # Remove cookie {{ disabled_cookie }} from client Cookies
     header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
@@ -247,8 +245,6 @@
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting Remote-User header unset it always
-    header_upstream -Remote-User
 {%- for disabled_cookie in disabled_cookie_list %}
     # Remove cookie {{ disabled_cookie }} from client Cookies
     header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
