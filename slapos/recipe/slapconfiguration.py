@@ -31,7 +31,8 @@ import os
 
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
-from ConfigParser import RawConfigParser
+import six
+from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 from slapos.util import mkdir_p
 from slapos import format as slapformat
@@ -115,7 +116,7 @@ class Recipe(object):
                                       buildout['buildout']['directory'])
 
       match = self.OPTCRE_match
-      for key, value in parameter_dict.iteritems():
+      for key, value in six.iteritems(parameter_dict):
           if match(key) is not None:
               continue
           options['configuration.' + key] = value
@@ -240,7 +241,7 @@ class Recipe(object):
           # be very careful with overriding master's information
           for key, value in flatten_dict(partition_params).items():
             if key not in options:
-              if isinstance(value, unicode):
+              if six.PY2 and isinstance(value, unicode):
                 value = value.encode('UTF-8')
               options[key] = value
       # print out augmented options to see what we are passing
@@ -265,8 +266,11 @@ class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
     parameter_dict = self.fetch_parameter_dict(options)
     self._json_output = options['json-output']
-    with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fout:
-      fout.write(json.dumps(parameter_dict, indent=2, sort_keys=True))
+    # XXX: do not touch file if there's no change to avoid excessive IO
+    #      (see https://lab.nexedi.com/nexedi/slapos.recipe.template/commit/14d26bc8c77a1940f389026bdbd3a9b229b241f4
+    #       for an example to fix this)
+    with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as fout:
+      json.dump(parameter_dict, fout, indent=2, sort_keys=True)
 
     def install(self):
         return [self._json_output]

@@ -69,7 +69,7 @@ export JAVA_OPTS="${JAVA_OPTS} -Djava.awt.headless=true"
     bindir = os.path.join(tomcat_home, 'bin')
     for f in os.listdir(bindir):
       if f.endswith('.sh'):
-        os.chmod(os.path.join(bindir, f), 0755)
+        os.chmod(os.path.join(bindir, f), 0o755)
     tomcat_wrapper = self.createRunningWrapper('xwiki', """#!/bin/sh
 export JRE_HOME=%(java_home)s
 exec %(catalina)s run
