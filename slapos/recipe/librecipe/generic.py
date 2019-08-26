@@ -36,7 +36,11 @@ import re
 import shutil
 import stat
 import urllib
-import urlparse
+import itertools
+import six
+from six.moves import map
+from six.moves.urllib.parse import urlunparse
+
 
 import pkg_resources
 import zc.buildout
@@ -90,7 +94,7 @@ class GenericBaseRecipe(object):
     """Options Hook method. This method can be overriden in child classes"""
     return
 
-  def createFile(self, name, content, mode=0600):
+  def createFile(self, name, content, mode=0o600):
     """Create a file with content
 
     The parent directory should exists, else it would raise IOError"""
@@ -117,7 +121,7 @@ class GenericBaseRecipe(object):
       f.write(content)
     return os.path.abspath(name)
 
-  def createExecutable(self, name, content, mode=0700):
+  def createExecutable(self, name, content, mode=0o700):
     return self.createFile(name, content, mode)
 
   def addLineToFile(self, filepath, line, encoding='utf8'):
@@ -148,9 +152,9 @@ class GenericBaseRecipe(object):
       module, function = function
     path, filename = os.path.split(os.path.abspath(name))
 
-    assert not isinstance(args, (basestring, dict)), args
-    args = map(repr, args)
-    args += map('%s=%r'.__mod__, kw.iteritems())
+    assert not isinstance(args, (six.string_types, dict)), args
+    args = itertools.chain(map(repr, args),
+                           map('%s=%r'.__mod__, six.iteritems(kw)))
 
     return zc.buildout.easy_install.scripts(
       [(filename, module, function)], self._ws, sys.executable,
@@ -173,12 +177,12 @@ class GenericBaseRecipe(object):
     lines = ['#!/bin/sh']
 
     if env:
-      for k, v in sorted(env.iteritems()):
+      for k, v in sorted(six.iteritems(env)):
         lines.append('export %s=%s' % (k, shlex.quote(v)))
 
     lines.append('exec')
 
-    args = map(shlex.quote, args)
+    args = list(map(shlex.quote, args))
     args.append('"$@"')
     for arg in args:
       if len(lines[-1]) < 40:
@@ -188,9 +192,9 @@ class GenericBaseRecipe(object):
         lines.append('\t' + arg)
 
     lines.append('')
-    return self.createFile(path, '\n'.join(lines), 0700)
+    return self.createFile(path, '\n'.join(lines), 0o700)
 
-  def createDirectory(self, parent, name, mode=0700):
+  def createDirectory(self, parent, name, mode=0o700):
     path = os.path.join(parent, name)
     if not os.path.exists(path):
       os.mkdir(path, mode)
@@ -254,7 +258,7 @@ class GenericBaseRecipe(object):
     if port is not None:
       netloc += ':%s' % port
 
-    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    url = urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
 

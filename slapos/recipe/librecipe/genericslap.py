@@ -27,7 +27,7 @@
 from slapos import slap
 import time
 
-from generic import GenericBaseRecipe
+from .generic import GenericBaseRecipe
 
 CONNECTION_CACHE = {}
 

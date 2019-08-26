@@ -36,7 +36,7 @@ def kill(pid_file, sig=signal.SIGUSR1):
       pid = int(f.read().strip())
     try:
       os.kill(pid, sig)
-    except OSError, e:
+    except OSError as e:
       if e.errno != errno.ESRCH: # No such process
         raise e
       os.unlink(pid_file)
