@@ -20,9 +20,6 @@ TypesConfig {{ httpd_home }}/conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
-# As backend is trusting Remote-User header unset it always
-RequestHeader unset Remote-User
-
 ServerTokens Prod
 
 # Disable TRACE Method

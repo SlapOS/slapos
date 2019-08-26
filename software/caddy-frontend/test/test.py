@@ -853,7 +853,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                       headers=None, cookies=None, source_ip=None):
     if headers is None:
       headers = {}
-    headers.setdefault('Remote-User', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
@@ -878,7 +877,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                      headers=None):
     if headers is None:
       headers = {}
-    headers.setdefault('Remote-User', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
