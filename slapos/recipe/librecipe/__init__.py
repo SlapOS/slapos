@@ -34,13 +34,13 @@ import stat
 import netaddr
 import time
 import re
-import urlparse
+from six.moves.urllib.parse import urlunparse
 import json
 
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
-from generic import GenericBaseRecipe
-from genericslap import GenericSlapRecipe
-from filehash import filehash
+from .generic import GenericBaseRecipe
+from .genericslap import GenericSlapRecipe
+from .filehash import filehash
 
 # Utility functions to (de)serialise live python objects in order to send them
 # to master.
@@ -324,7 +324,7 @@ class BaseSlapRecipe:
     if port is not None:
       netloc += ':%s' % port
 
-    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    url = urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
 
