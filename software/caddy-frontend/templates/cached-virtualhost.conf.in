@@ -21,8 +21,6 @@
   proxy / {{ slave_parameter.get('backend_url', '') }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # As backend is trusting Remote-User header unset it always
-    header_upstream -Remote-User
 
     transparent
     timeout 600s
@@ -49,8 +47,6 @@
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # As backend is trusting Remote-User header unset it always
-    header_upstream -Remote-User
     transparent
     timeout 600s
 {%- if ssl_proxy_verify %}

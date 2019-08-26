@@ -883,7 +883,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                       headers=None, cookies=None, source_ip=None):
     if headers is None:
       headers = {}
-    headers.setdefault('Remote-User', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
@@ -908,7 +907,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                      headers=None):
     if headers is None:
       headers = {}
-    headers.setdefault('Remote-User', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
@@ -1475,7 +1473,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - SOME_REMOTE_USER ' \
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
                  r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
                  r'"python-requests.*" \d+'
