@@ -76,9 +76,9 @@ class Recipe(GenericBaseRecipe):
       import hashlib
       hasher = hashlib.md5()
       for path in file_list:
-        with open(path, 'r') as afile:
+        with open(path, 'rb') as afile:
           buf = afile.read()
-        hasher.update("%s\n" % len(buf))
+        hasher.update(b"%u\n" % len(buf))
         hasher.update(buf)
       hash = hasher.hexdigest()
       return hash

@@ -27,6 +27,7 @@
 
 from collections import defaultdict
 from .librecipe import unwrap, wrap, GenericSlapRecipe
+import six
 
 def volatileOptions(options, volatile):
   def copy():
@@ -109,9 +110,9 @@ class Recipe(GenericSlapRecipe):
       publish = False
       publish_dict = {}
       try:
-        for init_section, init in init.iteritems():
+        for init_section, init in six.iteritems(init):
           override = {}
-          for k, v in init.iteritems():
+          for k, v in six.iteritems(init):
             try:
               override[v] = published_dict[k]
             except KeyError:
@@ -120,7 +121,7 @@ class Recipe(GenericSlapRecipe):
           init_section = buildout[init_section]
           assert buildout.Options is Options
           new = {}
-          for k, v in init.iteritems():
+          for k, v in six.iteritems(init):
             try:
               publish_dict[k] = new[v] = init_section.pop(v)
             except KeyError:
