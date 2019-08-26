@@ -2,7 +2,7 @@
 """
 import sys
 import os.path
-from ConfigParser import ConfigParser
+from zc.buildout.configparser import parse
 
 import logging
 
@@ -45,10 +45,10 @@ def makeRecipe(recipe_class, options, name='test', slap_connection=None):
   # to find a buildout relative to this file.
   buildout_cfg = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'buildout.cfg')
   if os.path.exists(buildout_cfg):
-    parser = ConfigParser()
-    parser.readfp(open(buildout_cfg))
-    eggs_directory = parser.get('buildout', 'eggs-directory')
-    develop_eggs_directory = parser.get('buildout', 'develop-eggs-directory')
+    with open(buildout_cfg) as f:
+      parsed_cfg = parse(f, buildout_cfg)
+    eggs_directory = parsed_cfg['buildout']['eggs-directory']
+    develop_eggs_directory = parsed_cfg['buildout']['develop-eggs-directory']
     logging.getLogger(__name__).info(
         'Using eggs-directory (%s) and develop-eggs-directory (%s) from buildout at %s',
         eggs_directory,

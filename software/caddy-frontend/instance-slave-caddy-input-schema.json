@@ -168,7 +168,7 @@
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
       "type": "string"
-   },
+    },
     "ssl_ca_crt": {
       "default": "",
       "description": "Content of the CA certificate file. Deprecated, please use key-upload-url.",
