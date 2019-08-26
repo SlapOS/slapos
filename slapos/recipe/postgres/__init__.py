@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import md5
+import hashlib
 import os
 import subprocess
 import textwrap
@@ -195,7 +195,7 @@ class Recipe(GenericBaseRecipe):
         password = self.options['password']
 
         # encrypt the password to avoid storing in the logs
-        enc_password = 'md5' + md5.md5(password+user).hexdigest()
+        enc_password = 'md5' + hashlib.md5(password+user).hexdigest()
 
         self.runPostgresCommand(cmd="""ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password))
 
