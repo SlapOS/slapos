@@ -172,7 +172,7 @@ class Password(object):
           raise
 
       fd = os.open(self.storage_path,
-        os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0600)
+        os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0o600)
       try:
         os.write(fd, self.passwd)
       finally:

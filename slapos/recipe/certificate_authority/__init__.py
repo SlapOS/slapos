@@ -26,11 +26,11 @@
 ##############################################################################
 import os
 import hashlib
-import ConfigParser
+from six.moves import configparser
 import tempfile
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-from certificate_authority import popenCommunicate
+from .certificate_authority import popenCommunicate
 
 class Recipe(GenericBaseRecipe):
 
@@ -119,7 +119,7 @@ class Request(Recipe):
       open(certificate, 'w').write(cert_content)
       request_needed = False
     else:
-      parser = ConfigParser.RawConfigParser()
+      parser = configparser.RawConfigParser()
       parser.add_section('certificate')
       parser.set('certificate', 'name', name)
       parser.set('certificate', 'key_file', key)

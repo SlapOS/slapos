@@ -3,6 +3,7 @@ from slapos.recipe import promise_plugin
 from slapos.test.utils import makeRecipe
 from pprint import pformat
 import stat, json
+import six
 
 class TestPromisePlugin(unittest.TestCase):
 
@@ -68,7 +69,7 @@ in multi line
     with open(self.output) as f:
       content = f.read()
     self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
-    self.assertIn('extra_config_dict = { }', content)
+    self.assertIn('extra_config_dict = %s' % ('{}' if six.PY3 else '{ }'), content)
 
 
   def test_bad_parameters(self):
@@ -99,7 +100,7 @@ in multi line
     with self.assertRaises(ValueError) as p:
       recipe.install()
 
-    self.assertEqual(p.exception.message, "Import path %r is not a valid" % self.options['import'])
+    self.assertEqual(str(p.exception), "Import path %r is not a valid" % self.options['import'])
 
   def test_bad_content(self):
     self.options['content'] = 'from slapos.plugin.check_site_available import toto; print "toto"'
@@ -110,5 +111,5 @@ in multi line
     with self.assertRaises(ValueError) as p:
       recipe.install()
 
-    self.assertEqual(p.exception.message, "Promise content %r is not valid" % self.options['content'])
+    self.assertEqual(str(p.exception), "Promise content %r is not valid" % self.options['content'])
 

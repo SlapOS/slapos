@@ -24,9 +24,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
 import zc.buildout
 from slapos.recipe.librecipe import wrap
 from slapos.recipe.librecipe import GenericSlapRecipe
+import six
 
 CONNECTION_PARAMETER_STRING = 'connection-'
 
@@ -77,9 +79,9 @@ class PublishSection(GenericSlapRecipe):
     for section in self.options['section-list'].strip().split():
       section = section.strip()
       options = self.buildout[section].copy()
-      for k, v in options.iteritems():
+      for k, v in six.iteritems(options):
         if k.startswith(CONNECTION_PARAMETER_STRING):
-          print k, v
+          print(k, v)
           publish_dict[k.lstrip(CONNECTION_PARAMETER_STRING)] = v
     self.setConnectionDict(publish_dict)
     return []
