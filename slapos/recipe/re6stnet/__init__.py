@@ -123,7 +123,7 @@ class Recipe(GenericBaseRecipe):
         token_dict[reference] = new_token
         to_add_dict[reference] = new_token
 
-    for reference in token_dict.keys():
+    for reference in list(token_dict):
       if not reference in reference_list:
         # This slave instance is destroyed ?
         to_remove_dict[reference] = token_dict.pop(reference)

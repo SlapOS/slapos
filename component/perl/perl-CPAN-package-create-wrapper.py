@@ -17,7 +17,7 @@ def post_make_hook(options, buildout, environmet):
 export PERL5LIB="{site_perl}:$PERL5LIB"
 exec {perl_location}/bin/perl "$@"
 '''.format(**locals()))
-  os.chmod(perl_wrapper_path, 0755)
+  os.chmod(perl_wrapper_path, 0o755)
 
   # create a wrapper for each scripts installed in perl-bin
   for script_path in glob.glob(os.path.join(prefix, 'perl-bin', '*')):
@@ -28,4 +28,4 @@ exec {perl_location}/bin/perl "$@"
 export PERL5LIB="{site_perl}:$PERL5LIB"
 exec {perl_location}/bin/perl {script_path} "$@"
 '''.format(**locals()))
-      os.chmod(wrapper_path, 0755)
+      os.chmod(wrapper_path, 0o755)

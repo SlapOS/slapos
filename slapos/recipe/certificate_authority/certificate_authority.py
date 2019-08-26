@@ -1,7 +1,9 @@
+from __future__ import print_function
+
 import os
 import subprocess
 import time
-import ConfigParser
+from six.moves import configparser
 import uuid
 
 
@@ -95,12 +97,12 @@ class CertificateAuthority:
 
   def checkRequestDir(self):
     for request_file in os.listdir(self.request_dir):
-      parser = ConfigParser.RawConfigParser()
+      parser = configparser.RawConfigParser()
       parser.readfp(open(os.path.join(self.request_dir, request_file), 'r'))
       if self._checkCertificate(parser.get('certificate', 'name'),
           parser.get('certificate', 'key_file'), parser.get('certificate',
             'certificate_file')):
-        print 'Created certificate %r' % parser.get('certificate', 'name')
+        print('Created certificate %r' % parser.get('certificate', 'name'))
 
 def runCertificateAuthority(*args):
   ca = CertificateAuthority(*args)
