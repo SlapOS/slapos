@@ -686,6 +686,7 @@ class TestHandler(BaseHTTPRequestHandler):
         f.write(json_response)
       json_response = out.getvalue()
       self.send_header('Backend-Content-Length', len(json_response))
+    self.send_header('Content-Length', len(json_response))
     self.end_headers()
     self.wfile.write(json_response)
 
