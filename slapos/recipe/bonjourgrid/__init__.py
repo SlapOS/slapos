@@ -94,7 +94,7 @@ class Recipe(GenericBaseRecipe):
       dict(ip_address=self.options['ipv6'].strip(),
             project=project,
             middleware=type)))
-    os.chmod(config_info_file, 0744)
+    os.chmod(config_info_file, 0o744)
     path_list.append(config_info)
 
   update = install
