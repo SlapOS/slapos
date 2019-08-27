@@ -80,9 +80,9 @@ input = inline:
   lt-cred-mech
   use-auth-secret
   static-auth-secret=${read-secret:secret}
-  listening-ip={{ (ipv6 | list)[0] }}
+  listening-ip={{ slapparameter_dict.get('listening-ip', (ipv6 | list)[0]) }}
 {% if slapparameter_dict.get('external-ip', '') %}
-  external-ip {{ slapparameter_dict['external-ip'] }}
+  external-ip={{ slapparameter_dict['external-ip'] }}
 {% endif %}
   server-name={{ server_name }}
   realm={{ server_name }}
@@ -105,26 +105,6 @@ input = inline:
   verbose
 output = ${directory:etc}/turnserver.conf
 mode = 644
-
-{% if slapparameter_dict.get('external-ip', '') -%}
-[tunnel-6to4-external]
-recipe = slapos.cookbook:wrapper
-ipv4 = {{ slapparameter_dict['external-ip'] }}
-ipv6 = ${slap-network-information:global-ipv6}
-wrapper-path = ${directory:services}/6tunnel-external
-command-line = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel -d -l ${:ipv4} {{ turn_port }} ${:ipv6} {{ turn_port }}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
-
-[tunnel-6to4-external-tls]
-recipe = slapos.cookbook:wrapper
-ipv4 = {{ slapparameter_dict['external-ip'] }}
-ipv6 = ${slap-network-information:global-ipv6}
-wrapper-path = ${directory:services}/6tunnel-external-tls
-command-line = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel -d -l ${:ipv4} {{ turn_tls_port }} ${:ipv6} {{ turn_tls_port }}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
-{%  do part_list.append('tunnel-6to4-external') -%}
-{%  do part_list.append('tunnel-6to4-external-tls') -%}
-{% endif -%}
 
 [turnserver-wrapper]
 recipe = slapos.cookbook:wrapper

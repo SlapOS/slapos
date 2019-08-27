@@ -41,7 +41,6 @@ context =
 
 [dynamic-template-turnserver-parameters]
 openssl = ${openssl:location}
-sixtunnel = ${6tunnel:location}
 turnserver-location = ${coturn:location}
 
 
