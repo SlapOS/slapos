@@ -44,6 +44,7 @@ import tempfile
 import ipaddress
 import StringIO
 import gzip
+import base64
 
 
 try:
@@ -660,6 +661,9 @@ class TestHandler(BaseHTTPRequestHandler):
     time.sleep(timeout)
     self.send_response(200)
 
+    drop_header_list = []
+    for header in self.headers.dict.get('x-drop-header').split():
+      drop_header_list.append(header)
     prefix = 'x-reply-header-'
     length = len(prefix)
     for key, value in self.headers.dict.items():
@@ -669,26 +673,33 @@ class TestHandler(BaseHTTPRequestHandler):
           value.strip()
         )
 
-    self.send_header("Content-Type", "application/json")
-    self.send_header('Set-Cookie', 'secured=value;secure')
-    self.send_header('Set-Cookie', 'nonsecured=value')
-    response = {
-      'Path': self.path,
-      'Incoming Headers': self.headers.dict
-    }
-    json_response = json.dumps(response, indent=2)
+    if 'Content-Type' not in drop_header_list:
+      self.send_header("Content-Type", "application/json")
+    if 'Set-Cookie' not in drop_header_list:
+      self.send_header('Set-Cookie', 'secured=value;secure')
+      self.send_header('Set-Cookie', 'nonsecured=value')
+
+    if 'x-reply-body' not in self.headers.dict:
+      response = {
+        'Path': self.path,
+        'Incoming Headers': self.headers.dict
+      }
+      response = json.dumps(response, indent=2)
+    else:
+      response = base64.b64decode(self.headers.dict['x-reply-body'])
     if compress:
       self.send_header('Content-Encoding', 'gzip')
       out = StringIO.StringIO()
       # compress with level 0, to find out if in the middle someting would
       # like to alter the compression
       with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
-        f.write(json_response)
-      json_response = out.getvalue()
-      self.send_header('Backend-Content-Length', len(json_response))
-    self.send_header('Content-Length', len(json_response))
+        f.write(response)
+      response = out.getvalue()
+      self.send_header('Backend-Content-Length', len(response))
+    if 'Content-Length' not in drop_header_list:
+      self.send_header('Content-Length', len(response))
     self.end_headers()
-    self.wfile.write(json_response)
+    self.wfile.write(response)
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
@@ -1586,6 +1597,30 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       }
     )
     self.assertFalse('Content-Encoding' in result_not_compressed.headers)
+
+  def test_no_content_type_alter(self):
+    parameter_dict = self.assertSlaveBase('Url')
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+        'X-Reply-Body': base64.b64encode(
+          b"""<?xml version="1.0" encoding="UTF-8"?>
+<note>
+  <to>Tove</to>
+  <from>Jani</from>
+  <heading>Reminder</heading>
+  <body>Don't forget me this weekend!</body>
+</note>"""),
+        'X-Drop-Header': 'Content-Type'
+      }
+    )
+
+    self.assertEqual(
+      'text/xml; charset=utf-8',
+      result.headers['Content-Type']
+    )
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
