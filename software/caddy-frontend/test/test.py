@@ -42,6 +42,10 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+import StringIO
+import gzip
+
+
 try:
     import lzma
 except ImportError:
@@ -652,6 +656,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
     timeout = int(self.headers.dict.get('timeout', '0'))
+    compress = int(self.headers.dict.get('compress', '0'))
     time.sleep(timeout)
     self.send_response(200)
 
@@ -667,12 +672,22 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_header("Content-Type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
     self.send_header('Set-Cookie', 'nonsecured=value')
-    self.end_headers()
     response = {
       'Path': self.path,
       'Incoming Headers': self.headers.dict
     }
-    self.wfile.write(json.dumps(response, indent=2))
+    json_response = json.dumps(response, indent=2)
+    if compress:
+      self.send_header('Content-Encoding', 'gzip')
+      out = StringIO.StringIO()
+      # compress with level 0, to find out if in the middle someting would
+      # like to alter the compression
+      with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
+        f.write(json_response)
+      json_response = out.getvalue()
+      self.send_header('Backend-Content-Length', len(json_response))
+    self.end_headers()
+    self.wfile.write(json_response)
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
@@ -1485,7 +1500,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
-      headers={'Timeout': '10'}  # more than default proxy-try-duration == 5
+      headers={
+        'Timeout': '10',  # more than default proxy-try-duration == 5
+        'Accept-Encoding': 'gzip',
+      }
     )
 
     self.assertEqual(
@@ -1534,6 +1552,39 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       content = fh.read()
       self.assertTrue('try_duration 5s' in content)
       self.assertTrue('try_interval 250ms' in content)
+
+  def test_compressed_result(self):
+    parameter_dict = self.assertSlaveBase('Url')
+    result_compressed = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+        'Compress': '1',
+      }
+    )
+    self.assertEqual(
+      'gzip',
+      result_compressed.headers['Content-Encoding']
+    )
+
+    # Assert that no tampering was done with the request
+    # (compression/decompression)
+    # Backend compresses with 0 level, so decompression/compression
+    # would change somthing
+    self.assertEqual(
+      result_compressed.headers['Content-Length'],
+      result_compressed.headers['Backend-Content-Length']
+    )
+
+    result_not_compressed = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertFalse('Content-Encoding' in result_not_compressed.headers)
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
