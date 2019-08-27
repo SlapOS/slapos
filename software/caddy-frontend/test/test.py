@@ -664,7 +664,7 @@ class TestHandler(BaseHTTPRequestHandler):
           value.strip()
         )
 
-    self.send_header("Content-type", "application/json")
+    self.send_header("Content-Type", "application/json")
     self.send_header('Set-Cookie', 'secured=value;secure')
     self.send_header('Set-Cookie', 'nonsecured=value')
     self.end_headers()
