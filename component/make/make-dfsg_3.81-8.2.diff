@@ -1044,6 +1044,15 @@
  # Autoconf setup
  AC_CONFIG_AUX_DIR(config)
  AC_CONFIG_SRCDIR(vpath.c)
+@@ -354,7 +356,7 @@
+ #define GLOB_INTERFACE_VERSION 1
+ #if !defined _LIBC && defined __GNU_LIBRARY__ && __GNU_LIBRARY__ > 1
+ # include <gnu-versions.h>
+-# if _GNU_GLOB_INTERFACE_VERSION == GLOB_INTERFACE_VERSION
++# if _GNU_GLOB_INTERFACE_VERSION >= GLOB_INTERFACE_VERSION
+    gnu glob
+ # endif
+ #endif
 @@ -372,6 +374,24 @@
  MAKE_HOST="$host"
  AC_SUBST(MAKE_HOST)
@@ -16744,7 +16753,15 @@
  /* end confdefs.h.  */
  
  #include <features.h>
-@@ -13629,13 +9246,13 @@
+@@ -13622,20 +9239,20 @@
+ #define GLOB_INTERFACE_VERSION 1
+ #if !defined _LIBC && defined __GNU_LIBRARY__ && __GNU_LIBRARY__ > 1
+ # include <gnu-versions.h>
+-# if _GNU_GLOB_INTERFACE_VERSION == GLOB_INTERFACE_VERSION
++# if _GNU_GLOB_INTERFACE_VERSION >= GLOB_INTERFACE_VERSION
+    gnu glob
+ # endif
+ #endif
  
  _ACEOF
  if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
