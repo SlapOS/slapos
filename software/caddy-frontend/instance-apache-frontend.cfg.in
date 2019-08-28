@@ -59,7 +59,6 @@ log = ${:var}/log
 run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
-plugin = ${:etc}/plugin
 
 ca-dir = ${:srv}/ssl
 # BBB: SlapOS Master non-zero knowledge BEGIN
@@ -139,6 +138,7 @@ context =
     import json_module json
     raw common_profile {{ parameter_dict['common_profile'] }}
     raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
+    raw monitor_template {{ parameter_dict['monitor_template'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory
@@ -257,7 +257,6 @@ extra-context =
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
-    key plugin_directory directory:plugin
     key report_directory directory:bin
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
@@ -511,17 +510,8 @@ filename = ip_allow.config
 context =
     key content trafficserver-variable:ip-allow-config
 
-[promise-plugin-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-output = ${directory:plugin}/${:name}
-
-
 [trafficserver-promise-listen-port]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = trafficserver-port-listening.py
 config-hostname = ${trafficserver-variable:local-ip}
@@ -534,7 +524,7 @@ wrapper-path = ${directory:bin}/traffic_ctl
 environment = TS_ROOT=${buildout:directory}
 
 [trafficserver-promise-cache-availability]
-<= promise-plugin-base
+<= monitor-promise-base
 module = trafficserver_cache_availability
 name = trafficserver-cache-availability.py
 config-wrapper-path = ${trafficserver-ctl:wrapper-path}
@@ -634,48 +624,48 @@ context =
     key content :content
 
 [promise-frontend-caddy-configuration]
-<= promise-plugin-base
+<= monitor-promise-base
 module = validate_frontend_configuration
 name = frontend-caddy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_https.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_http.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_https.py
 config-hostname = {{ instance_parameter['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_http.py
 config-hostname = {{ instance_parameter['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-cached]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_cached.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
 config-port = ${caddy-configuration:cache-through-port}
 
 [promise-caddy-frontend-ssl-cached]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = caddy_ssl_cached.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
@@ -736,7 +726,7 @@ context =
     raw content show:cache-stats
 
 [monitor-verify-re6st-connectivity]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_url_available
 name = re6st-connectivity.py
 config-url = ${configuration:re6st-verification-url}
