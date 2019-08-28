@@ -40,15 +40,27 @@ def makeRecipe(recipe_class, options, name='test', slap_connection=None):
     buildout['slap-connection'] = slap_connection
 
   # are we in buildout folder ?
-  # the usual layout is
-  # ${buildout:directory}/parts/slapos-repository/slapos/test/utils.py , so try
-  # to find a buildout relative to this file.
-  buildout_cfg = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'buildout.cfg')
+  # in SLAPOS-EGG-TEST the usual layout is
+  # ${buildout:directory}/parts/slapos-repository/slapos/test/utils.py in instance buildout, so try
+  # to find a buildout.cfg relative to this file.
+  # What can also happens is that this repository is used from software folder, this is the case in
+  # SLAPOS-SR-TEST. In this case, ${buildout:eggs} is not set in buildout.cfg and we can only assume
+  # it will be the standards eggs and develop-eggs folders.
+
+  # {BASE_DIRECTORY}/parts/slapos-repository/slapos/test/utils.py
+  base_directory = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+  buildout_cfg = os.path.join(base_directory, 'buildout.cfg')
   if os.path.exists(buildout_cfg):
     parser = ConfigParser()
     parser.readfp(open(buildout_cfg))
-    eggs_directory = parser.get('buildout', 'eggs-directory')
-    develop_eggs_directory = parser.get('buildout', 'develop-eggs-directory')
+    eggs_directory = parser.get(
+        'buildout',
+        'eggs-directory',
+        os.path.join(base_directory, 'eggs'))
+    develop_eggs_directory = parser.get(
+        'buildout',
+        'develop-eggs-directory',
+        os.path.join(base_directory, 'develop-eggs'))
     logging.getLogger(__name__).info(
         'Using eggs-directory (%s) and develop-eggs-directory (%s) from buildout at %s',
         eggs_directory,
