@@ -30,9 +30,13 @@ command-line = '{{ buildout_bin_directory }}/caucased'
 
 {% if promise -%}
 [{{ prefix }}-promise]
-recipe = slapos.cookbook:wrapper
-wrapper-path = {{ promise }}
-command-line = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc }}'
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.check_command_execute import RunPromise
+output = {{ promise }}
+config-command = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc }}'
 {%- endif %}
 {%- endmacro %}
 
