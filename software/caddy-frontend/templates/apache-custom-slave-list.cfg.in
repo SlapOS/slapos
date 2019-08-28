@@ -42,14 +42,6 @@ create = true
 {%   set slave_kedifa_information = {} %}
 {% endif %}
 
-[promise-plugin-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-output = {{ plugin_directory }}/${:name}
-
 # empty section if no cached slaves are available
 [slave-log-cache-direct-directory-dict]
 
@@ -288,7 +280,7 @@ filename = {{ '%s.conf' % slave_reference }}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
 {%     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_icmp_packet_lost
 name = {{ monitor_ipv6_section_title }}.py
 config-address = {{ dumps(monitor_ipv6_test) }}
@@ -301,7 +293,7 @@ config-frequency = 720
 {%     set monitor_ipv4_section_title = 'check-%s-ipv4-packet-list-test' % slave_instance.get('slave_reference') %}
 {%     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_icmp_packet_lost
 name = {{ monitor_ipv4_section_title }}.py
 config-address = {{ dumps(monitor_ipv4_test) }}
@@ -321,7 +313,7 @@ config-frequency = 720
 {%     do part_list.append(re6st_optimal_test_section_title) %}
 
 [{{ re6st_optimal_test_section_title }}]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_re6st_optimal_status
 name = {{ re6st_optimal_test_section_title }}.py
 config-ipv4 = {{ dumps(re6st_ipv4) }}
@@ -560,7 +552,7 @@ template = inline:
 rendered = {{ directory_caddy_csr_id }}/Caddyfile
 
 [promise-expose-csr_id-ip-port]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = expose-csr_id-ip-port-listening.py
 config-hostname = ${expose-csr_id-configuration:ip}
