@@ -360,6 +360,8 @@ class TestDataMixin(object):
       'validate_configuration_state_signature',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
+      # totally non-controllable
+      'monitor-bootstrap.pid',
     ])
 
   def test_file_list_etc_cron_d(self):
@@ -447,20 +449,9 @@ class TestDataMixin(object):
     self.assertTestData('\n'.join(promise_status_list), msg=(msg or None))
 
   def test_promise_run_promise(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    promise_status_list = []
-    for partition_path in sorted(partition_path_list):
-      promise_path_list = sorted(glob.glob(
-          os.path.join(partition_path, 'etc', 'promise', '*')
-      ))
-      for promise_path in promise_path_list:
-        promise_result = subprocess.call([promise_path])
-        promise_status_list.append(
-          '%s: %s' % (
-            promise_path[len(self.instance_path) + 1:],
-            promise_result == 0 and 'OK' or 'ERROR'))
-
-    self.assertTestData('\n'.join(promise_status_list))
+    promise_path_list = glob.glob(
+      os.path.join(self.instance_path, '*', 'etc', 'promise'))
+    self.assertEqual([], promise_path_list)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
