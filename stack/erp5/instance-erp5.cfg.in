@@ -91,7 +91,6 @@ backup-caucased = ${:srv}/backup/caucased
        service_auto_approve_count=caucase_dict.get('service-auto-approve-amount', 1),
        user_auto_approve_count=caucase_dict.get('user-auto-approve-amount', 0),
        key_len=caucase_dict.get('key-length', 2048),
-       promise='${directory:promise}/caucased',
 )}}
 {% do root_common.section('caucased') -%}
 {% do root_common.section('caucased-promise') -%}
