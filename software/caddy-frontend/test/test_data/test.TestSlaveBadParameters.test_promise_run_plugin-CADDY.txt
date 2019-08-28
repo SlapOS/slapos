@@ -5,6 +5,7 @@ T-0/etc/plugin/monitor-httpd-listening-on-tcp.py: OK
 T-0/etc/plugin/rejected-slave-publish-ip-port-listening.py: OK
 T-0/etc/plugin/rejected-slave.py: ERROR
 T-1/etc/plugin/buildout-T-1-status.py: OK
+T-1/etc/plugin/caucased.py: OK
 T-1/etc/plugin/check-free-disk-space.py: OK
 T-1/etc/plugin/expose-csr_id-ip-port-listening.py: OK
 T-1/etc/plugin/kedifa-http-reply.py: OK
