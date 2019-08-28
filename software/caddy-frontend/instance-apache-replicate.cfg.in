@@ -512,7 +512,6 @@ context =
   key content :content
 
 [directory]
-plugin = ${:etc}/plugin
 service = ${:etc}/service
 promise-output = ${:srv}/promise-output
 
@@ -572,23 +571,15 @@ template = inline:
 
 rendered = ${directory:etc}/Caddyfile-rejected-slave
 
-[promise-plugin-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-output = ${directory:plugin}/${:name}
-
 [promise-rejected-slave-publish-ip-port]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = rejected-slave-publish-ip-port-listening.py
 config-hostname = ${rejected-slave-publish-configuration:ip}
 config-port = ${rejected-slave-publish-configuration:port}
 
 [rejected-slave-promise]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 module = check_file_state
 name = rejected-slave.py

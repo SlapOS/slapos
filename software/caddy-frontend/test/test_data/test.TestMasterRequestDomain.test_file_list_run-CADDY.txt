@@ -1,4 +1,2 @@
 T-0/var/run/monitor-httpd.pid
-T-0/var/run/monitor/monitor-bootstrap.pid
 T-1/var/run/kedifa.pid
-T-1/var/run/monitor/monitor-bootstrap.pid
