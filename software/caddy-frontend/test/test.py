@@ -360,6 +360,8 @@ class TestDataMixin(object):
       'validate_configuration_state_signature',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
+      # totally non-controllable
+      'monitor-bootstrap.pid',
     ])
 
   def test_file_list_etc_cron_d(self):
@@ -402,10 +404,12 @@ class TestDataMixin(object):
       # ATS cache fillup can't be really controlled during test run
       'trafficserver-cache-availability.py',
     ]
-    runpromise_bin = os.path.join(
-      self.software_path, 'bin', 'monitor.runpromise')
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    promise_status_list = []
+    runpromise_bin = glob.glob(os.path.join(
+      self.working_directory, 'soft', '*', 'bin', 'monitor.runpromise'))[0]
+    instance_path = os.path.join(self.working_directory, 'inst')
+    partition_path_list = glob.glob(os.path.join(instance_path, '*'))
+    promise_list = []
+    promise_error_list = []
     msg = []
     for partition_path in sorted(partition_path_list):
       plugin_path_list = sorted(glob.glob(
@@ -437,30 +441,23 @@ class TestDataMixin(object):
         if 'Checking promise %s' % plugin not in plugin_result:
           plugin_status = 1
           msg.append(plugin_result)
-        promise_status_list.append(
-          '%s: %s' % (
-            plugin_path[len(self.instance_path) + 1:],
-            plugin_status == 0 and 'OK' or 'ERROR'))
-
+        promise = plugin_path[len(instance_path) + 1:]
+        if plugin_status != 0:
+          promise_error_list.append(promise)
+        promise_list.append(promise)
+    self.assertTestData('\n'.join(promise_list))
     if msg:
-      msg = ''.join(msg).strip()
-    self.assertTestData('\n'.join(promise_status_list), msg=(msg or None))
+      msg = '\n'.join(msg).strip()
+    self.assertEqual(
+      [],
+      promise_error_list,
+      msg
+    )
 
   def test_promise_run_promise(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    promise_status_list = []
-    for partition_path in sorted(partition_path_list):
-      promise_path_list = sorted(glob.glob(
-          os.path.join(partition_path, 'etc', 'promise', '*')
-      ))
-      for promise_path in promise_path_list:
-        promise_result = subprocess.call([promise_path])
-        promise_status_list.append(
-          '%s: %s' % (
-            promise_path[len(self.instance_path) + 1:],
-            promise_result == 0 and 'OK' or 'ERROR'))
-
-    self.assertTestData('\n'.join(promise_status_list))
+    promise_path_list = glob.glob(
+      os.path.join(self.working_directory, 'inst', '*', 'etc', 'promise'))
+    self.assertEqual([], promise_path_list)
 
 
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
