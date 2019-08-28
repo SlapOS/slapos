@@ -17,7 +17,6 @@ srv = ${buildout:directory}/srv
   service_auto_approve_count=slapparameter_dict.get('service-auto-approve-amount', 0),
   user_auto_approve_count=slapparameter_dict.get('user-auto-approve-amount', 1),
   key_len=slapparameter_dict.get('key-length', 2048),
-  promise='${directory:promise}/caucased',
 ) }}
 
 [publish]
