@@ -36,7 +36,7 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
       service_auto_approve_count=0,
       user_auto_approve_count=1,
       key_len=2048,
-      promise='${directory:promise}/caucased',
+      promise='${directory:plugin}/caucased.py',
 )}}
 
 # Create all needed directories
@@ -54,8 +54,6 @@ log = ${:var}/log
 run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
-promise = ${:etc}/promise
-plugin = ${:etc}/plugin
 
 # KeDiFa directories
 kedifa = ${:srv}/kedifa
@@ -158,7 +156,7 @@ template = inline:
 rendered = ${directory:caddy-csr_id}/Caddyfile
 
 [promise-expose-csr_id-ip-port]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_port_listening
 name = expose-csr_id-ip-port-listening.py
 config-hostname = ${expose-csr_id-configuration:ip}
@@ -197,14 +195,6 @@ context =
     section directory directory
     ${:extra-context}
 
-[promise-plugin-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-output = ${directory:plugin}/${:name}
-
 [kedifa-config]
 ip = {{ instance_parameter['ipv6-random'] }}
 port = {{ instance_parameter['configuration.kedifa_port'] }}
@@ -223,7 +213,7 @@ command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
 wrapper-path = ${directory:etc-run}/kedifa-reloader
 
 [promise-kedifa-http-reply]
-<= promise-plugin-base
+<= monitor-promise-base
 module = check_url_available
 name = kedifa-http-reply.py
 # Kedifa replies 400 on /, so use it to be sure that Kedifa replied
