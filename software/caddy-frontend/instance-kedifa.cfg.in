@@ -36,7 +36,7 @@ hash-files = ${buildout:directory}/software_release/buildout.cfg
       service_auto_approve_count=0,
       user_auto_approve_count=1,
       key_len=2048,
-      promise='${directory:promise}/caucased',
+      promise='${directory:plugin}/caucased.py',
 )}}
 
 # Create all needed directories
@@ -54,7 +54,6 @@ log = ${:var}/log
 run = ${:var}/run
 service = ${:etc}/service
 etc-run = ${:etc}/run
-promise = ${:etc}/promise
 plugin = ${:etc}/plugin
 
 # KeDiFa directories
