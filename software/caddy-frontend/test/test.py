@@ -45,6 +45,7 @@ import ipaddress
 import StringIO
 import gzip
 import base64
+import re
 
 
 try:
@@ -1061,6 +1062,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
     }
 
   @classmethod
@@ -3349,6 +3351,89 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'secured=value;secure, nonsecured=value',
       result_direct_https_backend.headers['Set-Cookie']
     )
+
+  def test_enable_cache_ats_timeout(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    # check that timeout seen by ATS does not result in many queries done
+    # to the backend and that next request works like a charm
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test_enable_cache_ats_timeout', headers={
+        'Timeout': '15',
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    # ATS timed out
+    self.assertEqual(
+      httplib.GATEWAY_TIMEOUT,
+      result.status_code
+    )
+
+    caddy_log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
+        '_enable_cache_access_log'
+      ))[0]
+
+    matching_line_amount = 0
+    pattern = re.compile(
+      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
+    with open(caddy_log_file) as fh:
+      for line in fh.readlines():
+        if pattern.match(line):
+          matching_line_amount += 1
+
+    # Caddy used between ATS and the backend received only one connection
+    self.assertEqual(
+      1,
+      matching_line_amount)
+
+    timeout = 5
+    b = time.time()
+    # ATS created squid.log with a delay
+    while True:
+      if (time.time() - b) > timeout:
+        self.fail('Squid log file did not appear in %ss' % (timeout,))
+      ats_log_file_list = glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
+        ))
+      if len(ats_log_file_list) == 1:
+        ats_log_file = ats_log_file_list[0]
+        break
+      time.sleep(0.1)
+
+    pattern = re.compile(
+      r'.*ERR_READ_TIMEOUT/504 .*test_enable_cache_ats_timeout'
+      '.*TIMEOUT_DIRECT*')
+    timeout = 5
+    b = time.time()
+    # ATS needs some time to flush logs
+    while True:
+      matching_line_amount = 0
+      if (time.time() - b) > timeout:
+        break
+      with open(ats_log_file) as fh:
+        for line in fh.readlines():
+          if pattern.match(line):
+            matching_line_amount += 1
+      if matching_line_amount > 0:
+        break
+      time.sleep(0.1)
+
+    # ATS has only one entry for this query
+    self.assertEqual(
+      1,
+      matching_line_amount)
+
+    # the result is available immediately after
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   def test_enable_cache_disable_no_cache_request(self):
     parameter_dict = self.assertSlaveBase(
