@@ -79,8 +79,10 @@ CONFIG proxy.config.net.default_inactivity_timeout INT 86400
 # Origin server connect attempts. Docs:
 #    https://docs.trafficserver.apache.org/records.config#origin-server-connect-attempts
 ##############################################################################
-CONFIG proxy.config.http.connect_attempts_max_retries INT 3
-CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
+# Try only once to connect (do not retry)
+CONFIG proxy.config.http.connect_attempts_max_retries INT 0
+# Try only once with server marked dead (do not retry)
+CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 0
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
 CONFIG proxy.config.http.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
