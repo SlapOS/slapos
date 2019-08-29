@@ -443,6 +443,7 @@ synthetic-port = ${configuration:trafficserver-synthetic-port}
 mgmt-port = ${configuration:trafficserver-mgmt-port}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
+request-timeout = ${configuration:request-timeout}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
