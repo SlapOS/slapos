@@ -68,8 +68,8 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 ##############################################################################
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
-CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
+CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ ats_configuration['request-timeout'] }}
 CONFIG proxy.config.http.transaction_active_timeout_in INT 900
 CONFIG proxy.config.http.transaction_active_timeout_out INT 0
 CONFIG proxy.config.http.accept_no_activity_timeout INT 120
@@ -84,8 +84,8 @@ CONFIG proxy.config.http.connect_attempts_max_retries INT 0
 # Try only once with server marked dead (do not retry)
 CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 0
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
-CONFIG proxy.config.http.connect_attempts_timeout INT 30
-CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
+CONFIG proxy.config.http.connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.post_connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
 CONFIG proxy.config.http.down_server.cache_time INT 60
 CONFIG proxy.config.http.down_server.abort_threshold INT 10
 
