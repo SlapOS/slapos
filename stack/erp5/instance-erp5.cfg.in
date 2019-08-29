@@ -399,7 +399,7 @@ recipe = slapos.cookbook:publish-early
 {%- endif %}
 {%- if test_runner_enabled %}
 {%-   for zope_family_name in zope_family_name_list %}
-  {{ zope_family_name }}-test-runner-url-list default-balancer-test-runner-url-list:default
+  {{ zope_family_name }}-test-runner-url-list default-balancer-test-runner-url-list:{{ zope_family_name }}
 {%-   endfor %}
 {%- endif %}
 {%- if neo %}
@@ -415,12 +415,15 @@ inituser-password = {{ dumps(inituser_password) }}
 {%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {%- if deadlock_debugger_password %}
 deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
-{%- endif %}
+{% endif %}
 
-
+{%- if test_runner_enabled %}
 [default-balancer-test-runner-url-list]
 recipe =
-default = not-ready
+{%-   for zope_family_name in zope_family_name_list %}
+{{ zope_family_name }} = not-ready
+{%-   endfor %}
+{%- endif %}
 
 [gen-password]
 recipe = slapos.cookbook:generate.password
