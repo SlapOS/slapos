@@ -23,7 +23,7 @@
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
@@ -48,7 +48,7 @@
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
