@@ -124,7 +124,7 @@
     header_upstream -Pragma
 {%-   endif %} {#-   if disable_no_cache_header #}
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%-   if ssl_proxy_verify %}
 {%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
@@ -261,7 +261,7 @@
     header_upstream -Pragma
 {%-     endif %} {#-     if disable_no_cache_header #}
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%-     if ssl_proxy_verify %}
 {%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}

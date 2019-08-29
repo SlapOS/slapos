@@ -241,6 +241,7 @@ http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 cached_port = {{ dumps('' ~ cached_port) }}
 ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
+request_timeout = {{ ('' ~ request_timeout) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
 {%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}

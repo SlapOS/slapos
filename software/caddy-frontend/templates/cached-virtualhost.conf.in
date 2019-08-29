@@ -25,7 +25,7 @@
     header_upstream -REMOTE_USER
 
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
@@ -52,7 +52,7 @@
     # As backend is trusting REMOTE_USER header unset it always
     header_upstream -REMOTE_USER
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
