@@ -54,16 +54,17 @@ def makeRecipe(recipe_class, options, name='test', slap_connection=None):
   if os.path.exists(buildout_cfg):
     parser = ConfigParser()
     parser.readfp(open(buildout_cfg))
-    eggs_directory = parser.get(
-        'buildout',
-        'eggs-directory',
-        # default, for the case when buildout_cfg is a software buildout
-        # like with SLAPOS-SR-TEST.
-        vars={'eggs-directory': os.path.join(base_directory, 'eggs')})
-    develop_eggs_directory = parser.get(
-        'buildout',
-        'develop-eggs-directory',
-        vars={'develop-eggs-directory': os.path.join(base_directory, 'develop-eggs')})
+    if parser.has_option('buildout', 'eggs-directory'):
+      # when buildout_cfg is an instance buildout (like in SLAPOS-EGG-TEST),
+      # there's a ${buildout:eggs-directory} we can use.
+      eggs_directory = parser.get('buildout', 'eggs-directory')
+      develop_eggs_directory = parser.get('buildout', 'develop-eggs-directory')
+    else:
+      # when when buildout_cfg is a software buildout, we can only guess the
+      # standard eggs directories.
+      eggs_directory = os.path.join(base_directory, 'eggs')
+      develop_eggs_directory = os.path.join(base_directory, 'develop-eggs')
+
     logging.getLogger(__name__).info(
         'Using eggs-directory (%s) and develop-eggs-directory (%s) from buildout at %s',
         eggs_directory,
