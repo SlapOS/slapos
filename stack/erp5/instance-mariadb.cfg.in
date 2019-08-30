@@ -187,9 +187,9 @@ context =
 environ =
   ODBCSYSINI='${my-cnf-parameters:etc-directory}'
   LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
-  {% for variable in slapparameter_dict.get('environment-variables', ()) %}
+  {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
   {{ variable }}
-  {% endfor %}
+  {%- endfor %}
 
 [odbc-ini-text]
 text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
