@@ -212,7 +212,7 @@ config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
 config-neo-name = {{ server_dict.keys()[0] }}
-config-neo-masters = ${neo-0-final:connection-masters}
+config-neo-masters = ${publish-early:neo-masters}
 {%   else -%}
 config-zodb-zeo = ${request-zodb:connection-storage-dict}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
@@ -368,10 +368,6 @@ return = site_url
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 -extends = publish-early
-{% if 'neo' in storage_dict -%}
-neo-masters = ${neo-0-final:connection-masters}
-neo-admins = ${neo-0-final:connection-admins}
-{% endif  -%}
 {% if zope_address_list_id_dict -%}
 {#
 Pick any published hosts-dict, they are expected to be identical - and there is
@@ -388,7 +384,6 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {%   endfor -%}
 {% endif -%}
 
-
 [publish-early]
 recipe = slapos.cookbook:publish-early
 -init =
@@ -404,6 +399,8 @@ recipe = slapos.cookbook:publish-early
 {%- endif %}
 {%- if neo %}
   neo-cluster gen-neo-cluster:name
+  neo-admins neo-cluster:admins
+  neo-masters neo-cluster:masters
 {%-  if neo[0] %}
 neo-cluster = {{ dumps(neo[0]) }}
 {%-  endif %}

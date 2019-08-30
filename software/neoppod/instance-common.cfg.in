@@ -42,5 +42,6 @@ extra-context =
     key admin_cfg neo-admin:rendered
 {%- if mariadb_location is defined %}
     raw mariadb_location {{ mariadb_location }}
+    raw template_mysqld_wrapper {{ template_mysqld_wrapper }}
     raw template_neo_my_cnf {{ template_neo_my_cnf }}
 {%- endif %}

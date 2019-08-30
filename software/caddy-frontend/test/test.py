@@ -42,6 +42,12 @@ from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
+import StringIO
+import gzip
+import base64
+import re
+
+
 try:
     import lzma
 except ImportError:
@@ -652,9 +658,13 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
     timeout = int(self.headers.dict.get('timeout', '0'))
+    compress = int(self.headers.dict.get('compress', '0'))
     time.sleep(timeout)
     self.send_response(200)
 
+    drop_header_list = []
+    for header in self.headers.dict.get('x-drop-header', '').split():
+      drop_header_list.append(header)
     prefix = 'x-reply-header-'
     length = len(prefix)
     for key, value in self.headers.dict.items():
@@ -664,15 +674,33 @@ class TestHandler(BaseHTTPRequestHandler):
           value.strip()
         )
 
-    self.send_header("Content-type", "application/json")
-    self.send_header('Set-Cookie', 'secured=value;secure')
-    self.send_header('Set-Cookie', 'nonsecured=value')
+    if 'Content-Type' not in drop_header_list:
+      self.send_header("Content-Type", "application/json")
+    if 'Set-Cookie' not in drop_header_list:
+      self.send_header('Set-Cookie', 'secured=value;secure')
+      self.send_header('Set-Cookie', 'nonsecured=value')
+
+    if 'x-reply-body' not in self.headers.dict:
+      response = {
+        'Path': self.path,
+        'Incoming Headers': self.headers.dict
+      }
+      response = json.dumps(response, indent=2)
+    else:
+      response = base64.b64decode(self.headers.dict['x-reply-body'])
+    if compress:
+      self.send_header('Content-Encoding', 'gzip')
+      out = StringIO.StringIO()
+      # compress with level 0, to find out if in the middle someting would
+      # like to alter the compression
+      with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
+        f.write(response)
+      response = out.getvalue()
+      self.send_header('Backend-Content-Length', len(response))
+    if 'Content-Length' not in drop_header_list:
+      self.send_header('Content-Length', len(response))
     self.end_headers()
-    response = {
-      'Path': self.path,
-      'Incoming Headers': self.headers.dict
-    }
-    self.wfile.write(json.dumps(response, indent=2))
+    self.wfile.write(response)
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
@@ -856,7 +884,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                       headers=None, cookies=None, source_ip=None):
     if headers is None:
       headers = {}
-    headers.setdefault('REMOTE_USER', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
@@ -881,7 +908,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
                      headers=None):
     if headers is None:
       headers = {}
-    headers.setdefault('REMOTE_USER', 'SOME_REMOTE_USER')
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     headers.setdefault('Accept-Encoding', 'dummy')
@@ -1036,6 +1062,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
     }
 
   @classmethod
@@ -1448,7 +1475,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
       ))[0]
 
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - SOME_REMOTE_USER ' \
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
                  r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
                  r'"python-requests.*" \d+'
@@ -1485,7 +1512,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = self.fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
-      headers={'Timeout': '10'}  # more than default proxy-try-duration == 5
+      headers={
+        'Timeout': '10',  # more than default proxy-try-duration == 5
+        'Accept-Encoding': 'gzip',
+      }
     )
 
     self.assertEqual(
@@ -1534,6 +1564,63 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       content = fh.read()
       self.assertTrue('try_duration 5s' in content)
       self.assertTrue('try_interval 250ms' in content)
+
+  def test_compressed_result(self):
+    parameter_dict = self.assertSlaveBase('Url')
+    result_compressed = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+        'Compress': '1',
+      }
+    )
+    self.assertEqual(
+      'gzip',
+      result_compressed.headers['Content-Encoding']
+    )
+
+    # Assert that no tampering was done with the request
+    # (compression/decompression)
+    # Backend compresses with 0 level, so decompression/compression
+    # would change somthing
+    self.assertEqual(
+      result_compressed.headers['Content-Length'],
+      result_compressed.headers['Backend-Content-Length']
+    )
+
+    result_not_compressed = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertFalse('Content-Encoding' in result_not_compressed.headers)
+
+  def test_no_content_type_alter(self):
+    parameter_dict = self.assertSlaveBase('Url')
+    result = self.fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Accept-Encoding': 'gzip',
+        'X-Reply-Body': base64.b64encode(
+          b"""<?xml version="1.0" encoding="UTF-8"?>
+<note>
+  <to>Tove</to>
+  <from>Jani</from>
+  <heading>Reminder</heading>
+  <body>Don't forget me this weekend!</body>
+</note>"""),
+        'X-Drop-Header': 'Content-Type'
+      }
+    )
+
+    self.assertEqual(
+      'text/xml; charset=utf-8',
+      result.headers['Content-Type']
+    )
 
   @skip('Feature postponed')
   def test_url_ipv6_access(self):
@@ -3264,6 +3351,89 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'secured=value;secure, nonsecured=value',
       result_direct_https_backend.headers['Set-Cookie']
     )
+
+  def test_enable_cache_ats_timeout(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    # check that timeout seen by ATS does not result in many queries done
+    # to the backend and that next request works like a charm
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test_enable_cache_ats_timeout', headers={
+        'Timeout': '15',
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    # ATS timed out
+    self.assertEqual(
+      httplib.GATEWAY_TIMEOUT,
+      result.status_code
+    )
+
+    caddy_log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
+        '_enable_cache_access_log'
+      ))[0]
+
+    matching_line_amount = 0
+    pattern = re.compile(
+      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
+    with open(caddy_log_file) as fh:
+      for line in fh.readlines():
+        if pattern.match(line):
+          matching_line_amount += 1
+
+    # Caddy used between ATS and the backend received only one connection
+    self.assertEqual(
+      1,
+      matching_line_amount)
+
+    timeout = 5
+    b = time.time()
+    # ATS created squid.log with a delay
+    while True:
+      if (time.time() - b) > timeout:
+        self.fail('Squid log file did not appear in %ss' % (timeout,))
+      ats_log_file_list = glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
+        ))
+      if len(ats_log_file_list) == 1:
+        ats_log_file = ats_log_file_list[0]
+        break
+      time.sleep(0.1)
+
+    pattern = re.compile(
+      r'.*ERR_READ_TIMEOUT/504 .*test_enable_cache_ats_timeout'
+      '.*TIMEOUT_DIRECT*')
+    timeout = 5
+    b = time.time()
+    # ATS needs some time to flush logs
+    while True:
+      matching_line_amount = 0
+      if (time.time() - b) > timeout:
+        break
+      with open(ats_log_file) as fh:
+        for line in fh.readlines():
+          if pattern.match(line):
+            matching_line_amount += 1
+      if matching_line_amount > 0:
+        break
+      time.sleep(0.1)
+
+    # ATS has only one entry for this query
+    self.assertEqual(
+      1,
+      matching_line_amount)
+
+    # the result is available immediately after
+    result = self.fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
   def test_enable_cache_disable_no_cache_request(self):
     parameter_dict = self.assertSlaveBase(

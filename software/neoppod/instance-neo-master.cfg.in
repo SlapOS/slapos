@@ -21,7 +21,7 @@ autostart = {{ slapparameter_dict['autostart'] }}
 # No actual installation takes place at that time
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
 # this default value is required.
-masters = ${publish:masters}
+masters = {{ dumps(slapparameter_dict['masters']) }}
 
 [neo-master-promise]
 recipe = slapos.cookbook:check_port_listening

@@ -7,18 +7,17 @@
 {% set mysql = storage_type == 'MySQL' -%}
 {% if mysql -%}
 
-[mysqld]
-recipe = slapos.cookbook:generic.mysql.wrap_mysqld
-output = ${directory:etc_run}/mariadb
-binary = ${:mysql-base-directory}/bin/mysqld
-configuration-file = ${my-cnf:rendered}
-data-directory = ${directory:srv_mariadb}
-mysql-install-binary = ${:mysql-base-directory}/scripts/mysql_install_db
-mysql-base-directory = {{ mariadb_location }}
+[{{ section('mysqld') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_mysqld_wrapper }}
+rendered = ${directory:etc_run}/mariadb
+context =
+  key defaults_file my-cnf:rendered
+  key datadir my-cnf-parameters:data-directory
 
 [my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
-data-directory = ${mysqld:data-directory}
+data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
@@ -34,9 +33,9 @@ rendered = ${directory:etc}/mariadb.cnf
 template = {{ template_neo_my_cnf }}
 context = section parameter_dict my-cnf-parameters
 
-[{{ section('binary-wrap-mysql') }}]
+[binary-wrap-mysql]
 recipe = slapos.cookbook:wrapper
-command-line = ${mysqld:mysql-base-directory}/bin/${:command} --defaults-file=${my-cnf:rendered}
+command-line = '{{ mariadb_location }}/bin/${:command}' --defaults-file="${my-cnf:rendered}"
 wrapper-path = ${directory:bin}/${:command}
 command = mysql
 
@@ -46,17 +45,6 @@ command = mysql
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ bin_directory }}/neolog
-
-{% set master_list = [] -%}
-{% set admin_list = [] -%}
-{% for k, v in slapparameter_dict.iteritems() -%}
-{%   if k.startswith('master-') and v -%}
-{%     do master_list.append(v) -%}
-{%   endif -%}
-{%   if k.startswith('admin-') and v -%}
-{%     do admin_list.append(v) -%}
-{%   endif -%}
-{% endfor -%}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
@@ -76,10 +64,6 @@ admin = ${:ip}:${:port-admin}
 {% else -%}
 admin =
 {% endif -%}
-masters = {{ ' '.join(sorted(master_list)) }}
-{%- if admin_list %}
-admins = {{ ' '.join(sorted(admin_list)) }}
-{%- endif %}
 
 {#- Hack to deploy SSL certs via instance parameters #}
 {%- for name, pem in zip(('ca.crt', 'neo.crt', 'neo.key'),
@@ -102,7 +86,7 @@ binary = {{ bin_directory }}/neostorage
 ip = ${publish:ip}
 ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-masters = ${publish:masters}
+masters = {{ dumps(slapparameter_dict['masters']) }}
 database-adapter = {{ storage_type }}
 wait-database = -1
 engine = ${my-cnf-parameters:engine}
@@ -122,7 +106,7 @@ database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
 database-parameters = ${directory:db-{{i}}}/db.sqlite
 
 [directory]
-db-{{i}} = ${buildout:directory}/srv/{{ storage_id }}
+db-{{i}} = ${:srv}/{{ storage_id }}
 {%- endif %}
 
 [{{ section('logrotate-storage-' ~ i) }}]
@@ -143,9 +127,9 @@ etc_run =  ${:etc}/run
 var_run =  ${:var}/run
 log = ${buildout:directory}/var/log
 tmp = ${buildout:directory}/tmp
-{% if mysql -%}
-srv_mariadb = ${buildout:directory}/srv/mariadb
+srv = ${buildout:directory}/srv
 
+{% if mysql -%}
 [init-script]
 recipe = slapos.recipe.template:jinja2
 # XXX: is there a better location ?
@@ -157,7 +141,7 @@ template = inline:
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
+post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
 
 {% if runTestSuite_in is defined -%}
 # bin/runTestSuite to run NEO tests
@@ -170,7 +154,7 @@ context =
     section directory         directory
     section my_cnf_parameters my-cnf-parameters
     raw     bin_directory     {{ bin_directory }}
-    raw     prepend_path      ${mysqld:mysql-base-directory}/bin
+    raw     prepend_path      {{ mariadb_location }}/bin
 {%- endif %}
 
 {%- endif %}

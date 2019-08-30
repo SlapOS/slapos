@@ -4,55 +4,6 @@ import time
 import sys
 import pytz
 
-
-def runMysql(conf):
-  sleep = 60
-  mysqld_wrapper_list = [conf['mysqld_binary'], '--defaults-file=%s' %
-      conf['configuration_file']]
-  # we trust mysql_install that if mysql directory is available mysql was
-  # correctly initalised
-  if not os.path.isdir(os.path.join(conf['data_directory'], 'mysql')):
-    while True:
-      # XXX: Protect with proper root password
-      # XXX: Follow http://dev.mysql.com/doc/refman/5.0/en/default-privileges.html
-      popen = subprocess.Popen([conf['mysql_install_binary'],
-        '--defaults-file=%s' % conf['configuration_file'],
-        '--skip-name-resolve',
-        '--datadir=%s' % conf['data_directory'],
-        '--basedir=%s' % conf['mysql_base_directory']],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      result = popen.communicate()[0]
-      if popen.returncode is None or popen.returncode != 0:
-        print "Failed to initialise server.\nThe error was: %s" % result
-        print "Waiting for %ss and retrying" % sleep
-        time.sleep(sleep)
-      else:
-        print "Mysql properly initialised"
-        break
-  else:
-    print "MySQL already initialised"
-  print "Starting %r" % mysqld_wrapper_list[0]
-  sys.stdout.flush()
-  sys.stderr.flush()
-  # try to increase the maximum number of open file descriptors.
-  # it seems that mysqld requires (max_connections + 810) file descriptors.
-  # to make it possible, you need to set the hard limit of nofile in
-  # /etc/security/limits.conf like the following :
-  #   @slapsoft hard nofile 2048
-  try:
-    import resource
-    required_nofile = 2048 # XXX hardcoded value more than 1000 + 810
-    nofile_limit_list = [max(x, required_nofile) for x in resource.getrlimit(resource.RLIMIT_NOFILE)]
-    resource.setrlimit(resource.RLIMIT_NOFILE, nofile_limit_list)
-  except ImportError:
-    # resource library is only available on Unix platform.
-    pass
-  except ValueError:
-    # 'ValueError: not allowed to raise maximum limit'
-    pass
-  os.execl(mysqld_wrapper_list[0], *mysqld_wrapper_list)
-
-
 def updateMysql(conf):
   sleep = 30
   is_succeed = False
