@@ -24,9 +24,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from functools import cmp_to_key
 import zc.buildout
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+@cmp_to_key
 def compareMimetypeEntryPair(a, b):
   """
     Like comparing strings, but here the star `*` is stronger than any other
@@ -115,7 +117,7 @@ class Recipe(GenericBaseRecipe):
       if l and not l.isspace()
     ]
     mimetype_entry_list.extend(default_mimetype_entry_list)
-    mimetype_entry_list.sort(compareMimetypeEntryPair)
+    mimetype_entry_list.sort(key=compareMimetypeEntryPair)
     conversion_server_dict['MIMETYPE_ENTRY_LIST'] = \
       "\n".join(["  " + l for l in mimetype_entry_list])
     config_file = self.createFile(self.options['configuration-file'],

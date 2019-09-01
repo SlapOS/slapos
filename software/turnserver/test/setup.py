@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,34 +24,30 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from setuptools import setup, find_packages
+import glob
+import os
 
-from __future__ import print_function
+version = '0.0.1.dev0'
+name = 'slapos.test.turnserver'
+long_description = open("README.md").read()
 
-import sys
-import pkg_resources
-from logging import Formatter
-from slapos.recipe.librecipe import BaseSlapRecipe
-
-class NoSQLTestBed(BaseSlapRecipe):
-
-  def _install(self):
-    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
-    try:
-      entry_point = pkg_resources.iter_entry_points(group='slapos.recipe.nosqltestbed.plugin',
-                                                    name=self.parameter_dict.get('plugin', 'kumo')).next()
-      plugin_class = entry_point.load()
-
-      testbed = plugin_class()
-    except:
-      print(Formatter().formatException(sys.exc_info()))
-      return None
-
-    software_type = self.parameter_dict.get('slap_software_type', 'default')
-    if software_type is None or software_type == 'RootSoftwareInstance':
-      software_type = 'default'
-    if "run_%s" % software_type in dir(testbed) and \
-       callable(getattr(testbed, "run_%s" % software_type)):
-      return getattr(testbed, "run_%s" % software_type)(self)
-    else:
-      raise NotImplementedError("Do not support %s" % software_type)
-
+setup(name=name,
+      version=version,
+      description="Test for TurnServer Software Release",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
+      maintainer="Nexedi",
+      maintainer_email="info@nexedi.com",
+      url="https://lab.nexedi.com/nexedi/slapos",
+      packages=find_packages(),
+      install_requires=[
+          'slapos.core',
+          'slapos.libnetworkcache',
+          'erp5.util',
+          'supervisor',
+          'psutil',
+      ],
+      zip_safe=True,
+      test_suite='test',
+      )
