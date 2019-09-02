@@ -86,7 +86,7 @@ srv = ${buildout:directory}/srv
 ca-dir = ${:srv}/ssl
 tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
-promises = ${:etc}/promise
+plugin = ${:etc}/plugin
 unit-test-path = ${:srv}/test-instance/unit_test
 
 # Used for ERP5 resiliency or (more probably)
@@ -326,10 +326,11 @@ port = {{ port }}
 {%- endif %}
 
 [{{ section("promise-" ~ name) }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ ipv4 }}
-port = {{ port }}
-path = ${directory:promises}/{{ name }}
+<= monitor-promise-base
+module = check_port_listening
+name = {{ name }}.py
+config-hostname = {{ ipv4 }}
+config-port = {{ port }}
 
 {% set extra_path_list = [] -%}
 {% set shell_escaped_extra_path_list = [] -%}
@@ -339,9 +340,10 @@ path = ${directory:promises}/{{ name }}
 {%   do shell_escaped_extra_path_list.append(line.replace("\x27", "\x27\\\x27\x27")) -%}
 {% endfor -%}
 [{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
-recipe = slapos.cookbook:wrapper
-command-line = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
-wrapper-path = ${directory:promises}/{{ name }}-is-running-actual-product
+<= monitor-promise-base
+module = check_command_execute
+name = {{ name }}-is-running-actual-product.py
+config-command = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
@@ -352,10 +354,11 @@ ipv4-port = {{ port }}
 {%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount, webdav)) -%}
 
 [{{ section("promise-tunnel-" ~ name) }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
-path = ${directory:promises}/{{ zope_tunnel_base_name }}
+<= monitor-promise-base
+module = check_port_listening
+name = {{ zope_tunnel_base_name }}.py
+config-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% else -%}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
 {% endif -%}
@@ -365,7 +368,7 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
-output = ${directory:plugins}/{{'check-' ~ name ~ '-longrequest-error-log.py'}}
+output = ${directory:plugin}/{{'check-' ~ name ~ '-longrequest-error-log.py'}}
 content =
   from slapos.promise.plugin.check_error_on_zope_longrequest_log import RunPromise
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
@@ -494,21 +497,28 @@ environment-extra +=
   zserver_address_list={{ ','.join(zserver_address_list) }}
   zserver_frontend_url_list={{ ','.join(slapparameter_dict['test-runner-apache-url-list']) }}
 
-[{{ section("promise-test-runner-apache-url") }}]
+[promise-test-runner-apache-url-executable]
 # promise to wait for apache partition to have returned the parameter
 recipe = slapos.cookbook:check_parameter
 value = {{ slapparameter_dict['test-runner-apache-url-list'] }}
 expected-not-value = not-ready
-path = ${directory:promises}/${:_buildout_section_name_}
+path = ${directory:bin}/${:_buildout_section_name_}
 expected-value =
+
+[{{ section("promise-test-runner-apache-url") }}]
+<= monitor-promise-base
+module = check_command_execute
+name = promise_test_runner_apache_url_executable.py
+config-command = ${promise-test-runner-apache-url-executable:path}
 
 {%-   endif %}
 {%- endif %}
 
 [{{ section('promise-check-computer-memory') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promises}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= monitor-promise-base
+module = check_command_execute
+name = check_computer_memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 
 [publish]
