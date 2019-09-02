@@ -51,6 +51,15 @@ def filehash(filename, type_=DEFAULT_HASH):
     shutil.copyfileobj(file_, digest)
   return digest.read()
 
+def generateHashFromFiles(file_list):
+  hasher = hashlib.md5()
+  for path in file_list:
+    with open(path, 'rb') as afile:
+      buf = afile.read()
+    hasher.update(b"%u\n" % len(buf))
+    hasher.update(buf)
+  return hasher.hexdigest()
+
 # Home made hashdeep <http://md5deep.sourceforge.net/>
 def dirhash(dirname, type_=DEFAULT_HASH):
   """Walk into a directory an return a unique hash for

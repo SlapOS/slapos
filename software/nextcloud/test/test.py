@@ -32,6 +32,7 @@ import glob
 import re
 
 import utils
+from slapos.recipe.librecipe import generateHashFromFiles
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('SLAPOS_TEST_DEBUG'):
@@ -166,18 +167,6 @@ class InstanceTestCase(utils.SlapOSInstanceTestCase):
 
 class ServicesTestCase(InstanceTestCase):
 
-  @staticmethod
-  def generateHash(file_list):
-    import hashlib
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
-
   def test_process_list(self):
     hash_list = [
       'software_release/buildout.cfg',
@@ -204,7 +193,7 @@ class ServicesTestCase(InstanceTestCase):
                       for path in hash_list]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHash(hash_file_list)
+      h = generateHashFromFiles(hash_file_list)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_name_list)

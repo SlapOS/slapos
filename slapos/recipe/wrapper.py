@@ -27,7 +27,7 @@
 
 import shlex
 
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
 
 class Recipe(GenericBaseRecipe):
     """Recipe to create a script from given command and options.
@@ -67,18 +67,8 @@ class Recipe(GenericBaseRecipe):
           kw['reserve_cpu'] = True
         if hash_files:
           hash_file_list = hash_files.split()
-          hash = self.generateHashFromFiles(hash_file_list)
+          hash = generateHashFromFiles(hash_file_list)
           wrapper_path = "%s-%s" % (wrapper_path, hash)
 
         return self.createWrapper(wrapper_path, args, environment, **kw)
 
-    def generateHashFromFiles(self, file_list):
-      import hashlib
-      hasher = hashlib.md5()
-      for path in file_list:
-        with open(path, 'rb') as afile:
-          buf = afile.read()
-        hasher.update(b"%u\n" % len(buf))
-        hasher.update(buf)
-      hash = hasher.hexdigest()
-      return hash
