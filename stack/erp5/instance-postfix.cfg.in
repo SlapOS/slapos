@@ -29,7 +29,7 @@ url = {{ dumps('smtp://' ~ urllib.quote_plus(smtpd_sasl_user) ~ ':' ~ urllib.quo
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
-promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 etc-postfix = ${:etc}/postfix
 etc-cyrus = ${:etc}/cyrus
 run = ${:etc}/run
@@ -79,10 +79,11 @@ wrapper-path = ${directory:run}/munnel
 {%   do milter_list.append(socket) -%}
 
 [{{ section('munnel-promise') }}]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/munnel
-hostname = {{ ip }}
-port = {{ milter_port }}
+<= monitor-promise-base
+module = check_port_listening
+name = munnel.py
+config-hostname = {{ ip }}
+config-port = {{ milter_port }}
 {% endif -%}
 
 [configuration]
@@ -260,15 +261,17 @@ command-line = ${directory:usr}/libexec/postfix/master
 wrapper-path = ${directory:run}/postfix-master
 
 [{{ section('postfix-promise') }}]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/postfix
-hostname = {{ ip }}
-port = {{ tcpv4_port }}
+<= monitor-promise-base
+module = check_port_listening
+name = postfix.py
+config-hostname = {{ ip }}
+config-port = {{ tcpv4_port }}
 
 [{{ section('promise-check-computer-memory') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= monitor-promise-base
+module = check_command_execute
+name = check_computer_memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
