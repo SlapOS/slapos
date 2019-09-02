@@ -22,6 +22,19 @@ autostart = {{ slapparameter_dict['autostart'] }}
 # this default value is required.
 masters = {{ dumps(slapparameter_dict['masters']) }}
 
+<<<<<<< HEAD
+=======
+[neo-master-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+output = ${directory:plugin}/neo_master_promise.py
+config-hostname = ${neo-master:ip}
+config-port = ${neo-master:port}
+
+>>>>>>> software/neoppod: Switch to promise.plugin system
 [logrotate-master]
 < = logrotate-entry-base
 name = neo-master

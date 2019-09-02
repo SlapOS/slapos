@@ -120,6 +120,10 @@ post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostor
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+<<<<<<< HEAD
+=======
+plugin = ${buildout:directory}/etc/plugin
+>>>>>>> software/neoppod: Switch to promise.plugin system
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var

@@ -47,10 +47,22 @@ config-bang-on-problem = {{ dumps(bang_on_problem) }}
 config-periodicity = {{ dumps(periodicity) }}
 {%- endif %}
 
+<<<<<<< HEAD
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('admin', 2050) + 1 }}
 monitor-title = neo
 password = {{ slapparameter_dict['monitor-passwd'] }}
+=======
+[neo-admin-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+output = ${directory:plugin}/neo_admin_promise.py
+config-hostname = ${neo-admin:ip}
+config-port = ${neo-admin:port}
+>>>>>>> software/neoppod: Switch to promise.plugin system
 
 [logrotate-admin]
 < = logrotate-entry-base
