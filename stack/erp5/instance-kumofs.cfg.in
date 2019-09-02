@@ -72,7 +72,7 @@ log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${
 recipe = slapos.cookbook:mkdirectory
 log = ${buildout:directory}/var/log
 services = ${buildout:directory}/etc/run
-promise = ${buildout:directory}/etc/promise
+plugin = ${buildout:directory}/etc/plugin
 srv = ${buildout:directory}/srv
 kumofs-data = ${:srv}/kumofs
 
@@ -85,34 +85,36 @@ rendered = ${directory:srv}/exporter.exclude
 
 # Deploy zope promises scripts
 [promise-template]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${kumofs-instance:ip}
-port = ${kumofs-instance:server-listen-port}
+<= monitor-promise-base
+module = check_port_listening
+config-hostname = ${kumofs-instance:ip}
+config-port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-server]
 <= promise-template
-path = ${directory:promise}/kumofs-server
+name = kumofs_server.py
 port = ${kumofs-instance:server-port}
 
 [promise-kumofs-server-listen]
 <= promise-template
-path = ${directory:promise}/kumofs-server-listen
+name = kumofs_server_listen.py
 port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-gateway]
 <= promise-template
-path = ${directory:promise}/kumofs-gateway
+name = kumofs_gateway.py
 port = ${kumofs-instance:gateway-port}
 
 [promise-kumofs-manager]
 <= promise-template
-path = ${directory:promise}/kumofs-manager
+name = kumofs_manager.py
 port = ${kumofs-instance:manager-port}
 
 [promise-check-computer-memory]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= monitor-promise-base
+module = check_command_execute
+name = check_computer_memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
