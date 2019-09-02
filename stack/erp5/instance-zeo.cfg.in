@@ -54,10 +54,11 @@ log = {{ "${" ~ zeo_section_name ~ ":log-path}" }}
 post = test ! -s {{ "${" ~ zeo_section_name ~":pid-path}" }} || {{ bin_directory }}/slapos-kill --pidfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} -s USR2
 
 [{{ section(zeo_section_name ~ "-promise") }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ "${" ~ zeo_section_name ~ ":ip}" }}
-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
-path = ${directory:promises}/zeo-{{ family }}
+<= monitor-promise-base
+module = check_port_listening
+name = zeo-{{ family }}.py
+config-hostname = {{ "${" ~ zeo_section_name ~ ":ip}" }}
+config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
 
 {% endfor -%}
 
@@ -87,10 +88,11 @@ repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
 tidstorage-wrapper = ${directory:services}/tidstoraged
 
 [{{ section("promise-tidstorage") }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${tidstorage:ip}
-port = ${tidstorage:port}
-path = ${directory:promises}/tidstorage
+<= monitor-promise-base
+module = check_port_listening
+name = tidstorage.py
+config-hostname = ${tidstorage:ip}
+config-port = ${tidstorage:port}
 {% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]
@@ -174,9 +176,10 @@ mode = 755
 {% endif -%}
 
 [{{ section('promise-check-computer-memory') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promises}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= monitor-promise-base
+module = check_command_execute
+name = check-computer-memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
@@ -195,7 +198,7 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
-promises = ${:etc}/promise
+plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
 log = ${:var}/log
