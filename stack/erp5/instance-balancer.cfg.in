@@ -179,12 +179,21 @@ input = inline:
   #!/bin/sh
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+
 [{{ section('apache-promise') }}]
+<= promise-plugin-base
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/apache
-hostname = {{ ipv4 }}
-port = {{ apache_dict.values()[0][0] }}
+module = check_port_listening
+name = apache.py
+config-hostname = {{ ipv4 }}
+config-port = {{ apache_dict.values()[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -209,7 +218,7 @@ recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
-promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 services = ${:etc}/run
 services-on-watch = ${:etc}/service
 var = ${buildout:directory}/var
@@ -247,14 +256,16 @@ configuration = {{ slapparameter_dict['apachedex-configuration'] }}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-apachedex-result
-command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
+<= promise-plugin-base
+module = check_command_execute
+name = check_apachedex_result.py
+config-command = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
 [{{ section('promise-check-computer-memory') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= promise-plugin-base
+module = check_command_execute
+name = chcek_computer_memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
