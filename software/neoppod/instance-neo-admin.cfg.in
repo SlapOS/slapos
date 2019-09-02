@@ -16,10 +16,14 @@ cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = {{ dumps(slapparameter_dict['masters']) }}
 
 [neo-admin-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${neo-admin:ip}
-port = ${neo-admin:port}
-path = ${directory:promises}/neo-admin-promise
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+output = ${directory:plugin}/neo_admin_promise.py
+config-hostname = ${neo-admin:ip}
+config-port = ${neo-admin:port}
 
 [logrotate-admin]
 < = logrotate-entry-base
