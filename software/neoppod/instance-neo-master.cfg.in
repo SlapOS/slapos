@@ -24,10 +24,14 @@ autostart = {{ slapparameter_dict['autostart'] }}
 masters = {{ dumps(slapparameter_dict['masters']) }}
 
 [neo-master-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${neo-master:ip}
-port = ${neo-master:port}
-path = ${directory:promises}/neo-master-promise
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.check_port_listening import RunPromise
+output = ${directory:plugin}/neo_master_promise.py
+config-hostname = ${neo-master:ip}
+config-port = ${neo-master:port}
 
 [logrotate-master]
 < = logrotate-entry-base
