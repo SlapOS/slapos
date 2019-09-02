@@ -252,7 +252,7 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
-promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
@@ -332,20 +332,31 @@ context =
 max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
 slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+
 [{{ section('monitor-promise-slowquery-result') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-slow-query-pt-digest-result
-command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
+<= promise-plugin-base
+module = check_command_execute
+name = check_slow_query_pt_digest_result.py
+config-command = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
 
 [{{ section('promise-check-computer-memory') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:promise}/check-computer-memory
-command-line = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+<= promise-plugin-base
+module = check_command_execute
+name = check_computer_memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [{{ section('promise') }}]
-recipe = slapos.cookbook:wrapper
-command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
-wrapper-path = ${directory:promise}/mariadb
+<= promise-plugin-base
+module = check_command_execute
+name = mariadb.py
+config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
