@@ -40,7 +40,7 @@ import json
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
 from .generic import GenericBaseRecipe
 from .genericslap import GenericSlapRecipe
-from .filehash import filehash
+from .filehash import filehash, generateHashFromFiles
 
 # Utility functions to (de)serialise live python objects in order to send them
 # to master.

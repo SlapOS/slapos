@@ -46,6 +46,7 @@ import StringIO
 import gzip
 import base64
 import re
+from slapos.recipe.librecipe import generateHashFromFiles
 
 
 try:
@@ -283,18 +284,6 @@ class TestDataMixin(object):
     except Exception as e:
       self.fail(e)
 
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    import hashlib
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
-
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
@@ -383,13 +372,13 @@ class TestDataMixin(object):
     hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
     hash_value_dict = {
-      'generic': self.generateHashFromFiles(hash_file_list),
+      'generic': generateHashFromFiles(hash_file_list),
     }
     for caddy_wrapper_path in glob.glob(os.path.join(
       self.instance_path, '*', 'bin', 'caddy-wrapper')):
       partition_id = caddy_wrapper_path.split('/')[-3]
       hash_value_dict[
-        'caddy-%s' % (partition_id)] = self.generateHashFromFiles(
+        'caddy-%s' % (partition_id)] = generateHashFromFiles(
         hash_file_list + [caddy_wrapper_path]
       )
     for rejected_slave_publish_path in glob.glob(os.path.join(
@@ -399,7 +388,7 @@ class TestDataMixin(object):
         self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
       hash_value_dict[
         'rejected-slave-publish'
-      ] = self.generateHashFromFiles(
+      ] = generateHashFromFiles(
         hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
       )
 
