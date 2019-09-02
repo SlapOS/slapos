@@ -65,7 +65,7 @@ config-name = {{ name }}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
-promise = ${:etc}/promise
+plugin = ${:etc}/plugin
 service-on-watch = ${:etc}/service
 srv = ${buildout:directory}/srv
 backup-caucased = ${:srv}/backup/caucased
