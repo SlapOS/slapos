@@ -90,7 +90,6 @@ etc = ${:home}/etc
 var = ${:home}/var
 script = ${:etc}/run/
 service = ${:etc}/service
-promise = ${:etc}/promise/
 log = ${:var}/log
 notebook_dir = ${:var}/notebooks
 # Add folders to explicitly define jupyter directory
