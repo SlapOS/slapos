@@ -46,6 +46,14 @@ partition. No more (undefined result), no less (IndexError).
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
+[promise-plugin-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+output = ${directory:plugin}/${:name}
+
 [run-common]
 <= userhosts-wrapper-base
 environment-extra =
@@ -86,7 +94,7 @@ srv = ${buildout:directory}/srv
 ca-dir = ${:srv}/ssl
 tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
-promises = ${:etc}/promise
+plugin = ${:etc}/plugin
 unit-test-path = ${:srv}/test-instance/unit_test
 
 # Used for ERP5 resiliency or (more probably)
@@ -326,10 +334,11 @@ port = {{ port }}
 {%- endif %}
 
 [{{ section("promise-" ~ name) }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ ipv4 }}
-port = {{ port }}
-path = ${directory:promises}/{{ name }}
+<= promise-plugin-base
+module = check_port_listening
+name = {{ name }}.py
+config-hostname = {{ ipv4 }}
+config-port = {{ port }}
 
 {% set extra_path_list = [] -%}
 {% set shell_escaped_extra_path_list = [] -%}
@@ -339,9 +348,10 @@ path = ${directory:promises}/{{ name }}
 {%   do shell_escaped_extra_path_list.append(line.replace("\x27", "\x27\\\x27\x27")) -%}
 {% endfor -%}
 [{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
-recipe = slapos.cookbook:wrapper
-command-line = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
-wrapper-path = ${directory:promises}/{{ name }}-is-running-actual-product
+<= promise-plugin-base
+module = check_command_execute
+name = {{ name }}-is-running-actual-product.py
+config-command = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
@@ -352,10 +362,11 @@ ipv4-port = {{ port }}
 {%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount, webdav)) -%}
 
 [{{ section("promise-tunnel-" ~ name) }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
-path = ${directory:promises}/{{ zope_tunnel_base_name }}
+<= promise-plugin-base
+module = check_port_listening
+name = {{ zope_tunnel_base_name }}.py
+config-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% else -%}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
 {% endif -%}
@@ -365,7 +376,7 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
-output = ${directory:plugins}/{{'check-' ~ name ~ '-longrequest-error-log.py'}}
+output = ${directory:plugin}/{{'check-' ~ name ~ '-longrequest-error-log.py'}}
 content =
   from slapos.promise.plugin.check_error_on_zope_longrequest_log import RunPromise
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
