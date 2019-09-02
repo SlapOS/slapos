@@ -35,9 +35,8 @@ import StringIO
 import subprocess
 import json
 
-import psutil
-
 import utils
+from slapos.recipe.librecipe import generateHashFromFiles
 
 SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
 SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
@@ -83,17 +82,6 @@ class TestPortRedirection(Re6stnetTestCase):
     }, portredir_config[0])
 
 class ServicesTestCase(Re6stnetTestCase):
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    import hashlib
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -115,7 +103,7 @@ class ServicesTestCase(Re6stnetTestCase):
                   for path in hash_files]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHashFromFiles(hash_files)
+      h = generateHashFromFiles(hash_files)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
