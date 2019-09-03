@@ -31,6 +31,7 @@ import glob
 import urlparse
 import logging
 import socket
+import subprocess
 import time
 
 import psutil
@@ -53,7 +54,115 @@ class ERP5TestCase(SlapOSInstanceTestCase):
         self.computer_partition.getConnectionParameterDict()['_'])
 
 
-class TestPublishedURLIsReachableMixin(object):
+def subprocess_status_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs)
+  out, err = prc.communicate()
+  return prc.returncode, out
+
+
+class TestDataMixin(object):
+  @staticmethod
+  def generateHashFromFiles(file_list):
+    import hashlib
+    hasher = hashlib.md5()
+    for path in file_list:
+      with open(path, 'r') as afile:
+        buf = afile.read()
+      hasher.update("%s\n" % len(buf))
+      hasher.update(buf)
+    hash = hasher.hexdigest()
+    return hash
+
+  def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
+    if hash_value_dict is None:
+      hash_value_dict = {}
+    filename = '%s.txt' % (self.id(),)
+    test_data_file = os.path.join(
+      os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
+
+    try:
+      test_data = open(test_data_file).read().strip()
+    except IOError:
+      test_data = ''
+
+    for hash_type, hash_value in hash_value_dict.items():
+      runtime_data = runtime_data.replace(hash_value, '{hash-%s}' % (
+        hash_type),)
+
+    maxDiff = self.maxDiff
+    self.maxDiff = None
+    longMessage = self.longMessage
+    self.longMessage = True
+    try:
+      self.assertMultiLineEqual(
+        test_data,
+        runtime_data,
+        msg=msg
+      )
+    except AssertionError:
+      if os.environ.get('SAVE_TEST_DATA', '0') == '1':
+        open(test_data_file, 'w').write(runtime_data.strip())
+      raise
+    finally:
+      self.maxDiff = maxDiff
+      self.longMessage = longMessage
+
+  def test_promise_run_plugin(self):
+    ignored_plugin_list = [
+      '__init__.py',  # that's not a plugin
+      'monitor-http-frontend.py',  # frontend not available, can't check
+    ]
+    runpromise_bin = glob.glob(os.path.join(
+      self.working_directory, 'soft', '*', 'bin', 'monitor.runpromise'))[0]
+    instance_path = os.path.join(self.working_directory, 'inst')
+    partition_path_list = glob.glob(os.path.join(instance_path, '*'))
+    promise_status_list = []
+    msg = []
+    for partition_path in sorted(partition_path_list):
+      plugin_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'plugin', '*.py')
+      ))
+      strip = len(os.path.join(partition_path, 'etc', 'plugin')) + 1
+      for plugin_path in plugin_path_list:
+        monitor_conf = os.path.join(partition_path, 'etc', 'monitor.conf')
+        plugin = plugin_path[strip:]
+        if plugin in ignored_plugin_list:
+          continue
+
+        plugin_status, plugin_result = subprocess_status_output([
+          runpromise_bin,
+          '-c', monitor_conf,
+          '--run-only', plugin,
+          '--force',
+          '--check-anomaly'
+        ])
+        if plugin_status == 1:
+          msg.append(plugin_result)
+
+        # sanity check
+        if 'Checking promise %s' % plugin not in plugin_result:
+          plugin_status = 1
+          msg.append(plugin_result)
+        promise_status_list.append(
+          '%s: %s' % (
+            plugin_path[len(instance_path) + 1:],
+            plugin_status == 0 and 'OK' or 'ERROR'))
+
+    if msg:
+      msg = ''.join(msg).strip()
+    self.assertTestData('\n'.join(promise_status_list), msg=(msg or None))
+
+  def test_promise_run_promise(self):
+    promise_path_list = glob.glob(
+      os.path.join(self.working_directory, 'inst', '*', 'etc', 'promise'))
+    self.assertEqual([], promise_path_list)
+
+
+class TestPublishedURLIsReachableMixin(TestDataMixin):
   """Mixin that checks that default page of ERP5 is reachable.
   """
   def _checkERP5IsReachable(self, url):
