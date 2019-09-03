@@ -31,12 +31,108 @@ import glob
 import urlparse
 import logging
 import socket
+import subprocess
 import time
 
 import psutil
 import requests
 
 from utils import SlapOSInstanceTestCase
+
+
+def subprocess_status_output(*args, **kwargs):
+  prc = subprocess.Popen(
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    *args,
+    **kwargs)
+  out, err = prc.communicate()
+  return prc.returncode, out
+
+
+class TestPromiseMixin(object):
+  def assertTestData(self, runtime_data, msg=None):
+    filename = '%s.txt' % (self.id(),)
+    test_data_file = os.path.join(
+      os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
+
+    try:
+      test_data = open(test_data_file).read().strip()
+    except IOError:
+      test_data = ''
+
+    maxDiff = self.maxDiff
+    self.maxDiff = None
+    longMessage = self.longMessage
+    self.longMessage = True
+    try:
+      self.assertMultiLineEqual(
+        test_data,
+        runtime_data,
+        msg=msg
+      )
+    except AssertionError:
+      if os.environ.get('SAVE_TEST_DATA', '0') == '1':
+        open(test_data_file, 'w').write(runtime_data.strip())
+      raise
+    finally:
+      self.maxDiff = maxDiff
+      self.longMessage = longMessage
+
+  def test_promise_run_plugin(self):
+    ignored_plugin_list = [
+      '__init__.py',  # that's not a plugin
+      'monitor-http-frontend.py',  # frontend not available, can't check
+    ]
+    runpromise_bin = glob.glob(os.path.join(
+      self.working_directory, 'soft', '*', 'bin', 'monitor.runpromise'))[0]
+    instance_path = os.path.join(self.working_directory, 'inst')
+    partition_path_list = glob.glob(os.path.join(instance_path, '*'))
+    promise_list = []
+    promise_error_list = []
+    msg = []
+    for partition_path in sorted(partition_path_list):
+      plugin_path_list = sorted(glob.glob(
+          os.path.join(partition_path, 'etc', 'plugin', '*.py')
+      ))
+      strip = len(os.path.join(partition_path, 'etc', 'plugin')) + 1
+      for plugin_path in plugin_path_list:
+        monitor_conf = os.path.join(partition_path, 'etc', 'monitor.conf')
+        plugin = plugin_path[strip:]
+        if plugin in ignored_plugin_list:
+          continue
+
+        plugin_status, plugin_result = subprocess_status_output([
+          runpromise_bin,
+          '-c', monitor_conf,
+          '--run-only', plugin,
+          '--force',
+          '--check-anomaly'
+        ])
+        if plugin_status == 1:
+          msg.append(plugin_result)
+
+        # sanity check
+        if 'Checking promise %s' % plugin not in plugin_result:
+          plugin_status = 1
+          msg.append(plugin_result)
+        promise = plugin_path[len(instance_path) + 1:]
+        if plugin_status != 0:
+          promise_error_list.append(promise)
+        promise_list.append(promise)
+    self.assertTestData('\n'.join(promise_list))
+    if msg:
+      msg = '\n'.join(msg).strip()
+    self.assertEqual(
+      [],
+      promise_error_list,
+      msg
+    )
+
+  def test_promise_run_promise(self):
+    promise_path_list = glob.glob(
+      os.path.join(self.working_directory, 'inst', '*', 'etc', 'promise'))
+    self.assertEqual([], promise_path_list)
 
 
 class ERP5TestCase(SlapOSInstanceTestCase):
@@ -91,13 +187,15 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin,
+                            TestPromiseMixin):
   """Test ERP5 can be instanciated with no parameters
   """
   __partition_reference__ = 'defp'
 
 
-class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin,
+               TestPromiseMixin):
   """Test ERP5 WSGI server
   """
   __partition_reference__ = 'wsgi'
@@ -107,7 +205,7 @@ class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin):
     return {'_': json.dumps({'wsgi': True})}
 
 
-class TestApacheBalancerPorts(ERP5TestCase):
+class TestApacheBalancerPorts(ERP5TestCase, TestPromiseMixin):
   """Instanciate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
    - a balancer entry point for test runner
@@ -193,7 +291,8 @@ class TestApacheBalancerPorts(ERP5TestCase):
     ])
 
 
-class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin,
+                            TestPromiseMixin):
   """Test ERP5 can be instanciated without test runner.
   """
   __partition_reference__ = 'distr'
