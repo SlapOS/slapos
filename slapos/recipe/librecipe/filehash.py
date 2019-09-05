@@ -52,15 +52,13 @@ def filehash(filename, type_=DEFAULT_HASH):
   return digest.read()
 
 def generateHashFromFiles(file_list):
-  import hashlib
   hasher = hashlib.md5()
   for path in file_list:
     with open(path, 'rb') as afile:
       buf = afile.read()
     hasher.update(b"%u\n" % len(buf))
     hasher.update(buf)
-  hash = hasher.hexdigest()
-  return hash
+  return hasher.hexdigest()
 
 # Home made hashdeep <http://md5deep.sourceforge.net/>
 def dirhash(dirname, type_=DEFAULT_HASH):
