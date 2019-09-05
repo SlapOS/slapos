@@ -82,7 +82,7 @@ class TestPromiseMixin(object):
   def test_promise_run_plugin(self):
     ignored_plugin_list = [
       '__init__.py',  # that's not a plugin
-      'monitor-http-frontend.py',  # frontend not available, can't check
+      'monitor-http-frontend.py',  # can't check w/o functioning frontend
     ]
     runpromise_bin = glob.glob(os.path.join(
       self.working_directory, 'soft', '*', 'bin', 'monitor.runpromise'))[0]
@@ -101,7 +101,6 @@ class TestPromiseMixin(object):
         plugin = plugin_path[strip:]
         if plugin in ignored_plugin_list:
           continue
-
         plugin_status, plugin_result = subprocess_status_output([
           runpromise_bin,
           '-c', monitor_conf,
