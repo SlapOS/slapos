@@ -446,7 +446,7 @@ recipe = slapos.cookbook:publish.serialised
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list %}
-slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
+slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {% endif %}
 monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
