@@ -3931,6 +3931,43 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
+class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': SLAPOS_TEST_IPV4,
+      '-frontend-quantity': 2,
+      '-sla-2-computer_guid': 'slapos.test',
+      '-frontend-2-state': 'destroyed',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'empty': {}}
+
+  def test_extra_slave_instance_list_not_present_destroyed_request(self):
+    buildout_file = os.path.join(
+      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+    with open(buildout_file) as fh:
+      buildout_file_content = fh.read()
+      node_1_present = re.search(
+        "^config-frontend-name = !py!'caddy-frontend-1'$",
+        buildout_file_content, flags=re.M) is not None
+      node_2_present = re.search(
+        "^config-frontend-name = !py!'caddy-frontend-2'$",
+        buildout_file_content, flags=re.M) is not None
+    self.assertTrue(node_1_present)
+    self.assertFalse(node_2_present)
+
+
 class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
                                          TestDataMixin):
   @classmethod
