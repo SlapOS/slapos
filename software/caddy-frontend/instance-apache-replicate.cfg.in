@@ -1,4 +1,6 @@
 {% if slap_software_type in software_type %}
+{#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
+{%- set SERVER_POLLUTED_KEY_LIST = ['connection-parameter-hash', 'timestamp', 'slave_title', 'slap_software_type'] -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
@@ -183,7 +185,12 @@ context =
 {%     endif %}
 {%   endif %}
 {%   if len(slave_error_list) == 0 %}
-{%     do authorized_slave_list.append(slave) %}
+{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
+{%     set authorized_slave = slave.copy() %}
+{%     for key in SERVER_POLLUTED_KEY_LIST %}
+{%       do authorized_slave.pop(key, None) %}
+{%     endfor %}
+{%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
 {%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
@@ -294,7 +301,7 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
-config-slave-list = {{ dumps(slave_instance_list) }}
+config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ cluster_identification }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
