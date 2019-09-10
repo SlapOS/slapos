@@ -1,4 +1,5 @@
 {% if slap_software_type in software_type %}
+{%- set NOT_NEEDED_REQUEST_KEY_LIST = ['connection-parameter-hash', 'timestamp'] -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
@@ -183,6 +184,10 @@ context =
 {%     endif %}
 {%   endif %}
 {%   if len(slave_error_list) == 0 %}
+{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
+{%     for key in NOT_NEEDED_REQUEST_KEY_LIST %}
+{%       do slave.pop(key, None) %}
+{%     endfor %}
 {%     do authorized_slave_list.append(slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
@@ -225,7 +230,7 @@ config-master-key-download-url = ${request-kedifa:connection-master-key-download
 config-cluster-identification = {{ cluster_identification }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
-{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
+{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(sorted(authorized_slave_list))) %}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
