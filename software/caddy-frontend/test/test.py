@@ -975,6 +975,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
     return parameter_dict
 
+  def getMasterPartitionPath(self):
+    return '/' + os.path.join(
+      *glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
+        )
+      )[0].split('/')[:-2])
+
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
@@ -1494,6 +1502,17 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 """,
       result_missing.text
     )
+
+  def test_server_polluted_keys_removed(self):
+    buildout_file = os.path.join(
+      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+    slave_list_line = [
+      q for q in open(buildout_file).readlines()
+      if q.startswith('config-slave-list')][0]
+    self.assertFalse('slave_title' in slave_list_line)
+    self.assertFalse('slap_software_type' in slave_list_line)
+    self.assertFalse('connection-parameter-hash' in slave_list_line)
+    self.assertFalse('timestamp' in slave_list_line)
 
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
