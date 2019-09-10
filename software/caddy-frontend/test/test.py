@@ -1071,6 +1071,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       'Url': {
         'url': cls.backend_url,
+        'timestamp': '57239487234',
+        'connection-parameter-hash': 'THIS_HASH_SHALL_NOT_APPEAR',
       },
       'url_https-url': {
         'url': cls.backend_url + 'http',
@@ -1494,6 +1496,26 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 """,
       result_missing.text
     )
+
+  def test_timestamp_connection_parameter_hash_removed(self):
+    # Here it is checked that keys:
+    #  * timestamp
+    #  * connection-parameter-hash
+    # are not present in the master partition in a place where it requests
+    # other nodes.
+    master_partition_path = '/' + os.path.join(
+      *glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
+        )
+      )[0].split('/')[:-2])
+    buildout_file = os.path.join(
+      master_partition_path, 'buildout-switch-softwaretype.cfg')
+    slave_list_line = [
+      q for q in open(buildout_file).readlines()
+      if q.startswith('config-slave-list')][0]
+    self.assertFalse('timestamp' in slave_list_line)
+    self.assertFalse('connection-parameter-hash' in slave_list_line)
 
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
