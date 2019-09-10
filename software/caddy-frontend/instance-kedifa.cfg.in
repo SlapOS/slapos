@@ -292,7 +292,7 @@ commands =
 
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
-slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
+slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
 caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=
