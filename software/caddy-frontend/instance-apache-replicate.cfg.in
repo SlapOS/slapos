@@ -219,23 +219,27 @@ software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url csr_id-url csr_id-certificate
 
 {% for section, frontend_request in request_dict.iteritems() %}
+{%   set state = frontend_request.get('state', '') %}
 [{{section}}]
 <= replicate
 name = {{ frontend_request.get('name') }}
-{%   if frontend_request.get('state') %}
-state = {{ frontend_request.get('state') }}
-{%   endif%}
+{%   if state %}
+state = {{ state }}
+{%   endif %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ cluster_identification }}
-{%   set slave_configuration_dict = slapparameter_dict %}
-{%   do slave_configuration_dict.update(frontend_request.get('config')) %}
-{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(sorted(authorized_slave_list))) %}
-{%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+{#   Do not send additional parameters for destroyed nodes #}
+{%   if state != 'destroyed' %}
+{%     set slave_configuration_dict = slapparameter_dict %}
+{%     do slave_configuration_dict.update(frontend_request.get('config')) %}
+{%     do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(sorted(authorized_slave_list))) %}
+{%     do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
+{%-     for config_key, config_value in slave_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
-{%   endfor -%}
+{%     endfor -%}
+{%   endif %}
 {%   if frontend_request.get('sla') %}
 {%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
