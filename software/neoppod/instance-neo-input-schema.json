@@ -42,7 +42,7 @@
         "periodicity": {
           "description": "Periodicity in minutes at which the cluster health is checked.",
           "default": 10,
-          "type": "float"
+          "type": "number"
         }
       },
       "type": "object"
