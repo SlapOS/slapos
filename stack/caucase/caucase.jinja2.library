@@ -80,7 +80,7 @@ rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
        buildout_bin_directory=buildout_bin_directory,
        template='${' ~ prefix ~  '-provided-csr:rendered}',
        csr='${:csr}',
-       key=key_path,
+       key=key_path
 )}}
 {%- else -%}
 [{{ prefix }}-csr]
@@ -108,5 +108,15 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
 {% macro rerequest(prefix, buildout_bin_directory, template, csr, key) -%}
 [{{ prefix }}]
 recipe = plone.recipe.command
-command = '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
+checksum-file = '{{ template }}.md5'
+command =
+  set -e
+  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}').read()).hexdigest()")
+  md5_old=$([ -f ${:checksum-file} ] && cat ${:checksum-file} || echo none)
+  if [ "$md5_current" != "$md5_old" ] || [ ! -f '{{ csr }}' ] || [ ! -f '{{ key }}' ] ; then 
+    '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
+    echo $md5_current > ${:checksum-file}
+  fi
+update-command = ${:command}
+stop-on-error = True
 {%- endmacro %}
