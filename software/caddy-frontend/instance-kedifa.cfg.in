@@ -134,7 +134,7 @@ stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    openssl req -new -newkey rsa:2048 -sha256 -subj \
+    {{ parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
       "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
