@@ -59,4 +59,4 @@ skip_character_set_client_handshake
 
 [client]
 socket = {{ socket }}
-user = root
+user = {{ parameter_dict['user'] }}

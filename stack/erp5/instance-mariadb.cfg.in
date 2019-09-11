@@ -107,7 +107,7 @@ time = {{ dumps(backup_periodicity) }}
 #   can be fully restored.
 # master-data: use value "2" as we are not in a replication case
 #}
-command = "${binary-wrap-mysqldump:wrapper-path}" -u root --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
 {# KEEP GLOB PATTERN IN SYNC with generated filenames above
 #           YYYYmmddHHMMSS -#}
 file-glob = ??????????????.sql.gz
@@ -125,6 +125,7 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 [my-cnf-parameters]
 ip = {{ ip }}
 port = {{ port }}
+user = {{ user }}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
@@ -206,7 +207,7 @@ context = section parameter_dict odbc-ini-text
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"
+post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link

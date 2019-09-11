@@ -155,6 +155,7 @@ unixodbc-location = {{ unixodbc_location }}
 template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
+    key user slap-configuration:user-name
     section parameter_dict dynamic-template-mariadb-parameters
 
 # Keep a section for backward compatibility for removed types

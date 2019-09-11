@@ -84,7 +84,7 @@ ssl_cipher = {{ parameter_dict['ssl-cipher'] }}
 
 [client]
 socket = {{ socket }}
-user = root
+user = {{ parameter_dict['user'] }}
 
 [mysql]
 no_auto_rehash

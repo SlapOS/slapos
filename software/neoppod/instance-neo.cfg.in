@@ -25,6 +25,7 @@ slow-query-log = ${directory:log}/mariadb_slowquery.log
 extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
 init-file = ${init-script:rendered}
 engine = {{ slapparameter_dict.get('engine', '') }}
+user = {{ user }}
 
 [my-cnf]
 recipe = slapos.recipe.template:jinja2
@@ -102,7 +103,7 @@ wrapper = ${directory:etc_run}/{{ 'neostorage-' ~ i }}
 logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
 {%- if mysql %}
 {%-   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') %}
-database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+database-parameters = ${my-cnf-parameters:user}@neo{{ i }}${my-cnf-parameters:socket}
 {%- else %}
 database-parameters = ${directory:db-{{i}}}/db.sqlite
 

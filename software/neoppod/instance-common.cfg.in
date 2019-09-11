@@ -38,6 +38,7 @@ template = {{ neo_master }}
 <= jinja2-template-base
 template = {{ neo }}
 extra-context =
+    key user slap-configuration:user-name
     key master_cfg neo-master:rendered
     key admin_cfg neo-admin:rendered
 {%- if mariadb_location is defined %}
