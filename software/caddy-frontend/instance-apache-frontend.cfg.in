@@ -189,8 +189,7 @@ stop-on-error = True
      ca_path='${kedifa-login-config:ca-certificate}',
      crl_path='${kedifa-login-config:crl}',
      key_path='${kedifa-login-csr:key}',
-     template_csr='${kedifa-login-csr:template-csr}',
-     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     template_csr='${kedifa-login-csr:template-csr}'
 )}}
 
 [dynamic-custom-personal-template-slave-list]
