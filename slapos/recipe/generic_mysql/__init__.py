@@ -32,10 +32,10 @@ class WrapUpdateMySQL(GenericBaseRecipe):
       self.createPythonScript(
         self.options['output'],
         __name__ + '.mysql.updateMysql',
-        [{
+        kw = {
           'mysql_upgrade_binary': self.options['binary'],
           'mysql_binary': self.options['mysql'],
           'mysql_script_file': self.options['init-script'],
-        }]
+        }
       ),
     ]
