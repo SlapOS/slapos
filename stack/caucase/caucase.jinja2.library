@@ -81,6 +81,7 @@ rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
        template='${' ~ prefix ~  '-provided-csr:rendered}',
        csr='${:csr}',
        key=key_path,
+       openssl=openssl
 )}}
 {%- else -%}
 [{{ prefix }}-csr]
@@ -105,8 +106,16 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
   {% if max_sleep %}--max-sleep '{{ max_sleep }}' {%- endif %}
 {%- endmacro %}
 
-{% macro rerequest(prefix, buildout_bin_directory, template, csr, key) -%}
+{% macro rerequest(prefix, buildout_bin_directory, template, csr, key, openssl) -%}
 [{{ prefix }}]
 recipe = plone.recipe.command
-command = '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
+checksum-file = '{{ template }}'.checksum
+command =
+  md5_current=$('{{ openssl }}' md5 '{{ template }}' | cut -d ' ' -f 2)
+  md5_old=$([ -f ${:checksum-file} ] && cat ${:checksum-file} || echo none)
+  if [ "$md5_current" != "$md5_old" ] ; then
+    '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
+  fi
+update-command = ${:command}
+stop-on-error = True
 {%- endmacro %}
