@@ -102,8 +102,7 @@ stop-on-error = True
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
      on_renew='${kedifa-reloader:wrapper-path}',
-     template_csr='${kedifa-csr:template-csr}',
-     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     template_csr='${kedifa-csr:template-csr}'
 )}}
 
 [store-csr_id]
