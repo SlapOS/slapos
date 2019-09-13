@@ -97,14 +97,14 @@ class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
   __partition_reference__ = 'defp'
 
 
-class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestMedusa(ERP5TestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 WSGI server
   """
-  __partition_reference__ = 'wsgi'
+  __partition_reference__ = 'medusa'
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': True})}
+    return {'_': json.dumps({'wsgi': False})}
 
 
 class TestApacheBalancerPorts(ERP5TestCase):
