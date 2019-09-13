@@ -98,7 +98,7 @@ class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
 
 
 class TestMedusa(ERP5TestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 WSGI server
+  """Test ERP5 Medusa server
   """
   __partition_reference__ = 'medusa'
 
