@@ -1,3 +1,4 @@
+{%- if slapparameter_dict.get('admin') != 0 %}
 {%- set monitor_dict = slapparameter_dict['monitor'] %}
 {%- set bang_on_problem = monitor_dict.pop('bang-on-problem', None) %}
 {%- set periodicity = monitor_dict.pop('periodicity', None) %}
@@ -68,3 +69,4 @@ command-line =
     --key ${directory:etc}/neo.key
 {%- endif %}
 wrapper-path = ${directory:bin}/neoctl
+{%- endif %}

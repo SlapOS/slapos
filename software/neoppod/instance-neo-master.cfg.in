@@ -1,3 +1,4 @@
+{%- if slapparameter_dict.get('master') != 0 %}
 [buildout]
 parts +=
   logrotate-master
@@ -27,3 +28,4 @@ masters = {{ dumps(slapparameter_dict['masters']) }}
 name = neo-master
 log = ${neo-master:logfile}
 post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- ${neo-master:binary} -l ${:log}
+{%- endif %}
