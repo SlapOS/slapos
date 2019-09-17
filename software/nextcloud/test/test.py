@@ -31,37 +31,45 @@ import json
 import glob
 import re
 
-import utils
 from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
 
-def subprocess_status_output(*args, **kwargs):
-  prc = subprocess.Popen(
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    *args,
-    **kwargs)
-  out, err = prc.communicate()
-  return prc.returncode, out
+setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-class InstanceTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+
+class NextCloudTestCase(InstanceTestCase):
+
+  # calculated in setUp
+  partition_dir = None
+  nextcloud_path = None
+
+  def setUp(self):
+    # we want full diff when assertions fail
+    self.maxDiff = None
+
+    # lookup the partition in which nextcloud was installed
+    partition_path_list = glob.glob(os.path.join(
+        self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      path = os.path.join(partition_path, 'srv/www')
+      if os.path.exists(path):
+        self.nextcloud_path = path
+        self.instance_folder = partition_path
+        break
+    self.assertTrue(
+        self.nextcloud_path,
+        "Nextcloud path not found in %r" % (partition_path_list,))
+
 
   def getNextcloudConfig(self, config_dict={}):
-    self.maxDiff = None
     data_dict = dict(
       datadirectory=self.partition_dir + "/srv/data",
-      dbhost="%s:2099" % self.config['ipv4_address'],
-      dbname="nextcloud", 
-      dbpassword="insecure", 
+      dbhost="%s:2099" % self._ipv4_address,
+      dbname="nextcloud",
+      dbpassword="insecure",
       dbport="",
       dbuser="nextcloud",
       mail_domain="nextcloud@example.com",
@@ -72,36 +80,36 @@ class InstanceTestCase(utils.SlapOSInstanceTestCase):
       mail_smtpport="587",
       mail_smtppassword="",
       mail_smtpname="",
-      cli_url="https://[%s]:9988/" % self.config['ipv6_address'],
+      cli_url="https://[%s]:9988/" % self._ipv6_address,
       partition_dir=self.partition_dir,
-      trusted_domain_list=json.dumps(["[%s]:9988" % self.config['ipv6_address']]),
+      trusted_domain_list=json.dumps(["[%s]:9988" % self._ipv6_address]),
       trusted_proxy_list=[],
     )
     data_dict.update(config_dict)
 
     template = """{
-  "activity_expire_days": 14, 
-  "auth.bruteforce.protection.enabled": true, 
+  "activity_expire_days": 14,
+  "auth.bruteforce.protection.enabled": true,
   "blacklisted_files": [
-    ".htaccess", 
-    "Thumbs.db", 
+    ".htaccess",
+    "Thumbs.db",
     "thumbs.db"
-  ], 
-  "cron_log": true, 
+  ],
+  "cron_log": true,
   "csrf.optout": [
 	  "/^WebDAVFS/",
 	  "/^Microsoft-WebDAV-MiniRedir/",
 	  "/^\\\\.jio_documents/"
 	],
-  "datadirectory": "%(datadirectory)s", 
-  "dbhost": "%(dbhost)s", 
-  "dbname": "%(dbname)s", 
-  "dbpassword": "%(dbpassword)s", 
-  "dbport": "", 
-  "dbtableprefix": "oc_", 
-  "dbtype": "mysql", 
-  "dbuser": "%(dbuser)s", 
-  "enable_previews": true, 
+  "datadirectory": "%(datadirectory)s",
+  "dbhost": "%(dbhost)s",
+  "dbname": "%(dbname)s",
+  "dbpassword": "%(dbpassword)s",
+  "dbport": "",
+  "dbtableprefix": "oc_",
+  "dbtype": "mysql",
+  "dbuser": "%(dbuser)s",
+  "enable_previews": true,
   "enabledPreviewProviders": [
 	  "OC\\\\Preview\\\\PNG",
 	  "OC\\\\Preview\\\\JPEG",
@@ -114,58 +122,58 @@ class InstanceTestCase(utils.SlapOSInstanceTestCase):
 	  "OC\\\\Preview\\\\TXT",
 	  "OC\\\\Preview\\\\MarkDown"
 	],
-  "filelocking.enabled": "true", 
-  "filesystem_check_changes": 0, 
+  "filelocking.enabled": "true",
+  "filesystem_check_changes": 0,
   "forwarded_for_headers": [
     "HTTP_X_FORWARDED"
-  ], 
-  "htaccess.RewriteBase": "/", 
-  "installed": true, 
-  "integrity.check.disabled": false, 
-  "knowledgebaseenabled": false, 
-  "log_rotate_size": 104857600, 
-  "logfile": "%(datadirectory)s/nextcloud.log", 
-  "loglevel": 2, 
-  "mail_domain": "%(mail_domain)s", 
-  "mail_from_address": "%(mail_from_address)s", 
-  "mail_sendmailmode": "smtp", 
-  "mail_smtpauth": %(mail_smtpauth)s, 
-  "mail_smtpauthtype": "%(mail_smtpauthtype)s", 
-  "mail_smtphost": "%(mail_smtphost)s", 
-  "mail_smtpmode": "smtp", 
-  "mail_smtpname": "%(mail_smtpname)s", 
-  "mail_smtppassword": "%(mail_smtppassword)s", 
-  "mail_smtpport": "%(mail_smtpport)s", 
-  "mail_smtpsecure": "tls", 
-  "maintenance": false, 
+  ],
+  "htaccess.RewriteBase": "/",
+  "installed": true,
+  "integrity.check.disabled": false,
+  "knowledgebaseenabled": false,
+  "log_rotate_size": 104857600,
+  "logfile": "%(datadirectory)s/nextcloud.log",
+  "loglevel": 2,
+  "mail_domain": "%(mail_domain)s",
+  "mail_from_address": "%(mail_from_address)s",
+  "mail_sendmailmode": "smtp",
+  "mail_smtpauth": %(mail_smtpauth)s,
+  "mail_smtpauthtype": "%(mail_smtpauthtype)s",
+  "mail_smtphost": "%(mail_smtphost)s",
+  "mail_smtpmode": "smtp",
+  "mail_smtpname": "%(mail_smtpname)s",
+  "mail_smtppassword": "%(mail_smtppassword)s",
+  "mail_smtpport": "%(mail_smtpport)s",
+  "mail_smtpsecure": "tls",
+  "maintenance": false,
   "memcache.locking": "\\\\OC\\\\Memcache\\\\Redis",
   "memcache.local": "\\\\OC\\\\Memcache\\\\APCu",
   "memcache.distributed": "\\\\OC\\\\Memcache\\\\Redis",
-  "mysql.utf8mb4": true, 
-  "overwrite.cli.url": "%(cli_url)s", 
-  "overwriteprotocol": "https", 
-  "preview_max_scale_factor": 1, 
-  "preview_max_x": 1024, 
-  "preview_max_y": 768, 
-  "quota_include_external_storage": false, 
+  "mysql.utf8mb4": true,
+  "overwrite.cli.url": "%(cli_url)s",
+  "overwriteprotocol": "https",
+  "preview_max_scale_factor": 1,
+  "preview_max_x": 1024,
+  "preview_max_y": 768,
+  "quota_include_external_storage": false,
   "redis": {
-    "host": "%(partition_dir)s/srv/redis/redis.socket", 
-    "port": 0, 
+    "host": "%(partition_dir)s/srv/redis/redis.socket",
+    "port": 0,
     "timeout": 0
-  }, 
-  "share_folder": "/Shares", 
-  "skeletondirectory": "", 
-  "theme": "", 
-  "trashbin_retention_obligation": "auto, 7", 
-  "trusted_domains": %(trusted_domain_list)s, 
-  "trusted_proxies": %(trusted_proxy_list)s, 
+  },
+  "share_folder": "/Shares",
+  "skeletondirectory": "",
+  "theme": "",
+  "trashbin_retention_obligation": "auto, 7",
+  "trusted_domains": %(trusted_domain_list)s,
+  "trusted_proxies": %(trusted_proxy_list)s,
   "updater.release.channel": "stable"
 }"""
 
     return json.loads(template % data_dict)
 
 
-class ServicesTestCase(InstanceTestCase):
+class ServicesTestCase(NextCloudTestCase):
 
   def test_process_list(self):
     hash_list = [
@@ -185,8 +193,8 @@ class ServicesTestCase(InstanceTestCase):
       'redis-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_name_list = [process['name']
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_name_list = [process['name']
                      for process in supervisor.getAllProcessInfo()]
 
     hash_file_list = [os.path.join(self.computer_partition_root_path, path)
@@ -199,24 +207,16 @@ class ServicesTestCase(InstanceTestCase):
       self.assertIn(expected_process_name, process_name_list)
 
   def test_nextcloud_installation(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    nextcloud_path = None
-    for partition_path in partition_path_list:
-      path = os.path.join(partition_path, 'srv/www')
-      if os.path.exists(path):
-        nextcloud_path = path
-        instance_folder = partition_path
-        break
-    can_install_path = os.path.join(nextcloud_path, 'config/CAN_INSTALL')
+    can_install_path = os.path.join(self.nextcloud_path, 'config/CAN_INSTALL')
 
-    self.assertTrue(os.path.exists(nextcloud_path))
+    self.assertTrue(os.path.exists(self.nextcloud_path))
     self.assertFalse(os.path.exists(can_install_path))
-    self.assertTrue(os.path.exists(os.path.join(nextcloud_path, 'config/config.php')))
+    self.assertTrue(os.path.exists(os.path.join(self.nextcloud_path, 'config/config.php')))
 
-    php_bin = os.path.join(instance_folder, 'bin/php')
+    php_bin = os.path.join(self.partition_dir, 'bin/php')
     nextcloud_status = subprocess.check_output([
       php_bin,
-      os.path.join(nextcloud_path, 'occ'),
+      os.path.join(self.nextcloud_path, 'occ'),
       'status',
       '--output',
       'json'])
@@ -224,22 +224,13 @@ class ServicesTestCase(InstanceTestCase):
     self.assertTrue(json_status['installed'], True)
 
   def test_nextcloud_config(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    nextcloud_path = None
-    for partition_path in partition_path_list:
-      path = os.path.join(partition_path, 'srv/www')
-      if os.path.exists(path):
-        nextcloud_path = path
-        instance_folder = partition_path
-        break
-    config_file = os.path.join(nextcloud_path, 'config/config.php')
-    php_script = os.path.join(instance_folder, 'test.php')
+    config_file = os.path.join(self.nextcloud_path, 'config/config.php')
+    php_script = os.path.join(self.partition_dir, 'test.php')
     with open(php_script, 'w') as f:
       f.write("<?php include('%s'); echo json_encode($CONFIG); ?>" % config_file)
 
-    self.partition_dir = instance_folder
-    php_bin = os.path.join(instance_folder, 'bin/php')
-    occ = os.path.join(nextcloud_path, 'occ')
+    php_bin = os.path.join(self.partition_dir, 'bin/php')
+    occ = os.path.join(self.nextcloud_path, 'occ')
     config_result =  subprocess.check_output([
       php_bin,
       '-f',
@@ -277,7 +268,7 @@ class ServicesTestCase(InstanceTestCase):
       "turn_servers"
     ])
     self.assertEqual(turn_config.strip(), '[{"server":"","secret":"","protocols":"udp,tcp"}]')
-    news_config_file = os.path.join(instance_folder, 'srv/data/news/config/config.ini')
+    news_config_file = os.path.join(self.instance_folder, 'srv/data/news/config/config.ini')
     with open(news_config_file) as f:
       config = f.read()
       regex = r"(useCronUpdates\s+=\s+false)"
@@ -285,64 +276,8 @@ class ServicesTestCase(InstanceTestCase):
       self.assertNotEqual(result, None)
 
 
-  def test_nextcloud_promises(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    nextcloud_path = None
-    for partition_path in partition_path_list:
-      path = os.path.join(partition_path, 'srv/www')
-      if os.path.exists(path):
-        nextcloud_path = path
-        instance_folder = partition_path
-        break
 
-    promise_path_list = glob.glob(os.path.join(instance_folder, 'etc/plugin/*.py'))
-    promise_name_list = [x for x in
-                         os.listdir(os.path.join(instance_folder, 'etc/plugin'))
-                         if not x.endswith('.pyc')]
-    partition_name = os.path.basename(instance_folder.rstrip('/'))
-    self.assertEqual(sorted(promise_name_list),
-                    sorted([
-                      "__init__.py",
-                      "check-free-disk-space.py",
-                      "monitor-http-frontend.py",
-                      "apache-httpd-port-listening.py",           
-                      "buildout-%s-status.py" % partition_name,
-                      "monitor-bootstrap-status.py",
-                      "monitor-httpd-listening-on-tcp.py"
-                    ]))
-
-    ignored_plugin_list = [
-      '__init__.py',
-      'monitor-http-frontend.py',
-    ]
-    runpromise_bin = os.path.join(
-      self.software_path, 'bin', 'monitor.runpromise')
-    monitor_conf = os.path.join(instance_folder, 'etc', 'monitor.conf')
-    msg = []
-    status = 0
-    for plugin_path in promise_path_list:
-      plugin_name = os.path.basename(plugin_path)
-      if plugin_name in ignored_plugin_list:
-        continue
-      plugin_status, plugin_result = subprocess_status_output([
-        runpromise_bin,
-        '-c', monitor_conf,
-        '--run-only', plugin_name,
-        '--force',
-        '--check-anomaly'
-      ])
-      status += plugin_status
-      if plugin_status == 1:
-        msg.append(plugin_result)
-      # sanity check
-      if 'Checking promise %s' % plugin_name not in plugin_result:
-        plugin_status = 1
-        msg.append(plugin_result)
-    msg = ''.join(msg).strip()
-    self.assertEqual(status, 0, msg)
-
-
-class ParametersTestCase(InstanceTestCase):
+class TestNextCloudParameters(NextCloudTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -365,22 +300,13 @@ class ParametersTestCase(InstanceTestCase):
     }
 
   def test_nextcloud_config_with_parameters(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    nextcloud_path = None
-    for partition_path in partition_path_list:
-      path = os.path.join(partition_path, 'srv/www')
-      if os.path.exists(path):
-        nextcloud_path = path
-        instance_folder = partition_path
-        break
-    config_file = os.path.join(nextcloud_path, 'config/config.php')
-    php_script = os.path.join(instance_folder, 'test.php')
+    config_file = os.path.join(self.nextcloud_path, 'config/config.php')
+    php_script = os.path.join(self.partition_dir, 'test.php')
     with open(php_script, 'w') as f:
       f.write("<?php include('%s'); echo json_encode($CONFIG); ?>" % config_file)
 
-    self.partition_dir = instance_folder
-    php_bin = os.path.join(instance_folder, 'bin/php')
-    occ = os.path.join(nextcloud_path, 'occ')
+    php_bin = os.path.join(self.partition_dir, 'bin/php')
+    occ = os.path.join(self.nextcloud_path, 'occ')
     config_result =  subprocess.check_output([
       php_bin,
       '-f',
@@ -404,7 +330,7 @@ class ParametersTestCase(InstanceTestCase):
       cli_url="nextcloud.example.com",
       partition_dir=self.partition_dir,
       trusted_domain_list=json.dumps([
-        "[%s]:9988" % self.config['ipv6_address'],
+        "[%s]:9988" % self._ipv6_address,
         "nextcloud.example.com",
         "nextcloud.proxy.com"
       ]),
