@@ -25,26 +25,20 @@
 #
 ##############################################################################
 
-import utils
 
 import httplib
 import json
 import os
 import requests
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestJupyter(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')),)
+class TestJupyter(InstanceTestCase):
 
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
@@ -54,12 +48,11 @@ class TestJupyter(utils.SlapOSInstanceTestCase):
     except Exception as e:
       self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
 
-    ip = os.environ['SLAPOS_TEST_IPV6']
     self.assertEqual(
       {
-        'jupyter-classic-url': 'https://[%s]:8888/tree' % (ip,),
-        'jupyterlab-url': 'https://[%s]:8888/lab' % (ip,),
-        'url': 'https://[%s]:8888/tree' % (ip,)
+        'jupyter-classic-url': 'https://[%s]:8888/tree' % (self._ipv6_address, ),
+        'jupyterlab-url': 'https://[%s]:8888/lab' % (self._ipv6_address, ),
+        'url': 'https://[%s]:8888/tree' % (self._ipv6_address, )
       },
       connection_dict
     )
