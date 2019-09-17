@@ -31,33 +31,34 @@ import json
 import glob
 import ConfigParser
 
-import utils
 from slapos.recipe.librecipe import generateHashFromFiles
-
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
-
-def subprocess_status_output(*args, **kwargs):
-  prc = subprocess.Popen(
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    *args,
-    **kwargs)
-  out, err = prc.communicate()
-  return prc.returncode, out
-
-class InstanceTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
+setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-class ServicesTestCase(InstanceTestCase):
+
+class TurnServerTestCase(InstanceTestCase):
+
+  partition_path = None
+
+  def setUp(self):
+    # Lookup the partition in which turnserver was installed.
+    partition_path_list = glob.glob(os.path.join(
+      self.slap.instance_directory, '*'))
+    for partition_path in partition_path_list:
+      if os.path.exists(os.path.join(partition_path, 'etc/turnserver.conf')):
+        self.partition_path = partition_path
+        break
+
+    self.assertTrue(
+        self.partition_path,
+        "Turnserver path not found in %r" % (partition_path_list,))
+
+
+class TestServices(TurnServerTestCase):
 
   def test_process_list(self):
     hash_list = [
@@ -72,8 +73,8 @@ class ServicesTestCase(InstanceTestCase):
       'monitor-httpd-graceful',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_name_list = [process['name']
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_name_list = [process['name']
                      for process in supervisor.getAllProcessInfo()]
 
     hash_file_list = [os.path.join(self.computer_partition_root_path, path)
@@ -86,19 +87,14 @@ class ServicesTestCase(InstanceTestCase):
       self.assertIn(expected_process_name, process_name_list)
 
   def test_default_deployment(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    instance_folder = None
-    for partition_path in partition_path_list:
-      if os.path.exists(os.path.join(partition_path, 'etc/turnserver.conf')):
-        instance_folder = partition_path
-        break
-
-    secret_file = os.path.join(instance_folder, 'etc/.turnsecret')
-    self.assertTrue(os.path.exists(instance_folder))
+    secret_file = os.path.join(self.partition_path, 'etc/.turnsecret')
+    self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
     config = ConfigParser.ConfigParser()
-    config.readfp(open(secret_file))
+    with open(secret_file) as f:
+      config.readfp(f)
     secret = config.get('turnserver', 'secret')
+    self.assertTrue(secret)
 
     expected_config = """listening-port=3478
 tls-listening-port=5349
@@ -125,70 +121,15 @@ no-stdout-log
 log-file=%(instance_path)s/var/log/turnserver.log
 userdb=%(instance_path)s/srv/turndb
 pidfile=%(instance_path)s/var/run/turnserver.pid
-verbose""" % {'instance_path': instance_folder, 'secret': secret, 'ipv4': self.config['ipv4_address']}
+verbose""" % {'instance_path': self.partition_path, 'secret': secret, 'ipv4': self._ipv4_address}
 
-    with open(os.path.join(instance_folder, 'etc/turnserver.conf')) as f:
+    with open(os.path.join(self.partition_path, 'etc/turnserver.conf')) as f:
       current_config = f.read().strip()
 
-    self.assertEqual(current_config, expected_config)
+    self.assertEqual(current_config.splitlines(), expected_config.splitlines())
 
-  def test_turnserver_promises(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    instance_folder = None
-    for partition_path in partition_path_list:
-      if os.path.exists(os.path.join(partition_path, 'etc/turnserver.conf')):
-        instance_folder = partition_path
-        break
-    self.assertTrue(os.path.exists(instance_folder))
 
-    promise_path_list = glob.glob(os.path.join(instance_folder, 'etc/plugin/*.py'))
-    promise_name_list = [x for x in
-                         os.listdir(os.path.join(instance_folder, 'etc/plugin'))
-                         if not x.endswith('.pyc')]
-    partition_name = os.path.basename(instance_folder.rstrip('/'))
-    self.assertEqual(sorted(promise_name_list),
-                    sorted([
-                      "__init__.py",
-                      "check-free-disk-space.py",
-                      "monitor-http-frontend.py",
-                      "buildout-%s-status.py" % partition_name,
-                      "monitor-bootstrap-status.py",
-                      "monitor-httpd-listening-on-tcp.py",
-                      "turnserver-port-listening.py",
-                      "turnserver-tls-port-listening.py",
-                    ]))
-
-    ignored_plugin_list = [
-      '__init__.py',
-      'monitor-http-frontend.py',
-    ]
-    runpromise_bin = os.path.join(
-      self.software_path, 'bin', 'monitor.runpromise')
-    monitor_conf = os.path.join(instance_folder, 'etc', 'monitor.conf')
-    msg = []
-    status = 0
-    for plugin_path in promise_path_list:
-      plugin_name = os.path.basename(plugin_path)
-      if plugin_name in ignored_plugin_list:
-        continue
-      plugin_status, plugin_result = subprocess_status_output([
-        runpromise_bin,
-        '-c', monitor_conf,
-        '--run-only', plugin_name,
-        '--force',
-        '--check-anomaly'
-      ])
-      status += plugin_status
-      if plugin_status == 1:
-        msg.append(plugin_result)
-      # sanity check
-      if 'Checking promise %s' % plugin_name not in plugin_result:
-        plugin_status = 1
-        msg.append(plugin_result)
-    msg = ''.join(msg).strip()
-    self.assertEqual(status, 0, msg)
-
-class ParametersTestCase(InstanceTestCase):
+class TestParameters(TurnServerTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -200,19 +141,14 @@ class ParametersTestCase(InstanceTestCase):
     }
 
   def test_turnserver_with_parameters(self):
-    partition_path_list = glob.glob(os.path.join(self.instance_path, '*'))
-    instance_folder = None
-    for partition_path in partition_path_list:
-      if os.path.exists(os.path.join(partition_path, 'etc/turnserver.conf')):
-        instance_folder = partition_path
-        break
-
-    secret_file = os.path.join(instance_folder, 'etc/.turnsecret')
-    self.assertTrue(os.path.exists(instance_folder))
+    secret_file = os.path.join(self.partition_path, 'etc/.turnsecret')
+    self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
     config = ConfigParser.ConfigParser()
-    config.readfp(open(secret_file))
+    with open(secret_file) as f:
+      config.readfp(f)
     secret = config.get('turnserver', 'secret')
+    self.assertTrue(secret)
 
     expected_config = """listening-port=%(port)s
 tls-listening-port=%(tls_port)s
@@ -240,7 +176,7 @@ no-stdout-log
 log-file=%(instance_path)s/var/log/turnserver.log
 userdb=%(instance_path)s/srv/turndb
 pidfile=%(instance_path)s/var/run/turnserver.pid
-verbose""" % {'instance_path': instance_folder,
+verbose""" % {'instance_path': self.partition_path,
               'secret': secret,
               'ipv4': '127.0.0.1',
               'name': 'turn.site.com',
@@ -248,9 +184,7 @@ verbose""" % {'instance_path': instance_folder,
               'port': 3488,
               'tls_port': 5369,}
 
-    with open(os.path.join(instance_folder, 'etc/turnserver.conf')) as f:
+    with open(os.path.join(self.partition_path, 'etc/turnserver.conf')) as f:
       current_config = f.read().strip()
 
-    self.assertEqual(current_config, expected_config)
-
-
+    self.assertEqual(current_config.splitlines(), expected_config.splitlines())
