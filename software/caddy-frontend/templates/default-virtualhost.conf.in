@@ -50,8 +50,6 @@
 {{ http_host_list|join(', ') }} {
 {%- endif %}
   bind {{ slave_parameter['local_ipv4'] }}
-  # Compress the output
-  gzip
 {%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
 {%- if cipher_list %}
@@ -110,8 +108,6 @@
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting REMOTE_USER header unset it always
-    header_upstream -REMOTE_USER
 {%- for disabled_cookie in disabled_cookie_list %}
     # Remove cookie {{ disabled_cookie }} from client Cookies
     header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
@@ -126,7 +122,7 @@
     header_upstream -Pragma
 {%-   endif %} {#-   if disable_no_cache_header #}
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%-   if ssl_proxy_verify %}
 {%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
@@ -247,8 +243,6 @@
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
 {%-     endif %} {#-     if proxy_name == 'prefer-gzip' #}
-    # As backend is trusting REMOTE_USER header unset it always
-    header_upstream -REMOTE_USER
 {%- for disabled_cookie in disabled_cookie_list %}
     # Remove cookie {{ disabled_cookie }} from client Cookies
     header_upstream Cookie "(.*)(^{{ disabled_cookie }}=[^;]*; |; {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*)" "$1 $3"
@@ -263,7 +257,7 @@
     header_upstream -Pragma
 {%-     endif %} {#-     if disable_no_cache_header #}
     transparent
-    timeout 600s
+    timeout {{ slave_parameter['request_timeout'] }}s
 {%-     if ssl_proxy_verify %}
 {%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
     ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}

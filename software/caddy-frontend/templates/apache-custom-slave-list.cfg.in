@@ -77,6 +77,7 @@ output = {{ plugin_directory }}/${:name}
 {%   set slave_publish_dict = {} %}
 {%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%   set slave_logrotate_section = slave_reference + "-logs" %}
+{%   set slave_logrotate_cache_direct_section = slave_reference + "-cache-direct-logs" %}
 {%   set slave_password_section = slave_reference + "-password" %}
 {%   set slave_ln_section = slave_reference + "-ln" %}
 
@@ -86,7 +87,8 @@ output = {{ plugin_directory }}/${:name}
 
 {%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {%   if enable_cache %}
-{%     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-cache-direct-logs" %}
+{%     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_logrotate_cache_direct_section %}
+{%     do part_list.extend([slave_logrotate_cache_direct_section]) %}
 {%   endif %}
 
 {#   Pass HTTP2 switch #}
@@ -162,7 +164,7 @@ name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
 {%    if enable_cache %}
-[{{slave_logrotate_section}}_cache_direct]
+[{{slave_logrotate_cache_direct_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log_cache_direct')}} {{slave_parameter_dict.get('error_log_cache_direct')}}
@@ -239,6 +241,7 @@ http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 cached_port = {{ dumps('' ~ cached_port) }}
 ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
+request_timeout = {{ ('' ~ request_timeout) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
 {%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}

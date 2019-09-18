@@ -1,6 +1,14 @@
 Changes
 =======
 
+1.0.121 (2019-09-12)
+--------------------
+
+- generic.mysql.wrap_update_mysql: prepare for MariaDB 10.4
+- publish-early: process -init entries in specified order
+- Partial support of Python 3
+- Remove unused generic.mysql recipe
+
 
 1.0.119 (2019-08-14)
 --------------------

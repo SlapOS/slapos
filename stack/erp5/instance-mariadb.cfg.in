@@ -126,7 +126,7 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 ip = {{ ip }}
 port = {{ port }}
 socket = ${directory:run}/mariadb.sock
-data-directory = ${directory:mariadb-data}
+data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
 etc-directory = ${directory:etc}
 pid-file = ${directory:run}/mariadb.pid
@@ -178,25 +178,18 @@ mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
 [{{ section('mysqld') }}]
 < = jinja2-template-executable
-# Note: all rendering is done when this file is rendered, not when the mysqld
-# section is installed - so I only use jinja2 as a fancy way to write an
-# executable file with partition-dependent but instance-parameters independent
-# content.
-template = inline:#!{{ dash }}
-  '{{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db' \
-    --defaults-file='${my-cnf:rendered}' \
-    --skip-name-resolve \
-    --datadir='${my-cnf-parameters:data-directory}' \
-    --basedir='{{ parameter_dict['mariadb-location'] }}' \
-    && ODBCSYSINI='${my-cnf-parameters:etc-directory}' \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{{ parameter_dict['unixodbc-location'] }}/lib \
-    {% for variable in slapparameter_dict.get('environment-variables', ()) %}
-    {{ variable }} \
-    {% endfor %}
-    exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
-    --defaults-file='${my-cnf:rendered}' \
-    "$@"
 rendered = ${directory:services}/mariadb
+template = {{ parameter_dict['template-mysqld-wrapper'] }}
+context =
+  key defaults_file my-cnf:rendered
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+environ =
+  ODBCSYSINI='${my-cnf-parameters:etc-directory}'
+  LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
+  {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
+  {{ variable }}
+  {%- endfor %}
 
 [odbc-ini-text]
 text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
@@ -265,7 +258,6 @@ tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
-mariadb-data = ${:srv}/mariadb
 mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
@@ -275,7 +267,7 @@ slowquery = ${monitor-directory:private}/slowquery_digest
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
-template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
+template = {{ 'inline:{{ "${my-cnf-parameters:data-directory}/**\\n${directory:mariadb-backup-incremental}/**\\n${directory:log}/**\\n${directory:tmp}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-identity-signature-script")}}]
@@ -295,7 +287,7 @@ rendered = ${directory:bin}/start-clone-from-backup
 context =
   key dash dash:dash
   key client binary-wrap-mysql:wrapper-path
-  key data_directory directory:mariadb-data
+  key data_directory my-cnf-parameters:data-directory
   key pid_file my-cnf-parameters:pid-file
   key server mysqld:rendered
   key update update-mysql:output
@@ -309,7 +301,7 @@ rendered = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
   key mysql_executable binary-wrap-mysql:wrapper-path
-  key mariadb_data_directory directory:mariadb-data
+  key mariadb_data_directory my-cnf-parameters:data-directory
   key mariadb_backup_directory directory:mariadb-backup-full
   key pid_file my-cnf-parameters:pid-file
   key binlog_path my-cnf-parameters:binlog-path

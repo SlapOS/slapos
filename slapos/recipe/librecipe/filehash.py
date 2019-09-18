@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
 import hashlib
 import shutil
 import os
@@ -49,6 +50,15 @@ def filehash(filename, type_=DEFAULT_HASH):
   with open(filename, 'r') as file_:
     shutil.copyfileobj(file_, digest)
   return digest.read()
+
+def generateHashFromFiles(file_list):
+  hasher = hashlib.md5()
+  for path in file_list:
+    with open(path, 'rb') as afile:
+      buf = afile.read()
+    hasher.update(b"%u\n" % len(buf))
+    hasher.update(buf)
+  return hasher.hexdigest()
 
 # Home made hashdeep <http://md5deep.sourceforge.net/>
 def dirhash(dirname, type_=DEFAULT_HASH):
@@ -91,6 +101,6 @@ if __name__ == '__main__':
   if len(sys.argv) == 1:
     raise ValueError("Not enough command line arguments")
   if len(sys.argv) == 2:
-    print sys.argv[1], '-', pathhash(sys.argv[1])
+    print(sys.argv[1], '-', pathhash(sys.argv[1]))
   else:
-    print sys.argv[2], '-', pathhash(sys.argv[2], sys.argv[1])
+    print(sys.argv[2], '-', pathhash(sys.argv[2], sys.argv[1]))
