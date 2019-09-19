@@ -498,16 +498,15 @@ ipv6-network-info =
 recipe = plone.recipe.command
 filename = netconfig.sh
 path = ${directory:public}/${:filename}
-ifconfig = ifconfig \$IFACE {{ slap_configuration.get('tap-ipv4-addr') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }}
-route-iface = route add {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
-route-network = route add -net {{ slap_configuration.get('tap-ipv4-network') }} netmask {{ slap_configuration.get('tap-ipv4-netmask') }} gw {{ slap_configuration.get('tap-ipv4-gateway') }}
+ipv4-add-address = ip -4 address add {{ slap_configuration.get('tap-ipv4-addr') }}/{{ slap_configuration.get('tap-ipv4-netmask') }} dev \$IFACE
 {%   if nat_restrict == 'true' -%}
-route-default = route add default gw {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
+ipv4-add-default-route = ip route add default via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
 {%   elif global_ipv4_prefix -%}
-route-default = ip route add {{ global_ipv4_prefix }} via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE src {{ slap_configuration.get('tap-ipv4-addr') }}
+ipv4-add-default-route = ip route add {{ global_ipv4_prefix }} via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE src {{ slap_configuration.get('tap-ipv4-addr') }}
 {%   else -%}
-route-default =
+ipv4-add-default-route =
 {%   endif -%}
+ipv4-set-link-up = ip link set dev \$IFACE up
 command =
   cat > ${:path} << EOF
   #!/bin/sh
@@ -515,10 +514,9 @@ command =
   #try to be compatible with OS with old names
   ip a | grep eth0: && [ \$IFACE = ens3 ] && IFACE=eth0
   ip a | grep eth1: && [ \$IFACE = ens4 ] && IFACE=eth1
-  ${:ifconfig}
-  ${:route-iface}
-  ${:route-network}
-  ${:route-default}
+  ${:ipv4-add-address}
+  ${:ipv4-add-default-route}
+  ${:ipv4-set-link-up}
   EOF
 update-command = ${:command}
 {% endif -%}
