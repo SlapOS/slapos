@@ -57,6 +57,9 @@ recipe = slapos.cookbook:generate.password
 user = admin
 bytes = 16
 
+[monitor-instance-parameter]
+monitor-httpd-port = {{ slap_configuration['configuration.monitor-base-port'] }}
+
 [monitor-directory]
 service = ${buildout:directory}/etc/service
 var = ${buildout:directory}/var
