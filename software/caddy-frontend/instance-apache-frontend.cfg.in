@@ -346,9 +346,8 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
-hash-files =
-  ${buildout:directory}/software_release/buildout.cfg
-  ${caddy-wrapper:wrapper-path}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${caddy-wrapper:wrapper-path}
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -455,7 +454,7 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_cop
 wrapper-path = ${trafficserver-variable:wrapper-path}
 environment = TS_ROOT=${buildout:directory}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [trafficserver-reload]
 recipe = slapos.cookbook:wrapper

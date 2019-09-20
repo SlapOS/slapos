@@ -513,8 +513,9 @@ command-line = {{ parameter_dict['caddy'] }}
   -root ${:directory}
 
 wrapper-path = ${directory:service}/rejected-slave-publish
-hash-files =
+hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
+hash-files =
   ${rejected-slave-template:rendered}
   ${rejected-slave-certificate:certificate}
 
