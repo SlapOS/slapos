@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "properties": {
+    "url": {
+      "title": "URL to check",
+      "description": "URL to check, like https://example.com",
+      "type": "string"
+    },
+    "check_status_code": {
+      "default": "Master default",
+      "title": "Default Check HTTP Code.",
+      "description": "HTTP code to check against (default: comes from master partition).",
+      "type": "string"
+    },
+    "check_certificate_expiration_days": {
+      "default": "Master default",
+      "title": "Check Certificate Expiration",
+      "description": "Amount of days to consider certificate as expired (default: comes from master partition).",
+      "type": "string"
+    },
+    "check_frontend_ip": {
+      "default": "Master default",
+      "title": "Space separated list of Frontend IPs to check",
+      "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
+      "type": "string"
+    }
+  }
+}
