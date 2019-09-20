@@ -181,7 +181,7 @@ ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {% if use_nat == 'true' and nat_rule_list -%}
 {%   for port in nat_rule_list.split(' ') -%}
@@ -206,7 +206,7 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 
 [kvm-controller-wrapper]
@@ -286,7 +286,7 @@ wrapped-path = ${novnc-instance:path}
 recipe = slapos.cookbook:wrapper
 command-line = ${websockify-sighandler:wrapper-path}
 wrapper-path = ${directory:services}/websockify
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 wait-for-files =
   ${ca-novnc:key-file}
   ${ca-novnc:cert-file}
@@ -306,7 +306,7 @@ ca-crl = ${cadirectory:crl}
 recipe = slapos.cookbook:wrapper
 command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -348,7 +348,7 @@ binary = ${directory:bin}/crond_raw
 recipe = slapos.cookbook:wrapper
 command-line = ${cron:binary}
 wrapper-path = ${directory:services}/crond
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
@@ -397,7 +397,7 @@ use-hash-url = false
 recipe = slapos.cookbook:wrapper
 command-line = ${httpd:wrapper}
 wrapper-path = ${directory:services}/http-server
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [httpd-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -623,7 +623,7 @@ runner-path = ${directory:bin}/6tunnel-cluster
 recipe = slapos.cookbook:wrapper
 command-line = ${tunnel-cluster-url:runner-path}
 wrapper-path = ${directory:services}/6tunnel-cluster
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ansible-vm-promise]
 recipe = slapos.recipe.template:jinja2

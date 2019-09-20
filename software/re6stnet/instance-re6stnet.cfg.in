@@ -92,7 +92,7 @@ cert-file = ${certificate-authority:ca-certs}/apache.crt
 recipe = slapos.cookbook:wrapper
 command-line = ${apache-ca:wrapper}
 wrapper-path = ${directory:services}/httpd
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {% endif %}
 
 [apache-httpd-graceful]
