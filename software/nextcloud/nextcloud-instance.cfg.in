@@ -180,6 +180,12 @@ command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
 admin-user = ${instance-parameter:admin-user}
 admin-password = ${instance-parameter:admin-password}
 
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+username = admin
+
 [slap-parameter]
 instance.mail-from = Nextcloud
 instance.mail-domain = nextcloud@example.com
