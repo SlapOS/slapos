@@ -395,7 +395,7 @@ ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
 <= tunnel-6to4-base
@@ -463,7 +463,7 @@ command-line = {{ kedifa_updater }}
   {{ kedifa_updater_state_file }}
 
 wrapper-path = {{ service_directory }}/kedifa-updater
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
 recipe = plone.recipe.command
@@ -578,7 +578,7 @@ command-line = {{ caddy_executable }}
   -root {{ directory_csr_id }}
 
 wrapper-path = {{ service_directory }}/expose-csr_id
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
 recipe = collective.recipe.shelloutput
