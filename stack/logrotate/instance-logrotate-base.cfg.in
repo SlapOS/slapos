@@ -20,7 +20,7 @@ service = ${cron-service:wrapper-path}
 recipe = slapos.cookbook:wrapper
 command-line = ${cron:binary}
 wrapper-path = ${logrotate-directory:services}/crond
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
