@@ -74,7 +74,7 @@ ca-crl = ${ca-directory:crl}
 recipe = slapos.cookbook:wrapper
 command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ca-apache-php]
 <= certificate-authority
@@ -88,7 +88,7 @@ wrapper = ${directory:bin}/ca-apache-php
 recipe = slapos.cookbook:wrapper
 command-line = ${ca-apache-php:wrapper}
 wrapper-path = ${directory:services}/apache-php
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 depends =
   ${copy-application:recipe}
   ${apache-graceful:recipe}
