@@ -158,8 +158,8 @@ class ServicesTestCase(PlantUMLTestCase):
 
   def test_hashes(self):
     hash_files = [
-      'software_release/buildout.cfg',
-      'var/tomcat/conf/server.xml'
+      'var/tomcat/conf/server.xml',
+      'software_release/buildout.cfg'
     ]
     expected_process_names = [
       'tomcat-instance-{hash}-on-watch',

@@ -63,8 +63,9 @@ environment =
 # related links:
 #   https://docs.oracle.com/javase/8/docs/technotes/guides/intl/fontconfig.html
 #   https://bugs.openjdk.java.net/browse/JDK-7175487
-hash-files =
+hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
+hash-files =
   $${tomcat-server-xml:output}
 
 ip =  $${tomcat-server-xml:ip}

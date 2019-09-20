@@ -389,7 +389,7 @@ class TestDataMixin(object):
       hash_value_dict[
         'rejected-slave-publish'
       ] = generateHashFromFiles(
-        hash_file_list + [rejected_slave_publish_path, rejected_slave_pem_path]
+        [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
 
     runtime_data = self.getTrimmedProcessInfo()
