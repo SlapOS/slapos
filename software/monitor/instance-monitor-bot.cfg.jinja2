@@ -1,0 +1,60 @@
+
+{% set slave_instance_list = [] %}
+{% set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
+{% if extra_slave_instance_list %}
+  {% set slave_instance_list = json_module.loads(extra_slave_instance_list) %}
+{% endif %}
+[buildout]
+
+extends = {{ monitor_template_output }}
+
+parts =
+  cron
+  monitor-base
+  publish-connection-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
+
+[monitor-instance-parameter]
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
+
+
+[monitor-directory]
+service = ${buildout:directory}/etc/service
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+server-log = ${:private}/server-log
+monitor-log = ${:private}/monitor-log
+cache = ${:var}/cache
+mod-ssl = ${:cache}/httpd_mod_ssl
+
+[python-symlink]
+recipe = plone.recipe.command
+command = ln -sf {{ buildout_bin }}/pythonwitheggs ${monitor-directory:bin}/python
+update-command = ${:command}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-parameter]

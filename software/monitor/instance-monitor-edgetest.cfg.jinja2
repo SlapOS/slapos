@@ -1,0 +1,144 @@
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    ${:extra-context}
+
+[slave-test-configuration]
+<=jinja2-template-base
+template = {{ template_json_edgetest_test }}
+filename = srv/monitor/private/test.json
+extensions = jinja2.ext.do 
+extra-context = 
+  section slave_information slap-configuration
+
+{% set part_list = [] -%}
+# Publish information for each slave
+{% set bot_software_type = 'bot' %}
+{% set bot_quantity = slapparameter_dict.pop('bot-quantity', '1') | int %}
+{% set bot_list = [] %}
+{% set bot_section_list = [] %}
+{% set slave_list_name = 'extra_slave_instance_list' %}
+{% set request_dict = {} %}
+{% set namebase = "bot" %}
+{% set authorized_slave_list = [] %}
+{% set monitor_base_url_dict = {} -%}
+
+{% for slave in sorted(slave_instance_list) %}
+{%   do authorized_slave_list.append(slave) %}
+{% endfor %}
+
+
+{% for i in range(1, bot_quantity + 1) %}
+{%   set bot_name = "%s-%s" % (namebase, i) %}
+{%   set request_section_title = 'request-%s' % bot_name %}
+{%   do bot_list.append(bot_name) %}
+{%   do bot_section_list.append(request_section_title) %}
+{%   do part_list.append(request_section_title) %}
+{%   do request_dict.__setitem__(request_section_title,
+                                  {
+                                  'config': {},
+                                  'name': bot_name,
+                                  'sla': {},
+                                  'state': 'started', 
+                                  }) %}
+{% endfor %}
+
+[replicate]
+<= slap-connection
+recipe = slapos.cookbook:request.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+software-url = ${slap-connection:software-release-url}
+software-type = {{bot_software_type}}
+return = monitor-base-url
+
+{% for section, bot_request in request_dict.iteritems() %}
+[{{section}}]
+<= replicate
+name = {{ bot_request.get('name') }}
+{%   if bot_request.get('state') %}
+state = {{ bot_request.get('state') }}
+{%   endif%}
+{%   set slave_configuration_dict = slapparameter_dict %}
+{%   do slave_configuration_dict.update(bot_request.get('config')) %}
+{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
+{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%   endfor -%}
+{%   if bot_request.get('sla') %}
+{%     for parameter, value in bot_request.get('sla').iteritems() %}
+sla-{{ parameter }} = {{ value }}
+{%     endfor %}
+{%   endif %}
+{%  do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% endfor %}
+
+{% set directory_list = [] -%}
+
+{% for slave_instance in slave_instance_list -%}
+{%   set publish_section_title = 'publish-%s' % slave_instance.get('slave_reference')  -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ slave_instance.get('slave_reference') }}
+{% endfor %}
+
+
+{% set data_source_dict = slapparameter_dict.get('data-source', None)  -%}
+{% set cron_min_count = 0 -%}
+{% if data_source_dict %}
+{% for entry in data_source_dict -%}
+{% set cron_min_count = cron_min_count + 1 -%}
+{% set cron_min = cron_min_count%60 -%}
+{% do part_list.append('cron-crawl-' + entry) -%}
+{% do directory_list.append(entry) -%}
+[cron-crawl-{{ entry }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = cron-crawler-{{ entry }}
+frequency = * * * * *
+command = cd ${monitor-directory:crawl-log}/{{ entry }} && ${crawler-bin:wrapper-path} {{ data_source_dict.get(entry) }} 
+{% endfor %}
+{% endif %}
+
+[monitor-directory]
+crawl-log = ${:srv}/crawlog
+network-user-logs = ${:private}/network-user-logs/
+{% for slave_instance in slave_instance_list -%}
+user-log-{{ slave_instance.get('slave_reference') }}-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}
+user-log-{{ slave_instance.get('slave_reference') }}-ping-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping
+user-log-{{ slave_instance.get('slave_reference') }}-ping6-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping6
+
+{% endfor -%}
+{% for directory in directory_list %}
+{{ '%s = ${:crawl-log}/%s' % (directory, directory) }}
+{% endfor %}
+
+[monitor-conf-parameters]
+monitor-title = Monitor
+password = ${monitor-htpasswd:passwd}
+
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
+[crawler-bin]
+recipe = slapos.cookbook:wrapper
+command-line = 
+  {{ wget_bin }} --no-check-certificate -l1 -r -nd --timestamp  
+wrapper-path = ${monitor-directory:bin}/log-crawler
+
+[buildout]
+extends = {{ instance_base_monitor }}
+parts +=
+  slave-test-configuration
+{% for part in part_list %}
+{{ '  %s' % part }}
+{% endfor %}
+
