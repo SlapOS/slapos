@@ -61,7 +61,7 @@ ca-crl = ${ca-directory:crl}
 recipe = slapos.cookbook:wrapper
 command-line = ${certificate-authority:wrapper}
 wrapper-path = ${directory:services}/certificate_authority
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [ca-monitor-httpd]
 <= certificate-authority
@@ -75,7 +75,7 @@ wrapper = ${directory:bin}/ca-monitor-httpd
 recipe = slapos.cookbook:wrapper
 command-line = ${ca-monitor-httpd:wrapper}
 wrapper-path = ${directory:services}/monitor-httpd
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [monitor-conf-parameters]
 title = ${monitor-instance-parameter:monitor-title}
