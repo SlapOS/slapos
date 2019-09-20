@@ -112,7 +112,7 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['turnserver-location'] }}/bin/turnserver
                -c ${turnserver-config:output}
 wrapper-path = ${directory:services}/turnserver
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [promise-check-turnserver-port]
 <= monitor-promise-base
