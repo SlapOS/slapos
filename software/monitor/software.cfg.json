@@ -1,0 +1,29 @@
+{
+  "name": "Monitor",
+  "description": "Software release for Monitoring purpose",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Standalone Monitor",
+      "request": "instance-default-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "index": 0
+    },
+    "edgetest": {
+      "title": "Edge Test",
+      "description": "Cluster of bots to perform a distributed monitoring ",
+      "request": "instance-edgetest-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "index": 1
+    },
+    "edgetest-slave": {
+      "title": "Edge Test Case",
+      "software-type": "edgetest",
+      "description": "Cluster of bots to perform a distributed monitoring ",
+      "request": "instance-edgetest-slave-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "index": 1
+    }
+  }
+}
