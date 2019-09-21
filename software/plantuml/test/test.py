@@ -36,6 +36,7 @@ import requests
 import plantuml
 
 import utils
+from slapos.recipe.librecipe import generateHashFromFiles
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('SLAPOS_TEST_DEBUG'):
@@ -154,16 +155,6 @@ class TestSimpleDiagram(PlantUMLTestCase):
 
 
 class ServicesTestCase(PlantUMLTestCase):
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
 
   def test_hashes(self):
     hash_files = [
@@ -182,7 +173,7 @@ class ServicesTestCase(PlantUMLTestCase):
                   for path in hash_files]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHashFromFiles(hash_files)
+      h = generateHashFromFiles(hash_files)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)

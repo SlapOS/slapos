@@ -152,7 +152,7 @@ connection-url = smtp://127.0.0.2:0/
 {%     set ((name, server_dict),) = server_dict.items() -%}
 {%     do neo.append(server_dict.get('cluster')) -%}
 {%     do server_dict.update(cluster='${publish-early:neo-cluster}') -%}
-{{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-') }}
+{{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-', monitor_base_url_dict) }}
 {%     set client_dict = zodb_dict[name].setdefault('storage-dict', {}) -%}
 {%     for k in 'ssl', '_ca', '_cert', '_key' -%}
 {%       do k in server_dict and client_dict.setdefault(k, server_dict[k]) -%}
@@ -255,7 +255,7 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', False)) }}
+config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 {%   endif -%}
