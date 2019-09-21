@@ -109,8 +109,12 @@ mode = 644
 
 [turnserver-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['turnserver-location'] }}/bin/turnserver
-               -c ${turnserver-config:output}
+# XXX on first invocation of read-secret, the secret file is not yet generated
+# so on first buildout run turnserver-config has an empty secret.
+# We don't want to start the server when config file is not complete.
+command-line =
+  bash -c "egrep static-auth-secret=.+ ${turnserver-config:output} && \
+  {{ parameter_dict['turnserver-location'] }}/bin/turnserver -c ${turnserver-config:output}"
 wrapper-path = ${directory:services}/turnserver
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
