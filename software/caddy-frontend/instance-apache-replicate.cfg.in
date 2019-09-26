@@ -199,6 +199,7 @@ context =
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
 {%   endif %}
 {% endfor %}
+{% do authorized_slave_list.sort() %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
