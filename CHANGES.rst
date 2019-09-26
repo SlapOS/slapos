@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.0.124 (2020-01-30)
+--------------------
+
+- cookbook:erp5testnode: new shared_part_list option
+
+
 1.0.123 (2019-10-03)
 --------------------
 
