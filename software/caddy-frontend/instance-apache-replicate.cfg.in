@@ -232,7 +232,7 @@ config-master-key-download-url = ${request-kedifa:connection-master-key-download
 config-cluster-identification = {{ cluster_identification }}
 {%   set slave_configuration_dict = slapparameter_dict %}
 {%   do slave_configuration_dict.update(frontend_request.get('config')) %}
-{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
+{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(sorted(authorized_slave_list))) %}
 {%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
 {%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
