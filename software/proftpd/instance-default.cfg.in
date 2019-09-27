@@ -29,7 +29,6 @@ var = ${:home}/var
 log = ${:var}/log
 srv = ${:home}/srv
 service = ${:etc}/service
-promise = ${:etc}/promise
 proftpd-dir = ${:srv}/proftpd/
 ssh-authorized-keys-dir = ${:etc}/authorized_keys/
 
@@ -39,10 +38,6 @@ template = {{ software_parts_directory }}/${:_buildout_section_name_}/${:_buildo
 rendered = ${directory:etc}/${:_buildout_section_name_}.cfg
 mode = 0644
 extensions = jinja2.ext.do
-
-[check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/${:_buildout_section_name_}
 
 [proftpd-userinfo]
 recipe = slapos.cookbook:userinfo
@@ -81,9 +76,11 @@ command-line =
 wrapper-path = ${directory:service}/proftpd
 
 [proftpd-listen-promise]
-<= check-port-listening-promise
-hostname = ${proftpd:ipv6}
-port = ${proftpd:sftp-port}
+<= monitor-promise-base
+module = check_port_listening
+name = proftpd_listen_promise.py
+config-hostname = ${proftpd:ipv6}
+config-port = ${proftpd:sftp-port}
 
 
 [ftpasswd]
