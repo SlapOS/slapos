@@ -18,7 +18,6 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 services = ${:etc}/service
 script = ${:etc}/run
-promises = ${:etc}/promise
 run = ${:var}/run
 ca-dir = ${:etc}/ssl
 requests = ${:ca-dir}/requests
@@ -202,16 +201,18 @@ context =
   section parameter_dict re6st-registry-conf-dict
 
 [re6st-registry-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/re6st-registry
-hostname = ${re6st-registry:ipv4}
-port = ${re6st-registry:port}
+<= monitor-promise-base
+module = check_port_listening
+name = re6st_registry.py
+config-hostname = ${re6st-registry:ipv4}
+config-port = ${re6st-registry:port}
 
 [apache-registry-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/apache-re6st-registry
-hostname = ${apache-conf:ipv6}
-port = ${apache-conf:port}
+<= monitor-promise-base
+module = check_port_listening
+name = apache_re6st_registry.py
+config-hostname = ${apache-conf:ipv6}
+config-port = ${apache-conf:port}
 
 {% do publish_dict.__setitem__('re6stry-url', uri_scheme ~ '://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
 {% do publish_dict.__setitem__('re6stry-local-url',  'http://${re6st-registry:ipv4}:${re6st-registry:port}/') -%}
