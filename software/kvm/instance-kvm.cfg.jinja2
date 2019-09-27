@@ -40,7 +40,6 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
-promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
 prerm = ${:etc}/prerm
@@ -216,13 +215,13 @@ command-line = ${kvm-controller:rendered}
 
 
 [kvm-vnc-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/vnc_promise
-hostname = ${kvm-parameter-dict:vnc-ip}
-port = ${kvm-parameter-dict:vnc-port}
+<= monitor-promise-base
+module = check_port_listening
+name = vnc_promise.py
+config-hostname = ${kvm-parameter-dict:vnc-ip}
+config-port = ${kvm-parameter-dict:vnc-port}
 
-[kvm-disk-image-corruption-promise]
-# Check that disk image is not corrupted
+[kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
   # Return code 0 is "OK"
@@ -239,8 +238,15 @@ input = inline:#!/bin/sh
   else
     exit 1
   fi
-output = ${directory:promises}/kvm-disk-image-corruption
+output = ${directory:bin}/kvm-disk-image-corruption
 mode = 700
+
+[kvm-disk-image-corruption-promise]
+# Check that disk image is not corrupted
+<= monitor-promise-base
+module = check_command_execute
+name = kvm_disk_image_corruption.py
+config-command = ${kvm-disk-image-corruption-bin:output}
 
 {% if wipe_disk == 'true' -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
@@ -255,15 +261,21 @@ command-line =
   {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
 {% endif -%}
 
-[kvm-started-promise]
+[kvm-started-bin]
 recipe = slapos.recipe.template:jinja2
 template = {{ qemu_start_promise_tpl }}
-rendered = ${directory:promises}/qemu-virtual-machine-is-ready
+rendered = ${directory:bin}/qemu-virtual-machine-is-ready
 mode = 700
 context =
   raw dash {{ dash_executable_location }}
   raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
   raw qemu_service_log_file ${buildout:directory}/.${slap-connection:partition-id}_kvm.log
+
+[kvm-started-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = qemu_virtual_machine_is_ready.py
+config-command = ${kvm-started-bin:rendered}
 
 [novnc-instance]
 recipe = slapos.cookbook:novnc
@@ -325,10 +337,11 @@ executable = ${directory:bin}/novnc
 wrapper = ${directory:bin}/websockify
 
 [novnc-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/novnc_promise
-hostname = ${novnc-instance:ip}
-port = ${novnc-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = novnc_promise.py
+config-hostname = ${novnc-instance:ip}
+config-port = ${novnc-instance:port}
 
 
 #----------------
@@ -380,11 +393,10 @@ name = ${slap-parameter:frontend-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/frontend_promise
-url = ${publish-connection-information:url}
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
+<= monitor-promise-base
+module = check_url_available
+name = frontend_promise.py
+config-url = ${publish-connection-information:url}
 
 {% if additional_frontend %}
 [request-slave-frontend-additional]
@@ -395,11 +407,11 @@ name = ${slap-parameter:frontend-additional-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 
 [frontend-additional-promise]
-recipe = slapos.cookbook:check_url_available
+<= monitor-promise-base
+module = check_url_available
+name = frontend_additional_promise.py
+config-url = ${publish-connection-information:url-additional}
 path = ${directory:promises}/frontend_additional_promise
-url = ${publish-connection-information:url-additional}
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
 {% endif %}
 
 {% if enable_http == 'true' %}
@@ -419,10 +431,11 @@ wrapper-path = ${directory:services}/http-server
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [httpd-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/httpd
-hostname = ${httpd:host}
-port = ${httpd:port}
+<= monitor-promise-base
+module = check_port_listening
+name = httpd.py
+config-hostname = ${httpd:host}
+config-port = ${httpd:port}
 {% endif %}
 
 [monitor-instance-parameter]
@@ -679,14 +692,20 @@ command-line = ${tunnel-cluster-url:runner-path}
 wrapper-path = ${directory:services}/6tunnel-cluster
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-[ansible-vm-promise]
+[ansible-vm-bin]
 recipe = slapos.recipe.template:jinja2
 template = {{ ansible_promise_tpl }}
-rendered = ${directory:promises}/ansible_{{ name }}
+rendered = ${directory:bin}/ansible_{{ name }}
 extensions = jinja2.ext.do
 context =
   raw logs ${directory:public}/ansible
   raw name {{ name }}
+
+[ansible-vm-promise]
+<= monitor-promise-base
+module = check_execute_comand
+name = ansible_{{ name }}.py
+config-command = ${ansible-vm-bin:rendered}
 
 [download-bootstrap-script]
 recipe = plone.recipe.command
