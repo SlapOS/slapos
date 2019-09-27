@@ -25,6 +25,7 @@ context =
   raw ftpdctl_bin {{ ftpdctl_bin }}
   raw ssh_keygen_bin {{ ssh_keygen_bin }}
   raw perl_bin {{ perl_bin }}
+  raw template_monitor {{ template_monitor }}
 
 [instance-default]
 <= instance-template
