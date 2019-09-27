@@ -41,7 +41,6 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
-promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
 ca-dir = ${:srv}/ssl
@@ -63,8 +62,7 @@ context =
 
 backup-disk-path = ${directory:backup}/virtual.qcow2
 
-[kvm-disk-image-corruption-promise]
-# Check that disk image is not corrupted
+[kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
   QEMU_IMAGE="${directory:srv}/virtual.qcow2"
@@ -78,5 +76,12 @@ input = inline:#!/bin/sh
   else
     exit 1
   fi
-output = ${directory:promises}/kvm-disk-image-corruption
+output = ${directory:bin}/kvm-disk-image-corruption
 mode = 700
+
+[kvm-disk-image-corruption-promise]
+# Check that disk image is not corrupted
+<= monitor-promise-base
+module = check_command_execute
+name = kvm-disk-image-corruption.py
+config-command = ${kvm-disk-image-corruption-bin:output}
