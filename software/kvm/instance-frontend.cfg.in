@@ -24,7 +24,6 @@ var = $${buildout:directory}/var
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 services = $${rootdirectory:etc}/run
-promises = $${rootdirectory:etc}/promise
 nodejs-conf = $${rootdirectory:etc}/nodejs
 run = $${rootdirectory:var}/run
 log = $${rootdirectory:var}/log
@@ -54,16 +53,18 @@ node-env = ${buildout:parts-directory}:${npm-modules:location}/node_modules
 shell-path = ${dash:location}/bin/dash
 
 [frontend-promise-ipv6]
-recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/frontend_promise
-hostname = $${frontend-instance:ipv6}
-port = $${frontend-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = frontend_promise_ipv6.py
+config-hostname = $${frontend-instance:ipv6}
+config-port = $${frontend-instance:port}
 
 [frontend-promise-ipv4]
-recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/frontend_promise
-hostname = $${frontend-instance:ipv4}
-port = $${frontend-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = frontend_promise_ipv4.py
+config-hostname = $${frontend-instance:ipv4}
+config-port = $${frontend-instance:port}
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
