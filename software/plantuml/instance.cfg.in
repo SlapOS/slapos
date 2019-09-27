@@ -7,6 +7,8 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+extends = ${monitor2-template:rendered}
+
 [fontconfig-conf]
 recipe = slapos.recipe.template
 url = ${font.conf:output}
@@ -77,16 +79,14 @@ needs = $${tomcat-web-xml:location}
 [promises]
 recipe =
 instance-promises =
-  $${tomcat-listen-promise:path}
-
-[check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${directory:promises}/$${:_buildout_section_name_}
+  $${tomcat-listen-promise:name}
 
 [tomcat-listen-promise]
-<= check-port-listening-promise
-hostname= $${tomcat-instance:ip}
-port = $${tomcat-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = tomcat_listen_promise.py
+config-hostname= $${tomcat-instance:ip}
+config-port = $${tomcat-instance:port}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
@@ -109,7 +109,6 @@ srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
 services = $${:etc}/service
-promises = $${:etc}/promise
 
 fonts = $${:srv}/fonts/
 fontcache = $${buildout:directory}/.fontcache/
