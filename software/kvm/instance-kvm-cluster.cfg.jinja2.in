@@ -215,7 +215,6 @@ log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 webroot = ${:srv}/document
-promises = ${:etc}/promise
 ssl = ${:etc}/ssl
 
 [directory-doc]
