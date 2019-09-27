@@ -57,7 +57,6 @@ cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
-promises = ${:etc}/promise
 
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
@@ -83,21 +82,26 @@ monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${publish-early:monitor-password}
 {% endif -%}
 
-[kvm-frontend-url-promise]
-# Check that url parameter is complete
+[kvm-frontend-url-bin]
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
   URL="${request-kvm:connection-url}"
   if [[ ! "$URL" == https://* ]]; then
     exit 1
   fi
-output = ${resilient-directory:promise}/kvm-frontend-url
+output = ${directory:bin}/kvm-frontend-url
 mode = 700
+
+[kvm-frontend-url-promise]
+# Check that url parameter is complete
+<= monitor-promise-base
+module = check_command_execute
+name = kvm-frontend-url.py
+config-command = ${kvm-frontend-url-bin:output}
 
 [kvm-backend-url-promise]
 # Check that backend url is reachable
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/frontend_promise
-url = ${publish-connection-information:url}
-dash_path = /bin/sh
-curl_path = {{ curl_executable_location }}
+<= monitor-promise-base
+module = check_url_available
+name = frontend_promise.py
+config-url = ${publish-connection-information:url}
