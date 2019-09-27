@@ -18,15 +18,6 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 
-[promise-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-mode = 644
-output = ${directory:plugins}/$${:name}
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-
 [request-apache]
 <= request-common
 software-type = apache
