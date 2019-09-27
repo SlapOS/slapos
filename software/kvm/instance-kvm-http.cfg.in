@@ -14,7 +14,6 @@ public = ${:srv}/public/
 log = ${:var}/log
 services = ${:etc}/service
 scripts = ${:etc}/run
-promises = ${:etc}/promise
 run = ${:var}/run
 document = ${:srv}/document
 ssl = ${:etc}/ssl
@@ -65,7 +64,8 @@ update-command =
 stop-on-error = true
 
 [httpd-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/apache-httpd
-hostname = ${apache-conf:ip}
-port = ${apache-conf:port}
+<= monitor-promise-base
+module = check_port_listening
+name = apache_httpd.py
+config-hostname = ${apache-conf:ip}
+config-port = ${apache-conf:port}
