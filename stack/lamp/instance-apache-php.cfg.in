@@ -37,8 +37,6 @@ services = ${:etc}/service
 scripts = ${:etc}/run
 run = ${:var}/run
 backup = ${:srv}/backup
-promises = ${:etc}/promise
-plugins = ${:etc}/plugin
 httpd-log = ${:log}/apache
 php-ini-dir = ${:etc}/php
 tmp-php = ${:tmp}/php
@@ -206,18 +204,9 @@ backend-url = ${apache-php-configuration:url}
 #----------------
 #--
 #-- Deploy promises scripts.
-[promise-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-mode = 644
-output = ${directory:plugins}/${:name}
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-
 [promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
-<= promise-base
+<= monitor-promise-base
 module = check_port_listening
 name = apache-httpd-port-listening.py
 config-hostname = ${apache-php-configuration:ip}
