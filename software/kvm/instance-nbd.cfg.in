@@ -23,7 +23,6 @@ log = $${buildout:directory}/log
 recipe = slapos.cookbook:mkdirectory
 services = $${rootdirectory:etc}/run
 watched-services = $${rootdirectory:etc}/service
-promises = $${rootdirectory:etc}/promise
 
 [nbd-instance]
 recipe = slapos.cookbook:nbdserver
@@ -36,10 +35,11 @@ shell-path = ${dash:location}/bin/dash
 path = $${basedirectory:services}/nbdserver
 
 [nbd-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/nbd_promise
-hostname = $${nbd-instance:ip}
-port = $${nbd-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = nbd_promise.py
+config-hostname = $${nbd-instance:ip}
+config-port = $${nbd-instance:port}
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
@@ -58,10 +58,11 @@ path = $${basedirectory:watched-services}/onetimeupload
 key = $${gen-passwd:passwd}
 
 [onetimeupload-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/onetimeupload_promise
-hostname = $${onetimeupload-instance:ip}
-port = $${onetimeupload-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = onetimeupload_promise.py
+config-hostname = $${onetimeupload-instance:ip}
+config-port = $${onetimeupload-instance:port}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
