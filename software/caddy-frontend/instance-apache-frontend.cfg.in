@@ -138,6 +138,7 @@ context =
     import json_module json
     raw common_profile {{ parameter_dict['common_profile'] }}
     raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
+    raw monitor_template {{ parameter_dict['monitor_template'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory

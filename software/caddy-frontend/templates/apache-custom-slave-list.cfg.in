@@ -485,6 +485,7 @@ rendered = {{frontend_configuration.get('log-access-configuration')}}
 extends =
   {{ common_profile }}
   {{ logrotate_base_instance }} 
+  {{ monitor_template }}
 
 parts +=
     kedifa-updater
