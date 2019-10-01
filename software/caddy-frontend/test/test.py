@@ -600,7 +600,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': None,
+        'monitor-base-url': 'None',
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -633,7 +633,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       {
-        'monitor-base-url': None,
+        'monitor-base-url': 'None',
         'domain': 'example.com',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1405,7 +1405,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '52',
       'rejected-slave-amount': '5',
@@ -4174,7 +4174,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': None,
+        'public-ipv4': 'None',
       },
       parameter_dict
     )
@@ -4228,7 +4228,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': None,
+        'public-ipv4': 'None',
       },
       parameter_dict
     )
@@ -4285,7 +4285,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4379,7 +4379,7 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       {
         'domain': 'test.None', 'replication_number': '1',
         'url': 'http://test.None', 'site_url': 'http://test.None',
-        'secure_access': 'https://test.None', 'public-ipv4': None},
+        'secure_access': 'https://test.None', 'public-ipv4': 'None'},
       parameter_dict
     )
     master_monitor_conf = open(os.path.join(
@@ -4562,7 +4562,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
@@ -4944,7 +4944,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5397,7 +5397,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '2',
@@ -6086,7 +6086,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6189,7 +6189,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',
