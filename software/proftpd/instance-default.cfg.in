@@ -3,6 +3,7 @@ parts =
   promises
   publish-connection-parameter
 
+extends = {{ template_monitor }}
 
 [instance-parameter]
 # TODO: this is not needed
@@ -126,7 +127,7 @@ context =
 [promises]
 recipe =
 instance-promises =
-  ${proftpd-listen-promise:path}
+  ${proftpd-listen-promise:name}
 
 
 [publish-connection-parameter]
