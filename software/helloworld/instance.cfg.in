@@ -15,6 +15,7 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+extends = {{ template_monitor }}
 
 [instance-parameter]
 # Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
@@ -51,9 +52,6 @@ var = ${:home}/var
 script = ${:etc}/run/
 # Executables put here will be started and monitored (for daemons)
 service = ${:etc}/service
-# Executables put here will be launched after buildout has completed to see
-# if instance is running
-promise = ${:etc}/promise/
 # Path of the log directory used by our service (see [helloweb])
 log = ${:var}/log
 
