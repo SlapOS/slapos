@@ -163,7 +163,7 @@ mode = 755
 
 [software-release-deployment-promise]
 <= monitor-promise-base
-module = check_execute_command
+module = check_command_execute
 name = software_release_deployment_promise
 config-command =${software-release-deployment-bin:output}
 
