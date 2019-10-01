@@ -30,8 +30,10 @@ import paramiko
 import contextlib
 import base64
 import hashlib
+import subprocess
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote
+from six.moves.configparser import ConfigParser
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -120,6 +122,45 @@ class TestSSH(SlaprunnerTestCase):
       self.assertEqual(
           self.computer_partition_root_path,
           client.exec_command("pwd")[1].read(1000).strip())
+
+
+class TestSlapOS(SlaprunnerTestCase):
+  def test_slapos_command(self):
+    # in ~/bin/slapos there is a wrapper setting configuration to use slapos from
+    # the web runner.
+    proxy_show_output = subprocess.check_output(
+        (
+            os.path.join(self.computer_partition_root_path, 'bin', 'slapos'),
+            'proxy',
+            'show',
+        ),
+        env={})
+    self.assertIn('slaprunner', proxy_show_output)
+
+  def test_shared_part_list(self):
+    # this slapos used shared_part_list
+    cfg_parser = ConfigParser()
+    with open(os.path.join(self.computer_partition_root_path,
+                           'etc',
+                           'slapos.cfg')) as f:
+      cfg_parser.readfp(f)
+    shared_part_list = cfg_parser.get('slapos', 'shared_part_list').splitlines()
+
+    # web runner own shared parts. Note that there is intentionnaly a double
+    # slash in this path, because slaprunner has double slash in paths since
+    # early releases, including for the path of slapos repository that will be
+    # used to develop and install software. If we fix this duplication, then
+    # the URL of installed software will be different and it will get a different
+    # hash and be reinstalled. To prevent this, we keep that // between srv and runner.
+    self.assertEqual(
+        '{}/srv//runner//shared'.format(self.computer_partition_root_path.rstrip('/')),
+        shared_part_list[-1])
+
+    # shared parts from outer slapos
+    outer_shared_part_list = os.getenv('SLAPOS_TEST_SHARED_PART_LIST',
+                                       '').split(os.pathsep)
+    for outer_shared_part in outer_shared_part_list:
+      self.assertIn(outer_shared_part, shared_part_list)
 
 
 class ServicesTestCase(SlaprunnerTestCase):
