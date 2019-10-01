@@ -244,7 +244,7 @@ mode = 700
 [kvm-disk-image-corruption-promise]
 # Check that disk image is not corrupted
 <= monitor-promise-base
-module = check_execute_command
+module = check_command_execute
 name = kvm_disk_image_corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}
 
@@ -273,7 +273,7 @@ context =
 
 [kvm-started-bin]
 <= monitor-promise-base
-module = check_execute_command
+module = check_command_execute
 name = qemu_virtual_machine_is_ready.py
 config-command = ${kvm-started-bin:rendered}
 
