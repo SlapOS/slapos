@@ -7,6 +7,8 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+extends = ${monitor2-template:rendered}
+
 [fontconfig-conf]
 recipe = slapos.recipe.template
 url = ${font.conf:output}
@@ -77,9 +79,9 @@ needs = $${tomcat-web-xml:location}
 [promises]
 recipe =
 instance-promises =
-  $${tomcat-listen-promise:path}
+  $${tomcat-listen-promise:name}
 
-[check-port-listening-promise]
+[tomcat-listen-promise]
 <= monitor-promise-base
 module = cookbook:check_port_listening
 name = tomcat_listen_promise.py
