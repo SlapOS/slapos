@@ -81,7 +81,7 @@ wrapper-path = ${monitor-directory:bin}/monitor-collect-csv-dump
 
 [monitor-check-memory-usage]
 <= monitor-promise-base
-module = check_execute_command
+module = check_command_execute
 name = check_computer_memory_usage.py
 config-command = {{ buildout_bin}}/check-computer-memory -db ${monitor-instance-parameter:collector-db} --threshold ${slap-parameter:memory-percent-threshold} --unit percent
 
