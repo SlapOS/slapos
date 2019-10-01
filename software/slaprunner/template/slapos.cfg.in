@@ -1,6 +1,8 @@
 [slapos]
 software_root = {{ slaprunner['software_root'] }}
 instance_root = {{ slaprunner['instance_root'] }}
+shared_part_list =
+  {{ '\n  '.join(slaprunner['shared_part_list'].splitlines()) }}
 master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
 computer_id = slaprunner
 maximal_delay = 0
