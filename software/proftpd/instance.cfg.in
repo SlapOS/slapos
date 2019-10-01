@@ -2,6 +2,7 @@
 parts = switch-softwaretype
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+extends = {{ template_monitor }}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
