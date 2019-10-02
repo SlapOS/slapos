@@ -26,14 +26,18 @@
 ##############################################################################
 
 import os
+import unittest
 import paramiko
 import contextlib
 import base64
 import hashlib
 import subprocess
+
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import urljoin
 from six.moves.configparser import ConfigParser
+import requests
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -46,6 +50,78 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class SlaprunnerTestCase(SlapOSInstanceTestCase):
   # Slaprunner uses unix sockets, so it needs short paths.
   __partition_reference__ = 's'
+
+
+class TestWeb(SlaprunnerTestCase):
+  def test_slaprunner(self):
+    # slaprunner main interface is password protected
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = parameter_dict['url']
+    resp = requests.get(url, verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    resp = requests.get(
+        url,
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertIn('SlapOS', resp.text)
+
+  def test_shellinabox(self):
+    # shellinabox exists at /shellinabox and is password protected
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = urljoin(parameter_dict['url'], '/shellinabox')
+    resp = requests.get(url, verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    resp = requests.get(
+        url,
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertIn('ShellInABox', resp.text)
+    self.assertNotIn('SlapOS', resp.text)
+
+  def test_public_url(self):
+    # ~/srv/runner/public/ is served over http
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    public_url = parameter_dict['public-url']
+
+    hello_file = os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'runner',
+        'public',
+        'hello.html')
+    self.addCleanup(os.remove, hello_file)
+    with open(hello_file, 'w') as f:
+      f.write('<b>Hello</b>')
+
+    index = requests.get(public_url, verify=False)
+    self.assertEqual(requests.codes.ok, index.status_code)
+    self.assertIn('hello.html', index.text)
+
+    hello = requests.get(urljoin(public_url, 'hello.html'), verify=False)
+    self.assertEqual(requests.codes.ok, hello.status_code)
+    self.assertIn('<b>Hello</b>', hello.text)
+
+  # git seems broken, these are 404 now...
+  @unittest.expectedFailure
+  def test_git_private(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = parameter_dict['git-private']
+    resp = requests.get(url, verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    resp = requests.get(
+        url,
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(requests.codes.ok, resp.status_code)
+
+  @unittest.expectedFailure
+  def test_git_public(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = parameter_dict['git-public']
+    resp = requests.get(url, verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
 
 
 class TestSSH(SlaprunnerTestCase):
