@@ -1,6 +1,17 @@
 [slapos]
 software_root = {{ slaprunner['software_root'] }}
 instance_root = {{ slaprunner['instance_root'] }}
+shared_part_list =
+  {#- buildout_shared_part_list_dump is ${buildout:shared-part-list} rendered as a
+  template during software step.
+  Because it can contain new lines, it's not possible to use it directly when generating
+  buildout config files from buildout, because the newlines don't get indented and cause
+  the instance buildout to be invalid ini file.
+  So we had to dump it in a simple text file and now we parse again that text file. -#}
+  {%- for line in codecs.open(buildout_shared_part_list_dump).readlines() %}
+  {{   line.strip() }}
+  {%- endfor %}
+  {{ slaprunner['shared_root'] }}
 master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
 computer_id = slaprunner
 maximal_delay = 0

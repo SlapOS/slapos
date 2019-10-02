@@ -1,10 +1,27 @@
---- Makefile.in	2016-07-28 00:54:27.000000000 +0200
-+++ Makefile.in	2016-08-19 13:02:30.227177750 +0200
-@@ -304,7 +304,6 @@
- 	$(srcdir)/mkinstalldirs $(DESTDIR)$(mandir)/$(mansubdir)5
- 	$(srcdir)/mkinstalldirs $(DESTDIR)$(mandir)/$(mansubdir)8
- 	$(srcdir)/mkinstalldirs $(DESTDIR)$(libexecdir)
--	(umask 022 ; $(srcdir)/mkinstalldirs $(DESTDIR)$(PRIVSEP_PATH))
+From 46cf5eba19cf52ffae48ea95f07a36b4c107ebd8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sun, 20 May 2018 20:47:16 +0900
+Subject: [PATCH] Do not create PRIVSEP_PATH
+
+For SlapOS, this would need to be in instance, but instance paths are
+not known at software compilation time.  Because we don't do privileges
+separation, just disable creation of this directory.
+---
+ Makefile.in | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Makefile.in b/Makefile.in
+index 04e1c8e5..9bd5d01b 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -329,7 +329,6 @@ install-files:
+ 	$(MKDIR_P) $(DESTDIR)$(mandir)/$(mansubdir)5
+ 	$(MKDIR_P) $(DESTDIR)$(mandir)/$(mansubdir)8
+ 	$(MKDIR_P) $(DESTDIR)$(libexecdir)
+-	$(MKDIR_P) -m 0755 $(DESTDIR)$(PRIVSEP_PATH)
  	$(INSTALL) -m 0755 $(STRIP_OPT) ssh$(EXEEXT) $(DESTDIR)$(bindir)/ssh$(EXEEXT)
  	$(INSTALL) -m 0755 $(STRIP_OPT) scp$(EXEEXT) $(DESTDIR)$(bindir)/scp$(EXEEXT)
  	$(INSTALL) -m 0755 $(STRIP_OPT) ssh-add$(EXEEXT) $(DESTDIR)$(bindir)/ssh-add$(EXEEXT)
+-- 
+2.11.0
+
