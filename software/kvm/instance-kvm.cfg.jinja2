@@ -370,9 +370,10 @@ partition-id = ${slap-connection:partition-id}
 name = ${slap-parameter:frontend-instance-name}
 software-type = ${slap-parameter:frontend-software-type}
 slave = true
-config-host = ${novnc-instance:ip}
-config-port = ${novnc-instance:port}
-return = url resource port domainname
+config-https-only = True
+config-type = websocket
+config-url = ${backend-url:value}
+return = secure_access domain
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]
@@ -422,12 +423,31 @@ interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://moni
 [helper]
 blank-line =
 
+[backend-url]
+value = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+
+[frontend-port-execute]
+recipe = plone.recipe.command
+command =
+  set -e
+  port=$(echo '${request-slave-frontend:connection-secure_access}' | cut -d ':' -f 3 | cut -d '/' -f 1)
+  [ -z $port ] && port=443
+  echo $port > ${:output}
+update-command = ${:command}
+stop-on-error = True
+output = ${directory:var}/frontend_port.txt
+
+[frontend-port]
+recipe = collective.recipe.shelloutput
+commands =
+  port = cat ${frontend-port-execute:output}
+
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-url}/vnc.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = ${backend-url:value}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}

@@ -3,32 +3,6 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
   "properties": {
-    "frontend": {
-      "title": "KVM frontend (web socket)",
-      "description": "Front end used to provide VNC.",
-      "properties": {
-        "frontend-instance-guid": {
-          "title": "Frontend Instance ID",
-          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-          "type": "string",
-          "default": ""
-        },
-        "frontend-software-type": {
-          "title": "Frontend Software Type",
-          "description": "Type of the frontend instance, like \"frontend\".",
-          "type": "string",
-          "default": "frontend"
-        },
-        "frontend-software-url": {
-          "title": "Frontend Software URL",
-          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-          "type": "string",
-          "format": "uri",
-          "default": "https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg"
-        }
-      },
-      "type": "object"
-    },
     "slave-frontend": {
       "title": "Web frontend",
       "description": "Front end used to provide web access for internal services at the kvm.",
