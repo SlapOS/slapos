@@ -65,7 +65,8 @@ recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
 {%     set log_access_url = slave_information.pop('log-access-urls', None) %}
 {%     if log_access_url %}
-log-access-url = {{ dumps(json_module.dumps(log_access_url)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {%     endif %}
 {%     for key, value in slave_information.iteritems() %}
 {{ key }} = {{ dumps(value) }}

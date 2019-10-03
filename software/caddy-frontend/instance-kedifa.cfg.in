@@ -102,8 +102,7 @@ stop-on-error = True
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
      on_renew='${kedifa-reloader:wrapper-path}',
-     template_csr='${kedifa-csr:template-csr}',
-     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     template_csr='${kedifa-csr:template-csr}'
 )}}
 
 [store-csr_id]
@@ -134,7 +133,7 @@ stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    openssl req -new -newkey rsa:2048 -sha256 -subj \
+    {{ parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
       "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
@@ -292,7 +291,8 @@ commands =
 
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
-slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
 caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=

@@ -600,7 +600,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': None,
+        'monitor-base-url': 'None',
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -633,7 +633,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       {
-        'monitor-base-url': None,
+        'monitor-base-url': 'None',
         'domain': 'example.com',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -974,6 +974,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     )
 
     return parameter_dict
+
+  def getMasterPartitionPath(self):
+    return '/' + os.path.join(
+      *glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
+        )
+      )[0].split('/')[:-2])
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -1397,7 +1405,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '52',
       'rejected-slave-amount': '5',
@@ -1494,6 +1502,18 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 """,
       result_missing.text
     )
+
+  def test_server_polluted_keys_removed(self):
+    buildout_file = os.path.join(
+      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+    for line in [
+      q for q in open(buildout_file).readlines()
+      if q.startswith('config-slave-list') or q.startswith(
+          'config-extra_slave_instance_list')]:
+      self.assertFalse('slave_title' in line)
+      self.assertFalse('slap_software_type' in line)
+      self.assertFalse('connection-parameter-hash' in line)
+      self.assertFalse('timestamp' in line)
 
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
@@ -3907,6 +3927,43 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
+class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': SLAPOS_TEST_IPV4,
+      '-frontend-quantity': 2,
+      '-sla-2-computer_guid': 'slapos.test',
+      '-frontend-2-state': 'destroyed',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
+      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'empty': {}}
+
+  def test_extra_slave_instance_list_not_present_destroyed_request(self):
+    buildout_file = os.path.join(
+      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+    with open(buildout_file) as fh:
+      buildout_file_content = fh.read()
+      node_1_present = re.search(
+        "^config-frontend-name = !py!'caddy-frontend-1'$",
+        buildout_file_content, flags=re.M) is not None
+      node_2_present = re.search(
+        "^config-frontend-name = !py!'caddy-frontend-2'$",
+        buildout_file_content, flags=re.M) is not None
+    self.assertTrue(node_1_present)
+    self.assertFalse(node_2_present)
+
+
 class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
                                          TestDataMixin):
   @classmethod
@@ -4117,7 +4174,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': None,
+        'public-ipv4': 'None',
       },
       parameter_dict
     )
@@ -4171,7 +4228,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': None,
+        'public-ipv4': 'None',
       },
       parameter_dict
     )
@@ -4228,7 +4285,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4322,7 +4379,7 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       {
         'domain': 'test.None', 'replication_number': '1',
         'url': 'http://test.None', 'site_url': 'http://test.None',
-        'secure_access': 'https://test.None', 'public-ipv4': None},
+        'secure_access': 'https://test.None', 'public-ipv4': 'None'},
       parameter_dict
     )
     master_monitor_conf = open(os.path.join(
@@ -4505,7 +4562,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
@@ -4887,7 +4944,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5340,7 +5397,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '2',
@@ -6029,7 +6086,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6132,7 +6189,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': None,
+      'monitor-base-url': 'None',
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',

@@ -29,6 +29,8 @@ max_allowed_packet = 128M
 query_cache_size = 32M
 innodb_file_per_table = {{ parameter_dict['innodb-file-per-table'] }}
 
+default_time_zone = '+00:00'
+
 plugin_load = ha_mroonga
 
 max_connections = {{ parameter_dict['max-connection-count'] }}

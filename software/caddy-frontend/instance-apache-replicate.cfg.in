@@ -1,4 +1,6 @@
 {% if slap_software_type in software_type %}
+{#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
+{%- set SERVER_POLLUTED_KEY_LIST = ['connection-parameter-hash', 'timestamp', 'slave_title', 'slap_software_type'] -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
@@ -183,7 +185,12 @@ context =
 {%     endif %}
 {%   endif %}
 {%   if len(slave_error_list) == 0 %}
-{%     do authorized_slave_list.append(slave) %}
+{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
+{%     set authorized_slave = slave.copy() %}
+{%     for key in SERVER_POLLUTED_KEY_LIST %}
+{%       do authorized_slave.pop(key, None) %}
+{%     endfor %}
+{%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
 {%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
@@ -192,6 +199,7 @@ context =
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
 {%   endif %}
 {% endfor %}
+{% do authorized_slave_list.sort() %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
@@ -213,23 +221,28 @@ software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url csr_id-url csr_id-certificate
 
 {% for section, frontend_request in request_dict.iteritems() %}
+{%   set state = frontend_request.get('state', '') %}
 [{{section}}]
 <= replicate
 name = {{ frontend_request.get('name') }}
-{%   if frontend_request.get('state') %}
-state = {{ frontend_request.get('state') }}
-{%   endif%}
+{%   if state %}
+state = {{ state }}
+{%   endif %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ cluster_identification }}
-{%   set slave_configuration_dict = slapparameter_dict %}
-{%   do slave_configuration_dict.update(frontend_request.get('config')) %}
-{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
-{%   do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
-{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+{#   Do not send additional parameters for destroyed nodes #}
+{%   if state != 'destroyed' %}
+{%     set slave_configuration_dict = slapparameter_dict %}
+{%     do slave_configuration_dict.update(frontend_request.get('config')) %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{%     do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
+{%     do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
+{%-     for config_key, config_value in slave_configuration_dict.iteritems() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
-{%   endfor -%}
+{%     endfor -%}
+{%   endif %}
 {%   if frontend_request.get('sla') %}
 {%     for parameter, value in frontend_request.get('sla').iteritems() %}
 sla-{{ parameter }} = {{ value }}
@@ -251,16 +264,19 @@ domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
-rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 {% if len(warning_list) > 0 %}
-warning-list = {{ dumps(json_module.dumps(warning_list)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 {% endif %}
 {% if len(warning_slave_dict) > 0 %}
-warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
 {% endif %}
 {% if not aikc_enabled %}
 kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
@@ -294,7 +310,7 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
-config-slave-list = {{ dumps(slave_instance_list) }}
+config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ cluster_identification }}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
@@ -316,12 +332,14 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 
 [rejected-slave-information]
 {% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
-{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list, sort_keys=True)) }}
 {% endfor %}
 
 [warning-slave-information]
 {% for slave_id, warning_list in warning_slave_dict.iteritems() %}
-{{ slave_id }} = {{ dumps(json_module.dumps(warning_list)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{{ slave_id }} = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 {% endfor %}
 
 [slave-information]
@@ -336,7 +354,8 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
 {%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
 {% endfor %}
-active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
@@ -484,7 +503,8 @@ directory = ${directory:promise-output}
 rendered = ${:directory}/${:filename}
 template = {{ parameter_dict['template_empty'] }}
 {% if rejected_slave_title_dict %}
-content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2)) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2, sort_keys=True)) }}
 {% else %}
 content =
 {% endif %}
