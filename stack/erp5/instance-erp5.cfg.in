@@ -19,6 +19,9 @@
 {%   set test_runner_total_database_count = mariadb_test_database_amount %}
 {%   set test_runner_enabled = mariadb_test_database_amount > 0 %}
 {% endif -%}
+{% if not test_runner_enabled -%}
+{%   set test_runner_total_database_count = 0 %}
+{% endif -%}
 {% set monitor_base_url_dict = {} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
@@ -115,7 +118,7 @@ backup-caucased = ${:srv}/backup/caucased
     'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000),
     'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', ''),
     'test-database-amount': test_runner_total_database_count,
-    'max-connection-count': sum(partition_thread_count_list) * 5 + 50,
+    'max-connection-count': (sum(partition_thread_count_list) + test_runner_total_database_count) * 5 + 50,
   },
   {
     'database-list': True,
