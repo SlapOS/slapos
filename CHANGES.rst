@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.0.123 (2019-10-03)
+--------------------
+
+- wrapper: accept hash-files already existing inside the partition directory
+
+
 1.0.122 (2019-09-24)
 --------------------
 

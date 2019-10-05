@@ -26,7 +26,6 @@
 ##############################################################################
 
 import os, shlex
-from six.moves import filter
 from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
 from zc.buildout import UserError
 
@@ -51,7 +50,9 @@ class Recipe(GenericBaseRecipe):
         hash_files = options.get('hash-files')
         if hash_files:
           self.hash_files = hash_files.split()
-          self._existing = list(filter(os.path.exists, self.hash_files))
+          prefix = os.path.realpath(buildout['buildout']['directory']) + os.sep
+          self._existing = [x for x in self.hash_files
+              if os.path.exists(x) and not os.path.realpath(x).startswith(prefix)]
         else:
           self.hash_files = []
         hash_files = options.get('hash-existing-files')

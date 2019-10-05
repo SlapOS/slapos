@@ -21,7 +21,7 @@ parts =
   promise-expose-csr_id-ip-port
 
 [caucased]
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
 {%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
@@ -175,7 +175,7 @@ command-line = {{ parameter_dict['caddy'] }}
   -root ${directory:csr_id}
 
 wrapper-path = ${directory:service}/expose-csr_id
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
 recipe = collective.recipe.shelloutput
@@ -249,7 +249,7 @@ command-line = {{ parameter_dict['kedifa'] }}
   --logfile ${kedifa-config:logfile}
 
 wrapper-path = ${directory:service}/kedifa
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 # Publish KeDiFa configuration for upload and download for each slave
 {%- set slave_kedifa_information = {} -%}
