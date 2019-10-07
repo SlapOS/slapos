@@ -380,7 +380,7 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [request-slave-frontend-china]
 <= request-slave-frontend-base
-name = ${slap-parameter:frontend-instance-name}
+name = ${slap-parameter:frontend-china-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-china-instance-guid}
 
 [frontend-promise]
@@ -699,6 +699,7 @@ frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/s
 frontend-instance-guid =
 frontend-china-instance-guid = SOFTINST-XXX
 frontend-instance-name = VNC Frontend
+frontend-china-instance-name = VNC Frontend China
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
