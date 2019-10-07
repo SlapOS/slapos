@@ -1,3 +1,4 @@
+{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'True').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
@@ -378,11 +379,6 @@ return = secure_access domain
 name = ${slap-parameter:frontend-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
-[request-slave-frontend-additional]
-<= request-slave-frontend-base
-name = ${slap-parameter:frontend-additional-instance-name}
-sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
-
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/frontend_promise
@@ -390,13 +386,19 @@ url = ${publish-connection-information:url}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
+{% if additional_frontend %}
+[request-slave-frontend-additional]
+<= request-slave-frontend-base
+name = ${slap-parameter:frontend-additional-instance-name}
+sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
+
 [frontend-additional-promise]
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/frontend_additional_promise
 url = ${publish-connection-information:url-additional}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
-
+{% endif %}
 
 {% if enable_http == 'true' %}
 [httpd]
@@ -458,6 +460,7 @@ filename = ${frontend-port-execute:output}
 commands =
   port = [ -f '${:filename}' ] && cat '${:filename}' || echo "NotReady"
 
+{% if additional_frontend %}
 [frontend-additional-port-execute]
 <= frontend-port-execute-base
 secure_access = ${request-slave-frontend-additional:connection-secure_access}
@@ -466,6 +469,7 @@ output = ${directory:var}/frontend_additional_port.txt
 [frontend-additional-port]
 <= frontend-port
 filename = ${frontend-additional-port-execute:output}
+{% endif %}
 
 [publish-connection-information]
 <= monitor-publish
@@ -473,7 +477,9 @@ recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+{% if additional_frontend %}
 url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+{% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
@@ -811,7 +817,9 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+{% if additional_frontend %}
   frontend-additional-promise
+{% endif %}
 # monitor parts
   monitor-base
 # Complete parts with sections
