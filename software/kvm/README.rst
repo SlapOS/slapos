@@ -119,21 +119,3 @@ files for more instance parameters (cpu-count, ram-size, disk-size, specific loc
 
 Then, if you want one of the two clones to takeover, you need to login into
 the hosting machine, go to the partition of the clone, and invoke bin/takeover.
-
-
-KVM Frontend Master Instance (will host all frontend Slave Instances)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This type of instance will allow to host any frontend slave instance requested
-by KVM instances. Slave instances (and thus KVM instance) will be accessible
-at : https://mydomain.com/instancereference .
-
-::
-  mykvmfrontend = request(
-      software_release=kvm,
-      partition_reference="mykvmfrontend",
-      partition_parameter_kw={
-          "domain":"mydomain.com"
-      },
-      software_type="frontend",
-  )
