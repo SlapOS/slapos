@@ -336,21 +336,25 @@
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
       "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-      "type": "string",
-      "default": "SOFTINST-11031"
+      "type": "string"
+    },
+    "frontend-additional-instance-guid": {
+      "title": "Additional Frontend Instance ID",
+      "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+      "type": "string"
     },
     "frontend-software-type": {
       "title": "Frontend Software Type",
       "description": "Type of the frontend instance, like \"frontend\".",
       "type": "string",
-      "default": "frontend"
+      "default": "RootSoftwareInstance"
     },
     "frontend-software-url": {
       "title": "Frontend Software URL",
       "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
       "type": "string",
       "format": "uri",
-      "default": "https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg"
+      "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
     }
   }
 }
