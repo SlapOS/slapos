@@ -335,9 +335,14 @@
     },
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
-      "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+      "description": "Unique identifier of the frontend instance, like \"SOFTINST-XXX\".",
+      "type": "string"
+    },
+    "frontend-china-instance-guid": {
+      "title": "Frontend Instance ID",
+      "description": "Unique identifier of the frontend instance for users in China, like \"SOFTINST-XXX\".",
       "type": "string",
-      "default": "SOFTINST-11031"
+      "default": "SOFTINST-XXX"
     },
     "frontend-software-type": {
       "title": "Frontend Software Type",
