@@ -35,9 +35,10 @@ See the instance-kvm-input-schema.json file for more instance parameters (cpu-co
 KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- frontend-software-type (default: frontend)
-- frontend-software-url (default: https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg)
+- frontend-software-type (default: RootSoftwareInstance)
+- frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
+- frontend-addtional-instance-guid
 - frontend-instance-name (default: VNC Frontend)
 - nbd-port (default: 1024)
 - nbd-host
