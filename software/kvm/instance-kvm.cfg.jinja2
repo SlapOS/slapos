@@ -8,7 +8,6 @@
 {% set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
-{% set frontend_software_type = 'default' -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
