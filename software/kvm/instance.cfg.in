@@ -13,7 +13,6 @@ default = $${:kvm}
 kvm-cluster = $${dynamic-template-kvm-cluster:rendered}
 kvm = $${dynamic-template-kvm:rendered}
 nbd = ${template-nbd:output}
-frontend = ${template-frontend:output}
 
 kvm-resilient = $${dynamic-template-kvm-resilient:rendered}
 kvm-import = $${dynamic-template-kvm-import:rendered}
