@@ -378,10 +378,10 @@ return = secure_access domain
 name = ${slap-parameter:frontend-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
-[request-slave-frontend-china]
+[request-slave-frontend-additional]
 <= request-slave-frontend-base
-name = ${slap-parameter:frontend-china-instance-name}
-sla-instance_guid = ${slap-parameter:frontend-china-instance-guid}
+name = ${slap-parameter:frontend-additional-instance-name}
+sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
@@ -390,10 +390,10 @@ url = ${publish-connection-information:url}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
-[frontend-china-promise]
+[frontend-additional-promise]
 recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/frontend_china_promise
-url = ${publish-connection-information:url-china}
+path = ${directory:promises}/frontend_additional_promise
+url = ${publish-connection-information:url-additional}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
@@ -458,14 +458,14 @@ filename = ${frontend-port-execute:output}
 commands =
   port = [ -f '${:filename}' ] && cat '${:filename}' || echo "NotReady"
 
-[frontend-china-port-execute]
+[frontend-additional-port-execute]
 <= frontend-port-execute-base
-secure_access = ${request-slave-frontend-china:connection-secure_access}
-output = ${directory:var}/frontend_china_port.txt
+secure_access = ${request-slave-frontend-additional:connection-secure_access}
+output = ${directory:var}/frontend_additional_port.txt
 
-[frontend-china-port]
+[frontend-additional-port]
 <= frontend-port
-filename = ${frontend-china-port-execute:output}
+filename = ${frontend-additional-port-execute:output}
 
 [publish-connection-information]
 <= monitor-publish
@@ -473,7 +473,7 @@ recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url-china = ${request-slave-frontend-china:connection-secure_access}/vnc.html?host=${request-slave-frontend-china:connection-domain}&port=${frontend-china-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
@@ -697,9 +697,9 @@ log = ${directory:public}/ansible/vm-bootstrap.log
 frontend-software-type = RootSoftwareInstance
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 frontend-instance-guid =
-frontend-china-instance-guid = SOFTINST-XXX
+frontend-additional-instance-guid =
 frontend-instance-name = VNC Frontend
-frontend-china-instance-name = VNC Frontend China
+frontend-additional-instance-name = VNC Frontend Additional
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
@@ -811,7 +811,7 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
-  frontend-china-promise
+  frontend-additional-promise
 # monitor parts
   monitor-base
 # Complete parts with sections

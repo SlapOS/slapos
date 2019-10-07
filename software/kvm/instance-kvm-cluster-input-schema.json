@@ -12,11 +12,10 @@
           "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
           "type": "string"
         },
-        "frontend-china-instance-guid": {
-          "title": "Frontend Instance ID",
-          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-          "type": "string",
-          "default": "SOFTINST-XXX"
+        "frontend-additional-instance-guid": {
+          "title": "Additional Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+          "type": "string"
         },
         "frontend-software-type": {
           "title": "Frontend Software Type",

@@ -37,7 +37,7 @@ KVM instance parameters:
 - frontend-software-type (default: RootSoftwareInstance)
 - frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
-- frontend-china-instance-guid (default: SOFTINST-XXX)
+- frontend-addtional-instance-guid
 - frontend-instance-name (default: VNC Frontend)
 - nbd-port (default: 1024)
 - nbd-host

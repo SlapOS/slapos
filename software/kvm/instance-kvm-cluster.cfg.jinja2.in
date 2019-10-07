@@ -48,7 +48,7 @@ state = stopped
 {% endif -%}
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
-config-frontend-china-instance-name = {{ instance_name ~ ' VNC Frontend China' }}
+config-frontend-addtional-instance-name = {{ instance_name ~ ' VNC Frontend Additional' }}
 config-frontend-software-type = RootSoftwareInstance
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg')) }}
 {{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}

@@ -338,9 +338,9 @@
       "description": "Unique identifier of the frontend instance, like \"SOFTINST-XXX\".",
       "type": "string"
     },
-    "frontend-china-instance-guid": {
-      "title": "Frontend Instance ID",
-      "description": "Unique identifier of the frontend instance for users in China, like \"SOFTINST-XXX\".",
+    "frontend-additional-instance-guid": {
+      "title": "Additional Frontend Instance ID",
+      "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-XXX\", if empty won't be requested.",
       "type": "string",
       "default": "SOFTINST-XXX"
     },
