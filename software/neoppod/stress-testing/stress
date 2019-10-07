@@ -1,0 +1,33 @@
+#!/usr/bin/python
+import curses, os, subprocess, sys, tempfile, threading, time
+from functools import partial
+curses.setupterm()
+
+result = partial(os.path.join, sys.argv[1])
+duration = int(sys.argv[2])
+
+cmd = sys.argv[3:]
+cmd[cmd.index('--')] = 'run'
+cmd[:0] = 'bin/py', 'parts/neoppod-repository/tools/stress', '-l', '../log'
+
+p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+time.sleep(10)
+p.stdin.write(curses.tigetstr("kf1"))
+t = threading.Timer(duration, p.stdin.write, ('q',))
+t.daemon = True
+try:
+    t.start()
+    returncode = p.wait()
+finally:
+    t.cancel()
+
+with open(result('status'), 'wb') as f:
+    f.write(str(returncode))
+
+if returncode:
+    subprocess.call(
+        ('tar', '-caf', result('log.tar.xz'), 'log'),
+        cwd=os.pardir)
+    subprocess.call(
+        ('tar', '-caf', result('db.tar.xz'), 'neo_tests'),
+        cwd=tempfile.gettempdir())

@@ -1,0 +1,168 @@
+#!{{parameter_dict['runTestSuite_py']}}
+from __future__ import print_function
+import argparse, curses, json, os, subprocess, sys, traceback
+from time import gmtime, strftime, time
+# These are the 2 modules to reuse when using ERP5 for managing test bots.
+# What we do here is currently too new to reuse more from testsuite.
+from erp5.util import taskdistribution
+from erp5.util.testsuite import format_command
+from zc.buildout.buildout import Buildout
+
+{% set vm = parameter_dict['vm'] -%}
+
+dist_list = {{vm['dists'].split()}}
+publish = {{slapparameter_dict.get('publish')}}
+
+
+class DummyTestResult:
+
+  class DummyTestResultLine:
+
+    def stop(self, **kw):
+      with open(self.name + '.json', 'w') as f:
+        json.dump(kw, f)
+
+  done = 0
+
+  def __init__(self, test_name_list):
+    self.test_name_list = test_name_list
+
+  def start(self):
+    test_result_line = self.DummyTestResultLine()
+    try:
+      test_result_line.name = self.test_name_list[self.done]
+    except IndexError:
+      return
+    self.done += 1
+    return test_result_line
+
+
+def main():
+  os.environ.update({k: v.strip() % os.environ
+    for k, v in {{parameter_dict['environment'].items()}}})
+
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', type=int,
+                      help='Number of CPUs to use for the VM')
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  test_title = args.test_suite_title or args.test_suite
+  if args.master_url:
+    tool = taskdistribution.TaskDistributor(args.master_url)
+    test_result = tool.createTestResult(args.revision,
+                                        dist_list,
+                                        args.test_node_title,
+                                        test_title=test_title,
+                                        project_title=args.project_title)
+    if test_result is None:
+      return
+  else:
+    test_result = DummyTestResult(dist_list)
+
+  Buildout._setup_logging = lambda self: None
+
+  # XXX: fix install of slapos.libnetworkcache in offline mode
+  import slapos.libnetworkcache
+  from zc.buildout.easy_install import buildout_and_setuptools_path
+  path, = slapos.__path__
+  buildout_and_setuptools_path.append(os.path.dirname(path))
+  ###
+
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  try:
+    os.write(fd, """\
+[buildout]
+offline = true
+relative-paths = true
+""")
+    Buildout('buildout.cfg', ()).bootstrap(None)
+    os.write(fd, """\
+extends = {{parameter_dict['profile_base_location']}}/stress.cfg
+develop-eggs-directory = {{buildout['develop-eggs-directory']}}
+eggs-directory = {{buildout['eggs-directory']}}
+
+[stress]
+environment =
+vm = {{vm['location']}}
+mount.neoppod = {{parameter_dict['neoppod']}}
+""")
+  finally:
+    os.close(fd)
+  partdir = os.path.join('parts', 'stress')
+  stderr_write = sys.stderr.write
+
+  while 1:
+    test_result_line = test_result.start()
+    if not test_result_line:
+      break
+    dist = test_result_line.name
+
+    cmd = [os.path.join('bin', 'buildout'),
+      'stress:dist=' + dist,
+    ]
+    if args.node_quantity:
+      cmd.append('stress:smp=%s' % args.node_quantity)
+    status_dict = {'command': format_command(*cmd)}
+    print('$', status_dict['command'])
+
+    # Wanted on test result lines:
+    #  status: UNKNOWN in case of buildout failure
+    #  output: stress check if any
+    #  error: buildout traceback or VM's disk usage
+
+    start = time()
+    try:
+      try:
+        p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+        stderr = []
+        while 1:
+          line = p.stderr.readline()
+          if not line:
+            break
+          stderr_write(line)
+          stderr.append(line)
+        returncode = p.wait()
+      finally:
+        end = time()
+      del p
+      status_dict['stderr'] = ''.join(stderr)
+
+      if not returncode:
+        try:
+          with open(os.path.join(partdir, 'status')) as f:
+            status = int(f.read())
+        except Exception:
+          pass
+        else:
+          status_dict['test_count'] = 1
+          try:
+            curses.setupterm('screen')
+            rmkx = curses.tigetstr('rmkx')
+            with open(os.path.join(partdir, 'stdout')) as f:
+              stdout = f.read()
+            status_dict['stdout'] = stdout[stdout.rindex(rmkx)+len(rmkx):]
+          except Exception:
+            status = -1
+          if status:
+            status_dict['error_count'] = 1
+
+    except Exception:
+      status_dict.setdefault('stderr', traceback.format_exc())
+
+    test_result_line.stop(
+      date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
+      duration = end - start,
+      **status_dict)
+
+
+if __name__ == "__main__":
+    main()
