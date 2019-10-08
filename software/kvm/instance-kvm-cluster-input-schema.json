@@ -7,22 +7,6 @@
       "title": "KVM frontend (web socket)",
       "description": "Front end used to provide VNC.",
       "properties": {
-        "frontend-instance-guid": {
-          "title": "Frontend Instance ID",
-          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-          "type": "string"
-        },
-        "frontend-additional-instance-guid": {
-          "title": "Additional Frontend Instance ID",
-          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
-          "type": "string"
-        },
-        "frontend-software-type": {
-          "title": "Frontend Software Type",
-          "description": "Type of the frontend instance, like \"frontend\".",
-          "type": "string",
-          "default": "RootSoftwareInstance"
-        },
         "frontend-software-url": {
           "title": "Frontend Software URL",
           "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
