@@ -47,10 +47,14 @@ sla-project_guid = {{ dumps(kvm_parameter_dict.get('project-guid', '')) }}
 state = stopped
 {% endif -%}
 
-config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
-config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
-config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
-{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
+config-frontend-instance-name = {{ instance_name ~ ' VNC Real Frontend' }}
+{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Frontend Additional' }}
+{% endif %}
+{{ setconfig('frontend-software-url', frontend_dict.get('frontend-software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg')) }}
+{{ setconfig('frontend-software-type', frontend_dict.get('frontend-software-type', 'RootSoftwareInstance')) }}
+{{ setconfig('frontend-instance-guid', frontend_dict.get('frontend-instance-guid', '')) }}
+{{ setconfig('frontend-additional-instance-guid', frontend_dict.get('frontend-additional-instance-guid', '')) }}
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
@@ -126,6 +130,9 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return = 
   url
+{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+  url-additional
+{% endif %}
   backend-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
@@ -151,6 +158,9 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
+{% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
 {% endfor %}
 
