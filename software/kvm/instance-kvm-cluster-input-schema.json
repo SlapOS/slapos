@@ -472,7 +472,7 @@
               "title": "Additional Frontend Instance ID",
               "description": "Unique identifier of the frontend instance to deliver websocket connections, like \"SOFTINST-11031\".",
               "type": "string"
-            }
+            },
             "frontend-software-type": {
               "title": "Frontend Software Type",
               "description": "Type of the frontend instance, like \"frontend\".",
