@@ -25,7 +25,11 @@
 #
 ##############################################################################
 
+import httplib
+import json
 import os
+import requests
+import urlparse
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -54,7 +58,7 @@ class ServicesTestCase(InstanceTestCase):
 
     with self.slap.instance_supervisor_rpc as supervisor:
       process_names = [process['name']
-                     for process in supervisor.getAllProcessInfo()]
+                       for process in supervisor.getAllProcessInfo()]
 
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
@@ -64,3 +68,134 @@ class ServicesTestCase(InstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class MonitorAccessMixin(object):
+  def test_access_monitor(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    monitor_base_url = connection_parameter_dict['monitor-base-url']
+    monitor_setup_url = connection_parameter_dict['monitor-setup-url']
+    monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
+
+    auth = urlparse.parse_qs(urlparse.urlparse(monitor_url_with_auth).path)
+
+    result = requests.get(
+      monitor_base_url, verify=False, auth=(
+        auth['username'][0],
+        auth['password'][0])
+    )
+
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+
+
+class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ad'
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertFalse('url-additional' in connection_parameter_dict)
+
+
+class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ada'
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+    result = requests.get(
+      connection_parameter_dict['url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+
+class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'akc'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True
+        }
+      }
+    })}
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
+
+
+class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'akca'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "frontend": {
+        'frontend-additional-instance-guid': 'SOMETHING',
+      },
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+        }
+      }
+    })}
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+    result = requests.get(
+      connection_parameter_dict['kvm0-url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
