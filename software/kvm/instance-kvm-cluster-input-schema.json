@@ -43,6 +43,12 @@
           "type": "string",
           "default": ""
         },
+        "additional-instance-guid": {
+          "title": "Additional Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "type": "string",
+          "default": ""
+        },
         "frontend-software-type": {
           "title": "Frontend Software Type",
           "description": "Type of the frontend instance, like \"frontend\".",
