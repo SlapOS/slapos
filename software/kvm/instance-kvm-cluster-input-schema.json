@@ -489,6 +489,16 @@
               "type": "boolean",
               "default": false
             }
+            "frontend-instance-guid": {
+              "title": "Main Frontend Instance ID",
+              "description": "Unique identifier of the frontend instance to deliver websocket connections, like \"SOFTINST-11031\".",
+              "type": "string"
+            },
+            "frontend-additional-instance-guid": {
+              "title": "Additional Frontend Instance ID",
+              "description": "Unique identifier of the frontend instance to deliver websocket connections, like \"SOFTINST-11031\".",
+              "type": "string"
+            }
           },
           "type": "object"
         }
