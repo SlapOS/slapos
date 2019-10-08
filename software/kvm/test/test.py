@@ -152,7 +152,7 @@ class TestAccessKvmClusterAdditional(InstanceTestCase):
       "kvm-partition-dict": {
         "KVM0": {
             "disable-ansible-promise": True,
-            'additional-instance-guid': 'SOMETHING',
+            'frontend-additional-instance-guid': 'SOMETHING',
         }
       }
     })}

@@ -48,10 +48,13 @@ state = stopped
 {% endif -%}
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
-config-frontend-addtional-instance-name = {{ instance_name ~ ' VNC Frontend Additional' }}
+{% if kvm_parameter_dict.get('frontend-additional-instance-guid', '') %}
+config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Frontend Additional' }}
+{% endif %}
 config-frontend-software-type = RootSoftwareInstance
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg')) }}
-{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
+{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('frontend-instance-guid', '')) }}
+{{ setconfig('frontend-additional-instance-guid', kvm_parameter_dict.get('frontend-additional-instance-guid', '')) }}
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
@@ -127,6 +130,9 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return = 
   url
+{% if kvm_parameter_dict.get('frontend-additional-instance-guid', '') %}
+  url-additional
+{% endif %}
   backend-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
@@ -152,6 +158,9 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% if kvm_parameter_dict.get('frontend-additional-instance-guid', '') %}
+{% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
+{% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
 {% endfor %}
 
