@@ -101,7 +101,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
-config-monitor-password = ${publish-early:monitor-password}
+config-monitor-password = ${monitor-htpasswd:passwd}
 # Enable disk wipe options
 {% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
 config-wipe-disk-ondestroy = True
@@ -256,11 +256,6 @@ mode = {{ mode }}
 {% if slapparameter_dict.get('cluster-data', '') -%}
 {{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
 {% endif -%}
-
-[publish-early]
-recipe = slapos.cookbook:publish-early
--init =
-  monitor-password monitor-htpasswd:passwd
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
