@@ -361,13 +361,11 @@ log = ${directory:log}/crond.log
 
 [request-slave-frontend-base]
 recipe = slapos.cookbook:requestoptional
-software-url = ${slap-parameter:frontend-software-url}
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-software-type = ${slap-parameter:frontend-software-type}
 slave = true
 config-https-only = True
 config-type = websocket
@@ -376,6 +374,8 @@ return = secure_access domain
 
 [request-slave-frontend]
 <= request-slave-frontend-base
+software-url = ${slap-parameter:frontend-software-url}
+software-type = ${slap-parameter:frontend-software-type}
 name = ${slap-parameter:frontend-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
@@ -389,6 +389,8 @@ curl_path = {{ curl_executable_location }}
 {% if additional_frontend %}
 [request-slave-frontend-additional]
 <= request-slave-frontend-base
+software-url = ${slap-parameter:frontend-additional-software-url}
+software-type = ${slap-parameter:frontend-additional-software-type}
 name = ${slap-parameter:frontend-additional-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 
@@ -703,8 +705,10 @@ log = ${directory:public}/ansible/vm-bootstrap.log
 frontend-software-type = RootSoftwareInstance
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 frontend-instance-guid =
-frontend-additional-instance-guid =
 frontend-instance-name = VNC Real Frontend
+frontend-additional-software-type = RootSoftwareInstance
+frontend-additional-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+frontend-additional-instance-guid =
 frontend-additional-instance-name = VNC Real Frontend Additional
 nbd-port = 1024
 nbd-host =
