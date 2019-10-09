@@ -6,6 +6,8 @@
 {% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
 {% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'custom-personal') -%}
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
+{% set WEBSOCKET_FRONTEND_DEFAULT_SR = 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg' %}
+{% set WEBSOCKET_FRONTEND_DEFAULT_ST = 'RootSoftwareInstance' %}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
 {% set monitor_base_url_dict = {} -%}
@@ -48,13 +50,15 @@ state = stopped
 {% endif -%}
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Real Frontend' }}
-{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
-config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Frontend Additional' }}
-{% endif %}
-{{ setconfig('frontend-software-url', frontend_dict.get('frontend-software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg')) }}
-{{ setconfig('frontend-software-type', frontend_dict.get('frontend-software-type', 'RootSoftwareInstance')) }}
+{{ setconfig('frontend-software-url', frontend_dict.get('frontend-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-software-type', frontend_dict.get('frontend-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
 {{ setconfig('frontend-instance-guid', frontend_dict.get('frontend-instance-guid', '')) }}
+
+config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Frontend Additional' }}
+{{ setconfig('frontend-additional-software-url', frontend_dict.get('frontend-additional-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-additional-software-type', frontend_dict.get('frontend-additional-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
 {{ setconfig('frontend-additional-instance-guid', frontend_dict.get('frontend-additional-instance-guid', '')) }}
+
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
