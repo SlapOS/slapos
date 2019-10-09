@@ -3,6 +3,7 @@
 # If you want to load your custom bash configuration, please use a .bashrc file
 
 cd {{ workdir }}
+export HOME={{- home }}
 export PATH={{- path }}
 export SHELL={{- shell }}
 {%- if instance_name %}
