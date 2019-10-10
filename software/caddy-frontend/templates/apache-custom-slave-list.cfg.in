@@ -15,6 +15,7 @@
 {%   set slave_instance_information_list = [] %}
 {%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) %}
 {% endif %}
+{% set SLAVE_PRESENT = len(slave_instance_list) > 0 %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
@@ -348,17 +349,18 @@ recipe = slapos.cookbook:publish
 {# End of the main for loop#}
 {% endfor %}
 
+{% if SLAVE_PRESENT %}
 [slave-log-directories]
 <= slave-log-directory-dict
 recipe = slapos.cookbook:mkdirectory
 
-{% do part_list.append('slave-log-directories') %}
+{%   do part_list.append('slave-log-directories') %}
 
 [slave-log-cache-direct-directories]
 <= slave-log-cache-direct-directory-dict
 recipe = slapos.cookbook:mkdirectory
 
-{% do part_list.append('slave-log-cache-direct-directories') %}
+{%   do part_list.append('slave-log-cache-direct-directories') %}
 
 [caddy-log-access]
 < = jinja2-template-base
@@ -369,8 +371,57 @@ extra-context =
     section slave_password slave-password
     section parameter_dict caddy-log-access-parameters
 
-{% do part_list.append('caddy-log-access') %}
+{%   do part_list.append('caddy-log-access') %}
 
+[promise-caddy-frontend-v4-https]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv4_https.py
+config-hostname = {{ local_ipv4 }}
+config-port = {{ https_port }}
+{%   do part_list.append('promise-caddy-frontend-v4-https') %}
+
+[promise-caddy-frontend-v4-http]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv4_http.py
+config-hostname = {{ local_ipv4 }}
+config-port = {{ http_port }}
+{%   do part_list.append('promise-caddy-frontend-v4-http') %}
+
+[promise-caddy-frontend-v6-https]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv6_https.py
+config-hostname = ${slap-network-information:global-ipv6}
+config-port = {{ https_port }}
+{%   do part_list.append('promise-caddy-frontend-v6-https') %}
+
+[promise-caddy-frontend-v6-http]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_frontend_ipv6_http.py
+config-hostname = ${slap-network-information:global-ipv6}
+config-port = {{ http_port }}
+{%   do part_list.append('promise-caddy-frontend-v6-http') %}
+
+[promise-caddy-frontend-cached]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_cached.py
+config-hostname = {{ local_ipv4 }}
+config-port = {{ cached_port }}
+{%   do part_list.append('promise-caddy-frontend-cached') %}
+
+[promise-caddy-frontend-ssl-cached]
+<= promise-plugin-base
+module = check_port_listening
+name = caddy_ssl_cached.py
+config-hostname = {{ local_ipv4 }}
+config-port = {{ ssl_cached_port }}
+{%   do part_list.append('promise-caddy-frontend-ssl-cached') %}
+
+{% endif %} {# if SLAVE_PRESENT #}
 ###############################################
 ### Prepare virtualhost for slaves using cache
 
