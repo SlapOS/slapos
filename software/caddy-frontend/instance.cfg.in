@@ -65,6 +65,9 @@ extra-context =
     raw template_monitor {{ monitor2_template }}
     raw common_profile {{ common_profile }}
     section parameter_dict dynamic-template-caddy-frontend-parameters
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+import-list =
+  file caucase :caucase-jinja2-library
 
 [dynamic-template-kedifa]
 < = jinja2-template-base
