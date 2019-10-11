@@ -472,6 +472,23 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   maxDiff = None
 
   @classmethod
+  def requestSlaves(cls):
+    request = cls.slap.request
+    for slave_reference, partition_parameter_kw in cls\
+            .getSlaveParameterDictDict().items():
+      request(
+        software_release=cls.getSoftwareURL(),
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        shared=True
+      )
+
+  @classmethod
+  def requestDefaultInstance(cls, *args, **kwargs):
+    super(HttpFrontendTestCase, cls).requestDefaultInstance(*args, **kwargs)
+    cls.requestSlaves()
+
+  @classmethod
   def setUpClass(cls):
     super(HttpFrontendTestCase, cls).setUpClass()
     # extra class attributes used in HttpFrontendTestCase
@@ -813,18 +830,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpSlaves(cls):
     cls.slave_connection_parameter_dict_dict = {}
-    request = cls.slap.request
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
-      slave_instance = request(
-        software_release=cls.getSoftwareURL(),
-        partition_reference=slave_reference,
-        partition_parameter_kw=partition_parameter_kw,
-        shared=True
-      )
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
+    request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
