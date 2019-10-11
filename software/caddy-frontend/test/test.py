@@ -1113,11 +1113,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
-      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
-        'url': cls.backend_https_url,
-        'ssl-proxy-verify': True,
-        'ssl_proxy_ca_crt': 'damaged',
-      },
+#      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+#        'url': cls.backend_https_url,
+#        'ssl-proxy-verify': True,
+#        'ssl_proxy_ca_crt': 'damaged',
+#      },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -1231,10 +1231,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'websocket-path-list': '////ws//// /with%20space/',
         'websocket-transparent': 'false',
       },
-      'type-eventsource': {
-        'url': cls.backend_url,
-        'type': 'eventsource',
-      },
+#      'type-eventsource': {
+#        'url': cls.backend_url,
+#        'type': 'eventsource',
+#      },
       'type-redirect': {
         'url': cls.backend_url,
         'type': 'redirect',
@@ -1287,11 +1287,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable-http2-default': {
         'url': cls.backend_url,
       },
-      'apache_custom_http_s-rejected': {
-        'url': cls.backend_url,
-        'apache_custom_https': '# apache_custom_https_filled_in_rejected',
-        'apache_custom_http': '# apache_custom_http_filled_in_rejected',
-      },
+#      'apache_custom_http_s-rejected': {
+#        'url': cls.backend_url,
+#        'apache_custom_https': '# apache_custom_https_filled_in_rejected',
+#        'apache_custom_http': '# apache_custom_http_filled_in_rejected',
+#      },
       'apache_custom_http_s-accepted': {
         'url': cls.backend_url,
         'apache_custom_https': cls.apache_custom_https % dict(
@@ -1299,11 +1299,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'apache_custom_http': cls.apache_custom_http % dict(
           url=cls.backend_url),
       },
-      'caddy_custom_http_s-rejected': {
-        'url': cls.backend_url,
-        'caddy_custom_https': '# caddy_custom_https_filled_in_rejected',
-        'caddy_custom_http': '# caddy_custom_http_filled_in_rejected',
-      },
+#      'caddy_custom_http_s-rejected': {
+#        'url': cls.backend_url,
+#        'caddy_custom_https': '# caddy_custom_https_filled_in_rejected',
+#        'caddy_custom_http': '# caddy_custom_http_filled_in_rejected',
+#      },
       'caddy_custom_http_s-accepted': {
         'url': cls.backend_url,
         'caddy_custom_https': cls.caddy_custom_https % dict(
@@ -1311,12 +1311,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'caddy_custom_http': cls.caddy_custom_http % dict(
           url=cls.backend_url),
       },
-      # this has to be rejected
-      'caddy_custom_http_s': {
-        'url': cls.backend_url,
-        'caddy_custom_https': '# caddy_custom_https_filled_in_rejected_2',
-        'caddy_custom_http': '# caddy_custom_http_filled_in_rejected_2',
-      },
+#      # this has to be rejected
+#      'caddy_custom_http_s': {
+#        'url': cls.backend_url,
+#        'caddy_custom_https': '# caddy_custom_https_filled_in_rejected_2',
+#        'caddy_custom_http': '# caddy_custom_http_filled_in_rejected_2',
+#      },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
