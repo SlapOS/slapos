@@ -46,16 +46,15 @@ import StringIO
 import gzip
 import base64
 import re
+import socket
 from slapos.recipe.librecipe import generateHashFromFiles
+from contextlib import closing
 
 
 try:
     import lzma
 except ImportError:
     from backports import lzma
-
-from utils import SlapOSInstanceTestCase
-from utils import findFreeTCPPort
 
 import datetime
 
@@ -65,6 +64,22 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
+
+def findFreeTCPPort(ip=''):
+  """Find a free TCP port to listen to.
+  """
+  family = socket.AF_INET6 if ':' in ip else socket.AF_INET
+  with closing(socket.socket(family, socket.SOCK_STREAM)) as s:
+    s.bind((ip, 0))
+    return s.getsockname()[1]
+
 
 SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
 SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
@@ -466,12 +481,6 @@ class TestDataMixin(object):
 class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
-
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (
-      os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
 
   @classmethod
   def setUpClass(cls):
