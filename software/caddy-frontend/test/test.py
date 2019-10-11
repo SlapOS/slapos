@@ -811,20 +811,25 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return False
 
   @classmethod
-  def setUpSlaves(cls):
-    cls.slave_connection_parameter_dict_dict = {}
+  def requestSlaves(cls):
     request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      slave_instance = request(
+      request(
         software_release=cls.getSoftwareURL(),
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
         shared=True
       )
+
+  @classmethod
+  def setUpSlaves(cls):
+    cls.slave_connection_parameter_dict_dict = {}
+    cls.requestSlaves()
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
+    request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
@@ -850,6 +855,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     try:
       cls.createWildcardExampleComCertificate()
       cls.startServerProcess()
+      cls.requestSlaves()
       super(SlaveHttpFrontendTestCase, cls).setUpClass()
       cls.setup_master_exception = None
       cls.setup_slave_exception = None
