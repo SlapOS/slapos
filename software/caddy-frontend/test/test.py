@@ -822,17 +822,22 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return False
 
   @classmethod
-  def setUpSlaves(cls):
-    cls.slave_connection_parameter_dict_dict = {}
+  def requestSlaves(cls):
     request = cls.slapos_controler.slap.registerOpenOrder().request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      slave_instance = request(
+      request(
         software_release=cls.software_url_list[0],
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
         shared=True
       )
+
+  @classmethod
+  def setUpSlaves(cls):
+    cls.slave_connection_parameter_dict_dict = {}
+    cls.requestSlaves()
+    request = cls.slapos_controler.slap.registerOpenOrder().request
     # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
@@ -867,6 +872,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       # Swallow setup master and slave exceptions, as not all tests depend on
       # it, and can provide important information about bad state of the
       # test environment
+      cls.requestSlaves()
       cls.setUpMaster()
       cls.setUpSlaves()
     except Exception:
