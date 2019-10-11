@@ -54,9 +54,6 @@ try:
 except ImportError:
     from backports import lzma
 
-from utils import SlapOSInstanceTestCase
-from utils import findFreeTCPPort
-
 import datetime
 
 from cryptography import x509
@@ -65,6 +62,13 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import findFreeTCPPort
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
 
 SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
 SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
@@ -468,12 +472,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   maxDiff = None
 
   @classmethod
-  def getSoftwareURLList(cls):
-    return (
-      os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
-
-  @classmethod
   def setUpClass(cls):
     super(HttpFrontendTestCase, cls).setUpClass()
     # extra class attributes used in HttpFrontendTestCase
@@ -797,8 +795,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         return False
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      parameter_dict = cls.slapos_controler.slap.registerOpenOrder().request(
-        software_release=cls.software_url_list[0],
+      parameter_dict = cls.request(
+        software_release=cls.getSoftwareURL(),
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
         shared=True
@@ -815,11 +813,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpSlaves(cls):
     cls.slave_connection_parameter_dict_dict = {}
-    request = cls.slapos_controler.slap.registerOpenOrder().request
+    request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
-        software_release=cls.software_url_list[0],
+        software_release=cls.getSoftwareURL(),
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
         shared=True
@@ -830,7 +828,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
       slave_instance = request(
-        software_release=cls.software_url_list[0],
+        software_release=cls.getSoftwareURL(),
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
         shared=True
@@ -5917,8 +5915,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       ssl_ca_crt=ca.certificate_pem,
     )
 
-    self.slapos_controler.slap.registerOpenOrder().request(
-        software_release=self.software_url_list[0],
+    self.request(
+        software_release=self.cls.getSoftwareURL(),
         partition_reference='custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
         partition_parameter_kw=slave_parameter_dict,
         shared=True
