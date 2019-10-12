@@ -1,6 +1,58 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
+    "custom_domain": {
+      "description": "Custom Domain to use for the website",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "title": "Custom Domain",
+      "type": "string"
+    },
+    "url": {
+      "description": "Url of the backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Backend URL",
+      "type": "string"
+    },
+    "type": {
+      "default": "",
+      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
+      "enum": [
+        "",
+        "zope",
+        "redirect",
+        "notebook",
+        "websocket",
+        "eventsource"
+      ],
+      "title": "Backend Type",
+      "type": "string"
+    },
+    "path": {
+      "default": "",
+      "description": "Path to proxy to in the backend",
+      "title": "type:zope Backend Path",
+      "type": "string"
+    },
+    "enable_cache": {
+      "default": "false",
+      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend Caddy and backend",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Enable Cache",
+      "type": "string"
+    },
+    "https-only": {
+      "default": "false",
+      "description": "If set to true, http requests will be redirected to https",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "HTTPS Only",
+      "type": "string"
+    },
     "caddy_custom_http": {
       "default": "",
       "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
@@ -13,12 +65,6 @@
       "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
       "textarea": true,
       "title": "HTTPS configuration",
-      "type": "string"
-    },
-    "custom_domain": {
-      "description": "Custom Domain to use for the website",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
-      "title": "Custom Domain",
       "type": "string"
     },
     "default-path": {
@@ -63,26 +109,6 @@
       "title": "Enable HTTP2 Protocol",
       "type": "string"
     },
-    "enable_cache": {
-      "default": "false",
-      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend Caddy and backend",
-      "enum": [
-        "false",
-        "true"
-      ],
-      "title": "Enable Cache",
-      "type": "string"
-    },
-    "https-only": {
-      "default": "false",
-      "description": "If set to true, http requests will be redirected to https",
-      "enum": [
-        "false",
-        "true"
-      ],
-      "title": "HTTPS Only",
-      "type": "string"
-    },
     "https-url": {
       "description": "HTTPS Url of the backend if it is diferent from url parameter",
       "pattern": "^(http|https|ftp)://",
@@ -99,12 +125,6 @@
       "default": "",
       "description": "IPv6 Address for the frontend keep monitoring with ping6 (without brackets)",
       "title": "IPv6 Address to Monitor Packet Lost",
-      "type": "string"
-    },
-    "path": {
-      "default": "",
-      "description": "Path to proxy to in the backend",
-      "title": "type:zope Backend Path",
       "type": "string"
     },
     "websocket-path-list": {
@@ -181,26 +201,6 @@
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
       "textarea": true,
       "title": "SSL Backend Authority's Certificate",
-      "type": "string"
-    },
-    "type": {
-      "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
-      "enum": [
-        "",
-        "zope",
-        "redirect",
-        "notebook",
-        "websocket",
-        "eventsource"
-      ],
-      "title": "Backend Type",
-      "type": "string"
-    },
-    "url": {
-      "description": "Url of the backend",
-      "pattern": "^(http|https|ftp)://",
-      "title": "Backend URL",
       "type": "string"
     },
     "virtualhostroot-http-port": {

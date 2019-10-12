@@ -4,8 +4,7 @@ kvm
 Introduction
 ------------
 
-This software release is used to deploy KVM instances, NBD instances and
-Frontend instances of KVM.
+This software release is used to deploy KVM and NBD instances.
 
 For extensive parameters definition, please look at parameter-input-schema.json.
 
@@ -35,9 +34,10 @@ See the instance-kvm-input-schema.json file for more instance parameters (cpu-co
 KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- frontend-software-type (default: frontend)
-- frontend-software-url (default: https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg)
+- frontend-software-type (default: RootSoftwareInstance)
+- frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)
 - frontend-instance-guid
+- frontend-addtional-instance-guid
 - frontend-instance-name (default: VNC Frontend)
 - nbd-port (default: 1024)
 - nbd-host
@@ -119,21 +119,3 @@ files for more instance parameters (cpu-count, ram-size, disk-size, specific loc
 
 Then, if you want one of the two clones to takeover, you need to login into
 the hosting machine, go to the partition of the clone, and invoke bin/takeover.
-
-
-KVM Frontend Master Instance (will host all frontend Slave Instances)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This type of instance will allow to host any frontend slave instance requested
-by KVM instances. Slave instances (and thus KVM instance) will be accessible
-at : https://mydomain.com/instancereference .
-
-::
-  mykvmfrontend = request(
-      software_release=kvm,
-      partition_reference="mykvmfrontend",
-      partition_parameter_kw={
-          "domain":"mydomain.com"
-      },
-      software_type="frontend",
-  )

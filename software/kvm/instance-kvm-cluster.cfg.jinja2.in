@@ -6,6 +6,8 @@
 {% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
 {% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'custom-personal') -%}
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
+{% set WEBSOCKET_FRONTEND_DEFAULT_SR = 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg' %}
+{% set WEBSOCKET_FRONTEND_DEFAULT_ST = 'RootSoftwareInstance' %}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
 {% set monitor_base_url_dict = {} -%}
@@ -47,10 +49,16 @@ sla-project_guid = {{ dumps(kvm_parameter_dict.get('project-guid', '')) }}
 state = stopped
 {% endif -%}
 
-config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
-config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
-config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
-{{ setconfig('frontend-instance-guid', kvm_parameter_dict.get('instance-guid', '')) }}
+config-frontend-instance-name = {{ instance_name ~ ' VNC Real Frontend' }}
+{{ setconfig('frontend-software-url', frontend_dict.get('frontend-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-software-type', frontend_dict.get('frontend-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
+{{ setconfig('frontend-instance-guid', frontend_dict.get('frontend-instance-guid', '')) }}
+
+config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Frontend Additional' }}
+{{ setconfig('frontend-additional-software-url', frontend_dict.get('frontend-additional-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-additional-software-type', frontend_dict.get('frontend-additional-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
+{{ setconfig('frontend-additional-instance-guid', frontend_dict.get('frontend-additional-instance-guid', '')) }}
+
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
 config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
@@ -100,7 +108,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
-config-monitor-password = ${publish-early:monitor-password}
+config-monitor-password = ${monitor-htpasswd:passwd}
 # Enable disk wipe options
 {% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
 config-wipe-disk-ondestroy = True
@@ -126,6 +134,9 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return = 
   url
+{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+  url-additional
+{% endif %}
   backend-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
@@ -151,6 +162,9 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
+{% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
 {% endfor %}
 
@@ -256,11 +270,6 @@ mode = {{ mode }}
 {{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
 {% endif -%}
 
-[publish-early]
-recipe = slapos.cookbook:publish-early
--init =
-  monitor-password monitor-htpasswd:passwd
-
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
@@ -277,14 +286,11 @@ private-path-list +=
   ${directory:webroot}/
 
 [publish-connection-information]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-monitor-password = ${publish-early:monitor-password}
-monitor-user = ${monitor-publish-parameters:monitor-user}
 {% do part_list.append('monitor-base') -%}
 
 [buildout]

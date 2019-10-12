@@ -1,3 +1,4 @@
+{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'True').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
@@ -8,7 +9,6 @@
 {% set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
-{% set frontend_software_type = 'default' -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
@@ -359,20 +359,24 @@ log = ${directory:log}/crond.log
 #--
 #-- Deploy frontend.
 
-[request-slave-frontend]
+[request-slave-frontend-base]
 recipe = slapos.cookbook:requestoptional
-software-url = ${slap-parameter:frontend-software-url}
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-name = ${slap-parameter:frontend-instance-name}
-software-type = ${slap-parameter:frontend-software-type}
 slave = true
-config-host = ${novnc-instance:ip}
-config-port = ${novnc-instance:port}
-return = url resource port domainname
+config-https-only = True
+config-type = websocket
+config-url = https://[${novnc-instance:ip}]:${novnc-instance:port}
+return = secure_access domain
+
+[request-slave-frontend]
+<= request-slave-frontend-base
+software-url = ${slap-parameter:frontend-software-url}
+software-type = ${slap-parameter:frontend-software-type}
+name = ${slap-parameter:frontend-instance-name}
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]
@@ -382,6 +386,21 @@ url = ${publish-connection-information:url}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
+{% if additional_frontend %}
+[request-slave-frontend-additional]
+<= request-slave-frontend-base
+software-url = ${slap-parameter:frontend-additional-software-url}
+software-type = ${slap-parameter:frontend-additional-software-type}
+name = ${slap-parameter:frontend-additional-instance-name}
+sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
+
+[frontend-additional-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/frontend_additional_promise
+url = ${publish-connection-information:url-additional}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+{% endif %}
 
 {% if enable_http == 'true' %}
 [httpd]
@@ -422,12 +441,47 @@ interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://moni
 [helper]
 blank-line =
 
+[frontend-port-execute-base]
+recipe = plone.recipe.command
+command =
+  set -e
+  port=$(echo '${request-slave-frontend:connection-secure_access}' | cut -d ':' -f 3 | cut -d '/' -f 1)
+  [ -z $port ] && port=443
+  echo $port > ${:output}
+update-command = ${:command}
+stop-on-error = True
+
+[frontend-port-execute]
+<= frontend-port-execute-base
+secure_access = ${request-slave-frontend:connection-secure_access}
+output = ${directory:var}/frontend_port.txt
+
+[frontend-port]
+recipe = collective.recipe.shelloutput
+filename = ${frontend-port-execute:output}
+commands =
+  port = [ -f '${:filename}' ] && cat '${:filename}' || echo "NotReady"
+
+{% if additional_frontend %}
+[frontend-additional-port-execute]
+<= frontend-port-execute-base
+secure_access = ${request-slave-frontend-additional:connection-secure_access}
+output = ${directory:var}/frontend_additional_port.txt
+
+[frontend-additional-port]
+<= frontend-port
+filename = ${frontend-additional-port-execute:output}
+{% endif %}
+
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-url}/vnc.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+{% if additional_frontend %}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+{% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
@@ -648,10 +702,14 @@ log = ${directory:public}/ansible/vm-bootstrap.log
 
 [slap-parameter]
 # Default values if not specified
-frontend-software-type = frontend
-frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
+frontend-software-type = RootSoftwareInstance
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 frontend-instance-guid =
-frontend-instance-name = VNC Frontend
+frontend-instance-name = VNC Real Frontend
+frontend-additional-software-type = RootSoftwareInstance
+frontend-additional-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+frontend-additional-instance-guid =
+frontend-additional-instance-name = VNC Real Frontend Additional
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
@@ -763,6 +821,9 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+{% if additional_frontend %}
+  frontend-additional-promise
+{% endif %}
 # monitor parts
   monitor-base
 # Complete parts with sections

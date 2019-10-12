@@ -25,30 +25,30 @@
 #
 ##############################################################################
 from setuptools import setup, find_packages
-import glob
-import os
 
 version = '0.0.1.dev0'
 name = 'slapos.test.re6stnet'
-long_description = open("README.md").read()
+with open("README.md") as f:
+  long_description = f.read()
 
-setup(name=name,
-      version=version,
-      description="Test for SlapOS' Re6stnet",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      maintainer="Nexedi",
-      maintainer_email="info@nexedi.com",
-      url="https://lab.nexedi.com/nexedi/slapos",
-      packages=find_packages(),
-      install_requires=[
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' Re6stnet",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
         'slapos.core',
         'slapos.cookbook',
         'slapos.libnetworkcache',
         'erp5.util',
         'supervisor',
         'psutil',
-        ],
-      zip_safe=True,
-      test_suite='test',
-    )
+    ],
+    zip_safe=True,
+    test_suite='test',
+)
