@@ -78,7 +78,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env LC_ALL=C.UTF-8 ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
