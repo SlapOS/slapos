@@ -4,7 +4,11 @@ T-1/var/log/expose-csr_id.log
 T-1/var/log/kedfia.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
+T-2/var/log/httpd-cache-direct/_dummy-cached_access_log
+T-2/var/log/httpd-cache-direct/_dummy-cached_error_log
 T-2/var/log/httpd-csr_id/expose-csr_id.log
+T-2/var/log/httpd/_dummy-cached_access_log
+T-2/var/log/httpd/_dummy-cached_error_log
 T-2/var/log/httpd/_enable-http2-default_access_log
 T-2/var/log/httpd/_enable-http2-default_error_log
 T-2/var/log/httpd/_enable-http2-false_access_log
