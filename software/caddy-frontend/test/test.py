@@ -404,6 +404,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
 
+  # minimise partition path
+  __partition_reference__ = 'T'
+
   @classmethod
   def callSupervisorMethod(cls, method, *args, **kwargs):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
