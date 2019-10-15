@@ -867,21 +867,24 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     parameter_dict = cls.slave_connection_parameter_dict_dict[
       cls.check_slave_id
     ]
-    wait_time = 30
+    wait_time = 60
     begin = time.time()
+    try_num = 0
+    cls.logger.info('waitForCaddy for %is' % (wait_time,))
     while True:
       try:
+        try_num += 1
+        cls.logger.info("waitForCaddy try %s" % (try_num,))
         fakeHTTPSResult(
           parameter_dict['domain'], parameter_dict['public-ipv4'],
-          'test-path/deep/.././deeper',
-          headers={
-            'Accept-Encoding': 'gzip',
-          }
+          '/',
         )
       except Exception:
         if time.time() - begin > wait_time:
+          cls.logger.exception("Error during waitForCaddy")
           raise
         else:
+          cls.logger.info("waitForCaddy sleeping for 0.5s")
           time.sleep(0.5)
       else:
         break
