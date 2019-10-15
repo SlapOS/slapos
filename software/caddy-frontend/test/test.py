@@ -870,11 +870,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     wait_time = 60
     begin = time.time()
     try_num = 0
-    cls.logger.info('waitForCaddy for %is' % (wait_time,))
+    cls.logger.debug('waitForCaddy for %is' % (wait_time,))
     while True:
       try:
         try_num += 1
-        cls.logger.info("waitForCaddy try %s" % (try_num,))
+        cls.logger.debug("waitForCaddy try %s" % (try_num,))
         fakeHTTPSResult(
           parameter_dict['domain'], parameter_dict['public-ipv4'],
           '/',
@@ -884,9 +884,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           cls.logger.exception("Error during waitForCaddy")
           raise
         else:
-          cls.logger.info("waitForCaddy sleeping for 0.5s")
+          cls.logger.debug("waitForCaddy sleeping for 0.5s")
           time.sleep(0.5)
       else:
+        cls.logger.debug("waitForCaddy took %.2fs" % ((time.time() - begin),))
         break
 
   @classmethod

@@ -1,8 +1,9 @@
-T-0/var/run/monitor-httpd.pid
-T-0/var/run/monitor/monitor-bootstrap.pid
-T-1/var/run/kedifa.pid
-T-1/var/run/monitor/monitor-bootstrap.pid
-T-2/var/run/graceful_configuration_state_signature
-T-2/var/run/httpd.pid
-T-2/var/run/monitor-httpd.pid
-T-2/var/run/monitor/monitor-bootstrap.pid
+TestSlave-0/var/run/monitor-httpd.pid
+TestSlave-0/var/run/monitor/monitor-bootstrap.pid
+TestSlave-1/var/run/kedifa.pid
+TestSlave-1/var/run/monitor-httpd.pid
+TestSlave-1/var/run/monitor/monitor-bootstrap.pid
+TestSlave-2/var/run/graceful_configuration_state_signature
+TestSlave-2/var/run/httpd.pid
+TestSlave-2/var/run/monitor-httpd.pid
+TestSlave-2/var/run/monitor/monitor-bootstrap.pid
