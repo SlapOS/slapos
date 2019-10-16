@@ -5342,10 +5342,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'ssl_ca_crt': cls.ca.certificate_pem,
         'custom_domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
       },
-      'ssl_ca_crt_only': {
-        'url': cls.backend_url,
-        'ssl_ca_crt': cls.ca.certificate_pem,
-      },
+      # 'ssl_ca_crt_only': {
+      #   'url': cls.backend_url,
+      #   'ssl_ca_crt': cls.ca.certificate_pem,
+      # },
       'ssl_ca_crt_garbage': {
         'url': cls.backend_url,
         'ssl_crt': cls.sslcacrtgarbage_ca_certificate_pem,
@@ -5358,10 +5358,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'ssl_key': cls.key_pem,
         'ssl_ca_crt': cls.ca.certificate_pem,
       },
-      'ssl_key-ssl_crt-unsafe': {
-        'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
-        'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
-      },
+      # 'ssl_key-ssl_crt-unsafe': {
+      #   'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
+      #   'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
+      # },
       'type-notebook-ssl_from_master': {
         'url': cls.backend_url,
         'type': 'notebook',
@@ -5399,10 +5399,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'rejected-slave-amount': '2',
       'slave-amount': '14',
       'rejected-slave-dict': {
-        u"_ssl_ca_crt_only":
-        [u"ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
-        u"_ssl_key-ssl_crt-unsafe":
-        [u"slave ssl_key and ssl_crt does not match"]
+        # u"_ssl_ca_crt_only":
+        # [u"ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
+        # u"_ssl_key-ssl_crt-unsafe":
+        # [u"slave ssl_key and ssl_crt does not match"]
       },
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
@@ -5428,9 +5428,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
           u'ssl_crt is obsolete, please use key-upload-url',
           u'ssl_ca_crt is obsolete, please use key-upload-url',
         ],
-        u'_ssl_ca_crt_only': [
-          u'ssl_ca_crt is obsolete, please use key-upload-url',
-        ],
+        # u'_ssl_ca_crt_only': [
+        #   u'ssl_ca_crt is obsolete, please use key-upload-url',
+        # ],
         u'_ssl_from_slave': [
           u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
@@ -5439,10 +5439,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
           u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
         ],
-        u'_ssl_key-ssl_crt-unsafe': [
-          u'ssl_key is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
-        ],
+        # u'_ssl_key-ssl_crt-unsafe': [
+        #   u'ssl_key is obsolete, please use key-upload-url',
+        #   u'ssl_crt is obsolete, please use key-upload-url',
+        # ],
         u'_type-notebook-ssl_from_slave': [
           u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
@@ -5809,6 +5809,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
+  @skip('Not implemented in new test system')
   def test_ssl_ca_crt_only(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
 
@@ -6017,6 +6018,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         out.read()
       )
 
+  @skip('Not implemented in new test system')
   def test_ssl_key_ssl_crt_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('ssl_key-ssl_crt-unsafe')
     self.assertEqual(
