@@ -647,6 +647,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     return {
       'waitforcaddyslave': {
         'url': cls.backend_url,
+        'enable_cache': True,
       }
     }
 
@@ -3873,11 +3874,13 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'replicate'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'replicate': {
         'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -3941,9 +3944,15 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'empty'
   @classmethod
   def getSlaveParameterDictDict(cls):
-    return {'empty': {}}
+    return {
+      'empty': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+      }
+    }
 
   def test_extra_slave_instance_list_not_present_destroyed_request(self):
     buildout_file = os.path.join(
@@ -3976,6 +3985,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'dummy-cached'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -3987,6 +3997,10 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-true': {
         'enable-http2': 'true',
       },
+      'dummy-cached': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+      }
     }
 
   def test_enable_http2_default(self):
@@ -4065,6 +4079,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'dummy-cached'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4076,6 +4091,10 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'enable-http2-true': {
         'enable-http2': 'true',
       },
+      'dummy-cached': {
+        'url': cls.backend_url,
+        'enable_cache': True,
+      }
     }
 
   def test_enable_http2_default(self):
@@ -4152,10 +4171,13 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'default'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'default': {
+        'url': cls.backend_url,
+        'enable_cache': True
       },
     }
 
@@ -4206,10 +4228,13 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'default'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'default': {
+        'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -4359,11 +4384,16 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   def runKedifaUpdater(cls):
     return
 
+  check_slave_id = 'test'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'test': {
         'url': cls.backend_url,
+      },
+      'testcached': {
+        'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -4407,11 +4437,13 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
+  check_slave_id = 'url'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'url': {
         'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -5172,11 +5204,13 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'mpm-graceful-shutdown-timeout': 2,
     }
 
+  check_slave_id = 'ssl_from_master_kedifa_overrides_master_certificate'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'ssl_from_master_kedifa_overrides_master_certificate': {
         'url': cls.backend_url,
+        'enable_cache': True
       },
     }
 
@@ -5310,11 +5344,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'mpm-graceful-shutdown-timeout': 2,
     }
 
+  check_slave_id = 'ssl_from_master'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'ssl_from_master': {
         'url': cls.backend_url,
+        'enable_cache': True,
       },
       'ssl_from_master_kedifa_overrides': {
         'url': cls.backend_url,
@@ -6069,11 +6105,13 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     cls.instance_parameter_dict['public-ipv4'] = cls._ipv4_address
     return cls.instance_parameter_dict
 
+  test_slave_id = 'ssl_from_master'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'ssl_from_master': {
         'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -6170,10 +6208,13 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
     }
 
+  check_slave_id = 'default_ciphers'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'default_ciphers': {
+        'url': cls.backend_url,
+        'enable_cache': True,
       },
       'own_ciphers': {
         'ciphers': 'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
