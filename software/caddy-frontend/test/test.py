@@ -680,12 +680,16 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       server_side=True)
 
     cls.backend_url = 'http://%s:%s/' % server.server_address
-    cls.server_process = multiprocessing.Process(target=server.serve_forever)
+    cls.server_process = multiprocessing.Process(
+      target=server.serve_forever, name='HTTPServer')
     cls.server_process.start()
+    cls.logger.debug('Started process %s' % (cls.server_process,))
+
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     cls.server_https_process = multiprocessing.Process(
-      target=server_https.serve_forever)
+      target=server_https.serve_forever, name='HTTPSServer')
     cls.server_https_process.start()
+    cls.logger.debug('Started process %s' % (cls.server_https_process,))
 
   @classmethod
   def stopServerProcess(cls):
@@ -694,7 +698,13 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     for server in ['server_process', 'server_https_process']:
       process = getattr(cls, server, None)
       if process is not None:
+        cls.logger.debug('Stopping process %s' % (process,))
+        process.join(10)
         process.terminate()
+        time.sleep(0.1)
+        if process.is_alive():
+          cls.logger.warning(
+            'Process %s still alive' % (process, ))
 
   @classmethod
   def setUpMaster(cls):
