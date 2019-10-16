@@ -834,9 +834,9 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         break
 
   @classmethod
-  def tearDownClass(cls):
+  def _cleanup(cls):
     cls.stopServerProcess()
-    super(SlaveHttpFrontendTestCase, cls).tearDownClass()
+    super(SlaveHttpFrontendTestCase, cls)._cleanup()
 
   def patchRequests(self):
     HTTPResponse = requests.packages.urllib3.response.HTTPResponse
