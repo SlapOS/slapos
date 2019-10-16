@@ -70,9 +70,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-SLAPOS_TEST_IPV4 = os.environ['SLAPOS_TEST_IPV4']
-SLAPOS_TEST_IPV6 = os.environ['SLAPOS_TEST_IPV6']
-
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
@@ -81,8 +78,6 @@ MONITOR_F1_HTTPD_PORT = '13001'
 MONITOR_F2_HTTPD_PORT = '13002'
 CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
-
-KEDIFA_IPV6_BASE = 'https://[%s]:%s' % (SLAPOS_TEST_IPV6, KEDIFA_PORT)
 
 
 # for development: debugging logs and install Ctrl+C handler
@@ -572,7 +567,8 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
-    base = '^' + KEDIFA_IPV6_BASE.replace(
+    kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
+    base = '^' + kedifa_ipv6_base.replace(
       '[', r'\[').replace(']', r'\]') + '/.{32}'
     self.assertRegexpMatches(
       generate_auth_url,
@@ -586,7 +582,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
     self.assertEqual(
       kedifa_caucase_url,
-      'http://[%s]:%s' % (SLAPOS_TEST_IPV6, CAUCASE_PORT),
+      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
     )
 
     return generate_auth_url, upload_url
@@ -657,17 +653,17 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
-      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
+      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
       TestHandler)
 
     server_https = HTTPServer(
-      (SLAPOS_TEST_IPV4, findFreeTCPPort(SLAPOS_TEST_IPV4)),
+      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
       TestHandler)
 
     cls.another_server_ca = CertificateAuthority("Another Server Root CA")
     cls.test_server_ca = CertificateAuthority("Test Server Root CA")
     key, key_pem, csr, csr_pem = createCSR(
-      "testserver.example.com", SLAPOS_TEST_IPV4)
+      "testserver.example.com", cls._ipv4_address)
     _, cls.test_server_certificate_pem = cls.test_server_ca.signCSR(csr)
 
     cls.test_server_certificate_file = tempfile.NamedTemporaryFile(
@@ -893,7 +889,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1039,7 +1035,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
@@ -1397,7 +1393,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % SLAPOS_TEST_IPV6,
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '52',
       'rejected-slave-amount': '0',
@@ -1628,17 +1624,17 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
 
     result_ipv6 = fakeHTTPSResult(
-      parameter_dict['domain'], SLAPOS_TEST_IPV6, 'test-path',
-      source_ip=SLAPOS_TEST_IPV6)
+      parameter_dict['domain'], self._ipv6_address, 'test-path',
+      source_ip=self._ipv6_address)
 
     self.assertEqual(
-       SLAPOS_TEST_IPV6,
+       self._ipv6_address,
        result_ipv6.json()['Incoming Headers']['x-forwarded-for']
     )
 
@@ -1732,7 +1728,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://serveraliaswildcard.example.com',
         'site_url': 'http://serveraliaswildcard.example.com',
         'secure_access': 'https://serveraliaswildcard.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1766,7 +1762,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://serveraliasduplicated.example.com',
         'site_url': 'http://serveraliasduplicated.example.com',
         'secure_access': 'https://serveraliasduplicated.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1801,7 +1797,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://alias4.example.com',
         'site_url': 'http://alias4.example.com',
         'secure_access': 'https://alias4.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1833,7 +1829,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1884,7 +1880,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslcacrtonly.example.com',
         'secure_access':
         'https://sslcacrtonly.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1916,7 +1912,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslcacrtgarbage.example.com',
         'secure_access':
         'https://sslcacrtgarbage.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -1970,7 +1966,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'site_url': 'http://sslcacrtdoesnotmatch.example.com',
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2047,7 +2043,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2074,7 +2070,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2109,7 +2105,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://*.customdomain.example.com',
         'site_url': 'http://*.customdomain.example.com',
         'secure_access': 'https://*.customdomain.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2138,7 +2134,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2324,7 +2320,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2564,7 +2560,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://typeeventsource.nginx.example.com',
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2632,7 +2628,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://sslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://sslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2740,7 +2736,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://enablecachesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2874,7 +2870,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'http://typezopesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -3078,7 +3074,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -3678,7 +3674,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': SLAPOS_TEST_IPV4},
+      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
       parameter_dict
     )
 
@@ -3779,7 +3775,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': SLAPOS_TEST_IPV4},
+      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
       parameter_dict
     )
 
@@ -3854,7 +3850,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'stopped',
@@ -3886,7 +3882,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -3922,7 +3918,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': 'slapos.test',
       '-frontend-2-state': 'destroyed',
@@ -3960,7 +3956,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -3995,7 +3991,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4015,7 +4011,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4035,7 +4031,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4050,7 +4046,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
@@ -4084,7 +4080,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4104,7 +4100,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4124,7 +4120,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4246,7 +4242,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
@@ -4303,7 +4299,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://empty.example.com',
         'site_url': 'http://empty.example.com',
         'secure_access': 'https://empty.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4380,9 +4376,9 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-httpd.conf')).read()
 
     self.assertTrue(
-      'Listen [%s]:8196' % (SLAPOS_TEST_IPV6,) in master_monitor_conf)
+      'Listen [%s]:8196' % (self._ipv6_address,) in master_monitor_conf)
     self.assertTrue(
-      'Listen [%s]:8072' % (SLAPOS_TEST_IPV6,) in slave_monitor_conf)
+      'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
 
 
 class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -4390,7 +4386,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'enable-quic': 'true',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -4423,7 +4419,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4489,7 +4485,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
@@ -4588,7 +4584,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://serveraliassame.example.com',
         'site_url': 'http://serveraliassame.example.com',
         'secure_access': 'https://serveraliassame.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4613,7 +4609,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://re6stoptimaltestunsafe.example.com',
         'site_url': 'http://re6stoptimaltestunsafe.example.com',
         'secure_access': 'https://re6stoptimaltestunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4655,7 +4651,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://re6stoptimaltestnocomma.example.com',
         'site_url': 'http://re6stoptimaltestnocomma.example.com',
         'secure_access': 'https://re6stoptimaltestnocomma.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4726,7 +4722,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://virtualhostroothttpportunsafe.example.com',
         'secure_access':
         'https://virtualhostroothttpportunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4754,7 +4750,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
         'secure_access':
         'https://virtualhostroothttpsportunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4784,7 +4780,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4818,7 +4814,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://monitoripv4testunsafe.example.com',
         'site_url': 'http://monitoripv4testunsafe.example.com',
         'secure_access': 'https://monitoripv4testunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4862,7 +4858,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://monitoripv6testunsafe.example.com',
         'site_url': 'http://monitoripv6testunsafe.example.com',
         'secure_access': 'https://monitoripv6testunsafe.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -4899,7 +4895,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'monitor-httpd-port': MONITOR_HTTPD_PORT,
@@ -4962,7 +4958,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://duplicate.example.com',
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -5015,7 +5011,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -5074,7 +5070,7 @@ class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -5105,7 +5101,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -5125,7 +5121,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -5154,7 +5150,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -5187,7 +5183,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -5292,7 +5288,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -5465,7 +5461,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -5492,7 +5488,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -5547,7 +5543,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5579,7 +5575,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5638,7 +5634,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -5666,7 +5662,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -5723,7 +5719,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5755,7 +5751,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5831,7 +5827,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': ['ssl_key is obsolete, please use key-upload-url',
                          'ssl_crt is obsolete, please use key-upload-url']
       },
@@ -5860,7 +5856,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5950,7 +5946,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://sslcacrtgarbage.example.com',
         'secure_access':
         'https://sslcacrtgarbage.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5981,7 +5977,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://sslcacrtdoesnotmatch.example.com',
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
-        'public-ipv4': SLAPOS_TEST_IPV4,
+        'public-ipv4': self._ipv4_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -6042,7 +6038,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
   instance_parameter_dict = {
     'domain': 'example.com',
-    'public-ipv4': SLAPOS_TEST_IPV4,
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
     'monitor-httpd-port': MONITOR_HTTPD_PORT,
@@ -6059,6 +6054,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'apache-certificate': cls.certificate_pem,
         'apache-key': cls.key_pem,
       })
+    cls.instance_parameter_dict['public-ipv4'] = cls._ipv4_address
     return cls.instance_parameter_dict
 
   @classmethod
@@ -6105,7 +6101,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': SLAPOS_TEST_IPV4
+        'public-ipv4': self._ipv4_address
       },
       parameter_dict
     )
@@ -6149,7 +6145,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': SLAPOS_TEST_IPV4,
+      'public-ipv4': cls._ipv4_address,
       '-frontend-authorized-slave-string':
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
