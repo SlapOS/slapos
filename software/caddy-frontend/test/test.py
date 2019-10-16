@@ -400,7 +400,95 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
 
 
-class HttpFrontendTestCase(SlapOSInstanceTestCase):
+def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
+                    headers=None, cookies=None, source_ip=None):
+  if headers is None:
+    headers = {}
+  # workaround request problem of setting Accept-Encoding
+  # https://github.com/requests/requests/issues/2234
+  headers.setdefault('Accept-Encoding', 'dummy')
+  session = requests.Session()
+  session.mount(
+    'https://%s:%s' % (domain, port),
+    ForcedIPHTTPSAdapter(
+      dest_ip=real_ip))
+  if source_ip is not None:
+    new_source = source.SourceAddressAdapter(source_ip)
+    session.mount('http://', new_source)
+    session.mount('https://', new_source)
+  return session.get(
+    'https://%s:%s/%s' % (domain, port, path),
+    verify=False,
+    allow_redirects=False,
+    headers=headers,
+    cookies=cookies
+  )
+
+
+def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
+                   headers=None):
+  if headers is None:
+    headers = {}
+  # workaround request problem of setting Accept-Encoding
+  # https://github.com/requests/requests/issues/2234
+  headers.setdefault('Accept-Encoding', 'dummy')
+  headers['Host'] = domain
+  return requests.get(
+    'http://%s:%s/%s' % (real_ip, port, path),
+    headers=headers,
+    allow_redirects=False,
+  )
+
+
+class TestHandler(BaseHTTPRequestHandler):
+  def do_GET(self):
+    timeout = int(self.headers.dict.get('timeout', '0'))
+    compress = int(self.headers.dict.get('compress', '0'))
+    time.sleep(timeout)
+    self.send_response(200)
+
+    drop_header_list = []
+    for header in self.headers.dict.get('x-drop-header', '').split():
+      drop_header_list.append(header)
+    prefix = 'x-reply-header-'
+    length = len(prefix)
+    for key, value in self.headers.dict.items():
+      if key.startswith(prefix):
+        self.send_header(
+          '-'.join([q.capitalize() for q in key[length:].split('-')]),
+          value.strip()
+        )
+
+    if 'Content-Type' not in drop_header_list:
+      self.send_header("Content-Type", "application/json")
+    if 'Set-Cookie' not in drop_header_list:
+      self.send_header('Set-Cookie', 'secured=value;secure')
+      self.send_header('Set-Cookie', 'nonsecured=value')
+
+    if 'x-reply-body' not in self.headers.dict:
+      response = {
+        'Path': self.path,
+        'Incoming Headers': self.headers.dict
+      }
+      response = json.dumps(response, indent=2)
+    else:
+      response = base64.b64decode(self.headers.dict['x-reply-body'])
+    if compress:
+      self.send_header('Content-Encoding', 'gzip')
+      out = StringIO.StringIO()
+      # compress with level 0, to find out if in the middle someting would
+      # like to alter the compression
+      with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
+        f.write(response)
+      response = out.getvalue()
+      self.send_header('Backend-Content-Length', len(response))
+    if 'Content-Length' not in drop_header_list:
+      self.send_header('Content-Length', len(response))
+    self.end_headers()
+    self.wfile.write(response)
+
+
+class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
 
@@ -436,15 +524,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   @classmethod
   def requestDefaultInstance(cls, state='started'):
     default_instance = super(
-      HttpFrontendTestCase, cls).requestDefaultInstance(state=state)
+      SlaveHttpFrontendTestCase, cls).requestDefaultInstance(state=state)
     if state != 'destroyed':
       cls.requestSlaves()
     return default_instance
 
   @classmethod
   def setUpClass(cls):
-    super(HttpFrontendTestCase, cls).setUpClass()
-    # extra class attributes used in HttpFrontendTestCase
+    cls.createWildcardExampleComCertificate()
+    cls.startServerProcess()
+    super(SlaveHttpFrontendTestCase, cls).setUpClass()
 
     # expose instance directory
     cls.instance_path = cls.slap.instance_directory
@@ -458,6 +547,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         'caddy-frontend-test')
     if not os.path.isdir(cls.working_directory):
       os.mkdir(cls.working_directory)
+    cls.setUpMaster()
+    cls.setUpSlaves()
+    cls.waitForCaddy()
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
@@ -554,161 +646,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       return False
     return True
 
-
-class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   @classmethod
-  def getInstanceParameterDict(cls):
+  def getSlaveParameterDictDict(cls):
     return {
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  def test(self):
-    # run partition until AIKC finishes
-    self.runComputerPartitionUntil(
-      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-    parameter_dict = self.parseConnectionParameterDict()
-    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'monitor-base-url': 'None',
-        'domain': 'None',
-        'accepted-slave-amount': '0',
-        'rejected-slave-amount': '0',
-        'slave-amount': '0',
-        'rejected-slave-dict': {}},
-      parameter_dict
-    )
-
-
-class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  def test(self):
-    # run partition until AIKC finishes
-    self.runComputerPartitionUntil(
-      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
-    parameter_dict = self.parseConnectionParameterDict()
-    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
-
-    self.assertEqual(
-      {
-        'monitor-base-url': 'None',
-        'domain': 'example.com',
-        'accepted-slave-amount': '0',
-        'rejected-slave-amount': '0',
-        'slave-amount': '0',
-        'rejected-slave-dict': {}
-      },
-      parameter_dict
-    )
-
-
-def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
-                    headers=None, cookies=None, source_ip=None):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  session = requests.Session()
-  session.mount(
-    'https://%s:%s' % (domain, port),
-    ForcedIPHTTPSAdapter(
-      dest_ip=real_ip))
-  if source_ip is not None:
-    new_source = source.SourceAddressAdapter(source_ip)
-    session.mount('http://', new_source)
-    session.mount('https://', new_source)
-  return session.get(
-    'https://%s:%s/%s' % (domain, port, path),
-    verify=False,
-    allow_redirects=False,
-    headers=headers,
-    cookies=cookies
-  )
-
-
-def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
-                   headers=None):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  headers['Host'] = domain
-  return requests.get(
-    'http://%s:%s/%s' % (real_ip, port, path),
-    headers=headers,
-    allow_redirects=False,
-  )
-
-
-class TestHandler(BaseHTTPRequestHandler):
-  def do_GET(self):
-    timeout = int(self.headers.dict.get('timeout', '0'))
-    compress = int(self.headers.dict.get('compress', '0'))
-    time.sleep(timeout)
-    self.send_response(200)
-
-    drop_header_list = []
-    for header in self.headers.dict.get('x-drop-header', '').split():
-      drop_header_list.append(header)
-    prefix = 'x-reply-header-'
-    length = len(prefix)
-    for key, value in self.headers.dict.items():
-      if key.startswith(prefix):
-        self.send_header(
-          '-'.join([q.capitalize() for q in key[length:].split('-')]),
-          value.strip()
-        )
-
-    if 'Content-Type' not in drop_header_list:
-      self.send_header("Content-Type", "application/json")
-    if 'Set-Cookie' not in drop_header_list:
-      self.send_header('Set-Cookie', 'secured=value;secure')
-      self.send_header('Set-Cookie', 'nonsecured=value')
-
-    if 'x-reply-body' not in self.headers.dict:
-      response = {
-        'Path': self.path,
-        'Incoming Headers': self.headers.dict
+      'waitforcaddyslave': {
+        'url': cls.backend_url,
       }
-      response = json.dumps(response, indent=2)
-    else:
-      response = base64.b64decode(self.headers.dict['x-reply-body'])
-    if compress:
-      self.send_header('Content-Encoding', 'gzip')
-      out = StringIO.StringIO()
-      # compress with level 0, to find out if in the middle someting would
-      # like to alter the compression
-      with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
-        f.write(response)
-      response = out.getvalue()
-      self.send_header('Backend-Content-Length', len(response))
-    if 'Content-Length' not in drop_header_list:
-      self.send_header('Content-Length', len(response))
-    self.end_headers()
-    self.wfile.write(response)
+    }
 
-
-class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
@@ -854,16 +799,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         '*.alias1.example.com',
       ])
 
-  @classmethod
-  def setUpClass(cls):
-    cls.createWildcardExampleComCertificate()
-    cls.startServerProcess()
-    super(SlaveHttpFrontendTestCase, cls).setUpClass()
-    cls.setUpMaster()
-    cls.setUpSlaves()
-    cls.waitForCaddy()
-
-  check_slave_id = 'Url'
+  check_slave_id = 'waitforcaddyslave'
   @classmethod
   def waitForCaddy(cls):
     # awaits until caddy is ready to serve slaves
@@ -975,6 +911,71 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       )[0].split('/')[:-2])
 
 
+class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  def test(self):
+    # run partition until AIKC finishes
+    self.runComputerPartitionUntil(
+      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+
+    self.assertEqual(
+      {
+        'monitor-base-url': 'None',
+        'domain': 'example.com',
+        'accepted-slave-amount': '0',
+        'rejected-slave-amount': '0',
+        'slave-amount': '0',
+        'rejected-slave-dict': {}
+      },
+      parameter_dict
+    )
+
+
+class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'monitor-httpd-port': MONITOR_HTTPD_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  def test(self):
+    # run partition until AIKC finishes
+    self.runComputerPartitionUntil(
+      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': 'None',
+        'domain': 'None',
+        'accepted-slave-amount': '0',
+        'rejected-slave-amount': '0',
+        'slave-amount': '0',
+        'rejected-slave-dict': {}},
+      parameter_dict
+    )
+
+
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
 https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
@@ -1052,6 +1053,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
+
+  check_slave_id = 'Url'
 
   @classmethod
   def setUpSlaves(cls):
