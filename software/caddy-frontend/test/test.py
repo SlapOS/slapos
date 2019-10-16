@@ -405,7 +405,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   maxDiff = None
 
   # minimise partition path
-  __partition_reference__ = 'T'
+  __partition_reference__ = 'T-'
 
   @classmethod
   def callSupervisorMethod(cls, method, *args, **kwargs):
