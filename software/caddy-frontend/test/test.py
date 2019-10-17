@@ -6139,7 +6139,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     cls.instance_parameter_dict['public-ipv4'] = cls._ipv4_address
     return cls.instance_parameter_dict
 
-  test_slave_id = 'ssl_from_master'
+  check_slave_id = 'ssl_from_master'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
