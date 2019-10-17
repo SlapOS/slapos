@@ -840,7 +840,8 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         )
       except Exception:
         if time.time() - begin > wait_time:
-          cls.logger.exception("Error during waitForCaddy after %.2fs" % ((time.time() - begin),))
+          cls.logger.exception(
+            "Error during waitForCaddy after %.2fs" % ((time.time() - begin),))
           raise
         else:
           time.sleep(0.5)
@@ -1084,14 +1085,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   check_slave_id = 'Url'
 
   @classmethod
-  def setUpSlaves(cls):
+  def startServerProcess(cls):
     cls.ca = CertificateAuthority('TestSlave')
     _, cls.customdomain_ca_key_pem, csr, _ = createCSR(
       'customdomainsslcrtsslkeysslcacrt.example.com')
     _, cls.customdomain_ca_certificate_pem = cls.ca.signCSR(csr)
     _, cls.customdomain_key_pem, _, cls.customdomain_certificate_pem = \
         createSelfSignedCertificate(['customdomainsslcrtsslkey.example.com'])
-    super(TestSlave, cls).setUpSlaves()
+    super(TestSlave, cls).startServerProcess()
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -5315,7 +5316,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # Do not upload certificates for the master partition
 
   @classmethod
-  def setUpSlaves(cls):
+  def startServerProcess(cls):
     _, cls.ssl_from_slave_key_pem, _, cls.ssl_from_slave_certificate_pem = \
       createSelfSignedCertificate(
         [
@@ -5358,7 +5359,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     _, cls.customdomain_key_pem, _, cls.customdomain_certificate_pem = \
         createSelfSignedCertificate(['customdomainsslcrtsslkey.example.com'])
 
-    super(TestSlaveSlapOSMasterCertificateCompatibility, cls).setUpSlaves()
+    super(
+      TestSlaveSlapOSMasterCertificateCompatibility, cls).startServerProcess()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -5464,8 +5466,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
-      'rejected-slave-amount': '2',
-      'slave-amount': '14',
+      'rejected-slave-amount': '0',
+      'slave-amount': '12',
       'rejected-slave-dict': {
         # u"_ssl_ca_crt_only":
         # [u"ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
@@ -5983,7 +5985,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     self.slap.request(
-        software_release=self.cls.getSoftwareURL(),
+        software_release=self.getSoftwareURL(),
         partition_reference='custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
         partition_parameter_kw=slave_parameter_dict,
         shared=True
