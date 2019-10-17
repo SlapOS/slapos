@@ -526,25 +526,39 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def setUpClass(cls):
-    cls.createWildcardExampleComCertificate()
-    cls.startServerProcess()
+    try:
+      cls.createWildcardExampleComCertificate()
+      cls.startServerProcess()
+    except BaseException:
+      cls.logger.exception("Error during setUpClass")
+      cls._cleanup()
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
+      raise
+
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
 
-    # expose instance directory
-    cls.instance_path = cls.slap.instance_directory
-    # expose software directory, extract from found computer partition
-    cls.software_path = os.path.realpath(os.path.join(
-        cls.computer_partition_root_path, 'software_release'))
-    # do working directory
-    cls.working_directory = os.path.join(os.path.realpath(
-        os.environ.get(
-            'SLAPOS_TEST_WORKING_DIR', os.path.join(os.getcwd(), '.slapos'))),
-        'caddy-frontend-test')
-    if not os.path.isdir(cls.working_directory):
-      os.mkdir(cls.working_directory)
-    cls.setUpMaster()
-    cls.setUpSlaves()
-    cls.waitForCaddy()
+    try:
+      # expose instance directory
+      cls.instance_path = cls.slap.instance_directory
+      # expose software directory, extract from found computer partition
+      cls.software_path = os.path.realpath(os.path.join(
+          cls.computer_partition_root_path, 'software_release'))
+      # do working directory
+      cls.working_directory = os.path.join(os.path.realpath(
+          os.environ.get(
+              'SLAPOS_TEST_WORKING_DIR',
+              os.path.join(os.getcwd(), '.slapos'))),
+          'caddy-frontend-test')
+      if not os.path.isdir(cls.working_directory):
+        os.mkdir(cls.working_directory)
+      cls.setUpMaster()
+      cls.setUpSlaves()
+      cls.waitForCaddy()
+    except BaseException:
+      cls.logger.exception("Error during setUpClass")
+      cls._cleanup()
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
+      raise
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
