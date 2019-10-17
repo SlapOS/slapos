@@ -840,7 +840,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         )
       except Exception:
         if time.time() - begin > wait_time:
-          cls.logger.exception("Error during waitForCaddy")
+          cls.logger.exception("Error during waitForCaddy after %.2fs" % ((time.time() - begin),))
           raise
         else:
           time.sleep(0.5)
