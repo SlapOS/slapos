@@ -942,6 +942,10 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
+  @classmethod
+  def waitForCaddy(cls):
+    pass
+
   def test(self):
     # run partition until AIKC finishes
     self.runComputerPartitionUntil(
@@ -953,11 +957,11 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       {
-        'monitor-base-url': 'None',
+        'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
         'domain': 'example.com',
-        'accepted-slave-amount': '0',
+        'accepted-slave-amount': '1',
         'rejected-slave-amount': '0',
-        'slave-amount': '0',
+        'slave-amount': '1',
         'rejected-slave-dict': {}
       },
       parameter_dict
@@ -975,6 +979,10 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
+  @classmethod
+  def waitForCaddy(cls):
+    pass
+
   def test(self):
     # run partition until AIKC finishes
     self.runComputerPartitionUntil(
@@ -985,11 +993,11 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': 'None',
+        'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
         'domain': 'None',
-        'accepted-slave-amount': '0',
+        'accepted-slave-amount': '1',
         'rejected-slave-amount': '0',
-        'slave-amount': '0',
+        'slave-amount': '1',
         'rejected-slave-dict': {}},
       parameter_dict
     )
@@ -4321,7 +4329,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4382,6 +4390,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       },
       parameter_dict
     )
+
 
 @skip('Impossible to instantiate cluster with stopped partition')
 class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -4605,7 +4614,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
@@ -4988,7 +4997,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5445,7 +5454,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '2',
@@ -6138,7 +6147,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6244,7 +6253,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'None',
+      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',
