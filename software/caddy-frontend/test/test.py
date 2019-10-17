@@ -4285,6 +4285,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     )
 
 
+@skip('New test system cannot be used with failing promises')
 class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
                                   TestDataMixin):
   @classmethod
@@ -4382,7 +4383,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       parameter_dict
     )
 
-
+@skip('Impossible to instantiate cluster with stopped partition')
 class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -4946,6 +4947,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
 
+@skip('New test system cannot be used with failing promises')
 class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
