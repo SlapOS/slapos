@@ -4193,7 +4193,10 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'default'
+  @classmethod
+  def waitForCaddy(cls):
+    pass
+
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4250,7 +4253,10 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'default'
+  @classmethod
+  def waitForCaddy(cls):
+    pass
+
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4546,6 +4552,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
     assertQUIC()
 
 
+@skip('New test system cannot be used with failing promises')
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
