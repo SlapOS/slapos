@@ -109,8 +109,6 @@ mount.neoppod = {{parameter_dict['neoppod']}}
     cmd = [os.path.join('bin', 'buildout'),
       'stress:dist=' + dist,
     ]
-    if args.node_quantity:
-      cmd.append('stress:smp=%s' % args.node_quantity)
     status_dict = {'command': format_command(*cmd)}
     print('$', status_dict['command'])
 
