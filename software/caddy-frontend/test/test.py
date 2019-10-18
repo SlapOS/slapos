@@ -3879,6 +3879,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqualResultJson(result_http, 'Path', '/http/test-path/deeper')
 
 
+@skip('Impossible to instantiate cluster with stopped partition')
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -3886,7 +3887,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
-      '-sla-2-computer_guid': 'slapos.test',
+      '-sla-2-computer_guid': cls.slap._computer_id,
       '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -3949,6 +3950,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
+@skip('Impossible to instantiate cluster with destroyed partition')
 class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -3956,7 +3958,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
-      '-sla-2-computer_guid': 'slapos.test',
+      '-sla-2-computer_guid': cls.slap._computer_id,
       '-frontend-2-state': 'destroyed',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -6252,6 +6254,8 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'own_ciphers': {
         'ciphers': 'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
+        'url': cls.backend_url,
+        'enable_cache': True,
       },
     }
 
@@ -6285,11 +6289,11 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.OK, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(httplib.OK, result_http.status_code)
 
     configuration_file = glob.glob(
       os.path.join(
@@ -6311,11 +6315,11 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.OK, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(httplib.OK, result_http.status_code)
 
     configuration_file = glob.glob(
       os.path.join(
