@@ -27,6 +27,8 @@
 
 import glob
 import os
+# NOT FOR MERGE
+os.environ['SLAPOS_TEST_DEBUG'] = '1'
 import requests
 import httplib
 from requests_toolbelt.adapters import source
