@@ -84,7 +84,9 @@ ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
 port = 3000
 base-url = http://$${:hostname}:$${:port}/
-
+hash-existing-files =
+  ${yarn.lock:output}
+  ${theia-wrapper:rendered}
 
 [promises]
 recipe =
