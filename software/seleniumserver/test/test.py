@@ -401,6 +401,11 @@ class TestFirefox60(BrowserCompatibilityMixin, SeleniumServerTestCase):
   user_agent = 'Gecko/20100101 Firefox/60.0'
 
 
+class TestFirefox68(BrowserCompatibilityMixin, SeleniumServerTestCase):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
+  user_agent = 'Gecko/20100101 Firefox/68.0'
+
+
 class TestChrome69(BrowserCompatibilityMixin, SeleniumServerTestCase):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'
