@@ -93,11 +93,17 @@ capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.22.0:location}
 port = 7778
 
+[selenium-server-node-instance-firefox-68]
+<= selenium-server-node-instance
+capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-68:version},firefox_binary=${firefox-wrapper-68:location}
+java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
+port = 7779
+
 [selenium-server-node-instance-chromium-69]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-69:version},chrome_binary=${chromium-wrapper-69:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
-port = 7779
+port = 7780
 
 
 [selenium-server-admin-password]
@@ -236,6 +242,7 @@ instance-promises =
   $${selenium-server-hub-listen-promise:path}
   $${selenium-server-node-firefox-52-listen-promise:path}
   $${selenium-server-node-firefox-60-listen-promise:path}
+  $${selenium-server-node-firefox-68-listen-promise:path}
   $${selenium-server-node-instance-chromium-69-listen-promise:path}
 
 
@@ -267,6 +274,11 @@ port = $${selenium-server-node-instance-firefox-52:port}
 <= check-port-listening-promise
 hostname = $${selenium-server-node-instance-firefox-60:hostname}
 port = $${selenium-server-node-instance-firefox-60:port}
+
+[selenium-server-node-firefox-68-listen-promise]
+<= check-port-listening-promise
+hostname = $${selenium-server-node-instance-firefox-68:hostname}
+port = $${selenium-server-node-instance-firefox-68:port}
 
 [selenium-server-node-instance-chromium-69-listen-promise]
 <= check-port-listening-promise
