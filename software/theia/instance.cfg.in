@@ -2,14 +2,13 @@
 parts =
   monitor-base
   promises
-  .bashrc
   frontend-reload
   publish-connection-parameter
 
 extends = ${monitor-template:rendered}
 
 eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory} 
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
@@ -79,37 +78,15 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env -i HOME=$${directory:home} LC_ALL=C.UTF-8 USER=$${user:pw-name} LOGNAME=$${user:pw-name} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
 port = 3000
 base-url = http://$${:hostname}:$${:port}/
-
-[.bashrc]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:home}/$${:_buildout_section_name_}
-template = inline:
-  export PS1="$ " # because we are in a gowork workspace
-  # XXX .bash_profile is not executed, so we introduce a bashrc.theia file
-  # to allow customizations.
-  if [ -f "$HOME/.bashrc.theia" ] ; then
-    source $HOME/.bashrc.theia
-  fi
-  # If not running interactively, don't do anything
-  case $- in
-      *i*) ;;
-        *) return;;
-  esac
-  # enable color support
-  if [ -x /usr/bin/dircolors ]; then
-      test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-      alias ls='ls --color=auto'
-  fi
-  # common ls aliases
-  alias ll='ls -l'
-  alias la='ls -A'
-  alias l='ls -CF'
+hash-existing-files =
+  ${yarn.lock:output}
+  ${theia-wrapper:rendered}
 
 [promises]
 recipe =
