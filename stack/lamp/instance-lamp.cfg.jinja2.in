@@ -104,7 +104,7 @@ recipe = slapos.cookbook:publish-early
 monitor-httpd-port = 8060
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
 username = admin
-password = ${monitor-htpasswd:passwd}
+password = ${publish-early:monitor-password}
 
 [monitor-base-url-dict]
 {% for key, value in monitor_base_url_dict.items() -%}
