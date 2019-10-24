@@ -895,6 +895,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def tearDown(self):
     self.unpatchRequests()
+    super(SlaveHttpFrontendTestCase, self).tearDown()
 
   def parseSlaveParameterDict(self, key):
     return self.parseParameterDict(
