@@ -174,6 +174,7 @@ class NextCloudTestCase(InstanceTestCase):
 
 
 class TestServices(NextCloudTestCase):
+  __partition_reference__ = 'ncs'
 
   def test_process_list(self):
     hash_list = [
@@ -275,6 +276,8 @@ class TestServices(NextCloudTestCase):
 
 
 class TestNextCloudParameters(NextCloudTestCase):
+  __partition_reference__ = 'ncp'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
