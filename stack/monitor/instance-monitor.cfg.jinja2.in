@@ -97,7 +97,6 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
-  file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
@@ -378,7 +377,6 @@ config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 module = check_free_disk_space
 name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
-config-threshold-file = ${directory:etc}/min-free-disk-size
 
 [monitor-base]
 # create dependencies between required monitor parts
