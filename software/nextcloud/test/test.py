@@ -57,7 +57,7 @@ class NextCloudTestCase(InstanceTestCase):
       path = os.path.join(partition_path, 'srv/www')
       if os.path.exists(path):
         self.nextcloud_path = path
-        self.instance_folder = partition_path
+        self.partition_dir = partition_path
         break
     self.assertTrue(
         self.nextcloud_path,
@@ -251,7 +251,7 @@ class TestServices(NextCloudTestCase):
       "richdocuments",
       "wopi_url"
     ])
-    self.assertEqual(collabora_config.strip(), 'https://collabora.host.vifib.net/')
+    self.assertEqual(collabora_config.strip(), b'https://collabora.host.vifib.net/')
     stun_config = subprocess.check_output([
       php_bin,
       occ,
@@ -259,7 +259,7 @@ class TestServices(NextCloudTestCase):
       "spreed",
       "stun_servers"
     ])
-    self.assertEqual(stun_config.strip(), '["turn.vifib.com:5349"]')
+    self.assertEqual(stun_config.strip(), b'["turn.vifib.com:5349"]')
     turn_config = subprocess.check_output([
       php_bin,
       occ,
@@ -267,14 +267,11 @@ class TestServices(NextCloudTestCase):
       "spreed",
       "turn_servers"
     ])
-    self.assertEqual(turn_config.strip(), '[{"server":"","secret":"","protocols":"udp,tcp"}]')
-    news_config_file = os.path.join(self.instance_folder, 'srv/data/news/config/config.ini')
+    self.assertEqual(turn_config.strip(), b'[{"server":"","secret":"","protocols":"udp,tcp"}]')
+    news_config_file = os.path.join(self.partition_dir, 'srv/data/news/config/config.ini')
     with open(news_config_file) as f:
       config = f.read()
-      regex = r"(useCronUpdates\s+=\s+false)"
-      result = re.search(regex, config)
-      self.assertNotEqual(result, None)
-
+    self.assertRegexpMatches(config, r"(useCronUpdates\s+=\s+false)")
 
 
 class TestNextCloudParameters(NextCloudTestCase):
@@ -349,7 +346,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       "richdocuments",
       "wopi_url"
     ])
-    self.assertEqual(collabora_config.strip(), 'https://my-custom.collabora.net')
+    self.assertEqual(collabora_config.strip(), b'https://my-custom.collabora.net')
     stun_config = subprocess.check_output([
       php_bin,
       occ,
@@ -357,7 +354,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       "spreed",
       "stun_servers"
     ])
-    self.assertEqual(stun_config.strip(), '["stun.example.net:5439"]')
+    self.assertEqual(stun_config.strip(), b'["stun.example.net:5439"]')
     turn_config = subprocess.check_output([
       php_bin,
       occ,
@@ -365,5 +362,6 @@ class TestNextCloudParameters(NextCloudTestCase):
       "spreed",
       "turn_servers"
     ])
-    self.assertEqual(turn_config.strip(),
-                     '[{"server":"turn.example.net:5439","secret":"c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053","protocols":"udp,tcp"}]')
+    self.assertEqual(
+        turn_config.strip(),
+        b'[{"server":"turn.example.net:5439","secret":"c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053","protocols":"udp,tcp"}]')
