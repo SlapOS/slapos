@@ -44,7 +44,7 @@ import tempfile
 # ConfigParser syntax in order to be strictly validated, to prevent misuse
 # and allow easy extension (ex: to other hashes).
 
-FILENAME_KEY = 'filename'
+FILENAME_KEY_LIST = ['filename', '__hash_filename__']
 HASH_MAP = {
     'md5sum': hashlib.md5,
 }
@@ -97,7 +97,7 @@ def main():
                         name, value = line.split('=', 1)
                         name = name.strip()
                         value = value.strip()
-                        if name == FILENAME_KEY:
+                        if name in FILENAME_KEY_LIST:
                             hash_file_path = value
                             current_section.append(line)
                         else:
