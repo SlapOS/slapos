@@ -895,7 +895,11 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def tearDown(self):
     self.unpatchRequests()
-    super(SlaveHttpFrontendTestCase, self).tearDown()
+    import ipdb ; ipdb.set_trace()
+    paczynek = super(SlaveHttpFrontendTestCase, self)
+    cls.logger.warning('Will call %s tearDown' % (paczynek.tearDown.im_func.func_code,))
+    
+    paczynek.tearDown()
 
   def parseSlaveParameterDict(self, key):
     return self.parseParameterDict(
