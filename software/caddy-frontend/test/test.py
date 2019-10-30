@@ -286,7 +286,8 @@ class TestDataMixin(object):
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
-      in self.callSupervisorMethod('getAllProcessInfo')]))
+      in self.callSupervisorMethod('getAllProcessInfo')
+      if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
 
   def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
     if hash_value_dict is None:
@@ -4468,6 +4469,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     )
 
 
+@skip('New test system cannot be used with failing promises')
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
                                     TestDataMixin):
   @classmethod
