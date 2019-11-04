@@ -14,4 +14,3 @@ T-1:kedifa-{hash-generic}-on-watch RUNNING
 T-1:kedifa-reloader EXITED
 T-1:monitor-httpd-{hash-generic}-on-watch EXITED
 T-1:monitor-httpd-graceful EXITED
-watchdog:watchdog RUNNING
