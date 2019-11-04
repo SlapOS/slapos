@@ -286,7 +286,8 @@ class TestDataMixin(object):
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
-      in self.callSupervisorMethod('getAllProcessInfo')]))
+      in self.callSupervisorMethod('getAllProcessInfo')
+      if not q.startswith('watchdog:watchdog')]))
 
   def assertTestData(self, runtime_data, hash_value_dict=None, msg=None):
     if hash_value_dict is None:
