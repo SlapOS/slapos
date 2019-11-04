@@ -30,4 +30,3 @@ T-2:monitor-httpd-{hash-generic}-on-watch STOPPED
 T-2:monitor-httpd-graceful STOPPED
 T-2:trafficserver-{hash-generic}-on-watch STOPPED
 T-2:trafficserver-reload STOPPED
-watchdog:watchdog RUNNING
