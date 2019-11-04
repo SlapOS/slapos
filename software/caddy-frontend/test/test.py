@@ -1186,6 +1186,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'prefer-gzip-encoding-to-backend': 'true',
         'type': 'zope',
       },
+      'type-zope-prefer-gzip-encoding-to-backend-https-only': {
+        'url': cls.backend_url,
+        'prefer-gzip-encoding-to-backend': 'true',
+        'type': 'zope',
+        'https-only': 'true',
+      },
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
         'type': 'zope',
@@ -1337,6 +1343,11 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
       },
+      'prefer-gzip-encoding-to-backend-https-only': {
+        'url': cls.backend_url,
+        'prefer-gzip-encoding-to-backend': 'true',
+        'https-only': 'true',
+      },
       'disabled-cookie-list': {
         'url': cls.backend_url,
         'disabled-cookie-list': 'Chocolate Vanilia',
@@ -1430,9 +1441,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '52',
+      'accepted-slave-amount': '54',
       'rejected-slave-amount': '0',
-      'slave-amount': '52',
+      'slave-amount': '54',
       'rejected-slave-dict': {
       }
     }
@@ -2309,6 +2320,86 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_type_zope_prefer_gzip_encoding_to_backend_https_only(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-zope-prefer-gzip-encoding-to-backend-https-only')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deep/.././deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deep/.././deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
 
   def test_type_zope_virtualhostroot_http_port(self):
     parameter_dict = self.assertSlaveBase(
@@ -3660,6 +3751,140 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+  def test_prefer_gzip_encoding_to_backend_https_only(self):
+    parameter_dict = self.assertSlaveBase(
+      'prefer-gzip-encoding-to-backend-https-only')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'deflate'})
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      result.headers['Location']
+    )
 
   def test_disabled_cookie_list(self):
     parameter_dict = self.assertSlaveBase('disabled-cookie-list')
