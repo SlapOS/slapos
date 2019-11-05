@@ -25,6 +25,8 @@ CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
+# Support stale-if-error by returning cached content on backend 5xx or unavailability
+CONFIG proxy.config.http.negative_revalidating_enabled INT 1
 
 ##############################################################################
 # Thread configurations. Docs:

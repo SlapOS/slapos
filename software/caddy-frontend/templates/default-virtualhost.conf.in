@@ -73,7 +73,7 @@
   }
 
 {%- if not (slave_type == 'zope' and backend_url) %}
-{%    if prefer_gzip %}
+{%    if prefer_gzip and not (not tls and https_only) %}
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
@@ -138,7 +138,7 @@
     / {scheme}://{host}/{{ default_path }}
   } {# redir #}
   {%- endif %} {#- if default_path #}
-{%- if prefer_gzip  %}
+{%- if prefer_gzip and not (not tls and https_only) %}
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"

@@ -5,7 +5,6 @@
       protocol="org.apache.coyote.http11.Http11Protocol"
       address="$${tomcat-configuration:ip}" 
       port="$${tomcat-configuration:port}"
-      maxThreads="10"
       scheme="$${tomcat-configuration:scheme}"
       secure="true"
       clientAuth="false"
