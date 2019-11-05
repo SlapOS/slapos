@@ -4468,6 +4468,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     )
 
 
+@skip('New test system cannot be used with failing promises')
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
                                     TestDataMixin):
   @classmethod
