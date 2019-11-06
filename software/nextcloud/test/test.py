@@ -244,7 +244,7 @@ class TestServices(NextCloudTestCase):
     config_dict.pop('secret')
     config_dict.pop('version')
     expected_dict = self.getNextcloudConfig()
-    self.assertEqual(config_dict, expected_dict)
+    self.assertEqual(expected_dict, config_dict)
     collabora_config = subprocess.check_output([
       php_bin,
       occ,
@@ -341,7 +341,7 @@ class TestNextCloudParameters(NextCloudTestCase):
       ])
     )
     expected_dict = self.getNextcloudConfig(instance_parameter_dict)
-    self.assertEqual(config_dict, expected_dict)
+    self.assertEqual(expected_dict, config_dict)
     collabora_config = subprocess.check_output([
       php_bin,
       occ,
