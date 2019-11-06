@@ -342,13 +342,16 @@ class TestNextCloudParameters(NextCloudTestCase):
     )
     expected_dict = self.getNextcloudConfig(instance_parameter_dict)
     self.assertEqual(expected_dict, config_dict)
-    collabora_config = subprocess.check_output([
-      php_bin,
-      occ,
-      "config:app:get",
-      "richdocuments",
-      "wopi_url"
-    ])
+    try:
+      collabora_config = subprocess.check_output([
+          php_bin,
+          occ,
+          "config:app:get",
+          "richdocuments",
+          "wopi_url"
+      ])
+    except subprocess.CalledProcessError as exc:
+      self.assertFalse((exc.returncode, exc.output))
     self.assertEqual(collabora_config.strip(), b'https://my-custom.collabora.net')
     stun_config = subprocess.check_output([
       php_bin,
