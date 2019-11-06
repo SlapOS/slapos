@@ -111,23 +111,22 @@ template = inline:
 [promises]
 recipe =
 instance-promises =
-  $${theia-listen-promise:path}
-  $${frontend-listen-promise:path}
-
-[check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${directory:promises}/$${:_buildout_section_name_}
+  $${theia-listen-promise:name}
+  $${frontend-listen-promise:name}
 
 [theia-listen-promise]
-<= check-port-listening-promise
-hostname= $${theia-instance:ip}
-port = $${theia-instance:port}
+<= monitor-promise-base
+module = check_port_listening
+name = $${:_buildout_section_name_}.py
+config-hostname=  $${theia-instance:ip}
+config-port = $${theia-instance:port}
 
 [frontend-listen-promise]
-<= check-port-listening-promise
-hostname= $${frontend-instance:ip}
-port = $${frontend-instance:port}
-
+<= monitor-promise-base
+module = check_port_listening
+name = $${:_buildout_section_name_}.py
+config-hostname = $${frontend-instance:ip}
+config-port = $${frontend-instance:port}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
@@ -152,7 +151,6 @@ tmp = $${buildout:directory}/tmp
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
-promises = $${:etc}/promise
 framebuffer = $${:srv}/framebuffer
 fonts = $${:srv}/fonts
 home = $${:srv}/home
