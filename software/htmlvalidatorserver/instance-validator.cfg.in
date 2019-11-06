@@ -11,7 +11,6 @@ run = $${:var}/run
 log = $${:var}/log
 # scripts = $${:etc}/run
 services = $${:etc}/service
-promises = $${:etc}/promise
 # tomcat directories
 catalina_base = $${:var}/vnu
 catalina_logs = $${:catalina_base}/logs
@@ -55,10 +54,11 @@ port = 8899
 scheme = https
 
 [tomcat-listen-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = $${tomcat-configuration:ip}
-port = $${tomcat-configuration:port}
-path = $${basedirectory:promises}/tomcat_listen
+<= monitor-promise-base
+module = check_port_listening
+name = tomcat-listen.py
+config-hostname = $${tomcat-configuration:ip}
+config-port = $${tomcat-configuration:port}
 
 #################################
 # Slapos publish
