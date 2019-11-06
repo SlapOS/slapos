@@ -31,7 +31,6 @@ statistic = $${:srv}/$${variables:statistic_dirbasename}
 backupscript = $${:etc}/backup
 www = $${:srv}/www
 home = $${:etc}/home
-promises = $${:etc}/promise
 ssl = $${:etc}/ssl
 ssh = $${:home}/.ssh
 plugin = $${:etc}/plugin
@@ -194,10 +193,11 @@ virtual-depends =
   $${nginx-configuration:ip}
 
 [nginx-listen-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = $${nginx-configuration:ip}
-port = $${nginx-configuration:port}
-path = $${directory:promises}/nginx_listen
+<= monitor-promise-base
+module = check_port_listening
+name = nginx-listen.py
+config-hostname = $${nginx-configuration:ip}
+config-port = $${nginx-configuration:port}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
