@@ -22,7 +22,6 @@ log = $${:var}/log
 varnginx = $${:var}/nginx
 scripts = $${:etc}/run
 services = $${:etc}/service
-promise = $${:etc}/promise/
 www = $${:srv}/www
 home = $${:etc}/home
 ssl = $${:etc}/ssl
