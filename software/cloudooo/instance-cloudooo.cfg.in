@@ -68,7 +68,9 @@ mode = {{ mode }}
 [buildout]
 extends =
   {{ parameter_dict['template-logrotate-base'] }}
+  {{ parameter_dict['template-monitor'] }}
 parts =
+  monitor-base
   publish
   apache
   apache-conf
@@ -114,10 +116,11 @@ crl = ${apache-ssl-client:crl}
 
 [apache-promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/apache
-hostname = {{ ipv4 }}
-port = {{ apache_dict.values()[0][0] }}
+<= monitor-promise-base
+module = check_port_listening
+name = apache.py
+config-hostname = {{ ipv4 }}
+config-port = {{ apache_dict.values()[0][0] }}
 
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
@@ -262,7 +265,6 @@ font = ${:srv}/font
 log = ${:var}/log
 newcerts = ${:ca-dir}/newcerts
 private = ${:ca-dir}/private
-promise = ${directory:etc}/promise
 requests = ${:ca-dir}/requests
 run = ${:var}/run
 services = ${:etc}/run
