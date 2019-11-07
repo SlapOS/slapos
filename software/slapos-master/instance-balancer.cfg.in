@@ -281,7 +281,6 @@ config-command = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apac
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
 module = check_exectue_command
-recipe = slapos.cookbook:wrapper
 name = check_computer_memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
