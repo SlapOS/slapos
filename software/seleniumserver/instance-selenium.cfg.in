@@ -1,8 +1,10 @@
 [buildout]
 parts =
+  monitor-base
   promises
   publish-connection-parameter
 
+extends = ${monitor-template:rendered}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory} 
 offline = true
