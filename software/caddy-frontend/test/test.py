@@ -6437,6 +6437,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       'apache-key': key_pem,
 
     })
+    self.requestDefaultInstance()
     self.slap.waitForInstance()
     self.runKedifaUpdater()
 
