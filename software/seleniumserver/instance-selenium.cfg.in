@@ -239,13 +239,13 @@ command = mkdir -p $${:location} && echo '$${instance-parameter:configuration.ss
 [promises]
 recipe =
 instance-promises =
-  $${sshd-listen-promise:path}
-  $${selenium-server-frontend-listen-promise:path}
-  $${selenium-server-hub-listen-promise:path}
-  $${selenium-server-node-firefox-52-listen-promise:path}
-  $${selenium-server-node-firefox-60-listen-promise:path}
-  $${selenium-server-node-firefox-68-listen-promise:path}
-  $${selenium-server-node-instance-chromium-69-listen-promise:path}
+  $${sshd-listen-promise:name}
+  $${selenium-server-frontend-listen-promise:name}
+  $${selenium-server-hub-listen-promise:name}
+  $${selenium-server-node-firefox-52-listen-promise:name}
+  $${selenium-server-node-firefox-60-listen-promise:name}
+  $${selenium-server-node-firefox-68-listen-promise:name}
+  $${selenium-server-node-instance-chromium-69-listen-promise:name}
 
 
 [check-port-listening-promise]
