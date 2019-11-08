@@ -17,7 +17,7 @@ parts +=
 
 # Bubble up the parameters
 [request-apache]
-return = url ssh-public-key ssh-url notification-id ip url backend_url
+return = url ssh-public-key resilient-ssh-url notification-id ip url backend_url
 # XXX: hardcoded values
 config-postgres1-computer-guid = ${slap-parameter:postgres1-computer-guid}
 config-pbs-postgres1-computer-guid = ${slap-parameter:pbs-postgres1-computer-guid}
