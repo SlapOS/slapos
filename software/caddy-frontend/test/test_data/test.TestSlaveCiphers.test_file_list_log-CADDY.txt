@@ -6,6 +6,8 @@ T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
 T-2/var/log/httpd-cache-direct/_default_ciphers_access_log
 T-2/var/log/httpd-cache-direct/_default_ciphers_error_log
+T-2/var/log/httpd-cache-direct/_own_ciphers_access_log
+T-2/var/log/httpd-cache-direct/_own_ciphers_error_log
 T-2/var/log/httpd-csr_id/expose-csr_id.log
 T-2/var/log/httpd/_default_ciphers_access_log
 T-2/var/log/httpd/_default_ciphers_error_log

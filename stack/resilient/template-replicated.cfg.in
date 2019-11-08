@@ -33,7 +33,7 @@ software-url = ${slap-connection:software-release-url}
    {{heriteLeader}}
 software-type = {{typeexport}}
 name = {{namebase}}0
-return = ssh-public-key ssh-url notification-id ip {{ monitor_return }}
+return = ssh-public-key resilient-ssh-url notification-id ip {{ monitor_return }}
 
 config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
@@ -87,7 +87,7 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = ssh-public-key ssh-url notification-url ip takeover-url takeover-password  {{ monitor_return }}
+return = ssh-public-key resilient-ssh-url notification-url ip takeover-url takeover-password  {{ monitor_return }}
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
@@ -229,7 +229,7 @@ mode = 700
 [request-pull-backup-server-{{namebase}}-{{id}}]
 <= request-pbs-common
 name = PBS {{id}} pulling from ${request-{{namebase}}:name}
-config-url = ${request-{{namebase}}:connection-ssh-url}
+config-url = ${request-{{namebase}}:connection-resilient-ssh-url}
 config-type = pull
 config-server-key = ${request-{{namebase}}:connection-ssh-public-key}
 config-on-notification = ${request-{{namebase}}:connection-notification-id}
@@ -259,7 +259,7 @@ monitor-url-list = {{ monitor_url_list | join(' ') }}
 [request-pull-backup-server-{{namebase}}-backup-{{id}}]
 <= request-pbs-common
 name = PBS pushing on ${request-{{namebase}}-pseudo-replicating-{{id}}:name}
-config-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-url}
+config-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-resilient-ssh-url}
 config-type = push
 config-server-key = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}

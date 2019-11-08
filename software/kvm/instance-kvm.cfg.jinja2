@@ -232,7 +232,7 @@ input = inline:#!/bin/sh
     # disk device option is used, skip qemu img check
     exit 0
   fi
-  ${kvm-parameter-dict:qemu-img-path} check -U ${kvm-parameter-dict:disk-path}
+  ${kvm-parameter-dict:qemu-img-path} check -U ${kvm-parameter-dict:disk-path} > /dev/null 2>&1
   RETURN_CODE=$?
   if [ $RETURN_CODE -eq 0 ] || [ $RETURN_CODE -eq 3 ]; then
     exit 0

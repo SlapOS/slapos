@@ -12,7 +12,7 @@
   {% set number_of_instances = 2 %}
 {% endif %}
 
-{% set slaprunner_return = ['init-user', 'init-password', 'url', 'ssh-public-key', 'ssh-url', 'notification-id', 'ip', 'backend-url', 'url', 'ssh-command', 'webdav-url', 'public-url', 'git-public-url', 'git-private-url'] -%}
+{% set slaprunner_return = ['init-user', 'init-password', 'url', 'ssh-public-key', 'resilient-ssh-url', 'notification-id', 'ip', 'backend-url', 'url', 'ssh-url', 'ssh-command', 'webdav-url', 'public-url', 'git-public-url', 'git-private-url'] -%}
 {% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} -%}
