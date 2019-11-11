@@ -1,8 +1,14 @@
+{%- if slapparameter_dict.get('admin') != 0 %}
+{%- set monitor_dict = slapparameter_dict['monitor'] %}
+{%- set bang_on_problem = monitor_dict.pop('bang-on-problem', None) %}
+{%- set periodicity = monitor_dict.pop('periodicity', None) %}
+
 [buildout]
+extends =
+  {{ template_monitor }}
 parts +=
-  neo-admin-promise
   logrotate-admin
-  neoctl
+  monitor-neo-health
 
 [neo-admin]
 recipe = slapos.cookbook:neoppod.admin
@@ -13,13 +19,39 @@ ip = ${publish:ip}
 port = ${publish:port-admin}
 ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-masters = ${publish:masters}
+masters = {{ dumps(slapparameter_dict['masters']) }}
+extra-options =
+{%- for k, v in monitor_dict.iteritems() %}
+{%-   if k == 'backup' %}
+{%-     set k = 'monitor-backup' %}
+{%-   endif %}
+{%-   if not isinstance(v, list) %}
+{%-     set v = [v] %}
+{%-   endif %}
+{%-   for v in v %}
+  --{{k}}={{v}}
+{%-   endfor %}
+{%- endfor %}
 
-[neo-admin-promise]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${neo-admin:ip}
-port = ${neo-admin:port}
-path = ${directory:promises}/neo-admin-promise
+[directory]
+plugin =  ${:etc}/plugin
+
+[monitor-neo-health]
+<= monitor-promise-base
+module = check_neo_health
+name = ${:_buildout_section_name_}.py
+config-neoctl = ${neoctl:wrapper-path}
+{%- if bang_on_problem != None %}
+config-bang-on-problem = {{ dumps(bang_on_problem) }}
+{%- endif %}
+{%- if periodicity != None %}
+config-periodicity = {{ dumps(periodicity) }}
+{%- endif %}
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ slapparameter_dict.get('admin', 2050) + 1 }}
+monitor-title = neo
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [logrotate-admin]
 < = logrotate-entry-base
@@ -37,3 +69,4 @@ command-line =
     --key ${directory:etc}/neo.key
 {%- endif %}
 wrapper-path = ${directory:bin}/neoctl
+{%- endif %}

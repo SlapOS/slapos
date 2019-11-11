@@ -26,94 +26,35 @@ def main():
   parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
-  parser.add_argument('--remote_access_url',
-                      help='The access url',
-                      default = parser_configuration.get('remote-access-url')
-                     )
-  parser.add_argument('--target',
-                      help='Target OS to run tests on',
-                      default = parser_configuration.get('target')
-                     )
-  parser.add_argument('--target_version',
-                      help='Target OS version to use',
-                      default = parser_configuration.get('target-version')
-                     )
-  parser.add_argument('--target_browser',
-                      help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
-                      default = parser_configuration.get('target-browser')
-                     )
-  parser.add_argument('--target_device',
-                      help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
-                      default = parser_configuration.get('target-device')
-                     )
-  parser.add_argument('--appium_server_auth',
-                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
-                      default = parser_configuration.get('appium-server-auth')
-                     )
-  parser.add_argument('--run_only',
-                      help='zuite to run',
-                      default = parser_configuration.get('run-only')
-                     )
-  parser.add_argument('--max_duration',
-                      type=int,
-                      help='max duration for running test en second',
-                      default = parser_configuration.get('max-duration', 1800)
-                     )
   args = parser.parse_args()
   test_line_dict = {}
   test_suite_title = args.test_suite_title or args.test_suite
   test_suite = args.test_suite
   revision = args.revision
 
-  # curl https://saucelabs.com/rest/v1/info/platforms/all
-  # https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
-  if args.target in ['iOS', 'Android']:
-    # parameters for mobile emulators have different names then parameters for
-    # desktop OSes
-    capabilities = {
-      'platformName': args.target,
-      'platformVersion': args.target_version,
-      'deviceName': args.target_device,
-      'browserName': args.target_browser,
-      'maxDuration': args.max_duration,
-      'name': test_suite_title
-    }
-  elif 'Windows' in args.target or 'OS X' in args.target:
-    capabilities = {
-      'browserName': args.target_browser,
-      'platform': args.target,
-      'version': args.target_version,
-      'maxDuration': args.max_duration,
-      'name': test_suite_title
-    }
-
-  if not args.appium_server_auth or not args.remote_access_url:
+ 
+  if not parser_configuration['server-url'] or not parser_configuration['remote-access-url']:
     sys.exit(-1)
 
-  #Authentication over HTTPS is not supported in saucelab
-  #https://wiki.saucelabs.com/display/DOCS/Instant+Selenium+Python+Tests
-  appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
-  # adjust make path to access url
-  # Do not store any test result in the ZMI
-  if args.run_only:
+  if parser_configuration['run-only']:
     url = "%s/erp5/portal_tests/%s/core/TestRunner.html" \
       "?test=../test_suite_html" \
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.remote_access_url, args.run_only, {{ repr(user) }}, {{ repr(password) }})
+      "&__ac_password=%s" % (parser_configuration['remote-access-url'], parser_configuration['run-only'], {{ repr(user) }}, {{ repr(password) }})
   else:
     url = "%s/erp5/portal_tests/core/TestRunner.html" \
       "?test=../test_suite_html" \
       "&auto=on" \
       "&resultsUrl=../getId" \
       "&__ac_name=%s" \
-      "&__ac_password=%s" % (args.remote_access_url, {{ repr(user) }}, {{ repr(password) }})
+      "&__ac_password=%s" % (parser_configuration['remote-access-url'], {{ repr(user) }}, {{ repr(password) }})
     
   # Wait until all activities are finished...
   wait_url = "%s/erp5/ActivityTool_getSqlStatisticList" \
       "?__ac_name=%s" \
-      "&__ac_password=%s" % (args.remote_access_url,  {{ repr(user) }}, {{ repr(password) }})
+      "&__ac_password=%s" % (parser_configuration['remote-access-url'],  {{ repr(user) }}, {{ repr(password) }})
   while 1:
     try:
       response = urlopen(wait_url)
@@ -136,7 +77,7 @@ def main():
     time.sleep(600)
  
   tool = taskdistribution.TaskDistributor(portal_url=args.master_url)
-  browser = webdriver.Remote(appium_url, capabilities)
+  browser = webdriver.Remote(parser_configuration['server-url'] , parser_configuration['desired-capabilities'] )
   
   try:
     agent = browser.execute_script("return navigator.userAgent")
@@ -158,7 +99,7 @@ def main():
     # Wait for test to be executed
     while 1:
       try:
-        WebDriverWait(browser, args.max_duration).until(EC.presence_of_element_located((
+        WebDriverWait(browser, parser_configuration['max-duration']).until(EC.presence_of_element_located((
           By.XPATH, '//td[@id="testRuns" and contains(text(), "%i")]' % test_count
         )))
         break
@@ -214,28 +155,21 @@ def main():
         'command': url,
         'stdout': agent,
         'stderr': '',
-        'html_test_result': 'Not Executed due to saucelabs related error'
+        'html_test_result': 'Not Executed due to selenium server related error'
       }
       else:
-        skip_count = success_count = error_count = 0
+        skip_count = error_count = 0
         test_table = tr[1].xpath('.//table')[0]
-        test_tbody = tr[1].xpath('.//tbody')[0]
-
-        tr_count = len(test_tbody)
-        for tr in test_tbody:
-          # print etree.tostring(tr).split('\n')[0]
-          status = tr.attrib.get('class')
-          if status is None or 'status_done' in status:
-            skip_count += 1
-          elif 'status_passed' in status:
-            success_count += 1
-          elif 'status_failed' in status:
-            error_count += 1
+        status = tr.attrib.get('class')
+        if status is None or 'status_done' in status:
+          skip_count = 1
+        elif 'status_failed' in status:
+          error_count = 1
 
         test_line_dict[test_name] = {
-          'test_count': tr_count,
+          'test_count': 1,
           'error_count': error_count,
-          'failure_count': tr_count - (skip_count + success_count + error_count),
+          'failure_count': 0,
           'skip_count': skip_count,
           'duration': test_execution_duration,
           'command': url,

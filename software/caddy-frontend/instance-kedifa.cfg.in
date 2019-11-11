@@ -5,11 +5,13 @@
 extends =
   {{ parameter_dict['common_profile'] }}
   {{ parameter_dict['monitor_template'] }}
+  {{ parameter_dict['logrotate_base_instance'] }}
 
 parts =
   monitor-base
   directory
   kedifa
+  logrotate-entry-kedifa
   promise-kedifa-http-reply
   slave-kedifa-information
   caucased
@@ -19,7 +21,7 @@ parts =
   promise-expose-csr_id-ip-port
 
 [caucased]
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
 {%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
@@ -100,8 +102,7 @@ stop-on-error = True
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
      on_renew='${kedifa-reloader:wrapper-path}',
-     template_csr='${kedifa-csr:template-csr}',
-     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     template_csr='${kedifa-csr:template-csr}'
 )}}
 
 [store-csr_id]
@@ -132,7 +133,7 @@ stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    openssl req -new -newkey rsa:2048 -sha256 -subj \
+    {{ parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
       "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
@@ -174,7 +175,7 @@ command-line = {{ parameter_dict['caddy'] }}
   -root ${directory:csr_id}
 
 wrapper-path = ${directory:service}/expose-csr_id
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
 recipe = collective.recipe.shelloutput
@@ -213,6 +214,7 @@ ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 template-csr = ${directory:etc-kedifa}/template-csr.pem
 pidfile = ${directory:run}/kedifa.pid
+logfile = ${directory:log}/kedfia.log
 
 [kedifa-reloader]
 recipe = slapos.cookbook:wrapper
@@ -223,10 +225,16 @@ wrapper-path = ${directory:etc-run}/kedifa-reloader
 <= promise-plugin-base
 module = check_url_available
 name = kedifa-http-reply.py
-# Kedifa replies 500 on /, so use it to be sure that Kedifa replied
-config-http_code = 500
+# Kedifa replies 400 on /, so use it to be sure that Kedifa replied
+config-http_code = 400
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
+
+[logrotate-entry-kedifa]
+<= logrotate-entry-base
+name = kedifa
+log = ${kedifa-config:logfile}
+rotate-num = 30
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
@@ -238,9 +246,10 @@ command-line = {{ parameter_dict['kedifa'] }}
   --ca-certificate ${kedifa-config:ca-certificate}
   --crl ${kedifa-config:crl}
   --pidfile ${kedifa-config:pidfile}
+  --logfile ${kedifa-config:logfile}
 
 wrapper-path = ${directory:service}/kedifa
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 # Publish KeDiFa configuration for upload and download for each slave
 {%- set slave_kedifa_information = {} -%}
@@ -282,7 +291,8 @@ commands =
 
 [slave-kedifa-information]
 recipe = slapos.cookbook:publish.serialised
-slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+slave-kedifa-information = {{ json_module.dumps(slave_kedifa_information, sort_keys=True) }}
 caucase-url = {{ caucase_url }}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}?auth=

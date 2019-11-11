@@ -189,8 +189,7 @@ stop-on-error = True
      ca_path='${kedifa-login-config:ca-certificate}',
      crl_path='${kedifa-login-config:crl}',
      key_path='${kedifa-login-csr:key}',
-     template_csr='${kedifa-login-csr:template-csr}',
-     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     template_csr='${kedifa-login-csr:template-csr}'
 )}}
 
 [dynamic-custom-personal-template-slave-list]
@@ -263,6 +262,8 @@ extra-context =
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
     key global_disable_http2 configuration:global-disable-http2
+    key ciphers configuration:ciphers
+    key request_timeout configuration:request-timeout
     key proxy_try_duration configuration:proxy-try-duration
     key proxy_try_interval configuration:proxy-try-interval
     key access_log caddy-configuration:access-log
@@ -344,9 +345,8 @@ wrapper-path = ${directory:bin}/caddy-wrapper
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
-hash-files =
-  ${buildout:directory}/software_release/buildout.cfg
-  ${caddy-wrapper:wrapper-path}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${caddy-wrapper:wrapper-path}
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -441,6 +441,7 @@ synthetic-port = ${configuration:trafficserver-synthetic-port}
 mgmt-port = ${configuration:trafficserver-mgmt-port}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
+request-timeout = ${configuration:request-timeout}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
@@ -452,7 +453,7 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_cop
 wrapper-path = ${trafficserver-variable:wrapper-path}
 environment = TS_ROOT=${buildout:directory}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [trafficserver-reload]
 recipe = slapos.cookbook:wrapper

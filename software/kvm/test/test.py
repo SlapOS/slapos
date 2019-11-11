@@ -25,45 +25,24 @@
 #
 ##############################################################################
 
-import os
-import shutil
-import urlparse
-import tempfile
-import requests
-import socket
-import StringIO
-import subprocess
+import httplib
 import json
+import os
+import requests
+import slapos.util
+import sqlite3
+import urlparse
 
-import psutil
-
-import utils
-
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
-class InstanceTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
 
 class ServicesTestCase(InstanceTestCase):
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    import hashlib
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
 
   def test_hashes(self):
     hash_files = [
@@ -79,15 +58,197 @@ class ServicesTestCase(InstanceTestCase):
       'websockify-{hash}-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_names = [process['name']
-                     for process in supervisor.getAllProcessInfo()]
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
 
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHashFromFiles(hash_files)
+      h = generateHashFromFiles(hash_files)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class MonitorAccessMixin(object):
+  def sqlite3_connect(self):
+    sqlitedb_file = os.path.join(
+      os.path.abspath(
+        os.path.join(
+          self.slap.instance_directory, os.pardir
+        )
+      ), 'var', 'proxy.db'
+    )
+    return sqlite3.connect(sqlitedb_file)
+
+  def get_all_instantiated_partition_list(self):
+    connection = self.sqlite3_connect()
+
+    def dict_factory(cursor, row):
+      d = {}
+      for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+      return d
+    connection.row_factory = dict_factory
+    cursor = connection.cursor()
+
+    cursor.execute(
+      "SELECT reference, xml, connection_xml, partition_reference, "
+      "software_release, requested_state, software_type "
+      "FROM partition14 "
+      "WHERE slap_state='busy'")
+    return cursor.fetchall()
+
+  def test_access_monitor(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    monitor_setup_url = connection_parameter_dict['monitor-setup-url']
+    monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
+
+    auth = urlparse.parse_qs(urlparse.urlparse(monitor_url_with_auth).path)
+
+    # check that monitor-base-url for all partitions in the tree are accessible
+    # with published username and password
+    partition_with_monitor_base_url_count = 0
+    for partition_information in self.get_all_instantiated_partition_list():
+      connection_xml = partition_information.get('connection_xml')
+      if not connection_xml:
+        continue
+      connection_dict = slapos.util.xml2dict(
+        partition_information['connection_xml'].encode('utf-8'))
+      monitor_base_url = connection_dict.get('monitor-base-url')
+      if not monitor_base_url:
+        continue
+      result = requests.get(
+        monitor_base_url, verify=False, auth=(
+          auth['username'][0],
+          auth['password'][0])
+      )
+
+      self.assertEqual(
+        httplib.OK,
+        result.status_code
+      )
+      partition_with_monitor_base_url_count += 1
+    self.assertEqual(
+      self.expected_partition_with_monitor_base_url_count,
+      partition_with_monitor_base_url_count
+    )
+
+
+class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ad'
+  expected_partition_with_monitor_base_url_count = 1
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertFalse('url-additional' in connection_parameter_dict)
+
+
+class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ada'
+  expected_partition_with_monitor_base_url_count = 1
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+    result = requests.get(
+      connection_parameter_dict['url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+
+class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'akc'
+  expected_partition_with_monitor_base_url_count = 2
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True
+        }
+      }
+    })}
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
+
+
+class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'akca'
+  expected_partition_with_monitor_base_url_count = 2
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "frontend": {
+        'frontend-additional-instance-guid': 'SOMETHING',
+      },
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+        }
+      }
+    })}
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+    result = requests.get(
+      connection_parameter_dict['kvm0-url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)

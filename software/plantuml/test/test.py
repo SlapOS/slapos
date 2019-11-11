@@ -35,20 +35,13 @@ from PIL import Image
 import requests
 import plantuml
 
-import utils
-
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
-class PlantUMLTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+setUpModule, PlantUMLTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
 class TestSimpleDiagram(PlantUMLTestCase):
@@ -154,35 +147,25 @@ class TestSimpleDiagram(PlantUMLTestCase):
 
 
 class ServicesTestCase(PlantUMLTestCase):
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
 
   def test_hashes(self):
     hash_files = [
-      'software_release/buildout.cfg',
-      'var/tomcat/conf/server.xml'
+      'var/tomcat/conf/server.xml',
+      'software_release/buildout.cfg'
     ]
     expected_process_names = [
       'tomcat-instance-{hash}-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_names = [process['name']
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
                      for process in supervisor.getAllProcessInfo()]
 
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHashFromFiles(hash_files)
+      h = generateHashFromFiles(hash_files)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)

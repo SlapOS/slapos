@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.92'
+version = '1.0.123'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -110,9 +110,7 @@ setup(name=name,
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',
           'generic.kumofs = slapos.recipe.generic_kumofs:Recipe',
           'generic.memcached = slapos.recipe.generic_memcached:Recipe',
-          'generic.mysql = slapos.recipe.generic_mysql:Recipe',
           'generic.mysql.wrap_update_mysql = slapos.recipe.generic_mysql:WrapUpdateMySQL',
-          'generic.mysql.wrap_mysqld = slapos.recipe.generic_mysql:WrapMySQLd',
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'gitinit = slapos.recipe.gitinit:Recipe',
           'haproxy = slapos.recipe.haproxy:Recipe',
@@ -134,6 +132,7 @@ setup(name=name,
           'mydumper = slapos.recipe.mydumper:Recipe',
           'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
+          'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',
           'neoppod.master = slapos.recipe.neoppod:Master',
           'neoppod.storage = slapos.recipe.neoppod:Storage',

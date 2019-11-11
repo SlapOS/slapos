@@ -55,6 +55,14 @@ output = {{ plugin_directory }}/${:name}
 
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
+{#   Manage ciphers #}
+{%   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
+{%   if slave_ciphers %}
+{%     set slave_cipher_list = ' '.join(slave_ciphers) %}
+{%   else %}
+{%     set slave_cipher_list = ciphers.strip() %}
+{%   endif %}
+{%   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
 {%   set slave_type = slave_instance.get('type', '') %}
 {%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%   set slave_reference = slave_instance.get('slave_reference') %}
@@ -69,6 +77,7 @@ output = {{ plugin_directory }}/${:name}
 {%   set slave_publish_dict = {} %}
 {%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%   set slave_logrotate_section = slave_reference + "-logs" %}
+{%   set slave_logrotate_cache_direct_section = slave_reference + "-cache-direct-logs" %}
 {%   set slave_password_section = slave_reference + "-password" %}
 {%   set slave_ln_section = slave_reference + "-ln" %}
 
@@ -78,7 +87,8 @@ output = {{ plugin_directory }}/${:name}
 
 {%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {%   if enable_cache %}
-{%     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-cache-direct-logs" %}
+{%     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_logrotate_cache_direct_section %}
+{%     do part_list.extend([slave_logrotate_cache_direct_section]) %}
 {%   endif %}
 
 {#   Pass HTTP2 switch #}
@@ -154,7 +164,7 @@ name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
 {%    if enable_cache %}
-[{{slave_logrotate_section}}_cache_direct]
+[{{slave_logrotate_cache_direct_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log_cache_direct')}} {{slave_parameter_dict.get('error_log_cache_direct')}}
@@ -231,6 +241,7 @@ http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 cached_port = {{ dumps('' ~ cached_port) }}
 ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
+request_timeout = {{ ('' ~ request_timeout) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
 {%     set caddy_custom_https_template = slave_instance.pop('caddy_custom_https', slave_instance.pop('apache_custom_https', '')) %}
@@ -384,7 +395,7 @@ ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
 <= tunnel-6to4-base
@@ -435,7 +446,8 @@ recipe = slapos.cookbook:publish.serialised
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list %}
-slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {% endif %}
 monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
@@ -452,7 +464,7 @@ command-line = {{ kedifa_updater }}
   {{ kedifa_updater_state_file }}
 
 wrapper-path = {{ service_directory }}/kedifa-updater
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
 recipe = plone.recipe.command
@@ -567,7 +579,7 @@ command-line = {{ caddy_executable }}
   -root {{ directory_csr_id }}
 
 wrapper-path = {{ service_directory }}/expose-csr_id
-hash-files = ${buildout:directory}/software_release/buildout.cfg
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
 recipe = collective.recipe.shelloutput

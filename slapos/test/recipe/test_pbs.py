@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 
+import six
+
 
 class PBSTest(unittest.TestCase):
 
@@ -22,12 +24,12 @@ class PBSTest(unittest.TestCase):
     def test_push(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile() as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
             recipe.wrapper_push(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
                                 remote_dir='TEST_REMOTE_DIR',
                                 rdiff_wrapper_path=rdiff_wrapper.name)
-            content = rdiff_wrapper.read()
+            content = open(rdiff_wrapper.name, 'r').read()
             self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
             self.assertIn('TEST_LOCAL_DIR', content)
             self.assertIn('TEST_REMOTE_DIR', content)
@@ -35,13 +37,13 @@ class PBSTest(unittest.TestCase):
     def test_pull(self):
         recipe = self.new_recipe()
 
-        with tempfile.NamedTemporaryFile() as rdiff_wrapper:
+        with tempfile.NamedTemporaryFile('w+') as rdiff_wrapper:
             recipe.wrapper_pull(remote_schema='TEST_REMOTE_SCHEMA',
                                 local_dir='TEST_LOCAL_DIR',
                                 remote_dir='TEST_REMOTE_DIR',
                                 rdiff_wrapper_path=rdiff_wrapper.name,
                                 remove_backup_older_than='TEST_OLDER')
-            content = rdiff_wrapper.read()
+            content = open(rdiff_wrapper.name, 'r').read()
             self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
             self.assertIn('TEST_LOCAL_DIR', content)
             self.assertIn('TEST_REMOTE_DIR', content)
@@ -104,22 +106,22 @@ class PBSTest(unittest.TestCase):
 
         recipe._install()
 
-        self.assertItemsEqual(os.listdir(promises_directory),
+        six.assertCountEqual(self, os.listdir(promises_directory),
                               ['ssh-to-pulltest', 'ssh-to-pushtest'])
 
-        self.assertItemsEqual(os.listdir(wrappers_directory),
+        six.assertCountEqual(self, os.listdir(wrappers_directory),
                               ['pulltest_raw', 'pulltest', 'pushtest_raw', 'pushtest'])
 
-        self.assertItemsEqual(os.listdir(directory),
+        six.assertCountEqual(self, os.listdir(directory),
                               ['TEST_NAME'])
 
-        self.assertItemsEqual(os.listdir(feeds_directory),
+        six.assertCountEqual(self, os.listdir(feeds_directory),
                               ['pulltest', 'pushtest'])
 
-        self.assertItemsEqual(os.listdir(run_directory),
+        six.assertCountEqual(self, os.listdir(run_directory),
                               [])
 
-        self.assertItemsEqual(os.listdir(cron_directory),
+        six.assertCountEqual(self, os.listdir(cron_directory),
                               ['pulltest', 'pushtest'])
 
         shutil.rmtree(promises_directory)

@@ -1,6 +1,7 @@
 T-0/var/log/monitor-httpd-error.log
 T-0/var/log/slapgrid-T-0-error.log
 T-1/var/log/expose-csr_id.log
+T-1/var/log/kedfia.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
 T-2/var/log/httpd-cache-direct/_enable_cache-disable-no-cache-request_access_log
@@ -26,6 +27,8 @@ T-2/var/log/httpd/_apache_custom_http_s-accepted_access_log
 T-2/var/log/httpd/_apache_custom_http_s-accepted_error_log
 T-2/var/log/httpd/_caddy_custom_http_s-accepted_access_log
 T-2/var/log/httpd/_caddy_custom_http_s-accepted_error_log
+T-2/var/log/httpd/_ciphers_access_log
+T-2/var/log/httpd/_ciphers_error_log
 T-2/var/log/httpd/_custom_domain_access_log
 T-2/var/log/httpd/_custom_domain_error_log
 T-2/var/log/httpd/_custom_domain_server_alias_access_log
@@ -66,6 +69,8 @@ T-2/var/log/httpd/_monitor-ipv4-test_access_log
 T-2/var/log/httpd/_monitor-ipv4-test_error_log
 T-2/var/log/httpd/_monitor-ipv6-test_access_log
 T-2/var/log/httpd/_monitor-ipv6-test_error_log
+T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_access_log
+T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_error_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend_access_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend_error_log
 T-2/var/log/httpd/_re6st-optimal-test_access_log
@@ -106,6 +111,8 @@ T-2/var/log/httpd/_type-zope-default-path_access_log
 T-2/var/log/httpd/_type-zope-default-path_error_log
 T-2/var/log/httpd/_type-zope-path_access_log
 T-2/var/log/httpd/_type-zope-path_error_log
+T-2/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend-https-only_access_log
+T-2/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend-https-only_error_log
 T-2/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend_access_log
 T-2/var/log/httpd/_type-zope-prefer-gzip-encoding-to-backend_error_log
 T-2/var/log/httpd/_type-zope-ssl-proxy-verify-unverified_access_log

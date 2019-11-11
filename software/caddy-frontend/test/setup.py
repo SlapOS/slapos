@@ -38,6 +38,7 @@ setup(name=name,
       packages=find_packages(),
       install_requires=[
         'slapos.core',
+        'slapos.cookbook',
         'slapos.libnetworkcache',
         'erp5.util',
         'requests >= 2.20.0',  # needed for recent SSL certificate fixes
@@ -51,6 +52,7 @@ setup(name=name,
         # caucase needed to connect to the KeDiFa caucase
         'caucase',
         'cryptography',
+        'backports.lzma',
       ],
       zip_safe=True,
       test_suite='test',

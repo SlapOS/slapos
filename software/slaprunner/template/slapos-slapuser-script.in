@@ -1,6 +1,6 @@
 #!/bin/sh
 # run slapos command inside slaprunner with appropriate config
 
-SLAPOS_CONFIGURATION={{ config_location }}   \
-SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION   \
+export SLAPOS_CONFIGURATION=${SLAPOS_CONFIGURATION-"{{ config_location }}"}
+export SLAPOS_CLIENT_CONFIGURATION=${SLAPOS_CLIENT_CONFIGURATION-$SLAPOS_CONFIGURATION}
 exec {{ slapos_python_file_location }} "$@"

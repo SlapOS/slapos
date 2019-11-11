@@ -1,0 +1,229 @@
+[buildout]
+extends =
+  {{ template_monitor }}
+  {{ logrotate_cfg }}
+  {{ custom_application_template }}
+
+parts =
+  monitor-base
+  certificate-authority
+  logrotate-entry-apache
+  promise
+
+  php.ini-conf
+  apache-php-service
+  publish-connection-information
+  {{ parameter_dict['application-part-list'] }}
+
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin
+tmp = ${buildout:directory}/tmp
+log = ${:var}/log
+services = ${:etc}/service
+scripts = ${:etc}/run
+run = ${:var}/run
+backup = ${:srv}/backup
+promises = ${:etc}/promise
+plugins = ${:etc}/plugin
+httpd-log = ${:log}/apache
+php-ini-dir = ${:etc}/php
+tmp-php = ${:tmp}/php
+upload-tmp = ${:tmp}/upload
+www = ${:srv}/www/
+apache.d = ${:etc}/apache.d
+
+#----------------
+#--
+#-- Certificate stuff.
+
+[ca-directory]
+recipe = slapos.cookbook:mkdirectory
+root = ${directory:srv}/ssl
+requests = ${:root}/requests
+private = ${:root}/private
+certs = ${:root}/certs
+newcerts = ${:root}/newcerts
+crl = ${:root}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${ca-directory:root}
+requests-directory = ${ca-directory:requests}
+wrapper = ${directory:bin}/certificate_authority
+ca-private = ${ca-directory:private}
+ca-certs = ${ca-directory:certs}
+ca-newcerts = ${ca-directory:newcerts}
+ca-crl = ${ca-directory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[ca-apache-php]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${apache-php-configuration:key-file}
+cert-file = ${apache-php-configuration:cert-file}
+executable = ${apache-php-wrapper:wrapper-path}
+wrapper = ${directory:bin}/ca-apache-php
+
+[apache-php-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-apache-php:wrapper}
+wrapper-path = ${directory:services}/apache-php
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+depends =
+  ${copy-application:recipe}
+  ${apache-graceful:recipe}
+
+[copy-application]
+recipe = plone.recipe.command
+command = if [ -z "$(ls -A ${directory:www})" ]; then
+    rm -rf ${directory:www};
+    cp -ax {{ parameter_dict['application-location'] }}/ ${directory:www};
+  fi
+update-command = ${:command}
+stop-on-error = true
+
+[mariadb-urlparse]
+recipe = slapos.cookbook:urlparse
+url = {{ slapparameter_dict['database-list'][0] }}
+
+
+
+#----------------
+#--
+#-- Common network parameters
+[apache-network-configuration]
+listening-ip = {{ (ipv6 | list)[0] }}
+listening-port = 9988
+
+
+#----------------
+#--
+#-- Deploy Apache + PHP application.
+
+[apache-php-configuration]
+document-root = ${directory:www}
+pid-file = ${directory:run}/apache.pid
+lock-file = ${directory:run}/apache.lock
+ip = ${apache-network-configuration:listening-ip}
+port = ${apache-network-configuration:listening-port}
+url = https://[${:ip}]:${:port}/
+error-log = ${directory:httpd-log}/error.log
+access-log = ${directory:httpd-log}/access.log
+log-dir = ${directory:httpd-log}
+php-ini-dir = ${directory:php-ini-dir}
+cert-file = ${ca-directory:certs}/httpd.crt
+key-file = ${ca-directory:certs}/httpd.key
+apache-config-dir = ${directory:apache.d}
+
+[apache-php-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-apache-conf'] }}
+rendered = ${directory:etc}/apache.conf
+context = 
+  section parameter_dict apache-php-configuration
+extensions = jinja2.ext.do
+mode = 0644
+
+[apache-php-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/apache-wrapper
+command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-php-conf:rendered}" -DFOREGROUND
+wait-for-files =
+  ${ca-directory:certs}/httpd.crt
+  ${ca-directory:certs}/httpd.key
+
+[apache-graceful]
+recipe = collective.recipe.template
+output = ${directory:scripts}/apache-httpd-graceful
+mode = 700
+input = inline:
+  #!/bin/sh
+  kill -USR1 "$(cat '${apache-php-configuration:pid-file}')"
+
+[logrotate-entry-apache]
+<= logrotate-entry-base
+name = apache
+log = ${apache-php-configuration:log-dir}/*.log
+frequency = daily
+rotate-num = 30
+
+[php.ini-configuration]
+tmp-dir = ${directory:tmp-php}
+php-upload-dir = ${directory:upload-tmp}
+
+[php.ini-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-php-ini'] }}
+rendered = ${directory:php-ini-dir}/php.ini
+context = 
+  section parameter_dict php.ini-configuration
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+mode = 0644
+
+[instance-parameter]
+db-user = ${mariadb-urlparse:username}
+db-password = ${mariadb-urlparse:password}
+db-name = ${mariadb-urlparse:path}
+db-host = ${mariadb-urlparse:host}
+db-port = ${mariadb-urlparse:port}
+document-root = ${apache-php-configuration:document-root}
+backend-url = ${apache-php-configuration:url}
+php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
+php-ini = ${php.ini-conf:rendered}
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+backend-url = ${apache-php-configuration:url}
+
+
+#----------------
+#--
+#-- Deploy promises scripts.
+[promise-base]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.toolbox
+mode = 644
+output = ${directory:plugins}/${:name}
+content =
+  from slapos.promise.plugin.${:module} import RunPromise
+
+[promise]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+<= promise-base
+module = check_port_listening
+name = apache-httpd-port-listening.py
+config-hostname = ${apache-php-configuration:ip}
+config-port = ${apache-php-configuration:port}
+
+[slap-parameter]
+{% for key, value in slapparameter_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor -%}

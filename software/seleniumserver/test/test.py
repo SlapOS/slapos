@@ -47,14 +47,12 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from utils import SlapOSInstanceTestCase, findFreeTCPPort
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import findFreeTCPPort
 
-debug_mode = os.environ.get('SLAPOS_TEST_DEBUG')
-# for development: debugging logs and install Ctrl+C handler
-if debug_mode:
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  unittest.installHandler()
+setUpModule, SeleniumServerTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
 class WebServerMixin(object):
@@ -71,12 +69,14 @@ class WebServerMixin(object):
        - upload a file and the file content will be displayed in div.uploadedfile
       """
       def log_message(self, *args, **kw):
-        if debug_mode:
+        if SeleniumServerTestCase._debug:
           BaseHTTPRequestHandler.log_message(self, *args, **kw)
+
       def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write('''
+        self.wfile.write(
+            '''
           <html>
             <title>Test page</title>
             <body>
@@ -87,18 +87,22 @@ class WebServerMixin(object):
               </form>
             </body>
           </html>''')
+
       def do_POST(self):
         form = cgi.FieldStorage(
             fp=self.rfile,
             headers=self.headers,
-            environ={'REQUEST_METHOD':'POST',
-                     'CONTENT_TYPE':self.headers['Content-Type'],})
+            environ={
+                'REQUEST_METHOD': 'POST',
+                'CONTENT_TYPE': self.headers['Content-Type'],
+            })
         self.send_response(200)
         self.end_headers()
         file_data = 'no file'
         if form.has_key('f'):
           file_data = form['f'].file.read()
-        self.wfile.write('''
+        self.wfile.write(
+            '''
           <html>
             <title>%s</title>
             <div>%s</div>
@@ -128,8 +132,9 @@ class BrowserCompatibilityMixin(WebServerMixin):
   def setUp(self):
     super(BrowserCompatibilityMixin, self).setUp()
     self.driver = webdriver.Remote(
-         command_executor=self.computer_partition.getConnectionParameterDict()['backend-url'],
-         desired_capabilities=self.desired_capabilities)
+        command_executor=self.computer_partition.getConnectionParameterDict()
+        ['backend-url'],
+        desired_capabilities=self.desired_capabilities)
 
   def tearDown(self):
     self.driver.quit()
@@ -142,7 +147,7 @@ class BrowserCompatibilityMixin(WebServerMixin):
 
   def test_simple_submit_scenario(self):
     self.driver.get(self.server_url)
-    input_element  = WebDriverWait(self.driver, 3).until(
+    input_element = WebDriverWait(self.driver, 3).until(
         EC.visibility_of_element_located((By.NAME, 'q')))
     input_element.send_keys(self.id())
     input_element.submit()
@@ -158,9 +163,7 @@ class BrowserCompatibilityMixin(WebServerMixin):
     self.driver.find_element_by_xpath('//input[@name="f"]').send_keys(f.name)
     self.driver.find_element_by_xpath('//input[@type="submit"]').click()
 
-    self.assertEqual(
-        self.id(),
-        self.driver.find_element_by_xpath('//div').text)
+    self.assertEqual(self.id(), self.driver.find_element_by_xpath('//div').text)
 
   def test_screenshot(self):
     self.driver.get(self.server_url)
@@ -169,7 +172,9 @@ class BrowserCompatibilityMixin(WebServerMixin):
     self.assertGreater(len(screenshot.getcolors(maxcolors=512)), 2)
 
   def test_window_and_screen_size(self):
-    size = json.loads(self.driver.execute_script('''
+    size = json.loads(
+        self.driver.execute_script(
+            '''
       return JSON.stringify({
         'screen.width': window.screen.width,
         'screen.height': window.screen.height,
@@ -188,7 +193,9 @@ class BrowserCompatibilityMixin(WebServerMixin):
 
   def test_resize_window(self):
     self.driver.set_window_size(800, 900)
-    size = json.loads(self.driver.execute_script('''
+    size = json.loads(
+        self.driver.execute_script(
+            '''
       return JSON.stringify({
         'outerWidth': window.outerWidth,
         'outerHeight': window.outerHeight
@@ -201,10 +208,11 @@ class BrowserCompatibilityMixin(WebServerMixin):
     webdriver_url = parameter_dict['backend-url']
 
     queue = multiprocessing.Queue()
+
     def _test(q, server_url):
       driver = webdriver.Remote(
-           command_executor=webdriver_url,
-           desired_capabilities=self.desired_capabilities)
+          command_executor=webdriver_url,
+          desired_capabilities=self.desired_capabilities)
       try:
         driver.get(server_url)
         q.put(driver.title == 'Test page')
@@ -213,32 +221,22 @@ class BrowserCompatibilityMixin(WebServerMixin):
 
     nb_workers = 10
     workers = []
-    for i in range(nb_workers):
+    for _ in range(nb_workers):
       worker = multiprocessing.Process(
-          target=_test,
-          args=(queue, self.server_url))
+          target=_test, args=(queue, self.server_url))
 
       worker.start()
       workers.append(worker)
-    del worker # pylint
+    del worker  # pylint
     _ = [worker.join(timeout=30) for worker in workers]
 
     # terminate workers if they are still alive after 30 seconds
     _ = [worker.terminate() for worker in workers if worker.is_alive()]
     _ = [worker.join() for worker in workers]
 
-    del _ # pylint
+    del _  # pylint
     self.assertEqual(
-        [True] * nb_workers,
-        [queue.get() for _ in range(nb_workers)])
-
-
-class SeleniumServerTestCase(SlapOSInstanceTestCase):
-  """Test the remote driver on a minimal web server.
-  """
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
+        [True] * nb_workers, [queue.get() for _ in range(nb_workers)])
 
 
 class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
@@ -249,18 +247,15 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     webdriver_url = parameter_dict['backend-url']
 
     driver = webdriver.Remote(
-         command_executor=webdriver_url,
-         desired_capabilities=DesiredCapabilities.CHROME)
+        command_executor=webdriver_url,
+        desired_capabilities=DesiredCapabilities.CHROME)
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
 
-    self.assertIn(
-        'Chrome',
-        driver.execute_script('return navigator.userAgent'))
+    self.assertIn('Chrome', driver.execute_script('return navigator.userAgent'))
     self.assertNotIn(
-        'Firefox',
-        driver.execute_script('return navigator.userAgent'))
+        'Firefox', driver.execute_script('return navigator.userAgent'))
     driver.quit()
 
   def test_firefox(self):
@@ -268,15 +263,14 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     webdriver_url = parameter_dict['backend-url']
 
     driver = webdriver.Remote(
-         command_executor=webdriver_url,
-         desired_capabilities=DesiredCapabilities.FIREFOX)
+        command_executor=webdriver_url,
+        desired_capabilities=DesiredCapabilities.FIREFOX)
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
 
     self.assertIn(
-        'Firefox',
-        driver.execute_script('return navigator.userAgent'))
+        'Firefox', driver.execute_script('return navigator.userAgent'))
     driver.quit()
 
   def test_firefox_desired_version(self):
@@ -286,16 +280,16 @@ class TestBrowserSelection(WebServerMixin, SeleniumServerTestCase):
     desired_capabilities = DesiredCapabilities.FIREFOX.copy()
     desired_capabilities['version'] = '60.0.2esr'
     driver = webdriver.Remote(
-         command_executor=webdriver_url,
-         desired_capabilities=desired_capabilities)
+        command_executor=webdriver_url,
+        desired_capabilities=desired_capabilities)
     self.assertIn(
         'Gecko/20100101 Firefox/60.0',
         driver.execute_script('return navigator.userAgent'))
     driver.quit()
     desired_capabilities['version'] = '52.9.0esr'
     driver = webdriver.Remote(
-         command_executor=webdriver_url,
-         desired_capabilities=desired_capabilities)
+        command_executor=webdriver_url,
+        desired_capabilities=desired_capabilities)
     self.assertIn(
         'Gecko/20100101 Firefox/52.0',
         driver.execute_script('return navigator.userAgent'))
@@ -313,9 +307,7 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     self.assertEqual('admin', parsed.username)
     self.assertTrue(parsed.password)
 
-    self.assertIn(
-        'Grid Console',
-        requests.get(admin_url, verify=False).text)
+    self.assertIn('Grid Console', requests.get(admin_url, verify=False).text)
 
   def test_browser_use_hub(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
@@ -325,8 +317,8 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     self.assertTrue(parsed.password)
 
     driver = webdriver.Remote(
-         command_executor=webdriver_url,
-         desired_capabilities=DesiredCapabilities.CHROME)
+        command_executor=webdriver_url,
+        desired_capabilities=DesiredCapabilities.CHROME)
 
     driver.get(self.server_url)
     self.assertEqual('Test page', driver.title)
@@ -346,27 +338,30 @@ class TestSSHServer(SeleniumServerTestCase):
     self.assertEqual('ssh', parsed.scheme)
 
     client = paramiko.SSHClient()
+
     class TestKeyPolicy(object):
       """Accept server key and keep it in self.key for inspection
       """
       def missing_host_key(self, client, hostname, key):
         self.key = key
+
     key_policy = TestKeyPolicy()
     client.set_missing_host_key_policy(key_policy)
 
     with contextlib.closing(client):
       client.connect(
-        username=urlparse.urlparse(ssh_url).username,
-        hostname=urlparse.urlparse(ssh_url).hostname,
-        port=urlparse.urlparse(ssh_url).port,
-        pkey=self.ssh_key,
+          username=urlparse.urlparse(ssh_url).username,
+          hostname=urlparse.urlparse(ssh_url).hostname,
+          port=urlparse.urlparse(ssh_url).port,
+          pkey=self.ssh_key,
       )
 
       # Check fingerprint from server matches the published one.
       # The publish format is the raw output of ssh-keygen and is something like this:
       #   521 SHA256:9aZruv3LmFizzueIFdkd78eGtzghDoPSCBXFkkrHqXE user@hostname (ECDSA)
       # we only want to parse SHA256:9aZruv3LmFizzueIFdkd78eGtzghDoPSCBXFkkrHqXE
-      _, fingerprint_string, _, key_type = parameter_dict['ssh-fingerprint'].split()
+      _, fingerprint_string, _, key_type = parameter_dict[
+          'ssh-fingerprint'].split()
       self.assertEqual(key_type, '(ECDSA)')
 
       fingerprint_algorithm, fingerprint = fingerprint_string.split(':', 1)
@@ -374,18 +369,23 @@ class TestSSHServer(SeleniumServerTestCase):
       # Paramiko does not allow to get the fingerprint as SHA256 easily yet
       # https://github.com/paramiko/paramiko/pull/1103
       self.assertEqual(
-        fingerprint,
-        # XXX with sha256, we need to remove that trailing =
-        base64.b64encode(hashlib.new(fingerprint_algorithm, key_policy.key.asbytes()).digest())[:-1]
-      )
+          fingerprint,
+          # XXX with sha256, we need to remove that trailing =
+          base64.b64encode(
+              hashlib.new(fingerprint_algorithm,
+                          key_policy.key.asbytes()).digest())[:-1])
 
       channel = client.invoke_shell()
       channel.settimeout(30)
-      # apparently we sometimes need to send something on the first ssh connection
-      channel.send('\n')
-      # openssh prints a warning 'Attempt to write login records by non-root user (aborting)'
-      # so we received more than the lenght of the asserted message.
-      self.assertIn("Welcome to SlapOS Selenium Server.", channel.recv(100))
+      received = ''
+      while True:
+        r = channel.recv(1024)
+        if not r:
+          break
+        received += r
+        if 'Selenium Server.' in received:
+          break
+      self.assertIn("Welcome to SlapOS Selenium Server.", received)
 
 
 class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
@@ -393,12 +393,17 @@ class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
   user_agent = 'Gecko/20100101 Firefox/52.0'
   # resizing window is not supported on firefox 52 geckodriver
   test_resize_window = unittest.expectedFailure(
-    BrowserCompatibilityMixin.test_resize_window)
+      BrowserCompatibilityMixin.test_resize_window)
 
 
 class TestFirefox60(BrowserCompatibilityMixin, SeleniumServerTestCase):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='60.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/60.0'
+
+
+class TestFirefox68(BrowserCompatibilityMixin, SeleniumServerTestCase):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
+  user_agent = 'Gecko/20100101 Firefox/68.0'
 
 
 class TestChrome69(BrowserCompatibilityMixin, SeleniumServerTestCase):

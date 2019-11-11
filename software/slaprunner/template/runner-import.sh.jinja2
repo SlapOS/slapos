@@ -250,6 +250,7 @@ do
 done
 
 # Change back slapproxy database to have all instances started
+DB_PARTITION_TABLE=$(db_query ".table partition__")
 log_message "Set instances as to start after takeover..."
 db_query "update $DB_PARTITION_TABLE set requested_state='started';"
 

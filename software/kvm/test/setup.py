@@ -25,12 +25,11 @@
 #
 ##############################################################################
 from setuptools import setup, find_packages
-import glob
-import os
 
 version = '0.0.1.dev0'
 name = 'slapos.test.kvm'
-long_description = open("README.md").read()
+with open("README.md") as f:
+  long_description = f.read()
 
 setup(name=name,
       version=version,
@@ -43,6 +42,7 @@ setup(name=name,
       packages=find_packages(),
       install_requires=[
           'slapos.core',
+          'slapos.cookbook',
           'slapos.libnetworkcache',
           'erp5.util',
           'supervisor',

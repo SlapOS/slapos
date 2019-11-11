@@ -29,28 +29,15 @@ import os
 import json
 import glob
 import urlparse
-import logging
 import socket
 import time
 
 import psutil
 import requests
 
-from utils import SlapOSInstanceTestCase
-
-
-class ERP5TestCase(SlapOSInstanceTestCase):
-  """Test the remote driver on a minimal web server.
-  """
-  logger = logging.getLogger(__name__)
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')), )
-
-  def getRootPartitionConnectionParameterDict(self):
-    """Return the output paramters from the root partition"""
-    return json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+from . import ERP5InstanceTestCase
+from . import setUpModule
+setUpModule # pyflakes
 
 
 class TestPublishedURLIsReachableMixin(object):
@@ -60,12 +47,14 @@ class TestPublishedURLIsReachableMixin(object):
     # What happens is that instanciation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
     # instanciated, but zope is still busy creating the site and haproxy replies
-    # with 503 Service Unavailable.
+    # with 503 Service Unavailable, sometimes the first request is 404, so we
+    # retry in a loop.
     # If we can move the "create site" in slapos node instance, then this retry loop
     # would not be necessary.
-    for i in range(1, 20):
-      r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
-      if r.status_code == requests.codes.service_unavailable:
+    for i in range(1, 60):
+      r = requests.get(url, verify=False)  # XXX can we get CA from caucase already ?
+      if r.status_code in (requests.codes.service_unavailable,
+                           requests.codes.not_found):
         delay = i * 2
         self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
         time.sleep(delay)
@@ -91,23 +80,23 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated with no parameters
   """
   __partition_reference__ = 'defp'
 
 
-class TestWSGI(ERP5TestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 WSGI server
+class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 Medusa server
   """
-  __partition_reference__ = 'wsgi'
+  __partition_reference__ = 'medusa'
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'wsgi': True})}
+    return {'_': json.dumps({'wsgi': False})}
 
 
-class TestApacheBalancerPorts(ERP5TestCase):
+class TestApacheBalancerPorts(ERP5InstanceTestCase):
   """Instanciate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
    - a balancer entry point for test runner
@@ -159,8 +148,8 @@ class TestApacheBalancerPorts(ERP5TestCase):
 
   def test_zope_listen(self):
     # we requested 3 zope in family1 and 5 zopes in family2, we should have 8 zope running.
-    all_process_info = self.getSupervisorRPCServer(
-    ).supervisor.getAllProcessInfo()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
     self.assertEqual(
         3 + 5,
         len([p for p in all_process_info if p['name'].startswith('zope-')]))
@@ -168,8 +157,8 @@ class TestApacheBalancerPorts(ERP5TestCase):
   def test_apache_listen(self):
     # We have 2 families, apache should listen to a total of 3 ports per family
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
-    all_process_info = self.getSupervisorRPCServer(
-    ).supervisor.getAllProcessInfo()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
     process_info, = [p for p in all_process_info if p['name'] == 'apache']
     apache_process = psutil.Process(process_info['pid'])
     self.assertEqual(
@@ -182,8 +171,8 @@ class TestApacheBalancerPorts(ERP5TestCase):
 
   def test_haproxy_listen(self):
     # There is one haproxy per family
-    all_process_info = self.getSupervisorRPCServer(
-    ).supervisor.getAllProcessInfo()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
     process_info, = [
         p for p in all_process_info if p['name'].startswith('haproxy-')
     ]
@@ -193,7 +182,7 @@ class TestApacheBalancerPorts(ERP5TestCase):
     ])
 
 
-class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
+class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated without test runner.
   """
   __partition_reference__ = 'distr'
@@ -215,8 +204,8 @@ class TestDisableTestRunner(ERP5TestCase, TestPublishedURLIsReachableMixin):
 
   def test_no_apache_testrunner_port(self):
     # Apache only listen on two ports, there is no apache ports allocated for test runner
-    all_process_info = self.getSupervisorRPCServer(
-    ).supervisor.getAllProcessInfo()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
     process_info, = [p for p in all_process_info if p['name'] == 'apache']
     apache_process = psutil.Process(process_info['pid'])
     self.assertEqual(

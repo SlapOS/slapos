@@ -26,45 +26,17 @@
 ##############################################################################
 
 import os
-import shutil
-import urlparse
-import tempfile
-import requests
-import socket
-import StringIO
-import subprocess
-import json
 
-import psutil
+from slapos.recipe.librecipe import generateHashFromFiles
 
-import utils
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-# for development: debugging logs and install Ctrl+C handler
-if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
-  logging.basicConfig(level=logging.DEBUG)
-  import unittest
-  unittest.installHandler()
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class InstanceTestCase(utils.SlapOSInstanceTestCase):
-  @classmethod
-  def getSoftwareURLList(cls):
-    return (os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg')), )
-
-
-class ServicesTestCase(InstanceTestCase):
-  @staticmethod
-  def generateHashFromFiles(file_list):
-    import hashlib
-    hasher = hashlib.md5()
-    for path in file_list:
-      with open(path, 'r') as afile:
-        buf = afile.read()
-      hasher.update("%s\n" % len(buf))
-      hasher.update(buf)
-    hash = hasher.hexdigest()
-    return hash
+class ServicesTestCase(SlapOSInstanceTestCase):
 
   def test_hashes(self):
     hash_files = [
@@ -75,15 +47,15 @@ class ServicesTestCase(InstanceTestCase):
       'crond-{hash}-on-watch',
     ]
 
-    supervisor = self.getSupervisorRPCServer().supervisor
-    process_names = [process['name']
-                     for process in supervisor.getAllProcessInfo()]
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [process['name']
+                       for process in supervisor.getAllProcessInfo()]
 
     hash_files = [os.path.join(self.computer_partition_root_path, path)
                   for path in hash_files]
 
     for name in expected_process_names:
-      h = ServicesTestCase.generateHashFromFiles(hash_files)
+      h = generateHashFromFiles(hash_files)
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)

@@ -35,10 +35,11 @@ parts =
 {{- assert(not sla_dict, sla_dict) }}
 {% endmacro -%}
 
-{% macro request_neo(parameter_dict, software_type, prefix='node-') -%}
+{% macro request_neo(parameter_dict, software_type, prefix='node-', monitor_base_url_dict=None) -%}
 {% set section_id_list = [] -%}
 [{{ prefix }}request-common]
 <= request-common-base
+config-masters = {{ '${' ~ prefix ~ 'cluster:masters}' }}
 config-cluster = {{ parameter_dict['cluster'] }}
 {% set replicas = parameter_dict.get('replicas', 0) -%}
 config-partitions = {{ dumps(parameter_dict.get('partitions', 12)) }}
@@ -52,45 +53,44 @@ config-upstream-cluster = {{ dumps(parameter_dict.get('upstream-cluster', '')) }
 config-upstream-masters = {{ dumps(parameter_dict.get('upstream-masters', '')) }}
 software-type = {{ software_type }}
 {% set node_list = parameter_dict.get('node-list', ({},)) -%}
-{% set storage_count =  [] -%}
+{% set storage_count = [] -%}
 {% for node in node_list -%}
 {%   do storage_count.append(node.get('storage-count', 1)) -%}
 {% endfor -%}
 config-autostart = {{ dumps(sum(storage_count)) }}
-{% do assert(replicas < len(node_list)) -%}
-{% for i, node in enumerate(node_list) -%}
-{%   set section_id =  prefix ~ i -%}
-{%   do section_id_list.append(section_id) -%}
+{%- do assert(replicas < len(node_list)) %}
+{%- set admin_list = [] %}
+{%- for i, node in enumerate(node_list) %}
+{%-   set section_id =  prefix ~ i %}
+{%-   do section_id_list.append(section_id) %}
+{%-   if admin_list %}
+{%-     do node.setdefault('admin', 0) %}
+{%-   endif %}
 
-[{{ section_id }}-base]
-name = {{ section_id }}
-{%   for k, v in node.iteritems() -%}
-config-{{ k }} = {{ dumps(v) }}
-{%   endfor -%}
-{{ sla(section_id) }}
-
-[{{ section_id }}]
+[{{section_id}}]
 <= {{ prefix }}request-common
-  {{ section_id }}-base
+name = {{ section_id }}
 return =
   master
   admin
-{% endfor -%}
-[final-base]
-{% for i, section_id in enumerate(section_id_list) -%}
-config-master-{{i}} = {{ '${' + section_id + ':connection-master}' }}
-config-admin-{{i}} = {{ '${' + section_id + ':connection-admin}' }}
-{% endfor -%}
+{%-   if node.get('admin') != 0 %}
+  monitor-base-url
+{%-     if monitor_base_url_dict != None %}
+{%-       do monitor_base_url_dict.__setitem__('neo',
+            '${' ~ section_id ~ ':connection-monitor-base-url}') %}
+{%-     endif %}
+{%-     do admin_list.append(section_id) %}
+config-monitor-passwd = ${monitor-htpasswd:passwd}
+config-monitor = {{ dumps(parameter_dict.get('monitor', {})) }}
+{%-   endif %}
+{%-   for k, v in node.iteritems() %}
+config-{{ k }} = {{ dumps(v) }}
+{%-   endfor %}
+{{ sla(section_id) }}
+{%- endfor %}
+{%- do assert(len(admin_list) == 1, admin_list) %}
 
-{% for section_id in section_id_list -%}
-[{{ section(section_id + '-final') }}]
-<= {{ prefix }}request-common
-  final-base
-  {{ section_id }}-base
-{%   if loop.first -%}
-return =
-  masters
-  admins
-{%   endif -%}
-{% endfor -%}
+[{{section(prefix ~ 'cluster')}}]
+recipe = slapos.cookbook:neoppod.cluster
+nodes = {{ ' '.join(section_id_list) }}
 {% endmacro -%}

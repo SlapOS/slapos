@@ -84,7 +84,7 @@ This software release assigns the following port ranges by default:
   memcached-persistent  2000-2009
   memcached-volatile    2010-2019
   smtp                  2025-2029
-  neo (admin & master)  2050-2051
+  neo (admin, master)   2050-2052
   mariadb               2099
   zeo                   2100-2149
   balancer              2150-2199

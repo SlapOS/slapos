@@ -20,9 +20,6 @@ TypesConfig {{ httpd_home }}/conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
-# As backend is trusting REMOTE_USER header unset it always
-RequestHeader unset REMOTE_USER
-
 ServerTokens Prod
 
 # Disable TRACE Method
@@ -138,7 +135,7 @@ ThreadsPerChild {{ slapparameter_dict.get('mpm-thread-per-child', '25') }}
 GracefulShutdownTimeout {{ slapparameter_dict.get('mpm-graceful-shutdown-timeout', '5') }}
 
 # Deflate
-AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/json application/x-javascript application/javascript
+AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/json application/x-javascript application/javascript application/wasm
 BrowserMatch ^Mozilla/4 gzip-only-text/html
 BrowserMatch ^Mozilla/4\.0[678] no-gzip
 BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
