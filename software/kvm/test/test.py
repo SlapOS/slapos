@@ -30,6 +30,7 @@ import json
 import os
 import requests
 import slapos.util
+import subprocess
 import sqlite3
 import urlparse
 
@@ -42,8 +43,20 @@ setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class ServicesTestCase(InstanceTestCase):
+class SanityCheckedInstanceTestCase(InstanceTestCase):
+  def test_kvm_sanity_check(self):
+    """Sanity check - if fails, machine is not able to run KVM tests"""
+    try:
+      output = subprocess.check_output("lsmod | grep kvm_intel", shell=True)
+    except subprocess.CalledProcessError as e:
+      state = False
+      output = e.output
+    else:
+      state = True
+    self.assertTrue(state)
+    self.assertRegexpMatches(output, r'kvm.*kvm_intel')
 
+class ServicesTestCase(SanityCheckedInstanceTestCase):
   def test_hashes(self):
     hash_files = [
       'software_release/buildout.cfg',
@@ -138,7 +151,7 @@ class MonitorAccessMixin(object):
     )
 
 
-class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
+class TestAccessDefault(MonitorAccessMixin, SanityCheckedInstanceTestCase):
   __partition_reference__ = 'ad'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -154,7 +167,7 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
     self.assertFalse('url-additional' in connection_parameter_dict)
 
 
-class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
+class TestAccessDefaultAdditional(MonitorAccessMixin, SanityCheckedInstanceTestCase):
   __partition_reference__ = 'ada'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -184,7 +197,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertTrue('<title>noVNC</title>' in result.text)
 
 
-class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
+class TestAccessKvmCluster(MonitorAccessMixin, SanityCheckedInstanceTestCase):
   __partition_reference__ = 'akc'
   expected_partition_with_monitor_base_url_count = 2
 
@@ -214,7 +227,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
     self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
 
 
-class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
+class TestAccessKvmClusterAdditional(MonitorAccessMixin, SanityCheckedInstanceTestCase):
   __partition_reference__ = 'akca'
   expected_partition_with_monitor_base_url_count = 2
 
