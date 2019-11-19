@@ -360,6 +360,8 @@ class TestDataMixin(object):
       'validate_configuration_state_signature',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
+      # no control regarding if it would or not be running
+      'monitor/monitor-bootstrap.pid',
     ])
 
   def test_file_list_etc_cron_d(self):
