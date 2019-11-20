@@ -28,35 +28,46 @@
 import httplib
 import json
 import os
+import re
 import requests
 import slapos.util
 import subprocess
 import sqlite3
 import urlparse
+import unittest
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
-setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+def sanityCheck():
+  try:
+    output = subprocess.check_output("lsmod | grep kvm_intel", shell=True)
+  except subprocess.CalledProcessError as e:
+    state = False
+    output = e.output
+  else:
+    state = True
+  if state is True and re.search(r'kvm.*kvm_intel', output):
+    return True
+
+
+if sanityCheck():
+  setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+else:
+  setUpModule, InstanceTestCase = None, unittest.TestCase
+
+  class SanityCheckTestCase(unittest.TestCase):
+    def test_kvm_sanity_check(self):
+      if not(sanityCheck()):
+        self.fail('This environment is not usable for kvm testing, as it '
+                  'lacks kvm_intel kernel module')
 
 
-class SanityCheckedInstanceTestCase(InstanceTestCase):
-  def test_kvm_sanity_check(self):
-    """Sanity check - if fails, machine is not able to run KVM tests"""
-    try:
-      output = subprocess.check_output("lsmod | grep kvm_intel", shell=True)
-    except subprocess.CalledProcessError as e:
-      state = False
-      output = e.output
-    else:
-      state = True
-    self.assertTrue(state)
-    self.assertRegexpMatches(output, r'kvm.*kvm_intel')
-
-class ServicesTestCase(SanityCheckedInstanceTestCase):
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class ServicesTestCase(InstanceTestCase):
   def test_hashes(self):
     hash_files = [
       'software_release/buildout.cfg',
@@ -151,7 +162,8 @@ class MonitorAccessMixin(object):
     )
 
 
-class TestAccessDefault(MonitorAccessMixin, SanityCheckedInstanceTestCase):
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'ad'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -167,7 +179,8 @@ class TestAccessDefault(MonitorAccessMixin, SanityCheckedInstanceTestCase):
     self.assertFalse('url-additional' in connection_parameter_dict)
 
 
-class TestAccessDefaultAdditional(MonitorAccessMixin, SanityCheckedInstanceTestCase):
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'ada'
   expected_partition_with_monitor_base_url_count = 1
 
@@ -197,7 +210,8 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, SanityCheckedInstanceTestC
     self.assertTrue('<title>noVNC</title>' in result.text)
 
 
-class TestAccessKvmCluster(MonitorAccessMixin, SanityCheckedInstanceTestCase):
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akc'
   expected_partition_with_monitor_base_url_count = 2
 
@@ -227,7 +241,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, SanityCheckedInstanceTestCase):
     self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
 
 
-class TestAccessKvmClusterAdditional(MonitorAccessMixin, SanityCheckedInstanceTestCase):
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akca'
   expected_partition_with_monitor_base_url_count = 2
 
