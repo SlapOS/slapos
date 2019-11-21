@@ -186,6 +186,7 @@ extra-args=-t ecdsa -b 521
 
 [ssh-key-fingerprint-command]
 recipe = plone.recipe.command
+stop-on-error = true
 # recent openssh client display ECDSA key's fingerprint as SHA256
 command = ${openssh-output:keygen} -lf $${ssh-host-ecdsa-key:output}
 
