@@ -107,7 +107,7 @@ class TestInfluxDb(GrafanaTestCase):
     query_url = '{self.influxdb_url}/query'.format(**locals())
     connection_params = self.computer_partition.getConnectionParameterDict()
 
-    for i in range(5):
+    for i in range(10):
       # retry, as it may take a little delay to create databases
       resp = requests.get(
           query_url,
@@ -118,7 +118,7 @@ class TestInfluxDb(GrafanaTestCase):
               p=connection_params['influxdb-password']))
       self.assertEqual(requests.codes.ok, resp.status_code)
       result, = resp.json()['results']
-      if result['series']:
+      if result['series'] and 'values' in result['series'][0]:
         break
       time.sleep(0.5 * i)
 
@@ -201,9 +201,14 @@ class TestLoki(GrafanaTestCase):
         time.sleep(0.5 * i)
         continue
 
-    warn_stream, = [stream for stream in resp['streams'] if 'level="WARNING"' in stream['labels']]
+    warn_stream_list = [stream for stream in resp['streams'] if 'level="WARNING"' in stream['labels']]
+    self.assertEqual(1, len(warn_stream_list), resp['streams'])
+    warn_stream, = warn_stream_list
     self.assertIn("testing warn", warn_stream['entries'][0]['line'])
-    info_stream, = [stream for stream in resp['streams'] if 'level="INFO"' in stream['labels']]
+
+    info_stream_list = [stream for stream in resp['streams'] if 'level="INFO"' in stream['labels']]
+    self.assertEqual(1, len(info_stream_list), resp['streams'])
+    info_stream, = info_stream_list
     self.assertTrue(
         [
             line for line in info_stream['entries']
