@@ -107,7 +107,7 @@ class TestInfluxDb(GrafanaTestCase):
     query_url = '{self.influxdb_url}/query'.format(**locals())
     connection_params = self.computer_partition.getConnectionParameterDict()
 
-    for i in range(5):
+    for i in range(10):
       # retry, as it may take a little delay to create databases
       resp = requests.get(
           query_url,
@@ -118,7 +118,7 @@ class TestInfluxDb(GrafanaTestCase):
               p=connection_params['influxdb-password']))
       self.assertEqual(requests.codes.ok, resp.status_code)
       result, = resp.json()['results']
-      if result['series']:
+      if result['series'] and 'values' in result['series'][0]:
         break
       time.sleep(0.5 * i)
 
@@ -179,7 +179,8 @@ class TestLoki(GrafanaTestCase):
   def test_log_ingested(self):
     # create a logger logging to the file that we have
     # configured in instance parameter.
-    test_logger = logging.getLogger(self.id())  # type: logging.Logger
+    test_logger = logging.getLogger(self.id())
+    test_logger.setLevel(logging.WARNING)
     test_handler = logging.FileHandler(filename=self._logfile.name)
     test_handler.setFormatter(
         logging.Formatter(
@@ -197,13 +198,18 @@ class TestLoki(GrafanaTestCase):
           '{self.loki_url}/api/prom/query?query={{job="TestLoki"}}'.format(
               **locals()),
           verify=False).json()
-      if not resp or len(resp['streams']) < 2:
+      if not resp:
         time.sleep(0.5 * i)
         continue
 
-    warn_stream, = [stream for stream in resp['streams'] if 'level="WARNING"' in stream['labels']]
+    warn_stream_list = [stream for stream in resp['streams'] if 'level="WARNING"' in stream['labels']]
+    self.assertEqual(1, len(warn_stream_list), resp['streams'])
+    warn_stream, = warn_stream_list
     self.assertIn("testing warn", warn_stream['entries'][0]['line'])
-    info_stream, = [stream for stream in resp['streams'] if 'level="INFO"' in stream['labels']]
+
+    info_stream_list = [stream for stream in resp['streams'] if 'level="INFO"' in stream['labels']]
+    self.assertEqual(1, len(info_stream_list), resp['streams'])
+    info_stream, = info_stream_list
     self.assertTrue(
         [
             line for line in info_stream['entries']
