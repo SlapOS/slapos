@@ -107,6 +107,7 @@ context =
   section supervisord supervisord
   raw  output_log_file ${directory:log}/${:resilient-log-basename}
   raw  shell_binary {{ bash_executable_location }}
+  raw  sqlite3_binary {{ sqlite3_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}
   raw  restore_exit_code_file ${:restore-exit-code-file}
   raw  restore_error_message_file ${:restore-error-message-file}
