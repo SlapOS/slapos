@@ -40,7 +40,6 @@ services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 scripts = $${rootdirectory:etc}/run
 backup = $${rootdirectory:srv}/backup
-promises = $${rootdirectory:etc}/promise
 services = $${rootdirectory:etc}/service
 cache = $${rootdirectory:var}/cache
 notifier = $${rootdirectory:etc}/notifier
@@ -152,11 +151,17 @@ name = resilient-notifier-status-feed
 frequency = */5 * * * *
 command = $${notifier-resilient-status-feed:wrapper-path}
 
-[notifier-stalled-promise]
+[notifier-stalled-promise-bin]
 recipe = slapos.cookbook:wrapper
 # time-buffer is 24h (+1h of latitude)
 command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${notifier-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
-wrapper-path = $${basedirectory:promises}/stalled-notifier-callbacks
+wrapper-path = $${rootdirectory:bin}/stalled-notifier-callbacks
+
+[notifier-stalled-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = stalled-notifier-callbacks.py
+config-command = $${notifier-stalled-promise-bin:wrapper-path}
 
 #----------------
 #--
@@ -206,10 +211,11 @@ command-line = $${directory:bin}/killpidfromfile $${resilient-sshd-config:path_p
 wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/sshd
-hostname = $${slap-network-information:global-ipv6}
-port = $${sshd-port:port}
+<= monitor-promise-base
+module = check_port_listening
+name = sshd.py
+config-hostname = $${slap-network-information:global-ipv6}
+config-port = $${sshd-port:port}
 
 #----------------
 #--
@@ -237,7 +243,7 @@ public-key = $${sshd-raw-server:rsa-keyfile}.pub
 private-key = $${sshd-raw-server:rsa-keyfile}
 wrapper = $${basedirectory:services}/sshd
 
-[resilient-sshkeys-sshd-promise]
+[resilient-sshkeys-sshd-promise-bin]
 # Check that public key file exists and is not empty
 recipe = collective.recipe.template
 input = inline:#!${bash:location}/bin/bash
@@ -245,23 +251,34 @@ input = inline:#!${bash:location}/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = $${basedirectory:promises}/public-key-existence
+output = $${rootdirectory:bin}/public-key-existence
 mode = 700
+
+[resilient-sshkeys-sshd-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = public-key-existence.py
+config-command = $${resilient-sshkeys-sshd-promise-bin:output}
 
 #----------------
 #--
 #-- Promises
 
-[notifier-feed-status-promise]
+[notifier-feed-status-promise-bin]
 recipe = slapos.recipe.template:jinja2
 template = ${notifier-feed-promise-template:target}
-rendered = $${basedirectory:promises}/notifier-feed-check-malformed-or-failure.py
+rendered = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
 mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds
   raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
   raw python_executable ${buildout:executable}
 
+[notifier-feed-status-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = notifier-feed-check-malformed-or-failure.py
+config-command = $${notifier-feed-status-promise-bin:rendered}
 #----------------
 #--
 #-- Connection informations to re-use.
