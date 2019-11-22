@@ -18,7 +18,6 @@
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
-promise = ${:etc}/promise
 
 
 ## Tells the Backupable recipe that we want a backup
