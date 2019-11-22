@@ -112,7 +112,7 @@ context =
   raw  restore_exit_code_file ${:restore-exit-code-file}
   raw  restore_error_message_file ${:restore-error-message-file}
 
-[importer-consistency-promise]
+[importer-consistency-bin]
 # Test that the importer script and "after-import" subscripts
 # are not older than 2 days (1 day + some slack), and have succeeded
 recipe = collective.recipe.template
@@ -135,10 +135,16 @@ input = inline: #!/bin/sh
     fi
   fi
   exit 1; # Something else went wrong
-output = ${directory:promises}/importer-consistency-promise
+output = ${directory:bin}/importer-consistency-promise
 mode = 755
 
-[software-release-deployment-promise]
+[importer-consistency-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = importer-consistency-promise.py
+config-command = ${importer-consistency-promise:output}
+
+[software-release-deployment-bin]
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
   PROJECT_FILE=$(find "${directory:etc}" -maxdepth 1 -name .project)
@@ -153,8 +159,14 @@ input = inline: #!/bin/sh
     fi
   fi
   exit 1
-output = ${directory:promises}/software-release-deployment-promise
+output = ${directory:bin}/software-release-deployment-promise
 mode = 755
+
+[software-release-deployment-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = software-release-deployment-promise.py
+config-command =${software-release-deployment-bin:output}
 
 [resilient-software-release-information]
 recipe = slapos.recipe.template
