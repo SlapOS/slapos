@@ -26,6 +26,9 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
+extends =
+  {{ monitor_template }}
+
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
   publish-early
