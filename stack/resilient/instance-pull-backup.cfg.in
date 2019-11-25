@@ -224,7 +224,7 @@ symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/p
 recipe = slapos.cookbook:wrapper
 # # time-buffer is 24h (+1h of latitude)
 command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
-wrapper-path = $${basedirectory:bin}/stalled-pull-push
+wrapper-path = $${rootdirectory:bin}/stalled-pull-push
 
 [pull-push-stalled-promise]
 <= monitor-promise-base
@@ -235,7 +235,7 @@ config-command = $${pull-push-stalled-promise-bin:wrapper-path}
 [notifier-feed-status-promise-bin]
 recipe = slapos.recipe.template:jinja2
 template = ${notifier-feed-promise-template:target}
-rendered = $${basedirectory:bin}/notifier-feed-check-malformed-or-failure.py
+rendered = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
 mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds

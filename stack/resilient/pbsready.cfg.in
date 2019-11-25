@@ -155,9 +155,9 @@ command = $${notifier-resilient-status-feed:wrapper-path}
 recipe = slapos.cookbook:wrapper
 # time-buffer is 24h (+1h of latitude)
 command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${notifier-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
-wrapper-path = $${basedirectory:bin}/stalled-notifier-callbacks
+wrapper-path = $${rootdirectory:bin}/stalled-notifier-callbacks
 
-[notifier-stalled-promise-bin]
+[notifier-stalled-promise]
 <= monitor-promise-base
 module = check_command_execute
 name = stalled-notifier-callbacks.py
@@ -251,7 +251,7 @@ input = inline:#!${bash:location}/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = $${basedirectory:bin}/public-key-existence
+output = $${rootdirectory:bin}/public-key-existence
 mode = 700
 
 [resilient-sshkeys-sshd-promise]
@@ -267,7 +267,7 @@ config-command = $${resilient-sshkeys-sshd-promise-bin:output}
 [notifier-feed-status-promise-bin]
 recipe = slapos.recipe.template:jinja2
 template = ${notifier-feed-promise-template:target}
-rendered = $${basedirectory:bin}/notifier-feed-check-malformed-or-failure.py
+rendered = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
 mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds
