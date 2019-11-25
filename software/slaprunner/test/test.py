@@ -269,3 +269,39 @@ class ServicesTestCase(SlaprunnerTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class ServicesTestCaseResilient(SlaprunnerTestCase):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  def test_hashes(self):
+    hash_files = [
+      'software_release/buildout.cfg',
+    ]
+    expected_process_names = [
+      'slaprunner-supervisord-{hash}-on-watch',
+      'runner-sshkeys-authority-{hash}-on-watch',
+      'runner-sshd-{hash}-on-watch',
+      'slaprunner-httpd-{hash}-on-watch',
+      'gunicorn-{hash}-on-watch',
+      'nginx-frontend-{hash}-on-watch',
+      'certificate_authority-{hash}-on-watch',
+      'shellinaboxd-{hash}-on-watch',
+      'supervisord-{hash}-on-watch',
+    ]
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_names = [
+          process['name'] for process in supervisor.getAllProcessInfo()
+      ]
+
+    hash_files = [os.path.join(self.computer_partition_root_path, path)
+                  for path in hash_files]
+
+    for name in expected_process_names:
+      h = generateHashFromFiles(hash_files)
+      expected_process_name = name.format(hash=h)
+
+      self.assertIn(expected_process_name, process_names)
