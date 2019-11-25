@@ -280,3 +280,31 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
       result.status_code
     )
     self.assertTrue('<title>noVNC</title>' in result.text)
+
+
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestInstanceResilient(InstanceTestCase):
+  __partition_reference__ = 'ir'
+  instance_max_retry = 20
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  def test(self):
+    # just check that keys returned on requested partition are for resilient
+    self.assertSetEqual(
+      set(self.computer_partition.getConnectionParameterDict().keys()),
+      set([
+        'backend-url',
+        'feed-url-kvm-1-pull',
+        'feed-url-kvm-1-push',
+        'ipv6',
+        'ipv6-network-info',
+        'monitor-base-url',
+        'monitor-password',
+        'monitor-setup-url',
+        'monitor-user',
+        'takeover-kvm-1-password',
+        'takeover-kvm-1-url',
+        'url']))
