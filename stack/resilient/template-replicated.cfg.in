@@ -18,6 +18,7 @@
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
+bin = ${:home}/bin
 
 
 ## Tells the Backupable recipe that we want a backup
@@ -226,7 +227,7 @@ sla-{{ key }} = {{ value }}
 {%   endfor %}
 {% endif %}
 
-[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
+[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise-bin]
 # Check that public-key-value parameter exists and is not empty
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
