@@ -269,3 +269,30 @@ class ServicesTestCase(SlaprunnerTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class TestInstanceResilient(SlaprunnerTestCase):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  def test(self):
+    # just check that keys returned on requested partition are for resilient
+    self.assertSetEqual(
+      set(self.computer_partition.getConnectionParameterDict().keys()),
+      set([
+        'backend-url',
+        'feed-url-runner-1-pull',
+        'feed-url-runner-1-push',
+        'git-private-url',
+        'git-public-url',
+        'init-password',
+        'init-user',
+        'monitor-base-url',
+        'monitor-setup-url',
+        'public-url',
+        'ssh-command',
+        'takeover-runner-1-password',
+        'takeover-runner-1-url',
+        'url',
+        'webdav-url']))
