@@ -42,6 +42,7 @@ log = $${rootdirectory:var}/log
 services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
 ssh-home = $${rootdirectory:etc}/ssh
 notifier = $${rootdirectory:etc}/notifier
 
@@ -119,6 +120,7 @@ notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 sshclient-binary = $${openssh-client:wrapper-path}
 known-hosts = $${directory:dot-ssh}/known_hosts
+promises-directory = $${basedirectory:promises}
 directory = $${directory:pbs-backup}
 cron-entries = $${cron:cron-entries}
 wrappers-directory = $${directory:pbs-wrappers}
