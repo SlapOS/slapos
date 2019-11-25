@@ -242,7 +242,8 @@ additional_disk_options = ''
 
 if disk_aio == 'native':
   additional_disk_options += ',cache.direct=on'
-
+if disk_format == "raw":
+  additional_disk_options += ',discard=on'
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
