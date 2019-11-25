@@ -134,8 +134,7 @@ HOME='{{ directory["home"] }}'
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export MAKEFLAGS=-j4
 SLAPOS='{{ directory["bin"] }}'/slapos
-# XXX hardcoded
-SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
+SQLITE3="{{ sqlite3_binary }}"
 DATABASE="$HOME/srv/runner/proxy.db"
 db_query () {
   # Try opening locked tables for 5 seconds to prevent "database is locked" error

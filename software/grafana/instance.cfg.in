@@ -3,6 +3,8 @@ parts =
   promises
   publish-connection-parameter
 
+extends = {{ monitor_template }}
+
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
@@ -33,7 +35,6 @@ etc = ${:home}/etc
 var = ${:home}/var
 srv = ${:home}/srv
 service = ${:etc}/service
-promise = ${:etc}/promise
 influxdb-data-dir = ${:srv}/influxdb
 grafana-dir = ${:srv}/grafana
 grafana-data-dir = ${:grafana-dir}/data
@@ -70,8 +71,9 @@ mode = 0644
 extensions = jinja2.ext.do
 
 [check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/${:_buildout_section_name_}
+<= monitor-base-promise
+module = check_port_listening
+name = ${:_buildout_section_name_}.py
 
 
 
@@ -110,14 +112,15 @@ username = influxdb
 
 [influxdb-listen-promise]
 <= check-port-listening-promise
-hostname = ${influxdb:ipv6}
-port = ${influxdb:http-port}
+config-hostname = ${influxdb:ipv6}
+config-port = ${influxdb:http-port}
 
 [influxdb-password-promise]
-recipe = slapos.cookbook:wrapper
-command-line =
+<= monitor-base-promise
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
   {{ influx_bin }} -username ${influxdb:auth-username} -password ${influxdb:auth-password} -socket ${influxdb:unix-socket} -execute "CREATE USER ${influxdb:auth-username} WITH PASSWORD '${influxdb:auth-password}' WITH ALL PRIVILEGES"
-wrapper-path = ${directory:promise}/${:_buildout_section_name_}
 
 
 
@@ -160,8 +163,8 @@ context =
 
 [grafana-listen-promise]
 <= check-port-listening-promise
-hostname= ${grafana:ipv6}
-port = ${grafana:port}
+config-hostname= ${grafana:ipv6}
+config-port = ${grafana:port}
 
 
 

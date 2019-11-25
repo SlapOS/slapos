@@ -18,15 +18,6 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 
-[promise-base]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-mode = 644
-output = ${directory:plugins}/$${:name}
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-
 [request-apache]
 <= request-common
 software-type = apache
@@ -114,14 +105,11 @@ password = ${publish-early:monitor-password}
 [monitor-conf-parameters]
 
 [publish-connection-information]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
-monitor-password = ${publish-early:monitor-password}
-monitor-user = ${monitor-publish-parameters:monitor-user}
 {% do part_list.append('monitor-base') -%}
 
 [buildout]

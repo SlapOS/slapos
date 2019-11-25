@@ -4,7 +4,9 @@
 #      security and performance reasons (unix has 2x less latency and more
 #      throughput compared to tcp over loopback).
 [buildout]
-extends = {{ gitlab_parameters_cfg }}
+extends =
+  {{ gitlab_parameters_cfg }}
+  {{ monitor_template }}
 parts =
     directory
     publish-instance-info
@@ -105,7 +107,6 @@ srv     = ${:home}/srv
 # slapos startup/service/promise scripts live here:
 startup = ${:etc}/run
 service = ${:etc}/service
-promise = ${:etc}/promise
 promise.slow = ${:promise}.slow
 
 # gitlab: etc/ log/ ...
@@ -401,18 +402,12 @@ tune-command =
 
 # 5. services
 
-# [promise-<something>] to generate promise wrapper <something>
-[promise-wrapper]
-recipe  = slapos.cookbook:wrapper
-wrapper-path = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
-
 # [promise-<something>] to check <something> by url
 [promise-byurl]
-recipe  = slapos.cookbook:check_url_available
-path    = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
-dash_path   = {{ bash_bin }}
-curl_path   = {{ curl_bin }}
-http_code   = 200
+<= monitor-promise-base
+module = check_url_available
+name   = !py! '${:_buildout_section_name_}'[8:] + '.py'
+config-http_code   = 200
 
 
 
@@ -452,8 +447,10 @@ depend  =
     ${promise-postgresql:recipe}
 
 [promise-postgresql]
-<= promise-wrapper
-command-line =
+<= monitor-base-promise
+module = check_command_execute
+name = promise-postgresql.py
+config-command =
     {{ postgresql_location }}/bin/psql
         -h ${service-postgresql:pgdata-directory}
         -U ${service-postgresql:superuser}
@@ -539,7 +536,7 @@ depend  =
 <= promise-byurl
 # http://localhost/users/statics.css will not redirect to /users/sign_in anymore because of this commit:
 #  https://lab.nexedi.com/nexedi/gitlab-workhorse/commit/c81f109a62fecf2a847fb17ceed012b380dab49f#c1215002e6d745f05eaaf9ee1dad7752e85d866f_318_331
-url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
+config-url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -581,7 +578,7 @@ depend  =
 
 [promise-unicorn]
 <= promise-byurl
-url     = --unix-socket ${unicorn:socket}  http://localhost/
+config-url     = --unix-socket ${unicorn:socket}  http://localhost/
 
 [promise-rakebase]
 recipe  = slapos.cookbook:wrapper
@@ -728,7 +725,7 @@ depend  =
 <= promise-byurl
 # XXX this depends on gitlab-workhorse being up
 #     (nginx is configured to proxy all requests to gitlab-workhorse)
-url     = ${backend-info:url}/users/sign_in
+config-url     = ${backend-info:url}/users/sign_in
 
 [logrotate-entry-nginx]
 <= logrotate-entry
