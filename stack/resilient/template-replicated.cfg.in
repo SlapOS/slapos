@@ -136,7 +136,7 @@ takeover-{{namebase}}-{{id}}-password = ${request-{{namebase}}-pseudo-replicatin
 
 
 
-[resilient-request-{{namebase}}-public-key-promise]
+[resilient-request-{{namebase}}-public-key-promise-bin]
 # Check that public-key-value parameter exists and is not empty
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
@@ -146,12 +146,19 @@ input = inline:#!/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-key
+output = ${resilient-directory:bin}/resilient-request-{{namebase}}-public-key
 mode = 700
+
+[resilient-request-{{namebase}}-public-key-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = resilient-request-{{namebase}}-public-key.py
+config-command = ${resilient-request-{{namebase}}-public-key-promise-bin:output}
+
 
 {% for id in range(1,nbbackup|int) %}
 
-[resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
+[resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise-bin]
 # Check that public-key-value parameter exists and is not empty
 # XXX: maybe we should consider empty values to be non-nexistent.
 recipe = collective.recipe.template
@@ -161,8 +168,14 @@ input = inline:#!/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+output = ${resilient-directory:bin}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
 mode = 700
+
+[resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key.py
+config-command = ${resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise-bin:output}
 
 {% endfor %}
 
@@ -223,9 +236,14 @@ input = inline:#!/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+output = ${resilient-directory:bin}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
 mode = 700
 
+[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+config-command = ${resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise-bin:output}
 
 [request-pull-backup-server-{{namebase}}-{{id}}]
 <= request-pbs-common
