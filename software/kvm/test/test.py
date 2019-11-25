@@ -280,3 +280,59 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
       result.status_code
     )
     self.assertTrue('<title>noVNC</title>' in result.text)
+
+
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessKvmResilient(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ad'
+  expected_partition_with_monitor_base_url_count = 1
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertFalse('url-additional' in connection_parameter_dict)
+
+
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessKvmResilientAdditional(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'ada'
+  expected_partition_with_monitor_base_url_count = 1
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
+
+    result = requests.get(
+      connection_parameter_dict['url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>noVNC</title>' in result.text)
