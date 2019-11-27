@@ -12,10 +12,34 @@ parts =
   cron
   monitor-base
   publish-connection-information
+  urlchecker
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[urlchecker-config]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/urlchecker.db
+rendered = ${directory:etc}/urlchecker.ini
+template = {{ template_urlchecker_ini }}
+url-list =
+{% for slave in sorted(slave_instance_list) %}
+  {% if 'url' in slave %}
+    {{ slave['url'] }}
+  {% endif %}
+{% endfor %}
+context =
+  import json_module json
+  key db :db
+  key url_list :url-list
+
+[urlchecker]
+recipe = slapos.cookbook:wrapper
+config = ${urlchecker-config:rendered}
+command-line =
+  {{ urlchecker_binary }} bot ${:config}
+wrapper-path = ${directory:bin}/urlchecker
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
