@@ -306,6 +306,7 @@ kvm_argument_list = [qemu_path,
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
+  '-nodefaults',
 ]
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
