@@ -59,3 +59,50 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class TestEdge(SlapOSInstanceTestCase):
+  # TODO:
+  #  * create backend URL
+  #  * serve one host with proper certificate
+  #  * serve one host with almost expired certificate
+  #  * do assertions on promise level (watch out, that first run has to be done
+  #    with clean promises)
+  __partition_reference__ = 'te'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest'
+
+  def requestEdgetestSlave(self, partition_reference, partition_parameter_kw):
+    software_url = self.getSoftwareURL()
+    self.slap.request(
+      software_release=software_url,
+      software_type='edgetest',
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True
+    )
+
+  def test(self):
+    # request a slave to monitor https://www.google.com/
+    self.requestEdgetestSlave(
+      'www.google.com',
+      {'url': 'https://www.erp5.com'},
+      {'url': 'https://erp5.com', 'http_code': '302'},
+    )
+    try:
+      self.slap.waitForInstance()
+    except Exception:
+      pass
+    
+    # execute url-checker
+    self.assertEqual(
+      0,
+      os.system(
+        glob.glob(
+          os.path.join(
+            self.slap.instance_directory, '*', 'bin', 'urlchecker'))[0])
+    )
+    
+    # now all promises shall be green
+    self.slap.waitForInstance()
