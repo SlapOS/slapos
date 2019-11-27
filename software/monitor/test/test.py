@@ -59,3 +59,13 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class TestEdge(SlapOSInstanceTestCase):
+  __partition_reference__ = 'te'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest'
+
+  def test(self):
+    raise NotImplementedError
