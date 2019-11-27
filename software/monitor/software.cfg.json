@@ -18,7 +18,7 @@
       "index": 1
     },
     "edgetest-slave": {
-      "title": "Edge Test Case",
+      "title": "Edge Test Slave",
       "software-type": "edgetest",
       "description": "Cluster of bots to perform a distributed monitoring ",
       "request": "instance-edgetest-slave-input-schema.json",
