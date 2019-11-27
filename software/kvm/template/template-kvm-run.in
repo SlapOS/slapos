@@ -242,7 +242,8 @@ additional_disk_options = ''
 
 if disk_aio == 'native':
   additional_disk_options += ',cache.direct=on'
-
+if disk_format == "raw":
+  additional_disk_options += ',discard=on'
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
@@ -305,6 +306,7 @@ kvm_argument_list = [qemu_path,
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
+  '-nodefaults',
 ]
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
