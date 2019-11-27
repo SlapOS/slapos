@@ -59,3 +59,19 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class TestEdge(SlapOSInstanceTestCase):
+  # TODO:
+  #  * create backend URL
+  #  * serve one host with proper certificate
+  #  * serve one host with almost expired certificate
+  #  * do assertions on promise level (watch out, that first run has to be done
+  #    with clean promises)
+  __partition_reference__ = 'te'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest'
+
+  def test(self):
+    raise NotImplementedError
