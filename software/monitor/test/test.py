@@ -59,3 +59,61 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class EdgeSlaveMixin(object):
+  __partition_reference__ = 'edge'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest'
+
+  def requestEdgetestSlave(self, partition_reference, partition_parameter_kw):
+    software_url = self.getSoftwareURL()
+    self.slap.request(
+      software_release=software_url,
+      software_type='edgetest',
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True
+    )
+
+
+class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  def test(self):
+    # request a slave to monitor https://www.google.com/
+    self.requestEdgetestSlave(
+      'www.erp5.com',
+      {'url': 'https://www.erp5.com'},
+    )
+    self.requestEdgetestSlave(
+      'erp5.com',
+      {'url': 'https://erp5.com', 'check_http_code': '302'},
+    )
+
+    # after some retries url-checker will do the checks and fill in the
+    # database so promises will pass
+    self.slap.waitForInstance(max_retry=5)
+
+
+class TestEdgeDnsCheckFrontendIp(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'dns': '8.8.8.8 4.4.4.4',
+      'check_frontend_ip': '176.31.129.213 85.118.38.162'
+    }
+
+  def test(self):
+    # request a slave to monitor https://www.google.com/
+    self.requestEdgetestSlave(
+      'www.erp5.com',
+      {'url': 'https://www.erp5.com'},
+    )
+    self.requestEdgetestSlave(
+      'erp5.com',
+      {'url': 'https://erp5.com', 'check_http_code': '302'},
+    )
+
+    # after some retries url-checker will do the checks and fill in the
+    # database so promises will pass
+    self.slap.waitForInstance(max_retry=5)
