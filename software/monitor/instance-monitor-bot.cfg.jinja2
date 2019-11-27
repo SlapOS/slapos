@@ -1,4 +1,3 @@
-
 {% set slave_instance_list = [] %}
 {% set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
 {% if extra_slave_instance_list %}
@@ -12,10 +11,32 @@ parts =
   cron
   monitor-base
   publish-connection-information
+  urlchecker
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[urlchecker-config]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/urlchecker.db
+rendered = ${directory:etc}/urlchecker.ini
+template = {{ template_urlchecker_ini }}
+slave_instance_list = {{ dumps(slave_instance_list) }}
+dns = {{ dumps(slapparameter_dict.get('dns', '')) }}
+
+context =
+  import json_module json
+  key db :db
+  key dns :dns
+  key slave_instance_list :slave_instance_list
+
+[urlchecker]
+recipe = slapos.cookbook:wrapper
+config = ${urlchecker-config:rendered}
+command-line =
+  {{ urlchecker_binary }} bot ${:config}
+wrapper-path = ${directory:bin}/urlchecker
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
