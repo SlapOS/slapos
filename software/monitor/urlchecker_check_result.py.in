@@ -1,0 +1,18 @@
+#!${buildout:executable}
+import sqlite3
+import sys
+host = sys.argv[1]
+status_code = sys.argv[2]
+db = sys.argv[3]
+
+connection = sqlite3.connect(db)
+cursor = connection.cursor()
+host = host.rstrip('/')
+cursor.execute("select status_code from httpcodechange where url = '" + host + "'")
+result = cursor.fetchall()
+result = [q[0] for q in result]
+if len (result) == 0:
+  raise ValueError('No result for %s' % (host))
+for r in result:
+  if str(status_code) != str(r):
+    raise ValueError('Expected %s != %s' % (status_code, r))
