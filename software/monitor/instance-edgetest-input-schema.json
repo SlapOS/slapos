@@ -1,9 +1,28 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "properties": {
-    "dummy": {
-      "title": "dummy",
-      "description": "Dummy",
+    "dns": {
+      "default": "",
+      "title": "DNS",
+      "description": "Space separated list of DNS servers to use.",
+      "type": "string"
+    },
+    "check_http_code": {
+      "default": "200",
+      "title": "Default Check HTTP Code",
+      "description": "Default HTTP code to check against (default: 200).",
+      "type": "string"
+    },
+    "check_certificate_expiration_days": {
+      "default": "30",
+      "title": "Default Check Certificate Expiration",
+      "description": "Default amount of days to consider certificate as expired (default: 30).",
+      "type": "string"
+    },
+    "check_frontend_ip": {
+      "default": "",
+      "title": "Default space separated list of Frontend IPs to check",
+      "description": "Default list of Frontend IPs to check, if empty no constraint is used.",
       "type": "string"
     }
   }
