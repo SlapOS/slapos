@@ -1,21 +1,63 @@
-
 {% set slave_instance_list = [] %}
 {% set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
 {% if extra_slave_instance_list %}
-  {% set slave_instance_list = json_module.loads(extra_slave_instance_list) %}
+{# Create slaves to process with setting up defaults #}
+{%   for slave in json_module.loads(extra_slave_instance_list) %}
+{%   if 'http_code' not in slave %}
+{%     do slave.__setitem__('http_code', slapparameter_dict.get('http_code', '200')) %}
+{%   endif %}
+{%   do slave_instance_list.append(slave) %}
+{%   endfor %}
 {% endif %}
-[buildout]
+{% set part_list = [] %}
+{% for slave in slave_instance_list %}
+{%   set part_id = slave['slave_reference'] ~ '-promise' %}
+{%   do part_list.append(part_id) %}
+{%   set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
+[{{part_id}}]
+<= monitor-promise-base
+module = check_command_execute
+name = {{ safe_name }}.py
+config-command =
+  {{ template_urlchecker_check_result }} {{ slave['url'] }} {{ slave['http_code'] }} ${urlchecker-config:db}
+{% endfor %}
 
+[buildout]
 extends = {{ monitor_template_output }}
 
 parts =
   cron
   monitor-base
   publish-connection-information
+  urlchecker
+{% for part_id in part_list %}
+  {{ part_id }}
+{% endfor %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[urlchecker-config]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/urlchecker.db
+rendered = ${directory:etc}/urlchecker.ini
+template = {{ template_urlchecker_ini }}
+slave_instance_list = {{ dumps(slave_instance_list) }}
+dns = {{ dumps(slapparameter_dict.get('dns', '')) }}
+
+context =
+  import json_module json
+  key db :db
+  key dns :dns
+  key slave_instance_list :slave_instance_list
+
+[urlchecker]
+recipe = slapos.cookbook:wrapper
+config = ${urlchecker-config:rendered}
+command-line =
+  {{ urlchecker_binary }} bot ${:config}
+wrapper-path = ${monitor-directory:service}/urlchecker
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
