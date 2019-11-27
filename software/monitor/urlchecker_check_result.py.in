@@ -1,0 +1,30 @@
+#!${buildout:executable}
+# This is XXX bad implementation of checking status of the sites from
+# url-checker DB. It is only for demonstrative purposes and has to be replaced
+# by url-checker provided check
+import sqlite3
+import sys
+db = sys.argv[1]
+host = sys.argv[2]
+status_code = sys.argv[3]
+try:
+  frontend_ip = sys.argv[4]
+except KeyError:
+  frontend_ip = []
+else:
+  frontend_ip = frontend_ip.split()
+connection = sqlite3.connect(db)
+cursor = connection.cursor()
+host = host.rstrip('/')
+cursor.execute("select status_code,ip from httpcodechange where url = '" + host + "'")
+result = cursor.fetchall()
+status_code_result = [q[0] for q in result]
+ip_result = [q[1] for q in result]
+if len (result) == 0:
+  raise ValueError('No result for %s' % (host))
+for r in status_code_result:
+  if str(status_code) != str(r):
+    raise ValueError('Expected %s != %s' % (status_code, r))
+if len(frontend_ip) > 0:
+  if set(frontend_ip) != set(ip_result):
+    raise ValueError('Expected %s != %s' % (frontend_ip, ip_result))
