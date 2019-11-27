@@ -91,7 +91,7 @@ class TestEdge(SlapOSInstanceTestCase):
     )
     self.requestEdgetestSlave(
       'erp5.com',
-      {'url': 'https://erp5.com', 'http_code': '302'},
+      {'url': 'https://erp5.com', 'check_http_code': '302'},
     )
 
     # after some retries url-checker will do the checks and fill in the
