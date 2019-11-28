@@ -15,7 +15,9 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.recipe.template:jinja2
 filename = ${:_buildout_section_name_}.cfg
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
-extensions = jinja2.ext.do
+extensions =
+    jinja2.ext.do
+    jinja2.ext.loopcontrols
 extra-context =
 context =
     key ipv4_set slap-configuration:ipv4
