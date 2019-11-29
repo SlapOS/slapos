@@ -1,77 +1,76 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Parameters to instantiate a NEO cluster. See https://lab.nexedi.com/nexedi/neoppod/blob/master/neo.conf for more information.",
-  "additionalProperties": false,
-  "required": [
-    "cluster"
-  ],
-  "properties": {
-    "cluster": {
-      "description": "Cluster unique identifier. Your last line of defense against mixing up NEO clusters and corrupting your data. Choose a unique value for each of your cluster. Space not allowed.",
-      "type": "string"
-    },
-    "partitions": {
-      "description": "Number of partitions. You cannot change this value once you created a cluster.",
-      "default": 12,
-      "type": "integer"
-    },
-    "replicas": {
-      "description": "Number of replicates.",
-      "default": 0,
-      "type": "integer"
-    },
-    "upstream-cluster": {
-      "description": "Identifier of the cluster to backup.",
-      "type": "string"
-    },
-    "upstream-masters": {
-      "description": "Master nodes in the cluster to backup.",
-      "type": "string"
-    },
-    "monitor": {
-      "description": "Parameters for monitoring.",
+  "definitions": {
+    "neo-cluster": {
+      "additionalProperties": false,
       "properties": {
-        "backup": {
-          "description": "List of cluster names that are expected to backup this cluster.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        },
-        "periodicity": {
-          "description": "Periodicity in minutes at which the cluster health is checked.",
-          "default": 10,
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "sla-dict": {
-      "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...). The prefix 'node-' is mandatory and the number must start from 0. The total number of nodes here must be equal to the length of node-list.",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
+        "cluster": {
+          "description": "Cluster unique identifier. Your last line of defense against mixing up NEO clusters and corrupting your data. Choose a unique value for each of your cluster. Space not allowed.",
           "type": "string"
         },
-        "uniqueItems": true
-      },
-      "type": "object"
-    },
-    "ssl": {
-      "description": "Enable SSL. All nodes look for 3 files in ~/etc: ca.crt, neo.crt, neo.key. Waiting that SlapOS provides a way to manage certificates, the user must deploy them manually, or use the temporary _ca/_cert/_key parameters.",
-      "default": true,
-      "type": "boolean"
-    },
-    "_ca": {
-      "type": "string"
-    },
-    "_cert": {
-      "type": "string"
-    },
-    "_key": {
-      "type": "string"
-    },
+        "partitions": {
+          "description": "Number of partitions. You cannot change this value once you created a cluster.",
+          "default": 12,
+          "type": "integer"
+        },
+        "replicas": {
+          "description": "Number of replicates.",
+          "default": 0,
+          "type": "integer"
+        },
+        "upstream-cluster": {
+          "description": "Identifier of the cluster to backup.",
+          "type": "string"
+        },
+        "upstream-masters": {
+          "description": "Master nodes in the cluster to backup.",
+          "type": "string"
+        },
+        "monitor": {
+          "description": "Parameters for monitoring.",
+          "properties": {
+            "backup": {
+              "description": "List of cluster names that are expected to backup this cluster.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "periodicity": {
+              "description": "Periodicity in minutes at which the cluster health is checked.",
+              "default": 10,
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "sla-dict": {
+          "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...). The prefix 'node-' is mandatory and the number must start from 0. The total number of nodes here must be equal to the length of node-list.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "type": "object"
+        },
+        "ssl": {
+          "description": "Enable SSL. All nodes look for 3 files in ~/etc: ca.crt, neo.crt, neo.key. Waiting that SlapOS provides a way to manage certificates, the user must deploy them manually, or use the temporary _ca/_cert/_key parameters.",
+          "default": true,
+          "type": "boolean"
+        },
+        "_ca": {
+          "type": "string"
+        },
+        "_cert": {
+          "type": "string"
+        },
+        "_key": {
+          "type": "string"
+        },
         "node-count": {
           "description": "Number of nodes to deploy.",
           "default": 1,
@@ -149,7 +148,7 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/properties/node"
+                    "$ref": "#/definitions/neo-cluster/properties/node"
                   },
                   {
                     "description": "Override value (parameters for maching nodes)."
@@ -161,6 +160,18 @@
           },
           "type": "array"
         }
+      },
+      "type": "object"
+    }
   },
-  "type": "object"
+  "allOf": [
+    {
+      "$ref": "#/definitions/neo-cluster"
+    },
+    {
+      "required": [
+        "cluster"
+      ]
+    }
+  ]
 }
