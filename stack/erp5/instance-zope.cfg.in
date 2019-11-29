@@ -267,6 +267,11 @@ timerserver-interval = {{ dumps(timerserver_interval) }}
 [zope-conf-base]
 < = jinja2-template-base
 template = {{ parameter_dict['zope-conf-template'] }}
+extensions =
+    jinja2.ext.do
+    jinja2.ext.loopcontrols
+import-list =
+    rawfile root_common {{ root_common }}
 
 {% macro zope(
   index,
@@ -312,10 +317,10 @@ longrequest-logger-file =
 [{{ conf_name }}]
 < = zope-conf-base
 rendered = ${directory:etc}/{{ name }}.conf
-extensions = jinja2.ext.do
 context =
   section parameter_dict {{ conf_parameter_name }}
   import os os
+  import re re
 
 [{{ section(name) }}]
 < = runzope-base

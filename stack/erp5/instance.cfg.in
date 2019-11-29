@@ -112,6 +112,7 @@ template = {{ template_zope }}
 filename = instance-zope.cfg
 extra-context =
     key buildout_directory buildout:directory
+    key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
     import hashlib hashlib
