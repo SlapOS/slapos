@@ -297,3 +297,18 @@ class TestInstanceResilient(SlaprunnerTestCase):
         'takeover-runner-1-url',
         'url',
         'webdav-url']))
+
+
+class TestCustomFrontend(SlaprunnerTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'custom-frontend-backend-url': 'https://www.erp5.com',
+      'custom-frontend-backend-type': 'redirect',
+    }
+
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertEqual(
+      parameter_dict['custom-frontend-url'],
+      'https://www.erp5.com')

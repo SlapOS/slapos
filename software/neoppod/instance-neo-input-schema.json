@@ -129,7 +129,7 @@
             "type": "object"
           },
           "engine": {
-            "description": "Configures storage engine, currently only InnoDB and TokuDB are supported. Defaults to NEO's default.",
+            "description": "Configures storage engine, currently only InnoDB, RocksDB and TokuDB are supported. Defaults to NEO's default.",
             "type": "string"
           }
         },
