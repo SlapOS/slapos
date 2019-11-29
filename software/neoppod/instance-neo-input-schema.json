@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Parameters to instantiate a NEO cluster. See https://lab.nexedi.com/nexedi/neoppod/blob/master/neo.conf for more information.",
   "additionalProperties": false,
-  "require": [
+  "required": [
     "cluster"
   ],
   "properties": {
