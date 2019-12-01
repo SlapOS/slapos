@@ -257,7 +257,7 @@
       "type": "object"
     },
     "zodb": {
-      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/4/src/ZODB/component.xml for extra options.",
       "items": {
         "required": [
           "type"
@@ -282,8 +282,13 @@
                 "type": "boolean"
               }
             },
+            "patternProperties": {
+              ".!$": {
+                "$ref": "#/properties/zodb/items/patternProperties/.!$"
+              }
+            },
             "additionalProperties": {
-              "type": "string"
+              "$ref": "#/properties/zodb/items/additionalProperties"
             },
             "type": "object"
           },
@@ -313,13 +318,32 @@
               },
               "server": {
                 "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. Partitions references are 'neo-0', 'neo-1', ...",
-                "$ref": "../neoppod/instance-neo-input-schema.json"
+                "$ref": "../neoppod/instance-neo-input-schema.json#/definitions/neo-cluster"
               }
             }
           }
         ],
+        "patternProperties": {
+          ".!$": {
+            "description": "Override with the value of the first item whose zope id matches against the pattern.",
+            "items": {
+              "items": [
+                {
+                  "description": "Override pattern (Python regular expression).",
+                  "type": "string"
+                },
+                {
+                  "description": "Override value (parameter for maching nodes).",
+                  "type": ["integer", "string"]
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
         "additionalProperties": {
-          "type": "string"
+          "type": ["integer", "string"]
         },
         "type": "object"
       },
