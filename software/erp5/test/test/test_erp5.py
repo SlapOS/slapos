@@ -195,8 +195,8 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     """
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
-    bin_programs = [os.path.basename(path) for path in
-      glob.glob("{}/../*/bin/*".format(self.computer_partition_root_path))]
+    bin_programs = map(os.path.basename,
+      glob.glob(self.computer_partition_root_path + "/../*/bin/*"))
 
     self.assertTrue(bin_programs) # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
@@ -210,8 +210,95 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     apache_process = psutil.Process(process_info['pid'])
     self.assertEqual(
         sorted([socket.AF_INET, socket.AF_INET6]),
-        sorted([
+        sorted(
             c.family
             for c in apache_process.connections()
             if c.status == 'LISTEN'
-        ]))
+        ))
+
+class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test override zope node parameters
+  """
+  __partition_reference__ = 'override'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "zodb": [{
+        "server": {},
+        "cache-size-bytes": "20M",
+        "cache-size-bytes!": [
+          ("bb-0", 1<<20),
+          ("bb-.*", "500M"),
+        ],
+        "pool-timeout": "10m",
+        "storage-dict": {
+          "transaction-timeout!": [
+            ("a-.*", 60),
+          ],
+        },
+      }],
+      "zope-partition-dict": {
+          "a": {
+              "instance-count": 3,
+          },
+          "bb": {
+              "instance-count": 5,
+          },
+      },
+    })}
+
+  def test_zope_conf(self):
+    zeo_addr = json.loads(
+        self.getComputerPartition('zodb').getInstanceParameter('_')
+      )["storage-dict"]["main"]["server"]
+
+    def checkParameter(line, kw):
+      k, v = line.split()
+      self.assertFalse(k.endswith('!'), k)
+      try:
+        expected = kw.pop(k)
+      except KeyError:
+        if k == 'server':
+          return
+      self.assertIsNotNone(expected, k)
+      self.assertEqual(str(expected), v, k)
+
+    def checkConf(zodb, storage):
+      zodb["mount-point"] = "/"
+      zodb["pool-size"] = 4
+      zodb["pool-timeout"] = "10m"
+      storage["storage"] = "main"
+      storage["server"] = zeo_addr
+      with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
+        conf = map(str.strip, f.readlines())
+      i = conf.index("<zodb_db root>") + 1
+      conf = iter(conf[i:conf.index("</zodb_db>", i)])
+      for line in conf:
+        if line == '<zeoclient>':
+          for line in conf:
+            if line == '</zeoclient>':
+              break
+            checkParameter(line, storage)
+          for k, v in storage.iteritems():
+            self.assertIsNone(v, k)
+          del storage
+        else:
+          checkParameter(line, zodb)
+      for k, v in zodb.iteritems():
+        self.assertIsNone(v, k)
+
+    partition = self.getComputerPartitionPath('zope-a')
+    for zope in xrange(3):
+      checkConf({
+          "cache-size-bytes": "20M",
+        }, {
+          "transaction-timeout": 60,
+        })
+    partition = self.getComputerPartitionPath('zope-bb')
+    for zope in xrange(5):
+      checkConf({
+          "cache-size-bytes": "500M" if zope else 1<<20,
+        }, {
+          "transaction-timeout": None,
+        })
