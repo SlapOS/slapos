@@ -309,6 +309,7 @@ class TestCustomFrontend(SlaprunnerTestCase):
 
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
+    # slapproxy returns the backend URL when requesting a slave frontend
     self.assertEqual(
       parameter_dict['custom-frontend-url'],
       'https://www.erp5.com')
