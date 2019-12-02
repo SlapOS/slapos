@@ -46,3 +46,13 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase):
     """Return the output paramters from the root partition"""
     return json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
+
+  def getComputerPartition(self, partition_reference):
+    for computer_partition in self.slap.computer.getComputerPartitionList():
+      if partition_reference == computer_partition.getInstanceParameter(
+          'instance_title'):
+        return computer_partition
+
+  def getComputerPartitionPath(self, partition_reference):
+    return os.path.join(self.slap._instance_root, self.getComputerPartition(
+      partition_reference).slap_computer_partition_id)
