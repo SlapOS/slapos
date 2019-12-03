@@ -1,19 +1,19 @@
+{%- set CONFIGURATION = {} %}
+{%- for k, v in slap_configuration.items() %}
+{%-   if k.startswith('configuration.') %}
+{%-     do CONFIGURATION.__setitem__(k[14:], v) %}
+{%-   endif %}
+{%- endfor %}
 {% set slave_instance_list = [] %}
 {% set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
-{# setup defaults #}
-{# XXX shall be done with configuration.<key> somewhere #}
-{% set DEFAULT_DNS = slapparameter_dict.get('dns', '') %}
-{% set DEFAULT_CHECK_HTTP_CODE = slapparameter_dict.get('check_http_code', '200') %}
-{% set DEFAULT_CHECK_CERTIFICATE_EXPIRATION_DAYS = slapparameter_dict.get('check_certificate_expiration_days', '30') %}
-{% set DEFAULT_CHECK_FRONTEND_IP = slapparameter_dict.get('check_frontend_ip', '') %}
 {% if extra_slave_instance_list %}
 {# Create slaves to process with setting up defaults #}
 {%   for slave in json_module.loads(extra_slave_instance_list) %}
 {%   if 'check_http_code' not in slave %}
-{%     do slave.__setitem__('check_http_code', DEFAULT_CHECK_HTTP_CODE) %}
+{%     do slave.__setitem__('check_http_code', CONFIGURATION['check_http_code']) %}
 {%   endif %}
 {%   if 'check_frontend_ip' not in slave %}
-{%     do slave.__setitem__('check_frontend_ip', DEFAULT_CHECK_FRONTEND_IP) %}
+{%     do slave.__setitem__('check_frontend_ip', CONFIGURATION['check_frontend_ip']) %}
 {%   endif %}
 {%   do slave_instance_list.append(slave) %}
 {%   endfor %}
@@ -53,7 +53,7 @@ db = ${directory:srv}/urlchecker.db
 rendered = ${directory:etc}/urlchecker.ini
 template = {{ template_urlchecker_ini }}
 slave_instance_list = {{ dumps(slave_instance_list) }}
-dns = {{ dumps(DEFAULT_DNS) }}
+dns = {{ dumps(CONFIGURATION['dns']) }}
 
 context =
   import json_module json
