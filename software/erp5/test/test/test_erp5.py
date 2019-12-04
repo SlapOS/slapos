@@ -302,7 +302,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
     partition = self.getComputerPartitionPath('zope-bb')
     for zope in xrange(5):
       checkConf({
-          "cache-size-bytes": "500MB" if zope else 1<<20,
+          "cache-size-bytes": "500MB" if zope else 123,
         }, {
           "cache-size": None,
         })
