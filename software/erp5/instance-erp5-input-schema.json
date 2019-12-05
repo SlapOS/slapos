@@ -334,7 +334,10 @@
                 },
                 {
                   "description": "Override value (parameter for maching nodes).",
-                  "type": ["integer", "string"]
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
                 }
               ],
               "type": "array"
@@ -343,7 +346,10 @@
           }
         },
         "additionalProperties": {
-          "type": ["integer", "string"]
+          "type": [
+            "integer",
+            "string"
+          ]
         },
         "type": "object"
       },
