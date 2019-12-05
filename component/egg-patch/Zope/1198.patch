@@ -1,0 +1,67 @@
+From 7f4c61c0d7fe0751be93e80683659271fa0c65a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <perrinjerome@gmail.com>
+Date: Sat, 17 Feb 2024 13:06:28 +0000
+Subject: [PATCH] Fix Content-Disposition heeader for clients without rfc6266
+ support.
+
+Since https://github.com/zopefoundation/Zope/pull/893 the
+Content-Disposition header supports non-ascii filenames, by containing
+the filename in ascii and the filename in UTF-8, but the ascii version
+was produced by applying `str` on a `bytes` instance, so it looks like
+`b'file.txt'` instead of `file.txt`.
+---
+ CHANGES.rst                              | 3 +++
+ src/ZPublisher/HTTPResponse.py           | 3 ++-
+ src/ZPublisher/tests/testHTTPResponse.py | 4 ++--
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/CHANGES.rst b/CHANGES.rst
+index e8dedc6a66..30061e2093 100644
+--- a/CHANGES.rst
++++ b/CHANGES.rst
+@@ -18,6 +18,9 @@ https://github.com/zopefoundation/Zope/blob/4.x/CHANGES.rst
+ - Fix redirections to URLs with host given as IP-literal with brackets.
+   Fixes `#1191 <https://github.com/zopefoundation/Zope/issues/1191>`_.
+ 
++- Fix ``Content-Disposition`` filename for clients without rfc6266 support.
++  (`#1198 <https://github.com/zopefoundation/Zope/pull/1198>`_)
++
+ 
+ 5.9 (2023-11-24)
+ ----------------
+diff --git a/src/ZPublisher/HTTPResponse.py b/src/ZPublisher/HTTPResponse.py
+index ed6bc00a89..264a488a03 100644
+--- a/src/ZPublisher/HTTPResponse.py
++++ b/src/ZPublisher/HTTPResponse.py
+@@ -142,7 +142,8 @@ def make_content_disposition(disposition, file_name):
+         #
+         # a special header has to be crafted
+         # also see https://tools.ietf.org/html/rfc6266#appendix-D
+-        encoded_file_name = file_name.encode('us-ascii', errors='ignore')
++        encoded_file_name = file_name.encode(
++            'us-ascii', errors='ignore').decode()
+         header += f'; filename="{encoded_file_name}"'
+         quoted_file_name = quote(file_name)
+         header += f'; filename*=UTF-8\'\'{quoted_file_name}'
+diff --git a/src/ZPublisher/tests/testHTTPResponse.py b/src/ZPublisher/tests/testHTTPResponse.py
+index 1613b0ea59..5d64b5b3dd 100644
+--- a/src/ZPublisher/tests/testHTTPResponse.py
++++ b/src/ZPublisher/tests/testHTTPResponse.py
+@@ -1433,7 +1433,7 @@ def test_ascii(self):
+     def test_latin_one(self):
+         self.assertEqual(
+             make_content_disposition('inline', 'Dänemark.png'),
+-            'inline; filename="b\'Dnemark.png\'"; filename*=UTF-8\'\'D%C3%A4nemark.png'  # noqa: E501
++            'inline; filename="Dnemark.png"; filename*=UTF-8\'\'D%C3%A4nemark.png'  # noqa: E501
+         )
+ 
+     def test_unicode(self):
+@@ -1445,7 +1445,7 @@ def test_unicode(self):
+         """
+         self.assertEqual(
+             make_content_disposition('inline', 'ıq.png'),
+-            'inline; filename="b\'q.png\'"; filename*=UTF-8\'\'%C4%B1q.png'
++            'inline; filename="q.png"; filename*=UTF-8\'\'%C4%B1q.png'
+         )
+ 
+ 
