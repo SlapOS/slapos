@@ -74,15 +74,15 @@ mode = 0644
 extensions = jinja2.ext.do
 
 [check-port-listening-promise]
-<= monitor-base-promise
+<= monitor-promise-base
 module = check_port_listening
 name = ${:_buildout_section_name_}.py
 
 [check-url-available-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promise}/${:_buildout_section_name_}
-dash_path = {{ dash_bin }}
-curl_path = {{ curl_bin }}
+<= monitor-promise-base
+module = check_url_available
+name = ${:_buildout_section_name_}.py
+config-url = ${:url}
 
 [influxdb]
 ipv6 = ${instance-parameter:ipv6-random}
@@ -123,7 +123,7 @@ config-hostname = ${influxdb:ipv6}
 config-port = ${influxdb:http-port}
 
 [influxdb-password-promise]
-<= monitor-base-promise
+<= monitor-promise-base
 module = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
