@@ -4,9 +4,7 @@
   "additionalProperties": false,
   "definitions": {
     "tcpv4port": {
-      "minimum": 0,
-      "maximum": 65535,
-      "type": "integer"
+      "$ref": "./schemas-definitions.json#/tcpv4port"
     }
   },
   "properties": {
