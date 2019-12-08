@@ -192,16 +192,34 @@
     },
     "kumofs": {
       "description": "Persistent memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2000
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "memcached": {
       "description": "Volatile memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "cloudooo-url": {
@@ -216,16 +234,34 @@
     },
     "smtp": {
       "description": "Mail queuing and relay service",
-      "additionalProperties": {
-        "$ref": "./instance-smtp-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-smtp-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "mariadb": {
       "description": "Relational database service",
-      "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-mariadb-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2099
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "zodb-zeo": {
