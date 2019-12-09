@@ -117,6 +117,7 @@ monitor-title = Monitor
 password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
+{# XXX: TODO: It results with not having self instance in the monitor XXX #}
 {% for key, value in monitor_base_url_dict.items() -%}
 {{ key }} = {{ value }}
 {% endfor %}
