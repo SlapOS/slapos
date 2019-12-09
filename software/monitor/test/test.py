@@ -26,6 +26,7 @@
 ##############################################################################
 
 import os
+import re
 
 from slapos.recipe.librecipe import generateHashFromFiles
 
@@ -61,7 +62,21 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
 
-class EdgeSlaveMixin(object):
+class MonitorTestMixin(object):
+  monitor_setup_url_key = 'monitor-setup-url'
+  def test_monitor_access(self):
+    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertTrue(self.monitor_setup_url_key in connection_parameter_dict)
+    monitor_setup_url_value = connection_parameter_dict[self.monitor_setup_url_key]
+    monitor_url_match = re.match(r'.*url=(.*)', monitor_setup_url_value)
+    self.assertNotEqual(None, monitor_url_match, '%s not parsable' % (monitor_setup_url_value,))
+    self.assertEqual(1, len(monitor_url_match.groups())
+    monitor_url = monitor_url_match.groups()[0]
+    monitor_url_split = monitor_url.split('&')
+    self.assertEqual(3, len(monitor_url_split), '%s not splitabble' % (monitor_url,))
+
+
+class EdgeSlaveMixin(MonitorTestMixin):
   __partition_reference__ = 'edge'
   @classmethod
   def getInstanceSoftwareType(cls):
