@@ -26,6 +26,11 @@
 ##############################################################################
 
 import os
+import re
+
+import requests
+import xml.etree.ElementTree as ET
+
 
 from slapos.recipe.librecipe import generateHashFromFiles
 
@@ -61,7 +66,46 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
 
-class EdgeSlaveMixin(object):
+class MonitorTestMixin(object):
+  monitor_setup_url_key = 'monitor-setup-url'
+
+  def test_monitor_setup(self):
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    self.assertTrue(
+      self.monitor_setup_url_key in connection_parameter_dict,
+      '%s not in %s' % (self.monitor_setup_url_key, connection_parameter_dict))
+    monitor_setup_url_value = connection_parameter_dict[
+      self.monitor_setup_url_key]
+    monitor_url_match = re.match(r'.*url=(.*)', monitor_setup_url_value)
+    self.assertNotEqual(
+      None, monitor_url_match, '%s not parsable' % (monitor_setup_url_value,))
+    self.assertEqual(1, len(monitor_url_match.groups()))
+    monitor_url = monitor_url_match.groups()[0]
+    monitor_url_split = monitor_url.split('&')
+    self.assertEqual(
+      3, len(monitor_url_split), '%s not splitabble' % (monitor_url,))
+    self.monitor_url = monitor_url_split[0]
+    monitor_username = monitor_url_split[1].split('=')
+    self.assertEqual(
+      2, len(monitor_username), '%s not splittable' % (monitor_username))
+    monitor_password = monitor_url_split[2].split('=')
+    self.assertEqual(
+      2, len(monitor_password), '%s not splittable' % (monitor_password))
+    self.monitor_username = monitor_username[1]
+    self.monitor_password = monitor_password[1]
+
+    opml_text = requests.get(self.monitor_url, verify=False).text
+    opml = ET.fromstring(opml_text)
+
+    body = opml[1]
+
+    self.assertEqual('body', body.tag)
+
+    raise NotImplementedError('Check list of monitors')
+
+
+class EdgeSlaveMixin(MonitorTestMixin):
   __partition_reference__ = 'edge'
   @classmethod
   def getInstanceSoftwareType(cls):
