@@ -26,20 +26,19 @@
 {%-   set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
 [{{part_id}}]
 <= monitor-promise-base
-# XXX TODO: configure anomaly time
-module = check_command_execute
+module = check_surykatka_json
 name = {{ safe_name }}.py
-config-command =
-  ${surykatka-analyzer:wrapper-path} http_query {{ slave['url'] }} {{ slave['check_http_code'] }} {{ slave['check_frontend_ip'] }}
+config-report = http_query
+config-url = {{ slave['url'] }}
+config-status-code = {{ slave['check_http_code'] }}
+config-ip-list = {{ slave['check_frontend_ip'] }}
 {% endfor %}
 
 [surykatka-bot-promise]
 <= monitor-promise-base
-# XXX TODO: configure anomaly time
-module = check_command_execute
+module = check_surykatka_json
 name = surykatka-bot-promise.py
-config-command =
-  ${surykatka-analyzer:wrapper-path} bot_status
+config-report = bot_status
 
 [buildout]
 extends = {{ monitor_template_output }}
