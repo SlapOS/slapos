@@ -25,10 +25,12 @@
 #
 ##############################################################################
 
+import json
 import os
-
+import re
+import requests
+import xml.etree.ElementTree as ET
 from slapos.recipe.librecipe import generateHashFromFiles
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -59,3 +61,338 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       expected_process_name = name.format(hash=h)
 
       self.assertIn(expected_process_name, process_names)
+
+
+class MonitorTestMixin(object):
+  monitor_setup_url_key = 'monitor-setup-url'
+
+  def test_monitor_setup(self):
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    self.assertTrue(
+      self.monitor_setup_url_key in connection_parameter_dict,
+      '%s not in %s' % (self.monitor_setup_url_key, connection_parameter_dict))
+    monitor_setup_url_value = connection_parameter_dict[
+      self.monitor_setup_url_key]
+    monitor_url_match = re.match(r'.*url=(.*)', monitor_setup_url_value)
+    self.assertNotEqual(
+      None, monitor_url_match, '%s not parsable' % (monitor_setup_url_value,))
+    self.assertEqual(1, len(monitor_url_match.groups()))
+    monitor_url = monitor_url_match.groups()[0]
+    monitor_url_split = monitor_url.split('&')
+    self.assertEqual(
+      3, len(monitor_url_split), '%s not splitabble' % (monitor_url,))
+    self.monitor_url = monitor_url_split[0]
+    monitor_username = monitor_url_split[1].split('=')
+    self.assertEqual(
+      2, len(monitor_username), '%s not splittable' % (monitor_username))
+    monitor_password = monitor_url_split[2].split('=')
+    self.assertEqual(
+      2, len(monitor_password), '%s not splittable' % (monitor_password))
+    self.monitor_username = monitor_username[1]
+    self.monitor_password = monitor_password[1]
+
+    opml_text = requests.get(self.monitor_url, verify=False).text
+    opml = ET.fromstring(opml_text)
+
+    body = opml[1]
+    self.assertEqual('body', body.tag)
+
+    outline_list = body[0].findall('outline')
+
+    self.assertEqual(
+      self.monitor_configuration_list,
+      [q.attrib for q in outline_list]
+    )
+
+    expected_status_code_list = []
+    got_status_code_list = []
+    for monitor_configuration in self.monitor_configuration_list:
+      status_code = requests.get(
+          monitor_configuration['url'],
+          verify=False,
+          auth=(self.monitor_username, self.monitor_password)
+        ).status_code
+      expected_status_code_list.append(
+        {
+          'url': monitor_configuration['url'],
+          'status_code': 200
+        }
+      )
+      got_status_code_list.append(
+        {
+          'url': monitor_configuration['url'],
+          'status_code': status_code
+        }
+      )
+    self.assertEqual(
+      expected_status_code_list,
+      got_status_code_list
+    )
+
+
+class EdgeSlaveMixin(MonitorTestMixin):
+  __partition_reference__ = 'edge'
+  instance_max_retry = 20
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest'
+
+  def requestEdgetestSlave(self, partition_reference, partition_parameter_kw):
+    software_url = self.getSoftwareURL()
+    self.slap.request(
+      software_release=software_url,
+      software_type='edgetest',
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True
+    )
+
+  def setUp(self):
+    self.bot_partition_path = os.path.join(
+      self.slap.instance_directory,
+      self.__partition_reference__ + '1')
+    self.surykatka_json = os.path.join(
+        self.bot_partition_path, 'srv', 'surykatka.json')
+    self.surykatka_status_json = os.path.join(
+        self.bot_partition_path, 'bin', 'surykatka-status-json')
+    self.monitor_configuration_list = [
+      {
+        'xmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,),
+        'version': 'RSS',
+        'title': 'testing partition 0',
+        'url': 'https://[%s]:9700/share/private/' % (self._ipv6_address,),
+        'text': 'testing partition 0',
+        'type': 'rss',
+        'htmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,)
+      },
+      {
+        'xmlUrl': 'https://[%s]:9701/public/feed' % (self._ipv6_address,),
+        'version': 'RSS',
+        'title': 'edgebot-1',
+        'url': 'https://[%s]:9701/share/private/' % (self._ipv6_address,),
+        'text': 'edgebot-1',
+        'type': 'rss',
+        'htmlUrl': 'https://[%s]:9701/public/feed' % (self._ipv6_address,)
+      }
+    ]
+
+  def assertSurykatkaIni(self):
+    surykatka_ini = open(
+      os.path.join(
+        self.bot_partition_path, 'etc', 'surykatka.ini')).read().strip()
+
+    expected = self.surykatka_ini % dict(
+        partition_path=self.bot_partition_path)
+    self.assertEqual(
+      expected.strip(),
+      surykatka_ini)
+
+  def assertPromiseContent(self, name, content):
+    promise = open(
+      os.path.join(
+        self.bot_partition_path, 'etc', 'plugin', name
+      )).read().strip()
+
+    self.assertTrue(content in promise)
+
+  def assertSurykatkaBotPromise(self):
+    self.assertPromiseContent(
+      'surykatka-bot-promise.py',
+      "'report': 'bot_status'")
+    self.assertPromiseContent(
+      'surykatka-bot-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+  def assertSurykatkaCron(self):
+    surykatka_cron = open(
+      os.path.join(
+        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status')
+        ).read().strip()
+    self.assertEqual(
+      '*/2 * * * * %s' % (self.surykatka_status_json,),
+      surykatka_cron
+    )
+
+  def initiateSurykatkaRun(self):
+    try:
+      self.slap.waitForInstance(max_retry=2)
+    except Exception:
+      pass
+
+  def assertSurykatkaStatusJSON(self):
+    if os.path.exists(self.surykatka_json):
+      os.unlink(self.surykatka_json)
+    self.assertEqual(0, os.system(self.surykatka_status_json))
+    self.assertTrue(os.path.exists(self.surykatka_json))
+    with open(self.surykatka_json) as fh:
+      status_json = json.loads(fh)
+    self.assertTrue('bot_status' in status_json)
+
+  def test(self):
+    self.requestEdgetestSlaves()
+    self.initiateSurykatkaRun()
+    self.assertSurykatkaStatusJSON()
+    self.assertSurykatkaIni()
+    self.assertSurykatkaBotPromise()
+    self.assertSurykatkaPromises()
+    self.assertSurykatkaCron()
+
+
+class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_ini = """[SURYKATKA]
+INTERVAL = 120
+SQLITE = %(partition_path)s/srv/surykatka.db
+URL =
+  https://www.erp5.com/
+  https://www.erp5.org/"""
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'backend-300-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'backend-300-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'backend-300-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'backend-300-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'backend-300-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-300',
+      {'url': 'https://www.erp5.org/', 'status-code': '300'},
+    )
+
+
+class TestEdgeNameserverCheckFrontendIp(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_ini = """[SURYKATKA]
+INTERVAL = 120
+SQLITE = %(partition_path)s/srv/surykatka.db
+NAMESERVER =
+  127.0.1.1
+  127.0.1.2
+
+URL =
+  https://www.erp5.com/"""
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'nameserver': '127.0.1.1 127.0.1.2',
+      'check-frontend-ip': '127.0.0.1 127.0.0.2',
+    }
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'ip-list': '127.0.0.1 127.0.0.2'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+
+
+class TestEdgeCheckStatusCode(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_ini = """[SURYKATKA]
+INTERVAL = 120
+SQLITE = %(partition_path)s/srv/surykatka.db
+URL =
+  https://www.erp5.com/"""
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'status-code': '500',
+    }
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'backend-501-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'backend-501-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'backend-501-promise.py',
+      "'status-code': '501'")
+    self.assertPromiseContent(
+      'backend-501-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'backend-501-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'status-code': '500'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-501',
+      {'url': 'https://www.erp5.com/', 'status-code': '501'},
+    )
