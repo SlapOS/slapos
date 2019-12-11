@@ -1,0 +1,17 @@
+[SURYKATKA]
+INTERVAL = 120
+SQLITE = {{ db }}
+{%- set nameserver_list = nameserver.split() %}
+{%- if len(nameserver_list) > 0 %}
+NAMESERVER =
+{%-   for nameserver_entry in nameserver_list %}
+  {{ nameserver_entry }}
+{%-   endfor %}
+{% endif %}
+URL =
+{%- for slave in sorted(slave_instance_list) %}
+{%-   if 'url' in slave %}
+  {{ slave['url'] }}
+{%-   endif -%}
+{% endfor %}
+

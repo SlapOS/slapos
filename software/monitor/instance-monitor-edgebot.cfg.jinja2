@@ -1,0 +1,142 @@
+{%- if slap_software_type == software_type %}
+{%- set CONFIGURATION = {} %}
+{%- for k, v in slap_configuration.items() %}
+{%-   if k.startswith('configuration.') %}
+{%-     do CONFIGURATION.__setitem__(k[14:], v) %}
+{%-   endif %}
+{%- endfor %}
+{%- set slave_instance_list = [] %}
+{%- set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
+{%- if extra_slave_instance_list %}
+{#- Create slaves to process with setting up defaults #}
+{%-   for slave in json_module.loads(extra_slave_instance_list) %}
+{%-   if 'check-status-code' not in slave %}
+{%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
+{%-   endif %}
+{%-   if 'check-frontend-ip' not in slave %}
+{%-     do slave.__setitem__('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
+{%-   endif %}
+{%-   do slave_instance_list.append(slave) %}
+{%-   endfor %}
+{%- endif %}
+{%- set part_list = [] %}
+{%- for slave in slave_instance_list %}
+{%-   set part_id = slave['slave_reference'] ~ '-promise' %}
+{%-   do part_list.append(part_id) %}
+{%-   set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
+[{{part_id}}]
+<= monitor-promise-base
+module = check_surykatka_json
+name = {{ safe_name }}.py
+config-report = http_query
+config-url = {{ slave['url'] }}
+config-status-code = {{ slave['check-status-code'] }}
+config-ip-list = {{ slave['check-frontend-ip'] }}
+config-json-file = ${surykatka-config:json}
+{% endfor %}
+
+[surykatka-bot-promise]
+<= monitor-promise-base
+module = check_surykatka_json
+name = surykatka-bot-promise.py
+config-report = bot_status
+config-json-file = ${surykatka-config:json}
+
+[buildout]
+extends = {{ monitor_template_output }}
+
+parts =
+  cron
+  cron-entry-surykatka-status
+  monitor-base
+  publish-connection-information
+  surykatka
+  surykatka-bot-promise
+{% for part_id in part_list %}
+  {{ part_id }}
+{% endfor %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[surykatka-config]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/surykatka.db
+rendered = ${directory:etc}/surykatka.ini
+template = {{ template_surykatka_ini }}
+slave_instance_list = {{ dumps(slave_instance_list) }}
+nameserver = {{ dumps(CONFIGURATION['nameserver']) }}
+json = ${directory:srv}/surykatka.json
+
+context =
+  import json_module json
+  key db :db
+  key nameserver :nameserver
+  key slave_instance_list :slave_instance_list
+
+[surykatka]
+recipe = slapos.cookbook:wrapper
+config = ${surykatka-config:rendered}
+command-line =
+  {{ surykatka_binary }} --run crawl --reload --configuration ${:config}
+wrapper-path = ${monitor-directory:service}/${:_buildout_section_name_}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[surykatka-status-json]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!/bin/sh
+  exec {{ surykatka_binary }} --run status --configuration ${surykatka:config} --output json > ${surykatka-config:json}
+rendered = ${monitor-directory:bin}/${:_buildout_section_name_}
+mode = 0755
+
+[cron-entry-surykatka-status]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = surykatka-status
+frequency = */2 * * * *
+command = ${surykatka-status-json:rendered}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ slapparameter_dict['monitor-httpd-port'] }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
+
+
+[monitor-directory]
+service = ${buildout:directory}/etc/service
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+server-log = ${:private}/server-log
+monitor-log = ${:private}/monitor-log
+cache = ${:var}/cache
+mod-ssl = ${:cache}/httpd_mod_ssl
+
+[python-symlink]
+recipe = plone.recipe.command
+command = ln -sf {{ buildout_bin }}/pythonwitheggs ${monitor-directory:bin}/python
+update-command = ${:command}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-parameter]
+{%- endif %}
