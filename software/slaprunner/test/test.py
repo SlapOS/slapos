@@ -25,13 +25,19 @@
 #
 ##############################################################################
 
-import os
-import unittest
-import paramiko
-import contextlib
 import base64
+import contextlib
 import hashlib
+import json
+import os
+import paramiko
+import requests
 import subprocess
+import time
+import unittest
+
+from lxml import etree
+from lxml.html import soupparser
 
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote
@@ -315,3 +321,131 @@ class TestCustomFrontend(SlaprunnerTestCase):
     self.assertEqual(
       parameter_dict['custom-frontend-url'],
       'https://www.erp5.com')
+
+class TestSlapProxyIntegration(SlaprunnerTestCase):
+  instance_max_retry = 5
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'autorun': True,
+      'auto-deploy': True,
+      'slapos-repository': '/srv/slapgrid/slappart16/srv/runner/project/slapos',
+      'slapos-reference': '',
+    }
+
+  def setUp(self):
+    self.parameter_dict = parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.base_url = parameter_dict['url']
+
+  def _call(self, path, method="GET", data=None):
+    resp = {
+      "GET": requests.get,
+      "POST": requests.post,
+    }[method](
+      "%s/%s" % (self.base_url, path),
+      verify=False,
+      auth=(self.parameter_dict['init-user'], self.parameter_dict['init-password']),
+      data=data
+    )
+    return resp
+
+  def _buildAndRun(self):
+    self.logger.debug('Running Build&Run')
+    self._call('runSoftwareProfile')
+    while True:
+      time.sleep(10)
+      result = json.loads(self._call('slapgridResult').text)
+      self.logger.debug('%s', result)
+
+      # If software or instance is currently under process, wait
+      if result['software']['state'] or result['instance']['state']:
+        self.logger.debug('Currently doing Build&Run')
+        continue
+
+      if result['software']['success'] == 0:
+        if result['instance']['success'] == 0:
+          self.logger.debug('Instance is up!')
+          # Done
+          return
+        else:
+          self.logger.debug('Starting Run')
+          self._call('runInstanceProfile')
+      else:
+        self.logger.debug('Try to Build one more time')
+        self._call('runSoftwareProfile')
+
+  def testUpgradeOfSoftwareRelease(self):
+    # 1: Request 2 Software Releases, and do build&run
+    result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v1/"})
+    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v2/"})
+    self.assertEqual(json.loads(result.text)['code'], 1)
+    self._buildAndRun()
+
+    # 2: Check that the Software Release of the instance is the 1st requested
+    result = self._call('inspectInstance')
+    root = soupparser.fromstring(result.text)
+    select_el = root.find(".//select[@name='software_release']")
+    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v1/software.cfg")
+    self.assertEqual(
+      select_el.value_options,
+      [
+        'workspace/slapos/software/slaprunner/test/software_v1/software.cfg',
+        'workspace/slapos/software/slaprunner/test/software_v2/software.cfg',
+      ]
+    )
+    result = self._call('getFileContent', method="POST", data={"file": "instance_root/slappart0/version.txt"})
+    self.assertEqual(json.loads(result.text)['code'], 1)
+    self.assertEqual(json.loads(result.text)['result'], u'1')
+
+    # 3: Check that that only the unused Software Release can be deleted
+    delete_form_el, = root.findall(".//form[@action='/destroySoftwareRelease']")
+    self.assertEqual(
+      delete_form_el.fields['uri'],
+      'workspace/slapos/software/slaprunner/test/software_v2/software.cfg',
+    )
+
+    # 4: Request the instance with the 2nd Software Release, and check modification is registered
+    result = self._call('saveParameterXml', method="POST", data={
+      "software_release": "workspace/slapos/software/slaprunner/test/software_v2/software.cfg",
+      "software_type": "default",
+      "parameter": '<?xml version="1.0" encoding="utf-8"?>\n<instance>\n</instance>',
+    })
+    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call('inspectInstance')
+    root = soupparser.fromstring(result.text)
+    select_el = root.find(".//select[@name='software_release']")
+    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v2/software.cfg")
+
+    # 5: Do build&run, and check that the instance was updated with the profile of the 2nd Software Release
+    self._buildAndRun()
+    result = self._call('getFileContent', method="POST", data={"file": "instance_root/slappart0/version.txt"})
+    self.assertEqual(json.loads(result.text)['code'], 1)
+    self.assertEqual(json.loads(result.text)['result'], u'2')
+
+    # 6: Check that that only the first Software Release can be deleted, and delete it
+    delete_form_el, = root.findall(".//form[@action='/destroySoftwareRelease']")
+    self.assertEqual(
+      delete_form_el.fields['uri'],
+      'workspace/slapos/software/slaprunner/test/software_v1/software.cfg',
+    )
+    self._call('destroySoftwareRelease', method="POST", data={
+      "uri": "workspace/slapos/software/slaprunner/test/software_v1/software.cfg"
+    })
+
+    # 7: Check that the first Software Release can't be chosen anymore
+    # for the instance, neither is shown as deletable
+    result = self._call('inspectInstance')
+    root = soupparser.fromstring(result.text)
+    select_el = root.find(".//select[@name='software_release']")
+    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v2/software.cfg")
+    self.assertEqual(
+      select_el.value_options,
+      [
+        'workspace/slapos/software/slaprunner/test/software_v2/software.cfg',
+      ]
+    )
+    self.assertTrue(
+      len(root.findall(".//form[@action='/destroySoftwareRelease']")) == 0
+    )
