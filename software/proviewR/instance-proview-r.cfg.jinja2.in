@@ -1,0 +1,172 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+var = ${buildout:directory}/tmp
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+ssl = ${:etc}/ssl
+auth = ${:tmp}/auth
+pwr = ${:pwr}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_executable_location }}
+ca-dir = ${directory:ca-dir}
+requests-directory = ${cadirectory:requests}
+wrapper = ${directory:bin}/certificate_authority
+ca-private = ${cadirectory:private}
+ca-certs = ${cadirectory:certs}
+ca-newcerts = ${cadirectory:newcerts}
+ca-crl = ${cadirectory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${certificate-authority:wrapper}
+wrapper-path = ${directory:services}/certificate_authority
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:ca-dir}/requests/
+private = ${directory:ca-dir}/private/
+certs = ${directory:ca-dir}/certs/
+newcerts = ${directory:ca-dir}/newcerts/
+crl = ${directory:ca-dir}/crl/
+
+[novnc-instance]
+recipe = slapos.cookbook:novnc
+path = ${ca-novnc:executable}
+ip = {{ ipv6 }}
+port = 6080
+vnc-ip = {{ ipv4 }}
+vnc-port = 5901
+novnc-location = {{ novnc_location }}
+websockify-path = {{ websockify_executable_location }}
+ssl-key-path = ${ca-novnc:key-file}
+ssl-cert-path = ${ca-novnc:cert-file}
+
+[websockify-sighandler]
+recipe = slapos.cookbook:signalwrapper
+wrapper-path = ${directory:bin}/websockify-sighandler
+wrapped-path = ${novnc-instance:path}
+
+[websockify-sighandler-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${websockify-sighandler:wrapper-path}
+wrapper-path = ${directory:services}/websockify
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+wait-for-files =
+  ${ca-novnc:key-file}
+  ${ca-novnc:cert-file}
+
+[ca-novnc]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${directory:novnc-conf}/novnc.key
+cert-file = ${directory:novnc-conf}/novnc.crt
+executable = ${directory:bin}/novnc
+wrapper = ${directory:bin}/websockify
+
+[novnc-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = novnc_promise.py
+config-hostname = ${novnc-instance:ip}
+config-port = ${novnc-instance:port}
+
+[x11vnc]
+recipe = slapos.cookbook:wrapper
+command-line = {{ x11vnc_bin }} -forever -display ${xserver:display} -ncache 10 \
+  -autoport 5901 -no6 -reopen -o ${directory:log}/x11vnc.log \
+  -listen {{ ipv4 }} -flag ${proview-prepare:pwr-flag} -xkb
+wrapper-path = ${directory:services}/x11vnc
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[xserver]
+recipe = slapos.cookbook:wrapper
+command-line = {{ xvfb_bin }} Xvfb ${:display} -screen 0 1280x1024x24 \
+  -cc 4 -nolisten tcp -auth ${directory:auth} -fp {{ xorg_font_util}}/share/fonts/X11/Type1
+wrapper-path = ${directory:services}/xserver
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+display = :98
+
+[proview-prepare]
+recipe = plone.recipe.command
+pwr-db = ${directory:pwr}/db
+pwr-flag = ${directory:pwr}/flag
+command = 
+  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}
+  echo PORT=5901 > ${:pwr-flag}
+
+update-command =
+stop-on-error = true
+
+[proview-wrapper]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  export export pwra_db=${proview-prepare:pwr-db}
+  source $pwra_db/pwr_setup.sh
+  source export PWR_BUS_ID=999
+  export LD_LIBRARY_PATH={{ ld_library_path }}
+
+  # start pwra
+  pwrp set base V5.6.0
+  DISPLAY=${xserver:display} pwra
+
+output = ${directory:bin}/pwr
+mode = 700
+
+
+[request-slave-frontend]
+recipe = slapos.cookbook:requestoptional
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+slave = true
+config-https-only = True
+config-type = websocket
+config-url = https://[${novnc-instance:ip}]:${novnc-instance:port}
+return = secure_access domain
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+software-type = RootSoftwareInstance
+name = ProviewR VNC
+sla-instance_guid =
+
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=443&encrypt=1
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
+{% endfor %}
+
+[buildout]
+extends = 
+  {{ template_logrotate }}
+{{ '  ' ~ template_monitor }}
+
+parts =
+  monitor-base
+  publish-connection-information
+  x11vnc
+  xserver
+  proview-wrapper
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+ 
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

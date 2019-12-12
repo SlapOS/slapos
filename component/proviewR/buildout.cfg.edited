@@ -1,0 +1,151 @@
+[buildout]
+
+extends = 
+  ../../component/flex/buildout.cfg
+  ../../component/bison/buildout.cfg
+  ../../component/qt/buildout.cfg
+  ../../component/gtk-2/buildout.cfg
+  ../../component/alsa/buildout.cfg
+  ../../component/java/buildout.cfg
+  ../../component/qt/buildout.cfg
+#  ../../component/gcc/buildout.cfg
+  ../../component/git/buildout.cfg
+  ../glib/buildout.cfg
+
+  ../../component/cmake/buildout.cfg
+  ../libdb/buildout.cfg
+  ../zlib/buildout.cfg
+#  ../../component/automake/buildout.cfg
+
+parts = 
+  proviewR
+
+[java-jdk]
+recipe = hexagonit.recipe.download
+url = https://download.java.net/java/GA/jdk12.0.2/e482c34c86bd4bf8b56c0b35558996b9/10/GPL/openjdk-12.0.2_linux-x64_bin.tar.gz
+md5sum = f5da6f4dec81bdd2a096184ec1d69216
+strip-top-level-dir = true
+
+[doxygen]
+recipe = slapos.recipe.cmmi
+url = http://doxygen.nl/files/doxygen-1.8.16.src.tar.gz
+md5sum = 3ec5f8bfda38a05845161fbbd5d8b439
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+configure-command =
+  mkdir build && cd build && \
+  ${cmake:location}/bin/cmake \
+  -DCMAKE_INSTALL_PREFIX=${:location} \
+  -G "Unix Makefiles" ../
+make-binary =
+  cd build && make
+environment =
+  PATH=${git:location}/bin:${cmake:location}/bin:${flex:location}/bin:${bison:location}/bin:%(PATH)s
+
+[make-4]
+recipe = slapos.recipe.cmmi
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+configure-command =
+  libtoolize --force
+  aclocal -I${pkgconfig:location}/share/aclocal -I${gettext:location}/share/aclocal -I${libtool:location}/share/aclocal
+  autoheader
+  automake --force-missing --add-missing
+  autoconf
+  ./configure
+url = http://ftp.de.debian.org/debian/pool/main/m/make-dfsg/make-dfsg_4.2.1.orig.tar.gz
+make-targets = install
+environment =
+  PATH=${autoconf:location}/bin:${automake:location}/bin:${libtool:location}/bin:${pkgconfig:location}/bin:%(PATH)s
+  LDFLAGS=-L${gettext:location}/lib
+
+[extra-cmake-modules]
+recipe = slapos.recipe.cmmi
+url = https://github.com/KDE/extra-cmake-modules/archive/v5.62.0.zip
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+configure-command =
+  mkdir build && cd build && \
+  ${cmake:location}/bin/cmake \
+    -DCMAKE_INSTALL_PREFIX=${:location} \
+    -DQt5LinguistTools_DIR=${qt5-qmake:location}/lib/cmake/Qt5LinguistTools \
+   ..
+make-binary = cd build && make
+environment = 
+  PATH=${qt5-qmake:location}/bin:${qt5-tools:location}/bin:%(PATH)s
+
+[phonon]
+recipe = slapos.recipe.cmmi
+url = http://download.kde.org/stable/phonon/4.11.1/phonon-4.11.1.tar.xz
+md5sum = d3df5ba646e4b3f11623d998caa40e74
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+configure-command =
+  mkdir build && cd build && \
+  ${cmake:location}/bin/cmake \
+    -DCMAKE_INSTALL_PREFIX=${:location} \
+    -DCMAKE_BUILD_TYPE=Release  \
+    -DECM_DIR=${extra-cmake-modules:location}/share/ECM/cmake \
+    -DQt5LinguistTools_DIR=${qt5-qmake:location}/lib/cmake/Qt5LinguistTools \
+    -DQt5Core_DIR=${qt5-qmake:location}/lib/cmake/Qt5Core \
+    -DQt5Gui_DIR=${qt5-qmake:location}/lib/cmake/Qt5Gui \
+    -DQt5Widgets_DIR=${qt5-qmake:location}/lib/cmake/Qt5Widgets \
+    -DQt5Designer_DIR=${qt5-qmake:location}/lib/cmake/Qt5Designer \
+    -DGLIB2_LIBRARIES=${glib:location}/lib \
+    -DGLIB2_MAIN_INCLUDE_DIR=${glib:location}/lib/glib-2.0/include \
+    ..
+make-binary = cd build && make
+environment =
+  PATH=${pkgconfig:location}/bin:%(PATH)s
+  PKG_CONFIG_PATH=${glib:location}/lib/pkgconfig:${pcre:location}/lib/pkgconfig:${qt5-qmake:location}/lib/pkgconfig
+  CPPFLAGS=-I${glib:location}/include/glib-2.0 -I${glib:location}/lib/glib-2.0/include
+  LDFLAGS=-L${glib:location}/lib -Wl,-rpath=${glib:location}/lib
+
+[phonon-qt4]
+<= phonon
+url = https://github.com/KDE/phonon/archive/4.10.tar.gz
+md5sum = 1c6f5ad1ec3b2943011364acac8e1847
+configure-command =
+  mkdir build && cd build && \
+  ${cmake:location}/bin/cmake \
+    -DCMAKE_INSTALL_PREFIX=${:location} \
+    -DCMAKE_BUILD_TYPE=Release  \
+    -DPHONON_BUILD_PHONON4QT5=FALSE \
+    -DGLIB2_LIBRARIES=${glib:location}/lib \
+    -DGLIB2_MAIN_INCLUDE_DIR=${glib:location}/lib/glib-2.0/include \
+    ..
+make-binary = cd build && make
+environment =
+  PATH=${pkgconfig:location}/bin:%(PATH)s
+  PKG_CONFIG_PATH=${glib:location}/lib/pkgconfig:${pcre:location}/lib/pkgconfig:${qt4-qmake:location}/lib/pkgconfig
+  CPPFLAGS=-I${glib:location}/include/glib-2.0 -I${glib:location}/lib/glib-2.0/include
+  LDFLAGS=-L${glib:location}/lib -Wl,-rpath=${glib:location}/lib
+
+[proviewR]
+recipe = slapos.recipe.cmmi
+url = https://iweb.dl.sourceforge.net/project/proview/proview/proviewr_${:version}/pwrsrc_${:version}.tar.gz
+md5sum = 2431b0ffec0de9e2d7b1a984b2e216a2
+version = 5.6.1-1
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+aroot=${:location}/local/adm
+keep-compile-dir = true
+incdir = -I${libdb:location}/include -I${qt5-qmake:location}/include
+libs = -L${libdb:location}/lib -ldb_cxx-5 -L${gettext:location}/lib -L${alsa:location}/lib
+#-L${qt5-qmake:location}/lib -lQt5Widgets
+depends = ${qt5-qmake:location}:${qt4-qmake:location}
+configure-command =
+  sed -i "s#aroot=/usr/local/adm#aroot=${:aroot}#" ${:location}__compile__/pwrsrc_${:version}/build.sh
+  sed -i "s#cflags	:= -c#cflags	:= ${:incdir} -c#" ${:location}__compile__/pwrsrc_${:version}/src/tools/bld/src/os_linux/hw_x86_64/variables.mk
+  sed -i "s#(lib_dir)#(lib_dir) ${:libs}#" ${:location}__compile__/pwrsrc_${:version}/src/tools/bld/src/os_linux/hw_x86_64/variables.mk
+  sed -i "s#/usr/include/qt4#${qt5-qmake:location}/include#" ${:location}__compile__/pwrsrc_${:version}/src/tools/pwre/src/os_linux/pwre_configure.sh
+  sed -i "s#/usr/lib/libQtGui.so#${qt5-qmake:location}/lib/libQtGui.so#" ${:location}__compile__/pwrsrc_${:version}/src/tools/pwre/src/os_linux/pwre_configure.sh
+  sed -i "s#/usr/local/include/gtk-2.0#${gtk-2:location}/include/gtk-2.0#" ${:location}__compile__/pwrsrc_${:version}/src/tools/pwre/src/os_linux/pwre_configure.sh
+  sed -i "s#/usr/lib/libgtk-x11-2.0.so#${gtk-2:location}/lib/libgtk-x11-2.0.so#" ${:location}__compile__/pwrsrc_${:version}/src/tools/pwre/src/os_linux/pwre_configure.sh
+#  sed -i "s,#include <QGtkStyle>,class QGtkStyle;," ${:location}__compile__/pwrsrc_${:version}/xtt/lib/cow/qt/cow_style_qt.h
+make-targets = install
+make-options = 
+  -j1
+environment =
+  PATH=${gcc-8.2:location}/bin:${doxygen:location}/bin:${pkgconfig:location}/bin:${java-jdk:location}/bin:${gtk-2:location}/bin:${flex:location}/bin:${bison:location}/bin:%(PATH)s
+  SHELL=/bin/bash
+  PKG_CONFIG_PATH=${qt4-qmake:location}/lib/pkgconfig:${gtk-2:location}/lib/pkgconfig:${pango:location}/lib/pkgconfig:${glib:location}/lib/pkgconfig:${cairo:location}/lib/pkgconfig:${pcre:location}/lib/pkgconfig:${pixman:location}/lib/pkgconfig:${fontconfig:location}/lib/pkgconfig:${fontconfig:pkg_config_depends}:${libXext:location}/lib/pkgconfig:${libXext:pkg_config_depends}:${fribidi:location}/lib/pkgconfig:${harfbuzz:location}/lib/pkgconfig:${harfbuzz:pkg_config_depends}:${atk:location}/lib/pkgconfig:${gdk-pixbuf:location}/lib/pkgconfig:${phonon-qt4:location}/lib/pkgconfig:${alsa:location}/lib/pkgconfig:${zlib:location}/lib/pkgconfig
+  LD_LIBRARY_PATH=${alsa:location}/lib:${flex:location}/lib:${qt4-qmake:location}/lib:${libdb:location}/lib:${openssl:location}/lib:${gtk-2:location}/lib:${pango:location}/lib:${cairo:location}/lib:${atk:location}/lib:${harfbuzz:location}/lib:${libXext:location}/lib:${gdk-pixbuf:location}/lib:${gettext:location}/lib:${phonon-qt4:location}/lib:${pixman:location}/lib
+  CXXFLAGS=-I${flex:location}/include -I${libdb:location}/include
+  LDFLAGS=-L${gcc-8.2:location}/lib -Wl,-rpath=${gcc-8.2:location}/lib -L${gcc-8.2:location}/lib64 -Wl,-rpath=${gcc-8.2:location}/lib64 -L${gettext:location}/lib -L${flex:location}/lib -Wl,-rpath=${flex:location}/lib -L${bison:location}/lib -L${libdb:location}/lib -L${gtk-2:location}/lib
+  DISPLAY=:0
