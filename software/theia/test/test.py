@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2019 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,34 +25,38 @@
 #
 ##############################################################################
 
-import json
 import os
+import textwrap
+import logging
+import tempfile
+import time
+from six.moves.urllib.parse import urlparse
+
+import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
+
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class ERP5InstanceTestCase(SlapOSInstanceTestCase):
-  """ERP5 base test case
-  """
-  # ERP5 instanciation needs to run several times before being ready, as
-  # the root instance request more instances.
-  instance_max_retry = 7 # XXX how many times ?
+class TestTheia(SlapOSInstanceTestCase):
+  def setUp(self):
+    self.theia_url = self.computer_partition.getConnectionParameterDict(
+    )['url']
 
-  def getRootPartitionConnectionParameterDict(self):
-    """Return the output paramters from the root partition"""
-    return json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
+  def test_http_get(self):
+    resp = requests.get(self.theia_url, verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
 
-  def getComputerPartition(self, partition_reference):
-    for computer_partition in self.slap.computer.getComputerPartitionList():
-      if partition_reference == computer_partition.getInstanceParameter(
-          'instance_title'):
-        return computer_partition
-
-  def getComputerPartitionPath(self, partition_reference):
-    partition_id = self.getComputerPartition(partition_reference).getId()
-    return os.path.join(self.slap._instance_root, partition_id)
+    # without login/password, this is unauthorized
+    parsed_url = urlparse(self.theia_url)
+    resp = requests.get(
+        parsed_url._replace(
+            netloc='[{}]:{}'.format(
+                parsed_url.hostname,
+                parsed_url.port)).geturl(),
+        verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)

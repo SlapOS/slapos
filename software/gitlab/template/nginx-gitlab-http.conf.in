@@ -121,6 +121,13 @@ server {
     # Set CORS header
     add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
     add_header 'Access-Control-Allow-Credentials' true;
+    if ($request_method = OPTIONS ) {
+        add_header Allow "GET, OPTIONS";
+        add_header Content-Type text/plain;
+        add_header 'Access-Control-Allow-Origin' $http_origin;
+        add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Authorization, Content-Type, Accept";
+        return 200;
+    }
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
     {{ 'gzip off;' if cfg_https else ''}}

@@ -8,7 +8,7 @@
     "tcpv4-port": {
       "allOf": [
         {
-          "$ref": "#/definitions/tcpv4port"
+          "$ref": "./schemas-definitions.json#/tcpv4port"
         },
         {
           "description": "Start allocating ports at this value, going upward"

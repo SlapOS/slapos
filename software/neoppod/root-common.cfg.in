@@ -16,6 +16,20 @@ sla-computer_guid = ${slap-connection:computer-id}
 {% endif -%}
 {% endmacro -%}
 
+{% macro apply_overrides(dict_, reference) -%}
+{% for key in list(dict_) -%}
+{%   if key.endswith('!') -%}
+{%     for pattern, value in dict_.pop(key, ()) -%}
+{%       set m = re.match(pattern, reference) -%}
+{%       if m and m.group() == reference %}{# PY3: fullmatch -#}
+{%         do dict_.__setitem__(key[:-1], value) -%}
+{%         break -%}
+{%       endif -%}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+{% endmacro -%}
+
 {% macro common_section() -%}
 [request-common-base]
 recipe = slapos.cookbook:request.serialised
@@ -52,7 +66,22 @@ config-ssl = {{ dumps((
 config-upstream-cluster = {{ dumps(parameter_dict.get('upstream-cluster', '')) }}
 config-upstream-masters = {{ dumps(parameter_dict.get('upstream-masters', '')) }}
 software-type = {{ software_type }}
-{% set node_list = parameter_dict.get('node-list', ({},)) -%}
+
+{% set node_list = parameter_dict.get('node-list') -%}
+{% if node_list == None -%}
+{%   set node_list = [] -%}
+{%   for i in range(parameter_dict.get('node-count', 1)) -%}
+{%     set x = parameter_dict.copy() -%}
+{%     do apply_overrides(x, prefix ~ i) -%}
+{%     do node_list.append(x.get('node', {})) -%}
+{%   endfor -%}
+{% else %}{# BBB -#}
+{%   do assert('node-count' not in parameter_dict) -%}
+{%   do assert('node' not in parameter_dict) -%}
+{%   do assert('node!' not in parameter_dict) -%}
+{% endif -%}
+{% do assert(node_list) -%}
+
 {% set storage_count = [] -%}
 {% for node in node_list -%}
 {%   do storage_count.append(node.get('storage-count', 1)) -%}

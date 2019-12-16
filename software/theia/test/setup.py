@@ -24,35 +24,29 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from setuptools import setup, find_packages
 
-import json
-import os
+version = '0.0.1.dev0'
+name = 'slapos.test.theia'
+long_description = open("README.md").read()
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
-
-
-class ERP5InstanceTestCase(SlapOSInstanceTestCase):
-  """ERP5 base test case
-  """
-  # ERP5 instanciation needs to run several times before being ready, as
-  # the root instance request more instances.
-  instance_max_retry = 7 # XXX how many times ?
-
-  def getRootPartitionConnectionParameterDict(self):
-    """Return the output paramters from the root partition"""
-    return json.loads(
-        self.computer_partition.getConnectionParameterDict()['_'])
-
-  def getComputerPartition(self, partition_reference):
-    for computer_partition in self.slap.computer.getComputerPartitionList():
-      if partition_reference == computer_partition.getInstanceParameter(
-          'instance_title'):
-        return computer_partition
-
-  def getComputerPartitionPath(self, partition_reference):
-    partition_id = self.getComputerPartition(partition_reference).getId()
-    return os.path.join(self.slap._instance_root, partition_id)
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' Theia",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'erp5.util',
+        'supervisor',
+        'requests',
+    ],
+    zip_safe=True,
+    test_suite='test',
+)
