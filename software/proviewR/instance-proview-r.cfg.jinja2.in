@@ -1,7 +1,7 @@
 {% set publish_dict = {} -%}
 {% set part_list = [] -%}
 {% set ipv6 = (ipv6 | list)[0] -%}
-
+{% set ipv4 = (ipv4 | list)[0] -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -9,13 +9,16 @@ etc = ${buildout:directory}/etc
 bin = ${buildout:directory}/bin
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
-var = ${buildout:directory}/tmp
+tmp = ${buildout:directory}/tmp
 log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 ssl = ${:etc}/ssl
 auth = ${:tmp}/auth
-pwr = ${:pwr}
+pwrp = ${buildout:directory}/pwrp
+ca-dir = ${:srv}/ssl
+novnc-conf = ${:etc}/novnc
+prerm = ${:etc}/prerm
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -85,46 +88,82 @@ config-port = ${novnc-instance:port}
 
 [x11vnc]
 recipe = slapos.cookbook:wrapper
-command-line = {{ x11vnc_bin }} -forever -display ${xserver:display} -ncache 10 \
-  -autoport 5901 -no6 -reopen -o ${directory:log}/x11vnc.log \
+command-line = {{ x11vnc_bin }} -forever -display ${xserver:display} -ncache 10
+  -autoport 5901 -no6 -reopen -o ${directory:log}/x11vnc.log
   -listen {{ ipv4 }} -flag ${proview-prepare:pwr-flag} -xkb
+  -auth ${directory:auth}.Xauthority
 wrapper-path = ${directory:services}/x11vnc
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [xserver]
 recipe = slapos.cookbook:wrapper
-command-line = {{ xvfb_bin }} Xvfb ${:display} -screen 0 1280x1024x24 \
-  -cc 4 -nolisten tcp -auth ${directory:auth} -fp {{ xorg_font_util}}/share/fonts/X11/Type1
+command-line = {{ xvfb_bin }} ${:display} -screen 0 1280x1024x24
+  -cc 4 -nolisten tcp -auth ${directory:auth}.Xauthority -fp {{ xorg_font_util}}/share/fonts/X11/Type1
 wrapper-path = ${directory:services}/xserver
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 display = :98
 
 [proview-prepare]
 recipe = plone.recipe.command
-pwr-db = ${directory:pwr}/db
-pwr-flag = ${directory:pwr}/flag
+pwr-db = ${directory:pwrp}/db
+pwr-flag = ${directory:pwrp}/flag
 command = 
-  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}
+  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}  
   echo PORT=5901 > ${:pwr-flag}
 
 update-command =
 stop-on-error = true
 
-[proview-wrapper]
+[proview-environment]
 recipe = collective.recipe.template
 input = inline:#!/bin/bash
-  export export pwra_db=${proview-prepare:pwr-db}
+  source ${pwrp-profile:rendered}
+  export pwra_db=${proview-prepare:pwr-db}
   source $pwra_db/pwr_setup.sh
-  source export PWR_BUS_ID=999
+  export PWR_BUS_ID=999
+  export DISPLAY=${xserver:display}
   export LD_LIBRARY_PATH={{ ld_library_path }}
 
-  # start pwra
+  if [ "$PS1" ]; then
+    eval `dircolors -b`
+    alias ls='ls --color=auto'
+    # set a fancy prompt
+
+    PS1='\u@\h:\w\$ '
+  fi
+
+  # Set Base (XXX - hard coded version)
   pwrp set base V5.6.0
-  DISPLAY=${xserver:display} pwra
 
-output = ${directory:bin}/pwr
-mode = 700
+output = ${buildout:directory}/.bashrc
+mode = 600
 
+[bash-profile]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  umask 022
+
+  # include .bashrc if it exists
+
+  if [ -f ~/.bashrc ]; then
+      source ~/.bashrc
+  fi
+
+output = ${buildout:directory}/.bashrc
+mode = 600
+
+[pwrp-profile]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/pwrp_profile
+extensions = jinja2.ext.do
+mode = 0744
+template = {{ pwrp_profile }}
+context =
+  key pwra_db proview-prepare:pwr-db
+  key base_directory buildout:directory
+  raw pwr_exp_dir {{ proview_compile_dir }}/rls/os_linux/hw_x86_64/exp
+  raw pwr_bus_id 999
+  raw java_location {{ java_location }}
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
@@ -162,7 +201,11 @@ parts =
   publish-connection-information
   x11vnc
   xserver
-  proview-wrapper
+  websockify-sighandler
+  websockify-sighandler-service
+  novnc-promise
+  proview-environment
+  bash-profile
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
