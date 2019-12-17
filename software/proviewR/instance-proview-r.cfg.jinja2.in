@@ -15,10 +15,23 @@ scripts = ${:etc}/run
 services = ${:etc}/service
 ssl = ${:etc}/ssl
 auth = ${:tmp}/auth
-pwrp = ${buildout:directory}/pwrp
 ca-dir = ${:srv}/ssl
 novnc-conf = ${:etc}/novnc
 prerm = ${:etc}/prerm
+pwrp = ${buildout:directory}/pwrp
+common = ${:pwrp}/common
+x86-64-linux = ${:pwrp}/x86_64_linux
+inc = ${:common}/inc
+load = ${:common}/load
+log = ${:common}/log
+loghist = ${:common}/loghist
+db = ${:common}/db
+web = ${:common}/web
+exe = ${:x86-64-linux}/exe
+lib = ${:x86-64-linux}/lib
+obj = ${:x86-64-linux}/obj
+lis = ${:x86-64-linux}/lis
+
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -123,6 +136,7 @@ input = inline:#!/bin/bash
   export PWR_BUS_ID=999
   export DISPLAY=${xserver:display}
   export LD_LIBRARY_PATH={{ ld_library_path }}
+  export TMPDIR=${directory:tmp}
 
   if [ "$PS1" ]; then
     eval `dircolors -b`
@@ -165,6 +179,25 @@ context =
   raw pwr_bus_id 999
   raw java_location {{ java_location }}
 
+
+[pwrrt-wrapper]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/pwrrt
+extensions = jinja2.ext.do
+mode = 0744
+template = {{ template_pwrrt }}
+context =
+  key tmp_directory directory:tmp
+  key pwrp_profile pwrp-profile:rendered
+
+[pwrrt-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${pwrrt-wrapper:rendered} start
+wrapper-path = ${directory:services}/pwrrt
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+environment = 
+  LD_LIBRARY_PATH={{ ld_library_path }}
+
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
 server-url = ${slap-connection:server-url}
@@ -206,6 +239,7 @@ parts =
   novnc-promise
   proview-environment
   bash-profile
+  pwrrt-service
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

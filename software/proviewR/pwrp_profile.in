@@ -1,10 +1,10 @@
 
 bus_id="{{ pwr_bus_id }}"
-if [ -e /etc/proview.cnf ]; then
-  bus_id=`eval cat /etc/proview.cnf | grep "\\bqcomBusId\\b" | awk '{print $2}'`
+if [ -e {{ base_directory }}/etc/proview.cnf ]; then
+  bus_id=`eval cat {{ base_directory }}/etc/proview.cnf | grep "\\bqcomBusId\\b" | awk '{print $2}'`
 fi
-if [ -e /etc/proview.cnf ]; then
-  web_dir=`eval cat /etc/proview.cnf | grep "\\bwebDirectory\\b" | awk '{print $2}'`
+if [ -e {{ base_directory }}/etc/proview.cnf ]; then
+  web_dir=`eval cat {{ base_directory }}/etc/proview.cnf | grep "\\bwebDirectory\\b" | awk '{print $2}'`
 fi
 
 export PWR_BUS_ID=$bus_id
@@ -39,11 +39,10 @@ export jdk_home={{ java_location }}/bin
 PATH=$PATH:$pwr_exe:$pwrp_exe:$jdk_home
 
 #symbols to define start/stop commands for PWR
-alias pwr_stop='/etc/init.d/pwr stop'
-alias pwr_stop.sh="/etc/init.d/pwr stop"
-alias pwr_start="/etc/init.d/pwr start"
-alias pwr="/etc/init.d/pwr"
-alias boot="/usr/bin/sudo /sbin/reboot"
+alias pwr_stop='{{ base_directory }}/bin/pwr stop'
+alias pwr_stop.sh="{{ base_directory }}/bin/pwr stop"
+alias pwr_start="{{ base_directory }}/bin/pwr start"
+alias pwr="{{ base_directory }}/bin/pwr"
 
 if [ -e $pwrp_exe/profile ]; then
   source $pwrp_exe/profile
