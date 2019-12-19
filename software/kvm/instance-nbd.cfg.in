@@ -15,6 +15,7 @@ offline = true
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
 srv = $${buildout:directory}/srv
 log = $${buildout:directory}/log
@@ -34,12 +35,18 @@ shell-path = ${dash:location}/bin/dash
 # XXX TODO: Wait for the iso to be uploaded (execute_wait)
 path = $${basedirectory:services}/nbdserver
 
+[nbd-checker-bin]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!/bin/sh
+  [ ! -f $${onetimeupload-instance:image-path} ] ||
+    $${buildout:executable} -c 'import socket ; socket.create_connection(("$${nbd-instance:ip}","$${nbd-instance:port}")).close()'
+rendered = $${rootdirectory:bin}/check-nbd-running.sh
+
 [nbd-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_command_execute
 name = nbd_promise.py
-config-hostname = $${nbd-instance:ip}
-config-port = $${nbd-instance:port}
+config-command = $${nbd-checker-bin:rendered}
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
@@ -66,6 +73,13 @@ config-port = $${onetimeupload-instance:port}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-nbd_url = nbd://[$${nbd-instance:ip}]:$${nbd-instance:port}
-upload_url = http://[$${onetimeupload-instance:ip}]:$${onetimeupload-instance:port}/
+nbd_hostname = $${nbd-instance:ip}
+nbd_port = $${nbd-instance:port}
+upload_url = http://[$${onetimeupload-instance:ip}]:$${onetimeupload-instance:port}
 upload_key = $${onetimeupload-instance:key}
+status_message = $${detect-if-cdrom-present:status}
+
+[detect-if-cdrom-present]
+recipe = collective.recipe.shelloutput
+commands =
+  status = [ -f $${onetimeupload-instance:image-path} ] && echo "image already uploaded, you can't upload it again" || echo "WARNING: no image yet, the NBD server doesn't work"
