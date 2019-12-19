@@ -2,7 +2,8 @@
 # Start script for Proview runtime
 #
 
-TMPDIR={{ tmp_directory }}
+TMPDIR="{{ tmp_directory }}"
+LD_LIBRARY_PATH={{ ld_library_path }}
 wrapper="{{ tmp_directory }}/rt_ini_wrapper"
 killer="{{ tmp_directory }}/pwr_killer"
 
