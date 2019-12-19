@@ -1,0 +1,46 @@
+worker_processes 5;
+
+pid {{ parameter_dict['pid-file'] }};
+error_log {{ parameter_dict['error-log'] }};
+
+daemon off;
+
+events {
+  worker_connections 1024;
+  accept_mutex off;
+}
+
+http {
+     default_type application/octet-stream;
+     access_log {{ parameter_dict['access-log'] }} combined;
+     client_max_body_size 10M;
+
+     server {
+        listen [{{ parameter_dict['global-ip'] }}]:{{ parameter_dict['global-port'] }} ssl;
+        server_name _;
+        ssl_certificate     {{ parameter_dict['ssl-certificate'] }};
+        ssl_certificate_key {{ parameter_dict['ssl-key'] }};
+        ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers         ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+        keepalive_timeout 90s;
+        client_body_temp_path {{ parameter_dict['client-body-temp-path'] }};
+        proxy_temp_path {{ parameter_dict['proxy-temp-path'] }};
+        fastcgi_temp_path {{ parameter_dict['fastcgi-temp-path'] }};
+        uwsgi_temp_path {{ parameter_dict['uwsgi-temp-path'] }};
+        scgi_temp_path {{ parameter_dict['scgi-temp-path'] }};
+
+        location / {
+            proxy_pass http://unix:{{ shellinabox_socket }}:/;
+            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+            auth_basic "Restricted";
+            auth_basic_user_file {{ parameter_dict['etc-dir'] }}/.htpasswd;
+            proxy_redirect off;
+            proxy_buffering off;
+            proxy_set_header        X-Real-IP         $remote_addr;
+            proxy_set_header        X-Forwarded-Proto $scheme;
+            proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Forwarded-Host  $http_host;
+      }
+    }
+}

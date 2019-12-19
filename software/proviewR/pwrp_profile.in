@@ -39,10 +39,10 @@ export jdk_home={{ java_location }}/bin
 PATH=$PATH:$pwr_exe:$pwrp_exe:$jdk_home
 
 #symbols to define start/stop commands for PWR
-alias pwr_stop='{{ base_directory }}/bin/pwr stop'
-alias pwr_stop.sh="{{ base_directory }}/bin/pwr stop"
-alias pwr_start="{{ base_directory }}/bin/pwr start"
-alias pwr="{{ base_directory }}/bin/pwr"
+alias pwr_stop='{{ base_directory }}/bin/pwrrt stop'
+alias pwr_stop.sh="{{ base_directory }}/bin/pwrrt stop"
+alias pwr_start="{{ base_directory }}/bin/pwrrt start"
+alias pwr="{{ base_directory }}/bin/pwrrt"
 
 if [ -e $pwrp_exe/profile ]; then
   source $pwrp_exe/profile

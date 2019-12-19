@@ -123,6 +123,16 @@ pwr-flag = ${directory:pwrp}/flag
 command = 
   cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}  
   echo PORT=5901 > ${:pwr-flag}
+  cat <<EOF > ${buildout:directory}/.rtt_start
+    #!/bin/bash
+    source ${pwrp-profile:rendered}
+    $pwr_exe/rt_rtt
+  EOF
+  cat <<EOF > ${buildout:directory}/.xtt_start
+    #!/bin/bash
+    source ${pwrp-profile:rendered}
+    $pwr_exe/rt_xtt &
+  EOF
 
 update-command =
 stop-on-error = true
@@ -163,7 +173,7 @@ input = inline:#!/bin/bash
       source ~/.bashrc
   fi
 
-output = ${buildout:directory}/.bashrc
+output = ${buildout:directory}/.bash_profile
 mode = 600
 
 [pwrp-profile]
@@ -189,6 +199,7 @@ template = {{ template_pwrrt }}
 context =
   key tmp_directory directory:tmp
   key pwrp_profile pwrp-profile:rendered
+  raw ld_library_path {{ ld_library_path }}
 
 [pwrrt-service]
 recipe = slapos.cookbook:wrapper
@@ -197,6 +208,71 @@ wrapper-path = ${directory:services}/pwrrt
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 environment = 
   LD_LIBRARY_PATH={{ ld_library_path }}
+
+[shellinabox]
+recipe = slapos.recipe.template:jinja2
+socket = ${directory:run}/siab.sock
+mode = 0700
+rendered = ${directory:bin}/shellinaboxd
+template = inline:
+  #!/bin/sh
+  exec {{ shellinabox_bin }}/shellinaboxd \
+    --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
+    --service "/:$(id -u):$(id -g):HOME:${shell-environment:shell} -l"
+
+[shellinabox-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/shellinaboxd
+wrapper-path = ${directory:services}/shellinaboxd
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[shell-environment]
+shell = /bin/bash
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${cadirectory:certs}/nginx.key
+cert-file = ${cadirectory:certs}/nginx.crt
+executable = ${nginx-launcher:rendered}
+wrapper = ${directory:services}/nginx
+# Put domain name
+name = example.com
+
+[nginx-parameter-conf]
+local-ip = ${slap-network-information:local-ipv4}
+global-ip = ${slap-network-information:global-ipv6}
+global-port = ${slaprunner:runner_port}
+ssl-certificate = ${ca-nginx:cert-file}
+ssl-key = ${ca-nginx:key-file}
+pid-file = ${directory:run}/nginx.pid
+access-log = ${directory:log}/nginx.access.log
+error-log = ${directory:log}/nginx.error.log
+etc-dir = ${directory:etc}
+client-body-temp-path = ${directory:tmp}/client_body_temp_path
+proxy-temp-path = ${directory:tmp}/proxy_temp_path
+fastcgi-temp-path = ${directory:tmp}/fastcgi_temp_path
+uwsgi-temp-path = ${directory:tmp}/uwsgi_temp_path
+scgi-temp-path = ${directory:tmp}/scgi_temp_path
+
+[nginx_conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_nginx }}
+rendered = ${directory:etc}/nginx.conf
+context =
+    key shellinabox_socket shellinabox:socket
+    section parameter_dict nginx-parameter-conf
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/nginx-launcher
+command-line = {{ nginx_bin }} -p ${buildout:directory} -c ${nginx_conf:rendered}
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${nginx-parameter-conf:access-log} ${nginx-parameter-conf:error-log}
+post = kill -USR1 $(cat ${nginx-parameter-conf:pid-file})
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
@@ -240,6 +316,8 @@ parts =
   proview-environment
   bash-profile
   pwrrt-service
+  shellinabox
+  shellinabox-service
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
