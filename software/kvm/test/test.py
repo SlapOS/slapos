@@ -308,3 +308,23 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-password',
         'takeover-kvm-1-url',
         'url']))
+
+class TestInstanceNbdServer(InstanceTestCase):
+  __partition_reference__ = 'ins'
+  instance_max_retry = 5
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'nbd'
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    self.assertNotIn("WARNING", connection_parameter_dict['upload_url'])
+    result = requests.get(connection_parameter_dict['upload_url'].strip(), verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertTrue('<title>Upload new File</title>' in result.text)
+    self.assertIn("WARNING", connection_parameter_dict['nbd_url'])
