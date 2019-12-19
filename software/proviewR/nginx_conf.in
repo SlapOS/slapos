@@ -1,4 +1,4 @@
-worker_processes 5;
+worker_processes 3;
 
 pid {{ parameter_dict['pid-file'] }};
 error_log {{ parameter_dict['error-log'] }};

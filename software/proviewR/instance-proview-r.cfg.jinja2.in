@@ -239,16 +239,25 @@ wrapper = ${directory:services}/nginx
 # Put domain name
 name = example.com
 
+[nginx-htpasswd]
+recipe = plone.recipe.command
+stop-on-error = true
+htpasswd-path = ${directory:etc}/.htpasswd
+command = if [ ! -f "${:htpasswd-path}" ]; then {{ apache_htpasswd_bin }} -cb ${:htpasswd-path} ${:user} ${monitor-htpasswd:passwd}; fi
+update-command = ${:command}
+user = proviewr
+
 [nginx-parameter-conf]
 local-ip = ${slap-network-information:local-ipv4}
 global-ip = ${slap-network-information:global-ipv6}
-global-port = ${slaprunner:runner_port}
+global-port = 8899
 ssl-certificate = ${ca-nginx:cert-file}
 ssl-key = ${ca-nginx:key-file}
 pid-file = ${directory:run}/nginx.pid
 access-log = ${directory:log}/nginx.access.log
 error-log = ${directory:log}/nginx.error.log
 etc-dir = ${directory:etc}
+htpasswd-file = ${nginx-htpasswd:htpasswd-path}
 client-body-temp-path = ${directory:tmp}/client_body_temp_path
 proxy-temp-path = ${directory:tmp}/proxy_temp_path
 fastcgi-temp-path = ${directory:tmp}/fastcgi_temp_path
@@ -275,12 +284,8 @@ log = ${nginx-parameter-conf:access-log} ${nginx-parameter-conf:error-log}
 post = kill -USR1 $(cat ${nginx-parameter-conf:pid-file})
 
 [request-slave-frontend]
+<= slap-connection
 recipe = slapos.cookbook:requestoptional
-server-url = ${slap-connection:server-url}
-key-file = ${slap-connection:key-file}
-cert-file = ${slap-connection:cert-file}
-computer-id = ${slap-connection:computer-id}
-partition-id = ${slap-connection:partition-id}
 slave = true
 config-https-only = True
 config-type = websocket
@@ -291,17 +296,31 @@ software-type = RootSoftwareInstance
 name = ProviewR VNC
 sla-instance_guid =
 
+[request-shellinabox-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Proview Shellinabox Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[$${nginx-parameter-conf:global-ip}]:$${nginx-parameter-conf:global-port}
+config-domain = 
+return = site_url domain
+
+
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=443&encrypt=1
+shell-url = ${request-shellinabox-frontend:site_url}
+shell-backend = ${request-shellinabox-frontend:config-ur}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
 
 [buildout]
-extends = 
+extends =
   {{ template_logrotate }}
 {{ '  ' ~ template_monitor }}
 
@@ -313,11 +332,13 @@ parts =
   websockify-sighandler
   websockify-sighandler-service
   novnc-promise
+  shellinabox
+  shellinabox-service
+  ca-nginx
+  logrotate-entry-nginx
   proview-environment
   bash-profile
   pwrrt-service
-  shellinabox
-  shellinabox-service
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
