@@ -225,7 +225,13 @@ class EdgeSlaveMixin(MonitorTestMixin):
   def assertSurykatkaStatusJSON(self):
     if os.path.exists(self.surykatka_json):
       os.unlink(self.surykatka_json)
-    self.assertEqual(0, os.system(self.surykatka_status_json))
+    original_environ = os.environ.copy()
+    os.environ.pop('PYTHONPATH', None)
+    try:
+      self.assertEqual(0, os.system(self.surykatka_status_json))
+    finally:
+      os.environ = original_environ
+
     self.assertTrue(os.path.exists(self.surykatka_json))
     with open(self.surykatka_json) as fh:
       status_json = json.load(fh)
