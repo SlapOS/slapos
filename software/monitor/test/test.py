@@ -29,6 +29,7 @@ import json
 import os
 import re
 import requests
+import subprocess
 import xml.etree.ElementTree as ET
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -225,17 +226,13 @@ class EdgeSlaveMixin(MonitorTestMixin):
   def assertSurykatkaStatusJSON(self):
     if os.path.exists(self.surykatka_json):
       os.unlink(self.surykatka_json)
-    original_environ = os.environ.copy()
-    os.environ.pop('PYTHONPATH', None)
-    try:
-      self.assertEqual(0, os.system(self.surykatka_status_json))
-    finally:
-      os.environ = original_environ
-
+    env = os.environ.copy()
+    env.pop('PYTHONPATH', None)
+    subprocess.check_call(self.surykatka_status_json, shell=True, env=env)
     self.assertTrue(os.path.exists(self.surykatka_json))
     with open(self.surykatka_json) as fh:
       status_json = json.load(fh)
-    self.assertTrue('bot_status' in status_json)
+    self.assertIn('bot_status', status_json)
 
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
