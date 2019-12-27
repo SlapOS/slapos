@@ -320,32 +320,36 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge END
 
 [caddy-wrapper]
-recipe = slapos.cookbook:wrapper
-environment =
-  CADDYPATH=${directory:frontend_cluster}
-command-line = {{ parameter_dict['caddy'] }}
-  -conf ${dynamic-caddy-frontend-template:rendered}
-  -log ${caddy-configuration:error-log}
-  -log-roll-mb 0
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!/bin/sh
+  export CADDYPATH=${directory:frontend_cluster}
+  ulimit -n $(ulimit -Hn)
+  exec {{ parameter_dict['caddy'] }} \
+  -conf ${dynamic-caddy-frontend-template:rendered} \
+  -log ${caddy-configuration:error-log} \
+  -log-roll-mb 0 \
 {% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
-  -http2=false
+  -http2=false \
 {% else %}
-  -http2=true
+  -http2=true \
 {% endif %}
 {% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
-  -quic
+  -quic \
 {% endif %}
-  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-wrapper-path = ${directory:bin}/caddy-wrapper
+  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s \
+  -disable-http-challenge \
+  -disable-tls-alpn-challenge \
+   "$@"
+rendered = ${directory:bin}/caddy-wrapper
+mode = 0755
 
 [caddy-frontend]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:wrapper-path} -pidfile ${caddy-configuration:pid-file}
+command-line = ${caddy-wrapper:rendered} -pidfile ${caddy-configuration:pid-file}
 wrapper-path = ${directory:service}/frontend_caddy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-hash-files = ${caddy-wrapper:wrapper-path}
+hash-files = ${caddy-wrapper:rendered}
 
 [not-found-html]
 recipe = slapos.cookbook:symbolic.link
@@ -594,7 +598,7 @@ rendered = ${directory:bin}/frontend-caddy-validate
 mode = 0700
 last_state_file = ${directory:run}/caddy_configuration_last_state
 extra-context =
-    key wrapper caddy-wrapper:wrapper-path
+    key wrapper caddy-wrapper:rendered
     key caddy_configuration_state frontend-caddy-configuration-state-validate:rendered
     key last_state_file :last_state_file
 
