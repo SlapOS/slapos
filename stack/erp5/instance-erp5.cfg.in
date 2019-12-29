@@ -24,7 +24,7 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
-{% for zope_parameter_dict in zope_partition_dict.values() -%}
+{% for zope_parameter_dict in list(zope_partition_dict.values()) -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
 {%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
@@ -44,7 +44,7 @@ config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-m
 name = {{ name }}
 software-type = {{ software_type }}
 return = {{ ' '.join(ret) }}
-{% for ret, publish in ret.iteritems() -%}
+{% for ret, publish in six.iteritems(ret) -%}
 {%   if publish -%}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}') %}
 {%   endif -%}
@@ -53,10 +53,10 @@ return = {{ ' '.join(ret) }}
 {%   endif -%}
 {% endfor -%}
 {{ root_common.sla(name) }}
-{% for k, v in config.iteritems() -%}
+{% for k, v in six.iteritems(config) -%}
 config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
-{% for k, v in key_config.iteritems() -%}
+{% for k, v in six.iteritems(key_config) -%}
 config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 config-name = {{ name }}
@@ -146,7 +146,7 @@ connection-url = smtp://127.0.0.2:0/
 {% endfor -%}
 {% do assert(len(mountpoints) == len(zodb_dict)) -%}
 {% set neo = [] -%}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 {%     set ((name, server_dict),) = server_dict.items() -%}
 {%     do neo.append(server_dict.get('cluster')) -%}
@@ -207,10 +207,10 @@ config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-z
 config-zodb-dict = {{ dumps(zodb_dict) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
-config-neo-name = {{ server_dict.keys()[0] }}
+config-neo-name = {{ list(server_dict)[0] }}
 config-neo-masters = ${publish-early:neo-masters}
 {%   else -%}
 config-zodb-zeo = ${request-zodb:connection-storage-dict}
@@ -372,7 +372,7 @@ recipe = slapos.cookbook:publish.serialised
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
-hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+hosts-dict = {{ '${' ~ list(zope_address_list_id_dict)[0] ~ ':connection-hosts-dict}' }}
 {% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}

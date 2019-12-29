@@ -43,7 +43,7 @@ mode = 644
 {% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
-  slapparameter_dict['zope-family-dict'].iteritems()) -%}
+  six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
 {%   set zope_family_address_list = [] -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
@@ -139,7 +139,7 @@ cert = ${apache-conf-ssl:cert}
 {%- endif %}
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
+backend-list = {{ dumps(list(apache_dict.values())) }}
 zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
@@ -185,7 +185,7 @@ input = inline:
 module = check_port_listening
 name = apache.py
 config-hostname = {{ ipv4 }}
-config-port = {{ apache_dict.values()[0][0] }}
+config-port = {{ list(apache_dict.values())[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised

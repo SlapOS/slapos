@@ -144,17 +144,17 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 %import {{ m }}
 {% endfor -%}
 {% set type_dict = {'neo': 'NEOStorage', 'zeo': 'zeoclient'} %}
-{% for name, zodb_dict in parameter_dict['zodb-dict'].iteritems() %}
+{% for name, zodb_dict in six.iteritems(parameter_dict['zodb-dict']) %}
 <zodb_db {{ name }}>
 {%- set storage_type = type_dict[zodb_dict.pop('type')] %}
 {%- set storage_dict = zodb_dict.pop('storage-dict') %}
 {%- do root_common.apply_overrides(zodb_dict, node_id) %}
-{%- for key, value in zodb_dict.iteritems() %}
+{%- for key, value in six.iteritems(zodb_dict) %}
   {{ key }} {{ value }}
 {%- endfor %}
   <{{ storage_type }}>
 {%- do root_common.apply_overrides(storage_dict, node_id) %}
-{%- for key, value in storage_dict.iteritems() %}
+{%- for key, value in six.iteritems(storage_dict) %}
     {{ key }} {{ value }}
 {%- endfor %}
   </{{ storage_type }}>

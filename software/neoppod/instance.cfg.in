@@ -9,7 +9,7 @@ rendered = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
 template = {{ cluster }}
 extra-context =
     import re re
-    import urlparse urlparse
+    import urllib_parse six.moves.urllib.parse
 import-list =
     rawfile root_common {{ root_common }}
 

@@ -181,7 +181,7 @@ def main():
 
   try:
     test_result = tool.createTestResult(revision = revision,
-                                        test_name_list = test_line_dict.keys(),
+                                        test_name_list = list(test_line_dict),
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
