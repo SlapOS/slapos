@@ -2,13 +2,13 @@
 {% set part_list = [] -%}
 
 {% set sla_dict = {} -%}
-{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
+{% for sla, ref_list in six.iteritems(slapparameter_dict.get('sla-dict', {})) -%}
 {%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
 {% endfor -%}
 
 {% macro sla(name, required=False) -%}
 {% if required or name in sla_dict -%}
-{%  for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
+{%  for k, (v,) in six.iteritems(urllib_parse.parse_qs(sla_dict.pop(name), strict_parsing=1)) -%}
 sla-{{ k }} = {{ v }}
 {%  endfor -%}
 {% else -%}
@@ -112,7 +112,7 @@ return =
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-monitor = {{ dumps(parameter_dict.get('monitor', {})) }}
 {%-   endif %}
-{%-   for k, v in node.iteritems() %}
+{%-   for k, v in six.iteritems(node) %}
 config-{{ k }} = {{ dumps(v) }}
 {%-   endfor %}
 {{ sla(section_id) }}

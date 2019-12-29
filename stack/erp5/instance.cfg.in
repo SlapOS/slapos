@@ -47,7 +47,7 @@ extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
     import re re
-    import urlparse urlparse
+    import urllib_parse six.moves.urllib.parse
 import-list =
     file root_common context:root-common
     file caucase context:caucase-jinja2-library
@@ -114,7 +114,7 @@ extra-context =
     key buildout_directory buildout:directory
     key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
-    import urlparse urlparse
+    import urllib_parse six.moves.urllib.parse
     import hashlib hashlib
     import itertools itertools
 

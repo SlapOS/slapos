@@ -19,11 +19,11 @@ ip = {{ ipv4 }}
 
 {% set known_tid_storage_identifier_dict = {} -%}
 {% set zodb_dict = {} -%}
-{% for name, zodb in slapparameter_dict['zodb-dict'].iteritems() -%}
+{% for name, zodb in six.iteritems(slapparameter_dict['zodb-dict']) -%}
 {%   do zodb_dict.setdefault(zodb.get('family', 'default').lower(), []).append((name, zodb)) -%}
 {% endfor -%}
 {% set tidstorage_port = slapparameter_dict['tcpv4-port'] + len(zodb_dict) -%}
-{% for family, zodb in zodb_dict.iteritems() -%}
+{% for family, zodb in six.iteritems(zodb_dict) -%}
 {%   set storage_list = [] -%}
 {%   set current_port = next_port() -%}
 {%   set known_tid_storage_identifier_host = (ipv4, current_port), -%}
@@ -140,7 +140,7 @@ input = inline: #!/bin/sh
   zodb_backup_directory="{{ default_backup_path }}"
   repozo="${tidstorage:repozo-binary}"
   EXIT_CODE=0
-  {% for family, zodb in zodb_dict.iteritems() -%}
+  {% for family, zodb in six.iteritems(zodb_dict) -%}
   {%   for name, zodb in zodb -%}
   {%   set zeo_section_name = 'zeo-' ~ family %}
   storage_name="{{ name }}"

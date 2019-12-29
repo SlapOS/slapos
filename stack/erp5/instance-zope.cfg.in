@@ -30,14 +30,14 @@ partition. No more (undefined result), no less (IndexError).
     ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
     ('erp5-smtp', slapparameter_dict['smtp-url']),
   ) -%}
-{%   set parsed_url = urlparse.urlparse(url) -%}
+{%   set parsed_url = urllib_parse.urlparse(url) -%}
 {%   do port_dict.__setitem__(alias, parsed_url.port)  -%}
 {%   do hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
 {%- endfor %}
 {% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
 {%   do hosts_dict.__setitem__(
        'erp5-catalog-' ~ i,
-       urlparse.urlparse(url).hostname,
+       urllib_parse.urlparse(url).hostname,
      ) -%}
 {%- endfor %}
 {% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
@@ -161,7 +161,7 @@ environment =
 command-line = '{{ parameter_dict['userhosts'] }}' ${:wrapped-command-line}
 
 {# Hack to deploy SSL certs via instance parameters -#}
-{% for zodb in zodb_dict.itervalues() -%}
+{% for zodb in six.itervalues(zodb_dict) -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
 {%   if zodb['type'] == 'neo' and storage_dict.get('ssl', 1) -%}
 {%     for k, v in (('_ca', 'ca.crt'),
@@ -209,7 +209,7 @@ site-id = {{ site_id }}
 {% if site_id -%}
 mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
 inituser = {{ slapparameter_dict['inituser-login'] }}
-{%  set mysql = urlparse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
+{%  set mysql = urllib_parse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
 {%  set mysql_db = mysql.path.split('/')[1] -%}
 sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
     mysql_db, mysql.port, mysql.username, mysql.password) }}
@@ -220,13 +220,13 @@ home = ${buildout:directory}
 # We only want to change the hostname to 'erp5-cloudooo' if we use the internal
 # cloudooo. We plan to remove the ability to have an internal one, so this
 # heuristic is enough.
-{%  set cloudooo = urlparse.urlsplit(slapparameter_dict['cloudooo-url']) -%}
+{%  set cloudooo = urllib_parse.urlsplit(slapparameter_dict['cloudooo-url']) -%}
 cloudooo-url = {{ (cloudooo if cloudooo.port == None else
   cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
 
 {% endif -%}
 {% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
-{% for name, zodb in zodb_dict.iteritems() -%}
+{% for name, zodb in six.iteritems(zodb_dict) -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
 {%   if zodb['type'] == 'zeo' -%}
 {%     do storage_dict.update(zeo_dict.get(name, ())) -%}
@@ -294,7 +294,7 @@ z2-log = ${directory:log}/{{ name }}-Z2.log
 node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
 {% set log_list = [] -%}
 {% set import_set = set() -%}
-{% for db_name, zodb in zodb_dict.iteritems() -%}
+{% for db_name, zodb in six.iteritems(zodb_dict) -%}
 {%   do zodb.setdefault('pool-size', thread_amount) -%}
 {%   if zodb['type'] == 'neo' -%}
 {%     do import_set.add('neo.client') -%}
@@ -440,7 +440,7 @@ wrapper-path = ${buildout:bin-directory}/runTestSuite
 
 {%   set connection_string_list = [] -%}
 {%   for url in slapparameter_dict['mysql-test-url-list'] -%}
-{%     set parsed_url = urlparse.urlparse(url) -%}
+{%     set parsed_url = urllib_parse.urlparse(url) -%}
 {%     do connection_string_list.append(
          '%s@%s:%s %s %s' % (
            parsed_url.path.lstrip('/'),

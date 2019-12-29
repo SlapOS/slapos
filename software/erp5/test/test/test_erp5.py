@@ -28,7 +28,7 @@
 import os
 import json
 import glob
-import urlparse
+from six.moves.urllib.parse import urljoin, urlparse
 import socket
 import time
 
@@ -70,14 +70,14 @@ class TestPublishedURLIsReachableMixin(object):
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']))
+      urljoin(param_dict['family-default-v6'], param_dict['site-id']))
 
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
+      urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
 class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -122,7 +122,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     }
 
   def checkValidHTTPSURL(self, url):
-    parsed = urlparse.urlparse(url)
+    parsed = urlparse(url)
     self.assertEqual(parsed.scheme, 'https')
     self.assertTrue(parsed.hostname)
     self.assertTrue(parsed.port)
