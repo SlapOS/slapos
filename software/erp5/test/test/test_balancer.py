@@ -1,9 +1,10 @@
+from __future__ import print_function
 from . import ERP5InstanceTestCase
 from . import setUpModule
 from slapos.testing.utils import findFreeTCPPort
+from slapos.util import str2bytes
 
-from BaseHTTPServer import HTTPServer
-from BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import OpenSSL.SSL
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
@@ -16,9 +17,11 @@ import multiprocessing
 import os
 import requests
 import shutil
+import six
 import subprocess
 import tempfile
 import time
+from six.moves import range
 
 setUpModule  # pyflakes
 
@@ -28,11 +31,11 @@ class TestHandler(BaseHTTPRequestHandler):
     self.send_header("Content-Type", "application/json")
     response = {
       'Path': self.path,
-      'Incoming Headers': self.headers.dict
+      'Incoming Headers': dict(self.headers.items()) if six.PY3 else self.headers.dict
     }
     response = json.dumps(response, indent=2)
     self.end_headers()
-    self.wfile.write(response)
+    self.wfile.write(str2bytes(response))
 
 class TestFrontendXForwardedFor(ERP5InstanceTestCase):
   __partition_reference__ = 'xff'
@@ -93,7 +96,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
 
     cls.software_release_root_path = os.path.join(
        cls.slap._software_root,
-       hashlib.md5(cls.getSoftwareURL()).hexdigest(),
+       hashlib.md5(str2bytes(cls.getSoftwareURL())).hexdigest(),
     )
     caucased_path = os.path.join(cls.software_release_root_path, 'bin', 'caucased')
     caucase_path = os.path.join(cls.software_release_root_path, 'bin', 'caucase')
@@ -116,7 +119,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         pass
       time.sleep(1)
     else:
-      raise RuntimeError, 'caucased failed to start.'
+      raise RuntimeError('caucased failed to start.')
 
     cau_args = [
       caucase_path,
@@ -145,7 +148,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       stderr=subprocess.STDOUT,
     )
     result = caucase_process.communicate()
-    print result
+    print(result)
     csr_id = result[0].split()[0]
 
     subprocess.check_call(
@@ -196,7 +199,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       else:
         time.sleep(1)
     else:
-      raise RuntimeError, 'getting service certificate failed.'
+      raise RuntimeError('getting service certificate failed.')
 
     # start a caucased and server certificate.
     cls.backend_caucase_dir = tempfile.mkdtemp()
@@ -223,7 +226,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         pass
       time.sleep(1)
     else:
-      raise RuntimeError, 'caucased failed to start.'
+      raise RuntimeError('caucased failed to start.')
 
     super(TestFrontendXForwardedFor, cls).setUpClass()
 

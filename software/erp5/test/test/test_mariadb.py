@@ -29,7 +29,7 @@
 import os
 import json
 import glob
-import urlparse
+from six.moves.urllib.parse import urlparse
 import socket
 import time
 import contextlib
@@ -72,7 +72,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getDatabaseConnection(self):
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = urlparse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
@@ -129,7 +129,7 @@ class TestMroonga(MariaDBTestCase):
           """
           SELECT mroonga_normalize("ABCDあぃうぇ㍑")
           """)
-      self.assertEqual((('abcdあぃうぇリットル',),),
+      self.assertEqual(((u'abcdあぃうぇリットル'.encode('utf-8'),),),
                        cnx.store_result().fetch_row(maxrows=2))
 
       if 0:
@@ -142,7 +142,7 @@ class TestMroonga(MariaDBTestCase):
             """
             SELECT mroonga_normalize("aBｃＤあぃウェ㍑", "NormalizerMySQLUnicodeCIExceptKanaCIKanaWithVoicedSoundMark")
             """)
-        self.assertEqual((('ABCDあぃうぇ㍑',),),
+        self.assertEqual(((u'ABCDあぃうぇ㍑'.encode('utf-8'),),),
                          cnx.store_result().fetch_row(maxrows=2))
 
   def test_mroonga_full_text_normalizer(self):
@@ -230,7 +230,7 @@ class TestMroonga(MariaDBTestCase):
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query("SELECT mroonga_command('register token_filters/stem')")
-      self.assertEqual((('true',),), cnx.store_result().fetch_row(maxrows=2))
+      self.assertEqual(((b'true',),), cnx.store_result().fetch_row(maxrows=2))
       cnx.query(
           """
           CREATE TABLE memos (

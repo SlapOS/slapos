@@ -47,7 +47,7 @@ extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
     import re re
-    import urlparse urlparse
+    import urllib_parse six.moves.urllib.parse
 import-list =
     file root_common context:root-common
     file caucase context:caucase-jinja2-library
@@ -118,7 +118,8 @@ extra-context =
     key buildout_directory buildout:directory
     key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
-    import urlparse urlparse
+    import base64 base64
+    import urllib_parse six.moves.urllib.parse
     import hashlib hashlib
     import itertools itertools
 
@@ -165,6 +166,7 @@ template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
+    import base64 base64
 
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until

@@ -28,12 +28,14 @@
 import os
 import json
 import glob
-import urlparse
+from six.moves.urllib.parse import urljoin, urlparse
 import socket
 import time
 
 import psutil
 import requests
+import six
+from six.moves import map, range
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
@@ -70,14 +72,14 @@ class TestPublishedURLIsReachableMixin(object):
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']))
+      urljoin(param_dict['family-default-v6'], param_dict['site-id']))
 
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
+      urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
 class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -122,7 +124,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     }
 
   def checkValidHTTPSURL(self, url):
-    parsed = urlparse.urlparse(url)
+    parsed = urlparse(url)
     self.assertEqual(parsed.scheme, 'https')
     self.assertTrue(parsed.hostname)
     self.assertTrue(parsed.port)
@@ -275,7 +277,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       storage["storage"] = "root"
       storage["server"] = zeo_addr
       with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
-        conf = map(str.strip, f.readlines())
+        conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
@@ -284,23 +286,23 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
             if line == '</zeoclient>':
               break
             checkParameter(line, storage)
-          for k, v in storage.iteritems():
+          for k, v in six.iteritems(storage):
             self.assertIsNone(v, k)
           del storage
         else:
           checkParameter(line, zodb)
-      for k, v in zodb.iteritems():
+      for k, v in six.iteritems(zodb):
         self.assertIsNone(v, k)
 
     partition = self.getComputerPartitionPath('zope-a')
-    for zope in xrange(3):
+    for zope in range(3):
       checkConf({
           "cache-size-bytes": "20MB",
         }, {
           "cache-size": "50MB",
         })
     partition = self.getComputerPartitionPath('zope-bb')
-    for zope in xrange(5):
+    for zope in range(5):
       checkConf({
           "cache-size-bytes": "500MB" if zope else 1<<20,
         }, {

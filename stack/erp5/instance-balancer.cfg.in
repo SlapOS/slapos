@@ -41,7 +41,7 @@ mode = 644
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
-{%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
+{%   set hash = hashlib.md5(six.ensure_binary(frontend_caucase_url)).hexdigest() -%}
 {%   do frontend_caucase_url_hash_list.append(hash) -%}
 {%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
 {{   caucase.updater(
@@ -101,9 +101,9 @@ update-command = ${:command}
 {% set apache_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
 {% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
-{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
+{% set ports = itertools.count(slapparameter_dict['tcpv4-port']) -%}
 {% for family_name, parameter_id_list in sorted(
-  slapparameter_dict['zope-family-dict'].iteritems()) -%}
+  six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
 {%   set zope_family_address_list = [] -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
@@ -122,7 +122,7 @@ update-command = ${:command}
 {%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
 {%       set test_runner_apache_url_list = [] %}
-{%       set test_runner_external_port = next_port() %}
+{%       set test_runner_external_port = next(ports) %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
@@ -144,7 +144,7 @@ update-command = ${:command}
  # do a no-op getitem.
 -#}
 {%   do zope_family_address_list[0][0] -%}
-{%   set haproxy_port = next_port() -%}
+{%   set haproxy_port = next(ports) -%}
 {%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
 {%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
 {%   if has_webdav -%}
@@ -154,7 +154,7 @@ update-command = ${:command}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, slapparameter_dict['ssl-authentication-dict'].get(family_name, False))) -%}
+{%   do apache_dict.__setitem__(family_name, (next(ports), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, slapparameter_dict['ssl-authentication-dict'].get(family_name, False))) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -218,7 +218,7 @@ cert = ${apache-conf-ssl:cert}
 {%- endif %}
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
+backend-list = {{ dumps(list(apache_dict.values())) }}
 zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
@@ -266,7 +266,7 @@ input = inline:
 module = check_port_listening
 name = apache.py
 config-hostname = {{ ipv4 }}
-config-port = {{ apache_dict.values()[0][0] }}
+config-port = {{ list(apache_dict.values())[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -345,7 +345,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port() }}
+monitor-httpd-port = {{ next(ports) }}
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
