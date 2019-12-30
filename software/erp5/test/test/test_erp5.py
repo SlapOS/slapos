@@ -30,7 +30,9 @@ import json
 import glob
 from six.moves.urllib.parse import urljoin, urlparse
 import socket
+import sys
 import time
+import unittest
 
 import psutil
 import requests
@@ -65,6 +67,7 @@ class TestPublishedURLIsReachableMixin(object):
 
     self.assertIn("ERP5", r.text)
 
+  @unittest.skipIf(sys.version_info >= (3, ), 'ERP5 currently supports python 2 only')
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.
     """
@@ -72,6 +75,7 @@ class TestPublishedURLIsReachableMixin(object):
     self._checkERP5IsReachable(
       urljoin(param_dict['family-default-v6'], param_dict['site-id']))
 
+  @unittest.skipIf(sys.version_info >= (3, ), 'ERP5 currently supports python 2 only')
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
