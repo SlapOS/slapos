@@ -55,7 +55,7 @@ def sanityCheck():
 if sanityCheck():
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', 'software-py3.cfg')))
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
