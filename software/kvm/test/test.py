@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import httplib
+import six.moves.http_client as httplib
 import json
 import os
 import re
@@ -34,7 +34,7 @@ import six
 import slapos.util
 import subprocess
 import sqlite3
-import urlparse
+from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -49,7 +49,7 @@ def sanityCheck():
     output = e.output
   else:
     state = True
-  if state is True and re.search(r'kvm.*kvm_intel', output):
+  if state is True and re.search(br'kvm.*kvm_intel', output):
     return True
 
 
@@ -133,7 +133,7 @@ class MonitorAccessMixin(object):
     monitor_setup_url = connection_parameter_dict['monitor-setup-url']
     monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
 
-    auth = urlparse.parse_qs(urlparse.urlparse(monitor_url_with_auth).path)
+    auth = parse_qs(urlparse(monitor_url_with_auth).path)
 
     # check that monitor-base-url for all partitions in the tree are accessible
     # with published username and password

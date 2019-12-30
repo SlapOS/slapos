@@ -6,7 +6,10 @@ import hashlib
 import os
 import socket
 import subprocess
-import urllib
+try:
+  from urllib.request import FancyURLopener
+except ImportError:
+  from urllib import FancyURLopener
 import gzip
 import shutil
 from random import shuffle
@@ -96,9 +99,9 @@ enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lowe
 logfile = '{{ parameter_dict.get("log-file") }}'
 
 if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
-  opener = urllib.FancyURLopener(context=ssl._create_unverified_context())
+  opener = FancyURLopener(context=ssl._create_unverified_context())
 else:
-  opener = urllib.FancyURLopener({})
+  opener = FancyURLopener({})
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -117,12 +120,12 @@ def getSocketStatus(host, port):
     af, socktype, proto, canonname, sa = res
     try:
       s = socket.socket(af, socktype, proto)
-    except socket.error, msg:
+    except socket.error as msg:
       s = None
       continue
     try:
       s.connect(sa)
-    except socket.error, msg:
+    except socket.error as msg:
       s.close()
       s = None
       continue
@@ -319,7 +322,7 @@ for numa in numa_list:
 kvm_argument_list += numa_parameter
 
 if tap_network_parameter == [] and nat_network_parameter == []:
-  print 'Warning : No network interface defined.'
+  print('Warning : No network interface defined.')
 else:
   kvm_argument_list += nat_network_parameter + tap_network_parameter
 if language in language_list:
@@ -361,7 +364,7 @@ for nbd_ip, nbd_port in nbd_list:
     s = getSocketStatus(nbd_ip, nbd_port)
     if s is None:
       # NBD is not available : launch kvm without it
-      print 'Warning : Nbd is not available.'
+      print('Warning : Nbd is not available.')
     else:
       # NBD is available
       # We close the NBD socket else qemu won't be able to use it apparently
@@ -375,5 +378,5 @@ else:
       '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
   ])
 
-print 'Starting KVM: \n %s' % ' '.join(kvm_argument_list)
+print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)
