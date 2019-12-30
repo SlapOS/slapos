@@ -29,6 +29,7 @@ import httplib
 import json
 import os
 import requests
+import six
 import slapos.util
 import sqlite3
 import urlparse
@@ -43,7 +44,8 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+      os.path.join(os.path.dirname(__file__), '..',
+                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
