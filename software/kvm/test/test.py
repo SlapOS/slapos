@@ -30,6 +30,7 @@ import json
 import os
 import re
 import requests
+import six
 import slapos.util
 import subprocess
 import sqlite3
@@ -55,7 +56,8 @@ def sanityCheck():
 if sanityCheck():
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+      os.path.join(os.path.dirname(__file__), '..',
+                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
