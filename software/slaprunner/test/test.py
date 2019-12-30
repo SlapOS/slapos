@@ -38,13 +38,15 @@ from six.moves.urllib.parse import quote
 from six.moves.urllib.parse import urljoin
 from six.moves.configparser import ConfigParser
 import requests
+import six
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..',
+                     'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 
 
 class SlaprunnerTestCase(SlapOSInstanceTestCase):
