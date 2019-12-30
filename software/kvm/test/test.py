@@ -25,14 +25,14 @@
 #
 ##############################################################################
 
-import httplib
+import six.moves.http_client as httplib
 import json
 import os
 import requests
 import six
 import slapos.util
 import sqlite3
-import urlparse
+from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -120,7 +120,7 @@ class MonitorAccessMixin(object):
     monitor_setup_url = connection_parameter_dict['monitor-setup-url']
     monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
 
-    auth = urlparse.parse_qs(urlparse.urlparse(monitor_url_with_auth).path)
+    auth = parse_qs(urlparse(monitor_url_with_auth).path)
 
     # check that monitor-base-url for all partitions in the tree are accessible
     # with published username and password
