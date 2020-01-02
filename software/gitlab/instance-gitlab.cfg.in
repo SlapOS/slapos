@@ -30,6 +30,7 @@ parts =
     service-nginx
     service-postgresql
     service-redis
+    promise-redis
 
     service-cron
 
@@ -107,7 +108,7 @@ srv     = ${:home}/srv
 # slapos startup/service/promise scripts live here:
 startup = ${:etc}/run
 service = ${:etc}/service
-promise.slow = ${:promise}.slow
+promise.slow = ${:etc}/promise.slow
 
 # gitlab: etc/ log/ ...
 [gitlab-dir]
@@ -405,8 +406,8 @@ tune-command =
 # [promise-<something>] to check <something> by url
 [promise-byurl]
 <= monitor-promise-base
-module = check_url_available
-name   = !py! '${:_buildout_section_name_}'[8:] + '.py'
+module = check_command_execute
+name   = ${:_buildout_section_name_}.py
 config-http_code   = 200
 
 
@@ -447,14 +448,14 @@ depend  =
     ${promise-postgresql:recipe}
 
 [promise-postgresql]
-<= monitor-base-promise
+<= monitor-promise-base
 module = check_command_execute
 name = promise-postgresql.py
 config-command =
-    {{ postgresql_location }}/bin/psql
-        -h ${service-postgresql:pgdata-directory}
-        -U ${service-postgresql:superuser}
-        -d ${service-postgresql:dbname}
+    {{ postgresql_location }}/bin/psql \
+        -h ${service-postgresql:pgdata-directory} \
+        -U ${service-postgresql:superuser} \
+        -d ${service-postgresql:dbname} \
         -c '\q'
 
 # postgresql logs to stdout/stderr - logs are handled by slapos not us
@@ -473,7 +474,7 @@ log     = ${directory:log}/redis
 [service-redis]
 recipe  = slapos.cookbook:redis.server
 wrapper = ${directory:service}/redis
-promise_wrapper = ${directory:promise}/redis
+promise_wrapper = ${directory:bin}/redis-promise
 
 server_dir  = ${redis:srv}
 config_file = ${directory:etc}/redis.conf
@@ -489,6 +490,11 @@ server_bin  = {{ redis_binprefix }}/redis-server
 depend  =
     ${logrotate-entry-redis:recipe}
 
+[promise-redis]
+<= monitor-promise-base
+module = check_command_execute
+name = promise-redis.py
+config-command = ${service-redis:promise_wrapper}
 
 # NOTE slapos.cookbook:redis.server setups promise automatically
 
@@ -536,7 +542,7 @@ depend  =
 <= promise-byurl
 # http://localhost/users/statics.css will not redirect to /users/sign_in anymore because of this commit:
 #  https://lab.nexedi.com/nexedi/gitlab-workhorse/commit/c81f109a62fecf2a847fb17ceed012b380dab49f#c1215002e6d745f05eaaf9ee1dad7752e85d866f_318_331
-config-url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
+config-command     = {{ curl_bin }} --unix-socket ${gitlab-workhorse:socket}  http://localhost/users/sign_in
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -578,7 +584,7 @@ depend  =
 
 [promise-unicorn]
 <= promise-byurl
-config-url     = --unix-socket ${unicorn:socket}  http://localhost/
+config-command = {{ curl_bin }} --unix-socket ${unicorn:socket}  http://localhost/
 
 [promise-rakebase]
 recipe  = slapos.cookbook:wrapper
@@ -726,6 +732,7 @@ depend  =
 # XXX this depends on gitlab-workhorse being up
 #     (nginx is configured to proxy all requests to gitlab-workhorse)
 config-url     = ${backend-info:url}/users/sign_in
+module = check_url_available
 
 [logrotate-entry-nginx]
 <= logrotate-entry
