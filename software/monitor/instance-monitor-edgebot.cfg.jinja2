@@ -13,6 +13,9 @@
 {%-   if 'check-status-code' not in slave %}
 {%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
 {%-   endif %}
+{%-   if 'check-certificate-expiration-days' not in slave %}
+{%-     do slave.__setitem__('check-certificate-expiration-days', CONFIGURATION['check-certificate-expiration-days']) %}
+{%-   endif %}
 {%-   if 'check-frontend-ip' not in slave %}
 {%-     do slave.__setitem__('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
 {%-   endif %}
@@ -33,6 +36,7 @@ name = {{ safe_name }}.py
 config-report = http_query
 config-url = {{ slave['url'] }}
 config-status-code = {{ slave['check-status-code'] }}
+config-certificate-expiration-days = {{ slave['check-certificate-expiration-days'] }}
 config-ip-list = {{ slave['check-frontend-ip'] }}
 config-json-file = ${surykatka-config:json}
 {% endfor %}

@@ -18,6 +18,12 @@
       "title": "Default space separated list of Frontend IPs to check",
       "description": "Default list of Frontend IPs to check, if empty no constraint is used.",
       "type": "string"
+    },
+    "check-certificate-expiration-days": {
+      "default": "15",
+      "title": "Default certificate expiration days check",
+      "description": "Default amount of days to consider certitifcate as being to-be-expired (default: 15).",
+      "type": "string"
     }
   }
 }
