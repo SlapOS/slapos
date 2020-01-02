@@ -17,6 +17,12 @@
       "title": "Space separated list of Frontend IPs to check",
       "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
       "type": "string"
+    },
+    "check-certificate-expiration-days": {
+      "default": "Master default",
+      "title": "Certificate expiration days check",
+      "description": "Default amount of days to consider certitifcate as being to-be-expired (default: comes from master partition).",
+      "type": "string"
     }
   }
 }
