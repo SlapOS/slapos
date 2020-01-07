@@ -309,6 +309,40 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-url',
         'url']))
 
+@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+class TestAccessResilientAdditional(InstanceTestCase):
+  __partition_reference__ = 'ara'
+  expected_partition_with_monitor_base_url_count = 1
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+
+    result = requests.get(connection_parameter_dict['url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertIn('<title>noVNC</title>', result.text)
+
+    result = requests.get(
+      connection_parameter_dict['url-additional'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertIn('<title>noVNC</title>', result.text)
+
 class TestInstanceNbdServer(InstanceTestCase):
   __partition_reference__ = 'ins'
   instance_max_retry = 5
