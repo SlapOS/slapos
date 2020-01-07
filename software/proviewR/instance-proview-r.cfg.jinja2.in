@@ -303,7 +303,7 @@ name = Proview Shellinabox Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[$${nginx-parameter-conf:global-ip}]:$${nginx-parameter-conf:global-port}
+config-url = https://[${nginx-parameter-conf:global-ip}]:${nginx-parameter-conf:global-port}
 config-domain = 
 return = secure_access domain
 
