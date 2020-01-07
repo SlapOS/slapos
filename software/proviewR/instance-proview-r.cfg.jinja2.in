@@ -216,8 +216,8 @@ mode = 0700
 rendered = ${directory:bin}/shellinaboxd
 template = inline:
   #!/bin/sh
-  exec {{ shellinabox_bin }}/shellinaboxd \
-    --unixdomain-only=$${:socket}:$(id -u):$(id -g):0600 \
+  exec {{ shellinabox_bin }} \
+    --unixdomain-only=${:socket}:$(id -u):$(id -g):0600 \
     --service "/:$(id -u):$(id -g):HOME:${shell-environment:shell} -l"
 
 [shellinabox-service]
@@ -234,7 +234,7 @@ shell = /bin/bash
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${cadirectory:certs}/nginx.key
 cert-file = ${cadirectory:certs}/nginx.crt
-executable = ${nginx-launcher:rendered}
+executable = ${nginx-launcher:wrapper-path}
 wrapper = ${directory:services}/nginx
 # Put domain name
 name = example.com
@@ -305,7 +305,7 @@ software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/a
 slave = true
 config-url = https://[$${nginx-parameter-conf:global-ip}]:$${nginx-parameter-conf:global-port}
 config-domain = 
-return = site_url domain
+return = secure_access domain
 
 
 [publish-connection-information]
@@ -313,8 +313,8 @@ return = site_url domain
 recipe = slapos.cookbook:publish
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=443&encrypt=1
-shell-url = ${request-shellinabox-frontend:site_url}
-shell-backend = ${request-shellinabox-frontend:config-ur}
+shell-url = ${request-shellinabox-frontend:connection-secure_access}
+shell-backend = ${request-shellinabox-frontend:config-url}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
