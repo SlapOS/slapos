@@ -29,6 +29,7 @@ import json
 import os
 import re
 import requests
+import subprocess
 import xml.etree.ElementTree as ET
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -225,11 +226,13 @@ class EdgeSlaveMixin(MonitorTestMixin):
   def assertSurykatkaStatusJSON(self):
     if os.path.exists(self.surykatka_json):
       os.unlink(self.surykatka_json)
-    self.assertEqual(0, os.system(self.surykatka_status_json))
+    env = os.environ.copy()
+    env.pop('PYTHONPATH', None)
+    subprocess.check_call(self.surykatka_status_json, shell=True, env=env)
     self.assertTrue(os.path.exists(self.surykatka_json))
     with open(self.surykatka_json) as fh:
       status_json = json.load(fh)
-    self.assertTrue('bot_status' in status_json)
+    self.assertIn('bot_status', status_json)
 
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
@@ -268,6 +271,9 @@ URL =
       "'status-code': '300'")
     self.assertPromiseContent(
       'http-query-backend-300-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-300-promise.py',
       "'url': 'https://www.erp5.org/'")
     self.assertPromiseContent(
       'http-query-backend-300-promise.py',
@@ -283,6 +289,9 @@ URL =
     self.assertPromiseContent(
       'http-query-backend-promise.py',
       "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'certificate-expiration-days': '15'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
       "'url': 'https://www.erp5.com/'")
@@ -333,6 +342,9 @@ URL =
       "'status-code': '200'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
@@ -372,6 +384,9 @@ URL =
       "'status-code': '501'")
     self.assertPromiseContent(
       'http-query-backend-501-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-501-promise.py',
       "'url': 'https://www.erp5.org/'")
     self.assertPromiseContent(
       'http-query-backend-501-promise.py',
@@ -389,6 +404,9 @@ URL =
       "'status-code': '500'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
@@ -403,4 +421,72 @@ URL =
     self.requestEdgetestSlave(
       'backend-501',
       {'url': 'https://www.erp5.org/', 'check-status-code': '501'},
+    )
+
+
+class TestEdgeCheckCertificateExpirationDays(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_ini = """[SURYKATKA]
+INTERVAL = 120
+SQLITE = %(partition_path)s/srv/surykatka.db
+URL =
+  https://www.erp5.com/
+  https://www.erp5.org/"""
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'check-certificate-expiration-days': '10',
+    }
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'certificate-expiration-days': '20'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'certificate-expiration-days': '10'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_json,)
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-20',
+      {'url': 'https://www.erp5.org/',
+       'check-certificate-expiration-days': '20'},
     )

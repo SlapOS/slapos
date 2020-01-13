@@ -534,7 +534,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
-      cls._cleanup()
+      cls._cleanup('setUpClass')
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
@@ -559,8 +559,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.waitForCaddy()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
-      cls._storeSnapshot("{}.setUpClass".format(cls.__name__))
-      cls._cleanup()
+      cls._cleanup('setUpClass')
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
@@ -854,9 +853,9 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         break
 
   @classmethod
-  def _cleanup(cls):
+  def _cleanup(cls, snapshot_name):
     cls.stopServerProcess()
-    super(SlaveHttpFrontendTestCase, cls)._cleanup()
+    super(SlaveHttpFrontendTestCase, cls)._cleanup(snapshot_name)
 
   def patchRequests(self):
     HTTPResponse = requests.packages.urllib3.response.HTTPResponse
