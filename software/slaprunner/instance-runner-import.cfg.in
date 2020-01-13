@@ -14,12 +14,8 @@ parts +=
   slaprunner-promise
   slaprunner-supervisord-wrapper
   runner-sshd-add-authorized-key
-  runner-sshd-graceful
   runner-sshd-promise
-  runner-sshkeys-authority
-  runner-sshkeys-authority-service
-  runner-sshkeys-sshd
-  runner-sshkeys-sshd-service
+  runner-sshd-service
   runtestsuite
   shellinabox
   shellinabox-service

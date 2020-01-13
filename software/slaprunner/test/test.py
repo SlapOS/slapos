@@ -246,7 +246,6 @@ class ServicesTestCase(SlaprunnerTestCase):
     ]
     expected_process_names = [
       'slaprunner-supervisord-{hash}-on-watch',
-      'runner-sshkeys-authority-{hash}-on-watch',
       'runner-sshd-{hash}-on-watch',
       'slaprunner-httpd-{hash}-on-watch',
       'gunicorn-{hash}-on-watch',
