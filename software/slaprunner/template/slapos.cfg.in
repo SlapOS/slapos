@@ -58,10 +58,8 @@ host = {{ slaprunner['ipv4'] }}
 port = {{ slaprunner['proxy_port'] }}
 database_uri = {{ slaprunner['proxy_database'] }}
 
-[sshkeys_authority]
-ssh_client = {{ slaprunner['ssh_client'] }}
-public_key = {{ slaprunner['public_key'] }}
-private_key = {{ slaprunner['private_key'] }}
-
 [gitclient]
 git = {{ slaprunner['git-binary'] }}
+
+[sshkeys_authority]
+public_key = {{ slaprunner['public_key'] }}
