@@ -92,7 +92,7 @@ def main():
         firefox_capabilities['marionette'] = True
         browser = webdriver.Firefox(
             capabilities=firefox_capabilities,
-            firefox_binary='${firefox-wrapper:location}',
+            firefox_binary='${firefox-wrapper-68:location}',
             executable_path='${geckodriver:location}')
       else:
         assert target == 'selenium-server', "Unsupported target {}".format(test_runner['target'])
