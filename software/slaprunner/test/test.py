@@ -372,7 +372,15 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
         self.logger.debug('Try to Build one more time')
         self._call('runSoftwareProfile')
 
-  def testUpgradeOfSoftwareRelease(self):
+  def test_upgrade_of_software_release(self):
+    """
+    Test that 2 Software Releases can be built at the same time in a webrunner,
+    and that the instance can be moved from one to another.
+    Also check border cases, including :
+      * ordering a new SR won't delete the existing ones
+      * only SR correctly built can be chosen for the instance
+      * the SR in-use can't be deleted
+    """
     # 1: Request 2 Software Releases, and do build&run
     result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v1/"})
     self.assertEqual(json.loads(result.text)['code'], 1)
