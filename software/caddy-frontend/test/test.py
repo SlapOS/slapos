@@ -534,7 +534,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
-      cls._cleanup('setUpClass')
+      cls._cleanup("{}.{}.setUpClass".format(cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
@@ -559,7 +559,9 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.waitForCaddy()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
-      cls._cleanup('setUpClass')
+      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used by SlapOSInstanceTestCase.setUpClass
+      # so we use another name for snapshot, to make sure we don't store another snapshot in same directory.
+      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
