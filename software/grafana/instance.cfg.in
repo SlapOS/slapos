@@ -130,7 +130,7 @@ wrapper-path = ${directory:promise}/${:_buildout_section_name_}
 
 [grafana]
 ipv6 = ${instance-parameter:ipv6-random}
-port = 8080
+port = 8180
 url = https://[${:ipv6}]:${:port}
 
 data-dir = ${directory:grafana-data-dir}
