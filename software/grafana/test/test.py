@@ -40,7 +40,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-
+SlapOSInstanceTestCase.report_max_retry = 5
 class TestGrafana(SlapOSInstanceTestCase):
   def setUp(self):
     self.grafana_url = self.computer_partition.getConnectionParameterDict(
