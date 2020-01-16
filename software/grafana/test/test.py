@@ -40,8 +40,18 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-SlapOSInstanceTestCase.report_max_retry = 5
-class TestGrafana(SlapOSInstanceTestCase):
+
+class GrafanaTestCase(SlapOSInstanceTestCase):
+  """Base test case for grafana.
+
+  Since the instances takes timte to start and stop,
+  we increate as lot the number of retries.
+  """
+  report_max_retry = 30
+  instance_max_retry = 30
+
+
+class TestGrafana(GrafanaTestCase):
   def setUp(self):
     self.grafana_url = self.computer_partition.getConnectionParameterDict(
     )['grafana-url']
@@ -83,7 +93,7 @@ class TestGrafana(SlapOSInstanceTestCase):
         sorted([ds['type'] for ds in resp.json()]))
 
 
-class TestInfluxDb(SlapOSInstanceTestCase):
+class TestInfluxDb(GrafanaTestCase):
   def setUp(self):
     self.influxdb_url = self.computer_partition.getConnectionParameterDict(
     )['influxdb-url']
@@ -116,7 +126,7 @@ class TestInfluxDb(SlapOSInstanceTestCase):
         [connection_params['influxdb-database']], result['series'][0]['values'])
 
 
-class TestTelegraf(SlapOSInstanceTestCase):
+class TestTelegraf(GrafanaTestCase):
   def test_telegraf_running(self):
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
@@ -124,7 +134,7 @@ class TestTelegraf(SlapOSInstanceTestCase):
     self.assertEqual('RUNNING', process_info['statename'])
 
 
-class TestLoki(SlapOSInstanceTestCase):
+class TestLoki(GrafanaTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     cls._logfile = tempfile.NamedTemporaryFile(suffix='log')
