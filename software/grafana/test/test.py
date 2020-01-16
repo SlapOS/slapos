@@ -134,9 +134,6 @@ class TestLoki(SlapOSInstanceTestCase):
                 r'''
                 - job_name: {cls.__name__}
                   pipeline_stages:
-                  - match:
-                    selector: "{{job=~\".*\"}}"
-                    stages:
                     - regex:
                         expression: "^(?P<timestamp>.*) - (?P<name>\\S+) - (?P<level>\\S+) - (?P<message>.*)"
                     - timestamp:
