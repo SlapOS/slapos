@@ -88,6 +88,7 @@ nbd2-host = ${slap-parameter:nbd2-host}
 nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = {{ slap_configuration.get('tap-name', '') }}
+tap-ipv6-addr = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
