@@ -130,7 +130,7 @@ class BaseRecipe(BaseSlapRecipe):
           'template/apache.in'), apache_config))
     self.path_list.append(config_file)
     php_ini = pkg_resources.resource_filename(__name__, 'template/php.ini.in')
-    if self.options.has_key('php_ini'):
+    if 'php_ini' in self.options:
       php_ini = os.path.join(self.options['php_ini'], 'php.ini.in')
     self.path_list.append(self.createConfigurationFile('php.ini',
         self.substituteTemplate(php_ini, dict(tmp_directory=self.tmp_directory))))
@@ -161,8 +161,7 @@ class BaseRecipe(BaseSlapRecipe):
     """Start process which can launch python scripts, move or remove files or
     directories when installing software.
     """
-    if not self.options.has_key('delete') and not self.options.has_key('rename') and not\
-        self.options.has_key('chmod') and not self.options.has_key('script'):
+    if 'delete' not in self.options and 'rename' not in self.options and 'chmod' not in self.options and 'script' not in self.options:
       return ""
     delete = []
     chmod = []
@@ -172,7 +171,7 @@ class BaseRecipe(BaseSlapRecipe):
     argument = [self.options['lampconfigure_directory'].strip(),
                              "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
                              "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user']]
-    if not self.options.has_key('file_token'):
+    if 'file_token' not in self.options:
       argument = argument + ["-d", mysql_conf['mysql_database'],
                              "--table", self.options['table_name'].strip(), "--cond",
                              self.options['constraint'].strip()]
@@ -180,11 +179,11 @@ class BaseRecipe(BaseSlapRecipe):
       argument = argument + ["-f", self.options['file_token'].strip()]
     argument += ["-t", document_root]
 
-    if self.options.has_key('delete'):
+    if 'delete' in self.options:
       delete = ["delete"]
       for fname in self.options['delete'].split(','):
         delete.append(fname.strip())
-    if self.options.has_key('rename'):
+    if 'rename' in self.options:
       for fname in self.options['rename'].split(','):
         if fname.find("=>") < 0:
           old_name = fname
@@ -194,15 +193,15 @@ class BaseRecipe(BaseSlapRecipe):
         else:
           fname = fname.split("=>")
         cmd = ["rename"]
-        if self.options.has_key('rename_chmod'):
+        if 'rename_chmod' in self.options:
           cmd += ["--chmod", self.options['rename_chmod'].strip()]
         rename.append(cmd + [fname[0].strip(), fname[1].strip()])
         rename_list += fname[0] + " to " + fname[1] + " "
-    if self.options.has_key('chmod'):
+    if 'chmod' in self.options:
       chmod = ["chmod", self.options['mode'].strip()]
       for fname in self.options['chmod'].split(','):
         chmod.append(fname.strip())
-    if self.options.has_key('script') and \
+    if 'script' in self.options and \
         self.options['script'].strip().endswith(".py"):
       data = ["run", self.options['script'].strip(), "-v", mysql_conf['mysql_database'], url, document_root]
     self.path_list.extend(zc.buildout.easy_install.scripts(
@@ -237,7 +236,7 @@ class Simple(BaseRecipe):
     if not renamed == "":
       connectionDict['rename'] = renamed
     self.setConnectionDict(connectionDict)
-    if self.options.has_key('template') and self.options.has_key('configuration'):
+    if 'template' in self.options and 'configuration' in self.options:
       self.createConfiguration(self.options['template'], document_root,
           self.options['configuration'], mysql_conf)
     return self.path_list

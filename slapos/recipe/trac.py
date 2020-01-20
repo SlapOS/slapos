@@ -32,6 +32,7 @@ import shutil
 import json
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+import six
 
 class Recipe(GenericBaseRecipe):
 
@@ -141,7 +142,7 @@ class Recipe(GenericBaseRecipe):
         self.logger.info("Finished initializing %s reposiroty" % svn_repo)
 
     repolist = json.loads(self.options.get('git-project-list', '{}'))
-    for repo, desc in repolist.iteritems():
+    for repo, desc in six.iteritems(repolist):
       absolute_path = os.path.join(self.options['git-dir'], '%s.git' % repo)
       if not os.path.exists(absolute_path):
         self.logger.info("Initializing %s GIT repository..." % repo)

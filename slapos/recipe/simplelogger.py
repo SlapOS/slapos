@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
 import sys
 import time
 
@@ -33,8 +34,8 @@ def log(filename):
   prefix = time.strftime('%Y-%m-%d.%H:%M.%s:')
   with open(filename, 'a') as logfile:
     for line in sys.stdin:
-      print >> logfile, prefix, line,
-    print >> logfile, prefix, '------------------------'
+      print(prefix, line, end=' ', file=logfile)
+    print(prefix, '------------------------', file=logfile)
 
 class Recipe(GenericBaseRecipe):
 

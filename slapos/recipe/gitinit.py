@@ -30,13 +30,14 @@ import os
 from subprocess import check_call
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+import six
 
 class Recipe(GenericBaseRecipe):
 
     def install(self):
 
         repolist = json.loads(self.options['repos'])
-        for repo, desc in repolist.iteritems():
+        for repo, desc in six.iteritems(repolist):
             absolute_path = os.path.join(self.options['base-directory'], '%s.git' % repo)
             if not os.path.exists(absolute_path):
                 check_call([self.options['git-binary'], 'init',

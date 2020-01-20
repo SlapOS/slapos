@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import os
 import pprint
 import re
@@ -215,7 +216,7 @@ Include conf/extra/httpd-autoindex.conf
         if not stat.S_ISFIFO(os.stat(fifo).st_mode):
           raise Exception("The file "+fifo+" exists but is not a FIFO.")
       else:
-        os.mkfifo(fifo, 0600)
+        os.mkfifo(fifo, 0o600)
 
     site_perl_bin = os.path.join(self.options['site_perl'], 'bin')
     mioga_conf_path = os.path.join(mioga_base, 'conf', 'Mioga.conf')
@@ -253,7 +254,7 @@ Include conf/extra/httpd-autoindex.conf
         pass
 
     os.chdir(former_directory)
-    print "Mioga instantiate.py::install finished!"
+    print("Mioga instantiate.py::install finished!")
     return path_list
 
 

@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import os
 import subprocess
 import time
@@ -40,7 +41,7 @@ def runProcess(args, file):
   return process.pid
 
 def launchScript(args):
-  print "Sleep for a few second..."
+  print("Sleep for a few second...")
   time.sleep(10)
   pid_list = []
   bg_pid = os.path.join(args['bg_base'], 'pid')
@@ -63,6 +64,6 @@ def launchScript(args):
       pid_list.append(runProcess(args, file))
 
   for pid in pid_list:
-    print "Parent waiting for process child: %s " % pid
+    print("Parent waiting for process child: %s " % pid)
     result = os.waitpid(pid, 0)
-    print "Done...", result
+    print("Done...", result)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import subprocess
 
 def executeRunner(arguments, delete, rename, chmod, data):
@@ -6,17 +7,17 @@ def executeRunner(arguments, delete, rename, chmod, data):
   exist into database.
   """
   if delete:
-    print "Calling lampconfigure with 'delete' arguments"
+    print("Calling lampconfigure with 'delete' arguments")
     subprocess.call(arguments + delete)
   if rename:
     for parameters in rename:
-      print "Calling lampconfigure with 'rename' arguments"
+      print("Calling lampconfigure with 'rename' arguments")
       subprocess.call(arguments + parameters)
   if chmod:
-    print "Calling lampconfigure with 'chmod' arguments"
+    print("Calling lampconfigure with 'chmod' arguments")
     subprocess.call(arguments + chmod)
   if data:
-    print "Calling lampconfigure with 'run' arguments"
-    print arguments + data
+    print("Calling lampconfigure with 'run' arguments")
+    print(arguments + data)
     subprocess.call(arguments + data)
 

@@ -1,4 +1,7 @@
 from __future__ import with_statement
+import six
+from six.moves import range
+from six.moves import zip
 
 "Core exceptions raised by the Redis client"
 
@@ -85,7 +88,7 @@ class PythonParser(object):
 
             # no length, read a full line
             return self._fp.readline()[:-2]
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             raise ConnectionError("Error while reading from socket: %s" % \
                 (e.args,))
 
@@ -110,7 +113,7 @@ class PythonParser(object):
             return response
         # int value
         elif byte == ':':
-            return long(response)
+            return int(response)
         # bulk response
         elif byte == '$':
             length = int(response)
@@ -123,7 +126,7 @@ class PythonParser(object):
             length = int(response)
             if length == -1:
                 return None
-            return [self.read_response() for i in xrange(length)]
+            return [self.read_response() for i in range(length)]
         raise InvalidResponse("Protocol Error")
 
 class HiredisParser(object):
@@ -151,7 +154,7 @@ class HiredisParser(object):
         while response is False:
             try:
                 buffer = self._sock.recv(4096)
-            except (socket.error, socket.timeout), e:
+            except (socket.error, socket.timeout) as e:
                 raise ConnectionError("Error while reading from socket: %s" % \
                     (e.args,))
             if not buffer:
@@ -197,7 +200,7 @@ class Connection(object):
             return
         try:
             sock = self._connect()
-        except socket.error, e:
+        except socket.error as e:
             raise ConnectionError(self._error_message(e))
 
         self._sock = sock
@@ -253,7 +256,7 @@ class Connection(object):
             self.connect()
         try:
             self._sock.sendall(command)
-        except socket.error, e:
+        except socket.error as e:
             self.disconnect()
             if len(e.args) == 1:
                 _errno, errmsg = 'UNKNOWN', e.args[0]
@@ -470,7 +473,7 @@ def zset_score_pairs(response, **options):
         return response
     score_cast_func = options.get('score_cast_func', float)
     it = iter(response)
-    return zip(it, imap(score_cast_func, it))
+    return list(zip(it, imap(score_cast_func, it)))
 
 def int_or_none(response):
     if response is None:
@@ -513,7 +516,7 @@ class StrictRedis(object):
         string_keys_to_dict(
             # these return OK, or int if redis-server is >=1.3.4
             'LPUSH RPUSH',
-            lambda r: isinstance(r, long) and r or r == 'OK'
+            lambda r: isinstance(r, int) and r or r == 'OK'
             ),
         string_keys_to_dict('ZSCORE ZINCRBY', float_or_none),
         string_keys_to_dict(
@@ -824,7 +827,7 @@ class StrictRedis(object):
     def mset(self, mapping):
         "Sets each key in the ``mapping`` dict to its corresponding value"
         items = []
-        for pair in mapping.iteritems():
+        for pair in six.iteritems(mapping):
             items.extend(pair)
         return self.execute_command('MSET', *items)
 
@@ -834,7 +837,7 @@ class StrictRedis(object):
         none of the keys are already set
         """
         items = []
-        for pair in mapping.iteritems():
+        for pair in six.iteritems(mapping):
             items.extend(pair)
         return self.execute_command('MSETNX', *items)
 
@@ -1218,7 +1221,7 @@ class StrictRedis(object):
                 raise RedisError("ZADD requires an equal number of "
                                  "values and scores")
             pieces.extend(args)
-        for pair in kwargs.iteritems():
+        for pair in six.iteritems(kwargs):
             pieces.append(pair[1])
             pieces.append(pair[0])
         return self.execute_command('ZADD', name, *pieces)
@@ -1383,7 +1386,7 @@ class StrictRedis(object):
     def _zaggregate(self, command, dest, keys, aggregate=None):
         pieces = [command, dest, len(keys)]
         if isinstance(keys, dict):
-            keys, weights = keys.keys(), keys.values()
+            keys, weights = list(keys.keys()), list(keys.values())
         else:
             weights = None
         pieces.extend(keys)
@@ -1446,7 +1449,7 @@ class StrictRedis(object):
         if not mapping:
             raise DataError("'hmset' with 'mapping' of length 0")
         items = []
-        for pair in mapping.iteritems():
+        for pair in six.iteritems(mapping):
             items.extend(pair)
         return self.execute_command('HMSET', name, *items)
 
@@ -1540,7 +1543,7 @@ class Redis(StrictRedis):
                 raise RedisError("ZADD requires an equal number of "
                                  "values and scores")
             pieces.extend(reversed(args))
-        for pair in kwargs.iteritems():
+        for pair in six.iteritems(kwargs):
             pieces.append(pair[1])
             pieces.append(pair[0])
         return self.execute_command('ZADD', name, *pieces)

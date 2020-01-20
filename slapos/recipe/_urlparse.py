@@ -24,7 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 

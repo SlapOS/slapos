@@ -34,6 +34,7 @@ import string, random
 import json
 import traceback
 from slapos import slap
+from six.moves import range
 
 class Recipe(GenericBaseRecipe):
   
@@ -154,7 +155,7 @@ class Recipe(GenericBaseRecipe):
     hash_path = os.path.join(self.options['conf-dir'], '%s-hash' % length)
     if not os.path.exists(hash_path):
       pool = string.letters + string.digits
-      hash_string = ''.join(random.choice(pool) for i in xrange(length))
+      hash_string = ''.join(random.choice(pool) for i in range(length))
       self.writeFile(hash_path, hash_string)
     else:
       hash_string = self.readFile(hash_path)

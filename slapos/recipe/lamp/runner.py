@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import subprocess
 
@@ -8,20 +9,20 @@ def executeRunner(args):
   """
   arguments, delete, rename, chmod, data = args
   if delete != []:
-    print "Calling lampconfigure with 'delete' arguments"
+    print("Calling lampconfigure with 'delete' arguments")
     result = subprocess.Popen(arguments + delete)
     result.wait()
   if rename != []:
     for parameters in rename:
-      print "Calling lampconfigure with 'rename' arguments"
+      print("Calling lampconfigure with 'rename' arguments")
       result = subprocess.Popen(arguments + parameters)
       result.wait()
   if chmod != []:
-    print "Calling lampconfigure with 'chmod' arguments"
+    print("Calling lampconfigure with 'chmod' arguments")
     result = subprocess.Popen(arguments + chmod)
     result.wait()
   if data != []:
-    print "Calling lampconfigure with 'run' arguments"
+    print("Calling lampconfigure with 'run' arguments")
     result = subprocess.Popen(arguments + data)
     result.wait()
     return

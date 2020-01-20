@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib
+import six.moves.http_client
 import logging
 import json
 import os
@@ -8,6 +8,7 @@ import slapos
 import traceback
 import logging
 from re6st import  registry
+import six
 
 log = logging.getLogger('SLAPOS-RE6STNET')
 logging.basicConfig(level=logging.INFO)
@@ -93,7 +94,7 @@ def requestRemoveToken(client, token_base_path):
       reference = reference_key.split('.')[0]
       try:
         result = client.deleteToken(token)
-      except httplib.NOT_FOUND:
+      except six.moves.http_client.NOT_FOUND:
         # Token is alread removed.
         result = True
       except Exception:
@@ -128,7 +129,7 @@ def checkService(client, token_base_path, token_json, computer_partition):
     return
 
   # Check token status
-  for slave_reference, token in token_dict.iteritems():
+  for slave_reference, token in six.iteritems(token_dict):
     log.info("%s %s" % (slave_reference, token))
     status_file = os.path.join(token_base_path, '%s.status' % slave_reference)
     if not os.path.exists(status_file):

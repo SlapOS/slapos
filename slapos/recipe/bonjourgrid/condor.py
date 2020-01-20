@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import os
 import sys
 import re
@@ -33,7 +34,7 @@ def updateCondorWrapper(folder, hostname, ipv6):
 
 def runCondor(config):
   if len(sys.argv) < 2:
-    print "Argument Error: uses %s hostname" % sys.argv[0]
+    print("Argument Error: uses %s hostname" % sys.argv[0])
     exit(1)
     
   hostname = sys.argv[1]

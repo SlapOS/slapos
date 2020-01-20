@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import time
@@ -10,7 +11,7 @@ def runApache(args):
     ready = True
     for f in conf.get('required_path_list', []):
       if not os.path.exists(f):
-        print 'File %r does not exists, sleeping for %s' % (f, sleep)
+        print('File %r does not exists, sleeping for %s' % (f, sleep))
         ready = False
     if ready:
       break

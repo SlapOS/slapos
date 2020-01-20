@@ -26,6 +26,7 @@
 ##############################################################################
 
 import os, subprocess, sys
+import six
 
 class Recipe:
 
@@ -41,7 +42,7 @@ class Recipe:
     # XXX-Antoine: We gotta find a better way to do this. I tried to check
     # out how slapgrid-cp was running buildout. But it is worse than that.
     args = sys.argv[:]
-    for x in self.buildout["slap-connection"].iteritems():
+    for x in six.iteritems(self.buildout["slap-connection"]):
       args.append("slap-connection:%s=%s" % x)
     for x in "directory", "eggs-directory", "develop-eggs-directory":
       args.append("buildout:%s=%s" % (x, self.buildout["buildout"][x]))

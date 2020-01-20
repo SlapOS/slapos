@@ -37,8 +37,8 @@ class NoSQLTestBed(BaseSlapRecipe):
   def _install(self):
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     try:
-      entry_point = pkg_resources.iter_entry_points(group='slapos.recipe.nosqltestbed.plugin',
-                                                    name=self.parameter_dict.get('plugin', 'kumo')).next()
+      entry_point = next(pkg_resources.iter_entry_points(group='slapos.recipe.nosqltestbed.plugin',
+                                                    name=self.parameter_dict.get('plugin', 'kumo')))
       plugin_class = entry_point.load()
 
       testbed = plugin_class()

@@ -27,6 +27,7 @@
 from functools import cmp_to_key
 import zc.buildout
 from slapos.recipe.librecipe import GenericBaseRecipe
+from six.moves import range
 
 @cmp_to_key
 def compareMimetypeEntryPair(a, b):

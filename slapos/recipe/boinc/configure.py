@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -34,6 +35,7 @@ import re
 import filecmp
 
 from lock_file import LockFile
+from six.moves import range
 
 def checkMysql(environment, connect_kw, file_status=None):
   sys.path += environment['PYTHONPATH'].split(':')
@@ -43,20 +45,20 @@ def checkMysql(environment, connect_kw, file_status=None):
     try:
       MySQLdb.connect(**connect_kw).close()
       break
-    except Exception, ex:
-      print "The result is: \n" + ex.message
-      print "Could not connect to MySQL database... sleep for 2 secondes"
+    except Exception as ex:
+      print("The result is: \n" + ex.message)
+      print("Could not connect to MySQL database... sleep for 2 secondes")
       time.sleep(2)
-  print "Successfully connect to MySQL database... "
+  print("Successfully connect to MySQL database... ")
   if file_status:
     writeFile(file_status, "starting")
 
 def checkFile(file, stime):
   """Loop until 'file' is created (exist)"""
   while True:
-    print "Search for file %s..." % file
+    print("Search for file %s..." % file)
     if not os.path.exists(file):
-      print "File not found... sleep for %s secondes" % stime
+      print("File not found... sleep for %s secondes" % stime)
       time.sleep(stime)
     else:
       break
@@ -69,22 +71,22 @@ def restart_boinc(args):
     checkFile(args['service_status'], 3)
   else:
     checkMysql(environment, args['mysql_dict'], args.get('file_status'))
-  print "Restart Boinc..."
+  print("Restart Boinc...")
   env = os.environ.copy()
   env.update(environment)
   subprocess.call((os.path.join(args['installroot'], 'bin', 'stop'),), env=env)
   subprocess.call((os.path.join(args['installroot'], 'bin', 'start'),), env=env)
   writeFile(args['start_boinc'], "started")
-  print "Done."
+  print("Done.")
 
 
 def check_installRequest(args):
-  print "Cheking if needed to install %s..." % args['appname']
+  print("Cheking if needed to install %s..." % args['appname'])
   install_request_file = os.path.join(args['home_dir'],
                   '.install_' + args['appname'] + args['version'])
   if not os.path.exists(install_request_file):
-    print "No install or update request for %s version %s..." % (
-                args['appname'], args['version'])
+    print("No install or update request for %s version %s..." % (
+                args['appname'], args['version']))
     return False
   os.unlink(install_request_file)
   return True
@@ -110,7 +112,7 @@ def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
               cwd=cwd)
   result = process.communicate()[0]
   if process.returncode is None or process.returncode != 0:
-    print "Failed to execute executable.\nThe error was: %s" % result
+    print("Failed to execute executable.\nThe error was: %s" % result)
     return False
   return True
 
@@ -118,39 +120,39 @@ def makeProject(make_sig, launch_args, request_file, extra_environ):
   """Run BOINC make_project script but once only"""
   #Wait for DateBase initialization...
   checkFile(make_sig, 3)
-  print "Cheking if needed to run BOINC make_project..."
+  print("Cheking if needed to run BOINC make_project...")
   if os.path.exists(request_file):
     env = os.environ.copy()
     env.update(extra_environ)
     if startProcess(launch_args, env=env):
       os.unlink(request_file)
-    print "Finished running BOINC make_projet...Ending"
+    print("Finished running BOINC make_projet...Ending")
   else:
-    print "No new request for make_project. Exiting..."
+    print("No new request for make_project. Exiting...")
 
 
 def services(args):
   """This function configure a new installed boinc project instance"""
-  print "Checking if needed to install or reinstall Boinc-server..."
+  print("Checking if needed to install or reinstall Boinc-server...")
   if not args['drop_install']:
-    print "Not need to install Boinc-server...skipped"
+    print("Not need to install Boinc-server...skipped")
     return
   #Sleep until file 'boinc_project'.readme exist
   checkFile(args['readme'], 3)
 
   topath = os.path.join(args['installroot'], 'html/ops/.htpasswd')
-  print "Generating .htpasswd file... File=%s" % topath
+  print("Generating .htpasswd file... File=%s" % topath)
   passwd = open(args['passwd'], 'r').read()
   htpwd_args = [args['htpasswd'], '-b', '-c', topath, args['username'], passwd]
   if not startProcess(htpwd_args):
     return
 
-  print "execute script xadd..."
+  print("execute script xadd...")
   env = os.environ.copy()
   env.update(args['environment'])
   if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
-  print "Update files and directories permissions..."
+  print("Update files and directories permissions...")
   upload = os.path.join(args['installroot'], 'upload')
   inc = os.path.join(args['installroot'], 'html/inc')
   languages = os.path.join(args['installroot'], 'html/languages')
@@ -171,7 +173,7 @@ def services(args):
   startProcess(sed_args)
 
   #Execute php create_forum.php...
-  print "Boinc Forum: Execute php create_forum.php..."
+  print("Boinc Forum: Execute php create_forum.php...")
   cwd = os.path.join(args['installroot'], 'html/ops')
   if not startProcess(["php", forum_file], env, cwd):
     return
@@ -180,11 +182,11 @@ def services(args):
 
 def deployApp(args):
   """Deploy Boinc App with lock"""
-  print "Asking to enter in execution with lock mode..."
+  print("Asking to enter in execution with lock mode...")
   with LockFile(args['lockfile'], wait=True):
-    print "acquire the lock file..."
+    print("acquire the lock file...")
     deployManagement(args)
-  print "Exit execution with lock..."
+  print("Exit execution with lock...")
 
 def deployManagement(args):
   """Fully deploy or redeploy or update a BOINC application using existing BOINC instance"""
@@ -195,8 +197,8 @@ def deployManagement(args):
   if os.path.exists(token):
     args['previous_wu'] = int(open(token, 'r').read().strip())
     if args['previous_wu'] < args['wu_number']:
-      print args['appname'] + " Work units will be updated from %s to %s" % (
-                args['previous_wu'], args['wu_number'])
+      print(args['appname'] + " Work units will be updated from %s to %s" % (
+                args['previous_wu'], args['wu_number']))
   else:
     args['previous_wu'] = 0
     newInstall = True
@@ -205,7 +207,7 @@ def deployManagement(args):
   env = os.environ.copy()
   env.update(args['environment'])
 
-  print "setup directories..."
+  print("setup directories...")
   numversion = args['version'].replace('.', '')
   args['inputfile'] = os.path.join(args['installroot'], 'download',
                         args['appname'] + numversion + '_input')
@@ -241,13 +243,13 @@ def deployManagement(args):
   findapp = re.search("<name>(%s)</name>" % args['appname'],
                 open(project_xml, 'r').read())
   if not findapp:
-    print "Adding '" + args['appname'] + "' to project.xml..."
-    print "Adding deamon for application to config.xml..."
+    print("Adding '" + args['appname'] + "' to project.xml...")
+    print("Adding deamon for application to config.xml...")
     sed_args = [args['bash'], args['appname'], args['installroot']]
     startProcess(sed_args)
 
   if signBin:
-    print "Sign the application binary..."
+    print("Sign the application binary...")
     sign = os.path.join(args['installroot'], 'bin/sign_executable')
     privateKeyFile = os.path.join(args['installroot'], 'keys/code_sign_private')
     output = open(binary + '.sig', 'w')
@@ -255,15 +257,15 @@ def deployManagement(args):
             stderr=subprocess.STDOUT, env=env)
     result = p_sign.communicate()[0]
     if p_sign.returncode is None or p_sign.returncode != 0:
-      print "Failed to execute bin/sign_executable.\nThe error was: %s" % result
+      print("Failed to execute bin/sign_executable.\nThe error was: %s" % result)
       return
     output.close()
 
-  print "execute script xadd..."
+  print("execute script xadd...")
 
   if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
-  print "Running script bin/update_versions..."
+  print("Running script bin/update_versions...")
   updt_version = os.path.join(args['installroot'], 'bin/update_versions')
   p_version = subprocess.Popen([updt_version], stdout=subprocess.PIPE,
           stderr=subprocess.STDOUT, stdin=subprocess.PIPE, env=env,
@@ -272,17 +274,17 @@ def deployManagement(args):
   result = p_version.communicate()[0]
   p_version.stdin.close()
   if p_version.returncode is None or p_version.returncode != 0:
-    print "Failed to execute bin/update_versions.\nThe error was: %s" % result
+    print("Failed to execute bin/update_versions.\nThe error was: %s" % result)
     return
 
-  print "Fill the database... calling bin/create_work..."
+  print("Fill the database... calling bin/create_work...")
   create_wu(args, env)
 
-  print "Restart Boinc..."
+  print("Restart Boinc...")
   subprocess.call((os.path.join(args['installroot'], 'bin', 'stop'),), env=env)
   subprocess.call((os.path.join(args['installroot'], 'bin', 'start'),), env=env)
 
-  print "Boinc Application deployment is done... writing end signal file..."
+  print("Boinc Application deployment is done... writing end signal file...")
   writeFile(token, str(args['wu_number']))
 
 
@@ -297,7 +299,7 @@ def create_wu(args, env):
         '--min_quorum', '1',  '--target_nresults', '1',
         args['appname'] + numversion + '_input']
   for i in range(args['previous_wu'], args['wu_number']):
-    print "Creating project wroker %s..." % str(i+1)
+    print("Creating project wroker %s..." % str(i+1))
     launch_args[4] = args['appname'] + str(i+1) + numversion + '_nodelete'
     startProcess(launch_args, env, args['installroot'])
 
@@ -311,7 +313,7 @@ def runCmd(base_cmd, cc_cmd, installdir, url, key):
   host = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
                 open(client_config, 'r').read()).group(1)
   base_cmd[2] = host + ':' + base_cmd[2]
-  print "Run boinccmd with host at %s " % base_cmd[2]
+  print("Run boinccmd with host at %s " % base_cmd[2])
   project_args = base_cmd + ['--project_attach', url, key]
   startProcess(project_args, cwd=installdir)
   if cc_cmd:

@@ -26,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import print_function
 import os
 from slapos import slap
 import signal
@@ -66,15 +67,15 @@ def runAccords(accords_conf):
   signal.signal(signal.SIGTERM, sigtermHandler)
 
   # Launch ACCORDS, parse & broke manifest to deploy instance
-  print 'Starting ACCORDS and friends...'
+  print('Starting ACCORDS and friends...')
   subprocess.check_call(['./co-start'],cwd=accords_location, env=environment)
-  print 'Parsing manifest...'
+  print('Parsing manifest...')
   subprocess.check_call(['./co-parser', manifest_name],
       cwd=accords_location, env=environment)
-  print 'Brokering manifest...'
+  print('Brokering manifest...')
   subprocess.check_call(['./co-broker', manifest_name],
       cwd=accords_location, env=environment)
-  print 'Done.'
+  print('Done.')
 
   # Parse answer
   # XXX

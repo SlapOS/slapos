@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import six
 
 class Recipe(GenericBaseRecipe):
   """
@@ -95,7 +96,7 @@ class Recipe(GenericBaseRecipe):
     # FIXME: maxconn must be provided per-backend, not globally
     maxconn = self.options['maxconn']
     i = 0
-    for name, (port, backend_list) in backend_dict.iteritems():
+    for name, (port, backend_list) in six.iteritems(backend_dict):
       server_snippet += self.substituteTemplate(
         listen_snippet_filename, {
           'name': name,

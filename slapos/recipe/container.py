@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import ConfigParser
+from six.moves import configparser
 import uuid
 import os
 import subprocess
@@ -47,7 +47,7 @@ class Recipe(GenericSlapRecipe):
         container_uuid = None
 
         if os.path.exists(config_filename):
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser()
             config.read(config_filename)
             if config.has_option('requested', 'name'):
                 container_uuid = uuid.UUID(hex=config.get('requested', 'name'))
@@ -68,7 +68,7 @@ class Recipe(GenericSlapRecipe):
 
         self.logger.info("Putting slapcontainer configuration file...")
 
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.add_section('requested')
         config.set('requested', 'status',
                    self.computer_partition.getState())

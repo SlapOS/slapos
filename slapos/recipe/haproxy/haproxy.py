@@ -1,4 +1,6 @@
+from __future__ import print_function
 import socket
+from six.moves import input
 try:
   import readline
 except ImportError:
@@ -7,9 +9,9 @@ except ImportError:
 def haproxyctl(socket_path):
   while True:
     try:
-      l = raw_input('> ')
+      l = input('> ')
     except EOFError:
-      print
+      print()
       break
     if l == 'quit':
       break
@@ -20,5 +22,5 @@ def haproxyctl(socket_path):
       r = s.recv(1024)
       if not r:
         break
-      print r
+      print(r)
     s.close()

@@ -54,8 +54,10 @@ class Recipe(GenericBaseRecipe):
     """Start process which can launch python scripts, move or remove files or
     directories when installing software.
     """
-    if not self.options.has_key('delete') and not self.options.has_key('rename') and not\
-        self.options.has_key('chmod') and not self.options.has_key('script') and not self.options.has_key('sql-script'):
+    for k in ['delete', 'rename', 'chmod', 'script', 'sql-script']:
+      if k in self.options:
+        break
+    else:
       return ""
     delete = []
     chmod = []
@@ -64,7 +66,7 @@ class Recipe(GenericBaseRecipe):
     rename_list = ""
     argument = [self.options['lampconfigure'], "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
                              "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user']]
-    if not self.options.has_key('file_token'):
+    if 'file_token' not in self.options:
       argument = argument + ["-d", mysql_conf['mysql_database'],
                              "--table", self.options['table_name'].strip(), "--cond",
                              self.options.get('constraint', '1').strip()]
@@ -72,11 +74,11 @@ class Recipe(GenericBaseRecipe):
       argument = argument + ["-f", self.options['file_token'].strip()]
     argument += ["-t", document_root]
 
-    if self.options.has_key('delete'):
+    if 'delete' in self.options:
       delete = ["delete"]
       for fname in self.options['delete'].split(','):
         delete.append(fname.strip())
-    if self.options.has_key('rename'):
+    if 'rename' in self.options:
       for fname in self.options['rename'].split(','):
         if fname.find("=>") < 0:
           old_name = fname
@@ -86,18 +88,18 @@ class Recipe(GenericBaseRecipe):
         else:
           fname = fname.split("=>")
         cmd = ["rename"]
-        if self.options.has_key('rename_chmod'):
+        if 'rename_chmod' in self.options:
           cmd += ["--chmod", self.options['rename_chmod'].strip()]
         rename.append(cmd + [fname[0].strip(), fname[1].strip()])
         rename_list += fname[0] + " to " + fname[1] + " "
-    if self.options.has_key('chmod'):
+    if 'chmod' in self.options:
       chmod = ["chmod", self.options['mode'].strip()]
       for fname in self.options['chmod'].split(','):
         chmod.append(fname.strip())
-    if self.options.has_key('script') and \
+    if 'script' in self.options and \
         self.options['script'].strip().endswith(".py"):
       data = ["run", self.options['script'].strip(), "-v", mysql_conf['mysql_database'], url, document_root]
-    if self.options.has_key('sql-script'):
+    if 'sql-script' in self.options:
       data = ["sql", self.options['sql-script'].strip(), "-v", mysql_conf['mysql_database'], url, document_root]
 
 

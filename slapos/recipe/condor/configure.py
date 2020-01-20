@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import os
 import subprocess
 import time
@@ -32,9 +33,9 @@ import time
 def submitJob(submit, submit_file, appdir, appname, sig_install):
   """Run condor_submit (if needed) for job deployment"""
   time.sleep(10)
-  print "Check if needed to submit %s job's" % appname
+  print("Check if needed to submit %s job's" % appname)
   if not os.path.exists(sig_install):
-    print "Nothing for install or update...Exited"
+    print("Nothing for install or update...Exited")
     return
   # '-a', "log = out.log", '-a', "error = error.log",
   launch_args = submit, '-verbose', submit_file
@@ -42,7 +43,7 @@ def submitJob(submit, submit_file, appdir, appname, sig_install):
               stderr=subprocess.STDOUT, cwd=appdir)
   result = process.communicate()[0]
   if process.returncode is None or process.returncode != 0:
-    print "Failed to execute condor_submit.\nThe error was: %s" % result
+    print("Failed to execute condor_submit.\nThe error was: %s" % result)
   else:
     os.unlink(sig_install)
 

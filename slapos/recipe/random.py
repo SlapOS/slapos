@@ -35,9 +35,11 @@ from __future__ import absolute_import
 import errno
 import os
 import random
+import six
 import string
 from .librecipe import GenericBaseRecipe
 from .publish_early import volatileOptions
+from six.moves import range
 
 class Integer(object):
   """
@@ -174,7 +176,10 @@ class Password(object):
       fd = os.open(self.storage_path,
         os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0o600)
       try:
-        os.write(fd, self.passwd)
+        passwd = self.passwd
+        if six.PY3 and type(passwd) is str:
+          passwd = passwd.encode('utf-8')
+        os.write(fd, passwd)
       finally:
         os.close(fd)
       if not self.create_once:

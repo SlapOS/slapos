@@ -8,6 +8,7 @@ from collections import defaultdict
 from inotify_simple import INotify, flags
 
 import six
+from six.moves import range
 
 def _wait_files_creation(file_list):
   # Establish a list of directory and subfiles.
@@ -66,7 +67,7 @@ def generic_exec(args, extra_environ=None, wait_list=None,
     else:
       # With chained shebangs, several paths may be inserted at the beginning.
       n = len(args)
-      for i in xrange(1+len(running)-n):
+      for i in range(1+len(running)-n):
         if args == running[i:n+i]:
           sys.exit("Already running with pid %s." % pid)
     with open(pidfile, 'w') as f:

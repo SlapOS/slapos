@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import os
 import sys
 import re
@@ -36,10 +37,10 @@ def createAccount(config, base_cmd):
 
 def runBoinc(config):
   if len(sys.argv) < 2:
-    print "Argument Error: uses %s project_url" % sys.argv[0]
+    print("Argument Error: uses %s project_url" % sys.argv[0])
     exit(1)
   if type(config) == type(""):
-    print "Error: bonjourgrid.xml parsing error, file not exist or corrupted"
+    print("Error: bonjourgrid.xml parsing error, file not exist or corrupted")
     exit(1)
   #XXX Using define values here for Boinc Master URL
   config['project_url'] = sys.argv[1]
@@ -53,7 +54,7 @@ def runBoinc(config):
   client_config = os.path.join(config['boinc_install_dir'], 'client_state.xml')
   while not os.path.exists(client_config):
     time.sleep(5)
-    print "Search for file '%r'..." % client_config
+    print("Search for file '%r'..." % client_config)
   time.sleep(10)
   try:
     #Scan client state xml to find client ipv4 adress
@@ -64,21 +65,21 @@ def runBoinc(config):
                 '--passwd', config['boinc_passwd']]
   
     #Create Account for current instance on BOINC master
-    print "Create account for current client..."
+    print("Create account for current client...")
     key = createAccount(config, base_cmd)
     config['key'] = key
-    print "Done. The account key is %s" % key
+    print("Done. The account key is %s" % key)
   
     #Attach project to Boinc Master
-    print "Attach client to Boinc Master at %s " % config['project_url']
+    print("Attach client to Boinc Master at %s " % config['project_url'])
     try:
       joinProject(config, base_cmd)
-    except Exception, e:
-      print e
-    print "Done! Waiting for Boinc Client now..."
-  except Exception, e:
+    except Exception as e:
+      print(e)
+    print("Done! Waiting for Boinc Client now...")
+  except Exception as e:
     #An error occure!!!
     os.kill(boinc.pid, signal.SIGTERM)
-    print e
+    print(e)
   #wait for Boinc client execution
   boinc.wait()

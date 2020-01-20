@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import subprocess
 import time
@@ -20,15 +21,15 @@ def runMysql(conf):
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=conf['cwd'])
       result = popen.communicate()[0]
       if popen.returncode is None or popen.returncode != 0:
-        print "Failed to initialise server.\nThe error was: %s" % result
-        print "Waiting for %ss and retrying" % sleep
+        print("Failed to initialise server.\nThe error was: %s" % result)
+        print("Waiting for %ss and retrying" % sleep)
         time.sleep(sleep)
       else:
-        print "Mysql properly initialised"
+        print("Mysql properly initialised")
         break
   else:
-    print "MySQL already initialised"
-  print "Starting %r" % mysqld_wrapper_list[0]
+    print("MySQL already initialised")
+  print("Starting %r" % mysqld_wrapper_list[0])
   sys.stdout.flush()
   sys.stderr.flush()
   os.execl(mysqld_wrapper_list[0], *mysqld_wrapper_list)
@@ -45,13 +46,13 @@ def updateMysql(conf):
       if mysql_upgrade.returncode is None:
         mysql_upgrade.kill()
       if mysql_upgrade.returncode != 0 and not 'is already upgraded' in result:
-        print "Command %r failed with result:\n%s" % (mysql_upgrade_list, result)
-        print 'Sleeping for %ss and retrying' % sleep
+        print("Command %r failed with result:\n%s" % (mysql_upgrade_list, result))
+        print('Sleeping for %ss and retrying' % sleep)
       else:
         if mysql_upgrade.returncode == 0:
-          print "MySQL database upgraded with result:\n%s" % result
+          print("MySQL database upgraded with result:\n%s" % result)
         else:
-          print "No need to upgrade MySQL database"
+          print("No need to upgrade MySQL database")
         mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root', '--socket=%s' % conf['socket']]
         mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -59,11 +60,11 @@ def updateMysql(conf):
         if mysql.returncode is None:
           mysql.kill()
         if mysql.returncode != 0:
-          print 'Command %r failed with:\n%s' % (mysql_list, result)
-          print 'Sleeping for %ss and retrying' % sleep
+          print('Command %r failed with:\n%s' % (mysql_list, result))
+          print('Sleeping for %ss and retrying' % sleep)
         else:
           is_succeed = True
-          print 'SlapOS initialisation script succesfully applied on database.'
+          print('SlapOS initialisation script succesfully applied on database.')
     sys.stdout.flush()
     sys.stderr.flush()
     time.sleep(sleep)
