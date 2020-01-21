@@ -184,18 +184,23 @@ extra-args=-t dsa
 <=ssh-keygen-base
 extra-args=-t ecdsa -b 521
 
-[ssh-key-fingerprint-command]
-recipe = plone.recipe.command
+[ssh-key-fingerprint-shelloutput]
+recipe = collective.recipe.shelloutput
 # recent openssh client display ECDSA key's fingerprint as SHA256
-command = ${openssh-output:keygen} -lf $${ssh-host-ecdsa-key:output}
+commands =
+  fingerprint = ${openssh-output:keygen} -lf $${ssh-host-ecdsa-key:output}
 
 [ssh-key-fingerprint]
-recipe = collective.recipe.shelloutput
-# XXX because collective.recipe.shelloutput ignore errors, we run the same
-# command in a plone.recipe.command so that if fails if something goes wrong.
-commands =
-  fingerprint = $${ssh-key-fingerprint-command:command}
-
+recipe = plone.recipe.command
+stop-on-error = true
+# XXX because collective.recipe.shelloutput ignore errors and capture output
+# "Error ...", we use a plone.recipe.command to check that this command did
+# not fail.
+# This command will always fail on first buildout run, because
+# collective.recipe.shelloutput is evaluated at buildout recipes __init__ step,
+# but the key file is created later at install step.
+command = echo "$${:fingerprint}" | ( grep ^Error || exit 0 && exit 1 )
+fingerprint = $${ssh-key-fingerprint-shelloutput:fingerprint}
 
 [sshd-config]
 recipe = slapos.recipe.template:jinja2
