@@ -41,7 +41,7 @@ config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}
 config-name = {{namebase}}0
 # Bubble up all the instance parameters to the requested export instance.
 {% if slapparameter_dict is defined %}
-{% for parameter_name, parameter_value in slapparameter_dict.items() %}
+{% for parameter_name, parameter_value in six.iteritems(slapparameter_dict) %}
 {% if parameter_value is string %}
 config-{{parameter_name}} = {{ parameter_value.split('\n') | join('\n  ') }}
 {% else %}
@@ -49,7 +49,7 @@ config-{{parameter_name}} = {{ parameter_value }}
 {% endif %}
 {% endfor %}
 {% endif %}
-{% for key, value in monitor_dict.iteritems() -%}
+{% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
 {% if sla_parameter_dict == {} -%}
@@ -67,7 +67,7 @@ sla-mode = unique_by_network
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
-{%   for key, value in sla_dict.iteritems() -%}
+{%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
 {%   endfor -%}
 {% endif -%}
@@ -101,7 +101,7 @@ config-number = {{id}}
 config-name = {{namebase}}{{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
-{% for key, value in monitor_dict.iteritems() -%}
+{% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
 {% if sla_parameter_dict == {} -%}
@@ -119,7 +119,7 @@ sla-mode = unique_by_network
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
-{%   for key, value in sla_dict.iteritems() -%}
+{%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
 {%   endfor -%}
 {% endif %}
@@ -202,7 +202,7 @@ software-type = pull-backup
 name = PBS ({{namebase}} / {{id}})
 config-ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
 config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
-{% for key, value in monitor_dict.iteritems() -%}
+{% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
 return = ssh-key notification-url feeds-url  {{ monitor_return }}
@@ -222,7 +222,7 @@ sla-mode = unique_by_network
 {%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
 {%     endif -%}
 {%   endfor -%}
-{%   for key, value in sla_dict.iteritems() -%}
+{%   for key, value in six.iteritems(sla_dict) -%}
 sla-{{ key }} = {{ value }}
 {%   endfor %}
 {% endif %}
