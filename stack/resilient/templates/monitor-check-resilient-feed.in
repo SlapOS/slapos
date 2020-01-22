@@ -1,7 +1,9 @@
 #!{{ python_executable }}
 
+from __future__ import print_function
 import os
-import urllib2
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 import sys
 
 input_feed_directory = '{{ input_feed_directory }}'
@@ -12,12 +14,12 @@ feed_file_list = os.listdir(input_feed_directory)
 rss_ok = True
 
 for feed_file_name in feed_file_list:
-  print "Getting %s" % feed_file_name
+  print("Getting %s" % feed_file_name)
   url = base_url + feed_file_name
   try:
-    feed = urllib2.urlopen(url)
+    feed = urlopen(url)
     body = feed.read()
     open(os.path.join(monitor_feed_directory, feed_file_name + '.rss'), 'w').write(body)
-    print "FEED is ok"
-  except urllib2.HTTPError as e:
+    print("FEED is ok")
+  except HTTPError as e:
     sys.exit("%s is unvailable: %s" % (feed_file_name, e))

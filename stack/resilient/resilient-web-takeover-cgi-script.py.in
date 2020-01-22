@@ -1,5 +1,6 @@
 #!${buildout:executable}
 
+from __future__ import print_function
 equeue_database = '${equeue:database}'
 equeue_lockfile = '${equeue:lockfile}'
 takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
@@ -8,7 +9,7 @@ import atexit
 import cgi
 import cgitb
 import datetime
-import gdbm
+import six.moves.dbm_gnu as dbm_gnu
 import os
 import shutil
 import subprocess
@@ -35,15 +36,16 @@ def getLatestBackupDate():
   atexit.register(deleteTemporaryDirectory, temporary_directory)
   equeue_database_copy = os.path.join(temporary_directory, 'equeue.db')
   shutil.copyfile(equeue_database, equeue_database_copy)
-  db = gdbm.open(equeue_database_copy)
+  db = dbm_gnu.open(equeue_database_copy)
   # Usually, there is only one callback (so only one key
   # in the db), but if there are several:
   # Take the "oldest" one (oldest value).
-  if not db.keys():
+  db_keys = list(db.keys())
+  if not db_keys:
     result = False
   else:
-    last_backup = db[db.keys()[-1]]
-    for callback in db.keys():
+    last_backup = db[db_keys[-1]]
+    for callback in db_keys:
       timestamp = float(db[callback])
       if timestamp < last_backup:
         last_backup = timestamp
@@ -79,12 +81,11 @@ if latest_backup_date == False:
 else:
   latest_backup_message = latest_backup_date.strftime('%Y-%m-%d %H:%M:%S')
 
-print "Content-Type: text/html"
-print
+print("Content-Type: text/html\n")
 
 form = cgi.FieldStorage()
 if "password" not in form:
-  print """<html>
+  print("""<html>
 <body>
   <h1>This is takeover web interface.</h1>
   <p>Calling takeover will stop and freeze the current main instance, and make this clone instance the new main instance, replacing the old one.</p>
@@ -100,15 +101,15 @@ if "password" not in form:
     <input type="submit" value="Take over" style="background: red;">
   </form>
 </body>
-</html>""" % (latest_backup_message, isBackupInProgress(), getSoftwareReleaseInformationFormatted())
+</html>""" % (latest_backup_message, isBackupInProgress(), getSoftwareReleaseInformationFormatted()))
   sys.exit(0)
 
 if form['password'].value != '${:password}':
-  print "<H1>Error</H1>"
-  print "Password is invalid."
+  print("<H1>Error</H1>")
+  print("Password is invalid.")
   sys.exit(1)
 
 # XXX hardcoded location
 result = subprocess.check_output([takeover_script], stderr=subprocess.STDOUT)
-print 'Success.'
-print '<pre>%s</pre>' % result
+print('Success.')
+print('<pre>%s</pre>' % result)

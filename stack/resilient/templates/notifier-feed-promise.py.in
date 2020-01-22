@@ -2,7 +2,8 @@
 import csv
 import os
 import sys
-import urllib2
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 
 csv.field_size_limit(sys.maxsize)
 
@@ -15,9 +16,9 @@ for feed_file_name in feed_file_list:
   url = base_url + feed_file_name
   # Try feed consistency
   try:
-    feed = urllib2.urlopen(url)
+    feed = urlopen(url)
     body = feed.read()
-  except urllib2.HTTPError as e:
+  except HTTPError as e:
     sys.exit("%s is unavailable: %s" % (feed_file_name, e))
   with open(os.path.join(notifier_feed_directory, feed_file_name)) as feed_file:
     reader = csv.reader(feed_file)
