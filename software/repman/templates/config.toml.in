@@ -1,0 +1,12 @@
+[Default]
+api-bind = "[{{service_ipv6}}]"
+http-bind-address = "[{{service_ipv6}}]"
+monitoring-save-config = true
+api-https-bind = true
+
+[cluster1]
+title = "cluster1"
+
+db-servers-hosts = "[2408:5180:0:43::d2a5]:3306,[2409:5180:0:43::d2a5]:3306"
+db-servers-prefered-master = "127.0.0.1:3310"
+db-servers-credential = "root:test"
