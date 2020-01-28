@@ -26,11 +26,11 @@ extends = {{ template_monitor }}
 # Always the same. Just copy/paste.
 # See docstring of slapos.cookbook:slapconfiguration for more information.
 recipe = slapos.cookbook:slapconfiguration
-computer = ${slap_connection:computer_id}
-partition = ${slap_connection:partition_id}
-url = ${slap_connection:server_url}
-key = ${slap_connection:key_file}
-cert = ${slap_connection:cert_file}
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
 
 # Define default parameter(s) that will be used later, in case user didn't
 # specify it.
