@@ -57,9 +57,6 @@ class SlapConfigParser(ConfigParser, object):
 
   def write(self, fp):
     """Write an .ini-format representation of the configuration state."""
-    if sys.version_info[0] > 2:
-      return super(SlapConfigParser, self).write(fp)
-
     regex = re.compile(r'^(.*)\s+([+-]{1})$')
     if self._defaults:
       fp.write("[%s]\n" % DEFAULTSECT)
