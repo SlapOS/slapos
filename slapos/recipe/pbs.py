@@ -46,7 +46,7 @@ def promise(ssh_client, user, host, port):
   with open(os.devnull) as _dev_null:
     ssh = subprocess.Popen(
         (ssh_client, '%s@%s' % (user, host), '-p', str(port)),
-        stdin=subprocess.PIPE, stdout=_dev_null)
+        stdin=subprocess.PIPE, stdout=_dev_null, universal_newlines=True)
   ssh.communicate('q' + chr(255) + chr(0) * 7)
   if ssh.returncode:
     sys.stderr.write("SSH Connection failed\n")

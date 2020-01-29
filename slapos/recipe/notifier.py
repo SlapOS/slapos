@@ -27,6 +27,7 @@
 import os
 from hashlib import sha512
 from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.util import str2bytes
 
 class Recipe(GenericBaseRecipe):
 
@@ -49,7 +50,7 @@ class Callback(GenericBaseRecipe):
     # XXX: hashing the name here and in
     # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
     # prevent any debug.
-    callback_id = sha512(notification_id).hexdigest()
+    callback_id = sha512(str2bytes(notification_id)).hexdigest()
 
     filepath = os.path.join(self.options['callbacks'], callback_id)
     self.addLineToFile(filepath, callback)
