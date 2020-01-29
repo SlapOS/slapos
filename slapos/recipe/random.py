@@ -38,6 +38,7 @@ import random
 import string
 from .librecipe import GenericBaseRecipe
 from .publish_early import volatileOptions
+from slapos.util import str2bytes
 
 class Integer(object):
   """
@@ -174,7 +175,7 @@ class Password(object):
       fd = os.open(self.storage_path,
         os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0o600)
       try:
-        os.write(fd, self.passwd)
+        os.write(fd, str2bytes(self.passwd))
       finally:
         os.close(fd)
       if not self.create_once:
