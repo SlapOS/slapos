@@ -19,7 +19,7 @@
 {% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 
 {% import 'parts' as parts %}
-{% import 'replicated' as replicated %}
+{% import 'replicated' as replicated with context %}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
