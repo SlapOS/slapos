@@ -28,7 +28,7 @@
 import os
 import sys
 import copy
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 import json
 import subprocess
 import slapos.slap
@@ -38,6 +38,7 @@ import errno
 import re
 
 import zc.buildout
+import six
 
 class SlapConfigParser(ConfigParser, object):
   """ 
@@ -135,9 +136,9 @@ class Recipe:
     for name, ip in self.parameter_dict['ip_list']:
       if name:
         return name
-    raise AttributeError, "Not network interface found"
+    raise AttributeError("Not network interface found")
   
-  def mkdir_p(self, path, mode=0700):
+  def mkdir_p(self, path, mode=0o700):
     """
     Creates a directory and its parents, if needed.
     NB: If the directory already exists, it does not change its permission.
@@ -190,7 +191,10 @@ class Recipe:
       raise zc.buildout.UserError("The specified buildout config file %r does "
                                   "not exist." % instance_file_path)
 
-    buildout = SlapConfigParser()
+    try:
+      buildout = SlapConfigParser(strict=False)
+    except TypeError:
+      buildout = SlapConfigParser()
     with open(instance_file_path) as instance_path:
       buildout.readfp(instance_path)
 
@@ -228,7 +232,7 @@ class Recipe:
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
-    for key, value in self.buildout['slap_connection'].iteritems():
+    for key, value in six.iteritems(self.buildout['slap_connection']):
       # XXX: Waiting for SlapBaseRecipe to use dash instead of underscores
       buildout.set('slap-connection', key.replace('_', '-'), value)
     # XXX: Needed for lxc. Use non standard API
