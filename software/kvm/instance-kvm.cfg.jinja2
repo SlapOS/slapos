@@ -88,6 +88,7 @@ nbd2-host = ${slap-parameter:nbd2-host}
 nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = {{ slap_configuration.get('tap-name', '') }}
+tap-ipv6-addr = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
@@ -532,7 +533,7 @@ key_info = Get the publick key file in your VM with the command: wget {{ kvm_htt
 
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
 ipv4-network-info =
-  Use this configuration in /etc/network/interfaces to configure IPv4 on interface {{ iface }} in your VM.
+  PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
   iface {{ iface }} inet static
   	address {{ slap_configuration.get('tap-ipv4-addr') }}
@@ -540,13 +541,14 @@ ipv4-network-info =
   	gateway {{ slap_configuration.get('tap-ipv4-gateway') }}
 {% if enable_http == 'true' %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -
+  TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -"
+  (the configuration will be gone after the next reboot)
 {% endif %}
 {% endif %}
 
 ipv6-network-info =
 {% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr') %}
-  Use this configuration in /etc/network/interfaces to configure IPv6 on interface {{ iface }} in your VM.
+  PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
   iface {{ iface }} inet6 static
   	address {{ slap_configuration.get('tap-ipv6-gateway') }}
@@ -554,7 +556,8 @@ ipv6-network-info =
   	gateway {{ slap_configuration.get('tap-ipv6-addr') }}
 {% if enable_http == 'true' %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -
+  TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -"
+  (the configuration will be gone after the next reboot)
 {% endif %}
 {% endif %}
 
@@ -820,6 +823,14 @@ template = inline:
 rendered = ${buildout:directory}/.slapos-disk-permission
 context =
   raw disk_device_path {{disk_device_path}}
+
+{%   do part_list.append('wipe-disk-device-wrapper') -%}
+[wipe-disk-device-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
+command-line =
+  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
+
 {% endif -%}
 
 [buildout]

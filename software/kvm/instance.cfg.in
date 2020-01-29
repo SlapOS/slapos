@@ -12,7 +12,7 @@ recipe = slapos.cookbook:softwaretype
 default = $${:kvm}
 kvm-cluster = $${dynamic-template-kvm-cluster:rendered}
 kvm = $${dynamic-template-kvm:rendered}
-nbd = ${template-nbd:output}
+nbd = $${dynamic-template-nbd:rendered}
 
 kvm-resilient = $${dynamic-template-kvm-resilient:rendered}
 kvm-import = $${dynamic-template-kvm-import:rendered}
@@ -149,3 +149,16 @@ context =
     raw gzip_binary ${gzip:location}/bin/gzip
 mode = 0644
 
+[dynamic-template-nbd]
+<= jinja2-template-base
+template = ${template-nbd:location}/instance-nbd.cfg.jinja2
+filename = template-nbd.cfg
+context =
+  section slap_configuration slap-configuration
+  key slapparameter_dict slap-configuration:configuration
+  key eggs_directory buildout:eggs-directory
+  key develop_eggs_directory buildout:develop-eggs-directory
+  raw qemu_nbd_executable_location ${kvm:location}/bin/qemu-nbd
+  raw dash_executable_location ${dash:location}/bin/dash
+  raw onetimeupload_executable_location ${buildout:bin-directory}/onetimeupload
+  raw template_monitor ${monitor2-template:rendered}

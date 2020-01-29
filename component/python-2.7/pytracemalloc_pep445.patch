@@ -492,7 +492,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  #ifdef WITH_PYMALLOC
  
  #ifdef HAVE_MMAP
-@@ -214,7 +489,7 @@
+@@ -220,7 +495,7 @@
   * Arenas are allocated with mmap() on systems supporting anonymous memory
   * mappings to reduce heap fragmentation.
   */
@@ -501,7 +501,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  
  #ifdef WITH_MEMORY_LIMITS
  #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
-@@ -581,7 +856,7 @@
+@@ -587,7 +862,7 @@
              return NULL;                /* overflow */
  #endif
          nbytes = numarenas * sizeof(*arenas);
@@ -510,7 +510,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
          if (arenaobj == NULL)
              return NULL;
          arenas = arenaobj;
-@@ -785,9 +1060,8 @@
+@@ -791,9 +1066,8 @@
   * Unless the optimizer reorders everything, being too smart...
   */
  
@@ -522,7 +522,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  {
      block *bp;
      poolp pool;
-@@ -802,15 +1076,6 @@
+@@ -808,15 +1082,6 @@
  #endif
  
      /*
@@ -538,7 +538,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
       * This implicitly redirects malloc(0).
       */
      if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
-@@ -981,17 +1246,13 @@
+@@ -987,17 +1252,13 @@
       * last chance to serve the request) or when the max memory limit
       * has been reached.
       */
@@ -559,7 +559,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  {
      poolp pool;
      block *lastfree;
-@@ -1211,7 +1472,7 @@
+@@ -1217,7 +1478,7 @@
  redirect:
  #endif
      /* We didn't allocate this address. */
@@ -568,7 +568,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  }
  
  /* realloc.  If p is NULL, this acts like malloc(nbytes).  Else if nbytes==0,
-@@ -1219,10 +1480,8 @@
+@@ -1225,10 +1486,8 @@
   * return a non-NULL result.
   */
  
@@ -581,7 +581,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  {
      void *bp;
      poolp pool;
-@@ -1232,16 +1491,7 @@
+@@ -1238,16 +1497,7 @@
  #endif
  
      if (p == NULL)
@@ -599,7 +599,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  
  #ifdef WITH_VALGRIND
      /* Treat running_on_valgrind == -1 the same as 0 */
-@@ -1269,10 +1519,10 @@
+@@ -1275,10 +1525,10 @@
              }
              size = nbytes;
          }
@@ -612,7 +612,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
          }
          return bp;
      }
-@@ -1290,40 +1540,17 @@
+@@ -1296,40 +1546,17 @@
       * at p.  Instead we punt:  let C continue to manage this block.
       */
      if (nbytes)
@@ -655,7 +655,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  #endif /* WITH_PYMALLOC */
  
  #ifdef PYMALLOC_DEBUG
-@@ -1343,10 +1570,6 @@
+@@ -1349,10 +1576,6 @@
  #define DEADBYTE       0xDB    /* dead (newly freed) memory */
  #define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
  
@@ -666,7 +666,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
  
  /* serialno is always incremented via calling this routine.  The point is
-@@ -1429,58 +1652,18 @@
+@@ -1467,58 +1690,18 @@
  p[2*S+n: 2*S+n+S]
      Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
  p[2*S+n+S: 2*S+n+2*S]
@@ -722,7 +722,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
 -
 -/* generic debug memory api, with an "id" to identify the API in use */
 -void *
--_PyObject_DebugMallocApi(char id, size_t nbytes)
+-_PyObject_DebugMallocApi(char api, size_t nbytes)
 +static void *
 +_PyMem_DebugMallocCtx(void *ctx, size_t nbytes)
  {
@@ -730,25 +730,27 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
      uchar *p;           /* base address of malloc'ed block */
      uchar *tail;        /* p + 2*SST + nbytes == pointer to tail pad bytes */
      size_t total;       /* nbytes + 4*SST */
-@@ -1491,14 +1674,14 @@
-         /* overflow:  can't represent total as a size_t */
+@@ -1530,7 +1713,7 @@
          return NULL;
  
--    p = (uchar *)PyObject_Malloc(total);
-+    p = (uchar *)api->alloc.malloc(api->alloc.ctx, total);
-     if (p == NULL)
-         return NULL;
+     if (api == _PYMALLOC_OBJ_ID) {
+-        p = (uchar *)PyObject_Malloc(total);
++        p = (uchar *)api->alloc.malloc(api->alloc.ctx, total);
+     }
+     else {
+         p = (uchar *)_PyMem_Malloc(total);
+@@ -1540,8 +1723,8 @@
  
-     /* at p, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
+     /* at p, write size (SST bytes), api (1 byte), pad (SST-1 bytes) */
      write_size_t(p, nbytes);
--    p[SST] = (uchar)id;
+-    p[SST] = (uchar)api;
 -    memset(p + SST + 1 , FORBIDDENBYTE, SST-1);
 +    p[SST] = (uchar)api->api_id;
 +    memset(p + SST + 1, FORBIDDENBYTE, SST-1);
  
      if (nbytes > 0)
          memset(p + 2*SST, CLEANBYTE, nbytes);
-@@ -1516,35 +1699,37 @@
+@@ -1559,40 +1742,42 @@
     Then fills the original bytes with DEADBYTE.
     Then calls the underlying free.
  */
@@ -769,8 +771,13 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
      nbytes += 4*SST;
      if (nbytes > 0)
          memset(q, DEADBYTE, nbytes);
--    PyObject_Free(q);
-+    api->alloc.free(api->alloc.ctx, q);
+     if (api == _PYMALLOC_OBJ_ID) {
+-        PyObject_Free(q);
++        api->alloc.free(api->alloc.ctx, q);
+     }
+     else {
+         _PyMem_Free(q);
+     }
  }
  
 -void *
@@ -795,7 +802,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
      bumpserialno();
      original_nbytes = read_size_t(q - 2*SST);
      total = nbytes + 4*SST;
-@@ -1552,16 +1737,12 @@
+@@ -1600,17 +1785,13 @@
          /* overflow:  can't represent total as a size_t */
          return NULL;
  
@@ -808,13 +815,14 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
       * case we didn't get the chance to mark the old memory with DEADBYTE,
       * but we live with that.
       */
--    q = (uchar *)PyObject_Realloc(q - 2*SST, total);
-+    oldq = q;
-+    q = (uchar *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
-     if (q == NULL) {
-         if (nbytes <= original_nbytes) {
-             /* bpo-31626: the memset() above expects that realloc never fails
-@@ -1571,11 +1752,17 @@
+     if (api == _PYMALLOC_OBJ_ID) {
+-        q = (uchar *)PyObject_Realloc(q - 2*SST, total);
++        oldq = q;
++        q = (uchar *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
+     }
+     else {
+         q = (uchar *)_PyMem_Realloc(q - 2*SST, total);
+@@ -1624,11 +1805,17 @@
          return NULL;
      }
  
@@ -833,7 +841,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
      tail = q + nbytes;
      memset(tail, FORBIDDENBYTE, SST);
      write_size_t(tail + SST, serialno);
-@@ -1594,8 +1781,8 @@
+@@ -1647,8 +1834,8 @@
   * and call Py_FatalError to kill the program.
   * The API id, is also checked.
   */
@@ -844,7 +852,7 @@ diff -Naru a/Objects/obmalloc.c b/Objects/obmalloc.c
  {
      const uchar *q = (const uchar *)p;
      char msgbuf[64];
-@@ -1941,3 +2128,44 @@
+@@ -1994,3 +2181,44 @@
             arenas[arenaindex_temp].address != 0;
  }
  #endif

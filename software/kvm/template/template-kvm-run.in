@@ -44,6 +44,7 @@ tap_interface = '{{ parameter_dict.get("tap-interface") }}'
 listen_ip = '{{ parameter_dict.get("ipv4") }}'
 mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
+tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
 numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
 ram_size = {{ parameter_dict.get("ram-size") }}
 ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
@@ -278,6 +279,8 @@ if use_nat == 'true':
                                            cluster_doc_host, cluster_doc_port)
   if set_nat_restrict == 'true':
     rules += ',restrict=on'
+  if use_tap == 'true' and tap_ipv6_addr != '':
+    rules += ',ipv6=off'
   nat_network_parameter = ['-netdev', rules,
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, mac_address)]
 if use_tap == 'true':

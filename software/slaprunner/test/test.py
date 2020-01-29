@@ -246,7 +246,6 @@ class ServicesTestCase(SlaprunnerTestCase):
     ]
     expected_process_names = [
       'slaprunner-supervisord-{hash}-on-watch',
-      'runner-sshkeys-authority-{hash}-on-watch',
       'runner-sshd-{hash}-on-watch',
       'slaprunner-httpd-{hash}-on-watch',
       'gunicorn-{hash}-on-watch',
@@ -297,3 +296,19 @@ class TestInstanceResilient(SlaprunnerTestCase):
         'takeover-runner-1-url',
         'url',
         'webdav-url']))
+
+
+class TestCustomFrontend(SlaprunnerTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'custom-frontend-backend-url': 'https://www.erp5.com',
+      'custom-frontend-backend-type': 'redirect',
+    }
+
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    # slapproxy returns the backend URL when requesting a slave frontend
+    self.assertEqual(
+      parameter_dict['custom-frontend-url'],
+      'https://www.erp5.com')

@@ -4,9 +4,7 @@
   "additionalProperties": false,
   "definitions": {
     "tcpv4port": {
-      "minimum": 0,
-      "maximum": 65535,
-      "type": "integer"
+      "$ref": "./schemas-definitions.json#/tcpv4port"
     }
   },
   "properties": {
@@ -194,16 +192,34 @@
     },
     "kumofs": {
       "description": "Persistent memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2000
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "memcached": {
       "description": "Volatile memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "cloudooo-url": {
@@ -218,16 +234,34 @@
     },
     "smtp": {
       "description": "Mail queuing and relay service",
-      "additionalProperties": {
-        "$ref": "./instance-smtp-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-smtp-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "mariadb": {
       "description": "Relational database service",
-      "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-mariadb-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2099
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "zodb-zeo": {
@@ -257,7 +291,7 @@
       "type": "object"
     },
     "zodb": {
-      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/4/src/ZODB/component.xml for extra options.",
       "items": {
         "required": [
           "type"
@@ -282,8 +316,13 @@
                 "type": "boolean"
               }
             },
+            "patternProperties": {
+              ".!$": {
+                "$ref": "#/properties/zodb/items/patternProperties/.!$"
+              }
+            },
             "additionalProperties": {
-              "type": "string"
+              "$ref": "#/properties/zodb/items/additionalProperties"
             },
             "type": "object"
           },
@@ -313,13 +352,38 @@
               },
               "server": {
                 "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. Partitions references are 'neo-0', 'neo-1', ...",
-                "$ref": "../neoppod/instance-neo-input-schema.json"
+                "$ref": "../neoppod/instance-neo-input-schema.json#/definitions/neo-cluster"
               }
             }
           }
         ],
+        "patternProperties": {
+          ".!$": {
+            "description": "Override with the value of the first item whose zope id matches against the pattern.",
+            "items": {
+              "items": [
+                {
+                  "description": "Override pattern (Python regular expression).",
+                  "type": "string"
+                },
+                {
+                  "description": "Override value (parameter for maching nodes).",
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
         "additionalProperties": {
-          "type": "string"
+          "type": [
+            "integer",
+            "string"
+          ]
         },
         "type": "object"
       },
