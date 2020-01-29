@@ -30,6 +30,7 @@ from six.moves import configparser
 import tempfile
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.util import str2bytes
 from .certificate_authority import popenCommunicate
 
 class Recipe(GenericBaseRecipe):
@@ -108,7 +109,7 @@ class Request(Recipe):
     request_needed = True
 
     name = self.options['name']
-    hash_ = hashlib.sha512(name).hexdigest()
+    hash_ = hashlib.sha512(str2bytes(name)).hexdigest()
     key = os.path.join(self.ca_private, hash_ + self.ca_key_ext)
     certificate = os.path.join(self.ca_certs, hash_ + self.ca_crt_ext)
 

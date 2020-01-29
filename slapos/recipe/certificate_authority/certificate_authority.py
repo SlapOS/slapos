@@ -8,7 +8,8 @@ import uuid
 
 
 def popenCommunicate(command_list, input=None):
-  subprocess_kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  subprocess_kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       universal_newlines=True)
   if input is not None:
     subprocess_kw.update(stdin=subprocess.PIPE)
   popen = subprocess.Popen(command_list, **subprocess_kw)

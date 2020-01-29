@@ -29,6 +29,7 @@ from six.moves import configparser
 import os
 import netaddr
 import socket
+from six.moves import range
 
 class Recipe(object):
   """
@@ -89,7 +90,7 @@ class Recipe(object):
     This algorithm thus returns always the same value with the same parameters in
     a standard environment.
     """
-    for port in xrange(self.minimum, self.maximum):
+    for port in range(self.minimum, self.maximum):
       sock = socket.socket(self.inet_family, socket.SOCK_STREAM)
       try:
         sock.bind((self.ip, port))
