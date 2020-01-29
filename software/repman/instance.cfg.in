@@ -30,20 +30,22 @@ offline = true
 # Always the same. Just copy/paste.
 # See docstring of slapos.cookbook:slapconfiguration for more information.
 recipe = slapos.cookbook:slapconfiguration
-computer = $${slap_connection:computer_id}
-partition = $${slap_connection:partition_id}
-url = $${slap_connection:server_url}
-key = $${slap_connection:key_file}
-cert = $${slap_connection:cert_file}
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
 
-# Define default parameter(s) that will be used later, in case user didn't
-# specify it.
-# All possible parameters should have a default.
-# In our use case, we are expecting from the user to specify one (optional) parameter: "name". We put the default value here if he doesn't specify it, so that it doesn't crash.
-configuration.name = John Doe
-# If our use case requires that the user can specify a mail address so that his instance can mail to him (for example), we can do:
-# configuration.mail-address =
-# If the user doesn't specify it, it won't break and the recipe can handle it (i.e don't send any mail for example).
+
+[slap-configuration]
+# apache-frontend reads from  a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
 
 
 # Create all needed directories, depending on your needs
@@ -62,6 +64,11 @@ promise = $${:etc}/promise/
 # Path of the log directory used by our service (see [helloweb])
 log = $${:var}/log
 data = $${:var}/lib
+
+[replication-manager-credential]
+recipe = slapos.cookbook:generate.password
+username = admin
+bytes = 12
 
 [replication-manager]
 # repman service is listening on:
@@ -83,7 +90,7 @@ logfile = $${directory:log}/repman.log
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line =
-  software_release/go.work/bin/replication-manager --monitoring-save-config=true --monitoring-basedir=system --monitoring-sharedir=software_release/src/share --http-root=software_release/src/dashboard --monitoring-datadir=$${directory:var}/lib --config=$${directory:etc}/config.toml --log-file=$${:logfile} monitor
+   ${gowork:bin}/replication-manager  --monitoring-basedir=system --monitoring-sharedir=software_release/src/share --http-root=software_release/src/dashboard --monitoring-datadir=$${directory:var}/lib --config=$${directory:etc}/config.toml --log-file=$${:logfile} monitor
 
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
@@ -99,7 +106,10 @@ recipe = slapos.recipe.template:jinja2
 template = ${download-config-toml:destination}
 rendered =$${directory:etc}/config.toml
 extra-context =
-context = key service_ipv6 replication-manager:ipv6
+context =
+  key service_ipv6 replication-manager:ipv6
+  key service_user replication-manager-credential:username
+  key service_pwd replication-manager-credential:passwd
 # promise, that checks that helloweb service is alive
 [repman-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -113,5 +123,6 @@ port    = 10005
 # Here we'll just echo back the entered name as instance parameter
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-name = Hello $${instance-parameter:configuration.name}!
 url = $${replication-manager:url}
+username = $${replication-manager-credential:username}
+password = $${replication-manager-credential:passwd}
