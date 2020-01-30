@@ -823,6 +823,14 @@ template = inline:
 rendered = ${buildout:directory}/.slapos-disk-permission
 context =
   raw disk_device_path {{disk_device_path}}
+
+{%   do part_list.append('wipe-disk-device-wrapper') -%}
+[wipe-disk-device-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
+command-line =
+  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
+
 {% endif -%}
 
 [buildout]
