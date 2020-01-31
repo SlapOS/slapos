@@ -36,8 +36,14 @@ long_description = open("README.rst").read() + "\n" + \
 for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'
 
-# extras_requires are not used because of
-#   https://bugs.launchpad.net/zc.buildout/+bug/85604
+
+extras_require = {
+    'test': [
+        'jsonschema',
+        'mock',
+        'testfixtures']}
+
+
 setup(name=name,
       version=version,
       description="SlapOS recipes.",
@@ -201,10 +207,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
+      extras_require=extras_require,
       test_suite='slapos.test',
-      tests_require=[
-        'jsonschema',
-        'mock',
-        'testfixtures',
-      ],
+      tests_require=extras_require['test'],
     )
