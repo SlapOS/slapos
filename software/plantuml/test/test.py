@@ -37,6 +37,7 @@ import plantuml
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from six.moves import zip
 
 
 setUpModule, PlantUMLTestCase = makeModuleSetUpAndTestCaseClass(
@@ -56,7 +57,7 @@ class TestSimpleDiagram(PlantUMLTestCase):
     """Assert images difference between images is less than `tolerance` %.
    taken from https://rosettacode.org/wiki/Percentage_difference_between_images
     """
-    pairs = zip(i1.getdata(), i2.getdata())
+    pairs = list(zip(i1.getdata(), i2.getdata()))
     if len(i1.getbands()) == 1:
       # for gray-scale jpegs
       dif = sum(abs(p1-p2) for p1,p2 in pairs)
