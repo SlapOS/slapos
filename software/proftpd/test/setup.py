@@ -48,6 +48,7 @@ setup(
         'pysftp',
         'supervisor',
         'psutil',
+        'six',
     ],
     zip_safe=True,
     test_suite='test',

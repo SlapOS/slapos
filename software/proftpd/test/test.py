@@ -25,11 +25,12 @@
 #
 ##############################################################################
 
+from __future__ import unicode_literals
 import os
 import shutil
-import urlparse
+import six.moves.urllib.parse as urlparse
 import tempfile
-import StringIO
+import io
 import subprocess
 
 import pysftp
@@ -39,6 +40,7 @@ from paramiko.ssh_exception import AuthenticationException
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
+
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -117,14 +119,14 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_uploaded_file_not_visible_until_fully_uploaded(self):
     test_self = self
 
-    class PartialFile(StringIO.StringIO):
+    class PartialFile(io.StringIO):
       def read(self, *args):
         # file is not visible yet
         test_self.assertNotIn('destination', os.listdir(test_self.upload_dir))
         # it's just a hidden file
         test_self.assertEqual(
             ['.in.destination.'], os.listdir(test_self.upload_dir))
-        return StringIO.StringIO.read(self, *args)
+        return io.StringIO.read(self, *args)
 
     with self._getConnection() as sftp:
       sftp.sftp_client.putfo(PartialFile("content"), "destination")
@@ -136,7 +138,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     test_self = self
     with self._getConnection() as sftp:
 
-      class ErrorFile(StringIO.StringIO):
+      class ErrorFile(io.StringIO):
         def read(self, *args):
           # at this point, file is already created on server
           test_self.assertEqual(
@@ -152,18 +154,18 @@ class TestSFTPOperations(ProFTPdTestCase):
 
   def test_user_cannot_escape_home(self):
     with self._getConnection() as sftp:
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('..')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('/')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('/tmp/')
 
 
 class TestUserManagement(ProFTPdTestCase):
   def test_user_can_be_added_from_script(self):
-    with self.assertRaisesRegexp(AuthenticationException,
-                                 'Authentication failed'):
+    with self.assertRaisesRegex(
+        AuthenticationException, 'Authentication failed'):
       self._getConnection(username='bob', password='secret')
 
     subprocess.check_call(
@@ -176,13 +178,13 @@ class TestUserManagement(ProFTPdTestCase):
 class TestBan(ProFTPdTestCase):
   def test_client_are_banned_after_5_wrong_passwords(self):
     # Simulate failed 5 login attempts
-    for i in range(5):
-      with self.assertRaisesRegexp(AuthenticationException,
-                                   'Authentication failed'):
+    for _ in range(5):
+      with self.assertRaisesRegex(
+          AuthenticationException, 'Authentication failed'):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
-    with self.assertRaisesRegexp(SSHException, 'Connection reset by peer'):
+    with self.assertRaisesRegex(SSHException, 'Connection reset by peer'):
       self._getConnection()
 
     # ban event is logged
@@ -190,7 +192,7 @@ class TestBan(ProFTPdTestCase):
                            'var',
                            'log',
                            'proftpd-ban.log')) as ban_log_file:
-      self.assertRegexpMatches(
+      self.assertRegex(
           ban_log_file.readlines()[-1],
           'login from host .* denied due to host ban')
 
