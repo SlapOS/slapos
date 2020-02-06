@@ -97,7 +97,7 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_simple_sftp_session(self) -> None:
     with self._getConnection() as sftp:
       # put a file
-      with tempfile.NamedTemporaryFile() as f:
+      with tempfile.NamedTemporaryFile(mode="w") as f:
         f.write("Hello FTP !")
         f.flush()
         sftp.put(f.name, remotepath='testfile')
