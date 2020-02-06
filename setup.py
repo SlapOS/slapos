@@ -61,7 +61,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34',  # for inotify-simple
+        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
