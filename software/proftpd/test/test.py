@@ -41,14 +41,15 @@ from paramiko.ssh_exception import AuthenticationException
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 
+from typing import Dict
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class ProFTPdTestCase(SlapOSInstanceTestCase):
-  def _getConnection(self, username=None, password=None, hostname=None):
+class ProFTPdTestCase(SlapOSInstanceTestCase): # type: ignore
+  def _getConnection(self, username:str=None, password:str=None, hostname:str=None) -> pysftp.Connection:
     """Returns a pysftp connection connected to the SFTP
 
     username and password can be specified and default to the ones from
@@ -58,7 +59,6 @@ class ProFTPdTestCase(SlapOSInstanceTestCase):
     # this tells paramiko not to verify host key
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
-
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     sftp_url = urlparse.urlparse(parameter_dict['url'])
 
@@ -71,10 +71,10 @@ class ProFTPdTestCase(SlapOSInstanceTestCase):
 
 
 class TestSFTPListen(ProFTPdTestCase):
-  def test_listen_on_ipv4(self):
+  def test_listen_on_ipv4(self) -> None:
     self.assertTrue(self._getConnection(hostname=self._ipv4_address))
 
-  def test_does_not_listen_on_all_ip(self):
+  def test_does_not_listen_on_all_ip(self) -> None:
     with self.assertRaises(SSHException):
       self._getConnection(hostname='0.0.0.0')
 
@@ -82,11 +82,11 @@ class TestSFTPListen(ProFTPdTestCase):
 class TestSFTPOperations(ProFTPdTestCase):
   """Tests upload / download features we expect in SFTP server.
   """
-  def setUp(self):
+  def setUp(self) -> None:
     self.upload_dir = os.path.join(
         self.computer_partition_root_path, 'srv', 'proftpd')
 
-  def tearDown(self):
+  def tearDown(self) -> None:
     for name in os.listdir(self.upload_dir):
       path = os.path.join(self.upload_dir, name)
       if os.path.isfile(path) or os.path.islink(path):
@@ -94,7 +94,7 @@ class TestSFTPOperations(ProFTPdTestCase):
       else:
         shutil.rmtree(path)
 
-  def test_simple_sftp_session(self):
+  def test_simple_sftp_session(self) -> None:
     with self._getConnection() as sftp:
       # put a file
       with tempfile.NamedTemporaryFile() as f:
@@ -116,7 +116,7 @@ class TestSFTPOperations(ProFTPdTestCase):
       with open(local_file) as f:
         self.assertEqual(f.read(), "Hello FTP !")
 
-  def test_uploaded_file_not_visible_until_fully_uploaded(self):
+  def test_uploaded_file_not_visible_until_fully_uploaded(self) -> None:
     test_self = self
 
     class PartialFile(io.StringIO):
@@ -134,7 +134,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     # now file is visible
     self.assertEqual(['destination'], os.listdir(self.upload_dir))
 
-  def test_partial_upload_are_deleted(self):
+  def test_partial_upload_are_deleted(self) -> None:
     test_self = self
     with self._getConnection() as sftp:
 
@@ -152,7 +152,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     # no half uploaded file is kept
     self.assertEqual([], os.listdir(self.upload_dir))
 
-  def test_user_cannot_escape_home(self):
+  def test_user_cannot_escape_home(self) -> None:
     with self._getConnection() as sftp:
       with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('..')
@@ -163,7 +163,7 @@ class TestSFTPOperations(ProFTPdTestCase):
 
 
 class TestUserManagement(ProFTPdTestCase):
-  def test_user_can_be_added_from_script(self):
+  def test_user_can_be_added_from_script(self) -> None:
     with self.assertRaisesRegex(
         AuthenticationException, 'Authentication failed'):
       self._getConnection(username='bob', password='secret')
@@ -176,7 +176,7 @@ class TestUserManagement(ProFTPdTestCase):
 
 
 class TestBan(ProFTPdTestCase):
-  def test_client_are_banned_after_5_wrong_passwords(self):
+  def test_client_are_banned_after_5_wrong_passwords(self) -> None:
     # Simulate failed 5 login attempts
     for _ in range(5):
       with self.assertRaisesRegex(
@@ -199,11 +199,11 @@ class TestBan(ProFTPdTestCase):
 
 class TestInstanceParameterPort(ProFTPdTestCase):
   @classmethod
-  def getInstanceParameterDict(cls):
+  def getInstanceParameterDict(cls) -> Dict[str, str]:
     cls.free_port = findFreeTCPPort(cls._ipv4_address)
-    return {'port': cls.free_port}
+    return {'port': str(cls.free_port)}
 
-  def test_instance_parameter_port(self):
+  def test_instance_parameter_port(self) -> None:
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     sftp_url = urlparse.urlparse(parameter_dict['url'])
     self.assertEqual(self.free_port, sftp_url.port)
@@ -213,7 +213,7 @@ class TestInstanceParameterPort(ProFTPdTestCase):
 class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
   """Make sure the instance only have files and socket in software dir.
   """
-  def setUp(self):
+  def setUp(self) -> None:
     """sets `self.proftpdProcess` to `psutil.Process` for the running proftpd in the instance.
     """
     with self.slap.instance_supervisor_rpc as supervisor:
@@ -224,7 +224,7 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
     self.assertEqual('proftpd', process.name())  # sanity check
     self.proftpdProcess = process
 
-  def test_only_write_file_in_instance_dir(self):
+  def test_only_write_file_in_instance_dir(self) -> None:
     self.assertEqual(
         [],
         [
@@ -232,7 +232,7 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
             if not f.path.startswith(self.computer_partition_root_path)
         ])
 
-  def test_only_unix_socket_in_instance_dir(self):
+  def test_only_unix_socket_in_instance_dir(self) -> None:
     self.assertEqual(
         [],
         [
