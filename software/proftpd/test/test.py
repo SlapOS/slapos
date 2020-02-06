@@ -41,14 +41,20 @@ from paramiko.ssh_exception import AuthenticationException
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, _SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class ProFTPdTestCase(SlapOSInstanceTestCase): # type: ignore
+if TYPE_CHECKING:
+  from slapos.testing.testcase import SlapOSInstanceTestCase
+else:
+  SlapOSInstanceTestCase = _SlapOSInstanceTestCase
+
+
+class ProFTPdTestCase(SlapOSInstanceTestCase):
   def _getConnection(self, username:str=None, password:str=None, hostname:str=None) -> pysftp.Connection:
     """Returns a pysftp connection connected to the SFTP
 
@@ -198,6 +204,7 @@ class TestBan(ProFTPdTestCase):
 
 
 class TestInstanceParameterPort(ProFTPdTestCase):
+  free_port: int
   @classmethod
   def getInstanceParameterDict(cls) -> Dict[str, str]:
     cls.free_port = findFreeTCPPort(cls._ipv4_address)
