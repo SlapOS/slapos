@@ -28,7 +28,7 @@
 import os
 import json
 import glob
-import urlparse
+import six.moves.urllib.parse as urlparse
 import socket
 import time
 
