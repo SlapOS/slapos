@@ -28,7 +28,7 @@
 import os
 import json
 import glob
-import urlparse
+import six.moves.urllib.parse as urlparse
 import socket
 import time
 
@@ -275,7 +275,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       storage["storage"] = "root"
       storage["server"] = zeo_addr
       with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
-        conf = map(str.strip, f.readlines())
+        conf = [line.strip() for line in f.readlines()]
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
@@ -293,14 +293,14 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
         self.assertIsNone(v, k)
 
     partition = self.getComputerPartitionPath('zope-a')
-    for zope in xrange(3):
+    for _ in range(3):
       checkConf({
           "cache-size-bytes": "20MB",
         }, {
           "cache-size": "50MB",
         })
     partition = self.getComputerPartitionPath('zope-bb')
-    for zope in xrange(5):
+    for zope in range(5):
       checkConf({
           "cache-size-bytes": "500MB" if zope else 1<<20,
         }, {
