@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import httplib
+import six.moves.http_client as httplib
 import json
 import os
 import re
@@ -33,7 +33,7 @@ import requests
 import slapos.util
 import subprocess
 import sqlite3
-import urlparse
+import six.moves.urllib.parse as urlparse
 import unittest
 
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -42,7 +42,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 def sanityCheck():
   try:
-    output = subprocess.check_output("lsmod | grep kvm_intel", shell=True)
+    output = subprocess.check_output("lsmod | grep kvm_intel", shell=True, universal_newlines=True)
   except subprocess.CalledProcessError as e:
     state = False
     output = e.output
