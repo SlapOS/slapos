@@ -51,6 +51,7 @@ setup(
         'image',
         'requests',
         'paramiko',
+        'six',
     ],
     zip_safe=True,
     test_suite='test',

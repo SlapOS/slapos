@@ -31,11 +31,11 @@ import multiprocessing
 import os
 import tempfile
 import unittest
-import urlparse
+import six.moves.urllib.parse as urlparse
 import base64
 import hashlib
 import contextlib
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from io import BytesIO
 
 import paramiko
@@ -76,7 +76,7 @@ class WebServerMixin(object):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(
-            '''
+            b'''
           <html>
             <title>Test page</title>
             <body>
@@ -104,7 +104,7 @@ class WebServerMixin(object):
         if form.has_key('f'):
           file_data = form['f'].file.read()
         self.wfile.write(
-            '''
+            b'''
           <html>
             <title>%s</title>
             <div>%s</div>
@@ -397,7 +397,7 @@ class TestSSHServer(SeleniumServerTestCase):
         received += r
         if 'Selenium Server.' in received:
           break
-      self.assertIn("Welcome to SlapOS Selenium Server.", received)
+      self.assertIn(b"Welcome to SlapOS Selenium Server.", received)
 
 
 class TestFirefox52(
