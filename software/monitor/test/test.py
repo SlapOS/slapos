@@ -155,9 +155,9 @@ class EdgeSlaveMixin(MonitorTestMixin):
       self.slap.instance_directory,
       self.__partition_reference__ + '1')
     self.surykatka_json = os.path.join(
-        self.bot_partition_path, 'srv', 'surykatka.json')
+        self.bot_partition_path, 'srv', 'surykatka-2.json')
     self.surykatka_status_json = os.path.join(
-        self.bot_partition_path, 'bin', 'surykatka-status-json')
+        self.bot_partition_path, 'bin', 'surykatka-status-json-2')
     self.monitor_configuration_list = [
       {
         'xmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,),
@@ -182,7 +182,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
   def assertSurykatkaIni(self):
     surykatka_ini = open(
       os.path.join(
-        self.bot_partition_path, 'etc', 'surykatka.ini')).read().strip()
+        self.bot_partition_path, 'etc', 'surykatka-2.ini')).read().strip()
 
     expected = self.surykatka_ini % dict(
         partition_path=self.bot_partition_path)
@@ -200,17 +200,17 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
   def assertSurykatkaBotPromise(self):
     self.assertPromiseContent(
-      'surykatka-bot-promise.py',
+      'surykatka-bot-promise-2.py',
       "'report': 'bot_status'")
     self.assertPromiseContent(
-      'surykatka-bot-promise.py',
+      'surykatka-bot-promise-2.py',
       "'json-file': '%s'" % (self.surykatka_json,)
     )
 
   def assertSurykatkaCron(self):
     surykatka_cron = open(
       os.path.join(
-        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status')
+        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status-2')
         ).read().strip()
     self.assertEqual(
       '*/2 * * * * %s' % (self.surykatka_status_json,),
@@ -254,7 +254,8 @@ class EdgeSlaveMixin(MonitorTestMixin):
 class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_ini = """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(partition_path)s/srv/surykatka-2.db
 URL =
   https://www.erp5.com/
   https://www.erp5.org/"""
@@ -315,7 +316,8 @@ class TestEdgeNameserverCheckFrontendIp(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_ini = """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(partition_path)s/srv/surykatka-2.db
 NAMESERVER =
   127.0.1.1
   127.0.1.2
@@ -361,7 +363,8 @@ URL =
 class TestEdgeCheckStatusCode(EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_ini = """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(partition_path)s/srv/surykatka-2.db
 URL =
   https://www.erp5.com/
   https://www.erp5.org/"""
@@ -428,7 +431,8 @@ class TestEdgeCheckCertificateExpirationDays(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_ini = """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(partition_path)s/srv/surykatka-2.db
 URL =
   https://www.erp5.com/
   https://www.erp5.org/"""
