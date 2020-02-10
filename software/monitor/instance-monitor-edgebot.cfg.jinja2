@@ -16,6 +16,9 @@
 {%-   if 'check-certificate-expiration-days' not in slave %}
 {%-     do slave.__setitem__('check-certificate-expiration-days', CONFIGURATION['check-certificate-expiration-days']) %}
 {%-   endif %}
+{%-   if 'check-maximum-elapsed-time' not in slave %}
+{%-     do slave.__setitem__('check-maximum-elapsed-time', CONFIGURATION['check-maximum-elapsed-time']) %}
+{%-   endif %}
 {%-   if 'check-frontend-ip' not in slave %}
 {%-     do slave.__setitem__('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
 {%-   endif %}
@@ -37,6 +40,7 @@ config-report = http_query
 config-url = {{ slave['url'] }}
 config-status-code = {{ slave['check-status-code'] }}
 config-certificate-expiration-days = {{ slave['check-certificate-expiration-days'] }}
+config-maximum-elapsed-time = {{ slave['check-maximum-elapsed-time'] }}
 config-ip-list = {{ slave['check-frontend-ip'] }}
 config-json-file = ${surykatka-config:json}
 {% endfor %}
