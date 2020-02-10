@@ -24,6 +24,12 @@
       "title": "Default certificate expiration days check",
       "description": "Default amount of days to consider certificate as being to-be-expired (default: 15).",
       "type": "string"
+    },
+    "check-maximum-elapsed-time": {
+      "default": "2",
+      "title": "Default maximum elapsed time for a site to reply (seconds)",
+      "description": "Default maximum elapsed time for a site to reply to be considered good (default: 2s).",
+      "type": "string"
     }
   }
 }
