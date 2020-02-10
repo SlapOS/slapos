@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import glob
 import json
 import os
 import re
@@ -150,14 +151,29 @@ class EdgeSlaveMixin(MonitorTestMixin):
       shared=True
     )
 
+  def updateSurykatkaDict(self):
+    class_list = self.surykatka_dict.keys()
+    for class_ in class_list:
+      update_dict = {}
+      update_dict['ini-file'] = os.path.join(
+        self.bot_partition_path, 'etc', 'surykatka-%s.ini' % (class_,))
+      update_dict['json-file'] = os.path.join(
+        self.bot_partition_path, 'srv', 'surykatka-%s.json' % (class_,))
+      update_dict['status-json'] = os.path.join(
+        self.bot_partition_path, 'bin', 'surykatka-status-json-%s' % (class_,))
+      update_dict['bot-promise'] = 'surykatka-bot-promise-%s.py' % (class_,)
+      update_dict['status-cron'] = os.path.join(
+        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status-%s' % (
+          class_,))
+      update_dict['db_file'] = os.path.join(
+        self.bot_partition_path, 'srv', 'surykatka-%s.db' % (class_,))
+      self.surykatka_dict[class_].update(update_dict)
+
   def setUp(self):
     self.bot_partition_path = os.path.join(
       self.slap.instance_directory,
       self.__partition_reference__ + '1')
-    self.surykatka_json = os.path.join(
-        self.bot_partition_path, 'srv', 'surykatka.json')
-    self.surykatka_status_json = os.path.join(
-        self.bot_partition_path, 'bin', 'surykatka-status-json')
+    self.updateSurykatkaDict()
     self.monitor_configuration_list = [
       {
         'xmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,),
@@ -180,15 +196,17 @@ class EdgeSlaveMixin(MonitorTestMixin):
     ]
 
   def assertSurykatkaIni(self):
-    surykatka_ini = open(
-      os.path.join(
-        self.bot_partition_path, 'etc', 'surykatka.ini')).read().strip()
-
-    expected = self.surykatka_ini % dict(
-        partition_path=self.bot_partition_path)
     self.assertEqual(
-      expected.strip(),
-      surykatka_ini)
+      set(
+        glob.glob(
+          os.path.join(self.bot_partition_path, 'etc', 'surykatka*.ini'))),
+      set([q['ini-file'] for q in self.surykatka_dict.values()])
+    )
+    for info_dict in self.surykatka_dict.values():
+      self.assertEqual(
+        info_dict['expected_ini'].strip() % info_dict,
+        open(info_dict['ini-file']).read().strip()
+      )
 
   def assertPromiseContent(self, name, content):
     promise = open(
@@ -199,23 +217,21 @@ class EdgeSlaveMixin(MonitorTestMixin):
     self.assertTrue(content in promise)
 
   def assertSurykatkaBotPromise(self):
-    self.assertPromiseContent(
-      'surykatka-bot-promise.py',
-      "'report': 'bot_status'")
-    self.assertPromiseContent(
-      'surykatka-bot-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
-    )
+    for info_dict in self.surykatka_dict.values():
+      self.assertPromiseContent(
+        info_dict['bot-promise'],
+        "'report': 'bot_status'")
+      self.assertPromiseContent(
+        info_dict['bot-promise'],
+        "'json-file': '%s'" % (info_dict['json-file'],)
+      )
 
   def assertSurykatkaCron(self):
-    surykatka_cron = open(
-      os.path.join(
-        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status')
-        ).read().strip()
-    self.assertEqual(
-      '*/2 * * * * %s' % (self.surykatka_status_json,),
-      surykatka_cron
-    )
+    for info_dict in self.surykatka_dict.values():
+      self.assertEqual(
+        '*/2 * * * * %s' % (info_dict['status-json'],),
+        open(info_dict['status-cron']).read().strip()
+      )
 
   def initiateSurykatkaRun(self):
     try:
@@ -224,15 +240,20 @@ class EdgeSlaveMixin(MonitorTestMixin):
       pass
 
   def assertSurykatkaStatusJSON(self):
-    if os.path.exists(self.surykatka_json):
-      os.unlink(self.surykatka_json)
-    env = os.environ.copy()
-    env.pop('PYTHONPATH', None)
-    subprocess.check_call(self.surykatka_status_json, shell=True, env=env)
-    self.assertTrue(os.path.exists(self.surykatka_json))
-    with open(self.surykatka_json) as fh:
-      status_json = json.load(fh)
-    self.assertIn('bot_status', status_json)
+    for info_dict in self.surykatka_dict.values():
+      if os.path.exists(info_dict['json-file']):
+        os.unlink(info_dict['json-file'])
+      env = os.environ.copy()
+      env.pop('PYTHONPATH', None)
+      try:
+        subprocess.check_call(info_dict['status-json'], shell=True, env=env)
+      except subprocess.CalledProcessError as e:
+        self.fail('%s failed with code %s and message %s' % (
+          info_dict['status-json'], e.returncode, e.output))
+      self.assertTrue(os.path.exists(info_dict['json-file']))
+      with open(info_dict['json-file']) as fh:
+        status_json = json.load(fh)
+      self.assertIn('bot_status', status_json)
 
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
@@ -252,12 +273,15 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
 
 class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_ini = """[SURYKATKA]
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(db_file)s
 URL =
   https://www.erp5.com/
-  https://www.erp5.org/"""
+  https://www.erp5.org/"""}
+  }
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -277,7 +301,7 @@ URL =
       "'url': 'https://www.erp5.org/'")
     self.assertPromiseContent(
       'http-query-backend-300-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
     self.assertPromiseContent(
@@ -297,7 +321,7 @@ URL =
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
   def requestEdgetestSlaves(self):
@@ -313,15 +337,18 @@ URL =
 
 class TestEdgeNameserverCheckFrontendIp(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_ini = """[SURYKATKA]
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(db_file)s
 NAMESERVER =
   127.0.1.1
   127.0.1.2
 
 URL =
-  https://www.erp5.com/"""
+  https://www.erp5.com/"""}
+  }
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -348,7 +375,7 @@ URL =
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
   def requestEdgetestSlaves(self):
@@ -359,12 +386,15 @@ URL =
 
 
 class TestEdgeCheckStatusCode(EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_ini = """[SURYKATKA]
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(db_file)s
 URL =
   https://www.erp5.com/
-  https://www.erp5.org/"""
+  https://www.erp5.org/"""}
+  }
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -390,7 +420,7 @@ URL =
       "'url': 'https://www.erp5.org/'")
     self.assertPromiseContent(
       'http-query-backend-501-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
     self.assertPromiseContent(
@@ -410,7 +440,7 @@ URL =
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
   def requestEdgetestSlaves(self):
@@ -426,12 +456,15 @@ URL =
 
 class TestEdgeCheckCertificateExpirationDays(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_ini = """[SURYKATKA]
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-SQLITE = %(partition_path)s/srv/surykatka.db
+TIMEOUT = 4
+SQLITE = %(db_file)s
 URL =
   https://www.erp5.com/
-  https://www.erp5.org/"""
+  https://www.erp5.org/"""}
+  }
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -457,7 +490,7 @@ URL =
       "'url': 'https://www.erp5.org/'")
     self.assertPromiseContent(
       'http-query-backend-20-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
     self.assertPromiseContent(
@@ -477,7 +510,7 @@ URL =
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
       'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_json,)
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
   def requestEdgetestSlaves(self):
@@ -489,4 +522,111 @@ URL =
       'backend-20',
       {'url': 'https://www.erp5.org/',
        'check-certificate-expiration-days': '20'},
+    )
+
+
+class TestEdgeCheckMaximumElapsedTime(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    5: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 7
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.com/"""},
+    20: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 22
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.org/"""},
+    1: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 3
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.net/"""}
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'check-maximum-elapsed-time': '5',
+    }
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'maximum-elapsed-time': '20'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[20]['json-file'],)
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'maximum-elapsed-time': '5'")
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'http-query-backend-default-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[5]['json-file'],)
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'maximum-elapsed-time': '1'")
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'url': 'https://www.erp5.net/'")
+    self.assertPromiseContent(
+      'http-query-backend-1-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[1]['json-file'],)
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend-default',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-20',
+      {'url': 'https://www.erp5.org/',
+       'check-maximum-elapsed-time': '20'},
+    )
+    self.requestEdgetestSlave(
+      'backend-1',
+      {'url': 'https://www.erp5.net/',
+       'check-maximum-elapsed-time': '1'},
     )
