@@ -23,6 +23,12 @@
       "title": "Certificate expiration days check",
       "description": "Default amount of days to consider certitifcate as being to-be-expired (default: comes from master partition).",
       "type": "string"
+    },
+    "check-maximum-elapsed-time": {
+      "default": "Master default",
+      "title": "Maximum elapsed time for a site to reply (seconds)",
+      "description": "Default maxium elapsed time for a site to reply to be considered good.(default: comes from master partition).",
+      "type": "string"
     }
   }
 }
