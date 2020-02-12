@@ -383,7 +383,10 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     """
     # 1: Request 2 Software Releases, and do build&run
     result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v1/"})
-    self.assertEqual(json.loads(result.text)['code'], 1)
+    try:
+      self.assertEqual(json.loads(result.text)['code'], 1)
+    except ValueError:
+      raise ValueError('supplySoftwareRelease returns code ', result.status_code)
     result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v2/"})
     self.assertEqual(json.loads(result.text)['code'], 1)
     self._buildAndRun()
