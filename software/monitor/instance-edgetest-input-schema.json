@@ -22,7 +22,7 @@
     "check-certificate-expiration-days": {
       "default": "15",
       "title": "Default certificate expiration days check",
-      "description": "Default amount of days to consider certitifcate as being to-be-expired (default: 15).",
+      "description": "Default amount of days to consider certificate as being to-be-expired (default: 15).",
       "type": "string"
     }
   }

@@ -21,7 +21,7 @@
     "check-certificate-expiration-days": {
       "default": "Master default",
       "title": "Certificate expiration days check",
-      "description": "Default amount of days to consider certitifcate as being to-be-expired (default: comes from master partition).",
+      "description": "Amount of days to consider certificate as being to-be-expired (default: comes from master partition).",
       "type": "string"
     }
   }
