@@ -29,6 +29,12 @@
       "title": "Maximum elapsed time for a site to reply (seconds)",
       "description": "Maximum elapsed time for a site to reply to be considered good.(default: comes from master partition).",
       "type": "string"
+    },
+    "failure-amount": {
+      "default": "Master default",
+      "title": "Amount of failures to consider URL as in bad state",
+      "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: comes from master partition).",
+      "type": "string"
     }
   }
 }
