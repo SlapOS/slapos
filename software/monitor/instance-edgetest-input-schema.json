@@ -30,6 +30,12 @@
       "title": "Default maximum elapsed time for a site to reply (seconds)",
       "description": "Default maximum elapsed time for a site to reply to be considered good (default: 2s).",
       "type": "string"
+    },
+    "failure-amount": {
+      "default": "1",
+      "title": "Default amount of failures to consider URL as in bad state",
+      "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: 1).",
+      "type": "string"
     }
   }
 }
