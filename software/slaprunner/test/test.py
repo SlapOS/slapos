@@ -327,8 +327,8 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     return {
       'autorun': True,
       'auto-deploy': True,
-      'slapos-repository': '',
-      'slapos-reference': '',
+      'slapos-repository': 'https://lab.nexedi.com/Nicolas/slapos.toolbox.git',
+      'slapos-reference': 'runner-multi-sr',
     }
 
   def setUp(self):
