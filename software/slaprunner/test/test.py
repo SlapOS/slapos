@@ -327,7 +327,7 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     return {
       'autorun': True,
       'auto-deploy': True,
-      'slapos-repository': '/srv/slapgrid/slappart16/srv/runner/project/slapos',
+      'slapos-repository': '',
       'slapos-reference': '',
     }
 
