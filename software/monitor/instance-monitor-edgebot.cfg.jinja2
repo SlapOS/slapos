@@ -38,9 +38,9 @@
 {%- for class, slave_instance_list in slave_instance_dict.items() %}
 {#- class is used to separate surykatka with different timeouts #}
 {%-   for slave in sorted(slave_instance_list) %}
-{%-     set part_id = 'http-query-' ~ slave['slave_reference'] ~ '-promise' %}
+{%-     set part_id = 'http-query-' ~ slave['url'] ~ '-' ~ slave['slave_reference'] ~ '-promise' %}
 {%-     do part_list.append(part_id) %}
-{%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
+{%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-').replace(':', '-').replace('/', '') %}
 [{{part_id}}]
 <= monitor-promise-base
 module = check_surykatka_json
