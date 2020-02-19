@@ -199,6 +199,8 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertTrue('<title>noVNC</title>' in result.text)
 
 
+@unittest.skipIf(six.PY3, 'The kvm software release does not yet fully support'
+                          ' Python 3')
 @skipUnlessKvm
 class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akc'
@@ -230,6 +232,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
     self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
 
 
+@unittest.skipIf(six.PY3, 'The kvm software release does not yet fully support'
+                          ' Python 3')
 @skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akca'
