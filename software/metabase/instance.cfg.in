@@ -1,0 +1,183 @@
+[buildout]
+parts =
+  publish-connection-parameter
+
+extends = ${monitor2-template:rendered}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[metabase-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/$${:_buildout_section_name_}
+command-line = bash -c "cd $${directory:srv-metabase}; ${java-re-8:location}/bin/java -jar ${metabase.jar:location}/metabase.jar"
+# https://www.metabase.com/docs/latest/operations-guide/customizing-jetty-webserver.html
+environment =
+  MB_EMOJI_IN_LOGS=false
+  MB_JETTY_HOST=$${:ip}
+  MB_JETTY_PORT=$${:-http-port}
+  MB_JETTY_SSL_PORT=$${:port}
+  MB_JETTY_SSL=true
+  MB_JETTY_SSL_KEYSTORE=$${metabase-keystore:file}
+  MB_JETTY_SSL_KEYSTORE_PASSWORD=$${metabase-keystore:password}
+  MB_DB_TYPE=postgres
+  MB_DB_DBNAME=$${postgresql:dbname}
+  MB_DB_PORT=$${postgresql:port}
+  MB_DB_USER=$${postgresql:superuser}
+  MB_DB_PASS=$${postgresql:password}
+  MB_DB_HOST=$${postgresql:ipv4}
+hash-existing-files =
+  $${buildout:directory}/software_release/buildout.cfg
+
+ip =  $${instance-parameter:ipv6-random}
+port = 8443
+# XXX It does not seem we can prevent metabase to also listen on http, so we
+# give it an http port, but don't use it.
+-http-port = 18080
+hostname = [$${:ip}]
+scheme = https
+url = $${:scheme}://$${:hostname}:$${:port}
+promises =
+  $${metabase-promise:name}
+
+[metabase-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = $${:_buildout_section_name_}.py
+config-hostname= $${metabase-instance:ip}
+config-port = $${metabase-instance:port}
+
+[metabase-keystore]
+recipe = plone.recipe.command
+command =
+  ${java-re-8-output:keytool} \
+    -genkeypair \
+    -alias "metabase" \
+    -keyalg RSA \
+    -keypass "$${:password}" \
+    -dname "CN=metabase,OU=Unit,O=Organization,L=City,S=State,C=Country" \
+    -keystore "$${:file}" \
+    -storepass "$${:password}"
+file = $${directory:etc}/.metabase_keystore
+password = insecure
+
+[postgresql]
+recipe = slapos.cookbook:postgres
+bin = ${postgresql10:location}/bin/
+services = $${directory:service}
+dbname  = metabase_db
+superuser = metabase-psql
+password = insecure
+pgdata-directory = $${directory:srv}/postgresql
+
+ipv4 = $${instance-parameter:ipv4-random}
+# disable listening on ipv6
+ipv6 =
+port = 5432
+
+promises = $${postgresql-promise:name}
+
+
+[postgresql-psql]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+command-line =
+    $${postgresql:bin}/psql
+        -h $${postgresql:pgdata-directory}
+        -U $${postgresql:superuser}
+        -d $${postgresql:dbname}
+
+[postgresql-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = promise-postgresql.py
+config-command = $${postgresql-psql:wrapper-path} -c '\q'
+
+[postgresql-backup-crontab-entry]
+recipe = slapos.cookbook:cron.d
+name = $${:_buildout_section_name_}
+cron-entries = $${cron:cron-entries}
+time = daily
+command = $${postgresql-backup:wrapper-path}
+
+[postgresql-backup]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+# XXX there's a recipe for backup in slapos cookbook, but it does not create
+# the backup file in an atomic way, which is not acceptable here, because we
+# don't want to risk pulling a partial file. To prevent this, we create a
+# temp file and move it when finished.
+command-line =
+    bash -c "$${postgresql:bin}/pg_dump \
+      -h $${postgresql:pgdata-directory} \
+      -U $${postgresql:superuser} \
+      --format=custom \
+      -f $${:backup-file}.tmp \
+      $${postgresql:dbname} \
+    && mv $${:backup-file}.tmp $${:backup-file}"
+backup-file = $${directory:srv-backup}/backup.pg_dump
+
+[postgresql-restore-backup]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+command-line =
+  bash -e -c "\
+    echo 'This will replace current database with latest backup. Hit Ctrl+C to cancel';
+    sleep 5;
+    $${postgresql:bin}/pg_restore \
+        --exit-on-error \
+        -h $${postgresql:pgdata-directory} \
+        -U $${postgresql:superuser} \
+        -d $${postgresql:dbname} \
+        $${postgresql-backup:backup-file}"
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron-output:crond}
+cron-entries = $${directory:etc-cron.d}
+crontabs = $${directory:var-crontabs}
+cronstamps = $${directory:var-cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:bin}/crond
+
+[cron-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${cron:binary}
+wrapper-path = $${directory:services}/crond
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/cron.log
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+etc-cron.d = $${:etc}/cron.d
+var = $${buildout:directory}/var
+var-crontabs = $${:var}/crontabs
+var-cronstamps = $${:var}/cronstamps
+var-cron-entries = $${:var}/cron-entries
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+service = $${:etc}/service
+srv-metabase = $${:srv}/metabase
+srv-backup = $${:srv}/backup
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${metabase-instance:url}
+backup-crontab = $${postgresql-backup-crontab-entry:name}
+restore-backup-script = $${postgresql-restore-backup:wrapper-path}
