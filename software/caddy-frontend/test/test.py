@@ -73,9 +73,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
-MONITOR_HTTPD_PORT = '13000'
-MONITOR_F1_HTTPD_PORT = '13001'
-MONITOR_F2_HTTPD_PORT = '13002'
 CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
 
@@ -944,7 +941,6 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -981,7 +977,6 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -1080,8 +1075,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -4118,9 +4111,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4189,9 +4179,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       '-frontend-2-state': 'destroyed',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4231,8 +4218,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4325,8 +4310,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4417,8 +4400,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4477,8 +4458,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       're6st-verification-url': 'some-re6st-verification-url',
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -4540,8 +4519,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4691,8 +4668,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'enable-quic': 'true',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -4792,8 +4767,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -5203,8 +5176,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -5460,8 +5431,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -5601,8 +5570,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -6352,8 +6319,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'monitor-httpd-port': MONITOR_HTTPD_PORT,
-    '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
     'mpm-graceful-shutdown-timeout': 2,
@@ -6465,8 +6430,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
