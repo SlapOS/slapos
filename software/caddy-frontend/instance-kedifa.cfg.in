@@ -288,4 +288,5 @@ master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${ma
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
+monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 {%- endif -%} {# if slap_software_type in software_type #}
