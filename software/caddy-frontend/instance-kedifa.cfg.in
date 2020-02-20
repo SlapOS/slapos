@@ -20,6 +20,12 @@ parts =
   expose-csr_id
   promise-expose-csr_id-ip-port
 
+[monitor-instance-parameter]
+# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
+#       directly, and in our case it can come from the network, thus resulting
+#       with need to strip !py!'u'
+monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
+
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 

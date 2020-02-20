@@ -2,6 +2,7 @@ T-0/var/log/monitor-httpd-error.log
 T-0/var/log/slapgrid-T-0-error.log
 T-1/var/log/expose-csr_id.log
 T-1/var/log/kedfia.log
+T-1/var/log/monitor-httpd-error.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
 T-2/var/log/httpd-cache-direct/_ssl_from_master_kedifa_overrides_master_certificate_access_log
