@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<instance>
+<parameter id="email_from">lab-test@nexedi.com</parameter>
+<parameter id="email_reply_to">noreply-lab-test@nexedi.com</parameter>
+<parameter id="external_url">https://softinst90376.host.vifib.net</parameter>
+<parameter id="icp_license">%E6%B2%AAICP%E5%A4%8714008524%E5%8F%B7</parameter>
+<parameter id="smtp_address">mail.tiolive.com</parameter>
+<parameter id="smtp_domain">nexedi.com</parameter>
+<parameter id="smtp_openssl_verify_mode">none</parameter>
+<parameter id="smtp_password">oLaec9Le</parameter>
+<parameter id="smtp_port">587</parameter>
+<parameter id="smtp_user_name">gitlab-test@nexedi.com</parameter>
+<parameter id="unicorn_worker_timeout">120</parameter>
+</instance>
