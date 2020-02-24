@@ -130,7 +130,7 @@ class MonitorAccessMixin(object):
       if not connection_xml:
         continue
       connection_dict = slapos.util.xml2dict(
-        partition_information['connection_xml'].encode('utf-8'))
+        connection_xml if six.PY3 else connection_xml.encode('utf-8'))
       monitor_base_url = connection_dict.get('monitor-base-url')
       if not monitor_base_url:
         continue
