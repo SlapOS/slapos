@@ -213,7 +213,7 @@ class TestSlapOS(SlaprunnerTestCase):
             'show',
         ),
         env={})
-    self.assertIn('slaprunner', proxy_show_output)
+    self.assertIn(b'slaprunner', proxy_show_output)
 
   def test_shared_part_list(self):
     # this slapos used shared_part_list
