@@ -493,7 +493,7 @@ ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
