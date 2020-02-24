@@ -164,8 +164,8 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
-    self.assertFalse('url-additional' in connection_parameter_dict)
+    self.assertIn('<title>noVNC</title>', result.text)
+    self.assertNotIn('url-additional', connection_parameter_dict)
 
 
 @skipUnlessKvm
@@ -188,7 +188,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
     result = requests.get(
       connection_parameter_dict['url-additional'], verify=False)
@@ -196,7 +196,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
 
 @skipUnlessKvm
@@ -226,8 +226,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
-    self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
+    self.assertIn('<title>noVNC</title>', result.text)
+    self.assertNotIn('kvm0-url-additional', connection_parameter_dict)
 
 
 @skipUnlessKvm
@@ -260,7 +260,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
     result = requests.get(
       connection_parameter_dict['kvm0-url-additional'], verify=False)
@@ -268,7 +268,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
 
 @skipUnlessKvm
