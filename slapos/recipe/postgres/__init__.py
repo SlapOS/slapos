@@ -149,7 +149,7 @@ class Recipe(GenericBaseRecipe):
                     lc_time = 'en_US.UTF-8'
                     default_text_search_config = 'pg_catalog.english'
 
-                    unix_socket_directory = '%s'
+                    unix_socket_directories = '%s'
                     unix_socket_permissions = 0700
                     """ % (
                         ','.join(ipv4.union(ipv6)),
