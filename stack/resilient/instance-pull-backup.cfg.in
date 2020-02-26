@@ -19,10 +19,6 @@ parts =
 extends =
   ${monitor2-template:rendered}
   ${template-logrotate-base:rendered}
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline = true
-
 
 #----------------
 #--
@@ -90,7 +86,7 @@ rendered = $${:wrapper}
 wrapper = $${basedirectory:services}/notifier
 mode = 0700
 command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
-host = $${slap-network-information:global-ipv6}
+host = {{ ipv6 }}
 port = $${notifier-port:port}
 context =
   key content notifier:command
@@ -128,8 +124,8 @@ run-directory = $${basedirectory:run}
 pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
-slave-instance-list = $${slap-parameter:slave_instance_list}
-ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
+slave-instance-list = {{ slapparameter_dict.get('slave_instance_list', '[]') }}
+ignore-known-hosts-file = {{ slapparameter_dict.get('ignore-known-hosts-file', 'false') }}
 # To get a verbose feed about PBS state
 instance-root-name = $${monitor-instance-parameter:root-instance-title}
 log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
@@ -194,20 +190,6 @@ identity-file = $${:home}/id_rsa
 command-line = ${openssh:location}/bin/ssh -T -o "UserKnownHostsFile $${pbs:known-hosts}" -i $${:identity-file}
 wrapper-path = $${rootdirectory:bin}/ssh
 
-
-#----------------
-#--
-#-- Slave instance list (empty default).
-
-[slap-parameter]
-slave_instance_list = []
-ignore-known-hosts-file = false
-monitor-cors-domains = 
-monitor-httpd-port = 8070
-monitor-title = PBS Instance
-monitor-password = $${monitor-htpasswd:passwd}
-monitor-username = admin
-
 #----------------
 #--
 #-- Resiliency promises.
@@ -269,11 +251,11 @@ monitor-password = $${monitor-publish-parameters:monitor-password}
 #-- Monitor
 
 [monitor-instance-parameter]
-monitor-httpd-port = $${slap-parameter:monitor-httpd-port}
-monitor-title = $${slap-parameter:monitor-title}
-cors-domains = $${slap-parameter:monitor-cors-domains}
-username = $${slap-parameter:monitor-username}
-password = $${slap-parameter:monitor-password}
+monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', 8070) }}
+monitor-title = {{ slapparameter_dict.get('monitor-title', 'PBS Instance') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+username = {{ slapparameter_dict.get('monitor-username', 'admin') }}
+password = {{ slapparameter_dict.get('monitor-password', '$${monitor-htpasswd:passwd}') }}
 
 [monitor-conf-parameters]
 private-path-list += 
