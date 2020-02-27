@@ -80,6 +80,10 @@ upload_key = ${onetimeupload-instance:key}
 status_message = ${detect-if-cdrom-present:status}
 
 [detect-if-cdrom-present]
-recipe = collective.recipe.shelloutput
-commands =
-  status = [ -f ${onetimeupload-instance:image-path} ] && echo "image already uploaded, you can't upload it again" || echo "WARNING: no image yet, the NBD server doesn't work"
+recipe = slapos.recipe.build
+init =
+  import os
+  options['status'] = (
+    "image already uploaded, you can't upload it again"
+    if os.path.isfile("${onetimeupload-instance:image-path}")
+    else "WARNING: no image yet, the NBD server doesn't work")
