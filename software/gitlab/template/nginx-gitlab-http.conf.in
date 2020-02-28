@@ -111,40 +111,54 @@ server {
   set_real_ip_from {{ trusted_address }};
   {% endfor %}
 
+  ## HSTS Config
+  ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
+  {% if cfg("nginx_hsts_max_age") > 0 -%}
+  {%   if '{{ cfg("nginx_hsts_include_subdomains") }}' == 'true' -%}
+  add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}; includeSubDomains"
+  {%   else -%}
+  add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}";
+  {%   endif -%}
+  {% endif -%}
+
   ## Individual nginx logs for this GitLab vhost
   access_log  {{ nginx.log }}/gitlab_access.log gitlab_access;
   error_log   {{ nginx.log }}/gitlab_error.log;
+  
+  # Set CORS header
+  add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
+  add_header 'Access-Control-Allow-Credentials' true;
+  #{{ 'gzip off;' if cfg_https else ''}}
+  {% if '{{ cfg("nginx_gzip_enabled") }}' == 'true' -%}
+  gzip on;
+  gzip_static on;
+  gzip_comp_level 2;
+  gzip_http_version 1.1;
+  gzip_vary on;
+  gzip_disable "msie6";
+  gzip_min_length 10240;
+  gzip_proxied no-cache no-store private expired auth;
+  gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/json application/xml application/rss+xml;
+  {% endif -%}
+
+  ## https://github.com/gitlabhq/gitlabhq/issues/694
+  ## Some requests take more than 30 seconds.
+  proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
+  proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
+  proxy_redirect          off;
+
+  proxy_http_version 1.1;
 
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
-  location {{ path }} {
-    # Set CORS header
-    add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
-    add_header 'Access-Control-Allow-Credentials' true;
-    if ($request_method = OPTIONS ) {
-        add_header Allow "GET, OPTIONS";
-        add_header Content-Type text/plain;
-        add_header 'Access-Control-Allow-Origin' $http_origin;
-        add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Authorization, Content-Type, Accept";
-        return 200;
-    }
-    ## If you use HTTPS make sure you disable gzip compression
-    ## to be safe against BREACH attack.
-    {{ 'gzip off;' if cfg_https else ''}}
-
-    ## https://github.com/gitlabhq/gitlabhq/issues/694
-    ## Some requests take more than 30 seconds.
-    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
-    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
-    proxy_redirect          off;
-
-    proxy_http_version 1.1;
-
-    # NOTE(slapos) proxy headers are defined upstream in omnibus-gitlab in:
-    #   - files/gitlab-config-template/gitlab.rb.template       nginx['proxy_set_headers']
-    #   - files/gitlab-cookbooks/gitlab/attributes/default.rb   default['gitlab']['nginx']['proxy_set_headers']
-    #   - files/gitlab-cookbooks/gitlab/libraries/gitlab.rb     parse_nginx_proxy_headers()
-    # (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+  
+  #if ($http_host = "") {
+  #  set $http_host_with_default "<%= default_host %>";
+  #}
+  #if ($http_host != "") {
+  #  set $http_host_with_default $http_host;
+  #}
+  location ~ (\.git/gitlab-lfs/objects|\.git/info/lfs/objects/batch$) {
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
     {% if cfg_https %}
@@ -154,6 +168,36 @@ server {
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass http://gitlab-workhorse;
+  }
+
+  location {{ path }} {
+    # NOTE(slapos) proxy headers are defined upstream in omnibus-gitlab in:
+    #   - files/gitlab-config-template/gitlab.rb.template       nginx['proxy_set_headers']
+    #   - files/gitlab-cookbooks/gitlab/attributes/default.rb   default['gitlab']['nginx']['proxy_set_headers']
+    #   - files/gitlab-cookbooks/gitlab/libraries/gitlab.rb     parse_nginx_proxy_headers()
+    # (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+    if ($request_method = OPTIONS ) {
+        add_header Allow "GET, OPTIONS";
+        add_header Content-Type text/plain;
+        add_header 'Access-Control-Allow-Origin' $http_origin;
+        add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Authorization, Content-Type, Accept";
+        return 200;
+    }
+    proxy_cache off;
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+
+    proxy_pass  http://gitlab-workhorse;
+  }
+
+  location ~ ^/(assets)/ {
+    proxy_cache off;
+    proxy_pass  http://gitlab-workhorse;
   }
 
   error_page 404 /404.html;
@@ -169,3 +213,4 @@ server {
   <%= @custom_gitlab_server_config %>
   #}
 }
+

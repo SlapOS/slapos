@@ -29,3 +29,4 @@ end
 # SMTP disabled in instance configuration (see `smtp_enable` parameter).
 # Mail sending, if enabled (see `email_enabled`), will be done via sendmail.
 {% endif %}
+
