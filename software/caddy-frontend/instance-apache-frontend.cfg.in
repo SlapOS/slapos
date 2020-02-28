@@ -683,6 +683,7 @@ config-port = ${caddy-configuration:ssl-cache-through-port}
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
 monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list += 
