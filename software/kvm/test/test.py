@@ -28,10 +28,8 @@
 import httplib
 import json
 import os
-import re
 import requests
 import slapos.util
-import subprocess
 import sqlite3
 import urlparse
 import unittest
@@ -39,20 +37,10 @@ import unittest
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
+has_kvm = os.access('/dev/kvm', os.R_OK|os.W_OK)
+skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
-def sanityCheck():
-  try:
-    output = subprocess.check_output("lsmod | grep kvm_intel", shell=True)
-  except subprocess.CalledProcessError as e:
-    state = False
-    output = e.output
-  else:
-    state = True
-  if state is True and re.search(r'kvm.*kvm_intel', output):
-    return True
-
-
-if sanityCheck():
+if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
@@ -61,12 +49,11 @@ else:
 
   class SanityCheckTestCase(unittest.TestCase):
     def test_kvm_sanity_check(self):
-      if not(sanityCheck()):
-        self.fail('This environment is not usable for kvm testing, as it '
-                  'lacks kvm_intel kernel module')
+      self.fail('This environment is not usable for kvm testing,'
+                ' as it lacks kvm_intel kernel module')
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class ServicesTestCase(InstanceTestCase):
   def test_hashes(self):
     hash_files = [
@@ -162,7 +149,7 @@ class MonitorAccessMixin(object):
     )
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'ad'
   expected_partition_with_monitor_base_url_count = 1
@@ -179,7 +166,7 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
     self.assertFalse('url-additional' in connection_parameter_dict)
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'ada'
   expected_partition_with_monitor_base_url_count = 1
@@ -210,7 +197,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertTrue('<title>noVNC</title>' in result.text)
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akc'
   expected_partition_with_monitor_base_url_count = 2
@@ -241,7 +228,7 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
     self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akca'
   expected_partition_with_monitor_base_url_count = 2
@@ -282,7 +269,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertTrue('<title>noVNC</title>' in result.text)
 
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestInstanceResilient(InstanceTestCase):
   __partition_reference__ = 'ir'
   instance_max_retry = 20
@@ -309,7 +296,7 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-url',
         'url']))
 
-@unittest.skipIf(not sanityCheck(), 'missing kvm_intel module')
+@skipUnlessKvm
 class TestAccessResilientAdditional(InstanceTestCase):
   __partition_reference__ = 'ara'
   expected_partition_with_monitor_base_url_count = 1

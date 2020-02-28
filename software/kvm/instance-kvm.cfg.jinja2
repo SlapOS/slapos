@@ -490,8 +490,8 @@ filename = ${frontend-additional-port-execute:output}
 <= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
 url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
@@ -823,6 +823,14 @@ template = inline:
 rendered = ${buildout:directory}/.slapos-disk-permission
 context =
   raw disk_device_path {{disk_device_path}}
+
+{%   do part_list.append('wipe-disk-device-wrapper') -%}
+[wipe-disk-device-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
+command-line =
+  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
+
 {% endif -%}
 
 [buildout]

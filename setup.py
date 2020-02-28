@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.123'
+version = '1.0.124'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -36,8 +36,14 @@ long_description = open("README.rst").read() + "\n" + \
 for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'
 
-# extras_requires are not used because of
-#   https://bugs.launchpad.net/zc.buildout/+bug/85604
+extras_require = {
+    'test': (
+        'jsonschema',
+        'mock',
+        'testfixtures',
+    ),
+}
+
 setup(name=name,
       version=version,
       description="SlapOS recipes.",
@@ -55,7 +61,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34',  # for inotify-simple
+        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
@@ -118,11 +124,6 @@ setup(name=name,
           'ipv6toipv4 = slapos.recipe.6tunnel:SixToFour',
           'jsondump = slapos.recipe.jsondump:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
-          'lamp = slapos.recipe.lamp:Request',
-          'lamp.generic = slapos.recipe.lampgeneric:Recipe',
-          'lamp.request = slapos.recipe.lamp:Request',
-          'lamp.simple = slapos.recipe.lamp:Simple',
-          'lamp.static = slapos.recipe.lamp:Static',
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
@@ -130,7 +131,6 @@ setup(name=name,
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
           'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
           'mydumper = slapos.recipe.mydumper:Recipe',
-          'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',
@@ -190,7 +190,6 @@ setup(name=name,
           'userinfo = slapos.recipe.userinfo:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
-          'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
@@ -201,10 +200,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
+      extras_require=extras_require,
       test_suite='slapos.test',
-      tests_require=[
-        'jsonschema',
-        'mock',
-        'testfixtures',
-      ],
+      tests_require=extras_require['test'],
     )

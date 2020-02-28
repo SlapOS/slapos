@@ -22,7 +22,19 @@
     "check-certificate-expiration-days": {
       "default": "15",
       "title": "Default certificate expiration days check",
-      "description": "Default amount of days to consider certitifcate as being to-be-expired (default: 15).",
+      "description": "Default amount of days to consider certificate as being to-be-expired (default: 15).",
+      "type": "string"
+    },
+    "check-maximum-elapsed-time": {
+      "default": "2",
+      "title": "Default maximum elapsed time for a site to reply (seconds)",
+      "description": "Default maximum elapsed time for a site to reply to be considered good (default: 2s).",
+      "type": "string"
+    },
+    "failure-amount": {
+      "default": "1",
+      "title": "Default amount of failures to consider URL as in bad state",
+      "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: 1).",
       "type": "string"
     }
   }
