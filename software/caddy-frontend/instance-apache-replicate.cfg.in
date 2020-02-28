@@ -209,13 +209,19 @@ context =
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
+password = ${publish-early:monitor-password}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
 
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
-config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-password = ${publish-early:monitor-password}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
 {% if slapparameter_dict.has_key(frontend_software_url_key) %}
@@ -310,7 +316,7 @@ custom-group = ${dynamic-publish-slave-information:rendered}
 recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
-config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-password = ${publish-early:monitor-password}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in slapparameter_dict %}
