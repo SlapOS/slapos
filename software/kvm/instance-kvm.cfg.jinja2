@@ -31,6 +31,10 @@
 {% do extends_list.append(template_monitor) -%}
 {% do extends_list.append(logrotate_cfg) -%}
 
+[slap-network-information]
+local-ipv4 = {{ slap_configuration['ipv4-random'] }}
+global-ipv6 = {{ slap_configuration['ipv6-random'] }}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -748,6 +752,10 @@ data-to-vm =
 
 # Change keyboard layout language (Change to en-us if you face some bad bihaviors)
 keyboard-layout-language = fr
+
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
 
 #############################
 #
