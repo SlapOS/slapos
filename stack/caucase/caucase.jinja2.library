@@ -52,7 +52,8 @@ config-command = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc 
   mode='service',
   template_csr=None,
   template_csr_pem=None,
-  openssl=None
+  openssl=None,
+  promise=True
 ) -%}
 [{{ prefix }}-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -104,6 +105,15 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
   {% if key_path %}--key '{{ key_path }}' {%- endif %}
   {% if on_renew %}--on-renew '{{ on_renew }}' {%- endif %}
   {% if max_sleep %}--max-sleep '{{ max_sleep }}' {%- endif %}
+{% if promise -%}
+[{{ prefix }}-promise]
+<= monitor-promise-base
+module = check_certificate
+name = {{ prefix }}.py
+config-certificate = {{ crt_path }}
+config-key = {{ key_path }}
+config-certificate-expiration-days = 15
+{%- endif %}
 {%- endmacro %}
 
 {% macro rerequest(prefix, buildout_bin_directory, template, csr, key) -%}
