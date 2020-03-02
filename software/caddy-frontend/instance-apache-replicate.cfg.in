@@ -455,6 +455,7 @@ command =
   fi
 
 {% do part_list.append('aikc-user-caucase-updater') %}
+{% do part_list.append('aikc-user-caucase-updater-promise') %}
 {{ caucase.updater(
      prefix='aikc-user-caucase-updater',
      buildout_bin_directory=parameter_dict['bin_directory'],
