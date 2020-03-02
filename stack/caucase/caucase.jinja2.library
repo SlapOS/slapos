@@ -102,7 +102,7 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
   --ca '{{ ca_path }}'
   --crl '{{ crl_path }}'
   {% if key_path %}--key '{{ key_path }}' {%- endif %}
-  --on-renew '{{ on_renew }}'
+  {% if on_renew %}--on-renew '{{ on_renew }}' {%- endif %}
   {% if max_sleep %}--max-sleep '{{ max_sleep }}' {%- endif %}
 {%- endmacro %}
 
