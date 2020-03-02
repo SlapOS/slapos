@@ -13,6 +13,7 @@ parts =
   caddy-frontend
   switch-caddy-softwaretype
   caucase-updater
+  caucase-updater-promise
   frontend-caddy-graceful
   not-found-html
   port-redirection
