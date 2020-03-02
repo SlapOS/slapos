@@ -221,13 +221,13 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
-    self.assertNotIn('kvm0-url-additional', connection_parameter_dict)
+    self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
 
 
 @skipUnlessKvm
@@ -255,7 +255,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -263,7 +263,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
     result = requests.get(
-      connection_parameter_dict['kvm0-url-additional'], verify=False)
+      connection_parameter_dict['KVM0-url-additional'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
