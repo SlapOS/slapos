@@ -91,7 +91,9 @@ class Recipe(GenericBaseRecipe):
                 # run we won't update it.
                 shutil.rmtree(pgdata)
                 raise
-
+        else:
+            self.createConfig()
+            self.createRunScript()
 
 
         # install() methods usually return the pathnames of managed files.
@@ -101,6 +103,9 @@ class Recipe(GenericBaseRecipe):
 
         return []
 
+    def update(self):
+        self.createConfig()
+        self.createRunScript()
 
     def check_exists(self, path):
         if not os.path.isfile(path):
