@@ -365,6 +365,9 @@ class TestDataMixin(object):
   def test_file_list_etc_cron_d(self):
     self._test_file_list(['etc', 'cron.d'])
 
+  def test_file_list_plugin(self):
+    self._test_file_list(['etc', 'plugin'], ['.pyc'])
+
   def test_supervisor_state(self):
     # give a chance for etc/run scripts to finish
     time.sleep(1)
