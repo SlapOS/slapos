@@ -114,6 +114,10 @@
               ],
               "type": "string"
             },
+            "private-tmpfs": {
+              "description": "Size of private tmpfs mount to store the database. See filesystems/tmpfs.txt in Linux documentation. Use only for testing.",
+              "type": "string"
+            },
             "mysql": {
               "description": "Dictionary containing parameters for MySQL.",
               "default": {},

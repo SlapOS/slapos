@@ -2,7 +2,7 @@
 """
   Script to run NEO test suite using Nexedi's test node framework.
 """
-import argparse, json, os, re, shutil, subprocess, sys, traceback
+import argparse, errno, json, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 from time import gmtime, sleep, strftime, time
 
@@ -130,6 +130,14 @@ def main():
           if timeout < time():
             raise RuntimeError("MySQL server not started")
           sleep(1)
+{%- if datadir is defined %}
+        # fake path for neostorage (getTopologyPath)
+        try:
+          os.mkdir({{ repr(datadir) }})
+        except OSError as e:
+          if e.errno != errno.EEXIST:
+            raise
+{%- endif %}
       with open(os.devnull) as stdin:
         p = subprocess.Popen(args, stdin=stdin, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env)
@@ -161,6 +169,13 @@ def main():
       date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
       stderr=stderr,
       **status_dict)
+{%- if results_directory is defined %}
+
+    results = {{ repr(results_directory + '/') }} + adapter
+    if os.path.exists(results):
+      shutil.rmtree(results)
+    shutil.move(temp, results)
+{%- endif %}
 
 if __name__ == "__main__":
     main()
