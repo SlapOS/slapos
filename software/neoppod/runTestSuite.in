@@ -13,12 +13,12 @@ SUMMARY_RE = re.compile(
   r' (.*) (?P<duration>\d+(\.\d*)?|\.\d+)s', re.MULTILINE)
 
 PATH = os.environ['PATH']
-PATH = '{{ prepend_path }}' + (PATH and ':' + PATH)
+PATH = {{ repr(prepend_path) }} + (PATH and ':' + PATH)
 
 # NEO specific environment
-TEMP_DIRECTORY  = '{{directory.tmp}}'
-NEO_DB_SOCKET = '{{my_cnf_parameters.socket}}'
-RUN_NEO_TESTS_COMMAND = '{{ bin_directory }}/neotestrunner'
+TEMP_DIRECTORY  = {{ repr(directory.tmp) }}
+NEO_DB_SOCKET = {{ repr(my_cnf_parameters.socket) }}
+RUN_NEO_TESTS_COMMAND = {{ repr(bin_directory + '/neotestrunner') }}
 
 def parseTestStdOut(data):
   """
