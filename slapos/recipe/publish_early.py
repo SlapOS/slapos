@@ -28,6 +28,7 @@
 from collections import OrderedDict
 from .librecipe import unwrap, wrap, GenericSlapRecipe
 import six
+from zc.buildout import UserError
 
 def volatileOptions(options, volatile):
   def copy():
@@ -125,7 +126,8 @@ class Recipe(GenericSlapRecipe):
               pass
           buildout.Options = newOptions
           init_section = buildout[init_section]
-          assert buildout.Options is Options
+          if buildout.Options is not Options:
+            raise UserError("%s section was already initialized" % init_section)
           new = {}
           for k, v in six.iteritems(init):
             try:

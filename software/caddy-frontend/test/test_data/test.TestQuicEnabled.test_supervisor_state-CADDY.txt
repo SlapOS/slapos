@@ -1,3 +1,4 @@
+T-0:aikc-user-caucase-updater-on-watch RUNNING
 T-0:bootstrap-monitor EXITED
 T-0:certificate_authority-{hash-generic}-on-watch RUNNING
 T-0:crond-{hash-generic}-on-watch RUNNING
@@ -12,7 +13,7 @@ T-1:crond-{hash-generic}-on-watch RUNNING
 T-1:expose-csr_id-{hash-generic}-on-watch RUNNING
 T-1:kedifa-{hash-generic}-on-watch RUNNING
 T-1:kedifa-reloader EXITED
-T-1:monitor-httpd-{hash-generic}-on-watch EXITED
+T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-1:monitor-httpd-graceful EXITED
 T-2:6tunnel-11080-{hash-generic}-on-watch RUNNING
 T-2:6tunnel-11443-{hash-generic}-on-watch RUNNING

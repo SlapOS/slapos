@@ -20,6 +20,13 @@ parts =
   expose-csr_id
   promise-expose-csr_id-ip-port
 
+[monitor-instance-parameter]
+# Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
+#       directly, and in our case it can come from the network, thus resulting
+#       with need to strip !py!'u'
+monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter['configuration.monitor-password'] | string }}
+
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -288,4 +295,5 @@ master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${ma
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:passwd}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
+monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 {%- endif -%} {# if slap_software_type in software_type #}

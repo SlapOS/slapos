@@ -47,6 +47,7 @@ import gzip
 import base64
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
+import xml.etree.ElementTree as ET
 
 
 try:
@@ -73,9 +74,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
-MONITOR_HTTPD_PORT = '13000'
-MONITOR_F1_HTTPD_PORT = '13001'
-MONITOR_F2_HTTPD_PORT = '13002'
 CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
 
@@ -559,9 +557,12 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.waitForCaddy()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
-      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used by SlapOSInstanceTestCase.setUpClass
-      # so we use another name for snapshot, to make sure we don't store another snapshot in same directory.
-      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(cls.__module__, cls.__name__))
+      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used
+      # by SlapOSInstanceTestCase.setUpClass so we use another name for
+      # snapshot, to make sure we don't store another snapshot in same
+      # directory.
+      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+        cls.__module__, cls.__name__))
       cls.setUp = lambda self: self.fail('Setup Class failed.')
       raise
 
@@ -944,7 +945,6 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
       'domain': 'example.com',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -964,7 +964,7 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(
       {
-        'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
         'domain': 'example.com',
         'accepted-slave-amount': '1',
         'rejected-slave-amount': '0',
@@ -981,7 +981,6 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -1000,7 +999,7 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
-        'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
         'domain': 'None',
         'accepted-slave-amount': '1',
         'rejected-slave-amount': '0',
@@ -1080,8 +1079,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -1371,6 +1368,102 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       }
     }
 
+  monitor_setup_url_key = 'monitor-setup-url'
+
+  def test_monitor_setup(self):
+    IP = self._ipv6_address
+    self.monitor_configuration_list = [
+      {
+        'htmlUrl': 'https://[%s]:8401/public/feed' % (IP,),
+        'text': 'testing partition 0',
+        'title': 'testing partition 0',
+        'type': 'rss',
+        'url': 'https://[%s]:8401/share/private/' % (IP,),
+        'version': 'RSS',
+        'xmlUrl': 'https://[%s]:8401/public/feed' % (IP,),
+      },
+      {
+        'htmlUrl': 'https://[%s]:8402/public/feed' % (IP,),
+        'text': 'kedifa',
+        'title': 'kedifa',
+        'type': 'rss',
+        'url': 'https://[%s]:8402/share/private/' % (IP,),
+        'version': 'RSS',
+        'xmlUrl': 'https://[%s]:8402/public/feed' % (IP,),
+      },
+      {
+        'htmlUrl': 'https://[%s]:8411/public/feed' % (IP,),
+        'text': 'caddy-frontend-1',
+        'title': 'caddy-frontend-1',
+        'type': 'rss',
+        'url': 'https://[%s]:8411/share/private/' % (IP,),
+        'version': 'RSS',
+        'xmlUrl': 'https://[%s]:8411/public/feed' % (IP,),
+      },
+    ]
+    connection_parameter_dict = self\
+        .computer_partition.getConnectionParameterDict()
+    self.assertTrue(
+      self.monitor_setup_url_key in connection_parameter_dict,
+      '%s not in %s' % (self.monitor_setup_url_key, connection_parameter_dict))
+    monitor_setup_url_value = connection_parameter_dict[
+      self.monitor_setup_url_key]
+    monitor_url_match = re.match(r'.*url=(.*)', monitor_setup_url_value)
+    self.assertNotEqual(
+      None, monitor_url_match, '%s not parsable' % (monitor_setup_url_value,))
+    self.assertEqual(1, len(monitor_url_match.groups()))
+    monitor_url = monitor_url_match.groups()[0]
+    monitor_url_split = monitor_url.split('&')
+    self.assertEqual(
+      3, len(monitor_url_split), '%s not splitabble' % (monitor_url,))
+    self.monitor_url = monitor_url_split[0]
+    monitor_username = monitor_url_split[1].split('=')
+    self.assertEqual(
+      2, len(monitor_username), '%s not splittable' % (monitor_username))
+    monitor_password = monitor_url_split[2].split('=')
+    self.assertEqual(
+      2, len(monitor_password), '%s not splittable' % (monitor_password))
+    self.monitor_username = monitor_username[1]
+    self.monitor_password = monitor_password[1]
+
+    opml_text = requests.get(self.monitor_url, verify=False).text
+    opml = ET.fromstring(opml_text)
+
+    body = opml[1]
+    self.assertEqual('body', body.tag)
+
+    outline_list = body[0].findall('outline')
+
+    self.assertEqual(
+      self.monitor_configuration_list,
+      [q.attrib for q in outline_list]
+    )
+
+    expected_status_code_list = []
+    got_status_code_list = []
+    for monitor_configuration in self.monitor_configuration_list:
+      status_code = requests.get(
+          monitor_configuration['url'],
+          verify=False,
+          auth=(self.monitor_username, self.monitor_password)
+        ).status_code
+      expected_status_code_list.append(
+        {
+          'url': monitor_configuration['url'],
+          'status_code': 200
+        }
+      )
+      got_status_code_list.append(
+        {
+          'url': monitor_configuration['url'],
+          'status_code': status_code
+        }
+      )
+    self.assertEqual(
+      expected_status_code_list,
+      got_status_code_list
+    )
+
   def getMasterPartitionPath(self):
     # partition w/o etc/trafficserver, but with buildout.cfg
     return [
@@ -1444,7 +1537,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '54',
       'rejected-slave-amount': '0',
@@ -4118,9 +4211,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4189,9 +4279,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       '-frontend-2-state': 'destroyed',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
-      '-frontend-config-2-monitor-httpd-port': MONITOR_F2_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4231,8 +4318,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4325,8 +4410,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4417,8 +4500,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4477,8 +4558,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     return {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       're6st-verification-url': 'some-re6st-verification-url',
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -4540,8 +4619,6 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
@@ -4566,7 +4643,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4691,8 +4768,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'enable-quic': 'true',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -4792,8 +4867,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -4852,7 +4925,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '8',
       'rejected-slave-amount': '3',
@@ -5203,8 +5276,6 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'mpm-graceful-shutdown-timeout': 2,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
@@ -5235,7 +5306,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5460,8 +5531,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -5601,8 +5670,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -5693,7 +5760,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '0',
@@ -6352,8 +6419,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     'domain': 'example.com',
     'port': HTTPS_PORT,
     'plain_http_port': HTTP_PORT,
-    'monitor-httpd-port': MONITOR_HTTPD_PORT,
-    '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
     'mpm-graceful-shutdown-timeout': 2,
@@ -6386,7 +6451,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6465,8 +6530,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
-      'monitor-httpd-port': MONITOR_HTTPD_PORT,
-      '-frontend-config-1-monitor-httpd-port': MONITOR_F1_HTTPD_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
       'mpm-graceful-shutdown-timeout': 2,
@@ -6495,7 +6558,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:13000' % self._ipv6_address,
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',

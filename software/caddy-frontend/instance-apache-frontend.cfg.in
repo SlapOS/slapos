@@ -682,10 +682,8 @@ config-port = ${caddy-configuration:ssl-cache-through-port}
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-{% set monitor_httpd_port = instance_parameter.get('configuration.monitor-httpd-port') %}
-{% if monitor_httpd_port %}
-monitor-httpd-port = {{ monitor_httpd_port | int }}
-{% endif -%}
+monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list += 

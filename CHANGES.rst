@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.138 (2020-03-03)
+--------------------
+
+- Update postgresql recipe for postgres version 10 and later
+
 1.0.124 (2020-01-30)
 --------------------
 

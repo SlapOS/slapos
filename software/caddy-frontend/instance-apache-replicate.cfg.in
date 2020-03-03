@@ -1,9 +1,14 @@
 {% if slap_software_type in software_type %}
+{% import "caucase" as caucase with context %}
 {#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
 {%- set SERVER_POLLUTED_KEY_LIST = ['connection-parameter-hash', 'timestamp', 'slave_title', 'slap_software_type'] -%}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
+{% set master_partition_monitor_monitor_httpd_port = 8401 %}
+{% set kedifa_partition_monitor_httpd_port = 8402 %}
+{% set frontend_monitor_httpd_base_port = 8410 %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -58,6 +63,7 @@ context =
 {%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
 {%     endif %}
 {%   endfor %}
+{%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do frontend_list.append(frontend_name) %}
 {%   do frontend_section_list.append(request_section_title) %}
 {%   do part_list.append(request_section_title) %}
@@ -202,7 +208,7 @@ context =
 {% do authorized_slave_list.sort() %}
 
 [monitor-instance-parameter]
-monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', '8196') }}
+monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
 
 [replicate]
 <= slap-connection
@@ -305,6 +311,7 @@ recipe = slapos.cookbook:requestoptional.serialised
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
 {% for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in slapparameter_dict %}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
@@ -369,11 +376,10 @@ extra-context =
     section warning_slave_information warning-slave-information
     key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
 
-[monitor-conf-parameters]
-monitor-url-list +=
-  ${request-kedifa:connection-monitor-base-url}
+[monitor-base-url-dict]
+kedifa = ${request-kedifa:connection-monitor-base-url}
 {% for frontend in frontend_section_list %}
-{{ '  ${' + frontend + ':connection-monitor-base-url}' }}
+{{ frontend }} = {{ '${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
 
 {% if aikc_enabled %}
@@ -447,6 +453,21 @@ command =
     ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
     touch ${aikc-config:user-created}
   fi
+
+{% do part_list.append('aikc-user-caucase-updater') %}
+{{ caucase.updater(
+     prefix='aikc-user-caucase-updater',
+     buildout_bin_directory=parameter_dict['bin_directory'],
+     updater_path='${directory:service}/aikc-user-caucase-updater',
+     url='${aikc-config:caucase-url}',
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${aikc-config:key}',
+     ca_path='${aikc-config:user-ca-certificate}',
+     crl_path='${aikc-config:user-crl}',
+     key_path='${aikc-config:key}',
+     mode='user',
+)}}
+
 
 [aikc-check-certificate]
 recipe = slapos.recipe.template:jinja2

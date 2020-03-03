@@ -47,7 +47,7 @@ extra_config_dict = %(config)s
 # The solution is to delete all cached 'slapos' modules as well as all cached
 # 'pkg_resources' modules which is responsible of namespace declaration.
 # They will be re-imported again using the updated sys.path
-for module in sys.modules.keys():
+for module in list(sys.modules):
   if 'slapos' in module or 'pkg_resources' in module:
     del sys.modules[module]
 
