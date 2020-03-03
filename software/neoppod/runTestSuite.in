@@ -2,7 +2,7 @@
 """
   Script to run NEO test suite using Nexedi's test node framework.
 """
-import argparse, os, re, shutil, subprocess, sys, traceback
+import argparse, json, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 from time import gmtime, sleep, strftime, time
 
@@ -52,6 +52,28 @@ def parseTestStdOut(data):
 
   return test_count, unexpected_count, expected_count, skip_count, duration
 
+class DummyTestResult:
+
+  class DummyTestResultLine:
+
+    def stop(self, **kw):
+      with open(self.name + '.json', 'w') as f:
+        json.dump(kw, f)
+
+  done = 0
+
+  def __init__(self, test_name_list):
+    self.test_name_list = test_name_list
+
+  def start(self):
+    test_result_line = self.DummyTestResultLine()
+    try:
+      test_result_line.name = self.test_name_list[self.done]
+    except IndexError:
+      return
+    self.done += 1
+    return test_result_line
+
 def main():
   parser = argparse.ArgumentParser(description='Run a test suite.')
   parser.add_argument('--test_suite', help='The test suite name')
@@ -67,18 +89,20 @@ def main():
   args = parser.parse_args()
 
   test_suite_title = args.test_suite_title or args.test_suite
-  revision = args.revision
 
   test_name_list = 'SQLite', 'MySQL'
 
-  tool = taskdistribution.TaskDistributor(portal_url = args.master_url)
-  test_result = tool.createTestResult(revision = revision,
-                                      test_name_list = test_name_list,
-                                      node_title = args.test_node_title,
-                                      test_title = test_suite_title,
-                                      project_title = args.project_title)
-  if test_result is None:
-    return
+  if args.master_url:
+    tool = taskdistribution.TaskDistributor(portal_url = args.master_url)
+    test_result = tool.createTestResult(args.revision,
+                                        test_name_list,
+                                        args.test_node_title,
+                                        test_title=test_suite_title,
+                                        project_title=args.project_title)
+    if test_result is None:
+      return
+  else:
+    test_result = DummyTestResult(test_name_list)
   # run NEO tests
   while 1:
     test_result_line = test_result.start()
