@@ -77,9 +77,6 @@ class Recipe(GenericBaseRecipe):
         wait_files = options.get('wait-for-files')
         pidfile = options.get('pidfile')
         private_tmpfs = self.parsePrivateTmpfs()
-        private_dev_shm = options.get('private-dev-shm') # BBB
-        if private_dev_shm:
-          private_tmpfs.append((private_dev_shm, '/dev/shm'))
 
         environment = {}
         for line in (options.get('environment') or '').splitlines():
