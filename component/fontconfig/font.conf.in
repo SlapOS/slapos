@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+{#
+ # Generates a font.conf to be used as FONTCONFIG_FILE environment variable.
+ #
+ # This template needs the following keys in context:
+ #
+ #  - cachedir: a directory to use a cachedir
+ #  - fonts: directories containing fonts ( \n separated list of paths )
+ #             for example {liberation-fonts:location}
+ #  - includes: directories fontconfig configuration ( \n separated list of paths )
+ #             typically, applications want to include {fontconfig:location}/etc/fonts/conf.d
+ #             also some fonts packages bundles font.d
+ #}
+<fontconfig>
+  <cachedir>{{ cachedir | escape}}</cachedir>
+  {% for font in fonts.splitlines() -%}
+    <dir>{{ font | escape}}</dir>
+  {% endfor %}
+  {% for include in includes.splitlines() -%}
+    <dir>{{ include | escape}}</dir>
+  {% endfor %}
+</fontconfig>
