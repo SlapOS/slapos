@@ -189,7 +189,10 @@ wrapped-command-line = '{{ bin_directory }}/runwsgi' {% if webdav %}-w{% endif %
 {% else -%}
 wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 {%- endif %}
-private-dev-shm = {{ slapparameter_dict['private-dev-shm'] }}
+{%- set private_dev_shm = slapparameter_dict['private-dev-shm'] %}
+{%- if private_dev_shm %}
+private-tmpfs = {{ private_dev_shm }} /dev/shm
+{%- endif %}
 
 [{{ section('zcml') }}]
 recipe = slapos.cookbook:copyfilelist

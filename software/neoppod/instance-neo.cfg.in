@@ -2,22 +2,36 @@
 {% set part_list = [] -%}
 {% set init_list = [] -%}
 
+{% set private_tmpfs = slapparameter_dict.get('private-tmpfs') -%}
 {% set storage_type = slapparameter_dict.get('storage-type') or (
      'MySQL' if mariadb_location is defined else 'SQLite') -%}
 {% set mysql = storage_type == 'MySQL' -%}
 {% if mysql -%}
 
 [{{ section('mysqld') }}]
+{% if private_tmpfs -%}
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:etc_run}/mariadb
+private-tmpfs = {{ private_tmpfs }} ${my-cnf-parameters:tmp-directory}
+command-line = ${mariadb-ns:rendered}
+[mariadb-ns]
+rendered = ${directory:bin}/mariadb-ns
+{% else -%}
+rendered = ${directory:etc_run}/mariadb
+{% endif -%}
 recipe = slapos.recipe.template:jinja2
 template = {{ template_mysqld_wrapper }}
-rendered = ${directory:etc_run}/mariadb
 context =
   key defaults_file my-cnf:rendered
   key datadir my-cnf-parameters:data-directory
 
 [my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
+{% if private_tmpfs -%}
+data-directory = ${:tmp-directory}/mariadb
+{% else -%}
 data-directory = ${directory:srv}/mariadb
+{% endif -%}
 tmp-directory = ${directory:tmp}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
@@ -105,6 +119,9 @@ logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
 {%- if mysql %}
 {%-   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') %}
 database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+{%- elif private_tmpfs %}
+private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
+database-parameters = ${directory:tmp}/db.sqlite
 {%- else %}
 database-parameters = ${directory:db-{{i}}}/db.sqlite
 
@@ -148,6 +165,14 @@ post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
 {% if runTestSuite_in is defined -%}
 # bin/runTestSuite to run NEO tests
 [{{ section('runTestSuite') }}]
+{%- if private_tmpfs %}
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+private-tmpfs = {{ private_tmpfs }} ${directory:tmp}
+command-line = ${runTestSuite-ns:rendered}
+
+[runTestSuite-ns]
+{%- endif %}
 recipe = slapos.recipe.template:jinja2
 rendered = ${directory:bin}/${:_buildout_section_name_}
 template = {{ runTestSuite_in }}
@@ -157,6 +182,13 @@ context =
     section my_cnf_parameters my-cnf-parameters
     raw     bin_directory     {{ bin_directory }}
     raw     prepend_path      {{ mariadb_location }}/bin
+{%- if private_tmpfs %}
+    key     datadir           my-cnf-parameters:data-directory
+    key     results_directory directory:results
+
+[directory]
+results = ${directory:srv}/tests
+{%- endif %}
 {%- endif %}
 
 {%- endif %}

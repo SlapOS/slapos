@@ -28,10 +28,9 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.138'
+version = '1.0.139'
 name = 'slapos.cookbook'
-long_description = open("README.rst").read() + "\n" + \
-    open("CHANGES.rst").read() + "\n"
+long_description = open("README.rst").read()
 
 for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'

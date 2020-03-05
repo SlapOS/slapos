@@ -43,7 +43,8 @@ from six.moves.urllib.parse import urlunparse
 
 
 import pkg_resources
-import zc.buildout
+from zc.buildout import easy_install, UserError
+from zc.recipe.egg import Egg
 
 from slapos.recipe.librecipe import shlex
 
@@ -85,8 +86,7 @@ class GenericBaseRecipe(object):
 
   def getWorkingSet(self):
     """If you want do override the default working set"""
-    egg = zc.recipe.egg.Egg(self.buildout, 'slapos.cookbook',
-                                  self.options.copy())
+    egg = Egg(self.buildout, 'slapos.cookbook', self.options.copy())
     requirements, ws = egg.working_set()
     return ws
 
@@ -156,9 +156,19 @@ class GenericBaseRecipe(object):
     args = itertools.chain(map(repr, args),
                            map('%s=%r'.__mod__, six.iteritems(kw)))
 
-    return zc.buildout.easy_install.scripts(
+    return easy_install.scripts(
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=', '.join(args))[0]
+
+  def parsePrivateTmpfs(self):
+    private_tmpfs = []
+    for line in (self.options.get('private-tmpfs') or '').splitlines():
+      if line:
+        x = line.split(None, 1)
+        if len(x) != 2:
+          raise UserError("failed to split %r into size and path" % line)
+        private_tmpfs.append(tuple(x))
+    return private_tmpfs
 
   def createWrapper(self, path, args, env=None, **kw):
     """Create a wrapper script for process replacement"""
