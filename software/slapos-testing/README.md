@@ -7,8 +7,8 @@ The approach is to use setuptools' integrated test runner, `python setup.py test
 The `python` used in this command will be a `zc.recipe.egg` interpreter with
 all eggs pre-installed by this software release.
 
-Nexedi staff can see the results of this test from the test suite
-`SLAPOS-EGG-TEST` in test result module.
+The results of this test suite running on Nexedi ERP5 are published as `SlapOS.Eggs.UnitTest-Master.Python3`
+and `SlapOS.Eggs.UnitTest-Master.Python2`.
 
 
 Here's an example session of how a developer could use this software release in
@@ -17,7 +17,7 @@ changes to the code, run tests and publish changes.
 
 ```bash
 # install this software release
-SR=https://lab.nexedi.com/nexedi/slapos/raw/master/software/slapos-testing/software.cfg 
+SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-testing/software.cfg
 COMP=slaprunner
 INSTANCE_NAME=$COMP
 
@@ -33,7 +33,11 @@ cd ~/srv/runner/instance/slappart0/parts/slapos.core/
 vim slapos/tests/client.py
 
 # run tests, using bundled python intepreter with pre-installed eggs dependencies
-~/srv/runner/instance/slappart0/software_release/bin/python_for_test setup.py build
+SLAPOS_TEST_IPV6=::1 \
+SLAPOS_TEST_IPV4=127.0.0.1 \
+SLAPOS_TEST_VERBOSE=1 \
+SLAPOS_TEST_DEBUG=1 \
+~/srv/runner/instance/slappart0/software_release/bin/python_for_test setup.py test
 
 # when satified, commit changes
 git add -p && git commit
