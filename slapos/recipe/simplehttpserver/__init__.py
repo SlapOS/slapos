@@ -27,6 +27,7 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 import string, random
 import os
+from six.moves import range
 
 class Recipe(GenericBaseRecipe):
 
@@ -35,7 +36,7 @@ class Recipe(GenericBaseRecipe):
     base_path = options['base-path']
     if options.get('use-hash-url', 'True') in ['true', 'True']:
       pool = string.letters + string.digits
-      hash_string = ''.join(random.choice(pool) for i in xrange(64))
+      hash_string = ''.join(random.choice(pool) for i in range(64))
       path = os.path.join(base_path, hash_string)
   
       if os.path.exists(base_path):

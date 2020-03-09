@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
+from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer
 import ssl
 import os
 import logging
@@ -46,7 +46,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     name = form['path'].value
     content = form['content'].value
     method = 'a'
-    if form.has_key('clear') and form['clear'].value == '1':
+    if 'clear' in form and form['clear'].value == '1':
       method = 'w'
     self.writeFile(name, content, method)
     self.respond(200, type=self.headers['Content-Type'])
@@ -97,7 +97,7 @@ def run(args):
   
   httpd = server((host, port), Handler)
   scheme = 'http'
-  if args.has_key('cert-file') and args.has_key('key-file') and \
+  if 'cert-file' in args and 'key-file' in args and \
       os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
     scheme = 'https'
     httpd.socket = ssl.wrap_socket (httpd.socket, 
