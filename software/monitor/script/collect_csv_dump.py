@@ -27,6 +27,7 @@
 #
 ##############################################################################
 
+from __future__ import print_function
 import os
 import argparse
 import csv
@@ -96,6 +97,6 @@ if __name__ == "__main__":
 
   
   if not os.path.exists(parser.collector_db):
-    print "Collector database not found..."
+    print("Collector database not found...")
 
   dump_table_into_csv(Database(parser.collector_db), parser.output_folder)
