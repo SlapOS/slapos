@@ -22,6 +22,10 @@ parts +=
 extends =
   ${monitor2-template:rendered}
 
+[slap-network-information]
+local-ipv4 = $${slap-configuration:ipv4-random}
+global-ipv6 = $${slap-configuration:ipv6-random}
+
 #----------------
 #--
 #-- Creation of all needed directories.

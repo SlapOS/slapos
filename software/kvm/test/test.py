@@ -25,13 +25,14 @@
 #
 ##############################################################################
 
-import httplib
+import six.moves.http_client as httplib
 import json
 import os
 import requests
+import six
 import slapos.util
 import sqlite3
-import urlparse
+from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 
 from slapos.recipe.librecipe import generateHashFromFiles
@@ -43,7 +44,8 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+      os.path.join(os.path.dirname(__file__), '..',
+                   'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
@@ -118,7 +120,7 @@ class MonitorAccessMixin(object):
     monitor_setup_url = connection_parameter_dict['monitor-setup-url']
     monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
 
-    auth = urlparse.parse_qs(urlparse.urlparse(monitor_url_with_auth).path)
+    auth = parse_qs(urlparse(monitor_url_with_auth).path)
 
     # check that monitor-base-url for all partitions in the tree are accessible
     # with published username and password
@@ -128,7 +130,7 @@ class MonitorAccessMixin(object):
       if not connection_xml:
         continue
       connection_dict = slapos.util.xml2dict(
-        partition_information['connection_xml'].encode('utf-8'))
+        connection_xml if six.PY3 else connection_xml.encode('utf-8'))
       monitor_base_url = connection_dict.get('monitor-base-url')
       if not monitor_base_url:
         continue
@@ -162,8 +164,8 @@ class TestAccessDefault(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
-    self.assertFalse('url-additional' in connection_parameter_dict)
+    self.assertIn('<title>noVNC</title>', result.text)
+    self.assertNotIn('url-additional', connection_parameter_dict)
 
 
 @skipUnlessKvm
@@ -186,7 +188,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
     result = requests.get(
       connection_parameter_dict['url-additional'], verify=False)
@@ -194,7 +196,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
 
 @skipUnlessKvm
@@ -219,13 +221,13 @@ class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
-    self.assertFalse('kvm0-url-additional' in connection_parameter_dict)
+    self.assertIn('<title>noVNC</title>', result.text)
+    self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
 
 
 @skipUnlessKvm
@@ -253,20 +255,20 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['kvm0-url'], verify=False)
+    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
     result = requests.get(
-      connection_parameter_dict['kvm0-url-additional'], verify=False)
+      connection_parameter_dict['KVM0-url-additional'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
-    self.assertTrue('<title>noVNC</title>' in result.text)
+    self.assertIn('<title>noVNC</title>', result.text)
 
 
 @skipUnlessKvm

@@ -38,13 +38,16 @@ from six.moves.urllib.parse import quote
 from six.moves.urllib.parse import urljoin
 from six.moves.configparser import ConfigParser
 import requests
+import six
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.util import bytes2str
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..',
+                     'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 
 
 class SlaprunnerTestCase(SlapOSInstanceTestCase):
@@ -185,7 +188,7 @@ class TestSSH(SlaprunnerTestCase):
       channel.settimeout(30)
       received = ''
       while True:
-        r = channel.recv(1024)
+        r = bytes2str(channel.recv(1024))
         self.logger.debug("received >%s<", r)
         if not r:
           break
@@ -197,7 +200,7 @@ class TestSSH(SlaprunnerTestCase):
       # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
       self.assertEqual(
           self.computer_partition_root_path,
-          client.exec_command("pwd")[1].read(1000).strip())
+          bytes2str(client.exec_command("pwd")[1].read(1000)).strip())
 
 
 class TestSlapOS(SlaprunnerTestCase):
@@ -211,7 +214,7 @@ class TestSlapOS(SlaprunnerTestCase):
             'show',
         ),
         env={})
-    self.assertIn('slaprunner', proxy_show_output)
+    self.assertIn(b'slaprunner', proxy_show_output)
 
   def test_shared_part_list(self):
     # this slapos used shared_part_list
