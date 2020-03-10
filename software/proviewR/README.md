@@ -5,6 +5,12 @@ See at http://www.proview.se/ for source code: https://github.com/siamect/provie
 
 Proview is an Open Source system for process control and automation.
 
+Configure server
+================
+
+Mesa component is needed with gbm, which need to install libudev.
+On debian/Ubundu you need to run apt-get install libudev-dev if it's not present.
+
 
 How it works
 ============
