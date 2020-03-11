@@ -9,7 +9,7 @@ PATH="${ioping:location}/bin:$PATH"
 PATH="${lmbench:location}/bin:$PATH"
 PATH="${mariadb:location}/bin:$PATH"
 PATH="${mariadb:location}/scripts:$PATH"
-PATH="${python2.7:location}/bin:$PATH"
+PATH="${python:location}/bin:$PATH"
 
 # add all eggs and develop-eggs to py path
 #
