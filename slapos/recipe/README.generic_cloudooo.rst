@@ -24,7 +24,7 @@ Here is an example of a section to add in your software.cfg :
   openoffice-port = 1235
   ooo-binary-path = ${directory:libreoffice-bin}/program
   environment =
-    FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+    FONTCONFIG_FILE = $${fontconfig-conf:rendered}
     PATH = ${binary-link:target-directory}
   ooo-uno-path = ${directory:libreoffice-bin}/basis-link/program
 
