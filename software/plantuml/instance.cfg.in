@@ -10,20 +10,23 @@ offline = true
 extends = ${monitor2-template:rendered}
 
 [fontconfig-conf]
-recipe = slapos.recipe.template
-url = ${font.conf:output}
-output = $${directory:etc}/font.conf
-
-fonts = $${directory:fonts}
-fontcache = $${directory:fontcache}
-installed-fonts =
-  ${liberation-fonts:location}
-  ${ipaex-fonts:location}
-  ${ipa-fonts:location}
-  ${ocrb-fonts:location}
-  ${android-fonts:location}
-  ${dejavu-fonts:location}
-
+recipe = slapos.recipe.template:jinja2
+template = ${template-font-conf:output}
+rendered = $${directory:etc}/font.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+    key includes :includes
+fonts =
+    ${android-fonts:location}
+    ${dejavu-fonts:location}
+    ${ipa-fonts:location}
+    ${ipaex-fonts:location}
+    ${liberation-fonts:location}
+    ${ocrb-fonts:location}
+    $${directory:fonts}
+includes =
+    ${fontconfig:location}/etc/fonts/conf.d
 [tomcat-server-xml]
 recipe = slapos.recipe.template
 url = ${tomcat-server-xml:output}
@@ -59,7 +62,7 @@ environment =
   JRE_HOME=${java-re-8:location}
   CATALINA_BASE=$${directory:catalina_base}
   GRAPHVIZ_DOT=${graphviz:location}/bin/dot
-  FONTCONFIG_FILE=$${fontconfig-conf:output}
+  FONTCONFIG_FILE=$${fontconfig-conf:rendered}
   LD_LIBRARY_PATH=${fontconfig:location}/lib:${freetype:location}/lib
 # XXX java is still loading system fonts ... ( even with $JAVA_FONTS or -Djava.awt.fonts )
 # related links:
@@ -110,9 +113,8 @@ srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
 services = $${:etc}/service
-
+fontconfig-cache = $${buildout:directory}/.fontconfig
 fonts = $${:srv}/fonts/
-fontcache = $${buildout:directory}/.fontcache/
 
 # tomcat directories
 catalina_base = $${:var}/tomcat
