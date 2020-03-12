@@ -6,15 +6,24 @@ parts =
 
 extends = ${monitor-template:rendered}
 eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory} 
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[fontconfig-instance]
-recipe = slapos.cookbook:fontconfig
-conf-path = $${directory:etc}/font.conf
-font-system-folder = ${fonts:location}
-font-folder = $${directory:fonts}
-service-folder = $${directory:services}
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+template = ${template-font-conf:output}
+rendered = $${directory:etc}/font.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+fonts =
+    ${android-fonts:location}
+    ${dejavu-fonts:location}
+    ${ipa-fonts:location}
+    ${ipaex-fonts:location}
+    ${liberation-fonts:location}
+    ${ocrb-fonts:location}
+    $${directory:fonts}
 
 [xvfb-instance]
 recipe = slapos.cookbook:wrapper
@@ -79,7 +88,7 @@ environment =
   PATH=${buildout:bin-directory}
   XORG_LOCK_DIR=$${directory:tmp}
   DISPLAY=$${xvfb-instance:display}
-  FONTCONFIG_FILE=$${fontconfig-instance:conf-path}
+  FONTCONFIG_FILE=$${fontconfig-conf:rendered}
 hostname = $${instance-parameter:ipv4-random}
 
 
@@ -331,5 +340,7 @@ tmp = $${buildout:directory}/tmp
 services = $${:etc}/service
 framebuffer = $${:srv}/framebuffer
 fonts = $${:srv}/fonts/
+fontconfig-cache = $${buildout:directory}/.fontconfig
+
 ssh = $${:etc}/ssh
 run = $${:var}/run
