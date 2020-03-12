@@ -9,9 +9,8 @@ parts =
   onetimeupload-promise
   publish-connection-information
 extends = {{ template_monitor }}
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
+
+{% set ipv6 = slap_configuration['ipv6-random'] -%}
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -27,7 +26,7 @@ watched-services = ${rootdirectory:etc}/service
 
 [nbd-instance]
 recipe = slapos.cookbook:nbdserver
-ip = ${slap-network-information:global-ipv6}
+ip = {{ ipv6 }}
 port = 1024
 image-path = ${onetimeupload-instance:image-path}
 qemu-path =  {{ qemu_nbd_executable_location }}
@@ -55,7 +54,7 @@ bytes = 24
 
 [onetimeupload-instance]
 recipe = slapos.cookbook:onetimeupload
-ip = ${slap-network-information:global-ipv6}
+ip = {{ ipv6 }}
 port = {{ slapparameter_dict.get('otu-port', 8080) }}
 image-path = ${rootdirectory:srv}/cdrom.iso
 log-path = ${rootdirectory:log}/onetimeupload.log
@@ -80,6 +79,10 @@ upload_key = ${onetimeupload-instance:key}
 status_message = ${detect-if-cdrom-present:status}
 
 [detect-if-cdrom-present]
-recipe = collective.recipe.shelloutput
-commands =
-  status = [ -f ${onetimeupload-instance:image-path} ] && echo "image already uploaded, you can't upload it again" || echo "WARNING: no image yet, the NBD server doesn't work"
+recipe = slapos.recipe.build
+init =
+  import os
+  options['status'] = (
+    "image already uploaded, you can't upload it again"
+    if os.path.isfile("${onetimeupload-instance:image-path}")
+    else "WARNING: no image yet, the NBD server doesn't work")

@@ -19,6 +19,14 @@ config-{{ name }} = {{ dumps(value) }}
 {% endif -%}
 {% endmacro -%}
 
+[slap-network-information]
+global-ipv6 = {{ ipv6 }}
+
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
 [request-common]
 recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}

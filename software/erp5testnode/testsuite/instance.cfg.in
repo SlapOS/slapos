@@ -6,7 +6,7 @@ default = $${:test}
 RootSoftwareInstance = $${:test}
 
 # Used for the test of resiliency. The system wants a "test" software_type.
-test = $${dynamic-template-resilient-test:rendered}
+test = dynamic-template-resilient-test:rendered
 
 [dynamic-template-resilient-test]
 recipe = slapos.recipe.template:jinja2

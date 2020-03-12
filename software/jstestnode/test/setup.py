@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2019 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -27,13 +27,12 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.kvm'
-with open("README.md") as f:
-  long_description = f.read()
+name = 'slapos.test.jstestnode'
+long_description = open("README.md").read()
 
 setup(name=name,
       version=version,
-      description="Test for SlapOS' kvm",
+      description="Test for SlapOS' jstestnode",
       long_description=long_description,
       long_description_content_type='text/markdown',
       maintainer="Nexedi",
@@ -41,14 +40,11 @@ setup(name=name,
       url="https://lab.nexedi.com/nexedi/slapos",
       packages=find_packages(),
       install_requires=[
-          'slapos.core',
-          'slapos.cookbook',
-          'slapos.libnetworkcache',
-          'erp5.util',
-          'supervisor',
-          'psutil',
-          'six',
-      ],
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'erp5.util',
+        'requests',
+        ],
       zip_safe=True,
       test_suite='test',
-      )
+    )

@@ -31,6 +31,10 @@
 {% do extends_list.append(template_monitor) -%}
 {% do extends_list.append(logrotate_cfg) -%}
 
+[slap-network-information]
+local-ipv4 = {{ slap_configuration['ipv4-random'] }}
+global-ipv6 = {{ slap_configuration['ipv6-random'] }}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -454,38 +458,6 @@ interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://moni
 [helper]
 blank-line =
 
-[frontend-port-execute-base]
-recipe = plone.recipe.command
-command =
-  set -e
-  port=$(echo '${request-slave-frontend:connection-secure_access}' | cut -d ':' -f 3 | cut -d '/' -f 1)
-  [ -z $port ] && port=443
-  echo $port > ${:output}
-update-command = ${:command}
-stop-on-error = True
-
-[frontend-port-execute]
-<= frontend-port-execute-base
-secure_access = ${request-slave-frontend:connection-secure_access}
-output = ${directory:var}/frontend_port.txt
-
-[frontend-port]
-recipe = collective.recipe.shelloutput
-filename = ${frontend-port-execute:output}
-commands =
-  port = [ -f '${:filename}' ] && cat '${:filename}' || echo "NotReady"
-
-{% if additional_frontend %}
-[frontend-additional-port-execute]
-<= frontend-port-execute-base
-secure_access = ${request-slave-frontend-additional:connection-secure_access}
-output = ${directory:var}/frontend_additional_port.txt
-
-[frontend-additional-port]
-<= frontend-port
-filename = ${frontend-additional-port-execute:output}
-{% endif %}
-
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
@@ -493,7 +465,7 @@ ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
@@ -780,6 +752,10 @@ data-to-vm =
 
 # Change keyboard layout language (Change to en-us if you face some bad bihaviors)
 keyboard-layout-language = fr
+
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
 
 #############################
 #

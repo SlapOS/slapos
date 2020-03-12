@@ -39,7 +39,7 @@ name = exporter
 title = Dumping ${slap-parameter:namebase}
 executable = ${exporter:wrapper}
 wrapper = ${rootdirectory:bin}/exporter
-notify = ${slap-parameter:notify}
+notify = {{ slapparameter_dict.get('notify', '') }}
 pidfile = ${resilient-directory:pid}/${:name}.pid
 max-run = 3
 
@@ -85,8 +85,3 @@ recipe = slapos.cookbook:random.time
 recipe = slapos.cookbook:publish-early
 -init =
   resiliency-backup-periodicity gen-resiliency-backup-periodicity:time
-
-[slap-parameter]
-# In cron.d format (i.e things like */15 * * * * are accepted).
-resiliency-backup-periodicity =
-notify =

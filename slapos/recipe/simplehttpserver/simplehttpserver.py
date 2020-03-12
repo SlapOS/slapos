@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
+from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer
 import ssl
 import os
 import logging
 from netaddr import valid_ipv4, valid_ipv6
 import socket
 import cgi, errno
+
+from slapos.util import str2bytes
+
 
 class ServerHandler(SimpleHTTPRequestHandler):
 
@@ -22,7 +25,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     if self.restrict_root_folder and self.path and self.path == '/':
       # no access to root path
       self.respond(403)
-      self.wfile.write("Forbidden")
+      self.wfile.write(b"Forbidden")
       return True
     return False
 
@@ -46,11 +49,11 @@ class ServerHandler(SimpleHTTPRequestHandler):
     name = form['path'].value
     content = form['content'].value
     method = 'a'
-    if form.has_key('clear') and form['clear'].value == '1':
+    if 'clear' in form and form['clear'].value == '1':
       method = 'w'
     self.writeFile(name, content, method)
     self.respond(200, type=self.headers['Content-Type'])
-    self.wfile.write("Content written to %s" % name)
+    self.wfile.write(b"Content written to %s" % str2bytes(name))
 
   def writeFile(self, filename, content, method='a'):
     file_path = os.path.join(self.document_path, filename)
@@ -97,7 +100,7 @@ def run(args):
   
   httpd = server((host, port), Handler)
   scheme = 'http'
-  if args.has_key('cert-file') and args.has_key('key-file') and \
+  if 'cert-file' in args and 'key-file' in args and \
       os.path.exists(args['cert-file']) and os.path.exists(args['key-file']):
     scheme = 'https'
     httpd.socket = ssl.wrap_socket (httpd.socket, 
