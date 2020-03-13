@@ -58,6 +58,7 @@ environment +=
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
   INSTANCE_HOME=${:instance-home}
   CAUCASE={{ slapparameter_dict['caucase-url'] }}
+  FONTCONFIG_FILE=${fontconfig-conf:rendered}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
@@ -88,6 +89,19 @@ tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
 plugin = ${:etc}/plugin
 unit-test-path = ${:srv}/test-instance/unit_test
+fontconfig-cache = ${buildout:directory}/.fontconfig
+
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-font-conf'] }}
+rendered = ${directory:etc}/font.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+fonts =
+{% for font in parameter_dict['fonts'].splitlines() %}
+   {{ font }}
+{% endfor %}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
@@ -308,7 +322,7 @@ node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
 zodb-dict = {{ dumps(zodb_dict) }}
-large-file-threshold = {{ large_file_threshold }} 
+large-file-threshold = {{ large_file_threshold }}
 {% if longrequest_logger_interval > 0 -%}
 longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
 longrequest-logger-timeout = {{ longrequest_logger_timeout }}
