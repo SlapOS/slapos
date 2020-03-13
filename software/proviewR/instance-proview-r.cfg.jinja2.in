@@ -166,7 +166,7 @@ mode = 600
 recipe = collective.recipe.template
 input = inline:#!/bin/bash
   umask 022
-
+  export HOME=${buildout:directory}
   # include .bashrc if it exists
 
   if [ -f ~/.bashrc ]; then
@@ -216,9 +216,12 @@ mode = 0700
 rendered = ${directory:bin}/shellinaboxd
 template = inline:
   #!/bin/sh
+  # XXXXXXXXXXXXXXXXXXXXXXX WORKAROUND XXXXXXXXXXXXXXXXXXXXXxx
+  export HOME=${buildout:directory}
+  # XXXXXXXXXXXXXXXXXXXXXXX WORKAROUND XXXXXXXXXXXXXXXXXXXXXxx
   exec {{ shellinabox_bin }} \
     --unixdomain-only=${:socket}:$(id -u):$(id -g):0600 \
-    --service "/:$(id -u):$(id -g):HOME:${shell-environment:shell} -l"
+    --service "/:$(id -u):$(id -g):${buildout:directory}:${shell-environment:shell} --rcfile ${bash-profile:output} -i"
 
 [shellinabox-service]
 recipe = slapos.cookbook:wrapper
@@ -227,7 +230,8 @@ wrapper-path = ${directory:services}/shellinaboxd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [shell-environment]
-shell = /bin/bash
+#shell = /bin/bash
+shell = {{ bash_location.replace('//','/') }}
 
 [ca-nginx]
 <= certificate-authority
