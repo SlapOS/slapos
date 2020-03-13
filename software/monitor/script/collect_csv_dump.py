@@ -54,15 +54,14 @@ def parseArguments():
   return parser.parse_args()
 
 def writeFile(name, folder, date_scope, rows):
-  if os.path.exists(
-      os.path.join(folder, "%s/dump_%s.csv" % (date_scope, name))):
+  folder = os.path.join(folder, date_scope)
+  f = os.path.join(folder, "dump_%s.csv" % name)
+  if os.path.exists(f):
     # File already exists, no reason to recreate it.
     return
-  mkdir_p(os.path.join(folder, date_scope), 0o755)
-  file_io = open(os.path.join(folder, "%s/dump_%s.csv" % (date_scope, name)), "w")
-  csv_output = csv.writer(file_io)
-  csv_output.writerows(rows)
-  file_io.close()
+  mkdir_p(folder, 0o755)
+  with open(f, "w") as file_io:
+    csv.writer(file_io).writerows(rows)
 
 def dump_table_into_csv(db, folder):
     db.connect()

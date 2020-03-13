@@ -65,7 +65,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
 
-class MonitorTestMixin(object):
+class MonitorTestMixin:
   monitor_setup_url_key = 'monitor-setup-url'
 
   def test_monitor_setup(self):
@@ -199,7 +199,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
       set(
         glob.glob(
           os.path.join(self.bot_partition_path, 'etc', 'surykatka*.ini'))),
-      set([q['ini-file'] for q in self.surykatka_dict.values()])
+      {q['ini-file'] for q in self.surykatka_dict.values()}
     )
     for info_dict in self.surykatka_dict.values():
       self.assertEqual(
@@ -247,7 +247,6 @@ class EdgeSlaveMixin(MonitorTestMixin):
       except subprocess.CalledProcessError as e:
         self.fail('%s failed with code %s and message %s' % (
           info_dict['status-json'], e.returncode, e.output))
-      self.assertTrue(os.path.exists(info_dict['json-file']))
       with open(info_dict['json-file']) as fh:
         status_json = json.load(fh)
       self.assertIn('bot_status', status_json)
