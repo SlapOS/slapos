@@ -165,13 +165,26 @@ recipe = slapos.cookbook:publish.serialised
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
 
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-font-conf'] }}
+rendered = ${directory:etc}/font.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+fonts =
+{% for font in parameter_dict['fonts'].splitlines() %}
+   {{ font }}
+{% endfor%}
+    ${directory:font}
 
 [cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
 ip = {{ ipv4 }}
 environment =
   LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
-  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+  FONTCONFIG_FILE = ${fontconfig-conf:rendered}
+
   PATH = ${binary-link:target-directory}
 mimetype_entry_addition =
 {% for entry in mimetype_entry_addition.splitlines() -%}
@@ -224,14 +237,6 @@ configuration-file = ${cloudooo-0:configuration-file}
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
 run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
 
-[fontconfig-instance]
-recipe = slapos.cookbook:fontconfig
-conf-path = ${directory:etc}/font.conf
-font-system-folder = {{ parameter_dict['fonts'] }}
-font-folder = ${directory:font}
-service-folder = ${directory:services}
-
-
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
@@ -262,6 +267,7 @@ certs = ${:ca-dir}/certs
 crl = ${:ca-dir}/crl
 etc = ${buildout:directory}/etc
 font = ${:srv}/font
+fontconfig-cache = ${buildout:directory}/.fontconfig
 log = ${:var}/log
 newcerts = ${:ca-dir}/newcerts
 private = ${:ca-dir}/private
