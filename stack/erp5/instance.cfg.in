@@ -143,6 +143,7 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 mariadb-location = {{ mariadb_location }}
+plugin-directory = {{ mroonga_mariadb_plugin_dir }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
