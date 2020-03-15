@@ -129,6 +129,8 @@ socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
 etc-directory = ${directory:etc}
+plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
+groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
@@ -186,6 +188,7 @@ context =
   key datadir my-cnf-parameters:data-directory
   key environ :environ
 environ =
+  GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
   ODBCSYSINI='${my-cnf-parameters:etc-directory}'
   LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
@@ -242,7 +245,7 @@ command = mysql_tzinfo_to_sql
 <= binary-wrap-base
 command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
 command = pt-query-digest
- 
+
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -319,7 +322,7 @@ template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
 rendered = ${directory:bin}/${:filename}
 filename = generate-mariadb-slow-query-report
 mode = 755
-context = 
+context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
