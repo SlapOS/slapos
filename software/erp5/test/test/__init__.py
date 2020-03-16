@@ -30,10 +30,19 @@ import os
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+_setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
 
+def setUpModule():
+# XXX hack to not install soft
+  return _setUpModule()
+
+  import unittest
+  import logging
+  unittest.installHandler()
+  logging.basicConfig(
+        level=logging.DEBUG)
 
 class ERP5InstanceTestCase(SlapOSInstanceTestCase):
   """ERP5 base test case
