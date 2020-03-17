@@ -82,13 +82,16 @@
           "additionalProperties": false,
           "properties": {
             "admin": {
-              "description": "Port of admin node. 0 to disable.",
-              "default": 2050,
+              "description": "Admin port, 0 to disable. Default to 2050 if the node has a master, 0 otherwise.",
               "type": "integer"
             },
             "master": {
-              "description": "Port of master node. 0 to disable.",
+              "description": "Master port, 0 to disable.",
               "default": 2051,
+              "type": "integer"
+            },
+            "monitor": {
+              "description": "Monitor port, 0 to disable. Unless explicitly set by a node, the first one with an admin gets a monitor at port 2052.",
               "type": "integer"
             },
             "storage-count": {
