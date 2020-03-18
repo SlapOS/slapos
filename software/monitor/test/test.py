@@ -65,7 +65,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
       self.assertIn(expected_process_name, process_names)
 
 
-class MonitorTestMixin(object):
+class MonitorTestMixin:
   monitor_setup_url_key = 'monitor-setup-url'
 
   def test_monitor_setup(self):
@@ -152,8 +152,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
     )
 
   def updateSurykatkaDict(self):
-    class_list = self.surykatka_dict.keys()
-    for class_ in class_list:
+    for class_ in self.surykatka_dict:
       update_dict = {}
       update_dict['ini-file'] = os.path.join(
         self.bot_partition_path, 'etc', 'surykatka-%s.ini' % (class_,))
@@ -200,7 +199,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
       set(
         glob.glob(
           os.path.join(self.bot_partition_path, 'etc', 'surykatka*.ini'))),
-      set([q['ini-file'] for q in self.surykatka_dict.values()])
+      {q['ini-file'] for q in self.surykatka_dict.values()}
     )
     for info_dict in self.surykatka_dict.values():
       self.assertEqual(
@@ -243,14 +242,11 @@ class EdgeSlaveMixin(MonitorTestMixin):
     for info_dict in self.surykatka_dict.values():
       if os.path.exists(info_dict['json-file']):
         os.unlink(info_dict['json-file'])
-      env = os.environ.copy()
-      env.pop('PYTHONPATH', None)
       try:
-        subprocess.check_call(info_dict['status-json'], shell=True, env=env)
+        subprocess.check_call(info_dict['status-json'])
       except subprocess.CalledProcessError as e:
         self.fail('%s failed with code %s and message %s' % (
           info_dict['status-json'], e.returncode, e.output))
-      self.assertTrue(os.path.exists(info_dict['json-file']))
       with open(info_dict['json-file']) as fh:
         status_json = json.load(fh)
       self.assertIn('bot_status', status_json)
@@ -680,8 +676,8 @@ INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
 URL =
-  https://www.erp5.org/
-  https://www.erp5.com/"""}
+  https://www.erp5.com/
+  https://www.erp5.org/"""}
   }
 
   @classmethod
