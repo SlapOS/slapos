@@ -117,10 +117,12 @@ crl = ${apache-ssl-client:crl}
 [apache-promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
-module = check_port_listening
+module = check_url_available
 name = apache.py
-config-hostname = {{ ipv4 }}
-config-port = {{ apache_dict.values()[0][0] }}
+config-url = https://{{ ipv4 }}:{{ apache_dict.values()[0][0] }}
+# XXX cloudooo replies "400 Bad Request" for GET on / but what we want to check
+# is that we don't have a "503 Service Unavailable" from apache or haproxy.
+config-http_code = 400
 
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
