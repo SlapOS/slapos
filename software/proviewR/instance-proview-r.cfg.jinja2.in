@@ -121,7 +121,7 @@ recipe = plone.recipe.command
 pwr-db = ${directory:pwrp}/db
 pwr-flag = ${directory:pwrp}/flag
 command = 
-  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}  
+  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}/.. #cp will make extra 'db' folder
   echo PORT=5901 > ${:pwr-flag}
   cat <<EOF > ${buildout:directory}/.rtt_start
     #!/bin/bash
@@ -157,7 +157,7 @@ input = inline:#!/bin/bash
   fi
 
   # Set Base (XXX - hard coded version)
-  pwrp set base V5.6.0
+  pwrp set base V5.7.1
 
 output = ${buildout:directory}/.bashrc
 mode = 600
