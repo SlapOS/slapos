@@ -94,7 +94,7 @@ extends = ${instance-mysoftware:output}
 
 parts +=
     mysoftware
-    import-on-notification
+    notify-callback
 
 [importer]
 recipe = YourImportRecipe

@@ -29,8 +29,6 @@ parts +=
   software-release-deployment-promise
 
   resilient-software-release-information
-# have to repeat the next one, as it's not inherited from pbsready-import
-  import-on-notification
 
   monitor-base
 

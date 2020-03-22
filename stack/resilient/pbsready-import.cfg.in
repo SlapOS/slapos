@@ -7,8 +7,7 @@ parts +=
   resilient-web-takeover-httpd-wrapper
   resilient-web-takeover-httpd-promise
 
-  check-backup-integrity-on-notification
-  import-on-notification
+  notify-callback
   backup-checksum-integrity-promise
   resilient-publish-connection-parameter
 
@@ -39,13 +38,17 @@ minimum = 65516
 maximum = 65525
 ip = $${notifier:host}
 
-[import-on-notification]
+[notify-callback]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received
-<= notifier
 recipe = slapos.cookbook:notifier.callback
+directory = $${notifier:callbacks}
 on-notification-id = $${slap-parameter:on-notification}
-callback = $${importer:wrapper}
+callbacks =
+# import on notification
+  $${importer:wrapper}
+# check backup integrity on notification
+  $${post-notification-run:output}
 
 [post-notification-run]
 recipe = collective.recipe.template
@@ -58,12 +61,6 @@ input = inline:
   diff -ruw backup.signature $${:proof-signature-file} > $${:diff-file}
 output = $${rootdirectory:bin}/post-notification-run
 mode = 0700
-
-[check-backup-integrity-on-notification]
-<= notifier
-recipe = slapos.cookbook:notifier.callback
-on-notification-id = $${slap-parameter:on-notification}
-callback = $${post-notification-run:output}
 
 [backup-checksum-integrity-promise-bin]
 recipe = slapos.recipe.template:jinja2

@@ -46,20 +46,16 @@ class Recipe(GenericBaseRecipe):
 
 class Callback(GenericBaseRecipe):
 
-  def createCallback(self, notification_id, callback):
+  def install(self):
+    options = self.options
+    notification_id = options['on-notification-id']
     # XXX: hashing the name here and in
     # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
     # prevent any debug.
     callback_id = sha512(str2bytes(notification_id)).hexdigest()
 
-    filepath = os.path.join(self.options['callbacks'], callback_id)
-    self.addLineToFile(filepath, callback)
-    return filepath
-
-  def install(self):
-    # XXX this path is returned multiple times, one for each callback that has been added.
-    return [self.createCallback(self.options['on-notification-id'],
-                                self.options['callback'])]
+    return self.createFile(os.path.join(options['directory'], callback_id),
+                           options['callbacks'])
 
 class Notify(GenericBaseRecipe):
 
