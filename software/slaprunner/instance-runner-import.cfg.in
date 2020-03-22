@@ -19,7 +19,6 @@ parts +=
   runtestsuite
   shellinabox
   shellinabox-service
-  symlinks
   slapos-cfg
   cron-entry-prepare-software
   deploy-instance-parameters
