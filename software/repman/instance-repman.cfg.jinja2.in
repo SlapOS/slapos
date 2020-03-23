@@ -1,0 +1,113 @@
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+repman-port = 10005
+
+[slap-configuration]
+# apache-frontend reads from  a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+data = ${:var}/lib
+
+[replication-manager-credential]
+recipe = slapos.cookbook:generate.password
+username = admin
+bytes = 12
+
+[replication-manager]
+recipe = slapos.cookbook:wrapper
+# repman service is listening on:
+# - global IPv6 address, and
+# - fixed port
+#
+# NOTE because every computer partition is allocated its own global IPv6
+# address, it is ok to fix the port - different hello-world instances will have
+# different IPv6 addresses and they all will be accessible at the same time.
+port = ${instance-parameter:repman-port}
+ipv6 = ${instance-parameter:ipv6-random}
+# full URL - for convenience
+url = https://[${:ipv6}]:${:port}
+logfile = ${directory:log}/repman.log
+command-line =
+   {{ gowork_bin }}/replication-manager
+   --monitoring-basedir=system
+   --monitoring-sharedir=software_release/src/share
+   --http-root=software_release/src/dashboard
+   --monitoring-datadir=${directory:var}/lib
+   --config=${directory:etc}/config.toml
+   --log-file=${:logfile} monitor
+
+wrapper-path = ${directory:service}/replication-manager
+
+
+[template-jinja2-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ config_toml_in }}
+rendered =${directory:etc}/config.toml
+extra-context =
+context =
+  key service_ipv6 replication-manager:ipv6
+  key service_user replication-manager-credential:username
+  key service_pwd replication-manager-credential:passwd
+
+
+[repman-listen-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = repman_service_listen.py
+config-hostname = ${replication-manager:ipv6}
+config-port = ${instance-parameter:repman-port}
+
+
+[publish-connection-parameter]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+url = ${replication-manager:url}
+username = ${replication-manager-credential:username}
+password = ${replication-manager-credential:passwd}
+
+
+#############################
+#
+# Deploy replication-manager instance
+#
+#############################
+[buildout]
+extends =
+  {{ template_monitor_cfg }}
+parts =
+  directory
+  publish-connection-parameter
+  instance-parameter
+  template-jinja2-base
+  replication-manager
+  repman-listen-promise
+  monitor-base
+
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
