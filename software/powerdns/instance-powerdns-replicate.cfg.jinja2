@@ -60,7 +60,7 @@ context =
 <= replicate
 name = {{dns_name}}
 {%   set state_key = "-dns-%s-state" % i %}
-{%   if slapparameter_dict.has_key(state_key) %}
+{%   if state_key in slapparameter_dict %}
 state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
 config-zone = {{ zone }}
@@ -95,7 +95,7 @@ monitor-url-list +=
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
 {% set dns_software_url_key = "-dns-software-release-url" %}
-{% if slapparameter_dict.has_key(dns_software_url_key) %}
+{% if dns_software_url_key in slapparameter_dict %}
 software-url = {{ slapparameter_dict.pop(dns_software_url_key) }}
 {% else %}
 software-url = ${slap-connection:software-release-url}
@@ -104,7 +104,7 @@ software-type = {{dns_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
 config-server-admin = {{ server_admin }}
 config-ns-record = {{ ns_record }}
-{% for parameter, value in slapparameter_dict.iteritems() -%}
+{% for parameter, value in slapparameter_dict.items() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
