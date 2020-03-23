@@ -1,128 +1,42 @@
-#############################
-#
-# Deploy replication-manager instance
-#
-#############################
+# GitLab "switch-softwaretype" instance
 [buildout]
-parts =
-  directory
-  publish-connection-parameter
-  instance-parameter
-  template-jinja2-base
-  replication-manager
-  repman-promise
+parts = switch-softwaretype
 
-
-# Define egg directories to be the one from Software Release
-# (/opt/slapgrid/...)
-# Always the same.
+# std stuff for slapos instance
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
-[instance-parameter]
-# Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
-# We use the slapconfiguration recipe with a few parameters (partition id,
-# computer id, certificate, etc).
-# It will then authenticate to SlapOS Master and fetch the instance parameters.
-# The parameters are accessible from $${instance-parameter:configuration.name-of-parameter}
-# Always the same. Just copy/paste.
-# See docstring of slapos.cookbook:slapconfiguration for more information.
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+repman  = $${template-instance-repman.cfg:rendered}
+default = $${:repman}
 
 
-[slap-configuration]
-# apache-frontend reads from  a part named [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-
-
-
-# Create all needed directories, depending on your needs
-[directory]
-recipe = slapos.cookbook:mkdirectory
-home = $${buildout:directory}
-etc = $${:home}/etc
-var = $${:home}/var
-# Executables put here will be started but not monitored (for startup scripts)
-script = $${:etc}/run/
-# Executables put here will be started and monitored (for daemons)
-service = $${:etc}/service
-# Executables put here will be launched after buildout has completed to see
-# if instance is running
-promise = $${:etc}/promise/
-# Path of the log directory used by our service (see [helloweb])
-log = $${:var}/log
-data = $${:var}/lib
-
-[replication-manager-credential]
-recipe = slapos.cookbook:generate.password
-username = admin
-bytes = 12
-
-[replication-manager]
-# repman service is listening on:
-# - global IPv6 address, and
-# - fixed port
-#
-# NOTE because every computer partition is allocated its own global IPv6
-# address, it is ok to fix the port - different hello-world instances will have
-# different IPv6 addresses and they all will be accessible at the same time.
-port = 10005
-ipv6 = $${instance-parameter:ipv6-random}
-# full URL - for convenience
-url = https://[$${:ipv6}]:$${:port}
-
-# the service will log here
-logfile = $${directory:log}/repman.log
-
-# Actual script that starts the service:
-# This recipe will try to "exec" the command-line after separating parameters.
-recipe = slapos.cookbook:wrapper
-command-line =
-   ${gowork:bin}/replication-manager  --monitoring-basedir=system --monitoring-sharedir=software_release/src/share --http-root=software_release/src/dashboard --monitoring-datadir=$${directory:var}/lib --config=$${directory:etc}/config.toml --log-file=$${:logfile} monitor
-
-# Put this shell script in the "etc/service" directory. Each executable of this
-# repository will be started and monitored by supervisord. If a service
-# exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
-wrapper-path = $${directory:service}/replication-manager
-
-name = config.toml
-
-
-
-[template-jinja2-base]
-recipe = slapos.recipe.template:jinja2
-template = ${download-config-toml:destination}
-rendered =$${directory:etc}/config.toml
-extra-context =
+# macro: render instance-*.cfg from instance-*.cfg.in
+[instance-cfg]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0644
+rendered= $${buildout:directory}/$${:_buildout_section_name_}
 context =
-  key service_ipv6 replication-manager:ipv6
-  key service_user replication-manager-credential:username
-  key service_pwd replication-manager-credential:passwd
-# promise, that checks that helloweb service is alive
-[repman-promise]
-recipe = slapos.cookbook:check_port_listening
-path = $${directory:promise}/replication-manager-ipv6
-hostname= $${replication-manager:ipv6}
-port    = 10005
 
+    key bin_directory           buildout:bin-directory
+    key eggs_directory          buildout:eggs-directory
+    key develop_eggs_directory  buildout:develop-eggs-directory
 
-# Publish all the parameters needed for the user to connect to the instance.
-# It can be anything: URL(s), password(s), or arbitrary parameters.
-# Here we'll just echo back the entered name as instance parameter
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-url = $${replication-manager:url}
-username = $${replication-manager-credential:username}
-password = $${replication-manager-credential:passwd}
+# program binaries
+    raw bash_bin                    ${bash:location}/bin/bash
+    raw gowork_bin                  ${gowork:bin}
+    raw template_monitor_cfg        ${monitor2-template:rendered}
+
+# config files
+    raw config_toml_in             ${config-toml.in:target}
+
+    $${:extra-context}
+extra-context =
+
+[template-instance-repman.cfg]
+<= instance-cfg
+template= ${instance-repman.cfg:target}
+extra-context =
