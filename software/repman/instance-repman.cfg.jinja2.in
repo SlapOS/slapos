@@ -50,6 +50,10 @@ command =
   cp -r share ${repman-parameter:share-dir}
   cp -r dashboard ${repman-parameter:http-root}
 
+# XXX - this need to be checked/optimized in case of upgrade.
+update-command =
+  
+
 [replication-manager]
 recipe = slapos.cookbook:wrapper
 command-line =
@@ -88,7 +92,7 @@ config-port = ${repman-parameter:port}
 [publish-connection-parameter]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-url = url = https://[${repman-parameter:ipv6}]:${repman-parameter:port}
+url = https://[${repman-parameter:ipv6}]:${repman-parameter:port}
 username = ${repman-parameter:username}
 password = ${repman-parameter:password}
 
