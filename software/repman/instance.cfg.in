@@ -28,6 +28,7 @@ context =
 # program binaries
     raw bash_bin                    ${bash:location}/bin/bash
     raw gowork_bin                  ${gowork:bin}
+    raw repman_src_location         ${git.signal18.io_signal18_repman:location}
     raw template_monitor_cfg        ${monitor2-template:rendered}
 
 # config files

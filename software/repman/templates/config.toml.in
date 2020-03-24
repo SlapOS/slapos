@@ -1,9 +1,9 @@
 [Default]
-api-bind = "[{{service_ipv6}}]"
-http-bind-address = "[{{service_ipv6}}]"
+api-bind = "[{{ parameter_dict['ipv6'] }}]"
+http-bind-address = "[{{ parameter_dict['ipv6'] }}]"
 monitoring-save-config = true
 api-https-bind = true
-api-credentials = "{{service_user}}:{{service_pwd}}"
+api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
 
 [cluster1]
 title = "cluster1"
