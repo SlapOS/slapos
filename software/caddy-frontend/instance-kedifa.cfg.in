@@ -210,7 +210,7 @@ ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
 crl = ${directory:etc-kedifa}/crl.pem
 template-csr = ${directory:etc-kedifa}/template-csr.pem
 pidfile = ${directory:run}/kedifa.pid
-logfile = ${directory:log}/kedfia.log
+logfile = ${directory:log}/kedifa.log
 
 [kedifa-reloader]
 recipe = slapos.cookbook:wrapper
