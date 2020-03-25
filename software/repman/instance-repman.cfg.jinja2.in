@@ -3,11 +3,13 @@ recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
 var = ${:home}/var
+run = ${:var}/run
 script = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 log = ${:var}/log
 data = ${:var}/lib
+nginx-prefix = ${:var}/nginx
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -21,6 +23,7 @@ cert = ${slap-connection:cert-file}
 <= slap-configuration
 # repman monitor seems to use a fixed port
 repman-port = 10005
+nginx-port  = 10006
 
 
 [repman]
@@ -28,6 +31,18 @@ recipe   = slapos.cookbook:mkdirectory
 etc      = ${directory:etc}/repman
 data-dir = ${directory:var}/lib
 root-dir = ${directory:srv}/repman
+
+[nginx-parameter]
+ipv6 = ${instance-parameter:ipv6-random}
+port = ${instance-parameter:nginx-port}
+ssl-certificate = ${ca-nginx:cert-file}
+ssl-key = ${ca-nginx:key-file}
+pid-file = ${directory:run}/nginx.pid
+access-log = ${directory:log}/nginx_access.log
+error-log = ${directory:log}/nginx_error.log
+repman-url = https://${repman-parameter:ipv4}:${repman-parameter:port}
+config-file = ${directory:etc}/nginx.conf
+backend-url = https://[${:ipv6}]:${:port}
 
 [repman-password]
 recipe = slapos.cookbook:generate.password
@@ -38,7 +53,7 @@ log = ${directory:log}/repman.log
 http-root = ${repman:root-dir}/dashboard
 share-dir = ${repman:root-dir}/share
 port = ${instance-parameter:repman-port}
-ipv6 = ${instance-parameter:ipv6-random}
+ipv4 = ${instance-parameter:ipv4-random}
 username = admin
 password = ${repman-password:passwd}
 
@@ -80,21 +95,91 @@ extra-context =
 context =
   section parameter_dict repman-parameter
 
-
 [repman-listen-promise]
 <= monitor-promise-base
 module = check_port_listening
 name = repman_service_listen.py
-config-hostname = ${repman-parameter:ipv6}
+config-hostname = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:port}
 
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ nginx_conf_in }}
+rendered = ${nginx-parameter:config-file}
+context =
+    section parameter_dict nginx-parameter
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ nginx_bin }}
+  -p ${directory:nginx-prefix}
+  -c ${nginx-conf:rendered}
+wrapper-path = ${directory:bin}/nginx-start
+wait-for-files =
+  ${ca-directory:certs}/nginx.key
+  ${ca-directory:certs}/nginx.crt
+  ${nginx-graceful-wrapper:wrapper-path}
+
+[nginx-graceful-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/nginx-graceful
+command-line =
+  kill -USR1 $(cat ${nginx-parameter:pid-file})
+
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+cert-file = ${ca-directory:certs}/nginx.crt
+key-file = ${ca-directory:certs}/nginx.key
+executable = ${nginx-launcher:wrapper-path}
+wrapper = ${directory:bin}/ca-nginx
+
+[ca-nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${ca-nginx:wrapper}
+wrapper-path = ${directory:services}/nginx
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${nginx-parameter:access-log} ${nginx-parameter:error-log}
+post = kill -USR1 $(cat ${nginx-parameter:pid-file})
 
 [publish-connection-parameter]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-url = https://[${repman-parameter:ipv6}]:${repman-parameter:port}
+backend-url = ${nginx-parameter:backend-url}
+url = ${repman-frontend:connection-secure_access}
 username = ${repman-parameter:username}
 password = ${repman-parameter:password}
+
+[repman-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Replication Manager Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${nginx-parameter:backend-url}
+config-domain = 
+return = domain secure_access
+
+[repman-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = check_repman_frontend.py
+config-url = https://${repman-frontend:connection-domain}
+config-check-secure = 1
+
+[repman-backend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = check_repman_frontend.py
+config-url = ${nginx-parameter:backend-url}
+config-check-secure = 1
 
 
 #############################
@@ -109,7 +194,11 @@ parts =
   replication-manager
   repman-listen-promise
   monitor-base
+  logrotate-entry-nginx
+  ca-nginx-service
   publish-connection-parameter
+  repman-frontend-promise
+  repman-backend-promise
 
 
 eggs-directory = {{ eggs_directory }}

@@ -28,11 +28,13 @@ context =
 # program binaries
     raw bash_bin                    ${bash:location}/bin/bash
     raw gowork_bin                  ${gowork:bin}
+    raw nginx_bin                   ${nginx:location}/sbin/nginx
     raw repman_src_location         ${git.signal18.io_signal18_repman:location}
     raw template_monitor_cfg        ${monitor2-template:rendered}
 
 # config files
     raw config_toml_in             ${config-toml.in:target}
+    raw nginx_conf_in              ${nginx.conf.in:target}
 
     $${:extra-context}
 extra-context =
