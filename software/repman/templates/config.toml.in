@@ -1,6 +1,6 @@
 [Default]
-api-bind = "[{{ parameter_dict['ipv6'] }}]"
-http-bind-address = "[{{ parameter_dict['ipv6'] }}]"
+api-bind = "[{{ parameter_dict['ipv4'] }}]"
+http-bind-address = "[{{ parameter_dict['ipv4'] }}]"
 monitoring-save-config = true
 api-https-bind = true
 api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
