@@ -160,6 +160,7 @@ context = section parameter_dict my-cnf-parameters
 
 [init-script-parameters]
 database-list = {{ dumps(database_list + test_database_list) }}
+mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 
 [init-script]
 < = jinja2-template-executable
