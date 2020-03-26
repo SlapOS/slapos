@@ -1,0 +1,106 @@
+# See https://doc.powerdns.com/authoritative/backends/geoip.html
+
+{%- set slave_instance_list = json_module.loads(slapparameter_dict.get('extra_slave_instance_list', '[]')) %}
+{%- set zone = slapparameter_dict.get('zone', 'example.com') %}
+
+{%- macro cname_record(origin, rr_dict, placeholder, code, region) %}
+    {{ code }}.{{ placeholder }}.{{ origin }}:
+      {%- set rr_list = rr_dict[region].split(',') %}
+
+      {%- if rr_list | length > 1 %}
+      {%-   for rr in rr_list %}
+      - cname:
+          content: {{ rr }}.{{ origin }}
+          weight: 1
+      {%-   endfor %}
+      {%- else %}
+      - cname: {{ rr_list[0] }}.{{ origin }}
+      {%- endif %}
+{%- endmacro %}
+
+domains:
+- domain: {{ zone }}
+  # TODO: what value for ttl?
+  ttl: 300
+
+  # Note: For each domain, one record of the domain name MUST exist with a soa record.
+  records:
+    {{ zone }}:
+      - soa: {{ slapparameter_dict.get('soa', 'ns0.example.com,admin@example.com').replace(',', ' ') }}
+      - ns: {{ slapparameter_dict.get('ns-record', 'ns0.example.com,ns1.example.com') }}
+
+    {%- for slave in slave_instance_list %}
+
+    {#-   Set the RR(s) to use for each region, as described in
+          'slave-instance-powerdns-input-schema.json' #}
+    {%-   set rr_dict = {} %}
+    {%-   for region, default_rr in {"europe": "eu",
+                                     "africa": "af",
+                                     "south-america": "sa",
+                                     "north-america": "na",
+                                     "china-telecom": "cn-t",
+                                     "china-unicom": "cn-u",
+                                     "china-mobile": "cn-m",
+                                     "japan": "jp",
+                                     "hong-kong": "hk",
+                                     "east-asia": "as",
+                                     "west-asia": "eu",
+                                     "oceania": "oc"}.items() %}
+    {%-     do rr_dict.__setitem__(region, slave.get(region, default_rr)) %}
+    {%-   endfor %}
+
+    {#-   Split the world the way we prefer. 'GeoLite2-Country.mmdb' divides the
+          world into 7 continents: Oceania, Asia, Europe, South America,
+          North America, Africa and Antarctica. However, we also want a more
+          fine-grained division for Asia, i.e. West/East, China, Hong-Kong and
+          Japan. #}
+    {%-   set world_split = {
+            "continent": {
+              "eu": "europe",
+              "af": "africa",
+              "sa": "south-america",
+              "na": "north-america",
+              "oc": "oceania",
+            },
+            "country": {
+              "jp": "japan",
+              "hk": "hong-kong",
+              "cn-t": "china-telecom",
+              "cn-u": "china-unicom",
+              "cn-m": "china-mobile",
+            }} %}
+    {%-   for country_code in ["ae", "af", "am", "az", "bh", "cc", "cy", "ge",
+                               "il", "iq", "ir", "jo", "kg", "kw", "kz", "lb",
+                               "om", "pk", "qa", "ru", "sa", "sy", "tj", "tm",
+                               "tr", "uz", "ye"] %}
+    {%-     do world_split["country"].__setitem__(country_code, "west-asia") %}
+    {%-   endfor %}
+    {%-   for country_code in ["bn", "bt", "cx", "id", "in", "io", "kh", "kp",
+                               "kr", "la", "lk", "mm", "mn", "mo", "mv", "my",
+                               "np", "ph", "sg", "th", "to", "tw", "vn"] %}
+    {%-     do world_split["country"].__setitem__(country_code, "east-asia") %}
+    {%-   endfor %}
+
+
+    {#-   'code2region' maps an ISO3166 country/continent code (i.e. the client
+          origin) to a geographical region. The latter is then used to find the
+          right RR(s) (thanks to 'rr_dict') #}
+    {%-   for placeholder, code2region in world_split.items() %}
+    {%-     for code, region in code2region.items() %}
+    {{-       cname_record(slave['origin'], rr_dict, placeholder, code, region) }}
+    {%-     endfor %}
+    {%-   endfor %}
+    {%- endfor %}
+
+  services:
+    {%- for slave in slave_instance_list %}
+    {%-   set origin = slave['origin'] %}
+    {{ slave['record'] }}:
+      {#- Note: Placeholders (i.e. "country." and "continent.") are used to avoid
+          possible name collisions, e.g.:
+          - %cc for American Samoa is 'as'
+          - %cn for Asia is also 'as' #}
+      default: ['%cc.country.{{ origin }}', '%cn.continent.{{ origin }}', '{{ slave['default'] }}.{{ origin }}']
+      # Split china's ip according to isp
+      # WIP
+    {%- endfor %}
