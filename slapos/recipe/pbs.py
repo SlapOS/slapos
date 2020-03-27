@@ -43,7 +43,7 @@ from slapos.recipe.librecipe import shlex
 
 def promise(ssh_client, user, host, port):
   # Redirect output to /dev/null
-  with open(os.devnull) as _dev_null:
+  with open(os.devnull, 'wb') as _dev_null:
     ssh = subprocess.Popen(
         (ssh_client, '%s@%s' % (user, host), '-p', str(port)),
         stdin=subprocess.PIPE, stdout=_dev_null, universal_newlines=True)
