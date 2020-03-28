@@ -41,6 +41,10 @@ from . import ERP5InstanceTestCase
 from . import setUpModule
 setUpModule  # pyflakes
 
+def xsetUpModule():
+  import logging
+  logging.basicConfig(level=logging.DEBUG)
+
 
 class MariaDBTestCase(ERP5InstanceTestCase):
   """Base test case for mariadb tests.
@@ -270,3 +274,42 @@ class TestMroonga(MariaDBTestCase):
           (2, "I'm developing Groonga"),
           (3, "I developed Groonga"),
       ], list(sorted(cnx.store_result().fetch_row(maxrows=4))))
+
+  def test_mroonga_full_text_stem_french(self):
+    # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-token-filters
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query("SELECT mroonga_command('register token_filters/stem')")
+      self.assertEqual((('true',),), cnx.store_result().fetch_row(maxrows=2))
+      cnx.query(
+          r"""
+          CREATE TABLE memos_french (
+            id INT NOT NULL PRIMARY KEY,
+            content TEXT NOT NULL,
+            FULLTEXT INDEX (content) COMMENT 'normalizer "NormalizerAuto", token_filters "\'TokenFilterStem("algorithm", "french")\'" '
+          ) Engine=Mroonga DEFAULT CHARSET=utf8
+          """)
+      cnx.store_result()
+      cnx.query(
+          """INSERT INTO memos_french VALUES (1, "Nous développons Groonga"), (2, "Je développais Groonga"), (3, "J'ai développé Groonga")"""
+      )
+      cnx.store_result()
+      cnx.query(
+          """INSERT INTO memos_french VALUES (4, "Nous maintenons Groonga"), (5, "Je maintiens Groonga"), (6, "J'ai maintenu Groonga")"""
+      )
+      cnx.store_result()
+      cnx.query(
+          """
+          SELECT *
+            FROM memos_french
+           WHERE MATCH (content) AGAINST ("+maintenir" IN BOOLEAN MODE)
+          """)
+      import pdb; pdb.set_trace()
+      self.assertEqual([
+          (1, "I develop Groonga"),
+          (2, "I'm developing Groonga"),
+          (3, "I developed Groonga"),
+      ], list(sorted(cnx.store_result().fetch_row(maxrows=4))))
+
+
+del TestMariaDB
