@@ -100,7 +100,7 @@ class TestMariaDB(MariaDBTestCase):
       cnx.store_result()
       cnx.query(
           """
-          insert into test_utf8_collation values ("à"), ("あ")
+          insert into test_utf8_collation values ("à"), ("あ"), ("😀")
           """)
       cnx.store_result()
 
@@ -109,6 +109,18 @@ class TestMariaDB(MariaDBTestCase):
           select * from test_utf8_collation where col1 = "a"
           """)
       self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
+
+      cnx.query(
+          """
+          select * from test_utf8_collation where col1 = "ア"
+          """)
+      self.assertEqual((('あ',),), cnx.store_result().fetch_row(maxrows=2))
+
+      cnx.query(
+          """
+          select * from test_utf8_collation where col1 = "😀"
+          """)
+      self.assertEqual((('😀',),), cnx.store_result().fetch_row(maxrows=2))
 
 
 class TestMroonga(MariaDBTestCase):
