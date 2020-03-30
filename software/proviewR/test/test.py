@@ -39,6 +39,9 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
+bases = SlapOSInstanceTestCase.__bases__ 
+bases[0]._instance_parameter_dict = {}
+
 
 class TestProviewR(SlapOSInstanceTestCase):
   def setUp(self):
