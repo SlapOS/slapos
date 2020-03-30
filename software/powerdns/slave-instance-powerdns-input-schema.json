@@ -15,7 +15,7 @@
     },
     "default": {
       "title": "Default RR",
-      "description": "Defautl record to use when the ip is not regognized",
+      "description": "Default record to use when the ip is not regognized",
       "type": "string"
     },
     "europe": {
