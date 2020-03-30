@@ -46,7 +46,7 @@ The pull-backup, upon receiving the notification, will make a copy of the data a
 
 You should provide the bin/{mysoftware}-exporter script, see for instance
   https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L207
-  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/mydumper.py#L71
+  https://lab.nexedi.com/nexedi/slapos/blob/1.0.142/slapos/recipe/mydumper.py#L71
 
 By default, as defined in
   https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/resilient/pbsready-export.cfg.in#L27
@@ -68,7 +68,7 @@ or through a monitoring + election script.
 You should provide the bin/{mysoftware}-importer script, see for instance
 
   https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L233
-  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/mydumper.py#L71
+  https://lab.nexedi.com/nexedi/slapos/blob/1.0.142/slapos/recipe/mydumper.py#L71
 
 
 
@@ -94,7 +94,7 @@ extends = ${instance-mysoftware:output}
 
 parts +=
     mysoftware
-    import-on-notification
+    notify-callback
 
 [importer]
 recipe = YourImportRecipe

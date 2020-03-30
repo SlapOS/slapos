@@ -237,13 +237,13 @@ input = inline:#!/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = ${resilient-directory:bin}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+output = ${resilient-directory:bin}/resilient-request-pbs-{{namebase}}-{{id}}-public-key
 mode = 700
 
 [resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
 <= monitor-promise-base
 module = check_command_execute
-name = resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+name = resilient-request-pbs-{{namebase}}-{{id}}-public-key.py
 config-command = ${resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise-bin:output}
 
 [request-pull-backup-server-{{namebase}}-{{id}}]

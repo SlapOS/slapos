@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.139'
+version = '1.0.143'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -103,7 +103,6 @@ setup(name=name,
           'dropbear = slapos.recipe.dropbear:Recipe',
           'dropbear.add_authorized_key = slapos.recipe.dropbear:AddAuthorizedKey',
           'dropbear.client = slapos.recipe.dropbear:Client',
-          'duplicity = slapos.recipe.duplicity:Recipe',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
           'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
@@ -129,7 +128,6 @@ setup(name=name,
           'logrotate.d = slapos.recipe.logrotate:Part',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
           'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
-          'mydumper = slapos.recipe.mydumper:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',

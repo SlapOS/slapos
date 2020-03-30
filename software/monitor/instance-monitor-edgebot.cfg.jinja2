@@ -9,7 +9,7 @@
 {%- set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
 {%- if extra_slave_instance_list %}
 {#- Create slaves to process with setting up defaults #}
-{%-   for slave in sorted(json_module.loads(extra_slave_instance_list)) %}
+{%-   for slave in json_module.loads(extra_slave_instance_list) | sort(attribute='slave_title') %}
 {%-   if 'check-status-code' not in slave %}
 {%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
 {%-   endif %}
@@ -37,7 +37,7 @@
 {%- set part_list = [] %}
 {%- for class, slave_instance_list in slave_instance_dict.items() %}
 {#- class is used to separate surykatka with different timeouts #}
-{%-   for slave in sorted(slave_instance_list) %}
+{%-   for slave in slave_instance_list | sort(attribute='slave_title') %}
 {%-     set part_id = 'http-query-' ~ slave['slave_reference'] ~ '-promise' %}
 {%-     do part_list.append(part_id) %}
 {%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}

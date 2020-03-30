@@ -27,7 +27,7 @@ extra-context =
 {%- set namebase = "edgebot" %}
 {%- set authorized_slave_list = [] %}
 {%- set monitor_base_url_dict = {} -%}
-{%- for slave in sorted(slave_instance_list) %}
+{%- for slave in slave_instance_list | sort(attribute='slave_title') %}
 {%-   do authorized_slave_list.append(slave) %}
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
@@ -56,7 +56,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{edgebot_software_type}}
 return = monitor-base-url
 
-{% for section, edgebot_request in request_dict.iteritems() %}
+{% for section, edgebot_request in request_dict.items() %}
 [{{section}}]
 <= replicate
 name = {{ edgebot_request.get('name') }}
@@ -66,11 +66,11 @@ state = {{ edgebot_request.get('state') }}
 {%-   set slave_configuration_dict = slapparameter_dict %}
 {%-   do slave_configuration_dict.update(edgebot_request.get('config')) %}
 {%-   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
-{%-   for config_key, config_value in slave_configuration_dict.iteritems() %}
+{%-   for config_key, config_value in slave_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%   endfor -%}
 {%-   if edgebot_request.get('sla') %}
-{%-     for parameter, value in edgebot_request.get('sla').iteritems() %}
+{%-     for parameter, value in edgebot_request.get('sla').items() %}
 sla-{{ parameter }} = {{ value }}
 {%-     endfor %}
 {%-   else %}

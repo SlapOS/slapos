@@ -27,7 +27,6 @@
 #
 ##############################################################################
 import errno
-import io
 import logging
 import os
 import sys
@@ -123,21 +122,6 @@ class GenericBaseRecipe(object):
 
   def createExecutable(self, name, content, mode=0o700):
     return self.createFile(name, content, mode)
-
-  def addLineToFile(self, filepath, line, encoding='utf8'):
-    """Append a single line to a text file, if the line does not exist yet.
-
-    line must be unicode."""
-
-    if os.path.exists(filepath):
-      lines = [l.rstrip('\n') for l in io.open(filepath, 'r', encoding=encoding)]
-    else:
-      lines = []
-
-    if not line in lines:
-      lines.append(line)
-      with io.open(filepath, 'w+', encoding=encoding) as f:
-        f.write(u'\n'.join(lines))
 
   def createPythonScript(self, name, absolute_function, args=(), kw={}):
     """Create a python script using zc.buildout.easy_install.scripts

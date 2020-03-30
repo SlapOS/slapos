@@ -65,7 +65,7 @@ recipe = slapos.cookbook:publish.serialised
 # TODO: make port a partition parameter
 ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
 {% set admin = slapparameter_dict.get('admin', 2050) -%}
-{% set master = slapparameter_dict.get('master', 2052) -%}
+{% set master = slapparameter_dict.get('master', 2051) -%}
 {% if master -%}
 port-master = {{ master }}
 master = ${:ip}:${:port-master}
@@ -75,10 +75,12 @@ master =
 {% if admin -%}
 port-admin = {{ admin }}
 admin = ${:ip}:${:port-admin}
+{%-   if 'monitor-passwd' in slapparameter_dict %}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
-{% else -%}
+{%-   endif %}
+{%- else %}
 admin =
-{% endif -%}
+{%- endif %}
 
 {#- Hack to deploy SSL certs via instance parameters #}
 {%- for name, pem in zip(('ca.crt', 'neo.crt', 'neo.key'),

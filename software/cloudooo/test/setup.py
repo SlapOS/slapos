@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,26 +24,29 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import GenericBaseRecipe
+from setuptools import setup, find_packages
 
-class Recipe(GenericBaseRecipe):
+version = '0.0.1.dev0'
+name = 'slapos.test.cloudooo'
+with open("README.md") as f:
+  long_description = f.read()
 
-  def install(self):
-
-    remote_url = self.options['remote-backup']
-    backup_directory = self.options['local-directory']
-
-    cmd = [self.options['duplicity-binary'],]
-    options = ['--no-encryption', '--archive-dir', self.options['cache']]
-
-    if self.optionIsTrue('recover', False):
-      options.append('--force')
-      # duplicity [options] remote backup
-      cmd.extend(options)
-      cmd.extend([remote_url, backup_directory])
-    else:
-      # duplicity [options] local remote
-      cmd.extend(options)
-      cmd.extend([backup_directory, remote_url])
-
-    return self.createWrapper(self.options['wrapper'], cmd)
+setup(name=name,
+      version=version,
+      description="Test for SlapOS' cloudooo",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
+      maintainer="Nexedi",
+      maintainer_email="info@nexedi.com",
+      url="https://lab.nexedi.com/nexedi/slapos",
+      packages=find_packages(),
+      install_requires=[
+        'slapos.core',
+        'slapos.cookbook',
+        'slapos.libnetworkcache',
+        'six',
+        'PyPDF2',
+      ],
+      zip_safe=True,
+      test_suite='test',
+    )
