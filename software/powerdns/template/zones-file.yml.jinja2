@@ -1,0 +1,25 @@
+{%- set slave_instance_list = json_module.loads(slapparameter_dict.get('extra_slave_instance_list', '[]')) %}
+{%- set zone = slapparameter_dict.get('zone', 'example.com') -%}
+
+domains:
+- domain: {{ zone }}
+  # TODO: what value for ttl?
+  ttl: 300
+
+  records:
+    # For each domain, one record of the domain name MUST exist with a soa record.
+    {{ zone }}:
+      - soa: {{ slapparameter_dict.get('soa', 'ns0.example.com,admin@example.com').replace(',', ' ') }}
+      - ns: {{ slapparameter_dict.get('ns-record', 'ns0.example.com,ns1.example.com') }}
+
+    # TODO:
+    # - define more records here (based on each slave)?
+    # - what to do with "slave['record']"?
+
+  services:
+    {%- for slave in slave_instance_list %}
+    {%-   if 'record' in slave and 'origin' in slave and 'default' in slave %}
+    {%-   set origin = slave['origin'] %}
+    {{ origin }}: ['%cn.{{ origin }}', '{{ slave['default'] }}.{{ origin }}']
+    {%-   endif %}
+    {%- endfor %}
