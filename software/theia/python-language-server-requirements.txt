@@ -14,6 +14,7 @@ parso==0.3.2
 pluggy==0.8.1
 pydocstyle==3.0.0
 pyflakes==2.1.0
+pygls==0.8.1
 pylint==2.4.4
 python-jsonrpc-server==0.1.2
 -e git+https://github.com/palantir/python-language-server@50d03d5931d564e9908292ccfa21dd629ee817ba#egg=python_language_server
@@ -25,3 +26,4 @@ typed-ast==1.4.1
 typing-extensions==3.7.4.2
 wrapt==1.11.2
 yapf==0.29.0
+zc.buildout.languageserver==0.2.0
