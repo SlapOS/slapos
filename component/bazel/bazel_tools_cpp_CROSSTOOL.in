@@ -105,15 +105,14 @@ toolchain {
   target_system_name: "local"
   toolchain_identifier: "local_linux"
 
-  tool_path { name: "ar" path: "{{ binutils_path }}/ar" }
-  tool_path { name: "compat-ld" path: "{{ binutils_path }}/ld" }
-  tool_path { name: "cpp" path: "{{ cpp_path }}" }
+  tool_path { name: "ar" path: "{{ binutils_location }}/bin/ar" }
+  tool_path { name: "compat-ld" path: "{{ gcc_location }}/bin/ld" }
+  tool_path { name: "cpp" path: "{{ gcc_location }}/bin/cpp" }
   tool_path { name: "dwp" path: "/usr/bin/dwp" }
-  tool_path { name: "gcc" path: "{{ gcc_path }}" }
+  tool_path { name: "gcc" path: "{{ gcc_location }}/bin/gcc" }
   cxx_flag: "-std=c++0x"
   linker_flag: "-lstdc++"
   linker_flag: "-B/usr/bin/"
-  linker_flag: "-Wl,rpath={{ gcc_lib64_path  }}"
 
   # TODO(bazel-team): In theory, the path here ought to exactly match the path
   # used by gcc. That works because bazel currently doesn't track files at
@@ -122,19 +121,19 @@ toolchain {
   cxx_builtin_include_directory: "/usr/lib/gcc/"
   cxx_builtin_include_directory: "/usr/local/include"
   cxx_builtin_include_directory: "/usr/include"
-  cxx_builtin_include_directory: "{{ include_path }}"
-  tool_path { name: "gcov" path: "{{ gconv_path }}" }
+  cxx_builtin_include_directory: "{{ gcc_location }}/include"
+  tool_path { name: "gcov" path: "{{ gcc_location }}/bin/gconv" }
 
   # C(++) compiles invoke the compiler (as that is the one knowing where
   # to find libraries), but we provide LD so other rules can invoke the linker.
-  tool_path { name: "ld" path: "{{ binutils_path }}/ld" }
+  tool_path { name: "ld" path: "{{ gcc_location }}/bin/ld" }
 
-  tool_path { name: "nm" path: "{{ binutils_path }}/nm" }
-  tool_path { name: "objcopy" path: "{{ binutils_path }}/objcopy" }
+  tool_path { name: "nm" path: "{{ binutils_location }}/bin/nm" }
+  tool_path { name: "objcopy" path: "{{ binutils_location }}/bin/objcopy" }
   objcopy_embed_flag: "-I"
   objcopy_embed_flag: "binary"
-  tool_path { name: "objdump" path: "{{ binutils_path }}/objdump" }
-  tool_path { name: "strip" path: "{{ binutils_path }}/strip" }
+  tool_path { name: "objdump" path: "{{ binutils_location }}/bin/objdump" }
+  tool_path { name: "strip" path: "{{ binutils_location }}/bin/strip" }
 
   # Anticipated future default.
   unfiltered_cxx_flag: "-no-canonical-prefixes"
