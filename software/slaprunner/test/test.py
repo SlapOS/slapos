@@ -32,6 +32,8 @@ import contextlib
 import base64
 import hashlib
 import subprocess
+import json
+import time
 
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote
@@ -53,6 +55,214 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
   # Slaprunner uses unix sockets, so it needs short paths.
   __partition_reference__ = 's'
 
+class SlaprunnerTestCase(SlapOSInstanceTestCase):
+  # Slaprunner uses unix sockets, so it needs short paths.
+  __partition_reference__ = 's'
+
+  def _openSoftwareRelease(self, software_release="erp5testnode/testsuite/dummy"):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/setCurrentProject" % parameter_dict['url']
+
+    data = {
+      "path": "workspace/slapos/software/%s" % software_release,
+    }
+    resp = self._postToSlaprunner(url, data) 
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertNotEqual(json.loads(resp.text)['code'], 0,
+       'Unexpecting result in call to setCurrentProject: %s' % resp.text)
+
+  def _buildSoftwareRelease(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/runSoftwareProfile" % parameter_dict['url']
+    resp = self._postToSlaprunner(url, {}) 
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertEqual(json.loads(resp.text)['result'], True,
+       'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
+
+  def _deployInstance(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/runInstanceProfile" % parameter_dict['url']
+    resp = self._postToSlaprunner(url, {}) 
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertEqual(json.loads(resp.text)['result'], True,
+       'Unexpecting result in call to runSoftwareProfile: %s' % resp.text)
+
+  def _gitClone(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/cloneRepository" % parameter_dict['url']
+
+    data = {
+      "repo": "https://lab.nexedi.com/nexedi/slapos.git",
+      "name": "workspace/slapos",
+      "email": "slapos@slapos.org",
+      "user": "slapos"
+    }
+    resp = self._postToSlaprunner(url, data)
+    d = json.loads(resp.text)
+    if d['code'] == 0:
+      return "OK"
+
+  def _isSoftwareReleaseReady(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/isSRReady" % parameter_dict['url']
+    resp = self._getFromSlaprunner(url) 
+    if requests.codes.ok != resp.status_code:
+      return -1
+    return resp.text
+
+  def _waitForSoftwareBuild(self, limit=5000):
+    status = self._isSoftwareReleaseReady()
+    while limit > 0 and status != "1":
+      status = self._isSoftwareReleaseReady()
+      limit -= 1
+      if status == '0':
+        self.logger.debug("Software release is Failing to Build. Sleeping...")
+      else:
+        self.logger.debug('Software is still building. Sleeping...')
+      time.sleep(20)
+
+  def _waitForInstanceDeploy(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/slapgridResult" % parameter_dict['url']
+    data = {
+      "position": 0,
+      "log": ""
+      }
+    while True:
+      time.sleep(25)
+      resp = self._postToSlaprunner(url, data) 
+      if requests.codes.ok != resp.status_code:
+        continue
+      if json.loads(resp.text)["instance"]["state"] is False:
+        break
+      self.logger.info('Buildout is still running. Sleeping....')
+    self.logger.info("Instance has been deployed.")
+
+  def _getFromSlaprunner(self, url):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    return requests.get(
+        url,
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+
+  def _postToSlaprunner(self, url, data):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    return requests.post(
+        url,
+        verify=False,
+        data=data,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+
+  def _getFileContent(self, relative_path):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = "%s/getFileContent" % parameter_dict['url']
+
+    data = {
+      "file": relative_path 
+    }
+    resp = self._postToSlaprunner(url, data) 
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertNotEqual(json.loads(resp.text)['code'], 0,
+       'Unexpecting result in call to getFileContent: %s' % resp.text)
+
+    return json.loads(resp.text)["result"]
+
+  def _waitForCloneToBeReadyForTakeover(self, scope="runner-1", limit=500):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    takeover_url = parameter_dict["takeover-%s-url" % scope]
+
+    def getTakeoverPageContent():
+      resp = requests.get(takeover_url, verify=True)
+      self.assertEqual(requests.codes.ok, resp.status_code)
+      return resp.text
+    takeover_page_content = getTakeoverPageContent()
+    while "<b>Last valid backup:</b> No backup downloaded yet, takeover should not happen now." in takeover_page_content:
+      time.sleep(10)
+      if limit < 0:
+        raise Exception("Timeout: No valid Backup")
+      takeover_page_content = getTakeoverPageContent()
+      limit -= 1
+
+    while "<b>Importer script(s) of backup in progress:</b> True" in takeover_page_content:
+      time.sleep(10)
+      if limit < 0:
+        raise Exception("Timeout: Backup still in progress")
+      takeover_page_content = getTakeoverPageContent()
+      limit -= 1
+
+  def _doTakeover(self, scope="runner-1"):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    takeover_url = parameter_dict["takeover-%s-url" % scope]
+    takeover_password = parameter_dict["takeover-%s-password" % scope]
+    
+    resp = requests.get(
+      "%s?password=%s" % (takeover_url, takeover_password),
+      verify=True)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertNotIn("Error", resp.text,
+            "An Error occured: %s" % resp.text)
+    self.assertIn("Success", resp.text,
+            "An Success not in %s" % resp.text)
+    return resp.text
+
+class TestWebRunnerBasicUsage(SlaprunnerTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        'auto-deploy': 'true',
+        'software-root': os.path.join(cls.slap._instance_root, "..", "soft"),
+        'buildout-shared-folder': os.path.join(cls.slap._instance_root, "..", "shared"),
+        "slapos-reference": 'slaprunner-basic-test-resiliency'
+       }
+
+  def test_open_software_release(self):
+    self._openSoftwareRelease()
+
+  def test_git_clone(self):
+    self._gitClone()
+
+  @unittest.skip('Skip as _getFileContent dont work for now')
+  def test_basic_usage(self):
+    self._openSoftwareRelease()
+    self._buildSoftwareRelease()
+    self._waitForSoftwareBuild()
+    self._deployInstance()
+    self._waitForInstanceDeploy()
+
+    result = self._getFileContent(
+      "instance_root/slappart0/var/log/log.log")
+
+    self.assertTrue(result.startswith("Hello"),
+      result)
+
+class TestWebRunnerAutorun(SlaprunnerTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        # Auto deploy is required for the isSRReady works. 
+        'auto-deploy': 'true',
+        'autorun': 'true',
+        'software-root': os.path.join(cls.slap._instance_root, "..", "soft"),
+        'buildout-shared-folder': os.path.join(cls.slap._instance_root, "..", "shared"),
+        'slapos-software': 'software/erp5testnode/testsuite/dummy',
+        # XXX HACK!
+        "slapos-reference": 'slaprunner-basic-test-resiliency'
+       }
+
+  @unittest.skip('Skip as _getFileContent dont work for now')
+  def test_basic_usage(self):
+    self._openSoftwareRelease()
+    self._waitForSoftwareBuild()
+    self._waitForSoftwareBuild()
+    self._waitForInstanceDeploy()
+    self._waitForInstanceDeploy()
+
+    result = self._getFileContent(
+      "instance_root/slappart0/var/log/log.log")
+
+    self.assertTrue(result.startswith("Hello"), result)
 
 class TestWeb(SlaprunnerTestCase):
   def test_slaprunner(self):
@@ -251,8 +461,22 @@ class ServicesTestCase(SlaprunnerTestCase):
 
       self.assertIn(expected_process_name, process_names)
 
+class TestCustomFrontend(SlaprunnerTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'custom-frontend-backend-url': 'https://www.erp5.com',
+      'custom-frontend-backend-type': 'redirect',
+    }
 
-class TestInstanceResilient(SlaprunnerTestCase):
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    # slapproxy returns the backend URL when requesting a slave frontend
+    self.assertEqual(
+      parameter_dict['custom-frontend-url'],
+      'https://www.erp5.com')
+
+class TestResilientInstance(SlaprunnerTestCase):
   instance_max_retry = 20
 
   @classmethod
@@ -278,18 +502,84 @@ class TestInstanceResilient(SlaprunnerTestCase):
         'url',
         'webdav-url']))
 
+class TestResilientCustomFrontend(TestCustomFrontend):
+  instance_max_retry = 20
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
 
-class TestCustomFrontend(SlaprunnerTestCase):
+class TestResilientWebInstance(TestWeb):
+  instance_max_retry = 20
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  def test_public_url(self):
+    pass # Disable until we can write on runner0 rather them
+         # on root partition
+
+class TestResilientWebrunnerBasicUsage(TestWebRunnerBasicUsage):
+  instance_max_retry = 20
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+
+class TestResilientWebrunnerAutorun(TestWebRunnerAutorun):
+  instance_max_retry = 20
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+class TestResilientDummyInstance(SlaprunnerTestCase):
+  instance_max_retry = 20
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'custom-frontend-backend-url': 'https://www.erp5.com',
-      'custom-frontend-backend-type': 'redirect',
-    }
-        
-  def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    # slapproxy returns the backend URL when requesting a slave frontend
-    self.assertEqual(
-      parameter_dict['custom-frontend-url'],
-      'https://www.erp5.com')
+        'resiliency-backup-periodicity': '*/6 * * * *',
+        'auto-deploy-instance': 'false',
+        'software-root': os.path.join(cls.slap._instance_root, "..", "soft"),
+        'buildout-shared-folder': os.path.join(cls.slap._instance_root, "..", "shared"),
+        'auto-deploy': 'true',
+        # XXX HACK!
+        "slapos-reference": 'slaprunner-erp5-resiliency',
+        "slapos-httpd-port": '9687'
+       }
+
+  @unittest.skip('Skip as _getFileContent dont work for now')
+  def test_basic_resilience(self):
+    self._openSoftwareRelease()
+    self._buildSoftwareRelease()
+    self._waitForSoftwareBuild()
+    self._deployInstance()
+    self._waitForInstanceDeploy()
+
+    result = self._getFileContent(
+      "instance_root/slappart0/var/log/log.log")
+
+    self.assertTrue(result.startswith("Hello"), result)
+
+    # We should ensure here that the resilience was indeed
+    # Propagates and test succeeded.
+    time.sleep(900)
+
+    self._waitForCloneToBeReadyForTakeover()
+    self._doTakeover()
+    self.slap.waitForInstance(20) 
+
+    previous_computer_partition = self.computer_partition
+    self.computer_partition = self.requestDefaultInstance()
+
+
+    result_after = self._getFileContent(
+      "instance_root/slappart0/var/log/log.log")
+
+    self.assertTrue(result_after.startswith("Hello"), result_after)
+
+    self.assertIn(result, result_after,
+            "%s not in %s" % (result, result_after))
+
