@@ -465,11 +465,11 @@ template = inline:
 
 rendered = ${:file}
 
-[caddy-log-access-header]
+[caddy-log-access-empty]
 # Caddy refuse to start if an `import`ed file is empty, so we prepend a header
 # so that the file is never empty.
 < = jinja2-template-base
-template = inline: # This file contain directives to serve directories with log files
+template = inline: # This file contain directives to serve directories with log files for shared instances, but no shared instances are defined yet.
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 
 [buildout]
@@ -481,10 +481,12 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
-    caddy-log-access-header
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
+{% if 'caddy-log-access' not in part_list %}
+    caddy-log-access-empty
+{% endif %}
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
