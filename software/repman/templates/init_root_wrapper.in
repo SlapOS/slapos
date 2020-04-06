@@ -1,0 +1,25 @@
+#!{{ dash_bin }}
+
+run_mysql () {
+  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
+  --protocol=socket -uroot -hlocalhost $@
+}
+
+if [ ! -f "{{ init_password_done }}" ]; then
+  for i in {30..0}; do
+    if echo 'SELECT 1' | run_mysql  &> /dev/null; then
+      break
+    fi
+    echo 'MySQL init process in progress...'
+    sleep 1
+  done
+  if [ "$i" = 0 ]; then
+    echo >&2 'MySQL init process failed.'
+    exit 1
+  fi
+  echo "Setting mariabdb root password...";
+  run_mysql  < {{ init_root_sql }} && touch {{ init_password_done }} || exit 1;
+  echo "done"
+fi
+
+exec {{ mysql_update }}
