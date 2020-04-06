@@ -17,13 +17,31 @@ recipe = slapos.cookbook:generate.password
 username = node
 bytes = 12
 
+[frontend-instance-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:key-file} ]
+  then
+    ${openssl-output:openssl} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${:common-name}" \
+      -newkey rsa:1024 -keyout $${:key-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+key-file = $${directory:etc}/$${:_buildout_section_name_}.key
+cert-file = $${directory:etc}/$${:_buildout_section_name_}.crt
+common-name = $${frontend-instance-config:ip}
+location =
+  $${:key-file}
+  $${:cert-file}
+
 [frontend-instance-config]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}
 template = inline:
-  https://$${:hostname}:$${:port} {
+  :$${:port} {
     bind $${:ip}
-    tls self_signed # TODO
+    tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
     log stdout
     errors stderr
     gzip
@@ -57,7 +75,7 @@ ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
 port = $${frontend-instance-config:port}
 pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
-url = https://$${frontend-instance-password:username}:$${frontend-instance-password:passwd}@$${:hostname}:$${:port}/
+url = https://$${:hostname}:$${:port}/
 
 [frontend-reload]
 recipe = slapos.cookbook:wrapper
@@ -108,10 +126,24 @@ name = $${:_buildout_section_name_}.py
 config-hostname = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
 
+[apache-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Theia Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = $${frontend-instance:url}
+config-https-only = true
+config-type = websocket
+config-websocket-path-list = /services
+return = domain secure_access
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-url = $${frontend-instance:url}
-
+url = $${apache-frontend:connection-secure_access}
+username = $${frontend-instance-password:username}
+password = $${frontend-instance-password:passwd}
 
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
