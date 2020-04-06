@@ -165,8 +165,8 @@ port = ${monitor-instance-parameter:monitor-httpd-port}
 pid-file = ${directory:run}/monitor-httpd.pid
 access-log = ${directory:log}/monitor-httpd-access.log
 error-log = ${directory:log}/monitor-httpd-error.log
-cert-file = ${ca-directory:certs}/httpd.crt
-key-file = ${ca-directory:certs}/httpd.key
+cert-file = ${ca-directory:certs}/monitor-httpd.crt
+key-file = ${ca-directory:certs}/monitor-httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:rendered}
@@ -194,8 +194,8 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ apache_location }}/bin/httpd -f ${monitor-httpd-conf:rendered} -DFOREGROUND
 wrapper-path = ${directory:bin}/monitor-httpd
 wait-for-files =
-  ${ca-directory:certs}/httpd.key
-  ${ca-directory:certs}/httpd.crt
+  ${monitor-httpd-conf-parameter:key-file}
+  ${monitor-httpd-conf-parameter:cert-file}
   ${monitor-httpd-graceful-wrapper:rendered}
 
 [monitor-httpd-graceful-wrapper]
