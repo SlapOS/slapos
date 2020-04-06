@@ -203,7 +203,7 @@ context =
 
 [pwrrt-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${pwrrt-wrapper:rendered} start
+command-line = bash -c "set -e; source ${bash-profile:output}; $pwr_exe/pwr_pkg.sh -i {{ test_volume }} || true; $pwr_exe/pwr_cleanup.sh||true; rt_ini -n gettingstarted -q 1 -w"
 wrapper-path = ${directory:services}/pwrrt
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 environment = 
