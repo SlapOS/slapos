@@ -154,7 +154,7 @@ create = true
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
-backup = {{ slave_log_folder }} 
+backup = {{ slave_log_folder }}
 {%    if enable_cache %}
 [{{slave_logrotate_cache_direct_section}}]
 <= logrotate-entry-base
@@ -352,15 +352,6 @@ recipe = slapos.cookbook:mkdirectory
 
 {% do part_list.append('slave-log-cache-direct-directories') %}
 
-[caddy-log-access]
-< = jinja2-template-base
-template = {{frontend_configuration.get('template-log-access')}}
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-extra-context =
-    section slave_log_directory slave-log-directory-dict
-    section slave_password slave-password
-    section parameter_dict caddy-log-access-parameters
-
 {% do part_list.append('caddy-log-access') %}
 
 ###############################################
@@ -484,7 +475,7 @@ rendered = {{frontend_configuration.get('log-access-configuration')}}
 [buildout]
 extends =
   {{ common_profile }}
-  {{ logrotate_base_instance }} 
+  {{ logrotate_base_instance }}
   {{ monitor_template }}
 
 parts +=
