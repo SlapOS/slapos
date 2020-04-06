@@ -1,15 +1,130 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set monitor_base_url_dict = {} -%}
+{% set mariadb_dict = {} -%}
+{% set mariadb_server_list = [] -%}
+{% set mariadb_path_list = [] -%}
+{% set ip = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
 etc = ${:home}/etc
 var = ${:home}/var
 run = ${:var}/run
-script = ${:etc}/run
+scripts = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 log = ${:var}/log
 data = ${:var}/lib
 nginx-prefix = ${:var}/nginx
+tmp = ${:home}/tmp
+
+
+[request-common]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+{% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
+{% do mariadb_dict.__setitem__('innodb-file-per-table', slapparameter_dict.get('innodb-file-per-table', 1)) -%}
+
+# Request mariadb instances
+{% for i in range(0, slapparameter_dict.get('database-amount', 2)) -%}
+{% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
+{% set section = 'request-mariadb-' ~ i -%}
+{% set name = 'Mariadb-' ~ i -%}
+
+[{{ section }}]
+<= request-common
+software-type = mariadb
+name = {{ name }}
+sla-computer_guid = {{ dumps(slapparameter_dict.get('mariadb-computer-guid', '')) }}
+{% for key, value in mariadb_dict.items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+config-monitor-passwd = ${publish-early:monitor-password}
+config-root-password = ${publish-early:root-password}
+config-repman-url = ${nginx-parameter:backend-url}
+config-repman-secure-url = ${nginx-parameter:backend-url}
+config-name = {{ name }}
+return = 
+  database-host
+  monitor-base-url
+  partition-path
+
+{% do part_list.append(section) -%}
+{% do mariadb_server_list.append('${' ~ section ~ ':connection-database-host}') -%}
+{% do mariadb_path_list.append('${' ~ section ~ ':connection-partition-path}') -%}
+{% do monitor_base_url_dict.__setitem__('mariadb' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+
+{% endfor -%}
+
+# Manage Replication Manager clusters
+{% set cluster_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "", "proxy-admin-port": 6032, "proxy-port": 6033, "proxysql-user": "external"}} -%}
+{% for name, parameter_dict in cluster_parameter_dict.items() -%}
+{% set prefered_master = parameter_dict.pop("db-prefered-master") -%}
+[{{ name ~ '-cluster-parameter' }}]
+{% for key, value in parameter_dict.items() -%}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+db-credential = repman:${publish-early:root-password}
+db-list = {{ mariadb_server_list | join(',') }}
+partition-list = {{ mariadb_path_list | join(',') }}
+{% if prefered_master -%}
+db-prefered-master = {{ prefered_master }}
+{% else -%}
+# First database is the prefered master
+db-prefered-master = {{ mariadb_server_list[0] }}
+{% endif -%}
+proxysql-servers = {{ ipv4 }}
+password = ${repman-parameter:password}
+proxysql-partition = ${buildout:directory}
+
+[{{ 'config-' ~ name }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ config_cluster_toml_in }}
+rendered = ${repman:clusters}/config-{{ name }}.toml
+extra-context =
+context =
+  section parameter_dict {{ name ~ '-cluster-parameter' }}
+
+# Donwnload mariadb configuration from repman
+[config-proxysql-{{ name }}]
+recipe = plone.recipe.command
+# if Repman is not started, cannot download config from server
+stop-on-error = false
+config = ${repman:proxies}/proxysql-{{ name }}.cnf
+data = ${repman:proxy-data}/{{ name }}
+command =
+  mkdir -p ${repman:config-tmp}/proxies &&
+  mkdir -p ${:data} &&
+  cd ${repman:config-tmp}/proxies &&
+  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/{{ parameter_dict['proxy-admin-port'] }}/config &&
+  tar -xzf proxies.tar.gz &&
+  cp conf/proxysql.cnf  ${:config}
+update-command = ${:command}
+
+[service-proxysql-{{ name }}]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ proxysql_location }}/bin/proxysql -f
+  -c ${config-proxysql-{{ name }}:config}
+  -D ${config-proxysql-{{ name }}:data}
+  --reload
+#  -S /tmp/proxysql_admin.sock
+wrapper-path = ${directory:service}/proxysql-{{ name }}
+wait-for-files =
+  ${repman:bootstrap}/{{ name }}_bootstrapped
+
+{% do part_list.append('config-' ~ name) -%}
+{% do part_list.append('service-proxysql-' ~ name) -%}
+{% endfor -%}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -22,8 +137,10 @@ cert = ${slap-connection:cert-file}
 [instance-parameter]
 <= slap-configuration
 # repman monitor seems to use a fixed port
-repman-port = 10005
-nginx-port  = 10006
+repman-secure-port = 10005
+repman-port = 10001
+nginx-ssl-port  = 10006
+nginx-port  = 10007
 
 
 [repman]
@@ -31,20 +148,32 @@ recipe   = slapos.cookbook:mkdirectory
 etc      = ${directory:etc}/repman
 data-dir = ${directory:var}/lib
 root-dir = ${directory:srv}/repman
+clusters = ${:etc}/cluster.d
+proxies  = ${:etc}/proxy
+proxy-data = ${:data-dir}/proxy
+config-tmp = ${directory:tmp}/config
+bootstrap = ${:etc}/bootstrap
 
 [nginx-parameter]
 ipv6 = ${instance-parameter:ipv6-random}
 port = ${instance-parameter:nginx-port}
+ssl-port = ${instance-parameter:nginx-ssl-port}
 ssl-certificate = ${ca-nginx:cert-file}
 ssl-key = ${ca-nginx:key-file}
 pid-file = ${directory:run}/nginx.pid
 access-log = ${directory:log}/nginx_access.log
 error-log = ${directory:log}/nginx_error.log
-repman-url = https://${repman-parameter:ipv4}:${repman-parameter:port}
+repman-secure-url = https://${repman-parameter:ipv4}:${repman-parameter:secure-port}
+repman-url = http://${repman-parameter:ipv4}:${repman-parameter:port}
 config-file = ${directory:etc}/nginx.conf
-backend-url = https://[${:ipv6}]:${:port}
+backend-ssl-url = https://[${:ipv6}]:${:ssl-port}
+backend-url = http://[${:ipv6}]:${:port}
 
 [repman-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
+
+[gen-root-password]
 recipe = slapos.cookbook:generate.password
 bytes = 12
 
@@ -52,22 +181,51 @@ bytes = 12
 log = ${directory:log}/repman.log
 http-root = ${repman:root-dir}/dashboard
 share-dir = ${repman:root-dir}/share
+secure-port = ${instance-parameter:repman-secure-port}
 port = ${instance-parameter:repman-port}
 ipv4 = ${instance-parameter:ipv4-random}
 username = admin
 password = ${repman-password:passwd}
+cluster-d = ${repman:clusters}
+mysql-bin-dir = {{ mariadb_location }}/bin
+mysqlbinlog-path = {{ mariadb_location }}/bin/mysqlbinlog
+mysqlclient-path = {{ mariadb_location }}/bin/mysql
+mysqldump-path = {{ mariadb_location }}/bin/mysqldump
+haproxy-bin   = {{ haproxy_location }}/sbin/haproxy
+sysbench-bin  = {{ sysbench_location }}/bin/sysbench
+
+mail-from = {{ slapparameter_dict.get("mail-from", "mrm@localhost") }}
+mail-smtp-addr = {{ slapparameter_dict.get("mail-smtp-addr", "localhost:25") }}
+mail-smtp-password = {{ slapparameter_dict.get("mail-smtp-password", "") }}
+mail-smtp-user = {{ slapparameter_dict.get("mail-smtp-user", "") }}
+mail-to = {{ slapparameter_dict.get("mail-to", "") }}
 
 [repman-config-folder]
 recipe = plone.recipe.command
 repman-location = {{ repman_src_location }}
 command = 
   cd ${:repman-location}
-  cp -r share ${repman-parameter:share-dir}
-  cp -r dashboard ${repman-parameter:http-root}
+  {{ rsync_location }}/bin/rsync -av share ${repman:root-dir}/
+  {{ rsync_location }}/bin/rsync -av  dashboard ${repman:root-dir}/
 
 # XXX - this need to be checked/optimized in case of upgrade.
-update-command =
+update-command = ${:command}
   
+[replication-manager-reload]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_repman_manager_sh }}
+cluster-list = {{ dumps(cluster_parameter_dict.keys() ) }}
+context =
+  section parameter_dict repman
+  key username repman-parameter:username
+  key password repman-parameter:password
+  key secure_url nginx-parameter:backend-ssl-url
+  key cluster_name_list :cluster-list
+  raw jq_bin {{ jq_bin }}
+  raw curl_bin {{ curl_bin }}
+  raw bash_bin {{ bash_bin }}
+rendered = ${directory:scripts}/repman-reload
+mode = 755
 
 [replication-manager]
 recipe = slapos.cookbook:wrapper
@@ -79,13 +237,14 @@ command-line =
    --monitoring-datadir=${repman:data-dir}
    --config=${repman-config.toml:rendered}
    --log-file=${repman-parameter:log}
+   --memprofile=${directory:tmp}/repmgr.mprof
    monitor
 
 wrapper-path = ${directory:service}/replication-manager
 # setup repman instance folder
 depends =
   ${repman-config-folder:recipe}
-
+  ${replication-manager-reload:recipe}
 
 [repman-config.toml]
 recipe = slapos.recipe.template:jinja2
@@ -119,14 +278,15 @@ wrapper-path = ${directory:bin}/nginx-start
 wait-for-files =
   ${ca-directory:certs}/nginx.key
   ${ca-directory:certs}/nginx.crt
-  ${nginx-graceful-wrapper:wrapper-path}
+  ${nginx-graceful-wrapper:rendered}
 
 [nginx-graceful-wrapper]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:scripts}/nginx-graceful
-command-line =
-  kill -USR1 $(cat ${nginx-parameter:pid-file})
-
+recipe = slapos.recipe.template:jinja2
+template = inline:#!{{ bash_bin }}
+  kill -USR1 "$(cat ${nginx-parameter:pid-file})"
+rendered = ${directory:scripts}/nginx-graceful
+context =
+mode = 755
 
 [ca-nginx]
 <= certificate-authority
@@ -148,13 +308,34 @@ name = nginx
 log = ${nginx-parameter:access-log} ${nginx-parameter:error-log}
 post = kill -USR1 $(cat ${nginx-parameter:pid-file})
 
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
+  root-password gen-root-password:passwd
+
 [publish-connection-parameter]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-backend-url = ${nginx-parameter:backend-url}
+backend-url = ${nginx-parameter:backend-ssl-url}
 url = ${repman-frontend:connection-secure_access}
 username = ${repman-parameter:username}
 password = ${repman-parameter:password}
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
+{% endfor %}
+
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8060
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }} 
+username = admin
+password = ${publish-early:monitor-password}
+
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
 
 [repman-frontend]
 <= slap-connection
@@ -163,7 +344,7 @@ name = Replication Manager Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = ${nginx-parameter:backend-url}
+config-url = ${nginx-parameter:backend-ssl-url}
 config-domain = 
 return = domain secure_access
 
@@ -178,7 +359,7 @@ config-check-secure = 1
 <= monitor-promise-base
 module = check_url_available
 name = check_repman_frontend.py
-config-url = ${nginx-parameter:backend-url}
+config-url = ${nginx-parameter:backend-ssl-url}
 config-check-secure = 1
 
 
@@ -189,7 +370,7 @@ config-check-secure = 1
 #############################
 [buildout]
 extends =
-  {{ template_monitor_cfg }}
+  {{ template_monitor }}
 parts =
   replication-manager
   repman-listen-promise
@@ -200,6 +381,8 @@ parts =
   repman-frontend-promise
   repman-backend-promise
 
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

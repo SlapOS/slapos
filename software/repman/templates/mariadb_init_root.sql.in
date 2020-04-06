@@ -1,0 +1,10 @@
+--  What's done in this file shouldn't be replicated
+--  or products like mysql-fabric won't work
+SET @@SESSION.SQL_LOG_BIN=0;
+
+CREATE USER 'repman'@'localhost' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO 'repman'@'localhost' WITH GRANT OPTION ;
+CREATE USER 'repman'@'%' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO 'repman'@'%' WITH GRANT OPTION ;
+DROP DATABASE IF EXISTS test ;
+FLUSH PRIVILEGES ;
