@@ -1,0 +1,37 @@
+[{{ parameter_dict['name'] }}]
+title = "{{ parameter_dict['name'] }}"
+db-servers-hosts = "{{ parameter_dict['db-list'] }}"
+db-servers-prefered-master = "{{ parameter_dict['db-prefered-master'] }}"
+db-servers-credential = "{{ parameter_dict['db-credential'] }}"
+replication-credential = "{{ parameter_dict['db-credential'] }}"
+db-servers-connect-timeout = 1
+slapos-db-partitions = "{{ parameter_dict['partition-list'] }}"
+slapos-proxysql-partitions = "{{ parameter_dict['proxysql-partition'] }}"
+
+proxysql = true
+proxysql-port = {{ parameter_dict['proxy-port'] }}
+proxysql-servers = "{{ parameter_dict['proxysql-servers'] }}"
+proxysql-user = "{{ parameter_dict['proxysql-user'] }}"
+proxysql-bootstrap = true
+proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
+proxysql-password = "{{ parameter_dict['password'] }}"
+
+prov-proxy-tags = "pkg,masterslave,linux,noreadwritesplit"
+
+monitoring-scheduler = true
+scheduler-db-servers-logical-backup  = true
+scheduler-db-servers-logical-backup-cron= "0 0 1 * * 6"
+scheduler-db-servers-logs   =  true
+scheduler-db-servers-logs-cron = "0 0 * * * *"
+#scheduler-db-servers-logs-table-keep = 12
+scheduler-db-servers-logs-table-keep = 4
+scheduler-db-servers-logs-table-rotate  = true
+#scheduler-db-servers-logs-table-rotate-cron = "0 0 0/6 * * *"
+scheduler-db-servers-logs-table-rotate-cron = "0 0 23 * * *"
+scheduler-db-servers-optimize  = true
+scheduler-db-servers-optimize-cron = "0 0 3 1 * 5"
+scheduler-db-servers-physical-backup = true
+scheduler-db-servers-physical-backup-cron = "0 0 0 * * *"
+backup-physical-type = "mariabackup"
+backup-logical-type = "mysqldump"
+# scheduler-db-servers-receiver-ports="4444,4445"
