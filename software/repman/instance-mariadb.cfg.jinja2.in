@@ -1,0 +1,262 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set port = slapparameter_dict['tcpv4-port'] %}
+{% set host = (ipv4_set | list)[0] -%}
+{% if use_ipv6 -%}
+{%   set ip = (ipv6_set | list)[0] -%}
+{%   set host = '[' ~ (ipv4_set | list)[0] ~ ']' -%}
+{% else -%}
+{%   set ip = (ipv4_set | list)[0] -%}
+{% endif -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set database_list = slapparameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
+
+[{{ section('publish') }}]
+recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
+database-host = {{ host }}:{{ port }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+partition-path = ${buildout:directory}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  server-id gen-server-id:value
+{%- set server_id = slapparameter_dict.get('server-id') %}
+{%- if server_id %}
+server-id = {{ dumps(server_id) }}
+{%- endif %}
+
+[gen-server-id]
+recipe = slapos.cookbook:random.integer
+minimum = {{ dumps(1) }}
+maximum = {{ dumps(2**32 - 1) }}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+mode = 644
+
+[jinja2-template-executable]
+< = jinja2-template-base
+mode = 755
+
+[simplefile]
+< = jinja2-template-base
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+[my-cnf-parameters]
+socket = ${directory:run}/mariadb.sock
+ip = {{ ip }}
+data-directory = ${directory:srv}/mariadb
+pid-file = ${directory:run}/mariadb.pid
+max-connection-count = {{ dumps(slapparameter_dict.get('max-connection-count', 1000)) }}
+innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
+innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
+innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
+innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
+innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
+relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
+server-id = ${publish-early:server-id}
+
+[my-cnf]
+< = jinja2-template-base
+rendered = ${directory:etc}/mariadb.cnf
+template = {{ parameter_dict['template-my-cnf'] }}
+context = section parameter_dict my-cnf-parameters
+
+[init-root-sql]
+< = jinja2-template-base
+rendered = ${directory:etc}/.init-root.sql
+template = {{ parameter_dict['template-mariadb-init-root'] }}
+context = section parameter_dict init-script-parameters
+mode = 600
+
+[init-script-parameters]
+password = {{ slapparameter_dict['root-password'] }}
+database-list = {{ dumps(database_list) }}
+
+[init-script]
+< = jinja2-template-executable
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+template = {{ parameter_dict['template-mariadb-initial-setup'] }}
+context = section parameter_dict init-script-parameters
+
+[update-mysql]
+recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
+output = ${directory:bin}/mariadb_update
+binary = ${binary-wrap-mysql_upgrade:wrapper-path}
+mysql = ${binary-wrap-mysql:wrapper-path}
+init-script = ${init-script:rendered}
+mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
+
+[{{ section('update-mysql-script') }}]
+< = jinja2-template-executable
+rendered = ${directory:scripts}/mariadb_update
+init-password = ${directory:etc}/.init-passwd.done
+context =
+  key init_password_done :init-password
+  key init_root_sql      init-root-sql:rendered
+  key mysql_update       update-mysql:output
+  raw mysql_conf         ${directory:etc}/mysql/my.cnf
+  raw dash_bin           {{ dash }}
+  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+template = {{ parameter_dict['template-init-root-wrapper'] }}
+
+[{{ section('mysqld') }}]
+< = jinja2-template-executable
+rendered = ${directory:services}/mariadb
+template = {{ parameter_dict['template-mysqld-wrapper'] }}
+context =
+  key defaults_file install-mysql-config:config
+  key datadir my-cnf-parameters:data-directory
+  key environ :environ
+environ =
+  ODBCSYSINI='${directory:etc}'
+  LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
+  {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
+  {{ variable }}
+  {%- endfor %}
+
+[odbc-ini-text]
+text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
+
+[{{ section('odbc-ini') }}]
+< = jinja2-template-base
+rendered = ${directory:etc}/odbc.ini
+template = inline:{% raw -%}
+  {{ parameter_dict['text'].decode('base64') }}
+  {%- endraw %}
+context = section parameter_dict odbc-ini-text
+
+# XXX - probably not needed anymore, to check
+#[logrotate-entry-mariadb]
+#< = logrotate-entry-base
+#name = mariadb
+#log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+#post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
+
+[{{ section('binary-link') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
+
+[binary-wrap-base]
+recipe = slapos.cookbook:wrapper
+# Note: --defaults-file must be the first argument, otherwise wrapped binary
+# will reject it.
+command-line = 
+  "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+  --defaults-file="${directory:etc}/mysql/my.cnf" --protocol=socket
+#  ${:command-extra}
+wrapper-path = ${directory:bin}/${:command}
+command-extra =
+
+[binary-wrap-mysql]
+<= binary-wrap-base
+command = mysql
+#command-extra = --password=${init-script-parameters:password}
+
+[binary-wrap-mysqldump]
+<= binary-wrap-base
+command = mysqldump
+#command-extra = --password=${init-script-parameters:password}
+
+[binary-wrap-mysql_upgrade]
+<= binary-wrap-base
+command = mysql_upgrade
+#command-extra = --password=${init-script-parameters:password}
+
+[binary-wrap-mysqladmin]
+<= binary-wrap-base
+command = mysqladmin
+
+[binary-wrap-mysql_tzinfo_to_sql]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+command = mysql_tzinfo_to_sql
+
+[binary-wrap-pt-digest]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
+command = pt-query-digest
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+scripts = ${:etc}/run
+services = ${:etc}/service
+plugin = ${:etc}/plugin
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+backup = ${:srv}/backup
+mariadb-backup-full = ${:backup}/mariadb-full
+mariadb-backup-incremental = ${:backup}/mariadb-incremental
+var = ${buildout:directory}/var
+lib = ${:var}/lib
+mysql = ${:lib}/mysql
+log = ${:var}/log
+run = ${:var}/run
+config-tmp = ${:tmp}/config
+custom = ${directory:etc}/mysql/custom
+
+
+# Donwnload mariadb configuration from repman
+[{{ section('install-mysql-config') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+# XXX - for now, we make only one cluster
+cluster = cluster1
+config = ${directory:etc}/mysql/my.cnf
+command =
+  cd ${directory:config-tmp} &&
+  {{ parameter_dict['curl-location'] }}/bin/curl -o config.tar.gz {{ slapparameter_dict['repman-url'] }}/api/clusters/${:cluster}/servers/{{ ip }}/{{ port }}/config &&
+  tar -xzf config.tar.gz &&
+  cp -r data/.system ${directory:mysql} &&
+  cp -r etc/mysql ${directory:etc} &&
+  ln -sf ${directory:mysql}/.system ${directory:var}/system &&
+  ln -sf ${my-cnf:rendered} ${directory:etc}/mysql/custom/01_mariadb.cnf
+
+update-command = ${:command}
+
+[dash]
+dash = {{ dumps(dash) }}
+
+[{{ section('promise-check-computer-memory') }}]
+<= monitor-promise-base
+module = check_command_execute
+name = check-computer-memory.py
+config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
+
+[{{ section('promise') }}]
+<= monitor-promise-base
+module = check_command_execute
+name = mariadb.py
+config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "{{ ip }}" "{{ port }}"
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ port + 1 }}
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts +=
+  {{ part_list | join('\n  ') }}
