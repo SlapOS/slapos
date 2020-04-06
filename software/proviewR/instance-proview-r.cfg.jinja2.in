@@ -99,6 +99,13 @@ name = novnc_promise.py
 config-hostname = ${novnc-instance:ip}
 config-port = ${novnc-instance:port}
 
+[pwr-status-server-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = status_server_promise.py
+config-hostname = {{ ipv4 }}
+config-port = 18084
+
 [x11vnc]
 recipe = slapos.cookbook:wrapper
 command-line = {{ x11vnc_bin }} -forever -display ${xserver:display} -ncache 10
@@ -336,6 +343,7 @@ parts =
   websockify-sighandler
   websockify-sighandler-service
   novnc-promise
+  pwr-status-server-promise
   shellinabox
   shellinabox-service
   ca-nginx
