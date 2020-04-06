@@ -1,0 +1,7 @@
+[{{ parameter_dict['name'] }}]
+title = "{{ parameter_dict['name'] }}"
+db-servers-hosts = "{{ parameter_dict['db-list'] }}"
+db-servers-prefered-master = "{{ parameter_dict['db-prefered-master'] }}"
+db-servers-credential = "{{ parameter_dict['db-credential'] }}"
+db-servers-connect-timeout = 1
+slapos-db-partitions = "{{ parameter_dict['partition-list'] }}"

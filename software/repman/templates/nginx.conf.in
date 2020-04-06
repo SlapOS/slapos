@@ -18,7 +18,7 @@ http {
      }
 
      server {
-        listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }} ssl;
+        listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['ssl-port'] }} ssl;
         server_name _;
         ssl_certificate     {{ parameter_dict['ssl-certificate'] }};
         ssl_certificate_key {{ parameter_dict['ssl-key'] }};
@@ -26,6 +26,21 @@ http {
         ssl_ciphers         ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5;
         ssl_prefer_server_ciphers on;
         keepalive_timeout 90s;
+
+        location / {
+            proxy_redirect off;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host  $http_host;
+            proxy_connect_timeout 200;
+
+            proxy_pass {{ parameter_dict['repman-secure-url'] }};
+        }
+    }
+
+    server {
+        listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }};
+        server_name _;
 
         location / {
             proxy_redirect off;
