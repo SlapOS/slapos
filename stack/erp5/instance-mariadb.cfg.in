@@ -160,6 +160,7 @@ context = section parameter_dict my-cnf-parameters
 
 [init-script-parameters]
 database-list = {{ dumps(database_list + test_database_list) }}
+mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 
 [init-script]
 < = jinja2-template-executable
@@ -344,7 +345,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 <= monitor-promise-base
 module = check_command_execute
 name = mariadb.py
-config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
+config-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';' {% if database_list and database_list[0].get('user') %} --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}" --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}" {% endif %}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
