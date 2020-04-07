@@ -338,7 +338,7 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     self.parameter_dict = parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.base_url = parameter_dict['url']
 
-  def _call(self, path, method="GET", data=None):
+  def _call(self, path, method="GET", data=None, assert_result_code=False):
     resp = {
       "GET": requests.get,
       "POST": requests.post,
@@ -348,6 +348,13 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
       auth=(self.parameter_dict['init-user'], self.parameter_dict['init-password']),
       data=data
     )
+    if assert_result_code:
+      try:
+        self.assertEqual(json.loads(resp.text)['code'], 1)
+      except ValueError:
+        raise ValueError("call to %s failed with HTTP code %s" % (
+          path, result.status_code
+        ))
     return resp
 
   def _buildAndRun(self):
@@ -385,13 +392,18 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
       * the SR in-use can't be deleted
     """
     # 1: Request 2 Software Releases, and do build&run
-    result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v1/"})
-    try:
-      self.assertEqual(json.loads(result.text)['code'], 1)
-    except ValueError:
-      raise ValueError('supplySoftwareRelease returns code ', result.status_code)
-    result = self._call('supplySoftwareRelease', method="POST", data={"path": "workspace/slapos/software/slaprunner/test/software_v2/"})
-    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call(
+      'supplySoftwareRelease',
+      method="POST",
+      data={"path": "workspace/slapos/software/slaprunner/test/software_v1/"},
+      assert_result_code=True,
+    )
+    result = self._call(
+      'supplySoftwareRelease',
+      method="POST",
+      data={"path": "workspace/slapos/software/slaprunner/test/software_v2/"},
+      assert_result_code=True,
+    )
     self._buildAndRun()
 
     # 2: Check that the Software Release of the instance is the 1st requested
@@ -406,8 +418,12 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
         'workspace/slapos/software/slaprunner/test/software_v2/software.cfg',
       ]
     )
-    result = self._call('getFileContent', method="POST", data={"file": "instance_root/slappart0/version.txt"})
-    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call(
+      'getFileContent',
+      method="POST",
+      data={"file": "instance_root/slappart0/version.txt"},
+      assert_result_code=True,
+    )
     self.assertEqual(json.loads(result.text)['result'], u'1')
 
     # 3: Check that that only the unused Software Release can be deleted
@@ -418,12 +434,16 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     )
 
     # 4: Request the instance with the 2nd Software Release, and check modification is registered
-    result = self._call('saveParameterXml', method="POST", data={
-      "software_release": "workspace/slapos/software/slaprunner/test/software_v2/software.cfg",
-      "software_type": "default",
-      "parameter": '<?xml version="1.0" encoding="utf-8"?>\n<instance>\n</instance>',
-    })
-    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call(
+      'saveParameterXml',
+      method="POST",
+      data={
+        "software_release": "workspace/slapos/software/slaprunner/test/software_v2/software.cfg",
+        "software_type": "default",
+        "parameter": '<?xml version="1.0" encoding="utf-8"?>\n<instance>\n</instance>',
+      },
+      assert_result_code=True,
+    )
     result = self._call('inspectInstance')
     root = soupparser.fromstring(result.text)
     select_el = root.find(".//select[@name='software_release']")
@@ -431,8 +451,12 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
 
     # 5: Do build&run, and check that the instance was updated with the profile of the 2nd Software Release
     self._buildAndRun()
-    result = self._call('getFileContent', method="POST", data={"file": "instance_root/slappart0/version.txt"})
-    self.assertEqual(json.loads(result.text)['code'], 1)
+    result = self._call(
+      'getFileContent',
+      method="POST",
+      data={"file": "instance_root/slappart0/version.txt"},
+      assert_result_code=True,
+    )
     self.assertEqual(json.loads(result.text)['result'], u'2')
 
     # 6: Check that that only the first Software Release can be deleted, and delete it
