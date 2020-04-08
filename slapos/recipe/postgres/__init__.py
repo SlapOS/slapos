@@ -143,7 +143,7 @@ class Recipe(GenericBaseRecipe):
         ipv6 = self.options['ipv6'].splitlines()
 
         postgres_conf = os.path.join(pgdata, 'postgresql.conf')
-        with open(postgres_conf, 'wb') as cfg:
+        with open(postgres_conf, 'w') as cfg:
             cfg.write(textwrap.dedent("""\
                     listen_addresses = '%s'
                     logging_collector = on
@@ -165,7 +165,7 @@ class Recipe(GenericBaseRecipe):
                         )))
 
         pg_hba_conf = os.path.join(pgdata, 'pg_hba.conf')
-        with open(pg_hba_conf, 'wb') as cfg:
+        with open(pg_hba_conf, 'w') as cfg:
             # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
             cfg_lines = [
