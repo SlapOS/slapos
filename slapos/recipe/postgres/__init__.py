@@ -56,8 +56,6 @@ class Recipe(GenericBaseRecipe):
             ipv4 to listen on, can be multiple ips or can be empty.
         ipv6
             ipv6 to listen on, can be multiple ips or can be empty.
-        ipv6-random
-            main ipv6 to listen on, can be empty.
         port
             port to listen on, same for both IPv4 and IPv6.
         pgdata-directory
@@ -71,13 +69,20 @@ class Recipe(GenericBaseRecipe):
 
     Exposed options:
         url
-            generated DBAPI connection string, on IPv6
+            generated DBAPI connection string, on IPv6.
             it can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
+            this is only available if at least one IPv6 was provided.
     """
 
     def _options(self, options):
-        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6-random)s]:%(port)s/%(dbname)s' % options
-
+        if options.get('ipv6'):
+            options['url'] = "postgresql://{superuser}:{password}@[{ipv6}]:{port}/{dbname}".format(
+                superuser=options['superuser'],
+                password=options['password'],
+                ipv6=options['ipv6'].splitlines()[0],
+                port=options['port'],
+                dbname=options['dbname'],
+            )
 
     def install(self):
         pgdata = self.options['pgdata-directory']
