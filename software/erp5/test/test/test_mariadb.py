@@ -46,9 +46,6 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   """Base test case for mariadb tests.
   """
   __partition_reference__ = 'm'
-  # XXX mariadb_update service sleeps for 30 seconds before retrying,
-  # so this takes a lot of time to instance
-  instance_max_retry = 60
 
   @classmethod
   def getInstanceSoftwareType(cls):
