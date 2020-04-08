@@ -475,9 +475,8 @@ password=
 pgdata-directory = ${directory:srv}/postgresql
 
 # empty addresses - listen only on unix socket
-ipv4    = !py!set([])
-ipv6    = !py!set([])
-ipv6-random =
+ipv4    =
+ipv6    =
 port    =
 
 depend  =
