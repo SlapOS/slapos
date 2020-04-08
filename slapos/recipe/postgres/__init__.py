@@ -42,7 +42,8 @@ class Recipe(GenericBaseRecipe):
 
         - a Postgres cluster
         - configuration to allow connections from IPv4, IPv6 or unix socket.
-        - a superuser with provided name and generated password
+          IPv4 and IPv6 can be disabled, unix socket will always be available.
+        - a superuser with provided name and password
         - a database with provided name
         - a start script in the services directory
 
@@ -52,21 +53,25 @@ class Recipe(GenericBaseRecipe):
         dbname
             name of the database to be used by the application.
         ipv4
-            set of ipv4 to listen on.
+            ipv4 to listen on, can be multiple ips or can be empty.
         ipv6
-            set of ipv6 to listen on.
+            ipv6 to listen on, can be multiple ips or can be empty.
+        ipv6-random
+            main ipv6 to listen on, can be empty.
+        port
+            port to listen on, same for both IPv4 and IPv6.
         pgdata-directory
             path to postgres configuration and data.
         services
             must be ${buildout:directory}/etc/service.
         superuser
             name of the superuser to create.
+        password
+            password for the superuser.
 
     Exposed options:
-        password
-            generated password for the superuser.
         url
-            generated DBAPI connection string.
+            generated DBAPI connection string, on IPv6
             it can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
 
