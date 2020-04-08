@@ -134,8 +134,8 @@ class Recipe(GenericBaseRecipe):
 
     def createConfig(self):
         pgdata = self.options['pgdata-directory']
-        ipv4 = self.options['ipv4']
-        ipv6 = self.options['ipv6']
+        ipv4 = self.options['ipv4'].splitlines()
+        ipv6 = self.options['ipv6'].splitlines()
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
@@ -154,7 +154,7 @@ class Recipe(GenericBaseRecipe):
                     unix_socket_directories = '%s'
                     unix_socket_permissions = 0700
                     """ % (
-                        ','.join(ipv4.union(ipv6)),
+                        ','.join(set(ipv4).union(ipv6)),
                         pgdata,
                         )))
 
