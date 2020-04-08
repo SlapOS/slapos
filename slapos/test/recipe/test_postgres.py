@@ -37,8 +37,13 @@ class PostgresTest(unittest.TestCase):
   def test_install(self):
     installed = self.recipe.install()
 
-    self.assertEqual(installed, [])
-
     self.assertIn('postgresql.conf', os.listdir(self.pgdata_directory))
     self.assertIn('pg_hba.conf', os.listdir(self.pgdata_directory))
     self.assertIn('postgres-start', os.listdir(self.services_directory))
+
+    self.assertEqual(
+        sorted(installed),
+        sorted([
+            os.path.join(self.pgdata_directory, 'postgresql.conf'),
+            os.path.join(self.pgdata_directory, 'pg_hba.conf'),
+            os.path.join(self.services_directory, 'postgres-start')]))

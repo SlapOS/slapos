@@ -82,25 +82,25 @@ class Recipe(GenericBaseRecipe):
     def install(self):
         pgdata = self.options['pgdata-directory']
 
-        # if the pgdata already exists, skip all steps, we don't need to do anything.
-
+        paths = []
+        # if the pgdata already exists, we don't need to recreate databases.
         if not os.path.exists(pgdata):
             try:
                 self.createCluster()
-                self.createConfig()
+                paths.extend(self.createConfig())
                 self.createDatabase()
                 self.updateSuperuser()
-                self.createRunScript()
+                paths.extend(self.createRunScript())
             except:
                 # do not leave half-installed postgresql - else next time we
                 # run we won't update it.
                 shutil.rmtree(pgdata)
                 raise
         else:
-            self.createConfig()
-            self.createRunScript()
+            paths.extend(self.createConfig())
+            paths.extend(self.createRunScript())
 
-        return []
+        return paths
 
     update = install
 
@@ -136,7 +136,8 @@ class Recipe(GenericBaseRecipe):
         pgdata = self.options['pgdata-directory']
         ipv4 = self.options['ipv4'].splitlines()
         ipv6 = self.options['ipv6'].splitlines()
-        with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
+        postgres_conf = os.path.join(pgdata, 'postgresql.conf')
+        with open(postgres_conf, 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
                     listen_addresses = '%s'
                     logging_collector = on
@@ -156,8 +157,8 @@ class Recipe(GenericBaseRecipe):
                         ','.join(set(ipv4).union(ipv6)),
                         pgdata,
                         )))
-
-        with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
+        pg_hba_conf = os.path.join(pgdata, 'pg_hba.conf')
+        with open(pg_hba_conf, 'wb') as cfg:
             # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
             cfg_lines = [
@@ -178,7 +179,7 @@ class Recipe(GenericBaseRecipe):
                 cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv6_netmask_bits))
 
             cfg.write('\n'.join(cfg_lines))
-
+        return postgres_conf, pg_hba_conf
 
     def createDatabase(self):
         self.runPostgresCommand(cmd='CREATE DATABASE "%s"' % self.options['dbname'])
@@ -236,6 +237,6 @@ class Recipe(GenericBaseRecipe):
                     -D %(pgdata-directory)s
                 """ % self.options)
         name = os.path.join(self.options['services'], 'postgres-start')
-        self.createExecutable(name, content=content)
+        return [self.createExecutable(name, content=content)]
 
 
