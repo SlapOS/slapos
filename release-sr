@@ -1,0 +1,29 @@
+#!/bin/bash
+
+git fetch
+
+git checkout 1.0
+git reset origin/1.0 --hard
+
+# for now this script is hardcoded to release on 1.0.x versions intentionally
+# update to version 2 or 1.1 would require a major reorganisation on the release
+# process
+CURRENT_VERSION=`git tag | grep "^1\+\.0\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1`
+
+NEXT_MINOR_VERSION=$((`echo $CURRENT_VERSION | cut -f3 -d.`+1))
+
+echo "###################################################################"
+echo "You are about to release a new version of SlapOS Software Release"
+echo "Lastest release: $CURRENT_VERSION"
+echo "Next Release to be Tagged: 1.0.$NEXT_MINOR_VERSION"
+echo "###################################################################"
+
+git tag 1.0.$NEXT_MINOR_VERSION -m "Release 1.0.$NEXT_MINOR_VERSION"
+
+
+echo " Please review current tag and them push it:"
+echo " To review use git log 1.0.$NEXT_MINOR_VERSION"
+
+echo ""
+echo " To push into main repository:"
+echo " git push origin 1.0.$NEXT_MINOR_VERSION"
