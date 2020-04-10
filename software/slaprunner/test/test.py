@@ -363,9 +363,10 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     while True:
       time.sleep(10)
       try:
-        result = json.loads(self._call('slapgridResult').text)
+        response = self._call('slapgridResult')
+        result = json.loads(response.text)
       except ValueError:
-        raise ValueError("couldnt decode JSON result of call (code: %s) : %s" % (result.status_code, result.text))
+        raise ValueError("couldnt decode JSON result of call (code: %s) : %s" % (response.status_code, response.text))
       self.logger.debug('%s', result)
 
       # If software or instance is currently under process, wait
