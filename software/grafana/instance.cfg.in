@@ -126,6 +126,18 @@ command-line =
   {{ influx_bin }} -username ${influxdb:auth-username} -password ${influxdb:auth-password} -socket ${influxdb:unix-socket} -execute "CREATE USER ${influxdb:auth-username} WITH PASSWORD '${influxdb:auth-password}' WITH ALL PRIVILEGES"
 wrapper-path = ${directory:promise}/${:_buildout_section_name_}
 
+[influxdb-database-ready-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  bash -c "{{ influx_bin }} \
+     -username ${influxdb:auth-username} \
+     -password ${influxdb:auth-password} \
+     -host ${influxdb:host} \
+     -port ${influxdb:http-port} \
+     -unsafeSsl \
+     -ssl \
+     -execute 'show databases' | grep '${influxdb:database}'"
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
 
 
 [grafana]
@@ -261,6 +273,7 @@ recipe =
 instance-promises =
   ${influxdb-listen-promise:path}
   ${influxdb-password-promise:wrapper-path}
+  ${influxdb-database-ready-promise:wrapper-path}
   ${grafana-listen-promise:path}
   ${loki-listen-promise:path}
   ${promtail-listen-promise:path}
