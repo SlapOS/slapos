@@ -21,7 +21,7 @@
     "keep-log-days": {
       "title": "Retention of test logs",
       "description": "Number of days to keep logs and snapshots",
-      "type": "integer",
+      "type": "number",
       "default": 15
     }
   }
