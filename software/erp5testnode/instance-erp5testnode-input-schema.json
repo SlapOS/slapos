@@ -17,6 +17,12 @@
       "title": "Task Distribution URL",
       "description": "Url for the task distributor master on portal_task_distribution",
       "type": "string"
+    },
+    "keep-log-days": {
+      "title": "Retention of test logs",
+      "description": "Number of days to keep logs and snapshots",
+      "type": "number",
+      "default": 15
     }
   }
 }
