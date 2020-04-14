@@ -415,7 +415,6 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     result = self._call('inspectInstance')
     root = soupparser.fromstring(result.text)
     select_el = root.find(".//select[@name='software_release']")
-    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v1/software.cfg")
     self.assertEqual(
       select_el.value_options,
       [
@@ -452,7 +451,7 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     result = self._call('inspectInstance')
     root = soupparser.fromstring(result.text)
     select_el = root.find(".//select[@name='software_release']")
-    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v2/software.cfg")
+    self.assertEqual(select_el.value_options[0], "workspace/slapos/software/slaprunner/test/software_v2/software.cfg")
 
     # 5: Do build&run, and check that the instance was updated with the profile of the 2nd Software Release
     self._buildAndRun()
@@ -479,7 +478,6 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     result = self._call('inspectInstance')
     root = soupparser.fromstring(result.text)
     select_el = root.find(".//select[@name='software_release']")
-    self.assertEqual(select_el.value, "workspace/slapos/software/slaprunner/test/software_v2/software.cfg")
     self.assertEqual(
       select_el.value_options,
       [
