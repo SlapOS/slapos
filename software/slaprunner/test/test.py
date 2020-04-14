@@ -324,6 +324,7 @@ class TestCustomFrontend(SlaprunnerTestCase):
 
 class TestSlapProxyIntegration(SlaprunnerTestCase):
   instance_max_retry = 5
+  _save_instance_file_pattern_list = SlaprunnerTestCase._save_instance_file_pattern_list + ('*/srv/runner/*.json',)
 
   @classmethod
   def getInstanceParameterDict(cls):
