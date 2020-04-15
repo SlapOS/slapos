@@ -2,6 +2,7 @@
 parts =
   nginx-service
   runTestSuite-instance
+  promises
   publish
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -22,6 +23,7 @@ log = $${:var}/log
 varnginx = $${:var}/nginx
 scripts = $${:etc}/run
 services = $${:etc}/service
+promise = $${:etc}/promise
 www = $${:srv}/www
 home = $${:etc}/home
 ssl = $${:etc}/ssl
@@ -51,14 +53,19 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
   ${xserver:location}/bin/Xvfb
-    $${:display}
+    :$${:display}
     -screen 0 1024x768x24
     -fbdir $${directory:framebuffer}
 environment =
   XORG_LOCK_DIR=$${:lock-dir}
 
-display = :0
+display = 0
 lock-dir = $${directory:run}
+
+[xvfb-promise]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:promise}/$${:_buildout_section_name_}
+command-line = bash -c "[ -S $${xvfb-instance:lock-dir}/.X11-unix/X$${xvfb-instance:display} ]"
 
 
 #################################
@@ -85,6 +92,13 @@ ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr
 ssl_crt = $${directory:ssl}/nginx.crt
 
+[nginx-listen-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promise}/$${:_buildout_section_name_}
+hostname = $${nginx-configuration:ip}
+port = $${nginx-configuration:port}
+
+
 #################################
 # SlapOS service
 #################################
@@ -96,3 +110,9 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 configuration._ = {}
+
+[promises]
+recipe =
+depends =
+  $${nginx-listen-promise:recipe}
+  $${xvfb-promise:recipe}
