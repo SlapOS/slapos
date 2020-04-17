@@ -6,5 +6,7 @@ CREATE USER 'repman'@'localhost' IDENTIFIED BY '{{ parameter_dict["password"] }}
 GRANT ALL ON *.* TO 'repman'@'localhost' WITH GRANT OPTION ;
 CREATE USER 'repman'@'%' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
 GRANT ALL ON *.* TO 'repman'@'%' WITH GRANT OPTION ;
+CREATE USER 'repman'@'::' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO 'repman'@'::' WITH GRANT OPTION ;
 DROP DATABASE IF EXISTS test ;
 FLUSH PRIVILEGES ;
