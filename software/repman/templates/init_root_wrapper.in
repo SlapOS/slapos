@@ -22,4 +22,11 @@ if [ ! -f "{{ init_password_done }}" ]; then
   echo "done"
 fi
 
-exec {{ mysql_update }}
+# Run mariadb_upgrade when replication is bootstrapped will break replication topology.
+# skip when already upgraded until we have a good solution.
+if [ ! -f "{{ upgrade_done }}" ]; then
+  {{ mysql_update }}
+  if [ $? -eq 0 ]; then
+    touch {{ upgrade_done }};
+  fi
+fi
