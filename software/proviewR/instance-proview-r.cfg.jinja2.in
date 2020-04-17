@@ -127,8 +127,9 @@ display = :98
 recipe = plone.recipe.command
 pwr-db = ${directory:pwrp}/db
 pwr-flag = ${directory:pwrp}/flag
-command = 
-  cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}/.. #cp will make extra 'db' folder
+command = echo  'cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}/.. '
+  echo  'cp -r {{ proview_directory }}/local/adm/db/ ${directory:pwrp}/' >  ${directory:pwrp}/test
+  cp -r {{ proview_directory }}/local/adm/db/ ${directory:pwrp}/ #cp will make extra 'db' folder
   echo PORT=5901 > ${:pwr-flag}
   cat <<EOF > ${buildout:directory}/.rtt_start
     #!/bin/bash
@@ -141,7 +142,7 @@ command =
     $pwr_exe/rt_xtt &
   EOF
 
-update-command =
+update-command = echo updating and doing nothing
 stop-on-error = true
 
 [proview-environment]
