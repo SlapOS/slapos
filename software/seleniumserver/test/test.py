@@ -48,7 +48,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort
+from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase
 
 setUpModule, SeleniumServerTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -80,11 +80,13 @@ class WebServerMixin(object):
           <html>
             <title>Test page</title>
             <body>
+              <style> p { font-family: Arial; } </style>
               <form action="/" method="POST" enctype="multipart/form-data">
                 <input name="q" type="text"></input>
                 <input name="f" type="file" ></input>
                 <input type="submit" value="I'm feeling lucky"></input>
               </form>
+              <p>the quick brown fox jumps over the lazy dog</p>
             </body>
           </html>''')
 
@@ -168,8 +170,18 @@ class BrowserCompatibilityMixin(WebServerMixin):
   def test_screenshot(self):
     self.driver.get(self.server_url)
     screenshot = Image.open(BytesIO(self.driver.get_screenshot_as_png()))
-    # just check it's not a white screen
-    self.assertGreater(len(screenshot.getcolors(maxcolors=512)), 2)
+    reference_filename = os.path.join(
+        os.path.dirname(__file__), "data",
+        self.id() + ".png")
+
+    # save the screenshot somewhere in a path that will be in snapshot folder.
+    # XXX we could use a better folder name ...
+    screenshot.save(
+        os.path.join(self.slap.instance_directory, 'etc',
+                     self.id() + ".png"))
+
+    reference = Image.open(reference_filename)
+    self.assertImagesSame(screenshot, reference, 0)
 
   def test_window_and_screen_size(self):
     size = json.loads(
@@ -388,7 +400,11 @@ class TestSSHServer(SeleniumServerTestCase):
       self.assertIn("Welcome to SlapOS Selenium Server.", received)
 
 
-class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox52(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='52.9.0esr')
   user_agent = 'Gecko/20100101 Firefox/52.0'
   # resizing window is not supported on firefox 52 geckodriver
@@ -396,16 +412,28 @@ class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
       BrowserCompatibilityMixin.test_resize_window)
 
 
-class TestFirefox60(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox60(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='60.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/60.0'
 
 
-class TestFirefox68(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox68(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
 
-class TestChrome69(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestChrome69(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'
