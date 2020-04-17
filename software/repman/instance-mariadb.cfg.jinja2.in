@@ -1,7 +1,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set port = slapparameter_dict['tcpv4-port'] %}
+{% set port = slapparameter_dict['tcp-port'] %}
 {% set host = (ipv4_set | list)[0] -%}
 {% if use_ipv6 -%}
 {%   set ip = (ipv6_set | list)[0] -%}
@@ -27,6 +27,7 @@ recipe = slapos.cookbook:publish-early
 {%- if server_id %}
 server-id = {{ dumps(server_id) }}
 {%- endif %}
+database-list = {{ dumps(database_list) }}
 
 [gen-server-id]
 recipe = slapos.cookbook:random.integer
@@ -70,6 +71,9 @@ innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table',
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 server-id = ${publish-early:server-id}
+ssl-crt = ${directory:mariadb-ssl}/crt.pem
+ssl-key = ${directory:mariadb-ssl}/key.pem
+ssl-ca-crt = ${certificate-authority:ca-dir}/cacert.pem
 
 [my-cnf]
 < = jinja2-template-base
@@ -87,6 +91,7 @@ mode = 600
 [init-script-parameters]
 password = {{ slapparameter_dict['root-password'] }}
 database-list = {{ dumps(database_list) }}
+root-user = repman
 
 [init-script]
 < = jinja2-template-executable
@@ -107,8 +112,10 @@ mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 < = jinja2-template-executable
 rendered = ${directory:scripts}/mariadb_update
 init-password = ${directory:etc}/.init-passwd.done
+upgrade-done = ${directory:lib}/mariadb-update-done
 context =
   key init_password_done :init-password
+  key upgrade_done       :upgrade-done
   key init_root_sql      init-root-sql:rendered
   key mysql_update       update-mysql:output
   raw mysql_conf         ${directory:etc}/mysql/my.cnf
@@ -116,9 +123,9 @@ context =
   raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
 template = {{ parameter_dict['template-init-root-wrapper'] }}
 
-[{{ section('mysqld') }}]
+[mysqld]
 < = jinja2-template-executable
-rendered = ${directory:services}/mariadb
+rendered = ${directory:bin}/mysqld
 template = {{ parameter_dict['template-mysqld-wrapper'] }}
 context =
   key defaults_file install-mysql-config:config
@@ -130,6 +137,14 @@ environ =
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
   {{ variable }}
   {%- endfor %}
+
+[{{ section('ca-mysqld') }}]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${my-cnf-parameters:ssl-key}
+cert-file = ${my-cnf-parameters:ssl-crt}
+executable = ${mysqld:rendered}
+wrapper = ${directory:services}/mariadb
 
 [odbc-ini-text]
 text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
@@ -160,25 +175,22 @@ recipe = slapos.cookbook:wrapper
 # will reject it.
 command-line = 
   "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
-  --defaults-file="${directory:etc}/mysql/my.cnf" --protocol=socket
-#  ${:command-extra}
+  --defaults-file="${directory:etc}/mysql/my.cnf" --protocol=socket ${:extra-args}
 wrapper-path = ${directory:bin}/${:command}
-command-extra =
+extra-args =
 
 [binary-wrap-mysql]
 <= binary-wrap-base
 command = mysql
-#command-extra = --password=${init-script-parameters:password}
 
 [binary-wrap-mysqldump]
 <= binary-wrap-base
 command = mysqldump
-#command-extra = --password=${init-script-parameters:password}
 
 [binary-wrap-mysql_upgrade]
 <= binary-wrap-base
 command = mysql_upgrade
-#command-extra = --password=${init-script-parameters:password}
+extra-args = --skip-write-binlog
 
 [binary-wrap-mysqladmin]
 <= binary-wrap-base
@@ -186,7 +198,7 @@ command = mysqladmin
 
 [binary-wrap-mysql_tzinfo_to_sql]
 <= binary-wrap-base
-command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --skip-write-binlog
 command = mysql_tzinfo_to_sql
 
 [binary-wrap-pt-digest]
@@ -207,6 +219,7 @@ tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
+mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 lib = ${:var}/lib
 mysql = ${:lib}/mysql
@@ -215,6 +228,42 @@ run = ${:var}/run
 config-tmp = ${:tmp}/config
 custom = ${directory:etc}/mysql/custom
 
+[dbjob-parameter]
+bash-bin = {{ bash_bin }}
+db-user = ${init-script-parameters:root-user}
+db-password = ${init-script-parameters:password}
+mysql-dir = ${directory:mysql}
+dbjob-cnf = ${directory:etc}/mysql/my.cnf
+log-dir = ${directory:mysql}/.system/logs
+tmp-dir = ${directory:tmp}
+mysqld-socket  = ${my-cnf-parameters:socket}
+socat-port = {{ port + 1 }}
+restart-script = ${mysqld-restart-script:path}
+socat-location = {{ parameter_dict['socat-location'] }}
+mysql-location = {{ parameter_dict['mariadb-location'] }}
+ip = {{ ip }}
+port = {{ port }}
+
+[dbjobs-executable]
+< = jinja2-template-executable
+rendered = ${directory:bin}/dbjobs
+context =
+  section parameter_dict dbjob-parameter
+template = {{ parameter_dict['dbjobs-template'] }}
+
+[{{ section('dbjobs-cron-entry') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = dbjobs
+frequency = * * * * *
+command = ${dbjobs-executable:rendered}
+
+[mysqld-restart-script]
+recipe = plone.recipe.command
+command =
+  echo "NOT IMPLEMENTED FOR NOW" > ${:path}
+update-command = ${:command}
+path = ${directory:bin}/mysqld_restart
 
 # Donwnload mariadb configuration from repman
 [{{ section('install-mysql-config') }}]
@@ -225,9 +274,10 @@ cluster = cluster1
 config = ${directory:etc}/mysql/my.cnf
 command =
   cd ${directory:config-tmp} &&
-  {{ parameter_dict['curl-location'] }}/bin/curl -o config.tar.gz {{ slapparameter_dict['repman-url'] }}/api/clusters/${:cluster}/servers/{{ ip }}/{{ port }}/config &&
+  {{ curl_bin }} -o config.tar.gz {{ slapparameter_dict['repman-url'] }}/api/clusters/${:cluster}/servers/{{ ip }}/{{ port }}/config &&
   tar -xzf config.tar.gz &&
   cp -r data/.system ${directory:mysql} &&
+  rm -rf ${directory:etc}/mysql &&
   cp -r etc/mysql ${directory:etc} &&
   ln -sf ${directory:mysql}/.system ${directory:var}/system &&
   ln -sf ${my-cnf:rendered} ${directory:etc}/mysql/custom/01_mariadb.cnf

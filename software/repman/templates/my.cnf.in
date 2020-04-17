@@ -36,6 +36,21 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 innodb_locks_unsafe_for_binlog = 1
 
 
+{% if 'ssl-key' in parameter_dict -%}
+ssl
+ssl-cert = {{ parameter_dict['ssl-crt'] }}
+ssl-key = {{ parameter_dict['ssl-key'] }}
+{%   if 'ssl-ca-crt' in parameter_dict -%}
+ssl-ca = {{ parameter_dict['ssl-ca-crt'] }}
+{%-  endif %}
+{%   if 'ssl-crl' in parameter_dict -%}
+ssl-crl = {{ parameter_dict['ssl-crl'] }}
+{%-  endif %}
+{%   if 'ssl-cipher' in parameter_dict -%}
+ssl-cipher = {{ parameter_dict['ssl-cipher'] }}
+{%-  endif %}
+{%- endif %}
+
 #server_id = {{ parameter_dict['server-id'] }}
 
 
