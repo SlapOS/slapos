@@ -10,8 +10,7 @@ db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 # Database list of hosts to ignore in election
 #db-servers-ignored-hosts =
 # Database hosts list to monitor, IP and port (optional), specified in the host:[port] format and separated by commas
-# XXX - check if mandatory (as present in cluster)
-#db-servers-hosts =
+monitoring-address = "{{ parameter_dict['ipv4'] }}"
 
 #haproxy = true
 haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
@@ -28,6 +27,17 @@ haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
 #HaProxy read-write port to leader (default 3306)
 #haproxy-write-port =
 
+# Use restic to archive and restore backups
+backup = true
+backup-restic = true
+backup-restic-binary-path = "{{ parameter_dict['restic-bin'] }}"
+backup-restic-aws = false
+backup-restic-password = "{{ parameter_dict['password'] }}"
+
+backup-mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
+backup-mysqlbinlog-path = "{{ parameter_dict['mysqlbinlog-path'] }}"
+backup-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
+
 # Mail configuration
 # Alert email sender (default "mrm@localhost")
 mail-from = "{{ parameter_dict['mail-from'] }}"
@@ -38,12 +48,8 @@ mail-smtp-user = "{{ parameter_dict['mail-smtp-user'] }}"
 # Alert email recipients, separated by commas
 mail-to = "{{ parameter_dict['mail-to'] }}"
 
-mysqlbinlog-path = "{{ parameter_dict['mysqlbinlog-path'] }}"
-mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
-
 prov-orchestrator = "slapos"
-prov-db-tags="gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog"
+prov-db-tags = {{ parameter_dict['enabled-tags') }}
 
 sysbench-binary-path = "{{ parameter_dict['sysbench-bin'] }}"
 # Number of threads to run benchmark (default 4)
