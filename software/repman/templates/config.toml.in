@@ -12,6 +12,7 @@ db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 # Database hosts list to monitor, IP and port (optional), specified in the host:[port] format and separated by commas
 # XXX - check if mandatory (as present in cluster)
 #db-servers-hosts =
+monitoring-address = "{{ parameter_dict['ipv4'] }}"
 
 #haproxy = true
 haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
@@ -27,6 +28,12 @@ haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
 #haproxy-stat-port =
 #HaProxy read-write port to leader (default 3306)
 #haproxy-write-port =
+
+# Use restic to archive and restore backups
+backup-restic = true
+backup-restic-binary-path = "{{ parameter_dict['restic-bin'] }}"
+backup-restic-aws = false
+backup-restic-password = ""
 
 # Mail configuration
 # Alert email sender (default "mrm@localhost")

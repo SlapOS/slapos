@@ -66,8 +66,8 @@ return =
 {% endfor -%}
 
 # Manage Replication Manager clusters
-{% set cluster_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "", "proxy-admin-port": 6032, "proxy-port": 6033, "proxysql-user": "external"}} -%}
-{% for name, parameter_dict in cluster_parameter_dict.items() -%}
+{% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "", "proxy-admin-port": 6032, "proxy-port": 6033, "proxysql-user": "external"}} -%}
+{% for name, parameter_dict in slapparameter_dict.get('cluster-partition-dict', default_parameter_dict).items() -%}
 {% set prefered_master = parameter_dict.pop("db-prefered-master") -%}
 [{{ name ~ '-cluster-parameter' }}]
 {% for key, value in parameter_dict.items() -%}
@@ -193,6 +193,7 @@ mysqlclient-path = {{ mariadb_location }}/bin/mysql
 mysqldump-path = {{ mariadb_location }}/bin/mysqldump
 haproxy-bin   = {{ haproxy_location }}/sbin/haproxy
 sysbench-bin  = {{ sysbench_location }}/bin/sysbench
+restic-bin    = {{ restic_bin_location }}
 
 mail-from = {{ slapparameter_dict.get("mail-from", "mrm@localhost") }}
 mail-smtp-addr = {{ slapparameter_dict.get("mail-smtp-addr", "localhost:25") }}
@@ -203,18 +204,17 @@ mail-to = {{ slapparameter_dict.get("mail-to", "") }}
 [repman-config-folder]
 recipe = plone.recipe.command
 repman-location = {{ repman_src_location }}
-command = 
+command =
   cd ${:repman-location}
   {{ rsync_location }}/bin/rsync -av share ${repman:root-dir}/
   {{ rsync_location }}/bin/rsync -av  dashboard ${repman:root-dir}/
 
-# XXX - this need to be checked/optimized in case of upgrade.
 update-command = ${:command}
   
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_repman_manager_sh }}
-cluster-list = {{ dumps(cluster_parameter_dict.keys() ) }}
+cluster-list = {{ dumps(slapparameter_dict.get('cluster-partition-dict', default_parameter_dict).keys() ) }}
 context =
   section parameter_dict repman
   key username repman-parameter:username
@@ -245,6 +245,8 @@ wrapper-path = ${directory:service}/replication-manager
 depends =
   ${repman-config-folder:recipe}
   ${replication-manager-reload:recipe}
+  ${repman-listen-promise:recipe}
+  ${repman-listen-ssl-promise:recipe}
 
 [repman-config.toml]
 recipe = slapos.recipe.template:jinja2
@@ -260,6 +262,13 @@ module = check_port_listening
 name = repman_service_listen.py
 config-hostname = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:port}
+
+[repman-listen-ssl-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = repman_service_ssl_listen.py
+config-hostname = ${repman-parameter:ipv4}
+config-port = ${repman-parameter:secure-port}
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
@@ -373,7 +382,6 @@ extends =
   {{ template_monitor }}
 parts =
   replication-manager
-  repman-listen-promise
   monitor-base
   logrotate-entry-nginx
   ca-nginx-service
