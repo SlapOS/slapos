@@ -59,6 +59,10 @@ extra-context =
     raw config_toml_in             {{ config_toml_in }}
     raw config_cluster_toml_in     {{ config_cluster_toml_in }}
     raw nginx_conf_in              {{ nginx_conf_in }}
+    raw rsync_location             {{ rsync_location }}
+    raw sysbench_location          {{ sysbench_location }}
+    raw proxysql_location          {{ proxysql_location }}
+    raw template_repman_manager_sh {{ template_repman_manager_sh }}
 
 [template-mariadb-parameters]
 bash = {{ bash_location }}
@@ -76,7 +80,8 @@ bin-directory = {{ bin_directory }}
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
 curl-location = {{ curl_location }}
-
+dbjobs-template = {{ dbjobs_in }}
+socat-location = {{ socat_location }}
 
 [template-instance-mariadb.cfg]
 <= jinja2-template-base

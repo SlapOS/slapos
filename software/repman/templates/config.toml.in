@@ -1,6 +1,6 @@
 [Default]
-api-bind = "[{{ parameter_dict['ipv4'] }}]"
-http-bind-address = "[{{ parameter_dict['ipv4'] }}]"
+api-bind = "{{ parameter_dict['ipv4'] }}"
+http-bind-address = "{{ parameter_dict['ipv4'] }}"
 monitoring-save-config = false
 api-https-bind = true
 api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
@@ -43,4 +43,12 @@ mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
 mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
 
 prov-orchestrator = "slapos"
-prov-db-tags="bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,ssl"
+prov-db-tags="gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog"
+
+sysbench-binary-path = "{{ parameter_dict['sysbench-bin'] }}"
+# Number of threads to run benchmark (default 4)
+sysbench-threads = 4
+# Time to run benchmark (default 100)
+sysbench-time = 100
+sysbench-v1 = true
+
