@@ -182,6 +182,49 @@ class TestMroonga(MariaDBTestCase):
           cnx.store_result().fetch_row(maxrows=2),
       )
 
+  def test_mroonga_full_text_normalizer_TokenBigramSplitSymbolAlphaDigit(self):
+    # Similar to as ERP5's testI18NSearch with erp5_full_text_mroonga_catalog
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query(
+          """
+            CREATE TABLE `full_text` (
+              `uid` BIGINT UNSIGNED NOT NULL,
+              `SearchableText` MEDIUMTEXT,
+              PRIMARY KEY  (`uid`),
+              FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
+            ) ENGINE=mroonga
+          """)
+      cnx.store_result()
+      cnx.query(
+          """
+            INSERT INTO full_text VALUES
+            (1, "Gabriel Fauré Quick brown fox jumps over the lazy dog"),
+            (2, "武者小路 実篤 Slow white fox jumps over the diligent dog."),
+            (3, "( - + )")""")
+      cnx.store_result()
+      cnx.query(
+          """
+          SELECT uid
+            FROM full_text
+            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ Faure' IN BOOLEAN MODE)
+          """)
+      self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
+      cnx.query(
+          """
+          SELECT uid
+            FROM full_text
+            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ 武者' IN BOOLEAN MODE)
+          """)
+      self.assertEqual(((2,),), cnx.store_result().fetch_row(maxrows=2))
+      cnx.query(
+          """
+          SELECT uid
+            FROM full_text
+            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ +quick +fox +dog' IN BOOLEAN MODE)
+          """)
+      self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
+
   def test_mroonga_full_text_stem(self):
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-token-filters
     cnx = self.getDatabaseConnection()
