@@ -33,8 +33,6 @@ The backup data is automatically used to build an historical, incremental archiv
 export
 ------
 
-example:
-    https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/lapp/postgres/instance-postgres-export.cfg.in
 
 This is the *active* instance - the one providing live data to the application.
 
@@ -45,7 +43,6 @@ A backup is run via the bin/exporter script: it will
 The pull-backup, upon receiving the notification, will make a copy of the data and transmit it to the 'import' instances.
 
 You should provide the bin/{mysoftware}-exporter script, see for instance
-  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L207
   https://lab.nexedi.com/nexedi/slapos/blob/1.0.142/slapos/recipe/mydumper.py#L71
 
 By default, as defined in
@@ -57,9 +54,6 @@ the bin/exporter script is run every 60 minutes.
 import
 ------
 
-example:
-    https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/lapp/postgres/instance-postgres-import.cfg.in
-
 This is the *fallback* instance - the one that can be activated and thus become active.
 Any number of import instances can be used. Deciding which one should take over can be done manually
 or through a monitoring + election script.
@@ -67,7 +61,6 @@ or through a monitoring + election script.
 
 You should provide the bin/{mysoftware}-importer script, see for instance
 
-  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L233
   https://lab.nexedi.com/nexedi/slapos/blob/1.0.142/slapos/recipe/mydumper.py#L71
 
 

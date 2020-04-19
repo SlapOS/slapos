@@ -41,17 +41,17 @@ def getLatestBackupDate():
   equeue_database_copy = os.path.join(temporary_directory, 'equeue.db')
   shutil.copyfile(equeue_database, equeue_database_copy)
   db = gdbm.open(equeue_database_copy)
-  # Usually, there is only one callback (so only one key
-  # in the db), but if there are several:
-  # Take the "oldest" one (oldest value).
+  # Usually, there is only one callback (so only one key in the db), but if
+  # there are several we take the "newest" one.  Indeed, sometimes the importer
+  # script change name those introducing a new key inside the db.
   db_keys = db.keys()
   if not db_keys:
     result = False
   else:
-    last_backup = db[db_keys[-1]]
+    last_backup = db[db_keys[0]]
     for callback in db_keys:
       timestamp = float(db[callback])
-      if timestamp < last_backup:
+      if timestamp > last_backup:
         last_backup = timestamp
     result = datetime.datetime.fromtimestamp(last_backup)
   db.close()

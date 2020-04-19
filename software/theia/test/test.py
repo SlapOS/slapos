@@ -44,19 +44,20 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestTheia(SlapOSInstanceTestCase):
   def setUp(self):
-    self.theia_url = self.computer_partition.getConnectionParameterDict(
-    )['url']
+    self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def test_http_get(self):
-    resp = requests.get(self.theia_url, verify=False)
-    self.assertEqual(requests.codes.ok, resp.status_code)
+    resp = requests.get(self.connection_parameters['url'], verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)
 
-    # without login/password, this is unauthorized
-    parsed_url = urlparse(self.theia_url)
+    # with login/password, this is allowed
+    parsed_url = urlparse(self.connection_parameters['url'])
     resp = requests.get(
         parsed_url._replace(
-            netloc='[{}]:{}'.format(
+            netloc='{}:{}@[{}]:{}'.format(
+                self.connection_parameters['username'],
+                self.connection_parameters['password'],
                 parsed_url.hostname,
                 parsed_url.port)).geturl(),
         verify=False)
-    self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    self.assertEqual(requests.codes.ok, resp.status_code)
