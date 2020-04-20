@@ -25,6 +25,18 @@ wait_database () {
   done
 }
 
+activate_proxy () {
+  NAME=$1
+  $URL="{{ secure_url }}/api/clusters/$NAME/settings/actions/switch/database-hearbeat"
+  CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" $URL)
+  if [ $CODE -eq 200 ]; then
+    exit 0;
+  else
+    echo "ERROR: failed to activate proxy: $URL returned code $CODE"
+    exit 1;
+  fi
+}
+
 TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login | {{ jq_bin }} -r '.token')
 
 # Always reload cluster configuration to apply recent changes
@@ -40,15 +52,19 @@ if [ ! -f "{{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped" ]; then
   wait_database {{ name }}
 
   echo "Bootstrap replication on {{ name }}..."
-  TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login | {{ jq_bin }} -r '.token')
+  #TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login | {{ jq_bin }} -r '.token')
 
   curl -H "Authorization: Bearer ${TOKEN}" \
     {{ secure_url }}/api/clusters/{{ name }}/actions/replication/cleanup
   CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/{{ name }}/actions/replication/bootstrap/master-slave)
+  SUCCESS=0
   if [ $CODE -eq 200 ]; then
-    # Mark boostrap done!
-    echo "Cluster {{ name }} replication bootstrapped"
-    echo "DO NOT REMOVE THIS FILE" > {{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped
+    activate_proxy {{ name }}
+    if [ $? -eq 0 ]; then
+      # Mark boostrap done!
+      echo "Cluster {{ name }} replication bootstrapped"
+      echo "DO NOT REMOVE THIS FILE" > {{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped
+    fi
   else
     echo "ERROR: Failed to bootstrap cluster {{ name }}... http_code $CODE"
   fi

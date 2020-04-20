@@ -16,11 +16,11 @@ proxysql-bootstrap = true
 proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
 proxysql-password = "{{ parameter_dict['password'] }}"
 
-prov-proxy-tags = "pkg,masterslave,linux,noreadwritesplit"
+prov-proxy-tags = "{{ parameter_dict['proxy-tags'] }}"
 
 monitoring-scheduler = true
 scheduler-db-servers-logical-backup  = true
-scheduler-db-servers-logical-backup-cron= "0 0 1 * * 6"
+scheduler-db-servers-logical-backup-cron = "0 {{ parameter_dict['logical-backup-cron'] }}"
 scheduler-db-servers-logs   =  true
 scheduler-db-servers-logs-cron = "0 0 * * * *"
 #scheduler-db-servers-logs-table-keep = 12
@@ -31,7 +31,7 @@ scheduler-db-servers-logs-table-rotate-cron = "0 0 23 * * *"
 scheduler-db-servers-optimize  = true
 scheduler-db-servers-optimize-cron = "0 0 3 1 * 5"
 scheduler-db-servers-physical-backup = true
-scheduler-db-servers-physical-backup-cron = "0 0 0 * * *"
+scheduler-db-servers-physical-backup-cron = "0 {{ parameter_dict['physical-backup-cron'] }}"
 backup-physical-type = "mariabackup"
 backup-logical-type = "mysqldump"
 # scheduler-db-servers-receiver-ports="4444,4445"
