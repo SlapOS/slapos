@@ -42,13 +42,15 @@ ip = $${notifier:host}
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received
 recipe = slapos.cookbook:notifier.callback
-directory = $${notifier:callbacks}
+callbacks-directory = $${notifier:callbacks-directory}
 on-notification-id = $${slap-parameter:on-notification}
-callbacks =
-# import on notification
-  $${importer:wrapper}
+callbacks-list =
+# warning the order of the 2 callbacks is important for now
+# it should be fixed later
 # check backup integrity on notification
   $${post-notification-run:output}
+# import on notification
+  $${importer:wrapper}
 
 [post-notification-run]
 recipe = collective.recipe.template
