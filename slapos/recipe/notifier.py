@@ -46,16 +46,18 @@ class Recipe(GenericBaseRecipe):
 
 class Callback(GenericBaseRecipe):
 
-  def install(self):
-    options = self.options
-    notification_id = options['on-notification-id']
+  # Note: this function is also used in pbs recipe
+  def createCallback(self, notification_id, callback):
     # XXX: hashing the name here and in
     # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
     # prevent any debug.
     callback_id = sha512(str2bytes(notification_id)).hexdigest()
+    return self.createFile(os.path.join(self.options['callbacks'], callback_id), callback)
 
-    return self.createFile(os.path.join(options['directory'], callback_id),
-                           options['callbacks'])
+  def install(self):
+    options = self.options
+    notification_id = options['on-notification-id']
+    return self.createCallback(notification_id, options['callback'])
 
 class Notify(GenericBaseRecipe):
 
