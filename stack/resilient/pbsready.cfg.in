@@ -63,9 +63,6 @@ cgi-bin = $${rootdirectory:srv}/cgi-bin
 monitor-resilient = $${monitor-directory:private}/resilient
 
 
-[slap-parameter]
-authorized-key =
-
 #----------------
 #--
 #-- Deploy cron.
@@ -198,7 +195,7 @@ wrapper-path = $${rootdirectory:bin}/raw_sshd
 [sshd-pbs-authorized-key]
 <= sshd-raw-server
 recipe = slapos.cookbook:dropbear.add_authorized_key
-key = $${slap-parameter:authorized-key}
+key = {{ slapparameter_dict.get('authorized-key', '') }}
 
 [sshd-server]
 recipe = collective.recipe.template
