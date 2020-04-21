@@ -57,7 +57,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
   def _options(self, options):
     options['rdiff-backup-data-folder'] = ""
     if 'slave-instance-list' in options:
-      for slave in json.loads(options['slave-instance-list']):
+      for slave in options['slave-instance-list']:
         if slave['type'] == 'pull':
           options['rdiff-backup-data-folder'] = str(os.path.join(options['directory'], slave['name'], 'rdiff-backup-data'))
 
@@ -299,8 +299,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     if self.optionIsTrue('client', True):
       self.logger.info("Client mode")
-
-      slaves = json.loads(self.options['slave-instance-list'])
+      slaves = self.options['slave-instance-list']
       known_hosts = KnownHostsFile(self.options['known-hosts'])
       with known_hosts:
         for slave in slaves:
