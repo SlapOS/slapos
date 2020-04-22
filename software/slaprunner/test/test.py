@@ -323,14 +323,14 @@ class TestCustomFrontend(SlaprunnerTestCase):
       'https://www.erp5.com')
 
 class TestSlapProxyIntegration(SlaprunnerTestCase):
-  instance_max_retry = 5
-  _save_instance_file_pattern_list = SlaprunnerTestCase._save_instance_file_pattern_list + ('*/srv/runner/*.json',)
+  _save_instance_file_pattern_list = SlaprunnerTestCase._save_instance_file_pattern_list + ('*/srv/runner/*.json', '*/srv/runner/*.log')
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'autorun': True,
       'auto-deploy': True,
+      'auto-deploy-instance': True,
       'slapos-repository': 'https://lab.nexedi.com/nexedi/slapos.git',
       'slapos-reference': 'runner-multi-sr',
     }
