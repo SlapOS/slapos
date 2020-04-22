@@ -1,5 +1,6 @@
 [{{ parameter_dict['name'] }}]
 title = "{{ parameter_dict['name'] }}"
+monitoring-save-config = true
 db-servers-hosts = "{{ parameter_dict['db-list'] }}"
 db-servers-prefered-master = "{{ parameter_dict['db-prefered-master'] }}"
 db-servers-credential = "{{ parameter_dict['db-credential'] }}"
@@ -23,10 +24,8 @@ scheduler-db-servers-logical-backup  = true
 scheduler-db-servers-logical-backup-cron = "0 {{ parameter_dict['logical-backup-cron'] }}"
 scheduler-db-servers-logs   =  true
 scheduler-db-servers-logs-cron = "0 0 * * * *"
-#scheduler-db-servers-logs-table-keep = 12
 scheduler-db-servers-logs-table-keep = 4
 scheduler-db-servers-logs-table-rotate  = true
-#scheduler-db-servers-logs-table-rotate-cron = "0 0 0/6 * * *"
 scheduler-db-servers-logs-table-rotate-cron = "0 0 23 * * *"
 scheduler-db-servers-optimize  = true
 scheduler-db-servers-optimize-cron = "0 0 3 1 * 5"
@@ -35,3 +34,11 @@ scheduler-db-servers-physical-backup-cron = "0 {{ parameter_dict['physical-backu
 backup-physical-type = "mariabackup"
 backup-logical-type = "mysqldump"
 # scheduler-db-servers-receiver-ports="4444,4445"
+
+prov-proxy-cpu-cores = {{ parameter_dict['proxy-cpu-cores'] }}
+prov-proxy-memory = {{ parameter_dict['proxy-memory'] }}
+prov-db-cpu-cores = {{ parameter_dict['db-cpu-cores'] }}
+prov-db-disk-iops = {{ parameter_dict['db-disk-iops'] }}
+prov-db-memory = {{ parameter_dict['db-memory'] }}
+prov-db-memory-shared-pct = "{{ parameter_dict['db-memory-shared-pct'] }}"
+prov-db-memory-threaded-pct = "{{ parameter_dict['db-memory-threaded-pct'] }}"

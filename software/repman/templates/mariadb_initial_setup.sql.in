@@ -14,6 +14,7 @@ CREATE DATABASE IF NOT EXISTS `{{ name }}`;
 {% if user -%}
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}';
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
+GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@'::' IDENTIFIED BY '{{ password }}';
 {%- endif %}
 {% endmacro -%}
 
