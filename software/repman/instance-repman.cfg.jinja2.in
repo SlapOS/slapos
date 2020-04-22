@@ -7,6 +7,7 @@
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog" -%}
+{% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -34,25 +35,31 @@ partition-id = ${slap-connection:partition-id}
 
 [proxy-admin-port]
 recipe = slapos.cookbook:free_port
+ip = {{ ipv4 }}
 minimum = 6032
 maximum = 6132
 
 [proxy-port]
 recipe = slapos.cookbook:free_port
-minimum = 6033
-maximum = 6133
+ip = {{ ipv4 }}
+minimum = 7032
+maximum = 7132
 
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
-{% do mariadb_dict.__setitem__('innodb-file-per-table', slapparameter_dict.get('innodb-file-per-table', 1)) -%}
-
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
   "database-amount": 2, "proxysql-user": "external", "proxy-tags": "pkg,masterslave,linux,noreadwritesplit",
   "logical-backup-cron": "0 1 * * 6", "physical-backup-cron": "0 0 * * *"}} -%}
-{% for name, parameter_dict in slapparameter_dict.get('cluster-partition-dict', default_parameter_dict).items() -%}
+{% for name, parameter_dict in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).items() -%}
+
+{% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
+{% do mariadb_dict.__setitem__('use-ipv6', parameter_dict.get('use-ipv6', True)) -%}
 
 # Request mariadb instances
-{% set db_amount = 2 if parameter_dict.get('database-amount', 2) < 3 else set db_amount = parameter_dict['database-amount'] -%}
+{% set db_amount = parameter_dict.get('database-amount', 2) -%}
+{% if db_amount < 2 -%}
+{% set db_amount = 2 -%}
+{% endif -%}
 
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
@@ -68,7 +75,7 @@ sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-monitor-passwd = ${publish-early:monitor-password}
-config-root-password = ${publish-early:root-password}
+config-root-password = ${publish-early:db-root-password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-url}
 config-name = {{ name }}
@@ -93,7 +100,7 @@ return =
 proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
 proxy-port = ${proxy-port:port}
 proxy-admin-port = ${proxy-admin-port:port}
-db-credential = repman:${publish-early:root-password}
+db-credential = repman:${publish-early:db-root-password}
 db-list = {{ mariadb_server_list | join(',') }}
 partition-list = {{ mariadb_path_list | join(',') }}
 {% if prefered_master -%}
@@ -108,6 +115,13 @@ proxysql-partition = ${buildout:directory}
 proxy-tags = {{ parameter_dict.get("proxy-tags", "pkg,masterslave,linux,noreadwritesplit") }}
 logical-backup-cron = {{ parameter_dict.get("logical-backup-cron", "0 1 * * 6") }}
 physical-backup-cron = {{ parameter_dict.get("physical-backup-cron", "0 0 * * *") }}
+proxy-cpu-cores = {{ parameter_dict.get("proxy-cpu-cores", 2) }}
+proxy-memory = {{ parameter_dict.get("proxy-memory", 1) }}
+db-cpu-cores = {{ parameter_dict.get("db-cpu-cores", 2) }}
+db-disk-iops = {{ parameter_dict.get("db-disk-iops", 300) }}
+db-memory = {{ parameter_dict.get("db-memory", 256) }}
+db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0") }}
+db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", "tmp:70,join:20,sort:10") }}
 
 [{{ 'config-' ~ name }}]
 recipe = slapos.recipe.template:jinja2
@@ -128,7 +142,7 @@ command =
   mkdir -p ${repman:config-tmp}/proxies &&
   mkdir -p ${:data} &&
   cd ${repman:config-tmp}/proxies &&
-  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/{{ parameter_dict['proxy-admin-port'] }}/config &&
+  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/${proxy-admin-port:port}/config &&
   tar -xzf proxies.tar.gz &&
   cp conf/proxysql.cnf  ${:config}
 update-command = ${:command}
@@ -208,7 +222,7 @@ secure-port = ${instance-parameter:repman-secure-port}
 port = ${instance-parameter:repman-port}
 ipv4 = ${instance-parameter:ipv4-random}
 username = admin
-password = ${publish-early:password}
+password = ${publish-early:repman-password}
 cluster-d = ${repman:clusters}
 mysql-bin-dir = {{ mariadb_location }}/bin
 mysqlbinlog-path = {{ mariadb_location }}/bin/mysqlbinlog
@@ -225,6 +239,9 @@ mail-smtp-user = {{ slapparameter_dict.get("mail-smtp-user", "") }}
 mail-to = {{ slapparameter_dict.get("mail-to", "") }}
 enabled-tags = {{ slapparameter_dict.get("tags", tags) }}
 
+http-session-lifetime = {{ slapparameter_dict.get("http-session-lifetime", 86400) }}
+http-refresh-interval = {{ slapparameter_dict.get("http-refresh-interval", 4) }}
+
 [repman-config-folder]
 recipe = plone.recipe.command
 repman-location = {{ repman_src_location }}
@@ -238,7 +255,7 @@ update-command = ${:command}
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_repman_manager_sh }}
-cluster-list = {{ dumps(slapparameter_dict.get('cluster-partition-dict', default_parameter_dict).keys() ) }}
+cluster-list = {{ dumps(slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).keys() ) }}
 context =
   section parameter_dict repman
   key username repman-parameter:username
@@ -345,8 +362,8 @@ post = kill -USR1 $(cat ${nginx-parameter:pid-file})
 recipe = slapos.cookbook:publish-early
 -init =
   monitor-password monitor-htpasswd:passwd
-  root-password gen-root-password:passwd
-  password repman-password:passwd
+  db-root-password gen-root-password:passwd
+  repman-password repman-password:passwd
 
 [publish-connection-parameter]
 <= monitor-publish
@@ -376,10 +393,11 @@ password = ${publish-early:monitor-password}
 recipe = slapos.cookbook:requestoptional
 name = Replication Manager Frontend
 # XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+software-url = {{ frontend_parameter_dict.get('frontend-software-url', '') }}
+software-type ={{ frontend_parameter_dict.get('frontend-software-type', '') }}
 slave = true
 config-url = ${nginx-parameter:backend-ssl-url}
-config-domain = 
+config-domain = {{ frontend_parameter_dict.get('slave-domain', '') }}
 return = domain secure_access
 
 [repman-frontend-promise]

@@ -1,0 +1,245 @@
+{
+	"type": "object",
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Input Parameters",
+	"properties": {
+		"slave-frontend": {
+			"title": "Web frontend",
+			"description": "Front end used to provide web access for internal services at the kvm.",
+			"properties": {
+				"slave-domain": {
+					"title": "Slave frontend domain",
+					"description": "Unique domain name for this slave frontend.",
+					"type": "string",
+					"default": ""
+				},
+				"instance-guid": {
+					"title": "Main Frontend Instance ID",
+					"description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+					"type": "string",
+					"default": ""
+				},
+				"frontend-software-type": {
+					"title": "Frontend Software Type",
+					"description": "Type of the frontend instance, like \"frontend\".",
+					"type": "string"
+				},
+				"frontend-software-url": {
+					"title": "Frontend Software URL",
+					"description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+					"type": "string",
+					"format": "uri",
+					"default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+				}
+			},
+			"type": "object"
+		},
+		"computer-memory-percent-threshold": {
+			"title": "Computer memory percent threshold.",
+			"description": "Computer memory percent threshold.",
+			"type": "int",
+			"default": 80
+		},
+		"monitor-interface-url": {
+			"title": "Monitor Web Interface URL",
+			"description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+			"type": "string",
+			"format": "uri",
+			"default": "https://monitor.app.officejs.com"
+		},
+		"monitor-cors-domains": {
+			"title": "Monitor CORS domains",
+			"description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+			"type": "string",
+			"default": "monitor.app.officejs.com"
+		},
+		"mail-from": {
+			"title": "Mail From",
+			"description": "Mail From address",
+			"type": "string",
+			"default": ""
+		},
+		"mail-smtp-addr": {
+			"title": "Mail SMTP address",
+			"description": "Mail SMTP address. Default: localhost:25",
+			"type": "string",
+			"default": "localhost:25"
+		},
+		"mail-smtp-password": {
+			"title": "Mail SMTP password",
+			"description": "Mail SMTP password",
+			"type": "string",
+			"default": ""
+		},
+		"mail-smtp-user": {
+			"title": "Mail SMTP User",
+			"description": "Mail SMTP User",
+			"type": "string",
+			"default": ""
+		},
+		"mail-to": {
+			"title": "Mail To",
+			"description": "",
+			"type": "string",
+			"default": ""
+		},
+		"tags": {
+			"title": "Provisioning db tags",
+			"description": "Provisioning db tags",
+			"type": "string",
+			"default": "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog"
+		},
+		"http-session-lifetime": {
+			"title": "Web Session life time in s",
+			"description": "Web interface Session life time in seconds. Default 86400",
+			"type": "integer",
+			"default": 86400
+		},
+		"http-refresh-interval": {
+			"title": "Web refresh interval in s",
+			"description": "Web interface refresh interval in ms",
+			"type": "integer",
+			"default": 4
+		},
+		"repman-cluster-dict": {
+			"title": "Replication Manager clusters definition",
+			"description": "Replication Manager clusters definition",
+			"patternProperties": {
+				".*": {
+					"properties": {
+						"name": {
+							"title": "Name of the cluster",
+							"description": "Name of the cluster: Should not contains spaces or any special characters.",
+							"type": "string",
+							"default": ""
+						},
+						"database-amount": {
+							"title": "Amount of databases for cluster",
+							"description": "Database amount to deploy with this cluster. Minimal amount is 2 required to enable replication.",
+							"type": "integer",
+							"default": 2,
+							"minimum": 2
+						},
+						"-sla-0-computer_guid": {
+							"title": "Prefered Master Computer Guid",
+							"description": "Computer Guid for prefered Master database.",
+							"type": "string",
+							"default": ""
+						},
+						"-sla-1-computer_guid": {
+							"title": "Slave 1 Computer Guid",
+							"description": "Computer Guid for the first slave database.",
+							"type": "string",
+							"default": ""
+						},
+						"-sla-2-computer_guid": {
+							"title": "Slave 2 Computer Guid",
+							"description": "Computer Guid for the second slave database.",
+							"type": "string",
+							"default": ""
+						},
+						"-sla-3-computer_guid": {
+							"title": "Slave 3 Computer Guid",
+							"description": "Computer Guid for the third slave database.",
+							"type": "string",
+							"default": ""
+						},
+						"-sla-4-computer_guid": {
+							"title": "Slave 4 Computer Guid",
+							"description": "Computer Guid for the fourth slave database.",
+							"type": "string",
+							"default": ""
+						},
+						"proxysql-user": {
+							"title": "Proxysql username",
+							"description": "Proxysql external user, default is 'external'.",
+							"type": "string",
+							"default": "external"
+						},
+						"proxy-tags": {
+							"title": "Proxy tags",
+							"description": "playbook configuration tags. Default: pkg,masterslave,linux,noreadwritesplit",
+							"type": "string",
+							"default": "pkg,masterslave,linux,noreadwritesplit"
+						},
+						"logical-backup-cron": {
+							"title": "Mysqldump backup cron definition.",
+							"description": "Logical backup cron expression represents a set of times, using cron format.",
+							"type": "string",
+							"default": "0 1 * * 6"
+						},
+						"physical-backup-cron": {
+							"title": "Mariabackup cron definition",
+							"description": "Physical backup cron expression represents a set of times, using cron format.",
+							"type": "string",
+							"default": "0 0 * * *"
+						},
+						"proxy-cpu-cores": {
+							"title": "Proxy Cpu cores",
+							"description": "Proxy Cpu cores. Default: 2",
+							"type": "integer",
+							"default": 2,
+							"minimum": 1
+						},
+						"proxy-memory": {
+							"title": "Proxy Memory usage in giga bytes",
+							"description": "Proxy Memory usage in giga bytes. Default: 1G",
+							"type": "integer",
+							"default": 1,
+							"minimum": 1
+						},
+						"db-cpu-cores": {
+							"title": "Database Cpu cores",
+							"description": "Database Cpu cores. Default: 2",
+							"type": "integer",
+							"default": 2,
+							"minimum": 1
+						},
+						"db-disk-iops": {
+							"title": "Database Rnd IO/s",
+							"description": "Rnd IO/s in seconds for micro service VM (default 300).",
+							"type": "integer",
+							"default": 300
+						},
+						"db-memory": {
+							"title": "Database memory in M",
+							"description": "Memory in M for micro service VM (default 256)",
+							"type": "integer",
+							"default": 256,
+							"minimum": 256,
+							"multipleOf": 256
+						},
+						"db-memory-shared-pct": {
+							"title": "Percent memory shared per buffer",
+							"description": "Percent memory shared per buffer (default \"threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0\")",
+							"type": "string",
+							"default": "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0"
+						},
+						"db-memory-threaded-pct": {
+							"title": "Percent memory allocted per threads",
+							"description": "Percent memory allocted per threads. (default \"tmp:70,join:20,sort:10\")",
+							"type": "string",
+							"default": "tmp:70,join:20,sort:10"
+						},
+						"innodb-file-per-table": {
+							"title": "enable Innodb file per table",
+							"description": "enable Innodb file per table. Possible value: 0=disabled, 1=enabled",
+							"type": "integer",
+							"default": 1,
+							"minimum": 0,
+							"maximum": 1
+						},
+						"use-ipv6": {
+							"title": "Mariadb server listen on IPv6",
+							"description": "Listen on IPv6 instead of IPv4.",
+							"type": "boolean",
+							"default": true
+						}
+					},
+					"type": "object"
+				}
+			},
+			"type": "object"
+		}
+	}
+}
