@@ -42,3 +42,5 @@ prov-db-disk-iops = {{ parameter_dict['db-disk-iops'] }}
 prov-db-memory = {{ parameter_dict['db-memory'] }}
 prov-db-memory-shared-pct = "{{ parameter_dict['db-memory-shared-pct'] }}"
 prov-db-memory-threaded-pct = "{{ parameter_dict['db-memory-threaded-pct'] }}"
+
+test-inject-traffic = true
