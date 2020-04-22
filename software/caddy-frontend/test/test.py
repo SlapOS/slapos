@@ -849,7 +849,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     parameter_dict = cls.slave_connection_parameter_dict_dict[
       cls.check_slave_id
     ]
-    wait_time = 60
+    wait_time = 600
     begin = time.time()
     try_num = 0
     cls.logger.debug('waitForCaddy for %is' % (wait_time,))
