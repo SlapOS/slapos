@@ -36,6 +36,7 @@ import subprocess
 import time
 import unittest
 
+from datetime import datetime
 from lxml import etree
 from lxml.html import soupparser
 
@@ -359,6 +360,7 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
     return resp
 
   def _buildAndRun(self):
+    start_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     self.logger.debug('Running Build&Run')
     self._call('runSoftwareProfile')
     while True:
@@ -376,7 +378,7 @@ class TestSlapProxyIntegration(SlaprunnerTestCase):
         continue
 
       if result['software']['success'] == 0:
-        if result['instance']['success'] == 0:
+        if result['instance']['success'] == 0 and start_date < result['instance']['last_build'].encode():
           self.logger.debug('Instance is up!')
           # Done
           return
