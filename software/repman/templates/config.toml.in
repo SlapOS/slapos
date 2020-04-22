@@ -1,6 +1,9 @@
 [Default]
 api-bind = "{{ parameter_dict['ipv4'] }}"
 http-bind-address = "{{ parameter_dict['ipv4'] }}"
+http-server = true
+http-session-lifetime = {{ parameter_dict['http-session-lifetime'] }}
+http-refresh-interval = {{ int(parameter_dict['http-refresh-interval'])*1000 }}
 monitoring-save-config = false
 api-https-bind = true
 api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
@@ -13,7 +16,7 @@ db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 monitoring-address = "{{ parameter_dict['ipv4'] }}"
 
 #haproxy = true
-haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
+#haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
 # HaProxy input bind address for read (default "0.0.0.0")
 #haproxy-ip-read-bind =
 # HaProxy input bind address for write (default "0.0.0.0")
@@ -49,7 +52,7 @@ mail-smtp-user = "{{ parameter_dict['mail-smtp-user'] }}"
 mail-to = "{{ parameter_dict['mail-to'] }}"
 
 prov-orchestrator = "slapos"
-prov-db-tags = {{ parameter_dict['enabled-tags') }}
+prov-db-tags = "{{ parameter_dict['enabled-tags'] }}"
 
 sysbench-binary-path = "{{ parameter_dict['sysbench-bin'] }}"
 # Number of threads to run benchmark (default 4)
