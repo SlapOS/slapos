@@ -49,11 +49,9 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..',
                      'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 
-
 class SlaprunnerTestCase(SlapOSInstanceTestCase):
   # Slaprunner uses unix sockets, so it needs short paths.
   __partition_reference__ = 's'
-
 
 class TestWeb(SlaprunnerTestCase):
   def test_slaprunner(self):
@@ -105,27 +103,6 @@ class TestWeb(SlaprunnerTestCase):
     hello = requests.get(urljoin(public_url, 'hello.html'), verify=False)
     self.assertEqual(requests.codes.ok, hello.status_code)
     self.assertIn('<b>Hello</b>', hello.text)
-
-  # git seems broken, these are 404 now...
-  @unittest.expectedFailure
-  def test_git_private(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = parameter_dict['git-private']
-    resp = requests.get(url, verify=False)
-    self.assertEqual(requests.codes.unauthorized, resp.status_code)
-    resp = requests.get(
-        url,
-        verify=False,
-        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
-    self.assertEqual(requests.codes.ok, resp.status_code)
-
-  @unittest.expectedFailure
-  def test_git_public(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = parameter_dict['git-public']
-    resp = requests.get(url, verify=False)
-    self.assertEqual(requests.codes.ok, resp.status_code)
-
 
 class TestSSH(SlaprunnerTestCase):
   @classmethod
@@ -287,8 +264,6 @@ class TestInstanceResilient(SlaprunnerTestCase):
         'backend-url',
         'feed-url-runner-1-pull',
         'feed-url-runner-1-push',
-        'git-private-url',
-        'git-public-url',
         'init-password',
         'init-user',
         'monitor-base-url',
@@ -308,7 +283,7 @@ class TestCustomFrontend(SlaprunnerTestCase):
       'custom-frontend-backend-url': 'https://www.erp5.com',
       'custom-frontend-backend-type': 'redirect',
     }
-
+        
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     # slapproxy returns the backend URL when requesting a slave frontend
