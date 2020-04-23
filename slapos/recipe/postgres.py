@@ -204,7 +204,7 @@ class Recipe(GenericBaseRecipe):
         password = self.options['password']
 
         # encrypt the password to avoid storing in the logs
-        enc_password = 'md5' + hashlib.md5(password+user).hexdigest()
+        enc_password = 'md5' + hashlib.md5((password + user).encode()).hexdigest()
 
         self.runPostgresCommand(cmd="""ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password))
 
@@ -228,7 +228,7 @@ class Recipe(GenericBaseRecipe):
                                   'postgres',
                                   ], stdin=subprocess.PIPE)
 
-            p.communicate(cmd+'\n')
+            p.communicate((cmd + '\n').encode())
         except subprocess.CalledProcessError:
             raise UserError('Could not create database %s' % pgdata)
 
