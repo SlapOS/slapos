@@ -234,6 +234,95 @@
 							"description": "Listen on IPv6 instead of IPv4.",
 							"type": "boolean",
 							"default": true
+						},
+						"failover-mode": {
+							"title": "Failover mode",
+							"description": "Failover is manual or automatic (default \"automatic\").",
+							"type": "string",
+							"default": "automatic",
+              "enum": [
+                "manual",
+                "automatic"
+              ]
+
+						},
+						"failover-limit": {
+							"title": "Failover amount limit",
+							"description": "Failover is canceld if already failover this number of time (0: unlimited) (default 5).",
+							"type": "integer",
+							"default": 5
+						},
+						"failover-falsepositive-heartbeat": {
+							"title": "Failover check slaves do not receive heartbeat",
+							"description": "Failover checks that slaves do not receive heartbeat (default true).",
+							"type": "boolean",
+							"default": true
+						},
+						"failover-falsepositive-heartbeat-timeout": {
+							"title": "Failover check slaves do not receive heartbeat timeout",
+							"description": "Failover checks that slaves do not receive heartbeat detection timeout  (default 3).",
+							"type": "integer",
+							"default": 3
+						},
+						"failover-falsepositive-ping-counter": {
+							"title": "Failover amount of ping failures",
+							"description": "Failover after this number of ping failures (interval 1s) (default 5).",
+							"type": "integer",
+							"default": 5
+						},
+						"failover-max-slave-delay": {
+							"title": "Failover election ignore slave with replication delay",
+							"description": "Election ignore slave with replication delay over this time in sec (default 30).",
+							"type": "integer",
+							"default": 30
+						},
+						"failover-readonly-state": {
+							"title": "Failover Switchover set slaves as read-only",
+							"description": "Failover Switchover set slaves as read-only (default true).",
+							"type": "boolean",
+							"default": true
+						},
+						"failover-restart-unsafe": {
+							"title": "Failover when cluster down if a slave is start first",
+							"description": "Failover when cluster down if a slave is start first.",
+							"type": "boolean",
+							"default": false
+						},
+						"failover-time-limit": {
+							"title": "Cancel failover if time in sec not passed after previous failover",
+							"description": "Failover is canceled if timer in sec is not passed with previous failover (0: do not wait).",
+							"type": "integer",
+							"default": 0
+						},
+						"switchover-at-equal-gtid": {
+							"title": "Switchover only when slaves are fully in sync",
+							"description": "Switchover only when slaves are fully in sync.",
+							"type": "boolean",
+							"default": false
+						},
+						"switchover-slave-wait-catch": {
+							"title": "Switchover wait for slave to catch with replication",
+							"description": "Switchover wait for slave to catch with replication, not needed in GTID mode but enable to detect possible issues like witing on old master (default true).",
+							"type": "boolean",
+							"default": true
+						},
+						"switchover-wait-kill": {
+							"title": "Switchover wait ms before killing threads on demoted master",
+							"description": "Switchover wait this many milliseconds before killing threads on demoted master (default 5000).",
+							"type": "integer",
+							"default": 5000
+						},
+						"switchover-wait-trx": {
+							"title": "Cancel switchover after timeout seconds if can't aquire FTWRL",
+							"description": "Switchover is cancel after this timeout in second if can't aquire FTWRL (default 10).",
+							"type": "integer",
+							"default": 10
+						},
+						"switchover-wait-write-query": {
+							"title": "Cancel switchover after timeout if a write query is running",
+							"description": "Switchover is canceled if a write query is running for this time (default 10).",
+							"type": "integer",
+							"default": 10
 						}
 					},
 					"type": "object"

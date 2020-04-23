@@ -1,3 +1,6 @@
+{% macro setbool(value) -%}
+{% if value in ['true', 'True'] %} true {% else %} false {% endif -%}
+{% endmacro -%}
 [{{ parameter_dict['name'] }}]
 title = "{{ parameter_dict['name'] }}"
 monitoring-save-config = true
@@ -44,3 +47,21 @@ prov-db-memory-shared-pct = "{{ parameter_dict['db-memory-shared-pct'] }}"
 prov-db-memory-threaded-pct = "{{ parameter_dict['db-memory-threaded-pct'] }}"
 
 test-inject-traffic = true
+# failover
+failover-mode = "{{ parameter_dict['failover-mode'] }}"
+failover-limit = {{ parameter_dict['failover-limit'] }}
+failover-falsepositive-heartbeat = {{ setbool(parameter_dict['failover-falsepositive-heartbeat']) }}
+failover-falsepositive-heartbeat-timeout = {{ parameter_dict['failover-falsepositive-heartbeat-timeout'] }}
+failover-falsepositive-ping-counter = {{ parameter_dict['failover-falsepositive-ping-counter'] }}
+failover-max-slave-delay = {{ parameter_dict['failover-max-slave-delay'] }}
+failover-readonly-state = {{ setbool(parameter_dict['failover-readonly-state']) }}
+failover-restart-unsafe = {{ setbool(parameter_dict['failover-restart-unsafe']) }}
+failover-time-limit = {{ parameter_dict['failover-time-limit'] }}
+#switchover
+switchover-at-equal-gtid = {{ setbool(parameter_dict['switchover-at-equal-gtid']) }}
+switchover-slave-wait-catch = {{ setbool(parameter_dict['switchover-slave-wait-catch']) }}
+switchover-wait-kill = {{ parameter_dict['switchover-wait-kill'] }}
+switchover-wait-trx = {{ parameter_dict['switchover-wait-trx'] }}
+switchover-wait-write-query = {{ parameter_dict['switchover-wait-write-query'] }}
+
+
