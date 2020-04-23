@@ -44,6 +44,20 @@ stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
 environment = PATH="{{- supervisord['path'] -}}"
 
+[program:{{- supervisord['slapformat'] -}}]
+command = {{ supervisord['slapformat-command'] }}
+process_name = {{ supervisord['slapformat'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['autostart'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+startretries = {{ supervisord['slapformat-startretries'] }}
+startsecs = {{ supervisord['startsecs'] }}
+autorestart = {{ supervisord['autorestart'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"
+
 [program:{{- supervisord['slapproxy'] -}}]
 command = {{ supervisord['slapproxy-command'] }}
 process_name = {{ supervisord['slapproxy'] }}
