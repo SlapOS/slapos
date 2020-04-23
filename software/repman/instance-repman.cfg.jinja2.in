@@ -122,6 +122,22 @@ db-disk-iops = {{ parameter_dict.get("db-disk-iops", 300) }}
 db-memory = {{ parameter_dict.get("db-memory", 256) }}
 db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0") }}
 db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", "tmp:70,join:20,sort:10") }}
+# failover
+failover-mode = {{ parameter_dict.get('failover-mode', 'automatic') }}
+failover-limit = {{ parameter_dict.get('failover-limit', 5) }}
+failover-falsepositive-heartbeat = {{ parameter_dict.get('failover-falsepositive-heartbeat', True) }}
+failover-falsepositive-heartbeat-timeout = {{ parameter_dict.get('failover-falsepositive-heartbeat-timeout', 3) }}
+failover-falsepositive-ping-counter = {{ parameter_dict.get('failover-falsepositive-ping-counter', 5) }}
+failover-max-slave-delay = {{ parameter_dict.get('failover-max-slave-delay', 30) }}
+failover-readonly-state = {{ parameter_dict.get('failover-readonly-state', True) }}
+failover-restart-unsafe = {{ parameter_dict.get('failover-restart-unsafe', False) }}
+failover-time-limit = {{ parameter_dict.get('failover-time-limit', 0) }}
+#switchover
+switchover-at-equal-gtid = {{ parameter_dict.get('switchover-at-equal-gtid', False) }}
+switchover-slave-wait-catch = {{ parameter_dict.get('switchover-slave-wait-catch', True) }}
+switchover-wait-kill = {{ parameter_dict.get('switchover-wait-kill', 5000) }}
+switchover-wait-trx = {{ parameter_dict.get('switchover-wait-trx', 10) }}
+switchover-wait-write-query = {{ parameter_dict.get('switchover-wait-write-query', 10) }}
 
 [{{ 'config-' ~ name }}]
 recipe = slapos.recipe.template:jinja2
