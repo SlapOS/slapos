@@ -22,6 +22,11 @@ pidfile_instance =  {{slaprunner['pidfile-instance']}}
 
 [slapformat]
 partition_amount = {{ slaprunner['partition-amount'] }}
+alter_user = false
+alter_network = false
+create_tab = false
+create_tun = false
+computer_xml = {{ slaprunner['etc_dir'] }}/slapos.xml
 
 [slaprunner]
 slapos = {{ slaprunner['slapos'] }}
