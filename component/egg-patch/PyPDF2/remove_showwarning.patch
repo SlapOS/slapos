@@ -1,0 +1,50 @@
+diff --git a/PyPDF2/pdf.py b/PyPDF2/pdf.py
+index c5cae9e..bffe6fe 100644
+--- a/PyPDF2/pdf.py
++++ b/PyPDF2/pdf.py
+@@ -64,7 +64,7 @@ import warnings
+ import codecs
+ from .generic import *
+ from .utils import readNonWhitespace, readUntilWhitespace, ConvertFunctionsToVirtualList
+-from .utils import isString, b_, u_, ord_, chr_, str_, formatWarning
++from .utils import isString, b_, u_, ord_, chr_, str_
+ 
+ if version_info < ( 2, 4 ):
+    from sets import ImmutableSet as frozenset
+@@ -1122,18 +1122,7 @@ class PdfFileReader(object):
+         ``warnings.py`` module with a custom implementation (defaults to
+         ``True``).
+     """
+-    def __init__(self, stream, strict=True, warndest = None, overwriteWarnings = True):
+-        if overwriteWarnings:
+-            # have to dynamically override the default showwarning since there are no
+-            # public methods that specify the 'file' parameter
+-            def _showwarning(message, category, filename, lineno, file=warndest, line=None):
+-                if file is None:
+-                    file = sys.stderr
+-                try:
+-                    file.write(formatWarning(message, category, filename, lineno, line))
+-                except IOError:
+-                    pass
+-            warnings.showwarning = _showwarning
++    def __init__(self, stream, strict=True):
+         self.strict = strict
+         self.flattenedPages = None
+         self.resolvedObjects = {}
+diff --git a/PyPDF2/utils.py b/PyPDF2/utils.py
+index 2120c70..1045013 100644
+--- a/PyPDF2/utils.py
++++ b/PyPDF2/utils.py
+@@ -64,12 +64,6 @@ def isBytes(b):
+     return isinstance(b, bytes_type)
+ 
+ 
+-#custom implementation of warnings.formatwarning
+-def formatWarning(message, category, filename, lineno, line=None):
+-    file = filename.replace("/", "\\").rsplit("\\", 1)[1] # find the file name
+-    return "%s: %s [%s:%s]\n" % (category.__name__, message, file, lineno)
+-
+-
+ def readUntilWhitespace(stream, maxchars=None):
+     """
+     Reads non-whitespace characters and returns them.
