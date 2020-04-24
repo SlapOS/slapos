@@ -29,6 +29,38 @@ domains:
       - soa: {{ slapparameter_dict.get('soa', 'ns0.example.com,admin@example.com').replace(',', ' ') }}
       - ns: {{ slapparameter_dict.get('ns-record', 'ns0.example.com,ns1.example.com') }}
 
+    {#- Split the world the way we prefer. 'GeoLite2-Country.mmdb' divides the
+        world into 7 continents: Oceania, Asia, Europe, South America,
+        North America, Africa and Antarctica. However, we also want a more
+        fine-grained division for Asia, i.e. West/East, China, Hong-Kong and
+        Japan. #}
+    {%- set world_split = {
+          "continent": {
+            "eu": "europe",
+            "af": "africa",
+            "sa": "south-america",
+            "na": "north-america",
+            "oc": "oceania",
+          },
+          "country": {
+            "jp": "japan",
+            "hk": "hong-kong",
+            "cn-t": "china-telecom",
+            "cn-u": "china-unicom",
+            "cn-m": "china-mobile",
+          }} %}
+    {%- for country_code in ["ae", "af", "am", "az", "bh", "cc", "cy", "ge",
+                             "il", "iq", "ir", "jo", "kg", "kw", "kz", "lb",
+                             "om", "pk", "qa", "ru", "sa", "sy", "tj", "tm",
+                             "tr", "uz", "ye"] %}
+    {%-   do world_split["country"].__setitem__(country_code, "west-asia") %}
+    {%- endfor %}
+    {%- for country_code in ["bn", "bt", "cx", "id", "in", "io", "kh", "kp",
+                             "kr", "la", "lk", "mm", "mn", "mo", "mv", "my",
+                             "np", "ph", "sg", "th", "to", "tw", "vn"] %}
+    {%-   do world_split["country"].__setitem__(country_code, "east-asia") %}
+    {%- endfor %}
+
     {%- for slave in slave_instance_list %}
 
     {#-   Set the RR(s) to use for each region, as described in
@@ -48,39 +80,6 @@ domains:
                                      "oceania": "oc"}.items() %}
     {%-     do rr_dict.__setitem__(region, slave.get(region, default_rr)) %}
     {%-   endfor %}
-
-    {#-   Split the world the way we prefer. 'GeoLite2-Country.mmdb' divides the
-          world into 7 continents: Oceania, Asia, Europe, South America,
-          North America, Africa and Antarctica. However, we also want a more
-          fine-grained division for Asia, i.e. West/East, China, Hong-Kong and
-          Japan. #}
-    {%-   set world_split = {
-            "continent": {
-              "eu": "europe",
-              "af": "africa",
-              "sa": "south-america",
-              "na": "north-america",
-              "oc": "oceania",
-            },
-            "country": {
-              "jp": "japan",
-              "hk": "hong-kong",
-              "cn-t": "china-telecom",
-              "cn-u": "china-unicom",
-              "cn-m": "china-mobile",
-            }} %}
-    {%-   for country_code in ["ae", "af", "am", "az", "bh", "cc", "cy", "ge",
-                               "il", "iq", "ir", "jo", "kg", "kw", "kz", "lb",
-                               "om", "pk", "qa", "ru", "sa", "sy", "tj", "tm",
-                               "tr", "uz", "ye"] %}
-    {%-     do world_split["country"].__setitem__(country_code, "west-asia") %}
-    {%-   endfor %}
-    {%-   for country_code in ["bn", "bt", "cx", "id", "in", "io", "kh", "kp",
-                               "kr", "la", "lk", "mm", "mn", "mo", "mv", "my",
-                               "np", "ph", "sg", "th", "to", "tw", "vn"] %}
-    {%-     do world_split["country"].__setitem__(country_code, "east-asia") %}
-    {%-   endfor %}
-
 
     {#-   'code2region' maps an ISO3166 country/continent code (i.e. the client
           origin) to a geographical region. The latter is then used to find the
