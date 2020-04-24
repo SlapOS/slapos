@@ -110,7 +110,7 @@ rotate-num = 30
 recipe = slapos.cookbook:pbs
 client = true
 feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
+callbacks-directory = $${directory:notifier-callbacks}
 equeue-socket = $${equeue:socket}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
@@ -124,7 +124,7 @@ run-directory = $${basedirectory:run}
 pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
-slave-instance-list = {{ slapparameter_dict.get('slave_instance_list', '[]') }}
+slave-instance-list = {{ dumps(slave_instance_list) }}
 ignore-known-hosts-file = {{ slapparameter_dict.get('ignore-known-hosts-file', 'false') }}
 # To get a verbose feed about PBS state
 instance-root-name = $${monitor-instance-parameter:root-instance-title}
