@@ -32,10 +32,10 @@ import tempfile
 import time
 from six.moves.urllib.parse import urlparse
 
+import pexpect
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -61,3 +61,28 @@ class TestTheia(SlapOSInstanceTestCase):
                 parsed_url.port)).geturl(),
         verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+
+  def test_theia_slapos(self):
+    process = pexpect.spawnu('{}/bin/theia-shell'.format(
+        self.computer_partition_root_path))
+
+    process.expect_exact('Standalone SlapOS for computer `local` activated')
+
+    process.sendline(
+        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg local'
+    )
+    process.expect(
+        'Requesting software installation of https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg...'
+    )
+
+    process.sendline(
+        'slapos proxy show | cat')  # pipe through cat to disable pager
+    process.expect(
+        'https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
+    )
+
+    process.sendline('slapos node software')
+    process.expect(
+        'Installing software release https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/gitlab/software.cfg'
+    )
+    process.terminate()
