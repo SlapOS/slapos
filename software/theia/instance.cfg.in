@@ -96,7 +96,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_SHELL=$${theia-shell:wrapper-path} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
@@ -105,6 +105,13 @@ base-url = http://$${:hostname}:$${:port}/
 hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
+
+[theia-shell]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+command-line =
+  # reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+  env GIT_EXEC_PATH= $SHELL
 
 [promises]
 recipe =
