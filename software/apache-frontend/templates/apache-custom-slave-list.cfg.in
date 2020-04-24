@@ -231,22 +231,6 @@ extra-context =
 {{ '\n' }}
 
 
-{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') -%}
-{%   do part_list.append(check_error_log_section_title) -%}
-[{{ check_error_log_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600 
-filename = {{ check_error_log_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
-
-{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') -%}
-{%   do part_list.append(check_error_log_section_title) -%}
-[{{ check_error_log_section_title }}]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 86400
-filename = {{ check_error_log_section_title }}
-wrapper-path = {{ promise_directory }}/${:filename}
-
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
 {%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}

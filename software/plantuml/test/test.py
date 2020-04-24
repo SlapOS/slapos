@@ -37,6 +37,7 @@ import plantuml
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import ImageComparisonTestCase
 
 
 setUpModule, PlantUMLTestCase = makeModuleSetUpAndTestCaseClass(
@@ -44,31 +45,13 @@ setUpModule, PlantUMLTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestSimpleDiagram(PlantUMLTestCase):
+class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
   def setUp(self):
     self.url = self.computer_partition.getConnectionParameterDict()["url"]
     self.plantuml = plantuml.PlantUML(
       url='{}/png/'.format(self.url),
       http_opts={"disable_ssl_certificate_validation": True}
     )
-
-  def assertImagesSimilar(self, i1, i2, tolerance=5):
-    """Assert images difference between images is less than `tolerance` %.
-   taken from https://rosettacode.org/wiki/Percentage_difference_between_images
-    """
-    pairs = zip(i1.getdata(), i2.getdata())
-    if len(i1.getbands()) == 1:
-      # for gray-scale jpegs
-      dif = sum(abs(p1-p2) for p1,p2 in pairs)
-    else:
-      dif = sum(abs(c1-c2) for p1,p2 in pairs for c1,c2 in zip(p1,p2))
-
-    ncomponents = i1.size[0] * i1.size[1] * 3
-    self.assertLessEqual((dif / 255.0 * 100) / ncomponents, tolerance)
-
-  def assertImagesSame(self, i1, i2):
-    """Assert images are exactly same."""
-    self.assertImagesSimilar(i1, i2, 0)
 
   def test_sequence_diagram(self):
     png = self.plantuml.processes(textwrap.dedent("""\

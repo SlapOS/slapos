@@ -237,9 +237,22 @@ def getQUIC(url, ip, port):
 
 
 def getPluginParameterDict(software_path, filepath):
+  """Load the slapos monitor plugin and returns the configuration used by this plugin.
+
+  This allow to check that monitoring plugin are using a proper config.
+  """
+  # This is implemented by creating a wrapper script that loads the plugin wrapper
+  # script and returns its `extra_config_dict`. This might have to be adjusted if
+  # internals of slapos promise plugins change.
+
   bin_file = os.path.join(software_path, 'bin', 'test-plugin-promise')
+
+  monitor_python_with_eggs = os.path.join(software_path, 'bin', 'monitor-pythonwitheggs')
+  if not os.path.exists(monitor_python_with_eggs):
+    raise ValueError("Monitoring stack's python does not exist at %s" % monitor_python_with_eggs)
+
   with open(bin_file, 'w') as f:
-    f.write("""#!%s/bin/pythonwitheggs
+    f.write("""#!%s
 import os
 import importlib
 import sys
@@ -251,9 +264,9 @@ filename = os.path.basename(filepath)
 module = importlib.import_module(os.path.splitext(filename)[0])
 
 print json.dumps(module.extra_config_dict)
-    """ % software_path)
+    """ % monitor_python_with_eggs)
 
-  os.chmod(bin_file, 0755)
+  os.chmod(bin_file, 0o755)
   result = subprocess_output([bin_file, filepath]).strip()
   try:
     return json.loads(result)
@@ -836,7 +849,7 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
     parameter_dict = cls.slave_connection_parameter_dict_dict[
       cls.check_slave_id
     ]
-    wait_time = 60
+    wait_time = 600
     begin = time.time()
     try_num = 0
     cls.logger.debug('waitForCaddy for %is' % (wait_time,))
