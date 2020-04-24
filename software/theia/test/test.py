@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import unicode_literals
 
 import os
 import textwrap
@@ -32,10 +33,10 @@ import tempfile
 import time
 from six.moves.urllib.parse import urlparse
 
+import pexpect
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -61,3 +62,46 @@ class TestTheia(SlapOSInstanceTestCase):
                 parsed_url.port)).geturl(),
         verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+
+  def test_theia_slapos(self):
+    # Make sure we can use the shell and the integrated slapos command
+    process = pexpect.spawnu(
+        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
+        env={'HOME': self.computer_partition_root_path})
+
+    # use a large enough terminal so that slapos proxy show table fit in the screen
+    process.setwinsize(5000, 5000)
+
+    process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
+    process.expect_exact('Standalone SlapOS for computer `local` activated')
+
+    # try to supply and install a software to check that this slapos is usable
+    process.sendline(
+        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg local'
+    )
+    process.expect(
+        'Requesting software installation of https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg...'
+    )
+
+    # we pipe through cat to disable pager and prevent warnings like
+    # WARNING: terminal is not fully functional
+    process.sendline('slapos proxy show | cat')
+    process.expect(
+        'https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
+    )
+
+    process.sendline('slapos node software')
+    process.expect(
+        'Installing software release https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
+    )
+    # interrupt this, we don't want to actually wait for software installation
+    process.sendcontrol('c')
+
+    # shutdown this slapos
+    process.sendline(
+        'supervisorctl -c {}/srv/slapos/etc/supervisord.conf shutdown'.format(
+            self.computer_partition_root_path))
+    process.expect('Shut down')
+
+    process.terminate()
+    process.wait()
