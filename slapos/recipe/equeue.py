@@ -30,11 +30,14 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
+    if not self.options['lockfile'].endswith('.lock'):
+      raise ValueError('lockfile parameter must end with .lock as equeue process will add .lock suffix')
+
     args = [
       self.options['equeue-binary'],
       '--database', self.options['database'],
       '--logfile', self.options['log'],
-      '--lockfile', self.options['lockfile']
+      '--lockfile', self.options['lockfile'][:-5]
     ]
 
     if 'takeover-triggered-file-path' in self.options:
