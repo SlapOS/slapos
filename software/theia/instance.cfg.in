@@ -109,9 +109,27 @@ hash-existing-files =
 [theia-shell]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+# reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+# activate slapos configuration
 command-line =
-  # reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  env GIT_EXEC_PATH= $SHELL
+  ${bash:location}/bin/bash -c ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash"
+
+[slapos-standalone-activate]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+# XXX maybe standalone slapos should provide an activate script like virtualenv is doing?
+template =
+  inline:#!/bin/sh
+  export PATH=${buildout:bin-directory}:$PATH
+  ${slapos-standalone:script-path} $${directory:slapos} $${:ipv4} $${:ipv6} $${:port}
+  export SLAPOS_CONFIGURATION=$${directory:slapos}/etc/slapos.cfg
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+port = 4000
+
 
 [promises]
 recipe =
@@ -171,3 +189,4 @@ pidfiles = $${:var}/run
 
 services = $${:etc}/service
 project = $${:srv}/project
+slapos = $${:srv}/slapos
