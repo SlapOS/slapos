@@ -48,18 +48,17 @@ class TestMetabaseSetup(MetabaseTestCase):
 
     # get a setup token as described in https://github.com/metabase/metabase/issues/4240#issuecomment-290717451
     # XXX this can timeout for some reasons, maybe a race condition in metabase, but if
-    # we retry it seems to work
-    try:
-      properties = requests.get(
-          parse.urljoin(url, '/api/session/properties'),
-          verify=False,
-          timeout=10).json()
-    except requests.ReadTimeout:
-      self.logger.exception("getting setup token failed, retrying")
-      properties = requests.get(
-          parse.urljoin(url, '/api/session/properties'),
-          verify=False,
-          timeout=10).json()
+    # we retry a bit it seems to work
+    properties = None
+    for _ in range(3):
+      try:
+        properties = requests.get(
+            parse.urljoin(url, '/api/session/properties'),
+            verify=False,
+            timeout=10).json()
+      except requests.ReadTimeout:
+        self.logger.exception("getting setup token failed, retrying")
+    self.assertIsNotNone(properties, 'Could not get setup token')
 
     email = "youlooknicetoday@email.com"
     password = "password123456"
