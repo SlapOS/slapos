@@ -53,7 +53,7 @@ def getLatestBackupDate():
       timestamp = float(db[callback])
       if timestamp > last_backup:
         last_backup = timestamp
-    result = datetime.datetime.fromtimestamp(last_backup)
+    result = datetime.datetime.fromtimestamp(float(last_backup))
   db.close()
   shutil.rmtree(temporary_directory)
   return result
