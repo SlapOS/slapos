@@ -69,6 +69,11 @@ class TestTheia(SlapOSInstanceTestCase):
     resp = requests.get(urljoin(authenticated_url, '/public/test_file'), verify=False)
     self.assertEqual('hello', resp.text)
 
+    # there's a (not empty) favicon
+    resp = requests.get(urljoin(authenticated_url, '/favicon.ico'), verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertTrue(resp.raw)
+
 
   def test_theia_slapos(self):
     process = pexpect.spawnu('{}/bin/theia-shell'.format(
