@@ -53,7 +53,7 @@ template = inline:
     root $${directory:frontend-static}
     browse
     proxy / $${theia-instance:base-url} {
-      except public
+      except public $${favicon.ico:filename}
     }
     proxy /services $${theia-instance:base-url} {
       websocket
@@ -90,6 +90,29 @@ hash-files =
   $${frontend-instance-config:rendered}
   $${frontend-instance:wrapper-path}
 wait-for-files = $${frontend-instance:pidfile}
+
+[favicon.ico]
+# generate a pseudo random favicon, different for each instance name.
+recipe = slapos.recipe.build
+install =
+  import hashlib, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  self.buildout['buildout']['offline'] = 'false'
+  try:
+    gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
+      '''$${slap-configuration:root-instance-title}'''
+    ).hexdigest() + "?s=256&d=retro"
+    shutil.copy(self.download(gravatar_url), '''$${:location}''')
+  except Exception:
+    # Because installation should work offline, if we can't download a favicon,
+    # just ignore this step.
+    self.logger.exception("Error while downloading favicon, using empty one")
+    open('''$${:location}''', 'w').close()
+  finally:
+    self.buildout['buildout']['offline'] = buildout_offline
+
+location = $${directory:frontend-static}/$${:filename}
+filename = $${:_buildout_section_name_}
 
 [user]
 recipe = slapos.cookbook:userinfo
