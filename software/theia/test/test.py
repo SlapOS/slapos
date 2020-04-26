@@ -30,7 +30,7 @@ import textwrap
 import logging
 import tempfile
 import time
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
 import requests
@@ -52,15 +52,23 @@ class TestTheia(SlapOSInstanceTestCase):
 
     # with login/password, this is allowed
     parsed_url = urlparse(self.connection_parameters['url'])
-    resp = requests.get(
-        parsed_url._replace(
-            netloc='{}:{}@[{}]:{}'.format(
-                self.connection_parameters['username'],
-                self.connection_parameters['password'],
-                parsed_url.hostname,
-                parsed_url.port)).geturl(),
-        verify=False)
+    authenticated_url = parsed_url._replace(netloc='{}:{}@[{}]:{}'.format(
+        self.connection_parameters['username'],
+        self.connection_parameters['password'],
+        parsed_url.hostname,
+        parsed_url.port,
+    )).geturl()
+    resp = requests.get(authenticated_url, verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+
+    # there's a public folder to serve file
+    with open('{}/srv/public/test_file'.format(self.computer_partition_root_path), 'w') as f:
+      f.write("hello")
+    resp = requests.get(urljoin(authenticated_url, '/public/'), verify=False)
+    self.assertIn('test_file', resp.text)
+    resp = requests.get(urljoin(authenticated_url, '/public/test_file'), verify=False)
+    self.assertEqual('hello', resp.text)
+
 
   def test_theia_slapos(self):
     process = pexpect.spawnu('{}/bin/theia-shell'.format(

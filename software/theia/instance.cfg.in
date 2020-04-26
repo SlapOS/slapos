@@ -50,8 +50,10 @@ template = inline:
     tls {
       alpn http/1.1
     }
+    root $${directory:frontend-static}
+    browse
     proxy / $${theia-instance:base-url} {
-    #  transparent
+      except public
     }
     proxy /services $${theia-instance:base-url} {
       websocket
@@ -190,3 +192,5 @@ pidfiles = $${:var}/run
 services = $${:etc}/service
 project = $${:srv}/project
 slapos = $${:srv}/slapos
+frontend-static = $${:srv}/frontend-static
+frontend-static-public = $${:frontend-static}/public
