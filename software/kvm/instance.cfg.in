@@ -146,7 +146,7 @@ context =
     key eggs_directory buildout:eggs-directory
     raw qemu_location ${kvm:location}
     raw template_kvm_import ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
-    raw pbsready_import_template ${pbsready-import:output}
+    key pbsready_import_template template-pbsready-import:rendered
     key slapparameter_dict slap-configuration:configuration
     raw zcat_binary ${gzip:location}/bin/zcat
     raw gzip_binary ${gzip:location}/bin/gzip
