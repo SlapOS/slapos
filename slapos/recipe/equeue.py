@@ -25,14 +25,16 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout import UserError
 
 class Recipe(GenericBaseRecipe):
 
+  def __init__(self, buildout, name, options):
+    if not options['lockfile'].endswith('.lock'):
+      raise UserError('lockfile parameter must end with .lock as equeue process will add .lock suffix')
+    super(Recipe, self).__init__(buildout, name, options)
+
   def install(self):
-
-    if not self.options['lockfile'].endswith('.lock'):
-      raise ValueError('lockfile parameter must end with .lock as equeue process will add .lock suffix')
-
     args = [
       self.options['equeue-binary'],
       '--database', self.options['database'],
