@@ -237,9 +237,9 @@
 						},
 						"failover-mode": {
 							"title": "Failover mode",
-							"description": "Failover is manual or automatic (default \"automatic\").",
+							"description": "Failover is manual or automatic (default \"manual\").",
 							"type": "string",
-							"default": "automatic",
+							"default": "manual",
               "enum": [
                 "manual",
                 "automatic"
