@@ -27,15 +27,21 @@ recipe  = slapos.recipe.template:jinja2
 mode    = 0644
 extensions = jinja2.ext.do
 rendered= ${buildout:directory}/${:_buildout_section_name_}
+supervisord-lib = {{ supervisord_lib }}
+import-list =
+  file supervisord_lib :supervisord-lib
 context =
     key slapparameter_dict      slap-configuration:configuration
     key computer_id             slap-configuration:computer
     key ipv4_set                slap-configuration:ipv4
     key ipv6_set                slap-configuration:ipv6
-    raw bin_directory           {{ buildout_directory }}
+    raw buildout_directory      {{ buildout_directory }}
+    raw buildout_bin_directory  {{ buildout_bin_directory }}
     raw eggs_directory          {{ buildout_egg_directory }}
     raw develop_eggs_directory  {{ buildout_develop_directory }}
     raw mariadb_location        {{ mariadb_location }}
+    raw supervisord_lib         {{ supervisord_lib }}
+    raw supervisord_conf        {{ supervisord_conf }}
     raw template_monitor        {{ template_monitor_cfg }}
 
 # program binaries
