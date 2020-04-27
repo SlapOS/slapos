@@ -6,6 +6,7 @@
 {% set mariadb_path_list = [] -%}
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% set cluster_list = [] -%}
 {% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog" -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 
@@ -17,12 +18,17 @@ var = ${:home}/var
 run = ${:var}/run
 scripts = ${:etc}/run
 service = ${:etc}/service
+controller = ${:etc}/controller
 promise = ${:etc}/promise
 log = ${:var}/log
 data = ${:var}/lib
 nginx-prefix = ${:var}/nginx
 tmp = ${:home}/tmp
 
+{% import "supervisord_lib" as supervisord_lib with context %}
+{% set proxysql_controller = "proxysql-controller" -%}
+{{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("proxysql-controller-service") -%}
 
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -32,18 +38,6 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-
-[proxy-admin-port]
-recipe = slapos.cookbook:free_port
-ip = {{ ipv4 }}
-minimum = 6032
-maximum = 6132
-
-[proxy-port]
-recipe = slapos.cookbook:free_port
-ip = {{ ipv4 }}
-minimum = 7032
-maximum = 7132
 
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
@@ -64,21 +58,24 @@ maximum = 7132
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
 {% set section = 'request-mariadb-' ~ i -%}
-{% set name = 'Mariadb-' ~ i -%}
+{% set dbname = 'Mariadb-' ~ i -%}
 
 [{{ section }}]
 <= request-common
 software-type = mariadb
-name = {{ name }}
+name = {{ dbname }}
 sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '')) }}
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-monitor-passwd = ${publish-early:monitor-password}
 config-root-password = ${publish-early:db-root-password}
+config-repman-user = ${repman-parameter:username}
+#config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
-config-repman-secure-url = ${nginx-parameter:backend-url}
-config-name = {{ name }}
+config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
+config-cluster = {{ name }}
+config-name = {{ dbname }}
 return = 
   database-host
   monitor-base-url
@@ -92,14 +89,26 @@ return =
 {% endfor -%}
 
 # Manage Replication Manager clusters
+[{{name}}-admin-port]
+recipe = slapos.cookbook:free_port
+ip = {{ ipv4 }}
+minimum = 6032
+maximum = 6132
+
+[{{name}}-port]
+recipe = slapos.cookbook:free_port
+ip = {{ ipv4 }}
+minimum = 7032
+maximum = 7132
+
 {% set prefered_master = parameter_dict.get("db-prefered-master") -%}
 [{{ name ~ '-cluster-parameter' }}]
 {% for key, value in parameter_dict.items() -%}
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
-proxy-port = ${proxy-port:port}
-proxy-admin-port = ${proxy-admin-port:port}
+proxy-port = {{ '${' ~ name ~ '-port:port}' }}
+proxy-admin-port = {{ '${' ~ name ~ '-admin-port:port}' }}
 db-credential = repman:${publish-early:db-root-password}
 db-list = {{ mariadb_server_list | join(',') }}
 partition-list = {{ mariadb_path_list | join(',') }}
@@ -123,7 +132,7 @@ db-memory = {{ parameter_dict.get("db-memory", 256) }}
 db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0") }}
 db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", "tmp:70,join:20,sort:10") }}
 # failover
-failover-mode = {{ parameter_dict.get('failover-mode', 'automatic') }}
+failover-mode = {{ parameter_dict.get('failover-mode', 'manual') }}
 failover-limit = {{ parameter_dict.get('failover-limit', 5) }}
 failover-falsepositive-heartbeat = {{ parameter_dict.get('failover-falsepositive-heartbeat', True) }}
 failover-falsepositive-heartbeat-timeout = {{ parameter_dict.get('failover-falsepositive-heartbeat-timeout', 3) }}
@@ -158,12 +167,12 @@ command =
   mkdir -p ${repman:config-tmp}/proxies &&
   mkdir -p ${:data} &&
   cd ${repman:config-tmp}/proxies &&
-  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/${proxy-admin-port:port}/config &&
+  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/{{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}/config &&
   tar -xzf proxies.tar.gz &&
   cp conf/proxysql.cnf  ${:config}
 update-command = ${:command}
 
-[service-proxysql-{{ name }}]
+[proxysql-{{ name }}-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line =
   {{ proxysql_location }}/bin/proxysql -f
@@ -171,12 +180,19 @@ command-line =
   -D ${config-proxysql-{{ name }}:data}
   --reload
 #  -S /tmp/proxysql_admin.sock
-wrapper-path = ${directory:service}/proxysql-{{ name }}
+wrapper-path = ${directory:controller}/proxysql-{{ name }}
 wait-for-files =
   ${repman:bootstrap}/{{ name }}_bootstrapped
 
+{% set service_name = "proxysql-" ~ name -%}
+{% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
+  "stopwaitsecs": 60, "environment": []} %}
+
+{{ supervisord_lib.supervisord_program(proxysql_controller, service_name, proxysql_dict) }}
+{% do part_list.append(proxysql_controller ~ "-" ~ service_name) %}
+
 {% do part_list.append('config-' ~ name) -%}
-{% do part_list.append('service-proxysql-' ~ name) -%}
+{% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
 {% endfor -%}
 
 [slap-configuration]
@@ -430,6 +446,26 @@ name = check_repman_frontend.py
 config-url = ${nginx-parameter:backend-ssl-url}
 config-check-secure = 1
 
+[template-proxysql-need-stop-start]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/proxysql_check_stop_start
+template = {{ template_proxy_need_stopstart }}
+mode = 755
+cluster-list = !py![{{ cluster_list | join(', ') }}]
+context =
+  key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
+  key repman_url          nginx-parameter:backend-url
+  key cluster_list        :cluster-list
+  raw jq_bin              {{ jq_bin }}
+  raw bash_bin           {{ bash_bin }}
+  raw curl_bin            {{ curl_bin }}
+
+[proxy-need-stop-start]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = proxysql-need-stop-start
+frequency = * * * * *
+command = ${template-proxysql-need-stop-start:rendered}
 
 #############################
 #
@@ -447,6 +483,7 @@ parts =
   publish-connection-parameter
   repman-frontend-promise
   repman-backend-promise
+  proxy-need-stop-start
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

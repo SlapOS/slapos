@@ -275,16 +275,38 @@ command = ${dbjobs-executable:rendered}
 < = jinja2-template-executable
 rendered = ${directory:bin}/mysqld_restart
 template = inline:#!/bin/sh
+  ${mariadb-controller-bin:wrapper-path} status
   ${mariadb-controller-bin:wrapper-path} restart mariadb
   sleep 1
   ${mariadb-controller-bin:wrapper-path} status
+
+[{{ section('mariadb-need-start') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariadb-need-start
+frequency = * * * * *
+command = ${template-mysqld-need-start:rendered}
+
+[template-mysqld-need-start]
+< = jinja2-template-executable
+rendered = ${directory:bin}/mysqld_need_start
+template = {{ parameter_dict['template-mysqld-need-start'] }}
+context =
+  key mariadb_controller mariadb-controller-bin:wrapper-path
+  raw username           {{ slapparameter_dict['repman-user'] }}
+  raw repman_url         {{ slapparameter_dict['repman-url'] }}
+  raw jq_bin             {{ jq_bin }}
+  raw cluster            {{ slapparameter_dict['cluster'] }}
+  raw db_host            {{ host }}
+  raw db_port            {{ port }}
+  raw bash_bin           {{ bash_bin }}
+  raw curl_bin           {{ curl_bin }}
 
 # Donwnload mariadb configuration from repman
 [{{ section('install-mysql-config') }}]
 recipe = plone.recipe.command
 stop-on-error = true
-# XXX - for now, we make only one cluster
-cluster = cluster1
+cluster = {{ slapparameter_dict['cluster'] }}
 config = ${directory:etc}/mysql/my.cnf
 command =
   cd ${directory:config-tmp} &&
