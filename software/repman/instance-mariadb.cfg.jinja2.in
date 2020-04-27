@@ -141,13 +141,22 @@ environ =
   {{ variable }}
   {%- endfor %}
 
-[{{ section('ca-mysqld') }}]
+[ca-mysqld]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${my-cnf-parameters:ssl-key}
 cert-file = ${my-cnf-parameters:ssl-crt}
 executable = ${mysqld:rendered}
-wrapper = ${directory:services}/mariadb
+wrapper = ${directory:controller}/mariadb
+
+{% import "supervisord_lib" as supervisord_lib with context %}
+{{ supervisord_lib.supervisord("mariadb-controller", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("mariadb-controller-service") -%}
+{% set maradb_program_dict = {"name": "mariadb", "command": "${ca-mysqld:wrapper}",
+  "stopwaitsecs": 86400, "environment": []} %}
+
+{{ supervisord_lib.supervisord_program("mariadb-controller", "mariadb", maradb_program_dict) }}
+{% do part_list.append("mariadb-controller-mariadb") %}
 
 [odbc-ini-text]
 text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
@@ -216,6 +225,7 @@ bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 scripts = ${:etc}/run
 services = ${:etc}/service
+controller = ${:etc}/controller
 plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
@@ -241,7 +251,7 @@ log-dir = ${directory:mysql}/.system/logs
 tmp-dir = ${directory:tmp}
 mysqld-socket  = ${my-cnf-parameters:socket}
 socat-port = {{ port + 1 }}
-restart-script = ${mysqld-restart-script:path}
+restart-script = ${mysqld-restart-script:rendered}
 socat-location = {{ parameter_dict['socat-location'] }}
 mysql-location = {{ parameter_dict['mariadb-location'] }}
 ip = {{ ip }}
@@ -262,11 +272,12 @@ frequency = * * * * *
 command = ${dbjobs-executable:rendered}
 
 [mysqld-restart-script]
-recipe = plone.recipe.command
-command =
-  echo "NOT IMPLEMENTED FOR NOW" > ${:path}
-update-command = ${:command}
-path = ${directory:bin}/mysqld_restart
+< = jinja2-template-executable
+rendered = ${directory:bin}/mysqld_restart
+template = inline:#!/bin/sh
+  ${mariadb-controller-bin:wrapper-path} restart mariadb
+  sleep 1
+  ${mariadb-controller-bin:wrapper-path} status
 
 # Donwnload mariadb configuration from repman
 [{{ section('install-mysql-config') }}]
