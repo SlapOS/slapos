@@ -71,7 +71,7 @@ SSLProxyEngine On
     DocumentRoot "%(testnode_log_directory)s"
     <Directory />
         Options Indexes FollowSymLinks
-        IndexOptions FancyIndexing
+        IndexOptions FancyIndexing NameWidth=* SuppressColumnSorting
         Require all granted
     </Directory>
 </VirtualHost>
@@ -86,7 +86,7 @@ Listen [%(ip)s]:%(software_access_port)s
     <Directory />
         AllowOverride AuthConfig
         Options FollowSymLinks
-        IndexOptions FancyIndexing
+        IndexOptions FancyIndexing NameWidth=* SuppressColumnSorting
         Require all denied
    </Directory>
 </VirtualHost>
