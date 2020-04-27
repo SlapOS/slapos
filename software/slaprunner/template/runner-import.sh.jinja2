@@ -173,7 +173,7 @@ if 1:
 
   # We want to replace the last occurence only
   old_software_release, partition = sys.argv[1], sys.argv[2]
-  for match in re.finditer("(slappart|test0-)[0-9][0-9]*", old_software_release):
+  for match in re.finditer("(slappart|test0-|s)[0-9][0-9]*", old_software_release):
     start, end = match.start(), match.end()
 
   print old_software_release[:start] + partition + old_software_release[end:]
