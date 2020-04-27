@@ -1,0 +1,21 @@
+#!{{ bash_bin }}
+
+curl () {
+  {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
+}
+
+# TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"XXXXX"}' {{ repman_url }}/api/login | {{ jq_bin }} -r '.token')
+
+# Checking if mariadb start is needed
+#CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/{{ cluster }}/servers/{{ db_host }}/{{ db_port }}/need-start)
+CODE=$(curl -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/{{ cluster }}/servers/{{ db_host }}/{{ db_port }}/need-start)
+
+if [ $CODE -eq 200 ]; then
+  echo "$CODE: Starting mariadb service..."
+  # print current status, can be useful for debug...
+  {{ mariadb_controller }} status mariadb
+  {{ mariadb_controller }} start mariadb
+  sleep 5
+  # check again if the service is still up...
+  {{ mariadb_controller }} status mariadb
+fi
