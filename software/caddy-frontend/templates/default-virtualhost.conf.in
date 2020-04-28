@@ -10,7 +10,7 @@
 {%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default']).lower() in TRUE_VALUES %}
 {%- set ssl_proxy_verify = slave_parameter.get('ssl-proxy-verify', '').lower() in TRUE_VALUES %}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
-{%- set https_only = slave_parameter.get('https-only', '').lower() in TRUE_VALUES %}
+{%- set https_only = slave_parameter.get('https-only', 'true').lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
 {%- set host_list = server_alias_list %}
 {%- set cipher_list = slave_parameter.get('cipher_list', '').strip() %}
