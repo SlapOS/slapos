@@ -161,6 +161,7 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${apache-frontend-url-available-promise:name}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -175,6 +176,13 @@ module = check_port_listening
 name = $${:_buildout_section_name_}.py
 config-hostname = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[apache-frontend-url-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${apache-frontend:connection-secure_access}
+config-check-secure = 1
 
 [apache-frontend]
 <= slap-connection
