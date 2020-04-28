@@ -64,21 +64,24 @@ maximum = 7132
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
 {% set section = 'request-mariadb-' ~ i -%}
-{% set name = 'Mariadb-' ~ i -%}
+{% set dbname = 'Mariadb-' ~ i -%}
 
 [{{ section }}]
 <= request-common
 software-type = mariadb
-name = {{ name }}
+name = {{ dbname }}
 sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '')) }}
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-monitor-passwd = ${publish-early:monitor-password}
 config-root-password = ${publish-early:db-root-password}
+config-repman-user = ${repman-parameter:username}
+config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
-config-repman-secure-url = ${nginx-parameter:backend-url}
-config-name = {{ name }}
+config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
+config-cluster = {{ name }}
+config-name = {{ dbname }}
 return = 
   database-host
   monitor-base-url
@@ -123,7 +126,7 @@ db-memory = {{ parameter_dict.get("db-memory", 256) }}
 db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0") }}
 db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", "tmp:70,join:20,sort:10") }}
 # failover
-failover-mode = {{ parameter_dict.get('failover-mode', 'automatic') }}
+failover-mode = {{ parameter_dict.get('failover-mode', 'manual') }}
 failover-limit = {{ parameter_dict.get('failover-limit', 5) }}
 failover-falsepositive-heartbeat = {{ parameter_dict.get('failover-falsepositive-heartbeat', True) }}
 failover-falsepositive-heartbeat-timeout = {{ parameter_dict.get('failover-falsepositive-heartbeat-timeout', 3) }}
