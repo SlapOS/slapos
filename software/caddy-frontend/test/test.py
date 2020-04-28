@@ -1695,17 +1695,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'test-path/deep/.././deeper')
     self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
 
-    try:
-      j = result_http.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_http.headers)
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
 
     self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_http.headers['Set-Cookie']
+      'https://url.example.com/test-path/deeper',
+      result_http.headers['Location']
     )
 
     # check that try_duration == 5 in the test_url slave
