@@ -1163,7 +1163,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       'https-only': {
         'url': cls.backend_url,
-        'https-only': True,
+        'https-only': False,
       },
       'custom_domain': {
         'url': cls.backend_url,
@@ -1208,7 +1208,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
         'type': 'zope',
-        'https-only': 'true',
+        'https-only': 'false',
       },
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
@@ -1230,7 +1230,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'type-zope-virtualhostroot-http-port': {
         'url': cls.backend_url,
         'type': 'zope',
-        'virtualhostroot-http-port': '12345'
+        'virtualhostroot-http-port': '12345',
+        'https-only': 'false',
       },
       'type-zope-virtualhostroot-https-port': {
         'url': cls.backend_url,
@@ -1364,7 +1365,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'prefer-gzip-encoding-to-backend-https-only': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
-        'https-only': 'true',
+        'https-only': 'false',
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
@@ -1624,7 +1625,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       log_regexp)
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://empty.example.com/test-path',
+      result_http.headers['Location']
+    )
 
     # check that 404 is as configured
     result_missing = fakeHTTPSResult(
@@ -1693,19 +1702,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
-
-    try:
-      j = result_http.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_http.headers)
 
     self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_http.headers['Set-Cookie']
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://url.example.com/test-path/deeper',
+      result_http.headers['Location']
     )
 
     # check that try_duration == 5 in the test_url slave
@@ -2180,15 +2185,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper')
 
-    self.assertEqual(
-      httplib.FOUND,
-      result_http.status_code
-    )
-
-    self.assertEqual(
-      'https://httpsonly.example.com/test-path/deeper',
-      result_http.headers['Location']
-    )
+    self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
 
   def test_custom_domain(self):
     reference = 'custom_domain'
@@ -2350,90 +2347,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper')
 
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/http//typezope.example.com:80/'
-      '/VirtualHostRoot/test-path/deeper'
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
     )
-
-  def test_type_zope_prefer_gzip_encoding_to_backend(self):
-    parameter_dict = self.assertSlaveBase(
-      'type-zope-prefer-gzip-encoding-to-backend')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
 
     self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
-      '/VirtualHostRoot/test-path/deeper'
+      'https://typezope.example.com/test-path/deep/.././deeper',
+      result.headers['Location']
     )
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackend.example.com:80/'
-      '/VirtualHostRoot/test-path/deeper'
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'gzip, deflate'})
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
-      '/VirtualHostRoot/test-path/deeper'
-    )
-    self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'gzip, deflate'})
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackend.example.com:80/'
-      '/VirtualHostRoot/test-path/deeper'
-    )
-    self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_type_zope_prefer_gzip_encoding_to_backend_https_only(self):
     parameter_dict = self.assertSlaveBase(
@@ -2458,6 +2380,84 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'Path',
       '/VirtualHostBase/https//'
       'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http//'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_type_zope_prefer_gzip_encoding_to_backend(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-zope-prefer-gzip-encoding-to-backend')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2494,7 +2494,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       result,
       'Path',
       '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      'typezopeprefergzipencodingtobackend.example.com:443/'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2889,8 +2889,13 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.FOUND,
       result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://sslproxyverifysslproxycacrtunverified.example.com/test-path',
+      result_http.headers['Location']
     )
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -2920,19 +2925,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-    try:
-      j = result_http.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result.headers)
 
     self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_http.headers['Set-Cookie']
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://sslproxyverifysslproxycacrt.example.com/test-path',
+      result_http.headers['Location']
     )
 
   @skip('Not implemented in new test system')
@@ -2999,8 +3000,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'test-path/deeper')
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.FOUND,
       result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://enablecachesslproxyverifysslproxycacrtunverified.example.com/'
+      'test-path/deeper',
+      result_http.headers['Location']
     )
 
   def test_enable_cache_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -3131,8 +3138,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.FOUND,
       result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://typezopesslproxyverifysslproxycacrtunverified.example.com/'
+      'test-path',
+      result_http.headers['Location']
     )
 
   def test_type_zope_ssl_proxy_verify_ssl_proxy_ca_crt(self):
@@ -3163,12 +3176,14 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
 
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/http//'
-      'typezopesslproxyverifysslproxycacrt.example.com:80/'
-      '/VirtualHostRoot/test-path'
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://typezopesslproxyverifysslproxycacrt.example.com/test-path',
+      result.headers['Location']
     )
 
   def test_type_zope_ssl_proxy_verify_unverified(self):
@@ -3201,7 +3216,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://monitoripv6test.example.com/test-path',
+      result_http.headers['Location']
+    )
 
     monitor_file = glob.glob(
       os.path.join(
@@ -3230,7 +3253,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://monitoripv4test.example.com/test-path',
+      result_http.headers['Location']
+    )
 
     monitor_file = glob.glob(
       os.path.join(
@@ -3260,7 +3291,15 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://re6stoptimaltest.example.com/test-path',
+      result_http.headers['Location']
+    )
 
     monitor_file = glob.glob(
       os.path.join(
@@ -3290,7 +3329,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
+
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://ciphers.example.com/test-path',
+      result_http.headers['Location']
+    )
 
     configuration_file = glob.glob(
       os.path.join(
@@ -3319,7 +3367,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       parameter_dict
     )
 
-    result = fakeHTTPResult(
+    result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
@@ -3360,7 +3408,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
   def test_enable_cache_server_alias(self):
     parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
 
-    result = fakeHTTPResult(
+    result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
@@ -3403,43 +3451,20 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-    self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
     self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value',
-        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
-                         'stale-if-error=3600'
-      },
-      headers
+      httplib.FOUND,
+      result.status_code
     )
 
-    backend_headers = result.json()['Incoming Headers']
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
+    self.assertEqual(
+      'https://enablecacheserveralias1.example.com/test-path/deeper',
+      result.headers['Location']
     )
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
-    result = fakeHTTPResult(
+    result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
@@ -3499,8 +3524,12 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
             'revalidate=3600, stale-if-error=3600'})
 
       result = fakeHTTPResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'],
-        'test-path/deeper',  # simple path, as ATS can't change them
+        # append with :HTTP_PORT to mimic access in ATS
+        parameter_dict['domain'] + ':' + HTTPS_PORT,
+        parameter_dict['public-ipv4'],
+        # prepend with HTTPS to mimic access via https in ATS
+        # use simple path, as it is changed in Caddy
+        'HTTPS/test-path/deeper',
         port=23432, headers={
           'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
           'revalidate=3600, stale-if-error=3600'})
@@ -3588,7 +3617,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     parameter_dict = self.assertSlaveBase('enable_cache')
     # check that timeout seen by ATS does not result in many queries done
     # to the backend and that next request works like a charm
-    result = fakeHTTPResult(
+    result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test_enable_cache_ats_timeout', headers={
         'Timeout': '15',
@@ -3655,7 +3684,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertIn(matching_line_amount, [0, 1])
 
     # the result is available immediately after
-    result = fakeHTTPResult(
+    result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
@@ -3819,84 +3848,85 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertTrue(
       isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
 
-  def test_prefer_gzip_encoding_to_backend(self):
-    parameter_dict = self.assertSlaveBase('prefer-gzip-encoding-to-backend')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'gzip, deflate'})
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'deflate'})
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    self.assertEqual(
-      'deflate', result.json()['Incoming Headers']['accept-encoding'])
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'gzip, deflate'})
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper',
-      headers={'Accept-Encoding': 'deflate'})
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    self.assertEqual(
-      'deflate', result.json()['Incoming Headers']['accept-encoding'])
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
   def test_prefer_gzip_encoding_to_backend_https_only(self):
     parameter_dict = self.assertSlaveBase(
       'prefer-gzip-encoding-to-backend-https-only')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'deflate'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertEqual(
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+  def test_prefer_gzip_encoding_to_backend(self):
+    parameter_dict = self.assertSlaveBase(
+      'prefer-gzip-encoding-to-backend')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
@@ -4212,7 +4242,16 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper')
-    self.assertEqualResultJson(result_http, 'Path', '/http/test-path/deeper')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertEqual(
+      'https://urlhttpsurl.example.com/test-path/deeper',
+      result_http.headers['Location']
+    )
 
 
 @skip('Impossible to instantiate cluster with stopped partition')
