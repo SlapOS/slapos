@@ -81,6 +81,7 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 template-mariadb-init-root = {{ template_init_root_sql }}
 template-init-root-wrapper = {{ template_init_root_wrapper }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
+template-mysqld-need-start = {{ mysqld_start_template }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
 bin-directory = {{ bin_directory }}

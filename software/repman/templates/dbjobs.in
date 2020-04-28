@@ -7,7 +7,7 @@ SLOWLOG={{ parameter_dict['mysql-dir']}}/.system/logs/sql-slow
 BACKUPDIR={{ parameter_dict['mysql-dir'] }}/.system/backup
 DATADIR={{ parameter_dict['mysql-dir'] }}/
 export PATH={{ parameter_dict['socat-location'] }}/bin:{{ parameter_dict['mysql-location'] }}/bin:$PATH
-JOBS=( "xtrabackup" "mariabackup" "error" "slowquery" "zfssnapback" "optimize" "reseedxtrabackup" "reseedmariabackup" "reseedmysqldump" "flashbackxtrabackup" "flashbackmariadbackup" "flashbackmysqldump" "stop" "start" "restart")
+JOBS=( "xtrabackup" "mariabackup" "error" "slowquery" "zfssnapback" "optimize" "reseedxtrabackup" "reseedmariabackup" "reseedmysqldump" "flashbackxtrabackup" "flashbackmariadbackup" "flashbackmysqldump" "stop" "start")
 
 doneJob()
 {
