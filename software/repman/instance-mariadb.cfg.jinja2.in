@@ -294,8 +294,7 @@ template = {{ parameter_dict['template-mysqld-need-start'] }}
 context =
   key mariadb_controller mariadb-controller-bin:wrapper-path
   raw username           {{ slapparameter_dict['repman-user'] }}
-  raw password           {{ slapparameter_dict['repman-passwd'] }}
-  raw secure_url         {{ slapparameter_dict['repman-secure-url'] }}
+  raw repman_url         {{ slapparameter_dict['repman-url'] }}
   raw jq_bin             {{ jq_bin }}
   raw cluster            {{ slapparameter_dict['cluster'] }}
   raw db_host            {{ host }}

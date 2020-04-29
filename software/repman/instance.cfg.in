@@ -70,6 +70,7 @@ extra-context =
     raw sysbench_location          {{ sysbench_location }}
     raw proxysql_location          {{ proxysql_location }}
     raw template_repman_manager_sh {{ template_repman_manager_sh }}
+    raw template_proxy_need_stopstart {{ proxy_need_stop_start_template }}
 
 [template-mariadb-parameters]
 bash = {{ bash_location }}
