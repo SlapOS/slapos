@@ -9,7 +9,7 @@ To use:
 
  * extend ``stack/supervisord/buildout.cfg`` in your software.cfg file.
  * provide ``supervisord-library:target`` and ``supervisord-conf:target`` to your instance template which require to use supervisord controller.
- * add ``{% import "supervisord_lib" as supervisord_lib with context %}`` to instance template which call supervisord library. See example bellow:
+ * add ``{% import "supervisord" as supervisord with context %}`` to instance template which call supervisord library. See example bellow:
 
 **software.cfg**
 ::
@@ -54,4 +54,24 @@ To use:
     ...
     custom-controller-service
     custom-controller-mariadb
+
+
+Supervisord inside partition
+============================
+
+Check supervisord controlled services status:
+::
+
+  $ instance/slappartXX/bin/custom-controllerctl status
+  mariadb                          RUNNING   pid 5511, uptime 6:04:54
+
+
+`supervisord_program` parameters and defaults:
+::
+
+  {% set program_dict = {"name": "mariadb", "command": "${mariadb-service:wrapper}",
+    "stopwaitsecs": 60, "environment": ['PATH="/usr/bin/:/partition/bin/:$PATH"', 'MAKEFLAGS="-j2"'],
+    "autostart": True, "autorestart": False, "startsecs": 0, "startretries": 0,
+    "stopsignal": "TERM", "stdout_logfile": "NONE", "stderr_logfile": "NONE"} %}
+  {{ supervisord.supervisord_program("custom-controller", "mariadb", program_dict) }}
 
