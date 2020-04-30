@@ -1,7 +1,9 @@
+T-0/var/log/monitor-httpd-access.log
 T-0/var/log/monitor-httpd-error.log
 T-0/var/log/slapgrid-T-0-error.log
 T-1/var/log/expose-csr_id.log
 T-1/var/log/kedifa.log
+T-1/var/log/monitor-httpd-access.log
 T-1/var/log/monitor-httpd-error.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
@@ -130,6 +132,7 @@ T-2/var/log/httpd/_type-zope_access_log
 T-2/var/log/httpd/_type-zope_error_log
 T-2/var/log/httpd/_url_https-url_access_log
 T-2/var/log/httpd/_url_https-url_error_log
+T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/trafficserver/manager.log
 T-2/var/log/trafficserver/traffic.out

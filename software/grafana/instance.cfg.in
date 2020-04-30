@@ -267,6 +267,10 @@ config-url = ${grafana:url}
 config-https-only = true
 return = domain secure_access
 
+[apache-frontend-available-promise]
+<= check-url-available-promise
+url = ${apache-frontend:connection-secure_access}
+
 
 [promises]
 recipe =
@@ -277,6 +281,8 @@ instance-promises =
   ${grafana-listen-promise:path}
   ${loki-listen-promise:path}
   ${promtail-listen-promise:path}
+  ${promtail-listen-promise:path}
+  ${apache-frontend-available-promise:path}
 
 
 [publish-connection-parameter]

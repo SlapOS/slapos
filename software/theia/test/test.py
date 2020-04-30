@@ -24,18 +24,19 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from __future__ import unicode_literals
 
 import os
 import textwrap
 import logging
 import tempfile
 import time
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urljoin
 
+import pexpect
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -43,6 +44,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestTheia(SlapOSInstanceTestCase):
+  __partition_reference__ = 'T' # for sockets in included slapos
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
@@ -52,12 +54,71 @@ class TestTheia(SlapOSInstanceTestCase):
 
     # with login/password, this is allowed
     parsed_url = urlparse(self.connection_parameters['url'])
-    resp = requests.get(
-        parsed_url._replace(
-            netloc='{}:{}@[{}]:{}'.format(
-                self.connection_parameters['username'],
-                self.connection_parameters['password'],
-                parsed_url.hostname,
-                parsed_url.port)).geturl(),
-        verify=False)
+    authenticated_url = parsed_url._replace(
+        netloc='{}:{}@[{}]:{}'.format(
+            self.connection_parameters['username'],
+            self.connection_parameters['password'],
+            parsed_url.hostname,
+            parsed_url.port,
+        )).geturl()
+    resp = requests.get(authenticated_url, verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+
+    # there's a public folder to serve file
+    with open('{}/srv/frontend-static/public/test_file'.format(
+        self.computer_partition_root_path), 'w') as f:
+      f.write("hello")
+    resp = requests.get(urljoin(authenticated_url, '/public/'), verify=False)
+    self.assertIn('test_file', resp.text)
+    resp = requests.get(
+        urljoin(authenticated_url, '/public/test_file'), verify=False)
+    self.assertEqual('hello', resp.text)
+
+    # there's a (not empty) favicon
+    resp = requests.get(
+        urljoin(authenticated_url, '/favicon.ico'), verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertTrue(resp.raw)
+
+  def test_theia_slapos(self):
+    # Make sure we can use the shell and the integrated slapos command
+    process = pexpect.spawnu(
+        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
+        env={'HOME': self.computer_partition_root_path})
+
+    # use a large enough terminal so that slapos proxy show table fit in the screen
+    process.setwinsize(5000, 5000)
+
+    process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
+    process.expect_exact('Standalone SlapOS for computer `local` activated')
+
+    # try to supply and install a software to check that this slapos is usable
+    process.sendline(
+        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg local'
+    )
+    process.expect(
+        'Requesting software installation of https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg...'
+    )
+
+    # we pipe through cat to disable pager and prevent warnings like
+    # WARNING: terminal is not fully functional
+    process.sendline('slapos proxy show | cat')
+    process.expect(
+        'https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
+    )
+
+    process.sendline('slapos node software')
+    process.expect(
+        'Installing software release https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg'
+    )
+    # interrupt this, we don't want to actually wait for software installation
+    process.sendcontrol('c')
+
+    # shutdown this slapos
+    process.sendline(
+        'supervisorctl -c {}/srv/slapos/etc/supervisord.conf shutdown'.format(
+            self.computer_partition_root_path))
+    process.expect('Shut down')
+
+    process.terminate()
+    process.wait()

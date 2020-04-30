@@ -7,19 +7,10 @@ from time import gmtime, strftime, time
 from unittest import TextTestResult
 from erp5.util import taskdistribution, testsuite
 
-{%- if prepend_path is defined %}
-PATH = os.environ['PATH']
-os.environ['PATH'] = {{ repr(prepend_path) }} + (PATH and os.pathsep + PATH)
-{%- endif %}
 os.environ['TEMP'] = {{ repr(tmpdir) }}
-os.environ['PYTHON'] = sys.executable
-os.environ['PYTHONPATH'] = os.pathsep.join(
-  sys.path[:-int(subprocess.check_output((
-    sys.executable, '-c', 'import sys;print(len(sys.path))')))])
 
-command = """set -e {{ gettext_location }}/lib
-make
-LD_RUN_PATH=$1 LIBRARY_PATH=$1 make test
+command = """. {{ cython_env_sh }}
+make all test
 """
 
 def parseTestStdOut(data):

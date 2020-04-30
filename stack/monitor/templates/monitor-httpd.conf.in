@@ -8,12 +8,13 @@ ThreadsPerChild 4
 
 ServerName example.com
 ServerAdmin someone@email
-<IfDefine !MonitorPort>
 Listen [{{ parameter_dict.get('listening-ip') }}]:{{ parameter_dict.get('port') }}
-Define MonitorPort
-</IfDefine>
 DocumentRoot "{{ directory.get('private') }}"
 ErrorLog "{{ parameter_dict.get('error-log') }}"
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+CustomLog "{{ parameter_dict.get('access-log') }}" common
+
+LoadModule log_config_module modules/mod_log_config.so
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so

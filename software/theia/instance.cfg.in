@@ -50,8 +50,10 @@ template = inline:
     tls {
       alpn http/1.1
     }
+    root $${directory:frontend-static}
+    browse
     proxy / $${theia-instance:base-url} {
-    #  transparent
+      except public $${favicon.ico:filename}
     }
     proxy /services $${theia-instance:base-url} {
       websocket
@@ -89,6 +91,29 @@ hash-files =
   $${frontend-instance:wrapper-path}
 wait-for-files = $${frontend-instance:pidfile}
 
+[favicon.ico]
+# generate a pseudo random favicon, different for each instance name.
+recipe = slapos.recipe.build
+install =
+  import hashlib, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  self.buildout['buildout']['offline'] = 'false'
+  try:
+    gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
+      '''$${slap-configuration:root-instance-title}'''
+    ).hexdigest() + "?s=256&d=retro"
+    shutil.copy(self.download(gravatar_url), '''$${:location}''')
+  except Exception:
+    # Because installation should work offline, if we can't download a favicon,
+    # just ignore this step.
+    self.logger.exception("Error while downloading favicon, using empty one")
+    open('''$${:location}''', 'w').close()
+  finally:
+    self.buildout['buildout']['offline'] = buildout_offline
+
+location = $${directory:frontend-static}/$${:filename}
+filename = $${:_buildout_section_name_}
+
 [user]
 recipe = slapos.cookbook:userinfo
 
@@ -96,7 +121,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port}
+  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_SHELL=$${theia-shell:wrapper-path} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
@@ -106,11 +131,37 @@ hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
 
+[theia-shell]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+# reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+# activate slapos configuration
+command-line =
+  ${bash:location}/bin/bash -c ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash"
+
+[slapos-standalone-activate]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+# XXX maybe standalone slapos should provide an activate script like virtualenv is doing?
+template =
+  inline:#!/bin/sh
+  export PATH=${buildout:bin-directory}:$PATH
+  ${slapos-standalone:script-path} $${directory:slapos} $${:ipv4} $${:ipv6} $${:port}
+  export SLAPOS_CONFIGURATION=$${directory:slapos}/etc/slapos.cfg
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+port = 4000
+
+
 [promises]
 recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${apache-frontend-url-available-promise:name}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -125,6 +176,13 @@ module = check_port_listening
 name = $${:_buildout_section_name_}.py
 config-hostname = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[apache-frontend-url-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${apache-frontend:connection-secure_access}
+config-check-secure = 1
 
 [apache-frontend]
 <= slap-connection
@@ -163,6 +221,7 @@ tmp = $${buildout:directory}/tmp
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
-framebuffer = $${:srv}/framebuffer
-fonts = $${:srv}/fonts
-home = $${:srv}/home
+project = $${:srv}/project
+slapos = $${:srv}/slapos
+frontend-static = $${:srv}/frontend-static
+frontend-static-public = $${:frontend-static}/public
