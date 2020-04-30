@@ -139,17 +139,6 @@ Example :
 	<parameter id="custom-frontend-basic-auth">true</parameter>
 	</instance>
 
-Git repositories :
-------------------
-
-It is easy to give access to your git repository/ies to everyone, or to clone it on your own computer. For this, fetch the git_url parameter returned by your webrunner instance. It should look like that : https://[IPV6]:PORT/git/YourRepo.git/
-
-To create the repo, go to the folder srv/runner/project and initiate a new git repo (git init/clone --bare YourRepo). Then, to clone the repo, just append its name to the previous URL.
-
-Please notice that your repositories are in public access for reading. However, an account is needed to push to the repository (use your webrunner account, or create a new user in the parameters section of the webrunner).
-
-For the moment, the PORT is the port of monitoring, which is 9685.
-
 Things to notice for the nex developer :
 ----------------------------------------
 
