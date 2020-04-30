@@ -99,6 +99,9 @@ perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
+fonts = {{ dumps(zope_fonts) }}
+fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
+template-fonts-conf = {{ dumps(template_fonts_conf) }}
 userhosts = {{ userhosts_location }}
 site-zcml = {{ site_zcml }}
 extra-path-list = {{ dumps(extra_path_list) }}
@@ -152,6 +155,8 @@ promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-querie
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
 mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
