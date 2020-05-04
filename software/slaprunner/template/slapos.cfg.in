@@ -21,6 +21,7 @@ pidfile_software =  {{slaprunner['pidfile-software']}}
 pidfile_instance =  {{slaprunner['pidfile-instance']}}
 
 [slapformat]
+input_definition_file = {{ slaprunner['slapformat-definition.cfg'] }}
 partition_amount = {{ slaprunner['partition-amount'] }}
 alter_user = false
 alter_network = false
