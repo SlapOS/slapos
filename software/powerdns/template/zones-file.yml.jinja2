@@ -100,6 +100,9 @@ domains:
           - %cc for American Samoa is 'as'
           - %cn for Asia is also 'as' #}
       default: ['%cc.country.{{ origin }}', '%cn.continent.{{ origin }}', '{{ slave['default'] }}.{{ origin }}']
-      # Split china's ip according to isp
-      # WIP
+
+      # Split China's ip addresses according to ISP
+      {%- for ip_range, country_code in china %}
+      {{ ip_range }}: {{ country_code }}.country.{{ origin }}
+      {%- endfor %}
     {%- endfor %}
