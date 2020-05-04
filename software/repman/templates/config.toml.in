@@ -1,3 +1,6 @@
+{% macro setbool(value) -%}
+{% if value in ['true', 'True'] %} true {% else %} false {% endif -%}
+{% endmacro -%}
 [Default]
 api-bind = "{{ parameter_dict['ipv4'] }}"
 http-bind-address = "{{ parameter_dict['ipv4'] }}"
@@ -8,7 +11,11 @@ monitoring-save-config = false
 api-https-bind = true
 api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
 include = "{{ parameter_dict['cluster-d'] }}"
-autorejoin = true
+autorejoin = {{ setbool(parameter_dict['autorejoin']) }}
+autoseed = {{ setbool(parameter_dict['autoseed']) }}
+{% if parameter_dict['autoseed'] in ['true', 'True'] -%}
+autorejoin-logical-backup = true
+{% endif -%}
 db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 # Database list of hosts to ignore in election
 #db-servers-ignored-hosts =
