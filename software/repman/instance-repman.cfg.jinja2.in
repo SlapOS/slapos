@@ -39,11 +39,28 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 
+[download-proxy-config]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!{{ bash_bin }}
+  NAME=$1
+  HOST=$2
+  PORT=$3
+  CONFIG=$4
+  if [ -z "$CONFIG" ]; then
+    CONFIG="${repman:proxies}/proxysql-$NAME.cnf"
+  fi
+  mkdir -p ${repman:config-tmp}/proxies
+  cd ${repman:config-tmp}/proxies
+  {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
+  tar -xzf proxies-$NAME.tar.gz
+  cp conf/proxysql.cnf $CONFIG
+rendered = ${directory:bin}/update-proxysql-config
+mode = 755
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
   "database-amount": 2, "proxysql-user": "external", "proxy-tags": "pkg,masterslave,linux,noreadwritesplit",
-  "logical-backup-cron": "0 1 * * 6", "physical-backup-cron": "0 0 * * *"}} -%}
+  "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
 {% for name, parameter_dict in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).items() -%}
 
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
@@ -164,12 +181,8 @@ stop-on-error = false
 config = ${repman:proxies}/proxysql-{{ name }}.cnf
 data = ${repman:proxy-data}/{{ name }}
 command =
-  mkdir -p ${repman:config-tmp}/proxies &&
   mkdir -p ${:data} &&
-  cd ${repman:config-tmp}/proxies &&
-  {{ curl_bin }} -o proxies.tar.gz ${nginx-parameter:repman-url}/api/clusters/{{ name }}/servers/{{ ipv4 }}/{{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}/config &&
-  tar -xzf proxies.tar.gz &&
-  cp conf/proxysql.cnf  ${:config}
+  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
 update-command = ${:command}
 
 [proxysql-{{ name }}-wrapper]
@@ -183,6 +196,23 @@ command-line =
 wrapper-path = ${directory:controller}/proxysql-{{ name }}
 wait-for-files =
   ${repman:bootstrap}/{{ name }}_bootstrapped
+depends =
+  {{ '${proxysql-' ~ name ~ '-admin-promise:recipe}' }}
+  {{ '${proxysql-' ~ name ~ '-promise:recipe}' }}
+
+[proxysql-{{ name }}-admin-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-{{ name }}-admin-port-listening
+config-hostname=  {{ ipv4 }}
+config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}
+
+[proxysql-{{ name }}-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-{{ name }}-port-listening
+config-hostname=  {{ ipv4 }}
+config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
@@ -256,6 +286,8 @@ ipv4 = ${instance-parameter:ipv4-random}
 username = admin
 password = ${publish-early:repman-password}
 cluster-d = ${repman:clusters}
+autorejoin = {{ slapparameter_dict.get("autorejoin", True) }}
+autoseed = {{ slapparameter_dict.get("autoseed", True) }}
 mysql-bin-dir = {{ mariadb_location }}/bin
 mysqlbinlog-path = {{ mariadb_location }}/bin/mysqlbinlog
 mysqlclient-path = {{ mariadb_location }}/bin/mysql
@@ -455,6 +487,7 @@ cluster-list = !py![{{ cluster_list | join(', ') }}]
 context =
   key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
   key repman_url          nginx-parameter:backend-url
+  key get_proxy_config    download-proxy-config:rendered
   key cluster_list        :cluster-list
   raw jq_bin              {{ jq_bin }}
   raw bash_bin           {{ bash_bin }}
