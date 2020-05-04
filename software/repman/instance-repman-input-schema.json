@@ -101,6 +101,18 @@
 			"type": "integer",
 			"default": 4
 		},
+		"autorejoin": {
+			"title": "Automatic rejoin a failed master",
+			"description": "Automatic rejoin a failed master (default true)",
+			"type": "boolean",
+			"default": true
+		},
+		"autoseed": {
+			"title": "Automatic join a standalone node",
+			"description": "Automatic join a standalone node",
+			"type": "boolean",
+			"default": true
+		},
 		"repman-cluster-dict": {
 			"title": "Replication Manager clusters definition",
 			"description": "Replication Manager clusters definition",
@@ -166,13 +178,13 @@
 							"title": "Mysqldump backup cron definition.",
 							"description": "Logical backup cron expression represents a set of times, using cron format.",
 							"type": "string",
-							"default": "0 1 * * 6"
+							"default": "0 21 * * *"
 						},
 						"physical-backup-cron": {
 							"title": "Mariabackup cron definition",
 							"description": "Physical backup cron expression represents a set of times, using cron format.",
 							"type": "string",
-							"default": "0 0 * * *"
+							"default": "0 1 * * *"
 						},
 						"proxy-cpu-cores": {
 							"title": "Proxy Cpu cores",
