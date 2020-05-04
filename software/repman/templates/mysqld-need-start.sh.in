@@ -11,6 +11,9 @@ curl () {
 CODE=$(curl -o /dev/null -w "%{http_code}" {{ repman_url }}/api/clusters/{{ cluster }}/servers/{{ db_host }}/{{ db_port }}/need-start)
 
 if [ $CODE -eq 200 ]; then
+  echo "$CODE: Updating mysql configuration..."
+  # update mysql configuration
+  {{ update_config }}
   echo "$CODE: Starting mariadb service..."
   # print current status, can be useful for debug...
   {{ mariadb_controller }} status mariadb
