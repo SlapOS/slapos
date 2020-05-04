@@ -30,9 +30,19 @@ import os
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+
+_setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+
+
+setup_module_executed = False
+def setUpModule():
+  # slapos.testing.testcase's only need to be executed once
+  global setup_module_executed
+  if not setup_module_executed:
+    _setUpModule()
+  setup_module_executed = True
 
 
 class ERP5InstanceTestCase(SlapOSInstanceTestCase):
