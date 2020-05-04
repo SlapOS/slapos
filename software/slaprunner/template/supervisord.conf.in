@@ -58,6 +58,34 @@ stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
 environment = PATH="{{- supervisord['path'] -}}"
 
+[program:{{- supervisord['slapboot'] -}}]
+command = {{ supervisord['slapboot-command'] }}
+process_name = {{ supervisord['slapboot'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['autostart'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+startretries = {{ supervisord['slapboot-startretries'] }}
+startsecs = {{ supervisord['startsecs'] }}
+autorestart = {{ supervisord['autorestart'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"
+
+[program:{{- supervisord['slapbang'] -}}]
+command = {{ supervisord['slapbang-command'] }}
+process_name = {{ supervisord['slapbang'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['autostart'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+startretries = {{ supervisord['slapbang-startretries'] }}
+startsecs = {{ supervisord['startsecs'] }}
+autorestart = {{ supervisord['autorestart'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"
+
 [program:{{- supervisord['slapproxy'] -}}]
 command = {{ supervisord['slapproxy-command'] }}
 process_name = {{ supervisord['slapproxy'] }}
