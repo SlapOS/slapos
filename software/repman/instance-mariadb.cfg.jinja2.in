@@ -21,6 +21,7 @@ recipe = slapos.cookbook:publish.serialised
 database-host = {{ host }}:{{ port }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 partition-path = ${buildout:directory}
+receiver-port = ${dbjob-parameter:socat-port}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
@@ -250,11 +251,13 @@ dbjob-cnf = ${directory:etc}/mysql/my.cnf
 log-dir = ${directory:mysql}/.system/logs
 tmp-dir = ${directory:tmp}
 mysqld-socket  = ${my-cnf-parameters:socket}
-socat-port = {{ port + 1 }}
+socat-port = {{ int(port) + 9 }}
 restart-script = ${mysqld-restart-script:rendered}
 socat-location = {{ parameter_dict['socat-location'] }}
 mysql-location = {{ parameter_dict['mariadb-location'] }}
+gzip-location = {{ parameter_dict['gzip-location'] }}
 ip = {{ ip }}
+ipv4 = {{ (ipv4_set | list)[0] }}
 port = {{ port }}
 
 [dbjobs-executable]
