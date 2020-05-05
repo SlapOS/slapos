@@ -7,9 +7,9 @@ SLOWLOG={{ parameter_dict['mysql-dir']}}/.system/logs/sql-slow
 BACKUPDIR={{ parameter_dict['mysql-dir'] }}/.system/backup
 DATADIR={{ parameter_dict['mysql-dir'] }}/
 {% if parameter_dict['use-ipv6'] == True -%}
-{% set listen = "TCP6:LISTEN" -%}
+{% set listen = "TCP6-LISTEN" -%}
 {% else -%}
-{% set listen = "TCP:LISTEN" -%}
+{% set listen = "TCP-LISTEN" -%}
 {% endif -%}
 export PATH={{ parameter_dict['socat-location'] }}/bin:{{ parameter_dict['mysql-location'] }}/bin:{{ parameter_dict['gzip-location'] }}/bin:$PATH
 JOBS=( "xtrabackup" "mariabackup" "error" "slowquery" "zfssnapback" "optimize" "reseedxtrabackup" "reseedmariabackup" "reseedmysqldump" "flashbackxtrabackup" "flashbackmariadbackup" "flashbackmysqldump" "stop" "start")
@@ -78,13 +78,13 @@ do
       reseedmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
         mysql --defaults-file={{ parameter_dict['dbjob-cnf'] }}  -e 'start slave;'
       ;;
       flashbackmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
        mysql --defaults-file={{ parameter_dict['dbjob-cnf'] }}  -e 'start slave;'
       ;;
       reseedmariabackup)
