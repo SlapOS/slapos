@@ -257,8 +257,9 @@ socat-location = {{ parameter_dict['socat-location'] }}
 mysql-location = {{ parameter_dict['mariadb-location'] }}
 gzip-location = {{ parameter_dict['gzip-location'] }}
 ip = {{ ip }}
-ipv4 = {{ (ipv4_set | list)[0] }}
+host = {{ host }}
 port = {{ port }}
+use-ipv6 = {{ dumps(use_ipv6) }}
 
 [dbjobs-executable]
 < = jinja2-template-executable
