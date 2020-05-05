@@ -756,7 +756,13 @@ data-to-vm =
 keyboard-layout-language = fr
 
 {% for k, v in slapparameter_dict.items() -%}
+{% if k == 'authorized-key' and v -%}
+{% set key_list =  v.split('\n') -%}
+{{ k }} =
+  {{ key_list | join('\n  ') }}
+{% else -%}
 {{ k }} = {{ v }}
+{% endif -%}
 {% endfor -%}
 
 #############################
