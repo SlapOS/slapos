@@ -6,6 +6,11 @@ ERROLOG={{ parameter_dict['mysql-dir'] }}/.system/logs/errors.log
 SLOWLOG={{ parameter_dict['mysql-dir']}}/.system/logs/sql-slow
 BACKUPDIR={{ parameter_dict['mysql-dir'] }}/.system/backup
 DATADIR={{ parameter_dict['mysql-dir'] }}/
+{% if parameter_dict['use-ipv6'] == True -%}
+{% set listen = "TCP6:LISTEN" -%}
+{% else -%}
+{% set listen = "TCP:LISTEN" -%}
+{% endif -%}
 export PATH={{ parameter_dict['socat-location'] }}/bin:{{ parameter_dict['mysql-location'] }}/bin:{{ parameter_dict['gzip-location'] }}/bin:$PATH
 JOBS=( "xtrabackup" "mariabackup" "error" "slowquery" "zfssnapback" "optimize" "reseedxtrabackup" "reseedmariabackup" "reseedmysqldump" "flashbackxtrabackup" "flashbackmariadbackup" "flashbackmysqldump" "stop" "start")
 
@@ -53,6 +58,7 @@ partialRestore()
 }
 
 kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP:LISTEN)
+kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP6:LISTEN)
 
 for job in "${JOBS[@]}"
 do
@@ -72,13 +78,13 @@ do
       reseedmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u TCP-LISTEN:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['ipv4'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
         mysql --defaults-file={{ parameter_dict['dbjob-cnf'] }}  -e 'start slave;'
       ;;
       flashbackmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u TCP-LISTEN:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['ipv4'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
        mysql --defaults-file={{ parameter_dict['dbjob-cnf'] }}  -e 'start slave;'
       ;;
       reseedmariabackup)
@@ -86,7 +92,7 @@ do
        mkdir $BACKUPDIR
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u TCP-LISTEN:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['ipv4'] }},reuseaddr STDOUT | mbstream -x -C $BACKUPDIR
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | mbstream -x -C $BACKUPDIR
        # mbstream -p, --parallel
        mariabackup --prepare --export --target-dir=$BACKUPDIR
        partialRestore
@@ -96,7 +102,7 @@ do
        mkdir $BACKUPDIR
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u TCP-LISTEN:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['ipv4'] }},reuseaddr STDOUT | xbstream -x -C $BACKUPDIR
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | xbstream -x -C $BACKUPDIR
        mariabackup --prepare --export --target-dir=$BACKUPDIR
        partialRestore
       ;;
