@@ -142,7 +142,7 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return = 
   url
-{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
   url-additional
 {% endif %}
   backend-url
@@ -170,7 +170,7 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
-{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
 {% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
 {% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}

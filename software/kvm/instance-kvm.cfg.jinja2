@@ -1,4 +1,4 @@
-{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
+{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
 {% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
 {% set use_tap = slapparameter_dict.get('use-tap', True) -%}
 {% set use_nat = slapparameter_dict.get('use-nat', True) -%}
