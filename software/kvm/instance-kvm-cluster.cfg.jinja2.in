@@ -40,7 +40,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 # Request kvm instances
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
 {% set section = 'request-' ~ instance_name -%}
-{% set use_nat = kvm_parameter_dict.get('use-nat', 'True') -%}
+{% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
 [{{ section }}]
 <= request-common
 software-type = kvm
@@ -97,7 +97,7 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
 {{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
 config-publish-nat-url = True
-config-use-nat = {{ use_nat }}
+config-use-nat = {{ dumps(use_nat) }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
 config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
 config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
@@ -146,7 +146,7 @@ return =
   url-additional
 {% endif %}
   backend-url
-{% if str(use_nat).lower() == 'true' -%}
+{% if use_nat -%}
 {%   for port in nat_rules_list -%}
 {%     if ':' in port -%}
 {%       set proto, port = port.split(':') -%}
