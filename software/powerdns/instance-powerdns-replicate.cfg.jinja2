@@ -151,7 +151,7 @@ key_file = ${slap-connection:key-file}
 cert_file = ${slap-connection:cert-file}
 
 [slap-parameter]
-slave_instance_list =
--dns-quantity = 1
--dns-type = single-default
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
 {%- endif %}
