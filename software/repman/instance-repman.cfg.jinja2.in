@@ -8,7 +8,7 @@
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
-{% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog" -%}
+{% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime,readcommitted,nohandshake" -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 
 [directory]
@@ -67,6 +67,7 @@ mode = 755
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
 {% do mariadb_dict.__setitem__('use-ipv6', parameter_dict.get('use-ipv6', True)) -%}
 
+{% set database_list = parameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
 # Request mariadb instances
 {% set db_amount = parameter_dict.get('database-amount', 2) -%}
 {% if db_amount < 2 -%}
@@ -94,6 +95,7 @@ config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
 config-name = {{ dbname }}
+config-database-list = {{ dumps(database_list) }}
 return = 
   database-host
   receiver-port
@@ -220,13 +222,26 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "environment": []} %}
+  "stopwaitsecs": 60, "environment": [],
+  "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
+  "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
 
 {{ supervisord_lib.supervisord_program(proxysql_controller, service_name, proxysql_dict) }}
 {% do part_list.append(proxysql_controller ~ "-" ~ service_name) %}
 
 {% do part_list.append('config-' ~ name) -%}
 {% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
+
+{% set publish_database_list = [] -%}
+{% for database in database_list -%}
+{%   if database.get('user') -%}
+{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
+{%   else -%}
+{%     do publish_database_list.append("mysql://" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
+{%   endif -%}
+{% endfor -%}
+
+{% do publish_dict.__setitem__(name ~ '-database-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
 {% endfor -%}
 
 [slap-configuration]
@@ -256,6 +271,7 @@ proxies  = ${:etc}/proxy
 proxy-data = ${:data-dir}/proxy
 config-tmp = ${directory:tmp}/config
 bootstrap = ${:etc}/bootstrap
+proxies-log = ${directory:log}/proxy
 
 [nginx-parameter]
 ipv6 = ${instance-parameter:ipv6-random}

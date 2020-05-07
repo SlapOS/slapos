@@ -58,7 +58,6 @@ partialRestore()
 }
 
 kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP:LISTEN)
-kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP6:LISTEN)
 
 for job in "${JOBS[@]}"
 do
@@ -78,7 +77,7 @@ do
       reseedmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="reset master;set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
         mysql --defaults-file={{ parameter_dict['dbjob-cnf'] }}  -e 'start slave;'
       ;;
       flashbackmysqldump)
@@ -112,11 +111,9 @@ do
       ;;
       error)
        cat $ERROLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
-       > $ERROLOG
       ;;
       slowquery)
        cat $SLOWLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
-       > $SLOWLOG
       ;;
       optimize)
        mysqlcheck --defaults-file={{ parameter_dict['dbjob-cnf'] }} -o --all-databases --skip-write-binlog &>{{ parameter_dict['log-dir'] }}/dbjob.out

@@ -10,7 +10,7 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
-{% set database_list = slapparameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set database_list = slapparameter_dict['database-list'] -%}
 
 # XXX- TODO: add cron with check db need restart then restart
 # API check restard needed: http://repman/api/clusters/{clusterName}/servers/{serverName}/{serverPort}/need-restart
@@ -26,17 +26,8 @@ receiver-port = ${dbjob-parameter:socat-port}
 [publish-early]
 recipe = slapos.cookbook:publish-early
 -init =
-  server-id gen-server-id:value
-{%- set server_id = slapparameter_dict.get('server-id') %}
-{%- if server_id %}
-server-id = {{ dumps(server_id) }}
-{%- endif %}
-database-list = {{ dumps(database_list) }}
 
-[gen-server-id]
-recipe = slapos.cookbook:random.integer
-minimum = {{ dumps(1) }}
-maximum = {{ dumps(2**32 - 1) }}
+database-list = {{ dumps(database_list) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -67,14 +58,14 @@ socket = ${directory:run}/mariadb.sock
 ip = {{ ip }}
 data-directory = ${directory:srv}/mariadb
 pid-file = ${directory:run}/mariadb.pid
-max-connection-count = {{ dumps(slapparameter_dict.get('max-connection-count', 1000)) }}
+plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
+groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
 innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
-server-id = ${publish-early:server-id}
 ssl-crt = ${directory:mariadb-ssl}/crt.pem
 ssl-key = ${directory:mariadb-ssl}/key.pem
 ssl-ca-crt = ${certificate-authority:ca-dir}/cacert.pem
@@ -95,6 +86,7 @@ mode = 600
 [init-script-parameters]
 password = {{ slapparameter_dict['root-password'] }}
 database-list = {{ dumps(database_list) }}
+mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 root-user = repman
 
 [init-script]
@@ -136,6 +128,7 @@ context =
   key datadir my-cnf-parameters:data-directory
   key environ :environ
 environ =
+  GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
   ODBCSYSINI='${directory:etc}'
   LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
   {%- for variable in slapparameter_dict.get('environment-variables', ()) %}
@@ -170,12 +163,11 @@ template = inline:{% raw -%}
   {%- endraw %}
 context = section parameter_dict odbc-ini-text
 
-# XXX - probably not needed anymore, to check
-#[logrotate-entry-mariadb]
-#< = logrotate-entry-base
-#name = mariadb
-#log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-#post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
+[{{ section('logrotate-entry-mariadb') }}]
+< = logrotate-entry-base
+name = mariadb
+log = ${dbjob-parameter:log-dir}/errors.log ${dbjob-parameter:log-dir}/sql-errors
+post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link

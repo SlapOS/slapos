@@ -87,7 +87,7 @@
 			"title": "Provisioning db tags",
 			"description": "Provisioning db tags",
 			"type": "string",
-			"default": "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog"
+			"default": "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime,readcommitted,nohandshake"
 		},
 		"http-session-lifetime": {
 			"title": "Web Session life time in s",
