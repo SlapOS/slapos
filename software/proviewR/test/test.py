@@ -44,6 +44,7 @@ bases[0]._instance_parameter_dict = {}
 
 
 class TestProviewR(SlapOSInstanceTestCase):
+  __partition_reference__ = 'p'
   def setUp(self):
     self.connection_dict = self.computer_partition.getConnectionParameterDict()
 
