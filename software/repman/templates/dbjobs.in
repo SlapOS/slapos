@@ -58,7 +58,6 @@ partialRestore()
 }
 
 kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP:LISTEN)
-kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP6:LISTEN)
 
 for job in "${JOBS[@]}"
 do

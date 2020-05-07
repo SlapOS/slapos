@@ -5,6 +5,7 @@
   "software-type": {
     "default": {
       "title": "Default",
+      "serialisation": "json-in-xml",
       "description": "Replication Manager",
       "request": "instance-repman-input-schema.json",
       "response": "instance-repman-output-schema.json",
