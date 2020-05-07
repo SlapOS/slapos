@@ -220,7 +220,9 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "environment": []} %}
+  "stopwaitsecs": 60, "environment": [],
+  "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
+  "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
 
 {{ supervisord_lib.supervisord_program(proxysql_controller, service_name, proxysql_dict) }}
 {% do part_list.append(proxysql_controller ~ "-" ~ service_name) %}
@@ -256,6 +258,7 @@ proxies  = ${:etc}/proxy
 proxy-data = ${:data-dir}/proxy
 config-tmp = ${directory:tmp}/config
 bootstrap = ${:etc}/bootstrap
+proxies-log = ${directory:log}/proxy
 
 [nginx-parameter]
 ipv6 = ${instance-parameter:ipv6-random}
