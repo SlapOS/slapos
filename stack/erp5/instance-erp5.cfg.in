@@ -204,6 +204,7 @@ config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
+config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
@@ -254,7 +255,6 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 {%   endif -%}
