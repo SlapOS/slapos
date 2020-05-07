@@ -11,15 +11,8 @@
 #sql_mode="NO_ENGINE_SUBSTITUTION"
 
 socket = {{ socket }}
-bind_address = {{ parameter_dict['ip'] }}
 datadir = {{ parameter_dict['data-directory'] }}
 pid_file = {{ parameter_dict['pid-file'] }}
-
-default_time_zone = '+00:00'
-
-plugin_load = ha_mroonga
-
-max_connections = {{ parameter_dict['max-connection-count'] }}
 
 {% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
 {% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}
@@ -33,8 +26,10 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 # very important to allow parallel indexing
 # Note: this is compatible with binlog-based incremental backups, because ERP5
 # doesn't use "insert ... select" (in any number of queries) pattern.
-innodb_locks_unsafe_for_binlog = 1
+# innodb_locks_unsafe_for_binlog = 1
 
+#plugin_load = ha_mroonga
+plugin-dir = {{ parameter_dict['plugin-directory'] }}
 
 {% if 'ssl-key' in parameter_dict -%}
 ssl
@@ -51,8 +46,6 @@ ssl-cipher = {{ parameter_dict['ssl-cipher'] }}
 {%-  endif %}
 {%- endif %}
 
-#server_id = {{ parameter_dict['server-id'] }}
-
 
 # Some dangerous settings you may want to uncomment temporarily
 # if you only want performance or less disk access.
@@ -62,10 +55,7 @@ ssl-cipher = {{ parameter_dict['ssl-cipher'] }}
 {{x}}innodb_doublewrite = 0
 {{x}}sync_frm = 0
 
-# Force utf8 usage
-character_set_server = utf8mb4
-collation_server = utf8mb4_general_ci
-skip_character_set_client_handshake
+# skip_character_set_client_handshake
 
 
 [client]
