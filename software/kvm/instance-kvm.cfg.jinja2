@@ -1,12 +1,11 @@
-{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
-{% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
-{% set use_tap = slapparameter_dict.get('use-tap', 'True').lower() -%}
-{% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
-{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', 'False').lower() -%}
-{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
+{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
+{% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
+{% set use_tap = slapparameter_dict.get('use-tap', True) -%}
+{% set use_nat = slapparameter_dict.get('use-nat', True) -%}
+{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', False) -%}
+{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', False) -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
-{% set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() -%}
+{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', True) -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
@@ -116,7 +115,7 @@ tap-mac-address = ${create-tap-mac:mac-address}
 use-tap = ${slap-parameter:use-tap}
 use-nat = ${slap-parameter:use-nat}
 nat-rules = {{ nat_rule_list }}
-nat-restrict= {{ nat_restrict }}
+nat-restrict= {{ dumps(nat_restrict) }}
 enable-vhost = ${slap-parameter:enable-vhost}
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
@@ -137,7 +136,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if enable_http == 'true' -%}
+{% if enable_http -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
@@ -187,7 +186,7 @@ wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-{% if use_nat == 'true' and nat_rule_list -%}
+{% if use_nat and nat_rule_list -%}
 {%   for port in nat_rule_list.split(' ') -%}
 {%     if ':' in port -%}
 {%       set proto, port = port.split(':') -%}
@@ -253,7 +252,7 @@ module = check_command_execute
 name = kvm-disk-image-corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}
 
-{% if wipe_disk == 'true' -%}
+{% if wipe_disk -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
 {% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
 {% if storage_dict -%}
@@ -418,7 +417,7 @@ name = frontend_additional_promise.py
 config-url = ${publish-connection-information:url-additional}
 {% endif %}
 
-{% if enable_http == 'true' %}
+{% if enable_http %}
 [httpd]
 recipe = slapos.cookbook:simplehttpserver
 host = ${slap-network-information:local-ipv4}
@@ -470,7 +469,7 @@ url-additional = ${request-slave-frontend-additional:connection-secure_access}/v
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
-{% if use_nat == 'true' -%}
+{% if use_nat -%}
 {%   set iface = 'ens4' -%}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
@@ -488,14 +487,14 @@ nat-rule-url-{{proto}}-{{port}} = [${slap-network-information:global-ipv6}]:${6t
 {%     endfor -%}
 {%   endif -%}
 {% endif -%}
-{% if use_tap == 'true' -%}
+{% if use_tap -%}
 tap-ipv4 = {{ slap_configuration.get('tap-ipv4-addr', '') }}
 tap-ipv6 = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
-{% if enable_http == 'true' %}
-{%   if use_nat == 'true' -%}
+{% if enable_http %}
+{%   if use_nat -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
@@ -503,7 +502,7 @@ key_info = Get the publick key file in your VM with the command: wget {{ kvm_htt
 {%   endif %}
 {% endif %}
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 ipv4-network-info =
   PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
@@ -511,7 +510,7 @@ ipv4-network-info =
   	address {{ slap_configuration.get('tap-ipv4-addr') }}
   	netmask {{ slap_configuration.get('tap-ipv4-netmask') }}
   	gateway {{ slap_configuration.get('tap-ipv4-gateway') }}
-{% if enable_http == 'true' %}
+{% if enable_http %}
   ${helper:blank-line}
   TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -"
   (the configuration will be gone after the next reboot)
@@ -519,14 +518,14 @@ ipv4-network-info =
 {% endif %}
 
 ipv6-network-info =
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr') %}
+{% if use_tap and slap_configuration.get('tap-ipv6-addr') %}
   PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
   iface {{ iface }} inet6 static
   	address {{ slap_configuration.get('tap-ipv6-gateway') }}
   	netmask {{ slap_configuration.get('tap-ipv6-network').split('/')[1] }}
   	gateway {{ slap_configuration.get('tap-ipv6-addr') }}
-{% if enable_http == 'true' %}
+{% if enable_http %}
   ${helper:blank-line}
   TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -"
   (the configuration will be gone after the next reboot)
@@ -534,14 +533,14 @@ ipv6-network-info =
 {% endif %}
 
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 [network-config-ipv4]
 recipe = plone.recipe.command
 filename = netconfig.sh
 path = ${directory:public}/${:filename}
 ipv4-add-address = ip -4 address add {{ slap_configuration.get('tap-ipv4-addr') }}/{{ slap_configuration.get('tap-ipv4-netmask') }} dev \$IFACE noprefixroute
 ipv4-add-gateway-route = ip -4 address add {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
-{%   if nat_restrict == 'true' -%}
+{%   if nat_restrict -%}
 ipv4-add-default-route = ip route add default via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
 {%   elif global_ipv4_prefix -%}
 ipv4-add-default-route = ip route add {{ global_ipv4_prefix }} via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE src {{ slap_configuration.get('tap-ipv4-addr') }}
@@ -564,7 +563,7 @@ command =
 update-command = ${:command}
 {% endif -%}
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv6-addr') -%}
 [network-config-ipv6]
 recipe = plone.recipe.command
 filename = ipv6_config.sh
@@ -602,7 +601,7 @@ mode = {{ mode }}
 {{   writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
 {% endif -%}
 
-{% if use_tap == 'true' and nat_restrict == 'true' -%}
+{% if use_tap and nat_restrict -%}
 # Ask to set default to tap interface in the vm
 {{ writefile('set-default-interface', '${directory:public}/delDefaultIface', iface, '600') }}
 {% do part_list.append('set-default-interface') -%}
@@ -611,7 +610,7 @@ mode = {{ mode }}
 [publish-host-config]
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 local-ipv4 = {{ slap_configuration['tap-ipv4-addr'] }}
 gateway = {{ slap_configuration.get('tap-ipv4-gateway') }}
 netmask = {{ slap_configuration.get('tap-ipv4-network') }}
@@ -679,7 +678,7 @@ context =
 
 [ansible-vm-promise]
 <= monitor-promise-base
-module = check_execute_comand
+module = check_command_execute
 name = ansible_{{ name }}.py
 config-command = ${ansible-vm-bin:rendered}
 
@@ -756,7 +755,13 @@ data-to-vm =
 keyboard-layout-language = fr
 
 {% for k, v in slapparameter_dict.items() -%}
+{% if k == 'authorized-key' and v -%}
+{% set key_list =  v.split('\n') -%}
+{{ k }} =
+  {{ key_list | join('\n  ') }}
+{% else -%}
 {{ k }} = {{ v }}
+{% endif -%}
 {% endfor -%}
 
 #############################
@@ -769,12 +774,12 @@ keyboard-layout-language = fr
 # Set Additionals parts
 {%   do part_list.append('cluster-url-path') -%}
 {% endif -%}
-{% if enable_http == 'true' %}
+{% if enable_http %}
 {%   do part_list.extend(['httpd', 'httpd-service', 'httpd-promise', 'publish-host-config']) -%}
 {% if slapparameter_dict.get('data-to-vm', '') %}
 {%   do part_list.append('vm-data-content') -%}
 {% endif -%}
-{% if disable_ansible_promise == 'false' %}
+{% if not disable_ansible_promise %}
 {%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
 {% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}
