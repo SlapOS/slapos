@@ -592,3 +592,21 @@ Then specify in the master instance parameters:
 
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
+
+Technical notes
+===============
+
+Instantiated cluster structure
+------------------------------
+
+Instantiating caddy-frontend results with a cluster in various partitions:
+
+ * master (the controlling one)
+ * kedifa (contains kedifa server)
+ * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
+
+So it means sites are served in `caddy-frontend-N` partition, and this partition is structured as:
+
+ * Caddy serving the browser
+ * (optional) Apache Traffic Server for caching
+ * Caddy connected to the backend
