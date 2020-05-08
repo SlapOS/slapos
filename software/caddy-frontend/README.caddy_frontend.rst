@@ -610,3 +610,14 @@ So it means sites are served in `caddy-frontend-N` partition, and this partition
  * Caddy serving the browser
  * (optional) Apache Traffic Server for caching
  * Caddy connected to the backend
+
+Kedifa implementation
+---------------------
+
+`Kedifa <https://lab.nexedi.com/nexedi/kedifa>`_ server runs on kedifa partition.
+
+Each `caddy-frontend-N` partition downloads certificates from the kedifa server.
+
+Caucase (exposed by ``kedifa-caucase-url`` in master partition parameters) is used to handle certificates for authentication to kedifa server.
+
+If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each caddy-frontend-N node.
