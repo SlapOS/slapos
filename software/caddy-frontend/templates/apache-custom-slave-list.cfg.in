@@ -42,6 +42,10 @@ create = true
 {%   set slave_kedifa_information = {} %}
 {% endif %}
 
+# empty sections if no slaves are available
+[slave-log-directory-dict]
+[slave-password]
+
 # empty section if no cached slaves are available
 [slave-log-cache-direct-directory-dict]
 
