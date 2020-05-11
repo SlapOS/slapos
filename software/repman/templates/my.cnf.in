@@ -11,15 +11,8 @@
 #sql_mode="NO_ENGINE_SUBSTITUTION"
 
 socket = {{ socket }}
-bind_address = {{ parameter_dict['ip'] }}
 datadir = {{ parameter_dict['data-directory'] }}
 pid_file = {{ parameter_dict['pid-file'] }}
-
-default_time_zone = '+00:00'
-
-plugin_load = ha_mroonga
-
-max_connections = {{ parameter_dict['max-connection-count'] }}
 
 {% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
 {% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}
@@ -62,9 +55,6 @@ ssl-cipher = {{ parameter_dict['ssl-cipher'] }}
 {{x}}innodb_doublewrite = 0
 {{x}}sync_frm = 0
 
-# Force utf8 usage
-character_set_server = utf8mb4
-collation_server = utf8mb4_general_ci
 skip_character_set_client_handshake
 
 

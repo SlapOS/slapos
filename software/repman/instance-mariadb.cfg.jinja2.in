@@ -10,7 +10,7 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
-{% set database_list = slapparameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set database_list = slapparameter_dict['database-list'] -%}
 
 # XXX- TODO: add cron with check db need restart then restart
 # API check restard needed: http://repman/api/clusters/{clusterName}/servers/{serverName}/{serverPort}/need-restart
@@ -170,12 +170,11 @@ template = inline:{% raw -%}
   {%- endraw %}
 context = section parameter_dict odbc-ini-text
 
-# XXX - probably not needed anymore, to check
-#[logrotate-entry-mariadb]
-#< = logrotate-entry-base
-#name = mariadb
-#log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-#post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
+[{{ section('logrotate-entry-mariadb') }}]
+< = logrotate-entry-base
+name = mariadb
+log = ${dbjob-parameter:log-dir}/errors.log ${dbjob-parameter:log-dir}/sql-errors
+post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
