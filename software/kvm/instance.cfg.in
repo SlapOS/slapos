@@ -88,8 +88,8 @@ extra-context =
   raw netcat_bin ${netcat:location}/bin/netcat
   raw python_executable ${buildout:executable}
   raw python_eggs_executable ${buildout:bin-directory}/${python-with-eggs:interpreter}
-  raw qemu_executable_location ${kvm:location}/bin/qemu-system-x86_64
-  raw qemu_img_executable_location ${kvm:location}/bin/qemu-img
+  raw qemu_executable_location ${qemu:location}/bin/qemu-system-x86_64
+  raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
   raw qemu_start_promise_tpl ${template-qemu-ready:location}/${template-qemu-ready:filename}
   raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
   raw template_httpd_cfg ${template-httpd:rendered}
@@ -144,7 +144,7 @@ extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
-    raw qemu_location ${kvm:location}
+    key qemu_location qemu:location
     raw template_kvm_import ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
     key pbsready_import_template template-pbsready-import:rendered
     key slapparameter_dict slap-configuration:configuration
@@ -161,7 +161,7 @@ context =
   key slapparameter_dict slap-configuration:configuration
   key eggs_directory buildout:eggs-directory
   key develop_eggs_directory buildout:develop-eggs-directory
-  raw qemu_nbd_executable_location ${kvm:location}/bin/qemu-nbd
+  raw qemu_nbd_executable_location ${qemu:location}/bin/qemu-nbd
   raw dash_executable_location ${dash:location}/bin/dash
   raw onetimeupload_executable_location ${buildout:bin-directory}/onetimeupload
   raw template_monitor ${monitor2-template:rendered}
