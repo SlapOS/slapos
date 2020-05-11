@@ -26,7 +26,6 @@ data = ${:var}/lib
 nginx-prefix = ${:var}/nginx
 tmp = ${:home}/tmp
 
-
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-controller" -%}
 {{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
