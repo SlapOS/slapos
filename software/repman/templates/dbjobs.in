@@ -111,11 +111,9 @@ do
       ;;
       error)
        cat $ERROLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
-       > $ERROLOG
       ;;
       slowquery)
        cat $SLOWLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
-       > $SLOWLOG
       ;;
       optimize)
        mysqlcheck --defaults-file={{ parameter_dict['dbjob-cnf'] }} -o --all-databases --skip-write-binlog &>{{ parameter_dict['log-dir'] }}/dbjob.out
