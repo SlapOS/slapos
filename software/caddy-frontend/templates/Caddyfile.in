@@ -4,7 +4,7 @@ import {{frontend_configuration.get('log-access-configuration')}}
 import {{ slave_configuration_directory }}/*.conf
 import {{ slave_with_cache_configuration_directory }}/*.conf
 
-{% for port in [https_port, ssl_cached_port] %}
+{% for port in [https_port] %}
 :{{ port }} {
   tls {{ master_certificate }} {{ master_certificate }}
   bind {{ local_ipv4 }}
@@ -19,7 +19,7 @@ import {{ slave_with_cache_configuration_directory }}/*.conf
 }
 {%- endfor %}
 
-{% for port in [http_port, cached_port] %}
+{% for port in [http_port, cached_port, ssl_cached_port] %}
 :{{ port }} {
   bind {{ local_ipv4 }}
   status 404 /
