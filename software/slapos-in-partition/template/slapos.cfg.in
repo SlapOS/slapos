@@ -20,4 +20,3 @@ input_definition_file = ${:computer-definition-file}
 computer_xml = ${:computer-xml}
 partition_amount = ${:partition-amount}
 create_tap = false
-

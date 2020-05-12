@@ -47,4 +47,3 @@ backup = ${:srv}/backup
 etc = ${buildout:directory}/etc
 services = ${:etc}/service
 log = ${buildout:directory}/var/log
-
