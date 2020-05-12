@@ -1,11 +1,11 @@
 {% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
-{% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
-{% set use_tap = slapparameter_dict.get('use-tap', True) -%}
-{% set use_nat = slapparameter_dict.get('use-nat', True) -%}
-{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', False) -%}
-{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', False) -%}
+{% set enable_http = str(slapparameter_dict.get('enable-http-server', False)).lower() == 'true' -%}
+{% set use_tap = str(slapparameter_dict.get('use-tap', True)).lower() == 'true' -%}
+{% set use_nat = str(slapparameter_dict.get('use-nat', True)).lower() == 'true' -%}
+{% set wipe_disk = str(slapparameter_dict.get('wipe-disk-ondestroy', False)).lower() == 'true' -%}
+{% set nat_restrict = str(slapparameter_dict.get('nat-restrict-mode', False)).lower() == 'true' -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', True) -%}
+{% set disable_ansible_promise = str(slapparameter_dict.get('disable-ansible-promise', True)).lower() == 'true' -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}

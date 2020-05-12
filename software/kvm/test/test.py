@@ -352,7 +352,13 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
+    result = requests.get(connection_parameter_dict['test-machine1-url'], verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+    self.assertIn('<title>noVNC</title>', result.text)
+    result = requests.get(connection_parameter_dict['test-machine2-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
