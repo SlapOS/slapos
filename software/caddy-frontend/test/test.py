@@ -500,7 +500,7 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile.write(response)
 
 
-class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
+class HttpFrontendTestCase(SlapOSInstanceTestCase):
   # show full diffs, as it is required for proper analysis of problems
   maxDiff = None
 
@@ -508,184 +508,10 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'T-'
 
   @classmethod
-  def callSupervisorMethod(cls, method, *args, **kwargs):
-    with cls.slap.instance_supervisor_rpc as instance_supervisor:
-      return getattr(instance_supervisor, method)(*args, **kwargs)
-
-  @classmethod
-  def requestSlaves(cls):
-    software_url = cls.getSoftwareURL()
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
-      cls.logger.debug(
-        'requesting slave "%s" software:%s parameters:%s',
-        slave_reference, software_url, partition_parameter_kw)
-      cls.slap.request(
-        software_release=software_url,
-        partition_reference=slave_reference,
-        partition_parameter_kw=partition_parameter_kw,
-        shared=True
-      )
-
-  @classmethod
   def getInstanceSoftwareType(cls):
     # Because of unknown problem yet, the root instance software type changes
     # from RootSoftwareInstance to '', so always request it with given type
     return "RootSoftwareInstance"
-
-  @classmethod
-  def requestDefaultInstance(cls, state='started'):
-    default_instance = super(
-      SlaveHttpFrontendTestCase, cls).requestDefaultInstance(state=state)
-    if state != 'destroyed':
-      cls.requestSlaves()
-    return default_instance
-
-  @classmethod
-  def setUpClass(cls):
-    try:
-      cls.createWildcardExampleComCertificate()
-      cls.startServerProcess()
-    except BaseException:
-      cls.logger.exception("Error during setUpClass")
-      cls._cleanup("{}.{}.setUpClass".format(cls.__module__, cls.__name__))
-      cls.setUp = lambda self: self.fail('Setup Class failed.')
-      raise
-
-    super(SlaveHttpFrontendTestCase, cls).setUpClass()
-
-    try:
-      # expose instance directory
-      cls.instance_path = cls.slap.instance_directory
-      # expose software directory, extract from found computer partition
-      cls.software_path = os.path.realpath(os.path.join(
-          cls.computer_partition_root_path, 'software_release'))
-      # do working directory
-      cls.working_directory = os.path.join(os.path.realpath(
-          os.environ.get(
-              'SLAPOS_TEST_WORKING_DIR',
-              os.path.join(os.getcwd(), '.slapos'))),
-          'caddy-frontend-test')
-      if not os.path.isdir(cls.working_directory):
-        os.mkdir(cls.working_directory)
-      cls.setUpMaster()
-      cls.setUpSlaves()
-      cls.waitForCaddy()
-    except BaseException:
-      cls.logger.exception("Error during setUpClass")
-      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used
-      # by SlapOSInstanceTestCase.setUpClass so we use another name for
-      # snapshot, to make sure we don't store another snapshot in same
-      # directory.
-      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
-        cls.__module__, cls.__name__))
-      cls.setUp = lambda self: self.fail('Setup Class failed.')
-      raise
-
-  def assertLogAccessUrlWithPop(self, parameter_dict):
-    log_access_url = parameter_dict.pop('log-access-url')
-
-    self.assertTrue(len(log_access_url) >= 1)
-    # check only the first one, as second frontend will be stopped
-    log_access = log_access_url[0]
-    entry = log_access.split(': ')
-    if len(entry) != 2:
-      self.fail('Cannot parse %r' % (log_access,))
-    frontend, url = entry
-    result = requests.get(url, verify=False)
-    self.assertEqual(
-      httplib.OK,
-      result.status_code,
-      'While accessing %r of %r the status code was %r' % (
-        url, frontend, result.status_code))
-
-  def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
-    generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
-      prefix,))
-    upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
-    kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
-    base = '^' + kedifa_ipv6_base.replace(
-      '[', r'\[').replace(']', r'\]') + '/.{32}'
-    self.assertRegexpMatches(
-      generate_auth_url,
-      base + r'\/generateauth$'
-    )
-    self.assertRegexpMatches(
-      upload_url,
-      base + r'\?auth=$'
-    )
-
-    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
-    self.assertEqual(
-      kedifa_caucase_url,
-      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
-    )
-
-    return generate_auth_url, upload_url
-
-  def assertKeyWithPop(self, key, d):
-    self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
-    d.pop(key)
-
-  def assertEqualResultJson(self, result, key, value):
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-    self.assertEqual(value, j[key])
-
-  def parseParameterDict(self, parameter_dict):
-    parsed_parameter_dict = {}
-    for key, value in parameter_dict.items():
-      if key in [
-        'rejected-slave-dict',
-        'warning-slave-dict',
-        'warning-list',
-        'request-error-list',
-        'log-access-url']:
-        value = json.loads(value)
-      parsed_parameter_dict[key] = value
-    return parsed_parameter_dict
-
-  def parseConnectionParameterDict(self):
-    return self.parseParameterDict(
-      self.requestDefaultInstance().getConnectionParameterDict()
-    )
-
-  @classmethod
-  def runComputerPartitionUntil(cls, until):
-    max_try = 10
-    try_num = 1
-    while True:
-      if until():
-        break
-      if try_num > max_try:
-        raise ValueError('Failed to run computer partition with %r' % (until,))
-      try:
-        cls.slap.waitForInstance()
-      except Exception:
-        cls.logger.exception("Error during until run")
-      try_num += 1
-
-  @classmethod
-  def untilNotReadyYetNotInMasterKeyGenerateAuthUrl(cls):
-    parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
-    key = 'master-key-generate-auth-url'
-    if key not in parameter_dict:
-      return False
-    if 'NotReadyYet' in parameter_dict[key]:
-      return False
-    return True
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'waitforcaddyslave': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      }
-    }
 
   @classmethod
   def startServerProcess(cls):
@@ -790,50 +616,6 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
       time.sleep(2)
 
   @classmethod
-  def untilSlavePartitionReady(cls):
-    # all on-watch services shall not be exited
-    for process in cls.callSupervisorMethod('getAllProcessInfo'):
-      if process['name'].endswith('-on-watch') and \
-        process['statename'] == 'EXITED':
-        if process['name'].startswith('monitor-http'):
-          continue
-        return False
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
-      parameter_dict = cls.slap.request(
-        software_release=cls.getSoftwareURL(),
-        partition_reference=slave_reference,
-        partition_parameter_kw=partition_parameter_kw,
-        shared=True
-      ).getConnectionParameterDict()
-
-      log_access_ready = 'log-access-url' in parameter_dict
-      key = 'key-generate-auth-url'
-      key_generate_auth_ready = key in parameter_dict \
-          and 'NotReadyYet' not in parameter_dict[key]
-      if log_access_ready and key_generate_auth_ready:
-        return True
-    return False
-
-  @classmethod
-  def setUpSlaves(cls):
-    cls.slave_connection_parameter_dict_dict = {}
-    # run partition for slaves to be setup
-    cls.runComputerPartitionUntil(
-      cls.untilSlavePartitionReady)
-    request = cls.slap.request
-    for slave_reference, partition_parameter_kw in cls\
-            .getSlaveParameterDictDict().items():
-      slave_instance = request(
-        software_release=cls.getSoftwareURL(),
-        partition_reference=slave_reference,
-        partition_parameter_kw=partition_parameter_kw,
-        shared=True
-      )
-      cls.slave_connection_parameter_dict_dict[slave_reference] = \
-          slave_instance.getConnectionParameterDict()
-
-  @classmethod
   def createWildcardExampleComCertificate(cls):
     _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
       [
@@ -842,39 +624,88 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
         '*.alias1.example.com',
       ])
 
-  check_slave_id = 'waitforcaddyslave'
   @classmethod
-  def waitForCaddy(cls):
-    # awaits until caddy is ready to serve slaves
-    parameter_dict = cls.slave_connection_parameter_dict_dict[
-      cls.check_slave_id
-    ]
-    wait_time = 600
-    begin = time.time()
-    try_num = 0
-    cls.logger.debug('waitForCaddy for %is' % (wait_time,))
+  def runComputerPartitionUntil(cls, until):
+    max_try = 10
+    try_num = 1
     while True:
-      try:
-        try_num += 1
-        fakeHTTPSResult(
-          parameter_dict['domain'], parameter_dict['public-ipv4'],
-          '/',
-        )
-      except Exception:
-        if time.time() - begin > wait_time:
-          cls.logger.exception(
-            "Error during waitForCaddy after %.2fs" % ((time.time() - begin),))
-          raise
-        else:
-          time.sleep(0.5)
-      else:
-        cls.logger.info("waitForCaddy took %.2fs" % ((time.time() - begin),))
+      if until():
         break
+      if try_num > max_try:
+        raise ValueError('Failed to run computer partition with %r' % (until,))
+      try:
+        cls.slap.waitForInstance()
+      except Exception:
+        cls.logger.exception("Error during until run")
+      try_num += 1
 
   @classmethod
-  def _cleanup(cls, snapshot_name):
-    cls.stopServerProcess()
-    super(SlaveHttpFrontendTestCase, cls)._cleanup(snapshot_name)
+  def untilNotReadyYetNotInMasterKeyGenerateAuthUrl(cls):
+    parameter_dict = cls.requestDefaultInstance().getConnectionParameterDict()
+    key = 'master-key-generate-auth-url'
+    if key not in parameter_dict:
+      return False
+    if 'NotReadyYet' in parameter_dict[key]:
+      return False
+    return True
+
+  @classmethod
+  def callSupervisorMethod(cls, method, *args, **kwargs):
+    with cls.slap.instance_supervisor_rpc as instance_supervisor:
+      return getattr(instance_supervisor, method)(*args, **kwargs)
+
+  def assertLogAccessUrlWithPop(self, parameter_dict):
+    log_access_url = parameter_dict.pop('log-access-url')
+
+    self.assertTrue(len(log_access_url) >= 1)
+    # check only the first one, as second frontend will be stopped
+    log_access = log_access_url[0]
+    entry = log_access.split(': ')
+    if len(entry) != 2:
+      self.fail('Cannot parse %r' % (log_access,))
+    frontend, url = entry
+    result = requests.get(url, verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code,
+      'While accessing %r of %r the status code was %r' % (
+        url, frontend, result.status_code))
+
+  def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
+    generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
+      prefix,))
+    upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
+    kedifa_ipv6_base = 'https://[%s]:%s' % (self._ipv6_address, KEDIFA_PORT)
+    base = '^' + kedifa_ipv6_base.replace(
+      '[', r'\[').replace(']', r'\]') + '/.{32}'
+    self.assertRegexpMatches(
+      generate_auth_url,
+      base + r'\/generateauth$'
+    )
+    self.assertRegexpMatches(
+      upload_url,
+      base + r'\?auth=$'
+    )
+
+    kedifa_caucase_url = parameter_dict.pop('kedifa-caucase-url')
+    self.assertEqual(
+      kedifa_caucase_url,
+      'http://[%s]:%s' % (self._ipv6_address, CAUCASE_PORT),
+    )
+
+    return generate_auth_url, upload_url
+
+  def assertKeyWithPop(self, key, d):
+    self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
+    d.pop(key)
+
+  def assertEqualResultJson(self, result, key, value):
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
+    self.assertEqual(value, j[key])
 
   def patchRequests(self):
     HTTPResponse = requests.packages.urllib3.response.HTTPResponse
@@ -917,7 +748,216 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def tearDown(self):
     self.unpatchRequests()
-    super(SlaveHttpFrontendTestCase, self).tearDown()
+    super(HttpFrontendTestCase, self).tearDown()
+
+  def parseParameterDict(self, parameter_dict):
+    parsed_parameter_dict = {}
+    for key, value in parameter_dict.items():
+      if key in [
+        'rejected-slave-dict',
+        'warning-slave-dict',
+        'warning-list',
+        'request-error-list',
+        'log-access-url']:
+        value = json.loads(value)
+      parsed_parameter_dict[key] = value
+    return parsed_parameter_dict
+
+  def getMasterPartitionPath(self):
+    return '/' + os.path.join(
+      *glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
+        )
+      )[0].split('/')[:-2])
+
+  def parseConnectionParameterDict(self):
+    return self.parseParameterDict(
+      self.requestDefaultInstance().getConnectionParameterDict()
+    )
+
+  @classmethod
+  def waitForMethod(cls, name, method):
+    wait_time = 600
+    begin = time.time()
+    try_num = 0
+    cls.logger.debug('%s for %is' % (name, wait_time,))
+    while True:
+      try:
+        try_num += 1
+        method()
+      except Exception:
+        if time.time() - begin > wait_time:
+          cls.logger.exception(
+            "Error during %s after %.2fs" % (name, (time.time() - begin),))
+          raise
+        else:
+          time.sleep(0.5)
+      else:
+        cls.logger.info("%s took %.2fs" % (name, (time.time() - begin),))
+        break
+
+  @classmethod
+  def waitForCaddy(cls):
+    def method():
+      fakeHTTPSResult(
+        cls._ipv4_address, cls._ipv4_address,
+        '/',
+      )
+    cls.waitForMethod('waitForCaddy', method)
+
+  @classmethod
+  def _cleanup(cls, snapshot_name):
+    cls.stopServerProcess()
+    super(HttpFrontendTestCase, cls)._cleanup(snapshot_name)
+
+  @classmethod
+  def setUpClass(cls):
+    try:
+      cls.createWildcardExampleComCertificate()
+      cls.startServerProcess()
+    except BaseException:
+      cls.logger.exception("Error during setUpClass")
+      cls._cleanup("{}.{}.setUpClass".format(cls.__module__, cls.__name__))
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
+      raise
+
+    super(HttpFrontendTestCase, cls).setUpClass()
+
+    try:
+      # expose instance directory
+      cls.instance_path = cls.slap.instance_directory
+      # expose software directory, extract from found computer partition
+      cls.software_path = os.path.realpath(os.path.join(
+          cls.computer_partition_root_path, 'software_release'))
+      # do working directory
+      cls.working_directory = os.path.join(os.path.realpath(
+          os.environ.get(
+              'SLAPOS_TEST_WORKING_DIR',
+              os.path.join(os.getcwd(), '.slapos'))),
+          'caddy-frontend-test')
+      if not os.path.isdir(cls.working_directory):
+        os.mkdir(cls.working_directory)
+      cls.setUpMaster()
+      cls.waitForCaddy()
+    except BaseException:
+      cls.logger.exception("Error during setUpClass")
+      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used
+      # by SlapOSInstanceTestCase.setUpClass so we use another name for
+      # snapshot, to make sure we don't store another snapshot in same
+      # directory.
+      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+        cls.__module__, cls.__name__))
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
+      raise
+
+
+class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
+  @classmethod
+  def requestDefaultInstance(cls, state='started'):
+    default_instance = super(
+      SlaveHttpFrontendTestCase, cls).requestDefaultInstance(state=state)
+    if state != 'destroyed':
+      cls.requestSlaves()
+    return default_instance
+
+  @classmethod
+  def requestSlaves(cls):
+    software_url = cls.getSoftwareURL()
+    for slave_reference, partition_parameter_kw in cls\
+            .getSlaveParameterDictDict().items():
+      cls.logger.debug(
+        'requesting slave "%s" software:%s parameters:%s',
+        slave_reference, software_url, partition_parameter_kw)
+      cls.slap.request(
+        software_release=software_url,
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        shared=True
+      )
+
+  @classmethod
+  def setUpClass(cls):
+    super(SlaveHttpFrontendTestCase, cls).setUpClass()
+
+    try:
+      cls.setUpSlaves()
+      cls.waitForSlave()
+    except BaseException:
+      cls.logger.exception("Error during setUpClass")
+      # "{}.{}.setUpClass".format(cls.__module__, cls.__name__) is already used
+      # by SlapOSInstanceTestCase.setUpClass so we use another name for
+      # snapshot, to make sure we don't store another snapshot in same
+      # directory.
+      cls._cleanup("{}.SlaveHttpFrontendTestCase.{}.setUpClass".format(
+        cls.__module__, cls.__name__))
+      cls.setUp = lambda self: self.fail('Setup Class failed.')
+      raise
+
+  @classmethod
+  def waitForSlave(cls):
+    def method():
+      for parameter_dict in cls.getSlaveConnectionParameterDictList():
+        if 'domain' in parameter_dict and 'public-ipv4' in parameter_dict:
+          try:
+            fakeHTTPSResult(
+              parameter_dict['domain'], parameter_dict['public-ipv4'], '/')
+          except requests.exceptions.InvalidURL:
+            # ignore slaves to which connection is impossible by default
+            continue
+    cls.waitForMethod('waitForSlave', method)
+
+  @classmethod
+  def getSlaveConnectionParameterDictList(cls):
+    parameter_dict_list = []
+
+    for slave_reference, partition_parameter_kw in cls\
+            .getSlaveParameterDictDict().items():
+      parameter_dict_list.append(cls.slap.request(
+        software_release=cls.getSoftwareURL(),
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        shared=True
+      ).getConnectionParameterDict())
+    return parameter_dict_list
+
+  @classmethod
+  def untilSlavePartitionReady(cls):
+    # all on-watch services shall not be exited
+    for process in cls.callSupervisorMethod('getAllProcessInfo'):
+      if process['name'].endswith('-on-watch') and \
+        process['statename'] == 'EXITED':
+        if process['name'].startswith('monitor-http'):
+          continue
+        return False
+
+    for parameter_dict in cls.getSlaveConnectionParameterDictList():
+      log_access_ready = 'log-access-url' in parameter_dict
+      key = 'key-generate-auth-url'
+      key_generate_auth_ready = key in parameter_dict \
+          and 'NotReadyYet' not in parameter_dict[key]
+      if not(log_access_ready and key_generate_auth_ready):
+        return False
+
+    return True
+
+  @classmethod
+  def setUpSlaves(cls):
+    cls.slave_connection_parameter_dict_dict = {}
+    # run partition for slaves to be setup
+    cls.runComputerPartitionUntil(
+      cls.untilSlavePartitionReady)
+    request = cls.slap.request
+    for slave_reference, partition_parameter_kw in cls\
+            .getSlaveParameterDictDict().items():
+      slave_instance = request(
+        software_release=cls.getSoftwareURL(),
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        shared=True
+      )
+      cls.slave_connection_parameter_dict_dict[slave_reference] = \
+          slave_instance.getConnectionParameterDict()
 
   def parseSlaveParameterDict(self, key):
     return self.parseParameterDict(
@@ -945,16 +985,8 @@ class SlaveHttpFrontendTestCase(SlapOSInstanceTestCase):
 
     return parameter_dict
 
-  def getMasterPartitionPath(self):
-    return '/' + os.path.join(
-      *glob.glob(
-        os.path.join(
-          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
-        )
-      )[0].split('/')[:-2])
 
-
-class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -965,14 +997,7 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
-  @classmethod
-  def waitForCaddy(cls):
-    pass
-
   def test(self):
-    # run partition until AIKC finishes
-    self.runComputerPartitionUntil(
-      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -982,16 +1007,16 @@ class TestMasterRequestDomain(SlaveHttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
         'domain': 'example.com',
-        'accepted-slave-amount': '1',
+        'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
-        'slave-amount': '1',
+        'slave-amount': '0',
         'rejected-slave-dict': {}
       },
       parameter_dict
     )
 
 
-class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -1001,14 +1026,7 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
-  @classmethod
-  def waitForCaddy(cls):
-    pass
-
   def test(self):
-    # run partition until AIKC finishes
-    self.runComputerPartitionUntil(
-      self.untilNotReadyYetNotInMasterKeyGenerateAuthUrl)
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -1017,9 +1035,9 @@ class TestMasterRequest(SlaveHttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
         'domain': 'None',
-        'accepted-slave-amount': '1',
+        'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
-        'slave-amount': '1',
+        'slave-amount': '0',
         'rejected-slave-dict': {}},
       parameter_dict
     )
@@ -1100,8 +1118,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'mpm-graceful-shutdown-timeout': 2,
       'request-timeout': '12',
     }
-
-  check_slave_id = 'Url'
 
   @classmethod
   def startServerProcess(cls):
@@ -1621,7 +1637,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
                  r'"python-requests.*" \d+'
 
     self.assertRegexpMatches(
-      open(log_file, 'r').read(),
+      open(log_file, 'r').readlines()[-1],
       log_regexp)
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -4270,7 +4286,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'replicate'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4338,7 +4353,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'empty'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4377,7 +4391,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'dummy-cached'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4469,7 +4482,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'dummy-cached'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4560,10 +4572,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     }
 
   @classmethod
-  def waitForCaddy(cls):
-    pass
-
-  @classmethod
   def getSlaveParameterDictDict(cls):
     return {
       'default': {
@@ -4617,10 +4625,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
-
-  @classmethod
-  def waitForCaddy(cls):
-    pass
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -4777,7 +4781,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   def runKedifaUpdater(cls):
     return
 
-  check_slave_id = 'test'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -4828,7 +4831,6 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       'caucase_port': CAUCASE_PORT,
     }
 
-  check_slave_id = 'url'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -5591,7 +5593,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
       'mpm-graceful-shutdown-timeout': 2,
     }
 
-  check_slave_id = 'ssl_from_master_kedifa_overrides_master_certificate'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -5730,7 +5731,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'mpm-graceful-shutdown-timeout': 2,
     }
 
-  check_slave_id = 'ssl_from_master'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -6489,7 +6489,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     cls.instance_parameter_dict['public-ipv4'] = cls._ipv4_address
     return cls.instance_parameter_dict
 
-  check_slave_id = 'ssl_from_master'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
@@ -6591,7 +6590,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
     }
 
-  check_slave_id = 'default_ciphers'
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
