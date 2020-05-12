@@ -21,4 +21,3 @@ else
     rm -f $PIDFILE
   fi
 fi
-
