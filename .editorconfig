@@ -1,0 +1,14 @@
+root = true
+
+[*.{cfg,in,md,json}]
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+
+[**.json]
+indent_style = space
+indent_size = 2
+
+# business templates metadata
+[**/bt/**]
+insert_final_newline = false
