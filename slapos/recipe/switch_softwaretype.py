@@ -27,6 +27,7 @@
 
 import os, subprocess, sys
 import six
+import slapos.slap
 
 class Recipe:
 
@@ -39,11 +40,24 @@ class Recipe:
     self.base = self.buildout[section][key]
 
   def install(self):
+    slap = slapos.slap.slap()
+    slap_connection = self.buildout['slap_connection']
+    computer_id = slap_connection['computer_id']
+    computer_partition_id = slap_connection['partition_id']
+    server_url = slap_connection['server_url']
+    key_file = slap_connection.get('key_file')
+    cert_file = slap_connection.get('cert_file')
+    slap.initializeConnection(server_url, key_file, cert_file)
+    self.computer_partition = slap.registerComputerPartition(
+      computer_id,
+      computer_partition_id)
     # XXX-Antoine: We gotta find a better way to do this. I tried to check
     # out how slapgrid-cp was running buildout. But it is worse than that.
     args = sys.argv[:]
     for x in six.iteritems(self.buildout["slap-connection"]):
       args.append("slap-connection:%s=%s" % x)
+    # XXX: Needed for kvm. Use non standard API
+    args.append("slap-connection:requested=%s" % self.computer_partition._requested_state)
     for x in "directory", "eggs-directory", "develop-eggs-directory":
       args.append("buildout:%s=%s" % (x, self.buildout["buildout"][x]))
     args.append("buildout:installed=.installed-%s.cfg" % self.name)
