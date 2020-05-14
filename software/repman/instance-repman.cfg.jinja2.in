@@ -8,7 +8,7 @@
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
-{% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime" -%}
+{% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime,readcommitted,nohandshake" -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 
 [directory]
