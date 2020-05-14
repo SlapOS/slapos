@@ -91,6 +91,9 @@ unixodbc-location = {{ unixodbc_location }}
 curl-location = {{ curl_location }}
 dbjobs-template = {{ dbjobs_in }}
 socat-location = {{ socat_location }}
+mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
 
 [template-instance-mariadb.cfg]
 <= jinja2-template-base
