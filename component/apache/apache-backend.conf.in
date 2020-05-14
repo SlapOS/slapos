@@ -136,6 +136,7 @@ RequestHeader unset Remote-User
 {% if parameter_dict['ca-cert'] -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
+RequestHeader unset X-Forwarded-For expr="%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
 SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
 {%   if parameter_dict['crl'] -%}
 SSLCARevocationCheck chain
