@@ -43,11 +43,6 @@ if echo "$pgtables" | grep -q '^Did not find any relations' ; then
 fi
 
 
-# re-build ssh keys
-# (we do not use them - just for cleannes)
-force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
-
-
 # 2. what to do when instance is upgraded
 # see
 #   https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/deploy/deploy.sh
@@ -68,6 +63,10 @@ test -s $migrate_log || rm $migrate_log
 # clear cache
 $RAKE cache:clear   || die "cache:clear failed"
 
+# re-build ssh keys
+# (we do not use them - just for cleannes)
+# run before migration to avoir error on missing tables in db
+force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
 
 
 # 3. finally exec to unicorn
