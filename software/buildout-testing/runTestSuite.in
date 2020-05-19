@@ -6,6 +6,11 @@ from erp5.util import taskdistribution
 from erp5.util.testsuite import SubprocessError, TestSuite
 from zc.buildout.buildout import Buildout
 
+if str is bytes:
+  str2bytes = lambda s: s
+else:
+  str2bytes = lambda s: s.encode()
+
 slapos_buildout = {{repr(slapos_buildout)}}
 test_dict = {
   'zc.buildout': slapos_buildout,
@@ -90,7 +95,7 @@ def main():
 
   fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
   try:
-    os.write(fd, """\
+    os.write(fd, str2bytes("""\
 [buildout]
 extends = %s
 develop =%s
@@ -112,7 +117,7 @@ scripts =
   zope-testrunner
 """ % (os.path.join(slapos_buildout, 'buildout.cfg'),
        ''.join('\n  ' + x for x in test_dict.itervalues()),
-       '\n'.join(x + ' =' for x in test_dict)))
+       '\n'.join(x + ' =' for x in test_dict))))
   finally:
     os.close(fd)
   Buildout('buildout.cfg', {}).install(['bootstrap'])
