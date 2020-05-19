@@ -46,6 +46,8 @@ from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.util import bytes2str
 
+skipIfPython3 = unittest.skipIf(six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
+
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..',
@@ -476,6 +478,7 @@ class TestCustomFrontend(SlaprunnerTestCase):
       parameter_dict['custom-frontend-url'],
       'https://www.erp5.com')
 
+@skipIfPython3
 class TestResilientInstance(SlaprunnerTestCase):
   instance_max_retry = 20
 
@@ -502,12 +505,14 @@ class TestResilientInstance(SlaprunnerTestCase):
         'url',
         'webdav-url']))
 
+@skipIfPython3
 class TestResilientCustomFrontend(TestCustomFrontend):
   instance_max_retry = 20
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
+@skipIfPython3
 class TestResilientWebInstance(TestWeb):
   instance_max_retry = 20
   @classmethod
@@ -518,6 +523,7 @@ class TestResilientWebInstance(TestWeb):
     pass # Disable until we can write on runner0 rather them
          # on root partition
 
+@skipIfPython3
 class TestResilientWebrunnerBasicUsage(TestWebRunnerBasicUsage):
   instance_max_retry = 20
   @classmethod
@@ -525,12 +531,14 @@ class TestResilientWebrunnerBasicUsage(TestWebRunnerBasicUsage):
     return 'resilient'
 
 
+@skipIfPython3
 class TestResilientWebrunnerAutorun(TestWebRunnerAutorun):
   instance_max_retry = 20
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'resilient'
 
+@skipIfPython3
 class TestResilientDummyInstance(SlaprunnerTestCase):
   instance_max_retry = 20
   @classmethod
