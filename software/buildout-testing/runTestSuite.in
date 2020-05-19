@@ -40,17 +40,17 @@ class DummyTestResult:
 class BuildoutTestSuite(TestSuite):
 
   RUN_RE = re.compile(
-    r'Ran (?P<all_tests>\d+) tests with'
-    ' (?P<failures>\d+) failures,'
-    ' (?P<errors>\d+) errors and'
-    ' (?P<skips>\d+) skipped in')
+    br'Ran (?P<all_tests>\d+) tests with'
+    br' (?P<failures>\d+) failures,'
+    br' (?P<errors>\d+) errors and'
+    br' (?P<skips>\d+) skipped in')
 
   def run(self, test):
     start = time()
     try:
       status_dict = self.spawn(os.path.join('bin', 'zope-testrunner'),
         '--test-path', os.path.join(test_dict[test], 'src'))
-    except SubprocessError, e:
+    except SubprocessError as e:
       status_dict = e.status_dict
     end = time()
     status_dict.update(
@@ -93,7 +93,7 @@ def main():
   else:
     test_result = DummyTestResult(list(test_dict))
 
-  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
     os.write(fd, str2bytes("""\
 [buildout]
@@ -116,7 +116,7 @@ eggs +=
 scripts =
   zope-testrunner
 """ % (os.path.join(slapos_buildout, 'buildout.cfg'),
-       ''.join('\n  ' + x for x in test_dict.itervalues()),
+       ''.join('\n  ' + x for x in test_dict.values()),
        '\n'.join(x + ' =' for x in test_dict))))
   finally:
     os.close(fd)
