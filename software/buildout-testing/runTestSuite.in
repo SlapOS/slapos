@@ -98,13 +98,16 @@ def main():
   try:
     os.write(fd, str2bytes("""\
 [buildout]
-extends = %s
 develop =%s
 parts = testrunner
 newest = false
+versions = versions
 
 [versions]
 %s
+zope.exceptions = 4.3
+zope.interface = 4.7.2
+zope.testing = 4.7
 
 [testrunner]
 recipe = zc.recipe.egg
@@ -116,8 +119,7 @@ scripts =
   zope-testrunner
 extra-paths =
   %s
-""" % (os.path.join(slapos_buildout, 'buildout.cfg'),
-       ''.join('\n  ' + x for x in test_dict.values()),
+""" % (''.join('\n  ' + x for x in test_dict.values()),
        '\n'.join(x + ' =' for x in test_dict),
        get_distribution('manuel').location,
        )))
