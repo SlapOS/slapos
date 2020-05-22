@@ -28,6 +28,21 @@ www = $${:srv}/www
 home = $${:etc}/home
 ssl = $${:etc}/ssl
 framebuffer = $${:srv}/framebuffer
+fontconfig-cache = $${buildout:directory}/.fontconfig
+
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+template = ${template-fonts-conf:output}
+rendered = $${directory:etc}/fonts.conf
+context =
+  key cachedir directory:fontconfig-cache
+  key fonts :fonts
+  key includes :includes
+fonts =
+  ${ipaex-fonts:location}
+  ${liberation-fonts:location}
+includes =
+  ${fontconfig:location}/etc/fonts/conf.d
 
 #################################
 # Test runner

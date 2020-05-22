@@ -365,14 +365,6 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    result = requests.get(
-      connection_parameter_dict['KVM1-url'], verify=False)
-    self.assertEqual(
-      httplib.OK,
-      result.status_code
-    )
-    self.assertIn('<title>noVNC</title>', result.text)
-
 @skipUnlessKvm
 class TestInstanceResilient(InstanceTestCase):
   __partition_reference__ = 'ir'

@@ -20,6 +20,7 @@ import json
 
 os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
 os.environ['DISPLAY'] = '$${xvfb-instance:display}'
+os.environ['FONTCONFIG_FILE'] = '$${fontconfig-conf:rendered}'
 
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 ETC_DIRECTORY = '$${directory:etc}'
