@@ -4,6 +4,7 @@ import argparse, os, re, subprocess, sys
 from time import gmtime, strftime, time
 from erp5.util import taskdistribution
 from erp5.util.testsuite import SubprocessError, TestSuite
+from pkg_resources import get_distribution
 from zc.buildout.buildout import Buildout
 
 if str is bytes:
@@ -99,29 +100,30 @@ def main():
 [buildout]
 extends = %s
 develop =%s
-parts = test
+parts = testrunner
 newest = false
 
 [versions]
 %s
 
-[bootstrap]
+[testrunner]
 recipe = zc.recipe.egg
-eggs = zc.buildout
-
-[test]
-recipe = zc.recipe.egg
-eggs +=
+eggs =
+  ${:recipe}
+  zope.testing
   zope.testrunner
 scripts =
   zope-testrunner
+extra-paths =
+  %s
 """ % (os.path.join(slapos_buildout, 'buildout.cfg'),
        ''.join('\n  ' + x for x in test_dict.values()),
-       '\n'.join(x + ' =' for x in test_dict))))
+       '\n'.join(x + ' =' for x in test_dict),
+       get_distribution('manuel').location,
+       )))
   finally:
     os.close(fd)
-  Buildout('buildout.cfg', {}).install(['bootstrap'])
-  subprocess.check_call((os.path.join('bin', 'buildout'),))
+  Buildout('buildout.cfg', {}).install(None)
 
   test_suite = BuildoutTestSuite(1)
   while 1:
