@@ -1,4 +1,4 @@
-#!{{ dash_bin }}
+#!/bin/bash
 
 run_mysql () {
   {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
@@ -7,7 +7,7 @@ run_mysql () {
 
 if [ ! -f "{{ init_password_done }}" ]; then
   for i in {30..0}; do
-    if echo 'SELECT 1' | run_mysql  &> /dev/null; then
+    if run_mysql -e 'SELECT 1'  &> /dev/null; then
       break
     fi
     echo 'MySQL init process in progress...'
