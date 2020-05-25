@@ -1,4 +1,4 @@
-#!{{ parameter_dict['bash-bin'] }}
+#!/bin/bash
 
 USER={{ parameter_dict['db-user'] }}
 PASSWORD={{ parameter_dict['db-password'] }}
