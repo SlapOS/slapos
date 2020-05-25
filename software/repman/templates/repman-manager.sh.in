@@ -20,7 +20,7 @@ wait_database () {
       fi
       echo ">> [$retry] waitdatabases returned code $CODE...";
     fi
-    sleep 1
+    sleep 30
   done
 }
 
