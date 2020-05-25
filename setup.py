@@ -37,6 +37,7 @@ for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
 
 extras_require = {
     'test': (
+        'setuptools_scm', # for jsonschema
         'jsonschema',
         'mock',
         'testfixtures',
@@ -61,6 +62,7 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'enum34; python_version<"3.4"',  # for inotify-simple
+        'setuptools_scm' # for jsonschema
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
