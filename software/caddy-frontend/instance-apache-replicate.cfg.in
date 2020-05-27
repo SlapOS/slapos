@@ -618,7 +618,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
       netloc=caucase_netloc,
-      service_auto_approve_count=0,
+      service_auto_approve_count=200,
       user_auto_approve_count=1,
       key_len=2048,
 )}}
