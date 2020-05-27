@@ -88,6 +88,16 @@
       "title": "Automatic Internal KeDiFa's Caucase CSR",
       "type": "string"
     },
+    "automatic-internal-backend-client-caucase-csr": {
+      "default": "true",
+      "description": "Automatically signs CSRs sent to Backend Client's caucase, based on csr_id and matching certificate.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Automatic Internal KeDiFa's Caucase CSR",
+      "type": "string"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
