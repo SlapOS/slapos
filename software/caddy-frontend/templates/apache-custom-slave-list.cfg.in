@@ -6,10 +6,14 @@
 {% set cache_port = caddy_configuration.get('cache-port') %}
 {% set cached_port = caddy_configuration.get('cache-through-port') %}
 {% set ssl_cached_port = caddy_configuration.get('ssl-cache-through-port') %}
+{% set backend_haproxy_port = caddy_configuration.get('backend-haproxy-port') %}
+{% set backend_haproxy_https_port = caddy_configuration.get('backend-haproxy-https-port') %}
+{% set backend_haproxy_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_port) %}
+{% set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_https_port) %}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{% set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
+{% set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port, 'backend_haproxy_url': backend_haproxy_url, 'backend_haproxy_https_url': backend_haproxy_https_url } %}
 {% set slave_log_dict = {} %}
 {% if extra_slave_instance_list %}
 {%   set slave_instance_information_list = [] %}
@@ -51,6 +55,19 @@ create = true
 
 {# Loop thought slave list to set up slaves #}
 {% for slave_instance in slave_instance_list %}
+{# prepare everything #}
+{%- set url_parsed = urlparse_module.urlparse(slave_instance.get('url', '')) %}
+{%- do slave_instance.__setitem__('url_scheme', url_parsed.scheme) %}
+{%- do slave_instance.__setitem__('url_hostname', url_parsed.hostname) %}
+{%- do slave_instance.__setitem__('url_port', url_parsed.port) %}
+{%- do slave_instance.__setitem__('url_path', url_parsed.path) %}
+{%- do slave_instance.__setitem__('url_fragment', url_parsed.fragment) %}
+{%- set https_url_parsed = urlparse_module.urlparse(slave_instance.get('https-url', '')) %}
+{%- do slave_instance.__setitem__('https_url_scheme', https_url_parsed.scheme) %}
+{%- do slave_instance.__setitem__('https_url_hostname', https_url_parsed.hostname) %}
+{%- do slave_instance.__setitem__('https_url_port', https_url_parsed.port) %}
+{%- do slave_instance.__setitem__('https_url_path', https_url_parsed.path) %}
+{%- do slave_instance.__setitem__('https_url_fragment', https_url_parsed.fragment) %}
 {#   Manage ciphers #}
 {%   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%   if slave_ciphers %}
@@ -69,6 +86,7 @@ create = true
 {%     set key_download_url = 'notreadyyet' %}
 {%   endif %}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
+{%   set slave_backend_haproxy_section_title = 'dynamic-template-slave-backend-haproxy-%s' % slave_reference %}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() %}
 {%   set slave_publish_dict = {} %}
 {%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
@@ -80,6 +98,7 @@ create = true
 {#   extend parts #}
 {%   do part_list.extend([slave_ln_section]) %}
 {%   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
+{%   do part_list.extend([slave_logrotate_section, slave_backend_haproxy_section_title]) %}
 
 {%   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {%   if enable_cache %}
@@ -237,6 +256,10 @@ http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 cached_port = {{ dumps('' ~ cached_port) }}
 ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
+backend_haproxy_port = {{ ('' ~ backend_haproxy_port) }}
+backend_haproxy_url = {{ ('' ~ backend_haproxy_url) }}
+backend_haproxy_https_port = {{ ('' ~ backend_haproxy_https_port) }}
+backend_haproxy_https_url = {{ ('' ~ backend_haproxy_https_url) }}
 request_timeout = {{ ('' ~ request_timeout) }}
 {# BBB: apache_custom_https and apache_custom_http #}
 {%     set caddy_custom_http_template = slave_instance.pop('caddy_custom_http', slave_instance.pop('apache_custom_http', '')) %}
@@ -278,6 +301,15 @@ extra-context =
 filename = {{ '%s.conf' % slave_reference }}
 {{ '\n' }}
 
+
+[{{ slave_backend_haproxy_section_title }}]
+<= jinja2-template-base
+filename = {{ '%s.cfg' % slave_reference }}
+rendered = {{ backend_haproxy_configuration_directory }}/${:filename}
+template = {{ template_backend_haproxy_slave_configuration }}
+extra-context =
+  section slave_parameter {{ slave_configuration_section_name }}
+  import urlparse_module urlparse
 
 {%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%   if monitor_ipv6_test %}
