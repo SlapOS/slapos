@@ -1,0 +1,21 @@
+# NON PROD CONFIG
+global
+  maxconn 4096
+log stderr local0
+defaults
+  log global
+  mode http
+  option httplog
+  option dontlognull
+  retries 1
+  option redispatch
+  maxconn 2000
+  cookie SERVERID rewrite
+  balance roundrobin
+  stats uri /haproxy
+  stats realm Global\ statistics
+  timeout server 305s
+  timeout queue 60s
+  timeout connect 5s
+  timeout client 305s
+  option httpclose
