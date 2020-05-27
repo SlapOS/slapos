@@ -1,0 +1,83 @@
+# NON PROD CONFIG
+global
+  maxconn 4096
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+
+log stderr local0
+defaults
+  log global
+  mode http
+  option httplog
+  option dontlognull
+  retries 1
+  option redispatch
+  cookie SERVERID rewrite
+  balance roundrobin
+  stats uri /haproxy
+  stats realm Global\ statistics
+  timeout queue 60s
+  option httpclose
+
+{%- macro frontend_entry(slave_instance, scheme) %}
+{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   if slave_instance.get('custom_domain') not in host_list %}
+{%-     do host_list.append(slave_instance.get('custom_domain')) %}
+{%-   endif %}
+{%-   for host in host_list %}
+{%-     if host.startswith('*.') %}
+{#-     hdr_sub has to be used, as anyway something.example.com shall match *.example.com[:port], with optional port #}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_sub(host) -i {{ host[2:] }}
+{%-     else %}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_dom(host) -i {{ host }}
+{%-     endif %}
+{%-   endfor %}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%- endmacro %}
+
+frontend http-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'http') }}
+{%- endfor %}
+
+frontend https-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'https') }}
+{%- endfor %}
+
+{%- for slave_instance in backend_slave_list %}
+{%-   for (scheme, prefix) in [('http', 'http_backend'), ('https', 'https_backend')] %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     if info_dict['scheme'] == 'https' %}
+{%-       set ssl = ['ssl verify'] %}
+{%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
+{%-       if slave_instance['ssl_proxy_verify'] and path_to_ssl_proxy_ca_crt %}
+{%-         do ssl.append('required ca-file %s' % (path_to_ssl_proxy_ca_crt,)) %}
+{%-       else %}
+{%-         do ssl.append('none') %}
+{%-       endif %}
+{%-       set ssl = ' '.join(ssl) %}
+{%-     else %}
+{%-       set ssl = '' %}
+{%-     endif %}
+
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout client {{ slave_instance['request-timeout'] }}s
+  # XXX-TODO: somehow support try_duration and try_interval...
+  timeout connect {{ slave_instance['timeout-backend-connect'] }}s
+  retries {{ slave_instance['timeout-backend-connect-retries'] }}s
+{%-     set hostname = info_dict['hostname'] %}
+{%-     set port = info_dict['port'] %}
+{%-     set path = info_dict['path'].rstrip('/') %}
+{%-     if hostname and port %}
+  server backend {{ hostname }}:{{ port }} {{ ssl }}
+{%-       if path %}
+  http-request set-path {{ path }}%[path]
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+{%- endfor %}
