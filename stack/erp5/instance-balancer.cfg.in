@@ -27,8 +27,8 @@ mode = 644
      url=ssl_parameter_dict['caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${apache-conf-ssl:caucase-cert}',
-     ca_path='${apache-conf-ssl:ca-cert}',
-     crl_path='${apache-conf-ssl:crl}',
+     ca_path='${directory:srv}/caucase-updater/ca.crt',
+     crl_path='${directory:srv}/caucase-updater/crl.pem',
      key_path='${apache-conf-ssl:caucase-key}',
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
@@ -123,8 +123,6 @@ key = ${directory:apache-conf}/apache.pem
 # XXX caucase certificate is not supported by caddy for now
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
-ca-cert =  ${directory:apache-conf}/ca.crt
-crl = ${directory:apache-conf}/crl.pem
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}
