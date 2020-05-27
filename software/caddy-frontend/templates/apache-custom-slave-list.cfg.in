@@ -429,6 +429,7 @@ https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 timeout-backend-connect = {{ dumps('' ~ configuration['timeout-backend-connect']) }}
 timeout-backend-connect-retries =  {{ dumps('' ~ configuration['timeout-backend-connect-retries']) }}
+backend-client-login-certificate = {{ dumps('' ~ backend_haproxy_configuration['backend-client-login-certificate']) }}
 ##<Backend haproxy>
 
 [buildout]
