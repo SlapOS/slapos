@@ -426,6 +426,7 @@ log-socket = {{ backend_haproxy_configuration['log-socket'] }}
 local-ipv4 = {{ dumps('' ~ local_ipv4) }}
 http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
 https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+backend-client-login-certificate = {{ ('' ~ backend_haproxy_configuration['backend-client-login-certificate']) }}
 ##<Backend haproxy>
 
 [buildout]
