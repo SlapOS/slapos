@@ -103,6 +103,7 @@ configuration.nginx_port = 9443
 configuration.kedifa_port = 7879
 # Warning: Caucase takes also cacuase_port+1
 configuration.caucase_port = 8890
+configuration.caucase_backend_client_port = 8990
 configuration.apache-key =
 configuration.apache-certificate =
 configuration.open-port = 80 443
