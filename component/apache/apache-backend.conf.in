@@ -32,6 +32,15 @@
  #       #  empty)
  #       "crl": "<file_path>",
  #
+ #       #  The path given to "SSLCACertificatePath" (can be empty)
+ #       #  If this value is not empty, it enables client certificate check.
+ #       #  (Enabling "SSLVerifyClient require")
+ #       "ca-cert-dir": "<directory_path>",
+ #
+ #       #  The path given to "SSLCARevocationPath" (used if ca-cert-dir is not
+ #       #  empty)
+ #       "crl-dir": "<directory_path>",
+ #
  #       #  The path given to "ErrorLog"
  #       "error-log": "<file_path>",
  #
@@ -133,16 +142,24 @@ SSLProxyEngine On
 
 # As backend is trusting Remote-User header unset it always
 RequestHeader unset Remote-User
-{% if parameter_dict['ca-cert'] -%}
+{% if parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir') -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
 RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
+{%   if parameter_dict.get('ca-cert') -%}
 SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
-{%   if parameter_dict['crl'] -%}
+{%   elif parameter_dict.get('ca-cert-dir') -%}
+SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
+{%   endif -%}
+{%   if parameter_dict.get('crl') or parameter_dict.get('crl-dir') -%}
 SSLCARevocationCheck chain
+{%     if parameter_dict.get('crl') -%}
 SSLCARevocationFile {{ parameter_dict['crl'] }}
-{%-   endif %}
-{%- endif %}
+{%     elif parameter_dict.get('crl-dir') -%}
+SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%     endif -%}
+{%   endif -%}
+{% endif -%}
 
 ErrorLog "{{ parameter_dict['error-log'] }}"
 # Default apache log format with request time in microsecond at the end
@@ -162,11 +179,19 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-{% if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
+{% if enable_authentication and (parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir')) and (parameter_dict.get('crl') or parameter_dict.get('crl-dir')) -%}
   SSLVerifyClient require
+{%   if parameter_dict.get('ca-cert') -%}
   SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+{%   elif parameter_dict.get('ca-cert-dir') -%}
+  SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
+{%   endif -%}
   SSLCARevocationCheck chain
+{%   if parameter_dict.get('crl') -%}
   SSLCARevocationFile {{ parameter_dict['crl'] }}
+{%   elif parameter_dict.get('crl-dir') -%}
+  SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%   endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
@@ -184,11 +209,19 @@ Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
   Timeout 3600
-{%   if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
+{%   if enable_authentication and (parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir')) and (parameter_dict.get('crl') or parameter_dict.get('crl-dir')) -%}
   SSLVerifyClient require
+{%   if parameter_dict.get('ca-cert') -%}
   SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+{%   elif parameter_dict.get('ca-cert-dir') -%}
+  SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
+{%   endif -%}
   SSLCARevocationCheck chain
+{%   if parameter_dict.get('crl') -%}
   SSLCARevocationFile {{ parameter_dict['crl'] }}
+{%   elif parameter_dict.get('crl-dir') -%}
+  SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%   endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
