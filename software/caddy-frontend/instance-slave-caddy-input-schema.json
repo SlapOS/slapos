@@ -214,6 +214,15 @@
       "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
       "type": "string"
+    },
+    "authenticate-to-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
