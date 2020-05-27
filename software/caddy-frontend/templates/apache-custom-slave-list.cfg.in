@@ -1,12 +1,13 @@
 {%- if software_type == slap_software_type %}
 {%- set kedifa_updater_mapping = [] %}
 {%- set cached_server_dict = {} %}
+{%- set backend_slave_list = [] %}
 {%- set part_list = [] %}
 {%- set cache_port = caddy_configuration.get('cache-port') %}
-{%- set cached_port = caddy_configuration.get('cache-through-port') %}
-{%- set ssl_cached_port = caddy_configuration.get('ssl-cache-through-port') %}
 {%- set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
 {%- set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
+{%- set backend_haproxy_http_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['http-port']) %}
+{%- set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
 {%- set slave_log_dict = {} %}
@@ -47,7 +48,15 @@ create = true
 [slave-log-cache-direct-directory-dict]
 
 {#- Loop thought slave list to set up slaves #}
+{%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
 {%- for slave_instance in slave_instance_list %}
+{#- prepare backend parameters #}
+{%- for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
+{%-   set parsed = urlparse_module.urlparse(slave_instance.get(key, '')) %}
+{%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
+{%-   do slave_instance.__setitem__(prefix, info_dict) %}
+{%- endfor %}
+{%-   do slave_instance.__setitem__('ssl_proxy_verify', slave_instance.get('ssl-proxy-verify', '').lower() in TRUE_VALUES) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
@@ -221,8 +230,8 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
-cached_port = {{ dumps('' ~ cached_port) }}
-ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
+backend_haproxy_http_url = {{ ('' ~ backend_haproxy_http_url) }}
+backend_haproxy_https_url = {{ ('' ~ backend_haproxy_https_url) }}
 request_timeout = {{ ('' ~ request_timeout) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
@@ -282,6 +291,7 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
+{%-  do backend_slave_list.append(slave_instance) %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
 [slave-log-directories]
@@ -290,34 +300,15 @@ recipe = slapos.cookbook:mkdirectory
 
 {%- do part_list.append('slave-log-directories') %}
 
-[slave-log-cache-direct-directories]
-<= slave-log-cache-direct-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
-{%- do part_list.append('slave-log-cache-direct-directories') %}
 {%- do part_list.append('caddy-log-access') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
-{%- for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
-{%-   set cached_slave_configuration_section_title = '%s-cached-virtualhost' % slave_reference %}
-{%-   do part_list.append(cached_slave_configuration_section_title) %}
-
-[{{ cached_slave_configuration_section_title }}]
-< = jinja2-template-base
-template = {{ template_cached_slave_configuration }}
-filename = {{ '%s.conf' % slave_reference }}
-rendered = {{ caddy_cached_configuration_directory }}/${:filename}
-extensions = jinja2.ext.do
-extra-context =
-    section slave_parameter {{ slave_configuration_section_name }}
-{{ '\n' }}
-{%- endfor %}
 {#- Define IPv6 to IPV4 tunneling #}
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
-wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
+wrapper-path = {{ directory['service'] }}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -330,16 +321,6 @@ ipv6-port = {{ http_port }}
 <= tunnel-6to4-base
 ipv4-port = {{ https_port }}
 ipv6-port = {{ https_port }}
-
-[tunnel-6to4-base-cached_port]
-<= tunnel-6to4-base
-ipv4-port = {{ cached_port }}
-ipv6-port = {{ cached_port }}
-
-[tunnel-6to4-base-ssl_cached_port]
-<= tunnel-6to4-base
-ipv4-port = {{ ssl_cached_port }}
-ipv6-port = {{ ssl_cached_port }}
 
 {#- Define log access #}
 
@@ -388,7 +369,7 @@ command-line = {{ kedifa_updater }}
   ${kedifa-updater-mapping:file}
   {{ kedifa_updater_state_file }}
 
-wrapper-path = {{ service_directory }}/kedifa-updater
+wrapper-path = {{ directory['service'] }}/kedifa-updater
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
@@ -414,6 +395,24 @@ rendered = ${:file}
 template = inline: # This file contain directives to serve directories with log files for shared instances, but no shared instances are defined yet.
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 
+##<Backend haproxy>
+[backend-haproxy-configuration]
+< = jinja2-template-base
+template = {{ template_backend_haproxy_configuration }}
+rendered = ${backend-haproxy-config:file}
+backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
+extra-context =
+  key backend_slave_list :backend_slave_list
+  section configuration backend-haproxy-config
+
+[backend-haproxy-config]
+file = {{ backend_haproxy_configuration['file'] }}
+pid-file = {{ backend_haproxy_configuration['pid-file'] }}
+local-ipv4 = {{ dumps('' ~ local_ipv4) }}
+http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
+https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+##<Backend haproxy>
+
 [buildout]
 extends =
   {{ common_profile }}
@@ -423,6 +422,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    backend-haproxy-configuration
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -432,8 +432,6 @@ parts +=
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
-    tunnel-6to4-base-cached_port
-    tunnel-6to4-base-ssl_cached_port
     expose-csr_id
     promise-expose-csr_id-ip-port
 
@@ -506,7 +504,7 @@ command-line = {{ caddy_executable }}
   -disable-tls-alpn-challenge
   -root {{ directory_csr_id }}
 
-wrapper-path = {{ service_directory }}/expose-csr_id
+wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
