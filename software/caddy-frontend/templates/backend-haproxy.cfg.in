@@ -1,0 +1,72 @@
+# NON PROD CONFIG
+global
+  maxconn 4096
+log stderr local0
+defaults
+  log global
+  mode http
+  option httplog
+  option dontlognull
+  retries 1
+  option redispatch
+  maxconn 2000
+  cookie SERVERID rewrite
+  balance roundrobin
+  stats uri /haproxy
+  stats realm Global\ statistics
+  timeout server 305s
+  timeout queue 60s
+  timeout connect 5s
+  timeout client 305s
+  option httpclose
+TODO: iterate over list of slaves to generate like:
+{%- set host_list = slave_parameter.get('server-alias', '').split() %}
+{#- TODO XXX: path in case of being a slave #}
+{%- set url = slave_parameter.get('backend_url', slave_parameter.get('url', '')) %}
+{%- set parsed = urlparse_module.urlparse(url) %}
+{%- set backend_host = parsed.hostname %}
+{%- set backend_port = parsed.port %}
+{%- if parsed.scheme == 'https' %}
+{#-   support ssl_proxy_verify #}
+{%-   set ssl = 'ssl verify none' %}
+{%- else %}
+{%-   set ssl = '' %}
+{%- endif %}
+{%- set https_url = slave_parameter.get('https_backend_url', slave_parameter.get('https-url', '')) %}
+{%- set https_parsed = urlparse_module.urlparse(https_url) %}
+{%- set https_backend_host = https_parsed.hostname %}
+{%- set https_backend_port = https_parsed.port %}
+{%- if https_parsed.scheme == 'https' %}
+{#-   support ssl_proxy_verify #}
+{%-   set https_ssl = 'ssl verify none' %}
+{%- else %}
+{%-   set https_ssl = '' %}
+{%- endif %}
+{%- if slave_parameter.get('custom_domain') not in host_list %}
+{%-   do host_list.append(slave_parameter.get('custom_domain')) %}
+{%- endif %}
+frontend http-backend
+  bind {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['backend_haproxy_port'] }}
+  capture request header Host len 300 {# XXX-DEBUG #}
+{%- for host in host_list %}
+  acl is_{{ slave_parameter['slave_reference'] }} hdr_dom(host) -i {{ host }}
+{%- endfor %}
+  use_backend {{ slave_parameter['slave_reference'] }} if is_{{ slave_parameter['slave_reference'] }}
+
+backend {{ slave_parameter['slave_reference'] }}
+{%- if backend_host and backend_port %}
+  server backend {{ backend_host }}:{{ backend_port }} {{ ssl }}
+{%- endif %}
+
+frontend https-backend
+  bind {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['backend_haproxy_https_port'] }}
+  capture request header Host len 300 {# XXX-DEBUG #}
+{%- for host in host_list %}
+  acl is_{{ slave_parameter['slave_reference'] }}-https hdr_dom(host) -i {{ host }}
+{%- endfor %}
+  use_backend {{ slave_parameter['slave_reference'] }}-https if is_{{ slave_parameter['slave_reference'] }}-https
+
+backend {{ slave_parameter['slave_reference'] }}-https
+{%- if https_backend_host and https_backend_port %}
+  server backend {{ https_backend_host }}:{{ https_backend_port }} {{ https_ssl }}
+{%- endif %}

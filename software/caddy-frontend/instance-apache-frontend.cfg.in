@@ -36,7 +36,6 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
-## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
   monitor-traffic-summary-last-stats-wrapper
@@ -211,7 +210,9 @@ kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
+haproxy_executable = {{ parameter_dict['haproxy_executable'] }}
 extra-context =
+    import urlparse_module urlparse
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
@@ -274,6 +275,9 @@ extra-context =
     key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
+## backend haproxy
+    key haproxy_executable :haproxy_executable
+    key template_backend_haproxy_slave_configuration software-release-path:template-backend-haproxy-slave
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
@@ -364,6 +368,8 @@ master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 cache-port = ${trafficserver-variable:input-port}
 cache-through-port = 26011
 ssl-cache-through-port = 26012
+backend-haproxy-port = 21080
+backend-haproxy-https-port = 21081
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
