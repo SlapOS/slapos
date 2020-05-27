@@ -442,6 +442,18 @@ Then specify in the master instance parameters:
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
 
+Authentication to the backend
+=============================
+
+The cluster generates CA served by caucase, available with `backend-client-caucase-url` return parameter.
+
+Then, each slave configured with `authenticate-to-backend` to true, will use a certificate signed by this CA while accessing https backend.
+
+This allows backends to:
+
+ * restrict access only from some frontend clsuters
+ * trust values (like `X-Forwarded-For`) sent by the frontend
+
 Technical notes
 ===============
 
