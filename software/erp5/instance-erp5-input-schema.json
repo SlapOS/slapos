@@ -455,6 +455,16 @@
         "ssl": {
           "description": "HTTPS certificate generation parameters",
           "properties": {
+            "frontend-caucase-url-list": {
+              "title": "Frontend Caucase URL List",
+              "description": "List of URLs of caucase service of frontend groups to authenticate access from them.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              },
+              "uniqueItems": true
+            },
             "caucase-url": {
               "title": "Caucase URL",
               "description": "URL of caucase service to use. If not set, global setting will be used.",
