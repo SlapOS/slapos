@@ -1047,6 +1047,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'domain': 'example.com',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1075,6 +1076,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1517,6 +1519,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '51',
       'rejected-slave-amount': '0',
@@ -4416,6 +4419,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4591,6 +4595,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '6',
       'rejected-slave-amount': '3',
@@ -4895,6 +4900,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5347,6 +5353,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '0',
@@ -6037,6 +6044,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6141,6 +6149,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',
