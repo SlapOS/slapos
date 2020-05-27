@@ -426,6 +426,7 @@ log-socket = {{ backend_haproxy_configuration['log-socket'] }}
 local-ipv4 = {{ dumps('' ~ local_ipv4) }}
 http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
 https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+backend-client-login-certificate = {{ ('' ~ backend_haproxy_configuration['backend-client-login-certificate']) }}
 ##<Backend haproxy>
 
 [buildout]
@@ -488,7 +489,7 @@ ip = ${slap-network-information:global-ipv6}
 port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory['caddy-csr_id']_log }}/expose-csr_id.log
+error-log = {{ directory['caddy-csr_id-log'] }}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
