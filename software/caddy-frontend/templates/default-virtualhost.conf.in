@@ -61,11 +61,15 @@
 
 {%- for tls in [True, False] %}
 {%- if tls %}
-{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
+{%-   if slave_parameter.get('https-url') %}
+{%-     set backend_url = slave_parameter['backend_haproxy_https_url'] %}
+{%-   else %}
+{%-     set backend_url = slave_parameter['backend_haproxy_http_url'] %}
+{%-   endif %}
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
 {%- else %}
-{%- set backend_url = slave_parameter.get('url', '').rstrip('/') %}
+{%- set backend_url = slave_parameter['backend_haproxy_http_url'] %}
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
