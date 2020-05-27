@@ -9,7 +9,6 @@
 {%- endif %} {#- if prefer_gzip #}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
 {%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default']).lower() in TRUE_VALUES %}
-{%- set ssl_proxy_verify = slave_parameter.get('ssl-proxy-verify', '').lower() in TRUE_VALUES %}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
 {%- set https_only = slave_parameter.get('https-only', 'true').lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
@@ -41,31 +40,18 @@
 {%- endif %}
 
 {%- macro proxy_header() %}
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    timeout {{ slave_parameter['request_timeout'] }}s
-{%-   if ssl_proxy_verify %}
-{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-   else %} {#-   if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-   endif %} {#-   if ssl_proxy_verify #}
+    timeout {{ slave_parameter['request-timeout'] }}s
     # force reset of X-Forwarded-For
     header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
 {%- endmacro %} {# proxy_header #}
 
 {%- for tls in [True, False] %}
 {%- if tls %}
-{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
+{%-   set backend_url = slave_parameter.get('backend-https-url', slave_parameter.get('backend-http-url')) %}
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
 {%- else %}
-{%- set backend_url = slave_parameter.get('url', '').rstrip('/') %}
+{%-   set backend_url = slave_parameter['backend-http-url'] %}
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
@@ -178,11 +164,13 @@
 {%- endif %}
   } {# rewrite #}
 {%- endif %} {#- if prefer_gzip #}
-{%- elif slave_type ==  'redirect' and backend_url %} {#- if slave_type ==  'zope' and backend_url #}
+{%- elif slave_type == 'redirect' %}
+{%-   if backend_url %}
   # Redirect configuration
   redir 302 {
     /  {{ backend_url }}{rewrite_uri}
-  } {# redir #}
+  }
+{%-   endif %}
 {%- elif slave_type == 'notebook' %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
@@ -204,6 +192,8 @@
 {{ proxy_header() }}
 {%-     if websocket_transparent %}
     transparent
+{%-     else %}
+    header_upstream Host {host}
 {%-     endif %}
   }
 {%-     for websocket_path in websocket_path_list %}
@@ -212,6 +202,8 @@
     websocket
 {%-       if websocket_transparent %}
     transparent
+{%-       else %}
+    header_upstream Host {host}
 {%-       endif %}
   }
 {%-     endfor %}
@@ -221,6 +213,8 @@
     websocket
 {%-   if websocket_transparent %}
     transparent
+{%-   else %}
+    header_upstream Host {host}
 {%-   endif %}
   }
 {%-   endif %}
