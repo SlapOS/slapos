@@ -404,6 +404,13 @@ class TestDataMixin(object):
         'caddy-%s' % (partition_id)] = generateHashFromFiles(
         [caddy_wrapper_path] + hash_file_list
       )
+    for backend_haproxy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
+      partition_id = backend_haproxy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
+        [backend_haproxy_wrapper_path] + hash_file_list
+      )
     for rejected_slave_publish_path in glob.glob(os.path.join(
       self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
@@ -1101,6 +1108,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'url_https-url': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
+        'backend-connect-timeout': 10,
+        'backend-connect-retries': 5,
+        'request-timeout': 15,
       },
       'server-alias': {
         'url': cls.backend_url,
@@ -1551,7 +1561,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -1561,7 +1571,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 r'"GET \/test-path HTTP\/1.1" \d{3} \d+ "-" '\
                  r'"python-requests.*" \d+'
 
     self.assertRegexpMatches(
@@ -1616,16 +1626,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     if ignore_header_list is None:
       ignore_header_list = []
     self.assertFalse('remote_user' in backend_header_dict.keys())
-    self.assertFalse('x-forwarded-for-real' in backend_header_dict.keys())
     if 'Host' not in ignore_header_list:
       self.assertEqual(
         backend_header_dict['host'],
         '%s:%s' % (domain, port))
-    # XXX It's really hard to play with Caddy headers, thus we have to keep
-    #     some of them. As other solutions will come in future, more control
-    #     over sent X-Forwarded-For will be possible
     self.assertEqual(
-      backend_header_dict['x-forwarded-for'].split(',')[0],
+      backend_header_dict['x-forwarded-for'],
       source_ip
     )
     self.assertEqual(
@@ -1644,7 +1650,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
       headers={
-        'Timeout': '10',  # more than default proxy-try-duration == 5
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
         'Accept-Encoding': 'gzip',
       }
     )
@@ -1683,13 +1689,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Location']
     )
 
-    # check that try_duration == 5 in the test_url slave
-    slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
-    with open(slave_configuration_file) as fh:
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue('try_duration 5s' in content)
-      self.assertTrue('try_interval 250ms' in content)
+      self.assertTrue("""backend _Url-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3""" in content)
+      self.assertTrue("""  timeout queue 60s
+  timeout server 12s
+  timeout client 12s
+  timeout connect 5s
+  retries 3""" in content)
 
   def test_compressed_result(self):
     parameter_dict = self.assertSlaveBase('Url')
@@ -2649,7 +2662,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -2724,7 +2736,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHeaders(
       j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
       ignore_header_list=['Host'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -2872,7 +2883,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2949,7 +2960,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2984,7 +2995,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3037,47 +3048,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers
     )
 
-    result_direct = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26011)
-
-    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
-
-    try:
-      j = result_direct.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct.headers['Set-Cookie']
-    )
-
-    result_direct_https_backend = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26012)
-
-    self.assertEqualResultJson(
-      result_direct_https_backend, 'Path', '/test-path')
-
-    try:
-      j = result_direct_https_backend.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (
-        result_direct_https_backend.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse(
-      'Content-Encoding' in result_direct_https_backend.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct_https_backend.headers['Set-Cookie']
-    )
-
   def test_enable_cache_ssl_proxy_verify_unverified(self):
     parameter_dict = self.assertSlaveBase(
       'enable_cache-ssl-proxy-verify-unverified')
@@ -3090,7 +3060,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3123,7 +3093,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3192,7 +3162,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3206,7 +3176,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3243,7 +3213,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3281,7 +3251,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3472,37 +3442,24 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # real check: cache access provides old data, access cache directly, as
     # caddy has to be stopped
     try:
-      # stop caddy, to have error on while connecting to the backend
-      caddy_process_name = [
-        ':'.join([q['group'], q['name']]) for q in
-        self.callSupervisorMethod('getAllProcessInfo')
-        if 'caddy' in q['name'] and 'on-watch' in q['name']][0]
-      self.callSupervisorMethod('stopProcess', caddy_process_name)
+      # stop the backend, to have error on while connecting to it
+      self.stopServerProcess()
 
-      # sanity check: see that it is impossible to connect to caddy
-      with self.assertRaises(requests.ConnectionError):
-        fakeHTTPResult(
-          parameter_dict['domain'], parameter_dict['public-ipv4'],
-          'test-path/deep/.././deeper', headers={
-            'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-            'revalidate=3600, stale-if-error=3600'})
-
-      result = fakeHTTPResult(
-        # append with :HTTP_PORT to mimic access in ATS
-        parameter_dict['domain'] + ':' + HTTPS_PORT,
-        parameter_dict['public-ipv4'],
-        # prepend with HTTPS to mimic access via https in ATS
-        # use simple path, as it is changed in Caddy
-        'HTTPS/test-path/deeper',
-        port=23432, headers={
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper', headers={
           'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-          'revalidate=3600, stale-if-error=3600'})
+          'revalidate=3600, stale-if-error=3600',
+        },
+        source_ip=source_ip
+      )
       self.assertEqual(result.status_code, httplib.OK)
       self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
       headers = result.headers.copy()
       self.assertKeyWithPop('Server', headers)
       self.assertKeyWithPop('Date', headers)
       self.assertKeyWithPop('Age', headers)
+      self.assertKeyWithPop('Expires', headers)
       # drop keys appearing randomly in headers
       headers.pop('Transfer-Encoding', None)
       headers.pop('Content-Length', None)
@@ -3518,7 +3475,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           # 'Set-Cookie': 'secured=value;secure, nonsecured=value',
           'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                            'stale-if-error=3600',
-          'Warning': '111 ApacheTrafficServer/7.1.6'
         },
         headers
       )
@@ -3538,46 +3494,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       time.sleep(2)
     # END: check stale-if-error support
 
-    result_direct = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26011)
-
-    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
-
-    try:
-      j = result_direct.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct.headers['Set-Cookie']
-    )
-
-    result_direct_https_backend = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26012)
-
-    self.assertEqualResultJson(
-      result_direct_https_backend, 'Path', '/test-path')
-
-    try:
-      j = result_direct_https_backend.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (
-        result_direct_https_backend.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct_https_backend.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct_https_backend.headers['Set-Cookie']
-    )
-
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
     # check that timeout seen by ATS does not result in many queries done
@@ -3595,21 +3511,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.status_code
     )
 
-    caddy_log_file = glob.glob(
+    backend_haproxy_log_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
-        '_enable_cache_access_log'
+        self.instance_path, '*', 'var', 'log', 'backend-haproxy.log'
       ))[0]
 
     matching_line_amount = 0
     pattern = re.compile(
-      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
-    with open(caddy_log_file) as fh:
+      r'.* _enable_cache-http.backend .* 504 .*'
+      '"GET .test_enable_cache_ats_timeout HTTP.1.1"$')
+    with open(backend_haproxy_log_file) as fh:
       for line in fh.readlines():
         if pattern.match(line):
           matching_line_amount += 1
 
-    # Caddy used between ATS and the backend received maximum one connection
+    # Haproxy backend received maximum one connection
     self.assertIn(matching_line_amount, [0, 1])
 
     timeout = 5
@@ -4055,6 +3971,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
+
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue("""backend _url_https-url-http
+  timeout server 15s
+  timeout connect 10s
+  retries 5""" in content)
 
 
 @skip('Impossible to instantiate cluster with stopped partition')
