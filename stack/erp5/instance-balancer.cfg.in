@@ -38,6 +38,24 @@ mode = 644
 {% do section('caucase-updater') -%}
 {% do section('caucase-updater-promise') -%}
 
+{% for frontend_caucase_url in ssl_parameter_dict['frontend-caucase-url-list'] -%}
+{%   set path = frontend_caucase_url | urlencode | replace('/', '%2F') | replace('%', '.') -%}
+{%   set data_dir = '${directory:srv}/client-cert-ca/%s' % path -%}
+{{   caucase.updater(
+       prefix='caucase-updater-%s' % path,
+       buildout_bin_directory=parameter_dict['bin-directory'],
+       updater_path='${directory:services-on-watch}/caucase-updater-%s' % path,
+       url=frontend_caucase_url,
+       data_dir=data_dir,
+       ca_path='%s/ca.crt' % data_dir,
+       crl_path='%s/crl.pem' % data_dir,
+       on_renew='ln -sf %(data_dir)s/ca.crt ${apache-conf-ssl:ca-cert-dir}/%(path)s.crt; ln -sf %(data_dir)s/crl.pem ${apache-conf-ssl:crl-dir}/%(path)s.crl; ${apache-graceful:output}' % {'data_dir': data_dir, 'path': path},
+       max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
+       openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+     )}}
+{%   do section('caucase-updater-%s' % path) -%}
+{% endfor -%}
+
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
@@ -123,6 +141,13 @@ key = ${directory:apache-conf}/apache.pem
 # XXX caucase certificate is not supported by caddy for now
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
+{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+ca-cert-dir = ${directory:apache-ca-cert-dir}
+crl-dir = ${directory:apache-crl-dir}
+# Create a dummy CA because Apache will not start if SSLCACertificatePath directoy is empty.
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout /dev/null -out "${:ca-cert-dir}/dummy.crt" && {{ parameter_dict['openssl'] }}/bin/c_rehash "${:ca-cert-dir}"
+{%- endif %}
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}
@@ -176,6 +201,10 @@ output = ${directory:bin}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
+  {% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+  {{ parameter_dict['openssl'] }}/bin/c_rehash ${apache-conf-ssl:ca-cert-dir}
+  {{ parameter_dict['openssl'] }}/bin/c_rehash ${apache-conf-ssl:crl-dir}
+  {% endif -%}
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
 
 [{{ section('apache-promise') }}]
@@ -207,6 +236,10 @@ post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bi
 [directory]
 recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
+{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+apache-ca-cert-dir = ${:apache-conf}/ssl.crt
+apache-crl-dir = ${:apache-conf}/ssl.crl
+{% endif -%}
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
