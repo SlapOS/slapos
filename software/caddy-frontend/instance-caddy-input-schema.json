@@ -88,6 +88,16 @@
       "title": "Automatic Internal KeDiFa's Caucase CSR",
       "type": "string"
     },
+    "automatic-internal-backend-client-caucase-csr": {
+      "default": "true",
+      "description": "Automatically signs CSRs sent to Backend Client's caucase, based on csr_id and matching certificate.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Automatic Internal Backend Client's Caucase CSR",
+      "type": "string"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
@@ -98,6 +108,16 @@
       "description": "Timeout for HTTP requests.",
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
+    },
+    "authenticate-to-backend": {
+      "default": "false",
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
