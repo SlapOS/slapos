@@ -442,6 +442,18 @@ Then specify in the master instance parameters:
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
 
+Authentication to the backend
+=============================
+
+The cluster generates CA served by caucase, available with ``backend-client-caucase-url`` return parameter.
+
+Then, each slave configured with ``authenticate-to-backend`` to true, will use a certificate signed by this CA while accessing https backend.
+
+This allows backends to:
+
+ * restrict access only from some frontend clusters
+ * trust values (like ``X-Forwarded-For``) sent by the frontend
+
 Technical notes
 ===============
 
@@ -492,7 +504,7 @@ Automatic Internal Caucase CSR
 
 This is a special internal system used to replace human to sign CSRs against internal caucases. It's used to sign certificates for Kedifa (``automatic-internal-kedifa-caucase-csr``) and Backend Client (``automatic-internal-backend-client-caucase-csr``).
 
-As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions. One way would be to use human, which would visit instantiated instance on a partition (eg. by sshing into it), but this is impractical and quite often impossible. So an automatic way to boostrap trust is done.
+As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions. One way would be to use human, but this is impractical and quite often impossible. So an automatic way to boostrap trust is done. Of course, it can be disabled by setting one of the above switches to false.
 
 Having in mind such structure:
 
