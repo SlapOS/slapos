@@ -1,0 +1,66 @@
+# NON PROD CONFIG
+global
+  maxconn 4096
+log stderr local0
+defaults
+  log global
+  mode http
+  option httplog
+  option dontlognull
+  retries 1
+  option redispatch
+  maxconn 2000
+  cookie SERVERID rewrite
+  balance roundrobin
+  stats uri /haproxy
+  stats realm Global\ statistics
+  timeout server 305s
+  timeout queue 60s
+  timeout connect 5s
+  timeout client 305s
+  option httpclose
+
+{%- macro frontend_entry(slave_instance, scheme) %}
+{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   if slave_instance.get('custom_domain') not in host_list %}
+{%-     do host_list.append(slave_instance.get('custom_domain')) %}
+{%-   endif %}
+{%-   for host in host_list %}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_dom(host) -i {{ host }}
+{%-   endfor %}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%- endmacro %}
+
+frontend http-backend
+  bind {{ configuration['local_ipv4'] }}:{{ configuration['backend_haproxy_http_port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'http') }}
+{%- endfor %}
+
+frontend https-backend
+  bind {{ configuration['local_ipv4'] }}:{{ configuration['backend_haproxy_https_port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'https') }}
+{%- endfor %}
+
+{%- for slave_instance in backend_slave_list %}
+{%-   for (scheme, prefix) in [('http', 'http_backend'), ('https', 'https_backend')] %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     if info_dict['scheme'] == 'https' %}
+{#-       support ssl_proxy_verify #}
+{%-       set ssl = 'ssl verify none' %}
+{%-     else %}
+{%-       set ssl = '' %}
+{%-     endif %}
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     set hostname = info_dict['hostname'] %}
+{%-     set port = info_dict['port'] %}
+{%-     set path = info_dict['path'] %}
+{%-     if hostname and port %}
+  server backend {{ hostname }}:{{ port }} {{ ssl }}
+{%-       if path %}
+  http-request set-path {{ path }}%[path]
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+{%- endfor %}

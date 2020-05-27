@@ -21,8 +21,8 @@ parts =
   promise-caddy-frontend-v4-http
   promise-caddy-frontend-v6-https
   promise-caddy-frontend-v6-http
-  promise-caddy-frontend-cached
-  promise-caddy-frontend-ssl-cached
+  promise-backend-haproxy-http
+  promise-backend-haproxy-https
 
   trafficserver-launcher
   trafficserver-reload
@@ -36,7 +36,6 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
-## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
   monitor-traffic-summary-last-stats-wrapper
@@ -147,7 +146,7 @@ context =
 [software-release-path]
 template-empty = {{ parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
-template-cached-slave-virtualhost = {{ parameter_dict['template_cached_slave_virtualhost'] }}
+template-backend-haproxy-configuration = {{ parameter_dict['template_backend_haproxy_configuration'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
 
 [kedifa-login-config]
@@ -210,13 +209,12 @@ kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
-service_directory = ${directory:service}
+haproxy_executable = {{ parameter_dict['haproxy_executable'] }}
 extra-context =
+    import urlparse_module urlparse
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
-    key caddy_cached_configuration_directory caddy-directory:slave-with-cache-configuration
-    key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     key kedifa_updater :kedifa-updater
     key kedifa_updater_mapping_file :kedifa-updater-mapping-file
     key kedifa_updater_state_file :kedifa-updater-state-file
@@ -248,7 +246,6 @@ extra-context =
     key global_ipv6 slap-network-information:global-ipv6
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
-    key template_cached_slave_configuration software-release-path:template-cached-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key frontend_graceful_reload caddy-configuration:frontend-graceful-command
@@ -266,14 +263,15 @@ extra-context =
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
-    key service_directory directory:service
-    key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
+## backend haproxy
+    key haproxy_executable :haproxy_executable
+    key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
@@ -288,9 +286,6 @@ extra-context =
     key master_certificate caddy-configuration:master-certificate
     key access_log caddy-configuration:access-log
     key slave_configuration_directory caddy-directory:slave-configuration
-    key cached_port caddy-configuration:cache-through-port
-    key ssl_cached_port caddy-configuration:ssl-cache-through-port
-    key slave_with_cache_configuration_directory caddy-directory:slave-with-cache-configuration
     section frontend_configuration frontend-configuration
     key http_port configuration:plain_http_port
     key https_port configuration:port
@@ -343,7 +338,6 @@ command = ln -sf  {{ parameter_dict['template_not_found_html'] }} ${caddy-direct
 recipe = slapos.cookbook:mkdirectory
 document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/caddy-slave-conf.d/
-slave-with-cache-configuration = ${directory:etc}/caddy-slave-with-cache-conf.d/
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
@@ -362,8 +356,8 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
-cache-through-port = 26011
-ssl-cache-through-port = 26012
+backend-haproxy-http-port = 21080
+backend-haproxy-https-port = 21443
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -415,8 +409,8 @@ reload-path = ${directory:etc-run}/trafficserver-reload
 local-ip = {{ instance_parameter['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
-remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:ssl-cache-through-port}
-  map / http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:cache-through-port}
+remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:backend-haproxy-https-port}
+  map / http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:backend-haproxy-http-port}
 
 plugin-config =
 ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
@@ -547,7 +541,7 @@ template = {{ parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:slave-with-cache-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -642,19 +636,19 @@ name = caddy_frontend_ipv6_http.py
 config-hostname = {{ instance_parameter['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
-[promise-caddy-frontend-cached]
+[promise-backend-haproxy-http]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_cached.py
+name = backend_haproxy_http.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
-config-port = ${caddy-configuration:cache-through-port}
+config-port = ${caddy-configuration:backend-haproxy-http-port}
 
-[promise-caddy-frontend-ssl-cached]
+[promise-backend-haproxy-https]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_ssl_cached.py
+name = backend_haproxy_https.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
-config-port = ${caddy-configuration:ssl-cache-through-port}
+config-port = ${caddy-configuration:backend-haproxy-https-port}
 
 #######
 # Monitoring sections
