@@ -49,6 +49,10 @@
     "kedifa-caucase-url": {
       "description": "URL to caucase used by KeDiFa",
       "type": "string"
+    },
+    "backend-client-caucase-url": {
+      "description": "URL to caucase used by authentication to the backend.",
+      "type": "string"
     }
   },
   "type": "object"
