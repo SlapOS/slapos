@@ -404,6 +404,13 @@ class TestDataMixin(object):
         'caddy-%s' % (partition_id)] = generateHashFromFiles(
         [caddy_wrapper_path] + hash_file_list
       )
+    for backend_haproxy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
+      partition_id = backend_haproxy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
+        [backend_haproxy_wrapper_path] + hash_file_list
+      )
     for rejected_slave_publish_path in glob.glob(os.path.join(
       self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
@@ -537,15 +544,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return "RootSoftwareInstance"
 
   @classmethod
-  def startServerProcess(cls):
-    server = HTTPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
-      TestHandler)
-
-    server_https = HTTPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
-      TestHandler)
-
+  def prepareCertificate(cls):
     cls.another_server_ca = CertificateAuthority("Another Server Root CA")
     cls.test_server_ca = CertificateAuthority("Test Server Root CA")
     key, key_pem, csr, csr_pem = createCSR(
@@ -560,6 +559,17 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         cls.test_server_certificate_pem + key_pem
       )
     cls.test_server_certificate_file.close()
+
+  @classmethod
+  def startServerProcess(cls):
+    server = HTTPServer(
+      (cls._ipv4_address, cls._server_http_port),
+      TestHandler)
+
+    server_https = HTTPServer(
+      (cls._ipv4_address, cls._server_https_port),
+      TestHandler)
+
     server_https.socket = ssl.wrap_socket(
       server_https.socket,
       certfile=cls.test_server_certificate_file.name,
@@ -578,9 +588,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     cls.logger.debug('Started process %s' % (cls.server_https_process,))
 
   @classmethod
-  def stopServerProcess(cls):
+  def cleanUpCertificate(cls):
     if getattr(cls, 'test_server_certificate_file', None) is not None:
       os.unlink(cls.test_server_certificate_file.name)
+
+  @classmethod
+  def stopServerProcess(cls):
     for server in ['server_process', 'server_https_process']:
       process = getattr(cls, server, None)
       if process is not None:
@@ -831,6 +844,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def _cleanup(cls, snapshot_name):
+    cls.cleanUpCertificate()
     cls.stopServerProcess()
     super(HttpFrontendTestCase, cls)._cleanup(snapshot_name)
 
@@ -838,6 +852,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def setUpClass(cls):
     try:
       cls.createWildcardExampleComCertificate()
+      cls.prepareCertificate()
+      # find ports once to be able startServerProcess many times
+      cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -1081,14 +1099,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   @classmethod
-  def startServerProcess(cls):
+  def prepareCertificate(cls):
     cls.ca = CertificateAuthority('TestSlave')
     _, cls.customdomain_ca_key_pem, csr, _ = createCSR(
       'customdomainsslcrtsslkeysslcacrt.example.com')
     _, cls.customdomain_ca_certificate_pem = cls.ca.signCSR(csr)
     _, cls.customdomain_key_pem, _, cls.customdomain_certificate_pem = \
         createSelfSignedCertificate(['customdomainsslcrtsslkey.example.com'])
-    super(TestSlave, cls).startServerProcess()
+    super(TestSlave, cls).prepareCertificate()
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -1101,10 +1119,17 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'url_https-url': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
+        'backend-connect-timeout': 10,
+        'backend-connect-retries': 5,
+        'request-timeout': 15,
       },
       'server-alias': {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
+      },
+      'server-alias-empty': {
+        'url': cls.backend_url,
+        'server-alias': '',
       },
       'server-alias-wildcard': {
         'url': cls.backend_url,
@@ -1500,9 +1525,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '51',
+      'accepted-slave-amount': '52',
       'rejected-slave-amount': '0',
-      'slave-amount': '51',
+      'slave-amount': '52',
       'rejected-slave-dict': {
       }
     }
@@ -1551,7 +1576,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -1561,7 +1586,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 r'"GET \/test-path HTTP\/1.1" \d{3} \d+ "-" '\
                  r'"python-requests.*" \d+'
 
     self.assertRegexpMatches(
@@ -1616,16 +1641,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     if ignore_header_list is None:
       ignore_header_list = []
     self.assertFalse('remote_user' in backend_header_dict.keys())
-    self.assertFalse('x-forwarded-for-real' in backend_header_dict.keys())
     if 'Host' not in ignore_header_list:
       self.assertEqual(
         backend_header_dict['host'],
         '%s:%s' % (domain, port))
-    # XXX It's really hard to play with Caddy headers, thus we have to keep
-    #     some of them. As other solutions will come in future, more control
-    #     over sent X-Forwarded-For will be possible
     self.assertEqual(
-      backend_header_dict['x-forwarded-for'].split(',')[0],
+      backend_header_dict['x-forwarded-for'],
       source_ip
     )
     self.assertEqual(
@@ -1644,7 +1665,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
       headers={
-        'Timeout': '10',  # more than default proxy-try-duration == 5
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
         'Accept-Encoding': 'gzip',
       }
     )
@@ -1683,13 +1704,181 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Location']
     )
 
-    # check that try_duration == 5 in the test_url slave
-    slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
-    with open(slave_configuration_file) as fh:
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue('try_duration 5s' in content)
-      self.assertTrue('try_interval 250ms' in content)
+      self.assertTrue("""backend _Url-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3""" in content)
+      self.assertTrue("""  timeout queue 60s
+  timeout server 12s
+  timeout client 12s
+  timeout connect 5s
+  retries 3""" in content)
+
+  def test_url_to_auth_backend(self):
+    parameter_dict = self.assertSlaveBase('url-to-auth-backend')
+    # 1. fetch certificate from backend-client-caucase-url
+    master_parameter_dict = self.parseConnectionParameterDict()
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
+    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    ca_certificate_file = os.path.join(
+      self.working_directory, 'ca-backend-client.crt.pem')
+    with open(ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
+
+    # 2. start backend with this certificate
+    class OwnTestHandler(TestHandler):
+      identification = 'Auth Backend'
+
+    server_https_auth = HTTPServer(
+      (self._ipv4_address, self._server_https_auth_port),
+      OwnTestHandler)
+
+    server_https_auth.socket = ssl.wrap_socket(
+      server_https_auth.socket,
+      certfile=self.test_server_certificate_file.name,
+      cert_reqs=ssl.CERT_REQUIRED,
+      ca_certs=ca_certificate_file,
+      server_side=True)
+
+    backend_https_auth_url = 'https://%s:%s/' \
+        % server_https_auth.server_address
+
+    server_https_auth_process = multiprocessing.Process(
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
+    server_https_auth_process.start()
+    self.logger.debug('Started process %s' % (server_https_auth_process,))
+    try:
+      # 3. assert that you can't fetch nothing without key
+      try:
+        requests.get(backend_https_auth_url, verify=False)
+      except Exception:
+        pass
+      else:
+        self.fail(
+          'Access to %r shall be not possible without certificate' % (
+            backend_https_auth_url,))
+      # 4. check that you can access this backend via frontend
+      #    (so it means that auth to backend worked)
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper',
+        headers={
+          'Timeout': '10',  # more than default backend-connect-timeout == 5
+          'Accept-Encoding': 'gzip',
+        }
+      )
+
+      self.assertEqual(
+        self.certificate_pem,
+        der2pem(result.peercert))
+
+      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+      try:
+        j = result.json()
+      except Exception:
+        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+
+      self.assertEqual(j['Incoming Headers']['timeout'], '10')
+      self.assertFalse('Content-Encoding' in result.headers)
+      self.assertBackendHeaders(
+         j['Incoming Headers'], parameter_dict['domain'])
+
+      self.assertEqual(
+        'secured=value;secure, nonsecured=value',
+        result.headers['Set-Cookie']
+      )
+      # proof that proper backend was accessed
+      self.assertEqual(
+        'Auth Backend',
+        result.headers['X-Backend-Identification']
+      )
+    finally:
+      self.logger.debug('Stopping process %s' % (server_https_auth_process,))
+      server_https_auth_process.join(10)
+      server_https_auth_process.terminate()
+      time.sleep(0.1)
+      if server_https_auth_process.is_alive():
+        self.logger.warning(
+          'Process %s still alive' % (server_https_auth_process, ))
+
+  def test_url_to_auth_backend_not_configured(self):
+    parameter_dict = self.assertSlaveBase('url-to-auth-backend-not-configured')
+    # 1. fetch certificate from backend-client-caucase-url
+    master_parameter_dict = self.parseConnectionParameterDict()
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
+    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    ca_certificate_file = os.path.join(
+      self.working_directory, 'ca-backend-client.crt.pem')
+    with open(ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
+
+    # 2. start backend with this certificate
+    class OwnTestHandler(TestHandler):
+      identification = 'Auth Backend'
+
+    server_https_auth = HTTPServer(
+      (self._ipv4_address, self._server_https_auth_port),
+      OwnTestHandler)
+
+    server_https_auth.socket = ssl.wrap_socket(
+      server_https_auth.socket,
+      certfile=self.test_server_certificate_file.name,
+      cert_reqs=ssl.CERT_REQUIRED,
+      ca_certs=ca_certificate_file,
+      server_side=True)
+
+    backend_https_auth_url = 'https://%s:%s/' \
+        % server_https_auth.server_address
+
+    server_https_auth_process = multiprocessing.Process(
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
+    server_https_auth_process.start()
+    self.logger.debug('Started process %s' % (server_https_auth_process,))
+    try:
+      # 3. assert that you can't fetch nothing without key
+      try:
+        requests.get(backend_https_auth_url, verify=False)
+      except Exception:
+        pass
+      else:
+        self.fail(
+          'Access to %r shall be not possible without certificate' % (
+            backend_https_auth_url,))
+      # 4. check that you can access this backend via frontend
+      #    (so it means that auth to backend worked)
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper',
+        headers={
+          'Timeout': '10',  # more than default backend-connect-timeout == 5
+          'Accept-Encoding': 'gzip',
+        }
+      )
+
+      self.assertEqual(
+        self.certificate_pem,
+        der2pem(result.peercert))
+
+      self.assertEqual(
+        result.status_code,
+        httplib.BAD_GATEWAY
+      )
+    finally:
+      self.logger.debug('Stopping process %s' % (server_https_auth_process,))
+      server_https_auth_process.join(10)
+      server_https_auth_process.terminate()
+      time.sleep(0.1)
+      if server_https_auth_process.is_alive():
+        self.logger.warning(
+          'Process %s still alive' % (server_https_auth_process, ))
 
   def test_compressed_result(self):
     parameter_dict = self.assertSlaveBase('Url')
@@ -1851,6 +2040,38 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+  def test_server_alias_empty(self):
+    parameter_dict = self.assertSlaveBase('server-alias-empty')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+
+    self.assertEqual(j['Incoming Headers']['timeout'], '10')
+    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result.headers['Set-Cookie']
+    )
 
   def test_server_alias_wildcard(self):
     parameter_dict = self.parseSlaveParameterDict('server-alias-wildcard')
@@ -2649,7 +2870,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -2724,7 +2944,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHeaders(
       j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
       ignore_header_list=['Host'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -2872,7 +3091,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2949,7 +3168,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2984,7 +3203,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3037,47 +3256,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       headers
     )
 
-    result_direct = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26011)
-
-    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
-
-    try:
-      j = result_direct.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct.headers['Set-Cookie']
-    )
-
-    result_direct_https_backend = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26012)
-
-    self.assertEqualResultJson(
-      result_direct_https_backend, 'Path', '/test-path')
-
-    try:
-      j = result_direct_https_backend.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (
-        result_direct_https_backend.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse(
-      'Content-Encoding' in result_direct_https_backend.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct_https_backend.headers['Set-Cookie']
-    )
-
   def test_enable_cache_ssl_proxy_verify_unverified(self):
     parameter_dict = self.assertSlaveBase(
       'enable_cache-ssl-proxy-verify-unverified')
@@ -3090,7 +3268,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3123,7 +3301,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3192,7 +3370,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3206,7 +3384,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3243,7 +3421,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3281,7 +3459,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3472,37 +3650,24 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # real check: cache access provides old data, access cache directly, as
     # caddy has to be stopped
     try:
-      # stop caddy, to have error on while connecting to the backend
-      caddy_process_name = [
-        ':'.join([q['group'], q['name']]) for q in
-        self.callSupervisorMethod('getAllProcessInfo')
-        if 'caddy' in q['name'] and 'on-watch' in q['name']][0]
-      self.callSupervisorMethod('stopProcess', caddy_process_name)
+      # stop the backend, to have error on while connecting to it
+      self.stopServerProcess()
 
-      # sanity check: see that it is impossible to connect to caddy
-      with self.assertRaises(requests.ConnectionError):
-        fakeHTTPResult(
-          parameter_dict['domain'], parameter_dict['public-ipv4'],
-          'test-path/deep/.././deeper', headers={
-            'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-            'revalidate=3600, stale-if-error=3600'})
-
-      result = fakeHTTPResult(
-        # append with :HTTP_PORT to mimic access in ATS
-        parameter_dict['domain'] + ':' + HTTPS_PORT,
-        parameter_dict['public-ipv4'],
-        # prepend with HTTPS to mimic access via https in ATS
-        # use simple path, as it is changed in Caddy
-        'HTTPS/test-path/deeper',
-        port=23432, headers={
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper', headers={
           'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-          'revalidate=3600, stale-if-error=3600'})
+          'revalidate=3600, stale-if-error=3600',
+        },
+        source_ip=source_ip
+      )
       self.assertEqual(result.status_code, httplib.OK)
       self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
       headers = result.headers.copy()
       self.assertKeyWithPop('Server', headers)
       self.assertKeyWithPop('Date', headers)
       self.assertKeyWithPop('Age', headers)
+      self.assertKeyWithPop('Expires', headers)
       # drop keys appearing randomly in headers
       headers.pop('Transfer-Encoding', None)
       headers.pop('Content-Length', None)
@@ -3518,7 +3683,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           # 'Set-Cookie': 'secured=value;secure, nonsecured=value',
           'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
                            'stale-if-error=3600',
-          'Warning': '111 ApacheTrafficServer/7.1.6'
         },
         headers
       )
@@ -3532,51 +3696,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.6\)$'
       )
     finally:
-      self.callSupervisorMethod('startProcess', caddy_process_name)
-      # give few moments for caddy to start
-      # XXX: convert to a loop which awaits caddy to be ready
-      time.sleep(2)
+      self.startServerProcess()
     # END: check stale-if-error support
-
-    result_direct = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26011)
-
-    self.assertEqualResultJson(result_direct, 'Path', '/test-path')
-
-    try:
-      j = result_direct.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result_direct.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct.headers['Set-Cookie']
-    )
-
-    result_direct_https_backend = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
-      port=26012)
-
-    self.assertEqualResultJson(
-      result_direct_https_backend, 'Path', '/test-path')
-
-    try:
-      j = result_direct_https_backend.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (
-        result_direct_https_backend.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertFalse('Content-Encoding' in result_direct_https_backend.headers)
-
-    self.assertEqual(
-      'secured=value;secure, nonsecured=value',
-      result_direct_https_backend.headers['Set-Cookie']
-    )
 
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3595,21 +3716,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.status_code
     )
 
-    caddy_log_file = glob.glob(
+    backend_haproxy_log_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
-        '_enable_cache_access_log'
+        self.instance_path, '*', 'var', 'log', 'backend-haproxy.log'
       ))[0]
 
     matching_line_amount = 0
     pattern = re.compile(
-      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
-    with open(caddy_log_file) as fh:
+      r'.* _enable_cache-http.backend .* 504 .*'
+      '"GET .test_enable_cache_ats_timeout HTTP.1.1"$')
+    with open(backend_haproxy_log_file) as fh:
       for line in fh.readlines():
         if pattern.match(line):
           matching_line_amount += 1
 
-    # Caddy used between ATS and the backend received maximum one connection
+    # Haproxy backend received maximum one connection
     self.assertIn(matching_line_amount, [0, 1])
 
     timeout = 5
@@ -4055,6 +4176,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
+
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue("""backend _url_https-url-http
+  timeout server 15s
+  timeout connect 10s
+  retries 5""" in content)
 
 
 @skip('Impossible to instantiate cluster with stopped partition')
@@ -5281,7 +5412,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     # Do not upload certificates for the master partition
 
   @classmethod
-  def startServerProcess(cls):
+  def prepareCertificate(cls):
     _, cls.ssl_from_slave_key_pem, _, cls.ssl_from_slave_certificate_pem = \
       createSelfSignedCertificate(
         [
@@ -5325,7 +5456,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         createSelfSignedCertificate(['customdomainsslcrtsslkey.example.com'])
 
     super(
-      TestSlaveSlapOSMasterCertificateCompatibility, cls).startServerProcess()
+      TestSlaveSlapOSMasterCertificateCompatibility, cls).prepareCertificate()
 
   @classmethod
   def getInstanceParameterDict(cls):
