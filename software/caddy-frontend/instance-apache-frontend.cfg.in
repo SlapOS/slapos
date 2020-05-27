@@ -14,6 +14,8 @@ parts =
   switch-caddy-softwaretype
   caucase-updater
   caucase-updater-promise
+  backend-client-caucase-updater
+  backend-client-caucase-updater-promise
   frontend-caddy-graceful
   not-found-html
   port-redirection
@@ -64,6 +66,7 @@ service = ${:etc}/service
 etc-run = ${:etc}/run
 
 ca-dir = ${:srv}/ssl
+backend-client-dir = ${:srv}/backend-client
 # BBB: SlapOS Master non-zero knowledge BEGIN
 bbb-ssl-dir = ${:srv}/bbb-ssl
 # BBB: SlapOS Master non-zero knowledge END
@@ -197,6 +200,47 @@ stop-on-error = True
      crl_path='${kedifa-login-config:crl}',
      key_path='${kedifa-login-csr:key}',
      template_csr='${kedifa-login-csr:template-csr}'
+)}}
+
+[backend-client-login-config]
+d = ${directory:backend-client-dir}
+template-csr = ${:d}/csr.pem
+key = ${:d}/certificate.pem
+certificate = ${:key}
+ca-certificate = ${:d}/ca.pem
+cas-ca-certificate = ${:d}/cas-ca.pem
+crl = ${:d}/crl.pem
+
+[backend-client-login-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+command =
+{% if slapparameter_dict['backend-client-caucase-url'] %}
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:template-csr}
+  fi
+{% endif %}
+  test -f ${:key} && test -f ${:template-csr}
+update-command = ${:command}
+template-csr = ${backend-client-login-config:template-csr}
+key = ${backend-client-login-config:key}
+stop-on-error = True
+
+{{ caucase.updater(
+     prefix='backend-client-caucase-updater',
+     buildout_bin_directory=parameter_dict['bin_directory'],
+     updater_path='${directory:service}/backend-client-login-certificate-caucase-updater',
+     url=slapparameter_dict['backend-client-caucase-url'],
+     data_dir='${directory:srv}/backend-client-caucase-updater',
+     crt_path='${backend-client-login-config:certificate}',
+     ca_path='${backend-client-login-config:ca-certificate}',
+     crl_path='${backend-client-login-config:crl}',
+     key_path='${backend-client-login-csr:key}',
+     template_csr='${backend-client-login-csr:template-csr}'
 )}}
 
 [dynamic-custom-personal-template-slave-list]
