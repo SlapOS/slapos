@@ -11,6 +11,12 @@ T-2/var/log/frontend-error.log
 T-2/var/log/httpd-csr_id/expose-csr_id.log
 T-2/var/log/httpd/_Url_access_log
 T-2/var/log/httpd/_Url_error_log
+T-2/var/log/httpd/_auth-to-backend-backend-ignore_access_log
+T-2/var/log/httpd/_auth-to-backend-backend-ignore_error_log
+T-2/var/log/httpd/_auth-to-backend-not-configured_access_log
+T-2/var/log/httpd/_auth-to-backend-not-configured_error_log
+T-2/var/log/httpd/_auth-to-backend_access_log
+T-2/var/log/httpd/_auth-to-backend_error_log
 T-2/var/log/httpd/_ciphers_access_log
 T-2/var/log/httpd/_ciphers_error_log
 T-2/var/log/httpd/_custom_domain_access_log
