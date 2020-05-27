@@ -1,0 +1,48 @@
+{%- set host_list = slave_parameter.get('server-alias', '').split() %}
+{#- support https-url #}
+{%- set url = slave_parameter.get('backend_url', slave_parameter.get('url', '')) %}
+{%- set parsed = urlparse_module.urlparse(url) %}
+{%- set backend_host = parsed.hostname %}
+{%- set backend_port = parsed.port %}
+{%- if parsed.scheme == 'https' %}
+{#-   support ssl_proxy_verify #}
+{%-   set ssl = 'ssl verify none' %}
+{%- else %}
+{%-   set ssl = '' %}
+{%- endif %}
+{%- set https_url = slave_parameter.get('https_backend_url', slave_parameter.get('https-url', '')) %}
+{%- set https_parsed = urlparse_module.urlparse(https_url) %}
+{%- set https_backend_host = https_parsed.hostname %}
+{%- set https_backend_port = https_parsed.port %}
+{%- if https_parsed.scheme == 'https' %}
+{#-   support ssl_proxy_verify #}
+{%-   set https_ssl = 'ssl verify none' %}
+{%- else %}
+{%-   set https_ssl = '' %}
+{%- endif %}
+{%- if slave_parameter.get('custom_domain') not in host_list %}
+{%-   do host_list.append(slave_parameter.get('custom_domain')) %}
+{%- endif %}
+frontend {{ slave_parameter['slave_reference'] }}
+  bind {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['backend_haproxy_port'] }}
+{%- for host in host_list %}
+  acl is_{{ slave_parameter['slave_reference'] }} hdr_beg(host) -i {{ host }}
+{%- endfor %}
+  use_backend {{ slave_parameter['slave_reference'] }} if is_{{ slave_parameter['slave_reference'] }}
+
+backend {{ slave_parameter['slave_reference'] }}
+{%- if backend_host and backend_port %}
+  server backend {{ backend_host }}:{{ backend_port }} {{ ssl }}
+{%- endif %}
+
+frontend {{ slave_parameter['slave_reference'] }}-https
+  bind {{ slave_parameter['local_ipv4'] }}:{{ slave_parameter['backend_haproxy_https_port'] }}
+{%- for host in host_list %}
+  acl is_{{ slave_parameter['slave_reference'] }}-https hdr_beg(host) -i {{ host }}
+{%- endfor %}
+  use_backend {{ slave_parameter['slave_reference'] }}-https if is_{{ slave_parameter['slave_reference'] }}-https
+
+backend {{ slave_parameter['slave_reference'] }}-https
+{%- if https_backend_host and https_backend_port %}
+  server backend {{ https_backend_host }}:{{ https_backend_port }} {{ https_ssl }}
+{%- endif %}
