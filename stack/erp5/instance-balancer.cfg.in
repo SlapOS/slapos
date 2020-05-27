@@ -21,40 +21,22 @@ recipe = slapos.recipe.template:jinja2
 mode = 644
 
 {{ caucase.updater(
-     prefix='caucase-updater-0',
+     prefix='caucase-updater',
      buildout_bin_directory=parameter_dict['bin-directory'],
-     updater_path='${directory:services-on-watch}/caucase-updater-0',
+     updater_path='${directory:services-on-watch}/caucase-updater',
      url=ssl_parameter_dict['caucase-url'],
-     data_dir='${directory:srv}/caucase-updater-0',
+     data_dir='${directory:srv}/caucase-updater',
      crt_path='${apache-conf-ssl:caucase-cert}',
-     ca_path='${directory:srv}/caucase-updater-0/ca.crt',
-     crl_path='${directory:srv}/caucase-updater-0/crl.pem',
+     ca_path='${apache-conf-ssl:ca-cert}',
+     crl_path='${apache-conf-ssl:crl}',
      key_path='${apache-conf-ssl:caucase-key}',
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
      template_csr_pem=ssl_parameter_dict.get('csr'),
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
-{% do section('caucase-updater-0') -%}
-{% do section('caucase-updater-0-promise') -%}
-
-{% for idx, frontend_caucase_url in enumerate(ssl_parameter_dict['frontend-caucase-url-list']) -%}
-{{   caucase.updater(
-       prefix='caucase-updater-%s' % (idx + 1),
-       buildout_bin_directory=parameter_dict['bin-directory'],
-       updater_path='${directory:services-on-watch}/caucase-updater-%s' % (idx + 1),
-       url=frontend_caucase_url,
-       data_dir='${directory:srv}/caucase-updater-%s' % (idx + 1),
-       ca_path='${directory:srv}/caucase-updater-%s/ca.crt' % (idx + 1),
-       crl_path='${directory:srv}/caucase-updater-%s/crl.pem' % (idx + 1),
-       on_renew='${apache-graceful:output}',
-       max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
-       template_csr_pem=ssl_parameter_dict.get('csr'),
-       openssl=parameter_dict['openssl'] ~ '/bin/openssl',
-     )}}
-{%   do section('caucase-updater-%s' % (idx + 1)) -%}
-{%   do section('caucase-updater-%s-promise' % (idx + 1)) -%}
-{% endfor -%}
+{% do section('caucase-updater') -%}
+{% do section('caucase-updater-promise') -%}
 
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
@@ -194,22 +176,9 @@ wait-for-files =
 recipe = collective.recipe.template
 output = ${directory:bin}/apache-httpd-graceful
 mode = 700
-input =
-  inline:
-  #!{{parameter_dict['bin-directory']}}/python2.7
-  from lock_file import LockFile
-  import os
-  import subprocess
-  with LockFile('${apache-conf-ssl:ca-cert}.lock', wait = True):
-    ca_path_list = [{% for idx in range(len(frontend_caucase_url_list) + 1) -%} '{{ '${directory:srv}/caucase-updater-%s/ca.crt' % idx }}', {% endfor -%}]
-    valid_ca_path_list = [path for path in ca_path_list
-                          if os.path.isfile(path) and subprocess.call(['openssl', 'x509', '-in', path], stdout=subprocess.PIPE) == 0]
-    file('${apache-conf-ssl:ca-cert}', 'w').write('\n'.join(file(path).read() for path in valid_ca_path_list))
-    crl_path_list = [{% for idx in range(len(frontend_caucase_url_list) + 1) -%} '{{ '${directory:srv}/caucase-updater-%s/crl.pem' % idx }}', {% endfor -%}]
-    valid_crl_path_list = [path for path in crl_path_list
-                          if os.path.isfile(path) and subprocess.call(['openssl', 'crl', '-in', path], stdout=subprocess.PIPE) == 0]
-    file('${apache-conf-ssl:crl}', 'w').write('\n'.join(file(path).read() for path in valid_crl_path_list))
-    subprocess.call(['kill',  '-USR1', file('${apache-conf-parameter-dict:pid-file}').read().strip()])
+input = inline:
+  #!/bin/sh
+  kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
 
 [{{ section('apache-promise') }}]
 <= monitor-promise-base
