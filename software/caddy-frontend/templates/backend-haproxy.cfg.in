@@ -51,7 +51,8 @@ frontend https-backend
 {%-   for (scheme, prefix) in [('http', 'http_backend'), ('https', 'https_backend')] %}
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     if info_dict['scheme'] == 'https' %}
-{%-       set ssl = ['ssl verify'] %}
+{%-       set ssl = ['crt %s' % (configuration['backend-client-login-certificate'],)] %}
+{%-       do ssl.append('ssl verify') %}
 {%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
 {%-       if slave_instance['ssl_proxy_verify'] %}
 {%-         if path_to_ssl_proxy_ca_crt %}
