@@ -36,6 +36,8 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
+## Backend haproxy
+  backend-haproxy
 ## Monitor for Caddy
   monitor-base
   monitor-ats-cache-stats-wrapper
@@ -71,6 +73,9 @@ frontend_cluster = ${:var}/frontend_cluster
 csr_id = ${:srv}/csr_id
 caddy-csr_id = ${:etc}/caddy-csr_id
 caddy-csr_id-log = ${:log}/httpd-csr_id
+
+# backend-haproxy
+backend-haproxy-configuration = ${:etc}/backend-haproxy.d
 
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
@@ -149,6 +154,7 @@ template-empty = {{ parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
 template-cached-slave-virtualhost = {{ parameter_dict['template_cached_slave_virtualhost'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
+template-backend-haproxy-slave = {{ parameter_dict['template_backend_haproxy_slave'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -211,7 +217,9 @@ kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
 service_directory = ${directory:service}
+haproxy_executable = {{ parameter_dict['haproxy_executable'] }}
 extra-context =
+    import urlparse_module urlparse
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
     key caddy_configuration_directory caddy-directory:slave-configuration
@@ -274,6 +282,10 @@ extra-context =
     key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
+## backend haproxy
+    key haproxy_executable :haproxy_executable
+    key template_backend_haproxy_slave_configuration software-release-path:template-backend-haproxy-slave
+    key backend_haproxy_configuration_directory backend-haproxy-config:configuration-directory
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
@@ -367,6 +379,8 @@ master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 cache-port = ${trafficserver-variable:input-port}
 cache-through-port = 26011
 ssl-cache-through-port = 26012
+backend-haproxy-port = 21080
+backend-haproxy-https-port = 21081
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -726,6 +740,41 @@ mode = 0644
 extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
+
+##<Backend haproxy>
+[backend-haproxy-base-configuration]
+< = jinja2-template-base
+template = {{ parameter_dict['template_backend_haproxy_configuration'] }}
+rendered = ${backend-haproxy-config:base-configuration}
+extra-context =
+
+[backend-haproxy-config]
+base-configuration = ${directory:etc}/backend-haproxy.cfg
+configuration-directory = ${directory:backend-haproxy-configuration}
+pid-file = ${directory:var}/backend-haproxy.pid
+
+[backend-haproxy-wrapper]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!/bin/sh
+  ulimit -n $(ulimit -Hn)
+  exec {{ parameter_dict['haproxy_executable'] }} \
+  -f ${backend-haproxy-config:base-configuration} \
+  -f ${backend-haproxy-config:configuration-directory} \
+   "$@"
+rendered = ${directory:bin}/backend-haproxy-wrapper
+mode = 0755
+
+[backend-haproxy]
+depends =
+  ${backend-haproxy-base-configuration:rendered}
+recipe = slapos.cookbook:wrapper
+command-line = ${backend-haproxy-wrapper:rendered} -p ${backend-haproxy-config:pid-file}
+wrapper-path = ${directory:service}/backend-haproxy
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${backend-haproxy-wrapper:rendered}
+
+##<Backend haproxy>
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
