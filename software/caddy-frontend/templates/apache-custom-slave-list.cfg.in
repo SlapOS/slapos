@@ -110,11 +110,12 @@ create = true
 {%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
 {#-   Pass backend timeout values #}
-{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout'] %}
+{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
 {%-     if slave_instance.get(key, '') == '' %}
 {%-       do slave_instance.__setitem__(key, configuration[key]) %}
 {%-     endif %}
 {%-   endfor %}
+{%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
@@ -126,6 +127,7 @@ create = true
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%-   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
+{%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
@@ -342,6 +344,7 @@ slave-instance-information-list = {{ json_module.dumps(slave_instance_informatio
 {%- endif %}
 monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
+backend-client-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/backend-haproxy-csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 
 [kedifa-updater]
@@ -400,6 +403,25 @@ https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
+certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
+
+[store-backend-haproxy-csr_id]
+recipe = plone.recipe.command
+
+csr_id_path = {{ directory['csr_id'] }}/backend-haproxy-csr_id.txt
+csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  {{ bin_directory }}/caucase \
+    --ca-url {{ backend_haproxy_configuration['caucase-url'] }} \
+    --ca-crt {{ backend_haproxy_configuration['cas-ca-certificate'] }} \
+    --crl {{ backend_haproxy_configuration['crl'] }} \
+    --mode service \
+    --send-csr {{ backend_haproxy_configuration['csr'] }} > ${:csr_work_path} && \
+  cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+
 ##<Backend haproxy>
 
 [buildout]
@@ -483,7 +505,9 @@ config-hostname = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]
-depends = ${store-csr_id:command}
+depends =
+  ${store-csr_id:command}
+  ${store-backend-haproxy-csr_id:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ caddy_executable }}
   -conf ${expose-csr_id-template:rendered}
