@@ -9,6 +9,9 @@
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
+{% set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] %}
+{% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
@@ -225,6 +228,7 @@ state = {{ state }}
 {%   endif %}
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
 config-cluster-identification = {{ cluster_identification }}
 {#   Do not send additional parameters for destroyed nodes #}
@@ -259,6 +263,7 @@ domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
+backend-client-cacucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
@@ -371,12 +376,17 @@ kedifa = ${request-kedifa:connection-monitor-base-url}
 {{ frontend }} = {{ '${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
 
-{% if aikc_enabled %}
 [directory]
 recipe = slapos.cookbook:mkdirectory
-
 bin = ${buildout:directory}/bin/
 srv = ${buildout:directory}/srv/
+backup = ${:srv}/backup
+# CAUCASE directories
+caucased = ${:srv}/caucased
+backup-caucased = ${:backup}/caucased
+
+{% if aikc_enabled %}
+[directory]
 aikc = ${:srv}/aikc
 
 [aikc-config]
@@ -599,6 +609,20 @@ config-filename = ${rejected-slave-json:rendered}
 config-state = empty
 config-url = ${rejected-slave-publish:url}
 
+[caucased-backend-client]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{  caucase.caucased(
+      prefix='caucased-backend-client',
+      buildout_bin_directory=parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/caucased-backend-client',
+      backup_dir='${directory:backup-caucased}',
+      data_dir='${directory:caucased}',
+      netloc=caucase_netloc,
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
+      key_len=2048,
+)}}
+
 [buildout]
 extends =
   {{ common_profile }}
@@ -610,6 +634,8 @@ parts =
   request-kedifa
   rejected-slave-promise
   promise-rejected-slave-publish-ip-port
+  caucased-backend-client
+  caucased-backend-client-promise
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
