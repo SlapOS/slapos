@@ -1551,7 +1551,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -1683,13 +1683,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Location']
     )
 
-    # check that try_duration == 5 in the test_url slave
-    slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
-    with open(slave_configuration_file) as fh:
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue('try_duration 5s' in content)
-      self.assertTrue('try_interval 250ms' in content)
+      self.assertTrue("""backend _Url-http
+  timeout server 12s
+  timeout client 12s
+  timeout connect 5s
+  retries 3s""" in content)
 
   def test_compressed_result(self):
     parameter_dict = self.assertSlaveBase('Url')
@@ -2872,7 +2875,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2949,7 +2952,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2984,7 +2987,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3123,7 +3126,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3192,7 +3195,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3206,7 +3209,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3243,7 +3246,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3281,7 +3284,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3595,21 +3598,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.status_code
     )
 
-    caddy_log_file = glob.glob(
+    backend_haproxy_log_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
-        '_enable_cache_access_log'
+        self.instance_path, '*', 'var', 'log', 'backend-haproxy.log'
       ))[0]
 
     matching_line_amount = 0
     pattern = re.compile(
-      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
-    with open(caddy_log_file) as fh:
+      r'.* _enable_cache-http.backend .* 504 .*'
+      '"GET .test_enable_cache_ats_timeout HTTP.1.1"$')
+    with open(backend_haproxy_log_file) as fh:
       for line in fh.readlines():
         if pattern.match(line):
           matching_line_amount += 1
 
-    # Caddy used between ATS and the backend received maximum one connection
+    # Haproxy backend received maximum one connection
     self.assertIn(matching_line_amount, [0, 1])
 
     timeout = 5
