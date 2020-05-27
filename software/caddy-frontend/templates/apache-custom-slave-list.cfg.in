@@ -1,12 +1,13 @@
 {%- if software_type == slap_software_type %}
 {%- set kedifa_updater_mapping = [] %}
 {%- set cached_server_dict = {} %}
+{%- set backend_slave_list = [] %}
 {%- set part_list = [] %}
 {%- set cache_port = caddy_configuration.get('cache-port') %}
-{%- set cached_port = caddy_configuration.get('cache-through-port') %}
-{%- set ssl_cached_port = caddy_configuration.get('ssl-cache-through-port') %}
 {%- set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
 {%- set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
+{%- set backend_haproxy_http_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['http-port']) %}
+{%- set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
 {%- set slave_log_dict = {} %}
@@ -43,11 +44,16 @@ create = true
 [slave-log-directory-dict]
 [slave-password]
 
-# empty section if no cached slaves are available
-[slave-log-cache-direct-directory-dict]
-
 {#- Loop thought slave list to set up slaves #}
+{%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
 {%- for slave_instance in slave_instance_list %}
+{#- prepare backend parameters #}
+{%- for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
+{%-   set parsed = urlparse_module.urlparse(slave_instance.get(key, '')) %}
+{%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
+{%-   do slave_instance.__setitem__(prefix, info_dict) %}
+{%- endfor %}
+{%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
@@ -56,10 +62,34 @@ create = true
 {%-     set slave_cipher_list = ciphers.strip() %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
+{#-   Manage common instance parameters #}
 {%-   set slave_type = slave_instance.get('type', '') %}
 {%-   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%-   set slave_reference = slave_instance.get('slave_reference') %}
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
+{#-   Setup backend URLs for front facing Caddy #}
+{%-   if slave_type == 'redirect' %}
+{%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url', '').rstrip('/')) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get['https-url'].rstrip('/')) %}
+{%-     endif %}
+{%-   elif enable_cache %}
+{%-     if 'domain' in slave_instance %}
+{%-       if not slave_instance.get('custom_domain') %}
+{%-         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%-       endif %}
+{%-     endif %}
+{%-     do slave_instance.__setitem__('backend-http-url', cache_access) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', ssl_cache_access) %}
+{%-     endif %}
+{%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
+{%-   else %}
+{%-     do slave_instance.__setitem__('backend-http-url', backend_haproxy_http_url) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', backend_haproxy_https_url) %}
+{%-     endif %}
+{%-   endif %}
 {%-   if slave_kedifa %}
 {%-     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%-   else %}
@@ -70,34 +100,28 @@ create = true
 {%-   set slave_publish_dict = {} %}
 {%-   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%-   set slave_logrotate_section = slave_reference + "-logs" %}
-{%-   set slave_logrotate_cache_direct_section = slave_reference + "-cache-direct-logs" %}
 {%-   set slave_password_section = slave_reference + "-password" %}
 {%-   set slave_ln_section = slave_reference + "-ln" %}
 {#-   extend parts #}
 {%-   do part_list.extend([slave_ln_section]) %}
 {%-   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
-{%-   if enable_cache %}
-{%-     set slave_log_cache_direct_folder = '${logrotate-directory:logrotate-backup}/' + slave_logrotate_cache_direct_section %}
-{%-     do part_list.extend([slave_logrotate_cache_direct_section]) %}
-{%-   endif %}
 {#-   Pass HTTP2 switch #}
 {%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
-{#-   Pass proxy_try_duration and proxy_try_interval #}
-{%-   do slave_instance.__setitem__('proxy_try_duration', proxy_try_duration) %}
-{%-   do slave_instance.__setitem__('proxy_try_interval', proxy_try_interval) %}
+{#-   Pass backend timeout values #}
+{#-   XXX: maybe support request timeout on master/slave level #}
+{%-   do slave_instance.__setitem__('request-timeout', ('' ~ configuration['request-timeout'])) %}
+{%-   for key in ['timeout-backend-connect', 'timeout-backend-connect-retries'] %}
+{%-     if slave_instance.get(key, '') == '' %}
+{%-       do slave_instance.__setitem__(key, configuration[key]) %}
+{%-     endif %}
+{%-   endfor %}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
-{%-   if enable_cache %}
-{%-     do slave_parameter_dict.__setitem__('access_log_cache_direct', '/'.join([caddy_log_cache_direct_directory, '%s_access_log' % slave_reference])) %}
-{%-     do slave_parameter_dict.__setitem__('error_log_cache_direct', '/'.join([caddy_log_cache_direct_directory, '%s_error_log' % slave_reference])) %}
-{%-     do slave_instance.__setitem__('access_log_cache_direct', slave_parameter_dict.get('access_log_cache_direct')) %}
-{%-     do slave_instance.__setitem__('error_log_cache_direct', slave_parameter_dict.get('error_log_cache_direct')) %}
-{%-   endif %}
 {#-   Add slave log directory to the slave log access dict #}
 {%-   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
 {%-   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
@@ -109,18 +133,6 @@ create = true
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
 {%-     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
 {%-   endif %}
-{%-   if enable_cache and 'url' in slave_instance %}
-{%-     if 'domain' in slave_instance %}
-{%-       if not slave_instance.get('custom_domain') %}
-{%-         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
-{%-       endif %}
-{%-     endif %}
-{%-     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %}
-{%-     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %}
-{%-     do slave_instance.__setitem__('url', cache_access) %}
-{%-     do slave_instance.__setitem__('https-url', ssl_cache_access) %}
-{%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
-{%-   endif %}
 {%-   do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
@@ -128,11 +140,6 @@ create = true
 
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
-
-{%-   if enable_cache %}
-[slave-log-cache-direct-directory-dict]
-{{slave_reference}}_cache_direct = {{ slave_log_cache_direct_folder }}
-{%-   endif %}
 
 [slave-password]
 {{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
@@ -143,14 +150,6 @@ create = true
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }}
-{%-   if enable_cache %}
-
-[{{slave_logrotate_cache_direct_section}}]
-<= logrotate-entry-base
-name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log_cache_direct')}} {{slave_parameter_dict.get('error_log_cache_direct')}}
-backup = {{ slave_log_cache_direct_folder }}
-{%-   endif %}
 
 {#-   integrate current logs inside #}
 
@@ -221,9 +220,6 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
-cached_port = {{ dumps('' ~ cached_port) }}
-ssl_cached_port = {{ ('' ~ ssl_cached_port) }}
-request_timeout = {{ ('' ~ request_timeout) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps('' ~ value) }}
@@ -282,6 +278,7 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
+{%-  do backend_slave_list.append(slave_instance) %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
 [slave-log-directories]
@@ -290,28 +287,9 @@ recipe = slapos.cookbook:mkdirectory
 
 {%- do part_list.append('slave-log-directories') %}
 
-[slave-log-cache-direct-directories]
-<= slave-log-cache-direct-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
-{%- do part_list.append('slave-log-cache-direct-directories') %}
 {%- do part_list.append('caddy-log-access') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
-{%- for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
-{%-   set cached_slave_configuration_section_title = '%s-cached-virtualhost' % slave_reference %}
-{%-   do part_list.append(cached_slave_configuration_section_title) %}
-
-[{{ cached_slave_configuration_section_title }}]
-< = jinja2-template-base
-template = {{ template_cached_slave_configuration }}
-filename = {{ '%s.conf' % slave_reference }}
-rendered = {{ caddy_cached_configuration_directory }}/${:filename}
-extensions = jinja2.ext.do
-extra-context =
-    section slave_parameter {{ slave_configuration_section_name }}
-{{ '\n' }}
-{%- endfor %}
 {#- Define IPv6 to IPV4 tunneling #}
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
@@ -330,16 +308,6 @@ ipv6-port = {{ http_port }}
 <= tunnel-6to4-base
 ipv4-port = {{ https_port }}
 ipv6-port = {{ https_port }}
-
-[tunnel-6to4-base-cached_port]
-<= tunnel-6to4-base
-ipv4-port = {{ cached_port }}
-ipv6-port = {{ cached_port }}
-
-[tunnel-6to4-base-ssl_cached_port]
-<= tunnel-6to4-base
-ipv4-port = {{ ssl_cached_port }}
-ipv6-port = {{ ssl_cached_port }}
 
 {#- Define log access #}
 
@@ -414,6 +382,27 @@ rendered = ${:file}
 template = inline: # This file contain directives to serve directories with log files for shared instances, but no shared instances are defined yet.
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 
+##<Backend haproxy>
+[backend-haproxy-configuration]
+< = jinja2-template-base
+template = {{ template_backend_haproxy_configuration }}
+rendered = ${backend-haproxy-config:file}
+backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
+extra-context =
+  key backend_slave_list :backend_slave_list
+  section configuration backend-haproxy-config
+
+[backend-haproxy-config]
+file = {{ backend_haproxy_configuration['file'] }}
+pid-file = {{ backend_haproxy_configuration['pid-file'] }}
+local-ipv4 = {{ dumps('' ~ local_ipv4) }}
+http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
+https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
+timeout-backend-connect = {{ dumps('' ~ configuration['timeout-backend-connect']) }}
+timeout-backend-connect-retries =  {{ dumps('' ~ configuration['timeout-backend-connect-retries']) }}
+##<Backend haproxy>
+
 [buildout]
 extends =
   {{ common_profile }}
@@ -423,6 +412,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    backend-haproxy-configuration
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -432,8 +422,6 @@ parts +=
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
-    tunnel-6to4-base-cached_port
-    tunnel-6to4-base-ssl_cached_port
     expose-csr_id
     promise-expose-csr_id-ip-port
 
