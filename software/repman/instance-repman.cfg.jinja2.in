@@ -457,8 +457,10 @@ password = ${publish-early:monitor-password}
 recipe = slapos.cookbook:requestoptional
 name = Replication Manager Frontend
 # XXX We have hardcoded SR URL here.
-software-url = {{ frontend_parameter_dict.get('frontend-software-url', '') }}
-software-type ={{ frontend_parameter_dict.get('frontend-software-type', '') }}
+software-url = {{ frontend_parameter_dict.get('frontend-software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') }}
+{% if frontend_parameter_dict.get('frontend-software-type', '') -%}
+software-type ={{ frontend_parameter_dict['frontend-software-type'] }}
+{% endif -%}
 slave = true
 config-url = ${nginx-parameter:backend-ssl-url}
 config-domain = {{ frontend_parameter_dict.get('slave-domain', '') }}
