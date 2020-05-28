@@ -38,23 +38,58 @@ mode = 644
 {% do section('caucase-updater') -%}
 {% do section('caucase-updater-promise') -%}
 
+{% set hash_list = [] -%}
 {% for frontend_caucase_url in ssl_parameter_dict['frontend-caucase-url-list'] -%}
-{%   set path = frontend_caucase_url | urlencode | replace('/', '%2F') | replace('%', '.') -%}
-{%   set data_dir = '${directory:srv}/client-cert-ca/%s' % path -%}
+{%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
+{%   do hash_list.append(hash) -%}
+{%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
 {{   caucase.updater(
-       prefix='caucase-updater-%s' % path,
+       prefix='caucase-updater-%s' % hash,
        buildout_bin_directory=parameter_dict['bin-directory'],
-       updater_path='${directory:services-on-watch}/caucase-updater-%s' % path,
+       updater_path='${directory:services-on-watch}/caucase-updater-%s' % hash,
        url=frontend_caucase_url,
        data_dir=data_dir,
        ca_path='%s/ca.crt' % data_dir,
        crl_path='%s/crl.pem' % data_dir,
-       on_renew='ln -sf %(data_dir)s/ca.crt ${apache-conf-ssl:ca-cert-dir}/%(path)s.crt; ln -sf %(data_dir)s/crl.pem ${apache-conf-ssl:crl-dir}/%(path)s.crl; ${apache-graceful:output}' % {'data_dir': data_dir, 'path': path},
+       on_renew='${caucase-updater-housekeeper:output}; ${apache-graceful:output}',
        max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
        openssl=parameter_dict['openssl'] ~ '/bin/openssl',
      )}}
-{%   do section('caucase-updater-%s' % path) -%}
+{%   do section('caucase-updater-%s' % hash) -%}
 {% endfor -%}
+
+{% if hash_list -%}
+[caucase-updater-housekeeper]
+recipe = collective.recipe.template
+output = ${directory:bin}/caucase-updater-housekeeper
+mode = 700
+input =
+  inline:
+  #!${buildout:executable}
+  import glob
+  import hashlib
+  import os
+  hash_list = {{ repr(hash_list) }}
+  crt_list = ['dummy.crt'] + ['%s.crt' % e for e in hash_list]
+  crl_list = ['%s.crl' % e for e in hash_list]
+  for path in glob.glob('${apache-conf-ssl:ca-cert-dir}/*.crt'):
+    if os.path.basename(path) not in crt_list:
+      os.unlink(path)
+  for path in glob.glob('${apache-conf-ssl:crl-dir}/*.crl'):
+    if os.path.basename(path) not in crl_list:
+      os.unlink(path)
+  for hash in hash_list:
+    crt = '${directory:srv}/client-cert-ca/%s/ca.crt' % hash
+    crt_link = '${apache-conf-ssl:ca-cert-dir}/%s.crt' % hash
+    crl = '${directory:srv}/client-cert-ca/%s/crl.pem' % hash
+    crl_link = '${apache-conf-ssl:crl-dir}/%s.crl' % hash
+    if os.path.isfile(crt) and not os.path.islink(crt_link):
+      os.symlink(crt, crt_link)
+    if os.path.isfile(crl) and not os.path.islink(crl_link):
+      os.symlink(crl, crl_link)
+  os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:ca-cert-dir}'")
+  os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:crl-dir}'")
+{% endif -%}
 
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
@@ -201,10 +236,6 @@ output = ${directory:bin}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
-  {% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
-  {{ parameter_dict['openssl'] }}/bin/c_rehash ${apache-conf-ssl:ca-cert-dir}
-  {{ parameter_dict['openssl'] }}/bin/c_rehash ${apache-conf-ssl:crl-dir}
-  {% endif -%}
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
 
 [{{ section('apache-promise') }}]
