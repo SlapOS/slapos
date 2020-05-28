@@ -89,6 +89,12 @@ input =
       os.symlink(crl, crl_link)
   os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:ca-cert-dir}'")
   os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:crl-dir}'")
+
+[caucase-updater-housekeeper-run]
+recipe = plone.recipe.command
+command = ${caucase-updater-housekeeper:output}
+update-command = ${:command}
+{% do section('caucase-updater-housekeeper-run') -%}
 {% endif -%}
 
 {% set haproxy_dict = {} -%}
