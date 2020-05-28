@@ -144,13 +144,13 @@ executable = ${mysqld:rendered}
 wrapper = ${directory:controller}/mariadb
 
 {% import "supervisord_lib" as supervisord_lib with context %}
-{{ supervisord_lib.supervisord("mariadb-controller", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
-{% do part_list.append("mariadb-controller-service") -%}
+{{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("supervisord-mariadb-ctl") -%}
 {% set maradb_program_dict = {"name": "mariadb", "command": "${ca-mysqld:wrapper}",
   "stopwaitsecs": 86400, "environment": []} %}
 
-{{ supervisord_lib.supervisord_program("mariadb-controller", "mariadb", maradb_program_dict) }}
-{% do part_list.append("mariadb-controller-mariadb") %}
+{{ supervisord_lib.supervisord_program("mariadb", maradb_program_dict) }}
+{% do part_list.append("supervisord-mariadb") %}
 
 [odbc-ini-text]
 text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
@@ -286,7 +286,7 @@ command = ${template-mysqld-need-start:rendered}
 rendered = ${directory:bin}/mysqld_need_start
 template = {{ parameter_dict['template-mysqld-need-start'] }}
 context =
-  key mariadb_controller mariadb-controller-bin:wrapper-path
+  key mariadb_controller mariadb-ctl-bin:wrapper-path
   key update_config      mysql-get-config:rendered
   raw username           {{ slapparameter_dict['repman-user'] }}
   raw repman_url         {{ slapparameter_dict['repman-url'] }}
