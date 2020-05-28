@@ -27,9 +27,9 @@ nginx-prefix = ${:var}/nginx
 tmp = ${:home}/tmp
 
 {% import "supervisord_lib" as supervisord_lib with context %}
-{% set proxysql_controller = "proxysql-controller" -%}
+{% set proxysql_controller = "proxysql-ctl" -%}
 {{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
-{% do part_list.append("proxysql-controller-service") -%}
+{% do part_list.append("supervisord-proxysql-ctl") -%}
 
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -226,8 +226,8 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
   "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
   "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
 
-{{ supervisord_lib.supervisord_program(proxysql_controller, service_name, proxysql_dict) }}
-{% do part_list.append(proxysql_controller ~ "-" ~ service_name) %}
+{{ supervisord_lib.supervisord_program(service_name, proxysql_dict) }}
+{% do part_list.append("supervisord-" ~ service_name) %}
 
 {% do part_list.append('config-' ~ name) -%}
 {% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
