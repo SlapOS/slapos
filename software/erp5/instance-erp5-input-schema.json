@@ -84,7 +84,8 @@
         "software-url": {
           "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
           "default": "",
-          "type": "string"
+          "type": "string",
+          "format": "uri"
         },
         "domain": {
           "description": "The domain name to request front-end to respond as.",
@@ -225,7 +226,8 @@
     "cloudooo-url": {
       "description": "Format conversion service URL",
       "pattern": "^https?://",
-      "type": "string"
+      "type": "string",
+      "format": "uri"
     },
     "cloudooo-retry-count": {
       "description": "Define retry count for cloudooo in network error case in test",
@@ -466,7 +468,8 @@
             "caucase-url": {
               "title": "Caucase URL",
               "description": "URL of caucase service to use. If not set, global setting will be used.",
-              "type": "string"
+              "type": "string",
+              "format": "uri"
             },
             "csr": {
               "title": "csr",
