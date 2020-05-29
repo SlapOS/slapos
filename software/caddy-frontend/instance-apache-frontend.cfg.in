@@ -15,7 +15,6 @@ parts =
   caucase-updater
   caucase-updater-promise
   frontend-caddy-graceful
-  not-found-html
   port-redirection
   promise-frontend-caddy-configuration
   promise-caddy-frontend-v4-https
@@ -338,10 +337,10 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files = ${caddy-wrapper:rendered}
 
 [not-found-html]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${caddy-directory:document-root}
-link-binary =
-	    {{ parameter_dict['template_not_found_html'] }}
+recipe = plone.recipe.command
+update-command = ${:command}
+filename = notfound.html
+command = ln -sf  {{ parameter_dict['template_not_found_html'] }} ${caddy-directory:document-root}/${:filename}
 
 [caddy-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -362,7 +361,7 @@ access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-caddy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
-not-found-file = ${caddy-directory:document-root}/notfound.html
+not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
@@ -463,19 +462,19 @@ context =
 
 [trafficserver-records-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_records_config_location'] }}/{{ parameter_dict['template_trafficserver_records_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_records_config'] }}
 filename = records.config
 extra-context =
     import os_module os
 
 [trafficserver-storage-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_storage_config_location'] }}/{{ parameter_dict['template_trafficserver_storage_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_storage_config'] }}
 filename = storage.config
 
 [trafficserver-logging-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_logging_config_location'] }}/{{ parameter_dict['template_trafficserver_logging_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_logging_config'] }}
 filename = logging.config
 
 [trafficserver-remap-config]
