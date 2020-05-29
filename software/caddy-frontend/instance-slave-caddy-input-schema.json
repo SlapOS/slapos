@@ -139,12 +139,6 @@
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
-    "re6st-optimal-test": {
-      "default": "",
-      "description": "IPv6 and IPv6 Address for the frontend test if re6st is on the optimal status (use ipv6,ipv4)",
-      "title": "IPv6 and IPv4 Address to test Re6st",
-      "type": "string"
-    },
     "server-alias": {
       "default": "",
       "description": "Server Alias List separated by space",
