@@ -6,9 +6,13 @@ curl () {
   {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
 }
 
+get_token () {
+  curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login
+}
+
 wait_database () {
   NAME=$1
-  for retry in {1..10}; do
+  for retry in {1..50}; do
     echo ">> Wait until $NAME databases are ready...";
     CODE=$(curl -H "Authorization: Bearer ${TOKEN}" -o /dev/null -w "%{http_code}" {{ secure_url }}/api/clusters/$NAME/actions/waitdatabases);
     if [ $CODE -eq 504 ]; then
@@ -17,6 +21,11 @@ wait_database () {
     else
       if [ $CODE -eq 200 ]; then
         break;
+      else
+        if [ $CODE -eq 401 ]; then
+          # try again with new token
+          TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+        fi
       fi
       echo ">> [$retry] waitdatabases returned code $CODE...";
     fi
@@ -37,7 +46,7 @@ activate_proxy () {
   fi
 }
 
-TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login | {{ jq_bin }} -r '.token')
+TOKEN=$(get_token | {{ jq_bin }} -r '.token')
 
 # Always reload cluster configuration to apply recent changes
 {% for name in cluster_name_list -%}
@@ -52,7 +61,7 @@ if [ ! -f "{{ parameter_dict['bootstrap'] }}/{{ name }}_bootstrapped" ]; then
   wait_database {{ name }}
 
   echo "Bootstrap replication on {{ name }}..."
-  TOKEN=$(curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login | {{ jq_bin }} -r '.token')
+  TOKEN=$(get_token | {{ jq_bin }} -r '.token')
 
   curl -H "Authorization: Bearer ${TOKEN}" \
     {{ secure_url }}/api/clusters/{{ name }}/actions/replication/cleanup

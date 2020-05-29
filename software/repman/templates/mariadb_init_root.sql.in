@@ -2,11 +2,17 @@
 --  or products like mysql-fabric won't work
 SET @@SESSION.SQL_LOG_BIN=0;
 
-CREATE USER 'repman'@'localhost' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
-GRANT ALL ON *.* TO 'repman'@'localhost' WITH GRANT OPTION ;
-CREATE USER 'repman'@'%' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
-GRANT ALL ON *.* TO 'repman'@'%' WITH GRANT OPTION ;
-CREATE USER 'repman'@'::' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
-GRANT ALL ON *.* TO 'repman'@'::' WITH GRANT OPTION ;
+CREATE USER '{{ parameter_dict["root-user"] }}'@'localhost' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO '{{ parameter_dict["root-user"] }}'@'localhost' WITH GRANT OPTION ;
+CREATE USER '{{ parameter_dict["root-user"] }}'@'%' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO '{{ parameter_dict["root-user"] }}'@'%' WITH GRANT OPTION ;
+CREATE USER '{{ parameter_dict["root-user"] }}'@'::' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO '{{ parameter_dict["root-user"] }}'@'::' WITH GRANT OPTION ;
+
+CREATE USER '{{ parameter_dict["heartbeat-user"] }}'@'localhost' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO '{{ parameter_dict["heartbeat-user"] }}'@'localhost' WITH GRANT OPTION ;
+CREATE USER '{{ parameter_dict["heartbeat-user"] }}'@'%' IDENTIFIED BY '{{ parameter_dict["password"] }}' ;
+GRANT ALL ON *.* TO '{{ parameter_dict["heartbeat-user"] }}'@'%' WITH GRANT OPTION ;
+
 DROP DATABASE IF EXISTS test ;
 FLUSH PRIVILEGES ;
