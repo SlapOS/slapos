@@ -53,20 +53,6 @@
       "title": "HTTPS Only",
       "type": "string"
     },
-    "caddy_custom_http": {
-      "default": "",
-      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTP configuration",
-      "type": "string"
-    },
-    "caddy_custom_https": {
-      "default": "",
-      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTPS configuration",
-      "type": "string"
-    },
     "default-path": {
       "default": "",
       "description": "Provide default path to redirect user to when user access / (the site root)",
