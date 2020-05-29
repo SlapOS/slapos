@@ -147,7 +147,6 @@ context =
 
 [software-release-path]
 template-empty = {{ parameter_dict['template_empty'] }}
-template-slave-configuration = {{ parameter_dict['template_slave_configuration'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
 template-cached-slave-virtualhost = {{ parameter_dict['template_cached_slave_virtualhost'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
@@ -249,7 +248,6 @@ extra-context =
     key local_ipv6 :local_ipv6
     key global_ipv6 slap-network-information:global-ipv6
     key empty_template software-release-path:template-empty
-    key template_custom_slave_configuration software-release-path:template-slave-configuration
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key template_cached_slave_configuration software-release-path:template-cached-slave-virtualhost
     key software_type :software_type
@@ -277,19 +275,6 @@ extra-context =
     key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
-
-[dynamic-virtualhost-template-slave]
-<= jinja2-template-base
-template = {{ parameter_dict['template_slave_configuration'] }}
-rendered = ${directory:template}/slave-virtualhost.conf.in
-# BBB: apache_custom_https and apache_custom_http
-extra-context =
-    key https_port configuration:port
-    key http_port configuration:plain_http_port
-    key apache_custom_https configuration:apache_custom_https
-    key apache_custom_http configuration:apache_custom_http
-    key caddy_custom_https configuration:caddy_custom_https
-    key caddy_custom_http configuration:caddy_custom_http
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]

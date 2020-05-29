@@ -237,14 +237,6 @@ Will append the specified path to the "VirtualHostRoot" of the zope's VirtualHos
 "path" is an optional parameter, ignored if not specified.
 Example of value: "/erp5/web_site_module/hosting/"
 
-caddy_custom_https
-~~~~~~~~~~~~~~~~~~
-Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
-
-caddy_custom_http
-~~~~~~~~~~~~~~~~~
-Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
-
 url
 ~~~
 Necessary to activate cache. ``url`` of backend to use.
@@ -359,33 +351,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 
-        "caddy_custom_https":'
-  https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
-    bind %(local_ipv4)s
-    tls %(certificate)s %(certificate)s
-
-    log / %(access_log)s {combined}
-    errors %(error_log)s
-
-    proxy / https://[1:2:3:4:5:6:7:8]:1234 {
-      transparent
-      timeout 600s
-      insecure_skip_verify
-    }
-  }
-        "caddy_custom_http":'
-  http://www.example.com:%(http_port)s, http://example.com:%(http_port)s {
-    bind %(local_ipv4)s
-    log / %(access_log)s {combined}
-    errors %(error_log)s
-  
-    proxy / https://[1:2:3:4:5:6:7:8]:1234/ {
-      transparent
-      timeout 600s
-      insecure_skip_verify
-    }
-  }
-
 Simple Cache Example - XXX - to be written
 ------------------------------------------
 
@@ -401,40 +366,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 	"domain": "www.example.org",
 	"enable_cache": "True",
-
-        "caddy_custom_https":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLEngine on
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  RewriteRule ^/(.*) %(cache_access)s/$1 [L,P]',
-
-        "caddy_custom_http":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*) %(cache_access)s/$1 [L,P],
-    }
-  )
-
 
 Advanced example - XXX - to be written
 --------------------------------------
@@ -456,56 +387,6 @@ the proxy::
         "type":"zope",
         "path":"/erp5",
         "domain":"example.org",
-
-  	"caddy_custom_https":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAdmin example.org
-  SSLEngine on
-  SSLProxyEngine on
-  SSLProtocol all -SSLv2 -SSLv3
-  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
-  SSLHonorCipherOrder on
-  # Use personal ssl certificates
-  SSLCertificateFile %(ssl_crt)s
-  SSLCertificateKeyFile %(ssl_key)s
-  SSLCACertificateFile %(ssl_ca_crt)s
-  SSLCertificateChainFile %(ssl_ca_crt)s
-  # Configure personal logs
-  ErrorLog "%(error_log)s"
-  LogLevel info
-  LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
-  CustomLog "%(access_log)s" combined
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  # Redirect / to /index.html
-  RewriteRule ^/$ /index.html [R=302,L]
-  # Use cache
-  RewriteRule ^/(.*) %(cache_access)s/VirtualHostBase/https/www.example.org:443/erp5/VirtualHostRoot/$1 [L,P]',
-
-    "caddy_custom_http":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  # Configure personal logs
-  ErrorLog "%(error_log)s"
-  LogLevel info
-  LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
-  CustomLog "%(access_log)s" combined
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}',
 
     "ssl_key":"-----BEGIN RSA PRIVATE KEY-----
   XXXXXXX..........XXXXXXXXXXXXXXX
