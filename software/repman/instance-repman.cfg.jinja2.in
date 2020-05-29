@@ -141,6 +141,7 @@ db-prefered-master = {{ prefered_master }}
 db-prefered-master = {{ mariadb_server_list[0] }}
 {% endif -%}
 proxysql-servers = {{ ipv4 }}
+proxysql-servers-ipv6 = [{{ ip }}]
 password = ${repman-parameter:password}
 proxysql-partition = ${buildout:directory}
 receiver-port-list = {{ receiver_port_list | join(',') }}
@@ -205,19 +206,27 @@ wait-for-files =
 depends =
   {{ '${proxysql-' ~ name ~ '-admin-promise:recipe}' }}
   {{ '${proxysql-' ~ name ~ '-promise:recipe}' }}
+  {{ '${proxysql-' ~ name ~ '-ipv6-promise:recipe}' }}
 
 [proxysql-{{ name }}-admin-promise]
 <= monitor-promise-base
 module = check_port_listening
-name = proxysql-{{ name }}-admin-port-listening
+name = proxysql-{{ name }}-admin-port-listening.py
 config-hostname=  {{ ipv4 }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}
 
 [proxysql-{{ name }}-promise]
 <= monitor-promise-base
 module = check_port_listening
-name = proxysql-{{ name }}-port-listening
+name = proxysql-{{ name }}-port-listening.py
 config-hostname=  {{ ipv4 }}
+config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
+
+[proxysql-{{ name }}-ipv6-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-{{ name }}-ipv6-port-listening.py
+config-hostname=  {{ ip }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
@@ -233,15 +242,19 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 {% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
 
 {% set publish_database_list = [] -%}
+{% set publish_database_v6_list = [] -%}
 {% for database in database_list -%}
 {%   if database.get('user') -%}
 {%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
+{%     do publish_database_v6_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
 {%   else -%}
 {%     do publish_database_list.append("mysql://" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
+{%     do publish_database_v6_list.append("mysql://[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
 {%   endif -%}
 {% endfor -%}
 
 {% do publish_dict.__setitem__(name ~ '-database-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
+{% do publish_dict.__setitem__(name ~ '-database-list-v6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
 {% endfor -%}
 
 [slap-configuration]
