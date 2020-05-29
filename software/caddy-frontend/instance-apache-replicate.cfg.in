@@ -78,13 +78,12 @@ context =
                                   }) %}
 {% endfor %}
 
-{% set authorized_slave_string_list = slapparameter_dict.pop('-frontend-authorized-slave-string', '').split() %}
+{% set authorized_slave_string_list = [] %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
 {% set rejected_slave_title_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% set unauthorized_message = 'slave not authorized' %}
 {% for slave in sorted(slave_instance_list) %}
 {%   set slave_error_list = [] %}
 {%   set slave_warning_list = [] %}
@@ -104,7 +103,6 @@ context =
 {%       endif %}
 {%     endfor %}
 {%   endif %}
-{#   BBB: apache_custom_https AND apache_custom_http #}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
 {%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
@@ -133,15 +131,6 @@ context =
 {%     endfor %}
 {%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
-{%   for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] %}
-{%     if slave.get(key) %}
-{%       if not slave.get('slave_reference') in authorized_slave_string_list %}
-{%         if not unauthorized_message in slave_error_list %}
-{%           do slave_error_list.append(unauthorized_message) %}
-{%         endif %}
-{%       endif %}
-{%     endif %}
-{%   endfor %} {# for key in ['caddy_custom_http', 'caddy_custom_https', 'apache_custom_http', 'apache_custom_https'] #}
 {%   if slave.get('url') %}
 {%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['url']]) == 1 %}
 {%       do slave_error_list.append('slave url %r invalid' % (slave['url'],)) %}
