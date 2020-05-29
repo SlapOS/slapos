@@ -463,19 +463,19 @@ context =
 
 [trafficserver-records-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_records_config_location'] }}/{{ parameter_dict['template_trafficserver_records_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_records_config'] }}
 filename = records.config
 extra-context =
     import os_module os
 
 [trafficserver-storage-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_storage_config_location'] }}/{{ parameter_dict['template_trafficserver_storage_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_storage_config'] }}
 filename = storage.config
 
 [trafficserver-logging-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_logging_config_location'] }}/{{ parameter_dict['template_trafficserver_logging_config_filename'] }}
+template = {{ parameter_dict['template_trafficserver_logging_config'] }}
 filename = logging.config
 
 [trafficserver-remap-config]
