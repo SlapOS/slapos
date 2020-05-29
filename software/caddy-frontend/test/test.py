@@ -1301,9 +1301,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-ipv6-test': {
         'monitor-ipv6-test': 'monitor-ipv6-test',
       },
-      're6st-optimal-test': {
-        're6st-optimal-test': 'ipv6,ipv4',
-      },
       'ciphers': {
         'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
       }
@@ -1480,9 +1477,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '52',
+      'accepted-slave-amount': '51',
       'rejected-slave-amount': '0',
-      'slave-amount': '52',
+      'slave-amount': '51',
       'rejected-slave-dict': {
       }
     }
@@ -3201,44 +3198,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       }
     )
 
-  def test_re6st_optimal_test(self):
-    parameter_dict = self.assertSlaveBase('re6st-optimal-test')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(
-      httplib.FOUND,
-      result_http.status_code
-    )
-
-    self.assertEqual(
-      'https://re6stoptimaltest.example.com/test-path',
-      result_http.headers['Location']
-    )
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-re6st-optimal-test.py'))[0]
-    # get promise module and check that parameters are ok
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'ipv4': 'ipv4',
-        'ipv6': 'ipv6'
-      }
-    )
-
   def test_ciphers(self):
     parameter_dict = self.assertSlaveBase('ciphers')
 
@@ -4665,13 +4624,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
-      're6st-optimal-test-nocomma': {
-        're6st-optimal-test': 'nocomma',
-      },
-      're6st-optimal-test-unsafe': {
-        're6st-optimal-test':
-        'new\nline;rm -fr ~;,new line\n[s${esection:eoption}',
-      },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
@@ -4764,83 +4716,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
-
-  def test_re6st_optimal_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 're6stoptimaltestunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://re6stoptimaltestunsafe.example.com',
-        'site_url': 'http://re6stoptimaltestunsafe.example.com',
-        'secure_access': 'https://re6stoptimaltestunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-unsafe-re6st-optimal-test.py'))[0]
-
-    # Note: The result is a bit differnt from the request (newlines stripped),
-    #       but good enough to prove, that ${esection:eoption} has been
-    #       correctly passed to the script.
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'ipv4': 'new line\n[s${esection:eoption}',
-        'ipv6': 'new\nline;rm -fr ~;',
-      }
-    )
-
-  def test_re6st_optimal_test_nocomma(self):
-    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-nocomma')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 're6stoptimaltestnocomma.example.com',
-        'replication_number': '1',
-        'url': 'http://re6stoptimaltestnocomma.example.com',
-        'site_url': 'http://re6stoptimaltestnocomma.example.com',
-        'secure_access': 'https://re6stoptimaltestnocomma.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    # assert that there is no nocomma file
-    monitor_file_list = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-nocomma-re6st-optimal-test.py'))
-    self.assertEqual(
-      [],
-      monitor_file_list
-    )
 
   def test_custom_domain_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
