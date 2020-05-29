@@ -15,6 +15,7 @@ slapos-proxysql-partitions = "{{ parameter_dict['proxysql-partition'] }}"
 proxysql = true
 proxysql-port = {{ parameter_dict['proxy-port'] }}
 proxysql-servers = "{{ parameter_dict['proxysql-servers'] }}"
+proxysql-servers-ipv6 = "{{ parameter_dict['proxysql-servers-ipv6'] }}"
 proxysql-user = "{{ parameter_dict['proxysql-user'] }}"
 proxysql-bootstrap = true
 proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
