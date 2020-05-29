@@ -1,11 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
-    "-frontend-authorized-slave-string": {
-      "description": "List of SOFTINST-XXX of Slaves, separated by space which is allowed to use custom configuration.",
-      "title": "Authorized Slave String",
-      "type": "string"
-    },
     "-frontend-quantity": {
       "description": "Quantity of Frontends Replicate.",
       "title": "Frontend Replication Quantity",
