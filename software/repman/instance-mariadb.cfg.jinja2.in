@@ -88,6 +88,7 @@ password = {{ slapparameter_dict['root-password'] }}
 database-list = {{ dumps(database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 root-user = repman
+heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
 
 [init-script]
 < = jinja2-template-executable
@@ -147,7 +148,9 @@ wrapper = ${directory:controller}/mariadb
 {{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
 {% do part_list.append("supervisord-mariadb-ctl") -%}
 {% set maradb_program_dict = {"name": "mariadb", "command": "${ca-mysqld:wrapper}",
-  "stopwaitsecs": 86400, "environment": []} %}
+  "stopwaitsecs": 86400, "environment": [],
+  "stdout_logfile": "${directory:log}/mariadb_stdout.log",
+  "stderr_logfile": "${directory:log}/mariadb_stdout.log" } %}
 
 {{ supervisord_lib.supervisord_program("mariadb", maradb_program_dict) }}
 {% do part_list.append("supervisord-mariadb") %}
