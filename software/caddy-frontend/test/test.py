@@ -1044,73 +1044,11 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
-  caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
-https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(certificate)s %%(certificate)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
-http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
-https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(certificate)s %%(certificate)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
-http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -1344,36 +1282,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable-http2-default': {
         'url': cls.backend_url,
       },
-      # 'apache_custom_http_s-rejected': {
-      #   'url': cls.backend_url,
-      #   'apache_custom_https': '# apache_custom_https_filled_in_rejected',
-      #   'apache_custom_http': '# apache_custom_http_filled_in_rejected',
-      # },
-      'apache_custom_http_s-accepted': {
-        'url': cls.backend_url,
-        'apache_custom_https': cls.apache_custom_https % dict(
-          url=cls.backend_url),
-        'apache_custom_http': cls.apache_custom_http % dict(
-          url=cls.backend_url),
-      },
-      # 'caddy_custom_http_s-rejected': {
-      #   'url': cls.backend_url,
-      #   'caddy_custom_https': '# caddy_custom_https_filled_in_rejected',
-      #   'caddy_custom_http': '# caddy_custom_http_filled_in_rejected',
-      # },
-      'caddy_custom_http_s-accepted': {
-        'url': cls.backend_url,
-        'caddy_custom_https': cls.caddy_custom_https % dict(
-          url=cls.backend_url),
-        'caddy_custom_http': cls.caddy_custom_http % dict(
-          url=cls.backend_url),
-      },
-      # # this has to be rejected
-      # 'caddy_custom_http_s': {
-      #   'url': cls.backend_url,
-      #   'caddy_custom_https': '# caddy_custom_https_filled_in_rejected_2',
-      #   'caddy_custom_http': '# caddy_custom_http_filled_in_rejected_2',
-      # },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
@@ -4062,186 +3970,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     self.assertEqual(
       'Coffee=present', result.json()['Incoming Headers']['cookie'])
 
-  @skip('Not implemented in new test system')
-  def test_apache_custom_http_s_rejected(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'apache_custom_http_s-rejected')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_https_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_http_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  def test_apache_custom_http_s_accepted(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'apache_custom_http_s-accepted')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      'apachecustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      },
-      headers
-    )
-
-    result_http = fakeHTTPResult(
-      'apachecustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_https_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_https_list))
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_http_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_http_list))
-
-  @skip('Not implemented in new test system')
-  def test_caddy_custom_http_s_rejected(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s-rejected')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  @skip('Not implemented in new test system')
-  def test_caddy_custom_http_s(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_rejected_2' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_rejected_2' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  def test_caddy_custom_http_s_accepted(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s-accepted')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      'caddycustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      },
-      headers
-    )
-
-    result_http = fakeHTTPResult(
-      'caddycustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_https_list))
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_http_list))
-
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
 
@@ -6585,8 +6313,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
