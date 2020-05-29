@@ -281,26 +281,6 @@ config-ipv4 = true
 config-frequency = 720
 {%   endif %}
 
-{%   set re6st_optimal_test = '' ~ slave_instance.get('re6st-optimal-test', '') %}
-{%   set re6st_ipv6 = None %}
-{%   set re6st_ipv4 = None %}
-{%   if ',' in re6st_optimal_test %}
-{%     set re6st_ipv6, re6st_ipv4 = re6st_optimal_test.split(",") %}
-{%   endif %}
-{%   if re6st_ipv6 and re6st_ipv4 %}
-{%     set re6st_optimal_test_section_title = 'check-%s-re6st-optimal-test' % slave_instance.get('slave_reference') %}
-{%     do part_list.append(re6st_optimal_test_section_title) %}
-
-[{{ re6st_optimal_test_section_title }}]
-<= monitor-promise-base
-module = check_re6st_optimal_status
-name = {{ re6st_optimal_test_section_title }}.py
-config-ipv4 = {{ dumps(re6st_ipv4) }}
-config-ipv6 = {{ dumps(re6st_ipv6) }}
-# promise frequency in minutes (2 times/day)
-config-frequency = 720
-{%   endif %}
-
 
 {# ###############################  #}
 {# Publish Slave Information        #}
