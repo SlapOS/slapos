@@ -328,7 +328,7 @@ class TestDataMixin(object):
       )
     except AssertionError:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
-        open(test_data_file, 'w').write(runtime_data.strip())
+        open(test_data_file, 'w').write(runtime_data.strip() + '\n')
       raise
     finally:
       self.maxDiff = maxDiff
