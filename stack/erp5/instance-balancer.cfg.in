@@ -218,9 +218,11 @@ cert = ${apache-ssl:cert}
 key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
+{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
 # Client x509 auth
-ca-cert = ${apache-conf-ssl:ca-cert}
-crl = ${apache-conf-ssl:crl}
+ca-cert-dir = ${apache-conf-ssl:ca-cert-dir}
+crl-dir = ${apache-conf-ssl:crl-dir}
+{%- endif %}
 
 [apache-conf]
 < = jinja2-template-base
