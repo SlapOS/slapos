@@ -183,8 +183,12 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
-        'url': cls.http_server_url,
-        'ssl': {'frontend-caucase-url-list': [cls.caucase_caucased_url]},
+        'zope-family-dict': {'default': ['dummy_http_server']},
+        'dummy_http_server': [[cls.http_server_url, 1, False]],
+        'backend-path-dict': {'default': '/'},
+        'ssl': {
+          'frontend-caucase-url-list': [cls.caucase_caucased_url],
+        },
       })
     }
 
@@ -200,16 +204,18 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     super(TestFrontendXForwardedFor, cls).tearDownClass()
 
   def test_x_forwarded_for_added_when_verified_connection(self):
+    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
     result = requests.get(
-      self.balancer_url,
+      balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
       cert=self.client_certificate,
     ).json()
     self.assertEqual(result['Incoming Headers'].get('x-forwarded-for'), '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
+    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
     result = requests.get(
-      self.balancer_url,
+      balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
       cert=self.client_certificate,
     ).json()
