@@ -204,7 +204,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       self.balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
       cert=self.client_certificate,
-    )
+    ).json()
     self.assertEqual(result['Incoming Headers'].get('x-forwarded-for'), '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
@@ -212,5 +212,5 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       self.balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
       cert=self.client_certificate,
-    )
+    ).json()
     self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for'), '1.2.3.4')
