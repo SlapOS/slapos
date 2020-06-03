@@ -157,6 +157,7 @@ SSLCARevocationCheck chain
 SSLCARevocationFile {{ parameter_dict['crl'] }}
 {%     elif parameter_dict.get('crl-dir') -%}
 SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%     endif -%}
 {%   endif -%}
 {% endif -%}
 
