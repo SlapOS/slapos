@@ -1612,6 +1612,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
+    self.assertEqual(
+      j['Incoming Headers']['host'],
+      '%s:%s' % (parameter_dict['domain'], HTTPS_PORT))
 
     self.assertFalse('Content-Encoding' in result.headers)
 
