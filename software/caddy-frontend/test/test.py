@@ -77,6 +77,9 @@ HTTPS_PORT = '11443'
 CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
 
+# IP to originate requests from
+# has to be not partition one
+SOURCE_IP = '127.0.0.1'
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('SLAPOS_TEST_DEBUG'):
@@ -413,12 +416,17 @@ class TestDataMixin(object):
 
 
 def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
-                    headers=None, cookies=None, source_ip=None):
+                    headers=None, cookies=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
   # workaround request problem of setting Accept-Encoding
   # https://github.com/requests/requests/issues/2234
   headers.setdefault('Accept-Encoding', 'dummy')
+  # Headers to tricks the whole system, like rouge user would do
+  headers.setdefault('X-Forwarded-For', '192.168.0.1')
+  headers.setdefault('X-Forwarded-Proto', 'irc')
+  headers.setdefault('X-Forwarded-Port', '17')
+
   session = requests.Session()
   session.mount(
     'https://%s:%s' % (domain, port),
@@ -1587,6 +1595,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertFalse('connection-parameter-hash' in line)
       self.assertFalse('timestamp' in line)
 
+  def assertBackendHeaders(
+    self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
+    proto='https'):
+    self.assertFalse('remote_user' in backend_header_dict.keys())
+    self.assertEqual(
+      backend_header_dict['host'],
+      '%s:%s' % (domain, port))
+    self.assertEqual(
+      backend_header_dict['x-forwarded-for'],
+      source_ip
+    )
+    self.assertEqual(
+      backend_header_dict['x-forwarded-port'],
+      port
+    )
+    self.assertEqual(
+      backend_header_dict['x-forwarded-proto'],
+      proto
+    )
+
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
 
@@ -1609,14 +1637,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
-    self.assertEqual(
-      j['Incoming Headers']['host'],
-      '%s:%s' % (parameter_dict['domain'], HTTPS_PORT))
-
     self.assertFalse('Content-Encoding' in result.headers)
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -2258,7 +2282,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2297,7 +2321,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2332,7 +2356,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2375,7 +2399,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2412,7 +2436,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2534,6 +2558,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2563,6 +2588,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2594,6 +2620,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
@@ -2612,6 +2639,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2633,6 +2661,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2663,6 +2692,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
@@ -2681,6 +2711,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2702,6 +2733,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2838,7 +2870,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertFalse('Content-Encoding' in result.headers)
 
@@ -3087,7 +3119,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3284,6 +3316,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3325,6 +3358,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3350,11 +3384,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
+    source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+        'revalidate=3600, stale-if-error=3600',
+        'X-Forwarded-For': '192.168.0.1',  # trick the system
+        'X-Forwarded-Proto': 'irc',  # trick the system
+        'X-Forwarded-Port': '17',  # trick the system
+      },
+      source_ip=source_ip
+    )
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3381,6 +3422,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3446,6 +3488,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       )
 
       backend_headers = result.json()['Incoming Headers']
+      self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
       via = backend_headers.pop('via', None)
       self.assertNotEqual(via, None)
       self.assertRegexpMatches(
@@ -3613,6 +3656,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3659,6 +3703,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3749,6 +3794,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3759,6 +3806,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3785,6 +3834,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3795,6 +3846,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3825,6 +3878,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3835,6 +3890,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3929,6 +3986,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Coffee=present', result.json()['Incoming Headers']['cookie'])
 
@@ -4567,7 +4626,7 @@ class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertKeyWithPop('Date', result.headers)
     self.assertKeyWithPop('Content-Length', result.headers)
