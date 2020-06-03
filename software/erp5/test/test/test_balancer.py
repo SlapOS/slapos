@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.x509.oid import NameOID
+import glob
 import json
 import multiprocessing
 import os
@@ -83,9 +84,11 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     with open(_caucase_user_csr, 'wb') as f:
       f.write(csr.public_bytes(serialization.Encoding.PEM))
 
+    caucased_path = glob.glob('%s/*/bin/caucased' % cls.slap._software_root)[0]
+    caucase_path = glob.glob('%s/*/bin/caucase' % cls.slap._software_root)[0]
     cls.caucase_caucased_process = subprocess.Popen(
       [
-        os.path.join(cls.computer_partition_root_path, 'software_release', 'bin', 'caucased'),
+        caucased_path,
         '--db', os.path.join(_caucase_caucased_dir, 'caucase.sqlite'),
         '--server-key', os.path.join(_caucase_caucased_dir, 'server.key.pem'),
         '--netloc', _caucase_caucased_netloc,
@@ -96,7 +99,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     time.sleep(3) # XXX how to check if caucased service is ready ?
 
     cau_args = [
-      os.path.join(cls.computer_partition_root_path, 'software_release', 'bin', 'caucase'),
+      caucase_path,
       '--ca-url', cls.caucase_caucased_url,
       '--ca-crt', os.path.join(_caucase_user_dir, 'service-ca-crt.pem'),
       '--crl', os.path.join(_caucase_user_dir, 'service.crl'),
@@ -105,7 +108,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     ]
 
     cas_args = [
-      os.path.join(cls.computer_partition_root_path, 'software_release', 'bin', 'caucase'),
+      caucase_path,
       '--ca-url', cls.caucase_caucased_url,
       '--ca-crt', os.path.join(_caucase_service_dir, 'service-ca-crt.pem'),
       '--crl', os.path.join(_caucase_service_dir, 'service.crl'),
