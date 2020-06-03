@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 import glob
+import hashlib
 import json
 import multiprocessing
 import os
@@ -49,7 +50,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       TestHandler)
     cls.http_server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
-    cls.http_server_url = 'http://%s:%s/' % (cls._ipv4_address, http_server_port)
+    cls.http_server_netloc = '%s:%s' % (cls._ipv4_address, http_server_port)
 
     # start a caucased and generate a valid client certificate.
     cls.computer_partition_root_path = os.path.abspath(os.curdir)
@@ -63,7 +64,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     _caucase_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
     cls.caucase_caucased_url = 'http://' + _caucase_caucased_netloc
 
-    _caucase_user_key = os.path.join(_caucase_user_dir, 'client.key.pem')
+    cls.user_certificate = _caucase_user_key = os.path.join(_caucase_user_dir, 'client.key.pem')
     _caucase_user_csr = os.path.join(_caucase_user_dir, 'client.csr.pem')
 
     key = rsa.generate_private_key(
@@ -84,8 +85,12 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     with open(_caucase_user_csr, 'wb') as f:
       f.write(csr.public_bytes(serialization.Encoding.PEM))
 
-    caucased_path = glob.glob('%s/*/bin/caucased' % cls.slap._software_root)[0]
-    caucase_path = glob.glob('%s/*/bin/caucase' % cls.slap._software_root)[0]
+    cls.software_release_root_path = os.path.join(
+       cls.slap._software_root,
+       hashlib.md5(cls.getSoftwareURL()).hexdigest(),
+    )
+    caucased_path = os.path.join(cls.software_release_root_path, 'bin', 'caucased')
+    caucase_path = os.path.join(cls.software_release_root_path, 'bin', 'caucase')
     cls.caucase_caucased_process = subprocess.Popen(
       [
         caucased_path,
@@ -186,10 +191,22 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
+        'tcpv4-port': 3306,
+        'computer-memory-percent-threshold': 100,
+        # XXX what is this ? should probably not be needed here
+        'name': cls.__name__,
+        'monitor-passwd': 'secret',
+        'apachedex-configuration': '',
+        'apachedex-promise-threshold': 100,
+        'haproxy-server-check-path': '/',
         'zope-family-dict': {'default': ['dummy_http_server']},
-        'dummy_http_server': [[cls.http_server_url, 1, False]],
+        'dummy_http_server': [[cls.http_server_netloc, 1, False]],
         'backend-path-dict': {'default': '/'},
+        'ssl-authentication-dict': {'default': False},
         'ssl': {
+          'caucase-url': cls.caucase_caucased_url, # XXX not a good value
+          'cert': file(cls.user_certificate).read(), # XXX not a good value
+          'key': file(cls.user_certificate).read(), # XXX not a good value
           'frontend-caucase-url-list': [cls.caucase_caucased_url],
         },
       })
