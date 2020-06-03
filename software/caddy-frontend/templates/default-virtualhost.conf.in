@@ -104,6 +104,8 @@
   proxy /{{ proxy_name }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
