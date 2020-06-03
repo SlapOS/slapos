@@ -22,7 +22,9 @@
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 
-    transparent
+    header_upstream Host {host}
+    header_upstream X-Forwarded-For {>X-Forwarded-For-Real}
+    header_upstream -X-Forwarded-For-Real
     timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
@@ -47,7 +49,9 @@
   proxy / {{ slave_parameter.get('https_backend_url', '') }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    transparent
+    header_upstream Host {host}
+    header_upstream X-Forwarded-For {>X-Forwarded-For-Real}
+    header_upstream -X-Forwarded-For-Real
     timeout {{ slave_parameter['request_timeout'] }}s
 {%- if ssl_proxy_verify %}
 {%-   if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
