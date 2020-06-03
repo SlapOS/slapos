@@ -104,6 +104,8 @@
   proxy /{{ proxy_name }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -176,6 +178,8 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
     transparent
     insecure_skip_verify
   }
@@ -188,6 +192,8 @@
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
     header_upstream X-Real-IP {remote}
     header_upstream Host {host}
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
     websocket
     without /proxy/
     insecure_skip_verify
@@ -197,6 +203,8 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
 {%-     if websocket_transparent %}
     transparent
 {%-     endif %}
@@ -206,6 +214,8 @@
   proxy /{{ websocket_path }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
     websocket
 {%-       if websocket_transparent %}
     transparent
@@ -217,6 +227,8 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
     websocket
 {%-   if websocket_transparent %}
     transparent
@@ -239,6 +251,8 @@
   proxy /{{ proxy_name }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    header_upstream X-Forwarded-For {remote}
+    header_upstream X-Forwarded-Proto {scheme}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
