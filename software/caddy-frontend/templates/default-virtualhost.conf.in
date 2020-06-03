@@ -1,4 +1,5 @@
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
+{%- set enable_cache = slave_parameter.get('enable_cache', '').lower() in TRUE_VALUES %}
 {%- set disable_no_cache_header = slave_parameter.get('disable-no-cache-request', '').lower() in TRUE_VALUES %}
 {%- set disable_via_header = slave_parameter.get('disable-via-header', '').lower() in TRUE_VALUES %}
 {%- set prefer_gzip = slave_parameter.get('prefer-gzip-encoding-to-backend', '').lower() in TRUE_VALUES %}
@@ -104,6 +105,12 @@
   proxy /{{ proxy_name }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -176,6 +183,12 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
     transparent
     insecure_skip_verify
   }
@@ -186,8 +199,13 @@
   proxy /proxy/ {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    header_upstream X-Real-IP {remote}
-    header_upstream Host {host}
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
+    transparent
     websocket
     without /proxy/
     insecure_skip_verify
@@ -197,6 +215,12 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
 {%-     if websocket_transparent %}
     transparent
 {%-     endif %}
@@ -206,6 +230,12 @@
   proxy /{{ websocket_path }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
     websocket
 {%-       if websocket_transparent %}
     transparent
@@ -217,6 +247,12 @@
   proxy / {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
     websocket
 {%-   if websocket_transparent %}
     transparent
@@ -239,6 +275,12 @@
   proxy /{{ proxy_name }} {{ backend_url }} {
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
