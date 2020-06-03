@@ -1590,13 +1590,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
 
+    source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default proxy-try-duration == 5
         'Accept-Encoding': 'gzip',
-      }
+      },
+      source_ip=source_ip
     )
 
     self.assertEqual(
@@ -1618,6 +1620,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertFalse('Content-Encoding' in result.headers)
 
+    self.assertEqual(
+      j['Incoming Headers']['x-forwarded-for'],
+      source_ip
+    )
+    self.assertEqual(
+      j['Incoming Headers']['x-real-ip'],
+      source_ip
+    )
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
       result.headers['Set-Cookie']
