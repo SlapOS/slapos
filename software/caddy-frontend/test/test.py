@@ -1590,13 +1590,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
 
+    source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default proxy-try-duration == 5
         'Accept-Encoding': 'gzip',
-      }
+        'X-Forwarded-For': '192.168.0.1',  # trick the system
+        'X-Forwarded-Proto': 'irc',  # trick the system
+        'X-Forwarded-Port': '17',  # trick the system
+      },
+      source_ip=source_ip
     )
 
     self.assertEqual(
@@ -1618,6 +1623,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertFalse('Content-Encoding' in result.headers)
 
+    self.assertEqual(
+      j['Incoming Headers']['x-forwarded-for'],
+      source_ip
+    )
+    self.assertEqual(
+      j['Incoming Headers']['x-forwarded-port'],
+      HTTPS_PORT
+    )
+    self.assertEqual(
+      j['Incoming Headers']['x-forwarded-proto'],
+      'https'
+    )
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
       result.headers['Set-Cookie']
@@ -3350,11 +3367,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
+    source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+        'revalidate=3600, stale-if-error=3600',
+        'X-Forwarded-For': '192.168.0.1',  # trick the system
+        'X-Forwarded-Proto': 'irc',  # trick the system
+        'X-Forwarded-Port': '17',  # trick the system
+      },
+      source_ip=source_ip
+    )
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3381,6 +3405,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertEqual(
+      j['Incoming Headers']['host'],
+      '%s:%s' % (parameter_dict['domain'], HTTPS_PORT))
+    self.assertEqual(
+      backend_headers['Incoming Headers']['x-forwarded-for'],
+      source_ip
+    )
+    self.assertEqual(
+      backend_headers['Incoming Headers']['x-forwarded-port'],
+      HTTPS_PORT
+    )
+    self.assertEqual(
+      backend_headers['Incoming Headers']['x-forwarded-proto'],
+      'https'
+    )
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
