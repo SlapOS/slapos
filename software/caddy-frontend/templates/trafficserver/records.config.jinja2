@@ -27,6 +27,14 @@ CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
 # Support stale-if-error by returning cached content on backend 5xx or unavailability
 CONFIG proxy.config.http.negative_revalidating_enabled INT 1
+##############################################################################
+# Proxy users variables. Docs:
+#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
+##############################################################################
+# Do not modify headers, as it needlessly pollutes information
+CONFIG proxy.config.http.insert_client_ip INT 0
+CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 0
+
 
 ##############################################################################
 # Thread configurations. Docs:
@@ -97,13 +105,6 @@ CONFIG proxy.config.http.down_server.abort_threshold INT 10
 ##############################################################################
 CONFIG proxy.config.http.negative_caching_enabled INT 0
 CONFIG proxy.config.http.negative_caching_lifetime INT 1800
-
-##############################################################################
-# Proxy users variables. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
-##############################################################################
-CONFIG proxy.config.http.insert_client_ip INT 1
-CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 1
 
 ##############################################################################
 # Security. Docs:
