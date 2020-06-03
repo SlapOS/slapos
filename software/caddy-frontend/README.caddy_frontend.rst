@@ -488,3 +488,8 @@ Each `caddy-frontend-N` partition downloads certificates from the kedifa server.
 Caucase (exposed by ``kedifa-caucase-url`` in master partition parameters) is used to handle certificates for authentication to kedifa server.
 
 If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each caddy-frontend-N node.
+
+Support for X-Real-Ip and X-Forwarded-For
+-----------------------------------------
+
+X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
