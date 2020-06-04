@@ -115,7 +115,6 @@ configuration.enable-http2-by-default = true
 configuration.global-disable-http2 = false
 configuration.ciphers =
 configuration.request-timeout = 600
-configuration.enable-quic = false
 configuration.mpm-graceful-shutdown-timeout = 5
 configuration.frontend-name =
 configuration.proxy-try-duration = 5
