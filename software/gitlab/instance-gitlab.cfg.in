@@ -276,6 +276,7 @@ rendered= ${directory:etc}/${:_buildout_section_name_}
 context-extra =
     import  urllib                  urllib
     section gitlab                  gitlab
+    section gitlab_shell            gitlab-shell
     section gitlab_shell_work       gitlab-shell-work
     section gitaly                  gitaly
 
@@ -565,7 +566,7 @@ command-line    = {{ gitlab_workhorse }}
     -documentRoot ${gitlab-work:location}/public
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
-    -repoPath ${gitlab-repo-dir:repositories}
+#    -repoPath ${gitlab-repo-dir:repositories}
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -816,11 +817,11 @@ cron-entries = ${cron:cron-entries}
 [service-gitaly]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitaly
-#command-line    = ${gitlab-work:location}/bin/daemon_with_pidfile ${gitaly:pid}
 command-line    = {{ gitaly_location }}/gitaly ${gitaly-config.toml:rendered}
 
 environment =
     PATH={{ bundler_1_17_3_dir }}:{{ ruby_location }}/bin:/bin:/usr/bin
+    LD_LIBRARY_PATH={{ gcc_location }}/lib:{{ gcc_location }}/lib64
 
 
 # 6. on-reinstantiate actions
