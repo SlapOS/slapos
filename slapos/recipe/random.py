@@ -107,8 +107,9 @@ class Mac(object):
     pass
 
 def generatePassword(length):
-  return ''.join(random.SystemRandom().sample(
-    string.ascii_letters + string.digits + '&#@=+$*!?', length))
+  system_random = random.SystemRandom()
+  alphabet = string.ascii_letters + string.digits + '&#@=+$*!?'
+  return ''.join(system_random.choice(alphabet) for i in range(length))
 
 
 class Password(object):
