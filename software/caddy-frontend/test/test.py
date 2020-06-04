@@ -228,17 +228,6 @@ def isHTTP2(domain, ip):
   return 'Using HTTP2, server supports multi-use' in err
 
 
-def getQUIC(url, ip, port):
-  quic_client_command = 'quic_client --disable-certificate-verification '\
-    '--port=%(port)s --host=%(host)s %(url)s' % dict(
-      port=port, host=ip, url=url)
-  try:
-    return True, subprocess.check_output(
-      quic_client_command.split(), stderr=subprocess.STDOUT)
-  except subprocess.CalledProcessError as e:
-    return False, e.output
-
-
 def getPluginParameterDict(software_path, filepath):
   """Load the slapos monitor plugin and returns the configuration used by this plugin.
 
@@ -4570,104 +4559,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'Listen [%s]:8196' % (self._ipv6_address,) in master_monitor_conf)
     self.assertTrue(
       'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
-
-
-class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
-      'enable-quic': 'true',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'url': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  # It is known problem that QUIC does not work after sending reload signal,
-  # SIGUSR1, see https://github.com/mholt/caddy/issues/2394
-  @expectedFailure
-  def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'url.example.com',
-        'replication_number': '1',
-        'url': 'http://url.example.com',
-        'site_url': 'http://url.example.com',
-        'secure_access': 'https://url.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
-
-    self.assertKeyWithPop('Date', result.headers)
-    self.assertKeyWithPop('Content-Length', result.headers)
-
-    def assertQUIC():
-      quic_status, quic_result = getQUIC(
-        'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
-        parameter_dict['public-ipv4'],
-        HTTPS_PORT
-      )
-
-      self.assertTrue(quic_status, quic_result)
-
-      try:
-        quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
-      except Exception:
-        raise ValueError('JSON not found at all in QUIC result:\n%s' % (
-          quic_result,))
-      try:
-        j = json.loads(quic_jsoned)
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
-      key = 'Path'
-      self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-      self.assertEqual('/test-path', j[key])
-
-    assertQUIC()
-    # https://github.com/mholt/caddy/issues/2394
-    # after sending USR1 to Caddy QUIC does not work, check current behaviour
-    caddy_pid = [
-      q['pid'] for q
-      in self.callSupervisorMethod('getAllProcessInfo')
-      if 'frontend_caddy' in q['name']][0]
-    os.kill(caddy_pid, signal.SIGUSR1)
-
-    # give caddy a moment to refresh its config, as sending signal does not
-    # block until caddy is refreshed
-    time.sleep(2)
-
-    assertQUIC()
 
 
 @skip('New test system cannot be used with failing promises')
