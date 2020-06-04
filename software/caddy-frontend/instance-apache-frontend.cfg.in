@@ -319,9 +319,6 @@ template = inline:
 {% else %}
   -http2=true \
 {% endif %}
-{% if instance_parameter['configuration.enable-quic'].lower() in TRUE_VALUES %}
-  -quic \
-{% endif %}
   -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s \
   -disable-http-challenge \
   -disable-tls-alpn-challenge \
