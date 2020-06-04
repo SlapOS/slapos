@@ -50,6 +50,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       TestHandler)
     cls.http_server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
+    cls.http_server_process.start()
     cls.http_server_netloc = '%s:%s' % (cls._ipv4_address, http_server_port)
 
     # start a caucased and generate a valid client certificate.
@@ -140,7 +141,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       ],
     )
 
-    cls.client_cerfiticate = _caucase_service_key = os.path.join(_caucase_service_dir, 'crt.pem')
+    cls.client_certificate = _caucase_service_key = os.path.join(_caucase_service_dir, 'crt.pem')
     _caucase_service_csr = os.path.join(_caucase_service_dir, 'csr.pem')
 
     key = rsa.generate_private_key(
@@ -185,6 +186,25 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       ],
     )
 
+    # start a caucased and server certificate.
+    cls.apache_caucase_dir = tempfile.mkdtemp()
+    _apache_caucased_dir = os.path.join(cls.apache_caucase_dir, 'caucased')
+    os.mkdir(_apache_caucased_dir)
+    _apache_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
+    cls.apache_caucased_url = 'http://' + _apache_caucased_netloc
+    cls.apache_caucased_process = subprocess.Popen(
+      [
+        caucased_path,
+        '--db', os.path.join(_apache_caucased_dir, 'caucase.sqlite'),
+        '--server-key', os.path.join(_apache_caucased_dir, 'server.key.pem'),
+        '--netloc', _apache_caucased_netloc,
+        '--service-auto-approve-count', '1',
+      ],
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+    )
+    time.sleep(3) # XXX how to check if caucased service is ready ?
+
     super(TestFrontendXForwardedFor, cls).setUpClass()
 
   @classmethod
@@ -204,7 +224,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         'backend-path-dict': {'default': '/'},
         'ssl-authentication-dict': {'default': False},
         'ssl': {
-          'caucase-url': cls.caucase_caucased_url, # XXX not a good value
+          'caucase-url': cls.apache_caucased_url,
           'cert': file(cls.user_certificate).read(), # XXX not a good value
           'key': file(cls.user_certificate).read(), # XXX not a good value
           'frontend-caucase-url-list': [cls.caucase_caucased_url],
@@ -213,15 +233,19 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     }
 
   @classmethod
-  def tearDownClass(cls):
+  def _cleanup(cls, snapshot_name):
     if cls.http_server_process:
       cls.http_server_process.terminate()
     if cls.caucase_caucased_process:
       cls.caucase_caucased_process.terminate()
     if cls.caucase_dir:
       shutil.rmtree(cls.caucase_dir)
+    if cls.apache_caucased_process:
+      cls.apache_caucased_process.terminate()
+    if cls.apache_caucase_dir:
+      shutil.rmtree(cls.apache_caucase_dir)
 
-    super(TestFrontendXForwardedFor, cls).tearDownClass()
+    super(TestFrontendXForwardedFor, cls)._cleanup(snapshot_name)
 
   def test_x_forwarded_for_added_when_verified_connection(self):
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
@@ -229,14 +253,15 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
       cert=self.client_certificate,
+      verify=False,
     ).json()
-    self.assertEqual(result['Incoming Headers'].get('x-forwarded-for'), '1.2.3.4')
+    self.assertEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
     result = requests.get(
       balancer_url,
       headers={'X-Forwarded-For': '1.2.3.4'},
-      cert=self.client_certificate,
+      verify=False,
     ).json()
-    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for'), '1.2.3.4')
+    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
