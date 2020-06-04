@@ -98,11 +98,22 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         '--db', os.path.join(_caucase_caucased_dir, 'caucase.sqlite'),
         '--server-key', os.path.join(_caucase_caucased_dir, 'server.key.pem'),
         '--netloc', _caucase_caucased_netloc,
+        '--service-auto-approve-count', '1',
       ],
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
     )
-    time.sleep(3) # XXX how to check if caucased service is ready ?
+    for _ in range(10):
+      try:
+        r = requests.get(cls.caucase_caucased_url)
+        print r.content
+        if r.status_code == 200:
+          break
+      except Exception:
+        pass
+      time.sleep(1)
+    else:
+      raise RuntimeError, 'caucased failed to start.'
 
     cau_args = [
       caucase_path,
@@ -172,19 +183,17 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     result = caucase_process.communicate()
     csr_id = result[0].split()[0]
 
-    subprocess.check_call(
-      cau_args + [
-        '--user-key', _caucase_user_key,
-        '--sign-csr', csr_id,
-      ],
-    )
-    time.sleep(3) # XXX should retry until the cert is ready
-
-    subprocess.check_call(
-      cas_args + [
-        '--get-crt', csr_id, _caucase_service_key,
-      ],
-    )
+    for _ in range(10):
+      if not subprocess.call(
+        cas_args + [
+          '--get-crt', csr_id, _caucase_service_key,
+        ],
+      ) == 0:
+        break
+      else:
+        time.sleep(1)
+    else:
+      raise RuntimeError, 'getting service certificate failed.'
 
     # start a caucased and server certificate.
     cls.apache_caucase_dir = tempfile.mkdtemp()
@@ -203,7 +212,15 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
     )
-    time.sleep(3) # XXX how to check if caucased service is ready ?
+    for _ in range(10):
+      try:
+        if requests.get(cls.apache_caucased_url).status_code == 200:
+          break
+      except Exception:
+        pass
+      time.sleep(1)
+    else:
+      raise RuntimeError, 'caucased failed to start.'
 
     super(TestFrontendXForwardedFor, cls).setUpClass()
 
@@ -225,8 +242,8 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         'ssl-authentication-dict': {'default': False},
         'ssl': {
           'caucase-url': cls.apache_caucased_url,
-          'cert': file(cls.user_certificate).read(), # XXX not a good value
-          'key': file(cls.user_certificate).read(), # XXX not a good value
+          'cert': open(cls.user_certificate).read(),
+          'key': open(cls.user_certificate).read(),
           'frontend-caucase-url-list': [cls.caucase_caucased_url],
         },
       })
