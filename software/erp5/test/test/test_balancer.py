@@ -9,7 +9,6 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-import glob
 import hashlib
 import json
 import multiprocessing
@@ -19,6 +18,8 @@ import shutil
 import subprocess
 import tempfile
 import time
+
+setUpModule  # pyflakes
 
 class TestHandler(BaseHTTPRequestHandler):
   def do_GET(self):
@@ -105,9 +106,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     )
     for _ in range(10):
       try:
-        r = requests.get(cls.caucase_caucased_url)
-        print r.content
-        if r.status_code == 200:
+        if requests.get(cls.caucase_caucased_url).status_code == 200:
           break
       except Exception:
         pass
