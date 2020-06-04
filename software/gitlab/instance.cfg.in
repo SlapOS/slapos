@@ -51,10 +51,11 @@ context =
     raw grep_location               ${grep:location}
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw gzip_location               ${gzip:location}
+    raw gcc_location                ${gcc-8.2:location}
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
     raw nginx_bin                   ${nginx-output:nginx}
     raw nginx_mime_types            ${nginx-output:mime}
-    raw node_bin_location           ${nodejs-8.12.0:location}/bin/
+    raw node_bin_location           ${nodejs-10.19.0:location}/bin/
     raw openssl_bin                 ${openssl-output:openssl}
     raw postgresql_location         ${postgresql10:location}
     raw redis_binprefix             ${redis28:location}/bin
