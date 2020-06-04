@@ -69,6 +69,7 @@ input =
   import glob
   import hashlib
   import os
+  import subprocess
   hash_list = {{ repr(hash_list) }}
   crt_list = ['dummy.crt'] + ['%s.crt' % e for e in hash_list]
   crl_list = ['%s.crl' % e for e in hash_list]
@@ -87,8 +88,8 @@ input =
       os.symlink(crt, crt_link)
     if os.path.isfile(crl) and not os.path.islink(crl_link):
       os.symlink(crl, crl_link)
-  os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:ca-cert-dir}'")
-  os.system("{{ parameter_dict['openssl'] }}/bin/c_rehash '${apache-conf-ssl:crl-dir}'")
+  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:ca-cert-dir}'])
+  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:crl-dir}'])
 
 [caucase-updater-housekeeper-run]
 recipe = plone.recipe.command
