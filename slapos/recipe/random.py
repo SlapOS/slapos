@@ -119,7 +119,7 @@ class Password(object):
     recipes like slapos.recipe.template:jinja2 to safely process the password.
 
     Options:
-    - bytes: password length (default: 8 characters)
+    - bytes: password length (default: 32 characters)
     - storage-path: plain-text persistent storage for password,
                     that can only be accessed by the user
       (default: ${buildout:parts-directory}/${:_buildout_section_name_})
@@ -149,7 +149,7 @@ class Password(object):
           if e.errno != errno.ENOENT:
             raise
       if not passwd:
-        passwd = self.generatePassword(int(options.get('bytes', '8')))
+        passwd = self.generatePassword(int(options.get('bytes', '32')))
         self.update = self.install
       options['passwd'] = passwd
     # Password must not go into .installed file, for 2 reasons:
