@@ -35,8 +35,10 @@ class TestHandler(BaseHTTPRequestHandler):
 
 class TestFrontendXForwardedFor(ERP5InstanceTestCase):
   http_server_process = None
-  caucase_dir = None
-  caucase_caucased_process = None
+  frontend_caucase_dir = None
+  frontend_caucased_process = None
+  backend_caucase_dir = None
+  backend_caucased_process = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -56,25 +58,25 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
 
     # start a caucased and generate a valid client certificate.
     cls.computer_partition_root_path = os.path.abspath(os.curdir)
-    cls.caucase_dir = tempfile.mkdtemp()
-    _caucase_caucased_dir = os.path.join(cls.caucase_dir, 'caucased')
-    os.mkdir(_caucase_caucased_dir)
-    _caucase_user_dir = os.path.join(cls.caucase_dir, 'user')
-    os.mkdir(_caucase_user_dir)
-    _caucase_service_dir = os.path.join(cls.caucase_dir, 'service')
-    os.mkdir(_caucase_service_dir)
-    _caucase_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
-    cls.caucase_caucased_url = 'http://' + _caucase_caucased_netloc
+    cls.frontend_caucase_dir = tempfile.mkdtemp()
+    frontend_caucased_dir = os.path.join(cls.frontend_caucase_dir, 'caucased')
+    os.mkdir(frontend_caucased_dir)
+    frontend_user_dir = os.path.join(cls.frontend_caucase_dir, 'user')
+    os.mkdir(frontend_user_dir)
+    frontend_service_dir = os.path.join(cls.frontend_caucase_dir, 'service')
+    os.mkdir(frontend_service_dir)
+    frontend_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
+    cls.frontend_caucased_url = 'http://' + frontend_caucased_netloc
 
-    cls.user_certificate = _caucase_user_key = os.path.join(_caucase_user_dir, 'client.key.pem')
-    _caucase_user_csr = os.path.join(_caucase_user_dir, 'client.csr.pem')
+    cls.user_certificate = frontend_user_key = os.path.join(frontend_user_dir, 'client.key.pem')
+    frontend_user_csr = os.path.join(frontend_user_dir, 'client.csr.pem')
 
     key = rsa.generate_private_key(
       public_exponent=65537,
       key_size=2048,
       backend=default_backend()
     )
-    with open(_caucase_user_key, 'wb') as f:
+    with open(frontend_user_key, 'wb') as f:
       f.write(key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -84,7 +86,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
       x509.NameAttribute(NameOID.COMMON_NAME, u'user'),
     ])).sign(key, hashes.SHA256(), default_backend())
-    with open(_caucase_user_csr, 'wb') as f:
+    with open(frontend_user_csr, 'wb') as f:
       f.write(csr.public_bytes(serialization.Encoding.PEM))
 
     cls.software_release_root_path = os.path.join(
@@ -93,12 +95,12 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     )
     caucased_path = os.path.join(cls.software_release_root_path, 'bin', 'caucased')
     caucase_path = os.path.join(cls.software_release_root_path, 'bin', 'caucase')
-    cls.caucase_caucased_process = subprocess.Popen(
+    cls.frontend_caucased_process = subprocess.Popen(
       [
         caucased_path,
-        '--db', os.path.join(_caucase_caucased_dir, 'caucase.sqlite'),
-        '--server-key', os.path.join(_caucase_caucased_dir, 'server.key.pem'),
-        '--netloc', _caucase_caucased_netloc,
+        '--db', os.path.join(frontend_caucased_dir, 'caucase.sqlite'),
+        '--server-key', os.path.join(frontend_caucased_dir, 'server.key.pem'),
+        '--netloc', frontend_caucased_netloc,
         '--service-auto-approve-count', '1',
       ],
       stdout=subprocess.PIPE,
@@ -106,7 +108,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     )
     for _ in range(10):
       try:
-        if requests.get(cls.caucase_caucased_url).status_code == 200:
+        if requests.get(cls.frontend_caucased_url).status_code == 200:
           break
       except Exception:
         pass
@@ -116,26 +118,26 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
 
     cau_args = [
       caucase_path,
-      '--ca-url', cls.caucase_caucased_url,
-      '--ca-crt', os.path.join(_caucase_user_dir, 'service-ca-crt.pem'),
-      '--crl', os.path.join(_caucase_user_dir, 'service.crl'),
-      '--user-ca-crt', os.path.join(_caucase_user_dir, 'user-ca-crt.pem'),
-      '--user-crl', os.path.join(_caucase_user_dir, 'user.crl'),
+      '--ca-url', cls.frontend_caucased_url,
+      '--ca-crt', os.path.join(frontend_user_dir, 'service-ca-crt.pem'),
+      '--crl', os.path.join(frontend_user_dir, 'service.crl'),
+      '--user-ca-crt', os.path.join(frontend_user_dir, 'user-ca-crt.pem'),
+      '--user-crl', os.path.join(frontend_user_dir, 'user.crl'),
     ]
 
     cas_args = [
       caucase_path,
-      '--ca-url', cls.caucase_caucased_url,
-      '--ca-crt', os.path.join(_caucase_service_dir, 'service-ca-crt.pem'),
-      '--crl', os.path.join(_caucase_service_dir, 'service.crl'),
-      '--user-ca-crt', os.path.join(_caucase_service_dir, 'user-ca-crt.pem'),
-      '--user-crl', os.path.join(_caucase_service_dir, 'user.crl'),
+      '--ca-url', cls.frontend_caucased_url,
+      '--ca-crt', os.path.join(frontend_service_dir, 'service-ca-crt.pem'),
+      '--crl', os.path.join(frontend_service_dir, 'service.crl'),
+      '--user-ca-crt', os.path.join(frontend_service_dir, 'user-ca-crt.pem'),
+      '--user-crl', os.path.join(frontend_service_dir, 'user.crl'),
     ]
 
     caucase_process = subprocess.Popen(
       cau_args + [
         '--mode', 'user',
-        '--send-csr', _caucase_user_csr,
+        '--send-csr', frontend_user_csr,
       ],
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
@@ -147,19 +149,19 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     subprocess.check_call(
       cau_args + [
         '--mode', 'user',
-        '--get-crt', csr_id, _caucase_user_key,
+        '--get-crt', csr_id, frontend_user_key,
       ],
     )
 
-    cls.client_certificate = _caucase_service_key = os.path.join(_caucase_service_dir, 'crt.pem')
-    _caucase_service_csr = os.path.join(_caucase_service_dir, 'csr.pem')
+    cls.client_certificate = frontend_service_key = os.path.join(frontend_service_dir, 'crt.pem')
+    frontend_service_csr = os.path.join(frontend_service_dir, 'csr.pem')
 
     key = rsa.generate_private_key(
       public_exponent=65537,
       key_size=2048,
       backend=default_backend()
     )
-    with open(_caucase_service_key, 'wb') as f:
+    with open(frontend_service_key, 'wb') as f:
       f.write(key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -169,12 +171,12 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
       x509.NameAttribute(NameOID.COMMON_NAME, u'service'),
     ])).sign(key, hashes.SHA256(), default_backend())
-    with open(_caucase_service_csr, 'wb') as f:
+    with open(frontend_service_csr, 'wb') as f:
       f.write(csr.public_bytes(serialization.Encoding.PEM))
 
     caucase_process = subprocess.Popen(
       cas_args + [
-        '--send-csr', _caucase_service_csr,
+        '--send-csr', frontend_service_csr,
       ],
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
@@ -185,7 +187,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     for _ in range(10):
       if not subprocess.call(
         cas_args + [
-          '--get-crt', csr_id, _caucase_service_key,
+          '--get-crt', csr_id, frontend_service_key,
         ],
       ) == 0:
         break
@@ -195,17 +197,17 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       raise RuntimeError, 'getting service certificate failed.'
 
     # start a caucased and server certificate.
-    cls.apache_caucase_dir = tempfile.mkdtemp()
-    _apache_caucased_dir = os.path.join(cls.apache_caucase_dir, 'caucased')
-    os.mkdir(_apache_caucased_dir)
-    _apache_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
-    cls.apache_caucased_url = 'http://' + _apache_caucased_netloc
-    cls.apache_caucased_process = subprocess.Popen(
+    cls.backend_caucase_dir = tempfile.mkdtemp()
+    backend_caucased_dir = os.path.join(cls.backend_caucase_dir, 'caucased')
+    os.mkdir(backend_caucased_dir)
+    backend_caucased_netloc = '%s:%s' % (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
+    cls.backend_caucased_url = 'http://' + backend_caucased_netloc
+    cls.backend_caucased_process = subprocess.Popen(
       [
         caucased_path,
-        '--db', os.path.join(_apache_caucased_dir, 'caucase.sqlite'),
-        '--server-key', os.path.join(_apache_caucased_dir, 'server.key.pem'),
-        '--netloc', _apache_caucased_netloc,
+        '--db', os.path.join(backend_caucased_dir, 'caucase.sqlite'),
+        '--server-key', os.path.join(backend_caucased_dir, 'server.key.pem'),
+        '--netloc', backend_caucased_netloc,
         '--service-auto-approve-count', '1',
       ],
       stdout=subprocess.PIPE,
@@ -213,7 +215,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     )
     for _ in range(10):
       try:
-        if requests.get(cls.apache_caucased_url).status_code == 200:
+        if requests.get(cls.backend_caucased_url).status_code == 200:
           break
       except Exception:
         pass
@@ -240,10 +242,8 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         'backend-path-dict': {'default': '/'},
         'ssl-authentication-dict': {'default': False},
         'ssl': {
-          'caucase-url': cls.apache_caucased_url,
-          'cert': open(cls.user_certificate).read(),
-          'key': open(cls.user_certificate).read(),
-          'frontend-caucase-url-list': [cls.caucase_caucased_url],
+          'caucase-url': cls.backend_caucased_url,
+          'frontend-caucase-url-list': [cls.frontend_caucased_url],
         },
       })
     }
@@ -252,14 +252,14 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
   def _cleanup(cls, snapshot_name):
     if cls.http_server_process:
       cls.http_server_process.terminate()
-    if cls.caucase_caucased_process:
-      cls.caucase_caucased_process.terminate()
-    if cls.caucase_dir:
-      shutil.rmtree(cls.caucase_dir)
-    if cls.apache_caucased_process:
-      cls.apache_caucased_process.terminate()
-    if cls.apache_caucase_dir:
-      shutil.rmtree(cls.apache_caucase_dir)
+    if cls.frontend_caucased_process:
+      cls.frontend_caucased_process.terminate()
+    if cls.frontend_caucase_dir:
+      shutil.rmtree(cls.frontend_caucase_dir)
+    if cls.backend_caucased_process:
+      cls.backend_caucased_process.terminate()
+    if cls.backend_caucase_dir:
+      shutil.rmtree(cls.backend_caucase_dir)
 
     super(TestFrontendXForwardedFor, cls)._cleanup(snapshot_name)
 
