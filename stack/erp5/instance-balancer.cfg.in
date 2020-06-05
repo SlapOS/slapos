@@ -38,10 +38,10 @@ mode = 644
 {% do section('caucase-updater') -%}
 {% do section('caucase-updater-promise') -%}
 
-{% set hash_list = [] -%}
+{% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in ssl_parameter_dict['frontend-caucase-url-list'] -%}
 {%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
-{%   do hash_list.append(hash) -%}
+{%   do frontend_caucase_url_hash_list.append(hash) -%}
 {%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
 {{   caucase.updater(
        prefix='caucase-updater-%s' % hash,
@@ -58,7 +58,7 @@ mode = 644
 {%   do section('caucase-updater-%s' % hash) -%}
 {% endfor -%}
 
-{% if hash_list -%}
+{% if frontend_caucase_url_hash_list -%}
 [caucase-updater-housekeeper]
 recipe = collective.recipe.template
 output = ${directory:bin}/caucase-updater-housekeeper
@@ -70,7 +70,7 @@ input =
   import hashlib
   import os
   import subprocess
-  hash_list = {{ repr(hash_list) }}
+  hash_list = {{ repr(frontend_caucase_url_hash_list) }}
   crt_list = ['dummy.crt'] + ['%s.crt' % e for e in hash_list]
   crl_list = ['%s.crl' % e for e in hash_list]
   for path in glob.glob('${apache-conf-ssl:ca-cert-dir}/*.crt'):
