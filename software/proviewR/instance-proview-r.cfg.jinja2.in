@@ -142,7 +142,7 @@ command = echo  'cp -r {{ proview_directory }}/local/adm/db/ ${:pwr-db}/.. '
     $pwr_exe/rt_xtt &
   EOF
 
-update-command = echo updating and doing nothing
+update-command = ${:command} 
 stop-on-error = true
 
 [proview-environment]
@@ -175,6 +175,7 @@ recipe = collective.recipe.template
 input = inline:#!/bin/bash
   umask 022
   export HOME=${buildout:directory}
+  export SLAP_DEPLOY_IP={{ ipv4 }}
   # include .bashrc if it exists
 
   if [ -f ~/.bashrc ]; then
