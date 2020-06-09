@@ -90,6 +90,7 @@ config-{{ key }} = {{ dumps(value) }}
 config-monitor-passwd = ${publish-early:monitor-password}
 config-root-password = ${publish-early:db-root-password}
 config-repman-user = ${repman-parameter:username}
+config-heartbeat-user = ${repman-parameter:heartbeat-user}
 #config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
@@ -126,13 +127,17 @@ maximum = 7132
 {% set prefered_master = parameter_dict.get("db-prefered-master") -%}
 [{{ name ~ '-cluster-parameter' }}]
 {% for key, value in parameter_dict.items() -%}
-{{ key }} = {{ dumps(value) }}
+{{ key }} = {{ value }}
 {% endfor -%}
 proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
 proxy-port = {{ '${' ~ name ~ '-port:port}' }}
 proxy-admin-port = {{ '${' ~ name ~ '-admin-port:port}' }}
-db-credential = repman:${publish-early:db-root-password}
+db-user = repman
+db-password = ${publish-early:db-root-password}
 db-list = {{ mariadb_server_list | join(',') }}
+
+heartbeat-user = ${repman-parameter:heartbeat-user}
+heartbeat-password = ${publish-early:db-root-password}
 partition-list = {{ mariadb_path_list | join(',') }}
 {% if prefered_master -%}
 db-prefered-master = {{ prefered_master }}
@@ -317,6 +322,7 @@ secure-port = ${instance-parameter:repman-secure-port}
 port = ${instance-parameter:repman-port}
 ipv4 = ${instance-parameter:ipv4-random}
 username = admin
+heartbeat-user = heartbeat
 password = ${publish-early:repman-password}
 cluster-d = ${repman:clusters}
 autorejoin = {{ slapparameter_dict.get("autorejoin", True) }}
