@@ -14,7 +14,7 @@ run = ${:var}/run
 supervisord = ${:etc}/supervisord-{{ name }}.conf.d
 
 [controller-parameters]
-socket-path = ${controller-directory:run}/supervisord-{{ name }}.socket
+socket-path = ${controller-directory:run}/{{ name }}.socket
 include-dir = ${controller-directory:supervisord}
 log-file    = ${controller-directory:log}/supervisord-{{ name }}.log
 log-level   = info
