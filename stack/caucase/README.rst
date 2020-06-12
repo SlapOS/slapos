@@ -72,7 +72,7 @@ Client
   
   This script allows you to re-issue a CSR using a locally-generated private key.
 
-.. topic:: ``updater(prefix, buildout_bin_directory, updater_path, url, data_dir, crt_path, ca_path, crl_path, key_path=None, on_renew=None, max_sleep=None, mode='service', template_csr_pem=None, openssl=None)``
+.. topic:: ``updater(prefix, buildout_bin_directory, updater_path, url, data_dir, ca_path, crl_path, crt_path=None, key_path=None, on_renew=None, max_sleep=None, mode='service', template_csr_pem=None, openssl=None)``
 
   - ``<prefix>``: Creates ``<updater>`` executable file to start ``caucase-updater``, and ``<data_dir>`` directory for its data storage needs.
   
