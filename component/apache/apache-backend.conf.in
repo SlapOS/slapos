@@ -92,6 +92,10 @@
  #  For more details, refer to
  #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
 -#}
+{% set ca_cert = parameter_dict.get('ca-cert') -%}
+{% set ca_cert_dir = parameter_dict.get('ca-cert-dir') -%}
+{% set crl = parameter_dict.get('crl') -%}
+{% set crl_dir = parameter_dict.get('crl-dir') -%}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
@@ -142,21 +146,23 @@ SSLProxyEngine On
 
 # As backend is trusting Remote-User header unset it always
 RequestHeader unset Remote-User
-{% if parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir') -%}
+{% if ca_cert or ca_cert_dir -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
 RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
-{%   if parameter_dict.get('ca-cert') -%}
-SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
-{%   elif parameter_dict.get('ca-cert-dir') -%}
-SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
+{%   if ca_cert -%}
+SSLCACertificateFile {{ ca_cert }}
 {%   endif -%}
-{%   if parameter_dict.get('crl') or parameter_dict.get('crl-dir') -%}
+{%   if ca_cert_dir -%}
+SSLCACertificatePath {{ ca_cert_dir }}
+{%   endif -%}
+{%   if crl or crl_dir -%}
 SSLCARevocationCheck chain
-{%     if parameter_dict.get('crl') -%}
-SSLCARevocationFile {{ parameter_dict['crl'] }}
-{%     elif parameter_dict.get('crl-dir') -%}
-SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%     if crl -%}
+SSLCARevocationFile {{ crl }}
+{%     endif -%}
+{%     if crl_dir -%}
+SSLCARevocationPath {{ crl_dir }}
 {%     endif -%}
 {%   endif -%}
 {% endif -%}
@@ -179,18 +185,20 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-{% if enable_authentication and (parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir')) and (parameter_dict.get('crl') or parameter_dict.get('crl-dir')) -%}
+{% if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
   SSLVerifyClient require
-{%   if parameter_dict.get('ca-cert') -%}
-  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
-{%   elif parameter_dict.get('ca-cert-dir') -%}
-  SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
+{%   if ca_cert -%}
+  SSLCACertificateFile {{ ca_cert }}
+{%   endif -%}
+{%   if ca_cert_dir -%}
+  SSLCACertificatePath {{ ca_cert_dir }}
 {%   endif -%}
   SSLCARevocationCheck chain
-{%   if parameter_dict.get('crl') -%}
-  SSLCARevocationFile {{ parameter_dict['crl'] }}
-{%   elif parameter_dict.get('crl-dir') -%}
-  SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
+{%   if crl -%}
+  SSLCARevocationFile {{ crl }}
+{%   endif -%}
+{%   if crl_dir -%}
+  SSLCARevocationPath {{ crl_dir }}
 {%   endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
@@ -209,19 +217,21 @@ Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
   Timeout 3600
-{%   if enable_authentication and (parameter_dict.get('ca-cert') or parameter_dict.get('ca-cert-dir')) and (parameter_dict.get('crl') or parameter_dict.get('crl-dir')) -%}
+{%   if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
   SSLVerifyClient require
-{%   if parameter_dict.get('ca-cert') -%}
-  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
-{%   elif parameter_dict.get('ca-cert-dir') -%}
-  SSLCACertificatePath {{ parameter_dict['ca-cert-dir'] }}
-{%   endif -%}
+{%     if ca_cert -%}
+  SSLCACertificateFile {{ ca_cert }}
+{%     endif -%}
+{%     if ca_cert_dir -%}
+  SSLCACertificatePath {{ ca_cert_dir }}
+{%     endif -%}
   SSLCARevocationCheck chain
-{%   if parameter_dict.get('crl') -%}
-  SSLCARevocationFile {{ parameter_dict['crl'] }}
-{%   elif parameter_dict.get('crl-dir') -%}
-  SSLCARevocationPath {{ parameter_dict['crl-dir'] }}
-{%   endif -%}
+{%     if crl -%}
+  SSLCARevocationFile {{ crl }}
+{%     endif -%}
+{%     if crl_dir -%}
+  SSLCARevocationPath {{ crl_dir }}
+{%     endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
