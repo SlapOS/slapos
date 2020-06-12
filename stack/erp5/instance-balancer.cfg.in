@@ -67,11 +67,10 @@ input =
   inline:
   #!${buildout:executable}
   import glob
-  import hashlib
   import os
   import subprocess
   hash_list = {{ repr(frontend_caucase_url_hash_list) }}
-  crt_list = ['dummy.crt'] + ['%s.crt' % e for e in hash_list]
+  crt_list = ['%s.crt' % e for e in hash_list]
   crl_list = ['%s.crl' % e for e in hash_list]
   for path in glob.glob('${apache-conf-ssl:ca-cert-dir}/*.crt'):
     if os.path.basename(path) not in crt_list:
@@ -95,7 +94,6 @@ input =
 recipe = plone.recipe.command
 command = ${caucase-updater-housekeeper:output}
 update-command = ${:command}
-{% do section('caucase-updater-housekeeper-run') -%}
 {% endif -%}
 
 {% set haproxy_dict = {} -%}
@@ -184,11 +182,9 @@ key = ${directory:apache-conf}/apache.pem
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
 {% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+depends = ${caucase-updater-housekeeper-run:recipe}
 ca-cert-dir = ${directory:apache-ca-cert-dir}
 crl-dir = ${directory:apache-crl-dir}
-# Create a dummy CA because Apache will not start if SSLCACertificatePath directoy is empty.
-recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout /dev/null -out "${:ca-cert-dir}/dummy.crt" && {{ parameter_dict['openssl'] }}/bin/c_rehash "${:ca-cert-dir}"
 {%- endif %}
 
 [simplefile]
