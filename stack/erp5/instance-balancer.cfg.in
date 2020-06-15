@@ -2,6 +2,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
+{% set frontend_caucase_url_list = ssl_parameter_dict.get('frontend-caucase-url-list', []) -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -39,7 +40,7 @@ mode = 644
 {% do section('caucase-updater-promise') -%}
 
 {% set frontend_caucase_url_hash_list = [] -%}
-{% for frontend_caucase_url in ssl_parameter_dict['frontend-caucase-url-list'] -%}
+{% for frontend_caucase_url in frontend_caucase_url_list -%}
 {%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
 {%   do frontend_caucase_url_hash_list.append(hash) -%}
 {%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
@@ -181,7 +182,7 @@ key = ${directory:apache-conf}/apache.pem
 # XXX caucase certificate is not supported by caddy for now
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
-{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+{% if frontend_caucase_url_list -%}
 depends = ${caucase-updater-housekeeper-run:recipe}
 ca-cert-dir = ${directory:apache-ca-cert-dir}
 crl-dir = ${directory:apache-crl-dir}
@@ -231,7 +232,7 @@ cert = ${apache-ssl:cert}
 key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
-{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+{% if frontend_caucase_url_list -%}
 # Client x509 auth
 ca-cert-dir = ${apache-conf-ssl:ca-cert-dir}
 crl-dir = ${apache-conf-ssl:crl-dir}
@@ -288,7 +289,7 @@ post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bi
 [directory]
 recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
-{% if ssl_parameter_dict['frontend-caucase-url-list'] -%}
+{% if frontend_caucase_url_list -%}
 apache-ca-cert-dir = ${:apache-conf}/ssl.crt
 apache-crl-dir = ${:apache-conf}/ssl.crl
 {% endif -%}

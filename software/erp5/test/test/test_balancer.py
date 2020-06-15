@@ -4,6 +4,7 @@ from slapos.testing.utils import findFreeTCPPort
 
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
+import OpenSSL.SSL
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -237,10 +238,19 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         'apachedex-configuration': '',
         'apachedex-promise-threshold': 100,
         'haproxy-server-check-path': '/',
-        'zope-family-dict': {'default': ['dummy_http_server']},
+        'zope-family-dict': {
+          'default': ['dummy_http_server'],
+          'default-auth': ['dummy_http_server'],
+        },
         'dummy_http_server': [[cls.http_server_netloc, 1, False]],
-        'backend-path-dict': {'default': '/'},
-        'ssl-authentication-dict': {'default': False},
+        'backend-path-dict': {
+          'default': '/',
+          'default-auth': '/',
+        },
+        'ssl-authentication-dict': {
+          'default': False,
+          'default-auth': True,
+        },
         'ssl': {
           'caucase-url': cls.backend_caucased_url,
           'frontend-caucase-url-list': [cls.frontend_caucased_url],
@@ -264,14 +274,15 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     super(TestFrontendXForwardedFor, cls)._cleanup(snapshot_name)
 
   def test_x_forwarded_for_added_when_verified_connection(self):
-    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
-    result = requests.get(
-      balancer_url,
-      headers={'X-Forwarded-For': '1.2.3.4'},
-      cert=self.client_certificate,
-      verify=False,
-    ).json()
-    self.assertEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+    for backend in ('default', 'default-auth'):
+      balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])[backend]
+      result = requests.get(
+        balancer_url,
+        headers={'X-Forwarded-For': '1.2.3.4'},
+        cert=self.client_certificate,
+        verify=False,
+      ).json()
+      self.assertEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
@@ -281,3 +292,10 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       verify=False,
     ).json()
     self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+    balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
+    with self.assertRaises(OpenSSL.SSL.Error):
+      requests.get(
+        balancer_url,
+        headers={'X-Forwarded-For': '1.2.3.4'},
+        verify=False,
+      )
