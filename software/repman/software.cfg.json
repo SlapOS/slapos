@@ -1,0 +1,15 @@
+{
+  "name": "Replication Manager",
+  "description": "Replication Manager",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "serialisation": "json-in-xml",
+      "description": "Replication Manager",
+      "request": "instance-repman-input-schema.json",
+      "response": "instance-repman-output-schema.json",
+      "index": 0
+    }
+  }
+}

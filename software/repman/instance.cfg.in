@@ -1,0 +1,105 @@
+[buildout]
+parts = switch-softwaretype
+
+eggs-directory = {{ buildout_egg_directory }}
+develop-eggs-directory = {{ buildout_develop_directory }}
+offline = true
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = template-instance-repman.cfg:rendered
+RootSoftwareInstance = ${:default}
+mariadb = template-instance-mariadb.cfg:rendered
+
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+
+[jinja2-template-base]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0644
+extensions = jinja2.ext.do
+rendered= ${buildout:directory}/${:_buildout_section_name_}
+supervisord-lib = {{ supervisord_lib }}
+import-list =
+  file supervisord_lib :supervisord-lib
+context =
+    key slapparameter_dict      slap-configuration:configuration
+    key computer_id             slap-configuration:computer
+    key ipv4_set                slap-configuration:ipv4
+    key ipv6_set                slap-configuration:ipv6
+    raw buildout_directory      {{ buildout_directory }}
+    raw buildout_bin_directory  {{ buildout_bin_directory }}
+    raw eggs_directory          {{ buildout_egg_directory }}
+    raw develop_eggs_directory  {{ buildout_develop_directory }}
+    raw mariadb_location        {{ mariadb_location }}
+    raw supervisord_lib         {{ supervisord_lib }}
+    raw supervisord_conf        {{ supervisord_conf }}
+    raw template_monitor        {{ template_monitor_cfg }}
+
+# program binaries
+    raw bash_bin                {{ bash_location }}/bin/bash
+    raw jq_bin                  {{ jq_location }}/jq
+    raw curl_bin                {{ curl_location }}/bin/curl
+
+    ${:extra-context}
+extra-context =
+
+[template-instance-repman.cfg]
+<= jinja2-template-base
+template= {{ template_repman_cfg }}
+extra-context =
+    raw gowork_bin                  {{ gowork_bin }}
+    raw haproxy_location            {{ haproxy_location }}
+    raw nginx_bin                   {{ nginx_location }}/sbin/nginx
+    raw repman_src_location         {{ repman_src_location }}
+
+# config files
+    raw config_toml_in             {{ config_toml_in }}
+    raw config_cluster_toml_in     {{ config_cluster_toml_in }}
+    raw nginx_conf_in              {{ nginx_conf_in }}
+    raw rsync_location             {{ rsync_location }}
+    raw restic_bin_location        {{ restic_bin_location }}
+    raw sysbench_location          {{ sysbench_location }}
+    raw proxysql_location          {{ proxysql_location }}
+    raw template_repman_manager_sh {{ template_repman_manager_sh }}
+    raw template_proxy_need_stopstart {{ proxy_need_stop_start_template }}
+
+[template-mariadb-parameters]
+bash = {{ bash_location }}
+dash-location = {{ dash_location }}
+gzip-location = {{ gzip_location }}
+mariadb-location = {{ mariadb_location }}
+template-my-cnf = {{ template_my_cnf }}
+template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
+template-mariadb-init-root = {{ template_init_root_sql }}
+template-init-root-wrapper = {{ template_init_root_wrapper }}
+template-mysqld-wrapper = {{ template_mysqld_wrapper }}
+template-mysqld-need-start = {{ mysqld_start_template }}
+link-binary = {{ dumps(mariadb_link_binary) }}
+check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
+bin-directory = {{ bin_directory }}
+percona-tools-location = {{ percona_toolkit_location }}
+unixodbc-location = {{ unixodbc_location }}
+curl-location = {{ curl_location }}
+dbjobs-template = {{ dbjobs_in }}
+socat-location = {{ socat_location }}
+mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
+
+[template-instance-mariadb.cfg]
+<= jinja2-template-base
+template = {{ template_mariadb }}
+filename = instance-mariadb.cfg
+extra-context =
+    section parameter_dict template-mariadb-parameters
+
+
