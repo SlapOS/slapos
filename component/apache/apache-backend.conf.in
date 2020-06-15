@@ -187,19 +187,6 @@ Listen {{ ip }}:{{ port }}
   SSLEngine on
 {% if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
   SSLVerifyClient require
-{%   if ca_cert -%}
-  SSLCACertificateFile {{ ca_cert }}
-{%   endif -%}
-{%   if ca_cert_dir -%}
-  SSLCACertificatePath {{ ca_cert_dir }}
-{%   endif -%}
-  SSLCARevocationCheck chain
-{%   if crl -%}
-  SSLCARevocationFile {{ crl }}
-{%   endif -%}
-{%   if crl_dir -%}
-  SSLCARevocationPath {{ crl_dir }}
-{%   endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
@@ -219,19 +206,6 @@ Listen {{ ip }}:{{ port }}
   Timeout 3600
 {%   if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
   SSLVerifyClient require
-{%     if ca_cert -%}
-  SSLCACertificateFile {{ ca_cert }}
-{%     endif -%}
-{%     if ca_cert_dir -%}
-  SSLCACertificatePath {{ ca_cert_dir }}
-{%     endif -%}
-  SSLCARevocationCheck chain
-{%     if crl -%}
-  SSLCARevocationFile {{ crl }}
-{%     endif -%}
-{%     if crl_dir -%}
-  SSLCARevocationPath {{ crl_dir }}
-{%     endif -%}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
