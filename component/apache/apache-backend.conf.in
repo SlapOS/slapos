@@ -23,15 +23,6 @@
  #       #  The path given to "SSLSessionCache shmcb:<folder_path>(512000)"
  #       "ssl-session-cache": "<folder_path>",
  #
- #       #  The path given to "SSLCACertificateFile" (can be empty)
- #       #  If this value is not empty, it enables client certificate check.
- #       #  (Enabling "SSLVerifyClient require")
- #       "ca-cert": "<file_path>",
- #
- #       #  The path given to "SSLCARevocationFile" (used if ca-cert is not
- #       #  empty)
- #       "crl": "<file_path>",
- #
  #       #  The path given to "SSLCACertificatePath" (can be empty)
  #       #  If this value is not empty, it enables client certificate check.
  #       #  (Enabling "SSLVerifyClient require")
@@ -78,7 +69,7 @@
  #  From to `backend-list`:
  #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
  #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
- #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert`.
+ #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert-dir`.
  #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
  #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
  #  accepting requests from any client.
@@ -92,9 +83,7 @@
  #  For more details, refer to
  #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
 -#}
-{% set ca_cert = parameter_dict.get('ca-cert') -%}
 {% set ca_cert_dir = parameter_dict.get('ca-cert-dir') -%}
-{% set crl = parameter_dict.get('crl') -%}
 {% set crl_dir = parameter_dict.get('crl-dir') -%}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
@@ -146,24 +135,14 @@ SSLProxyEngine On
 
 # As backend is trusting Remote-User header unset it always
 RequestHeader unset Remote-User
-{% if ca_cert or ca_cert_dir -%}
+{% if ca_cert_dir -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
 RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
-{%   if ca_cert -%}
-SSLCACertificateFile {{ ca_cert }}
-{%   endif -%}
-{%   if ca_cert_dir -%}
 SSLCACertificatePath {{ ca_cert_dir }}
-{%   endif -%}
-{%   if crl or crl_dir -%}
+{%   if crl_dir -%}
 SSLCARevocationCheck chain
-{%     if crl -%}
-SSLCARevocationFile {{ crl }}
-{%     endif -%}
-{%     if crl_dir -%}
 SSLCARevocationPath {{ crl_dir }}
-{%     endif -%}
 {%   endif -%}
 {% endif -%}
 
@@ -185,7 +164,7 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-{% if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
+{% if enable_authentication and ca_cert_dir -%}
   SSLVerifyClient require
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
@@ -204,7 +183,7 @@ Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
   Timeout 3600
-{%   if enable_authentication and (ca_cert or ca_cert_dir) and (crl or crl_dir) -%}
+{%   if enable_authentication and ca_cert_dir -%}
   SSLVerifyClient require
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
