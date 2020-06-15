@@ -4,6 +4,7 @@ import argparse, os, re, subprocess, sys
 from time import gmtime, strftime, time
 from erp5.util import taskdistribution
 from erp5.util.testsuite import SubprocessError, TestSuite
+from pkg_resources import get_distribution
 from zc.buildout.buildout import Buildout
 
 if str is bytes:
@@ -40,17 +41,17 @@ class DummyTestResult:
 class BuildoutTestSuite(TestSuite):
 
   RUN_RE = re.compile(
-    r'Ran (?P<all_tests>\d+) tests with'
-    ' (?P<failures>\d+) failures,'
-    ' (?P<errors>\d+) errors and'
-    ' (?P<skips>\d+) skipped in')
+    br'Ran (?P<all_tests>\d+) tests with'
+    br' (?P<failures>\d+) failures,'
+    br' (?P<errors>\d+) errors and'
+    br' (?P<skips>\d+) skipped in')
 
   def run(self, test):
     start = time()
     try:
       status_dict = self.spawn(os.path.join('bin', 'zope-testrunner'),
         '--test-path', os.path.join(test_dict[test], 'src'))
-    except SubprocessError, e:
+    except SubprocessError as e:
       status_dict = e.status_dict
     end = time()
     status_dict.update(
@@ -93,35 +94,38 @@ def main():
   else:
     test_result = DummyTestResult(list(test_dict))
 
-  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
     os.write(fd, str2bytes("""\
 [buildout]
-extends = %s
 develop =%s
-parts = test
+parts = testrunner
 newest = false
+versions = versions
 
 [versions]
 %s
+zope.exceptions = 4.3
+zope.interface = 4.7.2
+zope.testing = 4.7
 
-[bootstrap]
+[testrunner]
 recipe = zc.recipe.egg
-eggs = zc.buildout
-
-[test]
-recipe = zc.recipe.egg
-eggs +=
+eggs =
+  ${:recipe}
+  zope.testing
   zope.testrunner
 scripts =
   zope-testrunner
-""" % (os.path.join(slapos_buildout, 'buildout.cfg'),
-       ''.join('\n  ' + x for x in test_dict.itervalues()),
-       '\n'.join(x + ' =' for x in test_dict))))
+extra-paths =
+  %s
+""" % (''.join('\n  ' + x for x in test_dict.values()),
+       '\n'.join(x + ' =' for x in test_dict),
+       get_distribution('manuel').location,
+       )))
   finally:
     os.close(fd)
-  Buildout('buildout.cfg', {}).install(['bootstrap'])
-  subprocess.check_call((os.path.join('bin', 'buildout'),))
+  Buildout('buildout.cfg', {}).install(None)
 
   test_suite = BuildoutTestSuite(1)
   while 1:
