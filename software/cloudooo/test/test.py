@@ -88,6 +88,17 @@ class HTMLtoPDFConversionFontTestMixin:
     """Convert the HTML source to pdf bytes.
     """
 
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'ssl': {
+          'ca-cert': open(os.path.join(os.path.dirname(__file__), 'dummy.ca.crt')).read(),
+          'crl': open(os.path.join(os.path.dirname(__file__), 'dummy.crl.pem')).read(),
+        },
+      })
+    }
+
   def setUp(self):
     self.url = json.loads(
         self.computer_partition.getConnectionParameterDict()["_"])['cloudooo']
