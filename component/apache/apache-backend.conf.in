@@ -164,7 +164,8 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-{% if enable_authentication and ca_cert_dir -%}
+{%   if enable_authentication -%}
+{%     do assert(ca_cert_dir) -%}
   SSLVerifyClient require
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
@@ -183,7 +184,8 @@ Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
   Timeout 3600
-{%   if enable_authentication and ca_cert_dir -%}
+{%   if enable_authentication -%}
+{%     do assert(ca_cert_dir) -%}
   SSLVerifyClient require
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
