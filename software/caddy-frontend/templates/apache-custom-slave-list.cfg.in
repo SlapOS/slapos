@@ -472,6 +472,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    backend-haproxy-TODO-ME-NEEDED-get-from-instance-apache-frontend.cfg.in
 {% for part in part_list %}
 {{ '    %s' % part }}
 {% endfor %}
