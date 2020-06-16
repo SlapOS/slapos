@@ -135,10 +135,11 @@ SSLProxyEngine On
 
 # As backend is trusting Remote-User header unset it always
 RequestHeader unset Remote-User
+# Drop incoming X-Forwarded-For without valid client authentication
+RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
 {% if ca_cert_dir -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
-RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
 SSLCACertificatePath {{ ca_cert_dir }}
 {%   if crl_dir -%}
 SSLCARevocationCheck chain
