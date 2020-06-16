@@ -74,9 +74,6 @@ csr_id = ${:srv}/csr_id
 caddy-csr_id = ${:etc}/caddy-csr_id
 caddy-csr_id-log = ${:log}/httpd-csr_id
 
-# backend-haproxy
-backend-haproxy-configuration = ${:etc}/backend-haproxy.d
-
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -154,7 +151,6 @@ template-empty = {{ parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
 template-cached-slave-virtualhost = {{ parameter_dict['template_cached_slave_virtualhost'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
-template-backend-haproxy-slave = {{ parameter_dict['template_backend_haproxy_slave'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -285,7 +281,6 @@ extra-context =
 ## backend haproxy
     key haproxy_executable :haproxy_executable
     key template_backend_haproxy_slave_configuration software-release-path:template-backend-haproxy-slave
-    key backend_haproxy_configuration_directory backend-haproxy-config:configuration-directory
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
@@ -747,7 +742,6 @@ extra-context =
 
 [backend-haproxy-config]
 base-configuration = ${directory:etc}/backend-haproxy.cfg
-configuration-directory = ${directory:backend-haproxy-configuration}
 pid-file = ${directory:var}/backend-haproxy.pid
 
 [backend-haproxy-wrapper]
@@ -757,7 +751,6 @@ template = inline:
   ulimit -n $(ulimit -Hn)
   exec {{ parameter_dict['haproxy_executable'] }} \
   -f ${backend-haproxy-config:base-configuration} \
-  -f ${backend-haproxy-config:configuration-directory} \
    "$@"
 rendered = ${directory:bin}/backend-haproxy-wrapper
 mode = 0755
