@@ -417,14 +417,14 @@ def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
   headers.setdefault('X-Forwarded-Port', '17')
 
   session = requests.Session()
-  session.mount(
-    'https://%s:%s' % (domain, port),
-    ForcedIPHTTPSAdapter(
-      dest_ip=real_ip))
   if source_ip is not None:
     new_source = source.SourceAddressAdapter(source_ip)
     session.mount('http://', new_source)
     session.mount('https://', new_source)
+  session.mount(
+    'https://%s:%s' % (domain, port),
+    ForcedIPHTTPSAdapter(
+      dest_ip=real_ip))
   return session.get(
     'https://%s:%s/%s' % (domain, port, path),
     verify=False,
