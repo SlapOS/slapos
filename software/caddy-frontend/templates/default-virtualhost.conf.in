@@ -40,6 +40,25 @@
 {%-   set enable_h2 = False %}
 {%- endif %}
 
+{%- macro proxy_header() %}
+    try_duration {{ slave_parameter['proxy_try_duration'] }}s
+    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+    timeout {{ slave_parameter['request_timeout'] }}s
+{%-   if ssl_proxy_verify %}
+{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
+    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
+{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
+{%-   else %} {#-   if ssl_proxy_verify #}
+    insecure_skip_verify
+{%-   endif %} {#-   if ssl_proxy_verify #}
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%-     if enable_cache %}
+    # provide a header for other components
+    header_upstream X-Forwarded-For-Real {remote}
+{%-     endif %}
+{%- endmacro %} {# proxy_header #}
+
 {%- for tls in [True, False] %}
 {%- if tls %}
 {%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
@@ -103,14 +122,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -129,14 +141,6 @@
     header_upstream -Pragma
 {%-   endif %} {#-   if disable_no_cache_header #}
     transparent
-    timeout {{ slave_parameter['request_timeout'] }}s
-{%-   if ssl_proxy_verify %}
-{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-   else %} {#-   if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
 {%-   endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
   {%- if default_path %}
@@ -181,83 +185,43 @@
   } {# redir #}
 {%- elif slave_type == 'notebook' %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
     transparent
-    insecure_skip_verify
   }
   rewrite {
     regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
     to /proxy/{1}
   }
   proxy /proxy/ {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
     transparent
     websocket
     without /proxy/
-    insecure_skip_verify
   }
 {%- elif slave_type == 'websocket' %}
 {%-   if websocket_path_list %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
 {%-     if websocket_transparent %}
     transparent
 {%-     endif %}
-    insecure_skip_verify
   }
 {%-     for websocket_path in websocket_path_list %}
   proxy /{{ websocket_path }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
     websocket
 {%-       if websocket_transparent %}
     transparent
 {%-       endif %}
-    insecure_skip_verify
   }
 {%-     endfor %}
 {%-   else %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
     websocket
 {%-   if websocket_transparent %}
     transparent
 {%-   endif %}
-    insecure_skip_verify
   }
 {%-   endif %}
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
@@ -273,14 +237,7 @@
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
   proxy /{{ proxy_name }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    # force reset of X-Forwarded-For
-    header_upstream X-Forwarded-For {remote}
-{%-     if enable_cache %}
-    # provide a header for other components
-    header_upstream X-Forwarded-For-Real {remote}
-{%-     endif %}
+{{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -299,14 +256,6 @@
     header_upstream -Pragma
 {%-     endif %} {#-     if disable_no_cache_header #}
     transparent
-    timeout {{ slave_parameter['request_timeout'] }}s
-{%-     if ssl_proxy_verify %}
-{%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-       endif %} {#-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-     else %} {#-     if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-     endif %} {#-     if ssl_proxy_verify #}
   }  {# proxy #}
 {%-    endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
 {%-   endif %} {#-   if backend_url #}
