@@ -37,7 +37,6 @@ from unittest import skip
 import ssl
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
-from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
@@ -48,6 +47,7 @@ import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
+import socket
 
 
 try:
@@ -80,6 +80,21 @@ KEDIFA_PORT = '15080'
 # IP to originate requests from
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
+
+# "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
+DNS_CACHE = {}
+
+
+def add_custom_dns(domain, port, ip):
+  port = int(port)
+  key = (domain, port)
+  value = (socket.AF_INET, 1, 6, '', (ip, port))
+  DNS_CACHE[key] = [value]
+
+
+def new_getaddrinfo(*args):
+  return DNS_CACHE[args[:2]]
+
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('SLAPOS_TEST_DEBUG'):
@@ -417,21 +432,23 @@ def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
   headers.setdefault('X-Forwarded-Port', '17')
 
   session = requests.Session()
-  session.mount(
-    'https://%s:%s' % (domain, port),
-    ForcedIPHTTPSAdapter(
-      dest_ip=real_ip))
   if source_ip is not None:
     new_source = source.SourceAddressAdapter(source_ip)
     session.mount('http://', new_source)
     session.mount('https://', new_source)
-  return session.get(
-    'https://%s:%s/%s' % (domain, port, path),
-    verify=False,
-    allow_redirects=False,
-    headers=headers,
-    cookies=cookies
-  )
+  socket_getaddrinfo = socket.getaddrinfo
+  try:
+    add_custom_dns(domain, port, real_ip)
+    socket.getaddrinfo = new_getaddrinfo
+    return session.get(
+      'https://%s:%s/%s' % (domain, port, path),
+      verify=False,
+      allow_redirects=False,
+      headers=headers,
+      cookies=cookies
+    )
+  finally:
+    socket.getaddrinfo = socket_getaddrinfo
 
 
 def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
