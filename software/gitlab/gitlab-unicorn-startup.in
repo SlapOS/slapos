@@ -35,11 +35,10 @@ while true; do
 done
 echo "I: PostgreSQL ready." 1>&2
 
-# make sure pg_trgm extension is enabled for gitlab db
-psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
 
 if echo "$pgtables" | grep -q '^Did not find any relations' ; then
-    $RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
+    #$RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
+    $RAKE gitlab:setup RAILS_ENV=production force=yes || die "initial db setup failed"
 fi
 
 
