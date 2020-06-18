@@ -61,9 +61,15 @@
     },
     "mail-smtp-addr": {
       "title": "Mail SMTP address",
-      "description": "Mail SMTP address. Default: localhost:25",
+      "description": "Mail SMTP address. Default: localhost",
       "type": "string",
-      "default": "localhost:25"
+      "default": "localhost"
+    },
+    "mail-smtp-port": {
+      "title": "Mail SMTP port",
+      "description": "Mail SMTP port. Default: 25",
+      "type": "integer",
+      "default": "25"
     },
     "mail-smtp-password": {
       "title": "Mail SMTP password",
@@ -84,10 +90,31 @@
       "default": ""
     },
     "tags": {
-      "title": "Provisioning db tags",
-      "description": "Provisioning db tags",
-      "type": "string",
-      "default": "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime,readcommitted,nohandshake"
+      "title": "Provisioning db tag list",
+      "description": "Provisioning db tags. Set one tag per line.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "gtidstrict",
+        "bind",
+        "pkg",
+        "innodb",
+        "noquerycache",
+        "slow",
+        "pfs",
+        "linux",
+        "readonly",
+        "diskmonitor",
+        "sqlerror",
+        "compressbinlog",
+        "bm4ci",
+        "mroonga",
+        "utctime",
+        "readcommitted",
+        "nohandshake"
+      ]
     },
     "http-session-lifetime": {
       "title": "Web Session life time in s",
@@ -169,10 +196,18 @@
               "default": "external"
             },
             "proxy-tags": {
-              "title": "Proxy tags",
-              "description": "playbook configuration tags. Default: pkg,masterslave,linux,noreadwritesplit",
-              "type": "string",
-              "default": "pkg,masterslave,linux,noreadwritesplit"
+              "title": "Proxy tag list",
+              "description": "playbook configuration tags. Default: [\"pkg\", \"masterslave\", \"linux\", \"noreadwritesplit\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "pkg",
+                "masterslave",
+                "linux",
+                "noreadwritesplit"
+              ]
             },
             "logical-backup-cron": {
               "title": "Mysqldump backup cron definition.",
@@ -222,16 +257,36 @@
               "multipleOf": 256
             },
             "db-memory-shared-pct": {
-              "title": "Percent memory shared per buffer",
-              "description": "Percent memory shared per buffer (default \"threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0\")",
-              "type": "string",
-              "default": "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0"
+              "title": "Percent memory list shared per buffer",
+              "description": "Percent memory shared per buffer. Default: [\"threads:16\", \"innodb:60\", \"myisam:10\", \"aria:10\", \"rocksdb:1\", \"tokudb:1\", \"s3:1\", \"archive:1\", \"querycache:0\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "threads:16",
+                "innodb:60",
+                "myisam:10",
+                "aria:10",
+                "rocksdb:1",
+                "tokudb:1",
+                "s3:1",
+                "archive:1",
+                "querycache:0"
+              ]
             },
             "db-memory-threaded-pct": {
               "title": "Percent memory allocted per threads",
-              "description": "Percent memory allocted per threads. (default \"tmp:70,join:20,sort:10\")",
-              "type": "string",
-              "default": "tmp:70,join:20,sort:10"
+              "description": "Percent memory allocted per threads. Default: [\"tmp:70\", \"join:20\", \"sort:10\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "tmp:70",
+                "join:20",
+                "sort:10"
+              ]
             },
             "innodb-file-per-table": {
               "title": "enable Innodb file per table",

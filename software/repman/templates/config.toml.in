@@ -53,14 +53,13 @@ backup-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
 # Alert email sender (default "mrm@localhost")
 mail-from = "{{ parameter_dict['mail-from'] }}"
 # Alert email SMTP server address, in host:[port] format (default "localhost:25")
-mail-smtp-addr = "{{ parameter_dict['mail-smtp-addr'] }}"
+mail-smtp-addr = "{{ parameter_dict['mail-smtp-addr'] }}:{{ parameter_dict['mail-smtp-port'] }}"
 mail-smtp-password = "{{ parameter_dict['mail-smtp-password'] }}"
 mail-smtp-user = "{{ parameter_dict['mail-smtp-user'] }}"
 # Alert email recipients, separated by commas
 mail-to = "{{ parameter_dict['mail-to'] }}"
 
 prov-orchestrator = "slapos"
-prov-db-tags = "{{ parameter_dict['enabled-tags'] }}"
 
 sysbench-binary-path = "{{ parameter_dict['sysbench-bin'] }}"
 # Number of threads to run benchmark (default 4)
