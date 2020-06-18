@@ -46,7 +46,6 @@ setup(name=name,
         # ipaddress is patching IPAddress so IPv6 in SSL certificates
         # match works
         'ipaddress >= 1.0.22',
-        'forcediphttpsadapter',
         'requests-toolbelt',
         'supervisor',
         # caucase needed to connect to the KeDiFa caucase
