@@ -23,7 +23,7 @@
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
 
     header_upstream Host {host}
-    header_upstream -X-Forwarded-For
+{#    header_upstream -X-Forwarded-For - caddy behaviour while removing and setting header is unstable, so for now original header has to be kept, even if in that case it comes from after ATS caddy itself #}
     header_upstream X-Forwarded-For {>X-Forwarded-For-Real}
     header_upstream -X-Forwarded-For-Real
     timeout {{ slave_parameter['request_timeout'] }}s
@@ -51,7 +51,7 @@
     try_duration {{ slave_parameter['proxy_try_duration'] }}s
     try_interval {{ slave_parameter['proxy_try_interval'] }}ms
     header_upstream Host {host}
-    header_upstream -X-Forwarded-For
+{#    header_upstream -X-Forwarded-For - caddy behaviour while removing and setting header is unstable, so for now original header has to be kept, even if in that case it comes from after ATS caddy itself #}
     header_upstream X-Forwarded-For {>X-Forwarded-For-Real}
     header_upstream -X-Forwarded-For-Real
     timeout {{ slave_parameter['request_timeout'] }}s

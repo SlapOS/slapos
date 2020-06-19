@@ -1621,8 +1621,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertEqual(
         backend_header_dict['host'],
         '%s:%s' % (domain, port))
+    # XXX It's really hard to play with Caddy headers, thus we have to keep
+    #     some of them. As other solutions will come in future, more control
+    #     over sent X-Forwarded-For will be possible
     self.assertEqual(
-      backend_header_dict['x-forwarded-for'],
+      backend_header_dict['x-forwarded-for'].split(',')[0],
       source_ip
     )
     self.assertEqual(
