@@ -3,10 +3,7 @@ global
   stats socket %(socket_path)s level admin
 
 defaults
-  log global
   mode  http
-  option  httplog
-  option  dontlognull
   retries 1
   option redispatch
   maxconn 2000

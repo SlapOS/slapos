@@ -4,10 +4,7 @@ global
   stats socket {{ parameter_dict['socket-path'] }} level admin
 
 defaults
-  log global
   mode http
-  option httplog
-  option dontlognull
   retries 1
   option redispatch
   maxconn 2000
