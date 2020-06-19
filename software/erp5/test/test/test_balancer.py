@@ -35,6 +35,7 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile.write(response)
 
 class TestFrontendXForwardedFor(ERP5InstanceTestCase):
+  __partition_reference__ = 'xff'
   http_server_process = None
   frontend_caucase_dir = None
   frontend_caucased_process = None
