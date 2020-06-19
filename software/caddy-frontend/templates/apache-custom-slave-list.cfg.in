@@ -52,20 +52,14 @@ create = true
 [slave-log-cache-direct-directory-dict]
 
 {#- Loop thought slave list to set up slaves #}
+{%- set DEFAULT_PORT = {'http': 80, 'https': 443} %}
 {%- for slave_instance in slave_instance_list %}
-{#- prepare everything #}
-{%- set url_parsed = urlparse_module.urlparse(slave_instance.get('url', '')) %}
-{%- do slave_instance.__setitem__('url_scheme', url_parsed.scheme) %}
-{%- do slave_instance.__setitem__('url_hostname', url_parsed.hostname) %}
-{%- do slave_instance.__setitem__('url_port', url_parsed.port) %}
-{%- do slave_instance.__setitem__('url_path', url_parsed.path) %}
-{%- do slave_instance.__setitem__('url_fragment', url_parsed.fragment) %}
-{%- set https_url_parsed = urlparse_module.urlparse(slave_instance.get('https-url', '')) %}
-{%- do slave_instance.__setitem__('https_url_scheme', https_url_parsed.scheme) %}
-{%- do slave_instance.__setitem__('https_url_hostname', https_url_parsed.hostname) %}
-{%- do slave_instance.__setitem__('https_url_port', https_url_parsed.port) %}
-{%- do slave_instance.__setitem__('https_url_path', https_url_parsed.path) %}
-{%- do slave_instance.__setitem__('https_url_fragment', https_url_parsed.fragment) %}
+{#- prepare backend parameters #}
+{%- for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
+{%-   set parsed = urlparse_module.urlparse(slave_instance.get(key, '')) %}
+{%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or 'DIEDIEDIE', 'path': parsed.path, 'fragment': parsed.fragment} %}
+{%-   do slave_instance.__setitem__(prefix, info_dict) %}
+{%- endfor %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
@@ -444,7 +438,6 @@ template = {{ template_backend_haproxy_configuration }}
 rendered = ${backend-haproxy-config:configuration}
 backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
 extra-context =
-  import urlparse_module urlparse
   key backend_slave_list :backend_slave_list
   section configuration backend-haproxy-config
 
