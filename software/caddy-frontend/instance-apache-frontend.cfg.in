@@ -21,8 +21,6 @@ parts =
   promise-caddy-frontend-v4-http
   promise-caddy-frontend-v6-https
   promise-caddy-frontend-v6-http
-  promise-backend-haproxy-http
-  promise-backend-haproxy-https
 
   trafficserver-launcher
   trafficserver-reload
@@ -42,6 +40,10 @@ parts =
   monitor-caddy-server-status-wrapper
   monitor-verify-re6st-connectivity
 
+  backend-haproxy
+  backend-haproxy-graceful
+  promise-backend-haproxy-http
+  promise-backend-haproxy-https
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -209,7 +211,6 @@ kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
-haproxy_executable = {{ parameter_dict['haproxy_executable'] }}
 extra-context =
     import urlparse_module urlparse
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
@@ -270,7 +271,6 @@ extra-context =
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
-    key haproxy_executable :haproxy_executable
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 
 # Deploy Caddy Frontend with Jinja power
@@ -356,8 +356,6 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
-backend-haproxy-http-port = 21080
-backend-haproxy-https-port = 21443
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -409,8 +407,8 @@ reload-path = ${directory:etc-run}/trafficserver-reload
 local-ip = {{ instance_parameter['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
-remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:backend-haproxy-https-port}
-  map / http://{{ instance_parameter['ipv4-random'] }}:${caddy-configuration:backend-haproxy-http-port}
+remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${backend-haproxy-configuration:https-port}
+  map / http://{{ instance_parameter['ipv4-random'] }}:${backend-haproxy-configuration:http-port}
 
 plugin-config =
 ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
@@ -641,14 +639,94 @@ config-port = ${configuration:plain_http_port}
 module = check_port_listening
 name = backend_haproxy_http.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
-config-port = ${caddy-configuration:backend-haproxy-http-port}
+config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
 module = check_port_listening
 name = backend_haproxy_https.py
 config-hostname = {{ instance_parameter['ipv4-random'] }}
-config-port = ${caddy-configuration:backend-haproxy-https-port}
+config-port = ${backend-haproxy-configuration:https-port}
+
+[backend-haproxy-configuration]
+file = ${directory:etc}/backend-haproxy.cfg
+pid-file = ${directory:run}/backend-haproxy.pid
+graceful-command = ${backend-haproxy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
+http-port = 21080
+https-port = 21443
+
+[backend-haproxy-wrapper]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!/bin/sh
+  ulimit -n $(ulimit -Hn)
+  exec {{ parameter_dict['haproxy_executable'] }} \
+  -f ${backend-haproxy-configuration:file} \
+   "$@"
+rendered = ${directory:bin}/backend-haproxy-wrapper
+mode = 0755
+
+[backend-haproxy]
+recipe = slapos.cookbook:wrapper
+command-line = ${backend-haproxy-wrapper:rendered} -p ${backend-haproxy-configuration:pid-file}
+wrapper-path = ${directory:service}/backend-haproxy
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${backend-haproxy-wrapper:rendered}
+
+[backend-haproxy-configuration-state]
+<= jinja2-template-base
+template = {{ parameter_dict['template_configuration_state_script'] }}
+rendered = ${directory:bin}/${:_buildout_section_name_}
+mode = 0700
+
+path_list = ${backend-haproxy-configuration:file}
+sha256sum = {{ parameter_dict['sha256sum'] }}
+
+extra-context =
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[backend-haproxy-configuration-state-graceful]
+<= backend-haproxy-configuration-state
+signature_file = ${directory:run}/backend_haproxy_graceful_configuration_state_signature
+
+[backend-haproxy-configuration-state-validate]
+<= backend-haproxy-configuration-state
+signature_file = ${directory:run}/backend_haproxy_validate_configuration_state_signature
+
+[backend-haproxy-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_graceful_script'] }}
+rendered = ${directory:etc-run}/backend-haproxy-safe-graceful
+mode = 0700
+
+extra-context =
+    key graceful_reload_command backend-haproxy-configuration:graceful-command
+    key caddy_configuration_state backend-haproxy-configuration-state-graceful:rendered
+
+[backend-haproxy-validate]
+<= jinja2-template-base
+template = {{ parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/backend-haproxy-validate
+mode = 0700
+last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
+extra-context =
+    key wrapper backend-haproxy-wrapper:rendered
+    key caddy_configuration_state backend-haproxy-configuration-state-validate:rendered
+    key last_state_file :last_state_file
+
+[backend-haproxy-lazy-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
+rendered = ${directory:bin}/backend-haproxy-lazy-graceful
+mode = 0700
+pid-file = ${directory:run}/backend-haproxy-lazy-graceful.pid
+wait_time = 60
+extra-context =
+    key pid_file :pid-file
+    key wait_time :wait_time
+    key lazy_command backend-haproxy-configuration:graceful-command
 
 #######
 # Monitoring sections
