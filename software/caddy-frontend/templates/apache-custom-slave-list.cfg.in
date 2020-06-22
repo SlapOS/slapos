@@ -402,15 +402,14 @@ rendered = {{frontend_configuration.get('log-access-configuration')}}
 [backend-haproxy-configuration]
 < = jinja2-template-base
 template = {{ template_backend_haproxy_configuration }}
-rendered = ${backend-haproxy-config:configuration}
+rendered = ${backend-haproxy-config:file}
 backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
 extra-context =
   key backend_slave_list :backend_slave_list
   section configuration backend-haproxy-config
 
 [backend-haproxy-config]
-configuration = {{ directory['etc'] }}/backend-haproxy.cfg
-pid-file = {{ directory['var'] }}/backend-haproxy.pid
+file = {{ backend_haproxy_configuration_file }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
@@ -418,27 +417,6 @@ backend_haproxy_http_port = {{ ('' ~ backend_haproxy_http_port) }}
 backend_haproxy_http_url = {{ ('' ~ backend_haproxy_http_url) }}
 backend_haproxy_https_port = {{ ('' ~ backend_haproxy_https_port) }}
 backend_haproxy_https_url = {{ ('' ~ backend_haproxy_https_url) }}
-
-[backend-haproxy-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = inline:
-  #!/bin/sh
-  ulimit -n $(ulimit -Hn)
-  exec {{ haproxy_executable }} \
-  -f ${backend-haproxy-config:configuration} \
-   "$@"
-rendered = {{ directory['bin'] }}/backend-haproxy-wrapper
-mode = 0755
-
-[backend-haproxy]
-depends =
-  ${backend-haproxy-configuration:rendered}
-recipe = slapos.cookbook:wrapper
-command-line = ${backend-haproxy-wrapper:rendered} -p ${backend-haproxy-config:pid-file}
-wrapper-path = {{ directory['service'] }}/backend-haproxy
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-hash-files = ${backend-haproxy-wrapper:rendered}
-
 ##<Backend haproxy>
 
 [buildout]
@@ -450,7 +428,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
-    backend-haproxy
+    backend-haproxy-configuration
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
