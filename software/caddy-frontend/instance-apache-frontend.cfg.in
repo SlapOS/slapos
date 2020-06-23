@@ -46,6 +46,7 @@ parts =
   promise-backend-haproxy-http
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
+  logrotate-entry-backend-haproxy
 
 # Create all needed directories
 [directory]
@@ -61,6 +62,7 @@ template = ${buildout:directory}/template/
 backup = ${:srv}/backup
 log = ${:var}/log
 run = ${:var}/run
+backend-haproxy-rsyslogd-spool = ${:run}/backend-haproxy-rsyslogd-spool
 service = ${:etc}/service
 etc-run = ${:etc}/run
 
@@ -152,6 +154,7 @@ context =
 template-empty = {{ parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
 template-backend-haproxy-configuration = {{ parameter_dict['template_backend_haproxy_configuration'] }}
+template-rsyslogd-conf = {{ parameter_dict['template_rsyslogd_conf'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
 
 [kedifa-login-config]
@@ -656,6 +659,7 @@ config-port = ${backend-haproxy-configuration:https-port}
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
 pid-file = ${directory:run}/backend-haproxy.pid
+log-socket = ${backend-haproxy-rsyslogd:log-socket}
 graceful-command = ${backend-haproxy-validate:rendered} && kill -USR2 $(cat ${:pid-file})
 http-port = ${configuration:backend-haproxy-http-port}
 https-port = ${configuration:backend-haproxy-https-port}
@@ -677,6 +681,13 @@ command-line = ${backend-haproxy-wrapper:rendered}
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files = ${backend-haproxy-wrapper:rendered}
+
+[logrotate-entry-backend-haproxy]
+<= logrotate-entry-base
+name = backend-haproxy
+log = ${backend-haproxy-rsyslogd-configuration:log-file}
+rotate-num = 30
+post = kill -HUP $(cat ${backend-haproxy-rsyslogd-configuration:pid-file})
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
@@ -750,6 +761,26 @@ content =
   exit `cat ${backend-haproxy-validate:last_state_file}`
 context =
     key content :content
+
+[backend-haproxy-rsyslogd-configuration]
+<= jinja2-template-base
+template = {{ parameter_dict['template_rsyslogd_conf'] }}
+rendered = ${directory:etc}/backend-haproxy-rsyslogd.conf
+log-socket = ${directory:run}/backend-haproxy-rsyslogd.sock
+log-file = ${directory:log}/backend-haproxy.log
+pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
+extra-context =
+  key socket :log-socket
+  key log_file :log-file
+  key spool_directory directory:backend-haproxy-rsyslogd-spool
+
+[backend-haproxy-rsyslogd]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:rendered}
+wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
+log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
 
 #######
 # Monitoring sections
