@@ -408,6 +408,7 @@ extra-context =
 [backend-haproxy-config]
 file = {{ backend_haproxy_configuration['file'] }}
 pid-file = {{ backend_haproxy_configuration['pid-file'] }}
+log-socket = {{ backend_haproxy_configuration['log-socket'] }}
 local-ipv4 = {{ dumps('' ~ local_ipv4) }}
 http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
 https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
