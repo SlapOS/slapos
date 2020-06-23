@@ -56,6 +56,7 @@ create = true
 {%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
 {%-   do slave_instance.__setitem__(prefix, info_dict) %}
 {%- endfor %}
+{%-   do slave_instance.__setitem__('ssl_proxy_verify', slave_instance.get('ssl-proxy-verify', '').lower() in TRUE_VALUES) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
