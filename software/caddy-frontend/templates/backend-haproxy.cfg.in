@@ -5,7 +5,7 @@ global
   # master-worker is compatible with foreground with process management
   master-worker
 
-log stderr local0
+log {{ configuration['log-socket'] }} local0
 defaults
   log global
   mode http
@@ -73,7 +73,6 @@ frontend https-backend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   timeout server {{ slave_instance['request-timeout'] }}s
   timeout client {{ slave_instance['request-timeout'] }}s
-  # XXX-TODO: somehow support try_duration and try_interval...
   timeout connect {{ slave_instance['timeout-backend-connect'] }}s
   retries {{ slave_instance['timeout-backend-connect-retries'] }}s
 {%-     set hostname = info_dict['hostname'] %}
