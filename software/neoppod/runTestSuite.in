@@ -115,10 +115,19 @@ def main():
       shutil.rmtree(temp)
     os.mkdir(temp)
 
-    args = [RUN_NEO_TESTS_COMMAND, '-ufz']
+    args = [RUN_NEO_TESTS_COMMAND,
+{%- if pypy_location is defined -%}
+            '-fz'
+{%- else -%}
+            '-ufz'
+{%- endif -%}
+            ]
     command = ' '.join(args)
     env = {'PATH': PATH,
            'TEMP': temp,
+{%- if pypy_location is defined %}
+           'NEO_PYPY': {{ repr(pypy_location) }},
+{%- endif %}
            'NEO_TESTS_ADAPTER': adapter,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
            'NEO_DB_USER': 'root'}
