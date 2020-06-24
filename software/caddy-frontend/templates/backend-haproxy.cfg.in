@@ -52,12 +52,9 @@ frontend https-backend
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     if info_dict['scheme'] == 'https' %}
 {%-       set ssl = ['ssl verify'] %}
-{%-       if slave_instance['ssl_proxy_verify'] %}
-{%-         do ssl.append('required') %}
-{%-         set path_to_ssl_proxy_ca_crt = slave_instance['path_to_ssl_proxy_ca_crt'] %}
-{%-         if path_to_ssl_proxy_ca_crt %}
-{%-           do ssl.append('ca_file %s' % (path_to_ssl_proxy_ca_crt,)) %}
-{%-         endif %}
+{%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
+{%-       if slave_instance['ssl_proxy_verify'] and path_to_ssl_proxy_ca_crt %}
+{%-         do ssl.append('required ca_file %s' % (path_to_ssl_proxy_ca_crt,)) %}
 {%-       else %}
 {%-         do ssl.append('none') %}
 {%-       endif %}
