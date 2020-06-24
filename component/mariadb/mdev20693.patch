@@ -1,0 +1,205 @@
+From: Sergei Petrunia <psergey@askmonty.org>
+Date: Tue, 1 Oct 2019 15:29:38 -0700
+Subject: [PATCH] #1052: ha_rocksdb::records_in_range() vastly overestimates
+ #rows (#1053)
+
+Summary:
+In ha_rocksdb::records_in_range, Do not adjust the key value. See
+issue comments for justification.
+
+The optimizer_loose_index_scans test was hitting this. The testcase
+there has a key(b,d) and queries with WHERE b=... and d>=98 (the latter
+condition not matching any rows in the table).
+Pull Request resolved: https://github.com/facebook/mysql-5.6/pull/1053
+
+Upstream commit 2b1e7918066a967b3a48fe486e5687d786aee052.
+
+diff -ur a/storage/rocksdb/ha_rocksdb.cc b/storage/rocksdb/ha_rocksdb.cc
+--- a/storage/rocksdb/ha_rocksdb.cc	2020-05-09 21:28:02.000000000 +0200
++++ b/storage/rocksdb/ha_rocksdb.cc	2020-06-24 21:14:13.090911121 +0200
+@@ -11941,11 +11941,6 @@
+         max_key->flag == HA_READ_AFTER_KEY) {
+       kd.successor(m_sk_packed_tuple_old, size2);
+     }
+-    // pad the upper key with FFFFs to make sure it is more than the lower
+-    if (size1 > size2) {
+-      memset(m_sk_packed_tuple_old + size2, 0xff, size1 - size2);
+-      size2 = size1;
+-    }
+   } else {
+     kd.get_supremum_key(m_sk_packed_tuple_old, &size2);
+   }
+@@ -11953,8 +11948,11 @@
+   const rocksdb::Slice slice1((const char *)m_sk_packed_tuple, size1);
+   const rocksdb::Slice slice2((const char *)m_sk_packed_tuple_old, size2);
+ 
+-  // slice1 >= slice2 means no row will match
++  // It's possible to get slice1 == slice2 for a non-inclusive range with the
++  // right bound being successor() of the left one, e.g. "t.key>10 AND t.key<11"
+   if (slice1.compare(slice2) >= 0) {
++    // It's not possible to get slice2 > slice1
++    DBUG_ASSERT(slice1.compare(slice2) == 0);
+     DBUG_RETURN(HA_EXIT_SUCCESS);
+   }
+ 
+diff -ur a/storage/rocksdb/mysql-test/rocksdb/r/optimizer_loose_index_scans.result b/storage/rocksdb/mysql-test/rocksdb/r/optimizer_loose_index_scans.result
+--- a/storage/rocksdb/mysql-test/rocksdb/r/optimizer_loose_index_scans.result	2020-05-09 21:28:02.000000000 +0200
++++ b/storage/rocksdb/mysql-test/rocksdb/r/optimizer_loose_index_scans.result	2020-06-24 21:14:13.082911030 +0200
+@@ -126,9 +126,9 @@
+ set optimizer_switch = 'skip_scan=off';
+ explain select a, b, c, d from t where a in (1, 5) and b in (1, 2) and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t	range	PRIMARY,b	PRIMARY	8	NULL	#	Using where; Using index
++1	SIMPLE	t	range	PRIMARY,b	b	12	NULL	#	Using where; Using index
+ rows_read
+-200
++0
+ set optimizer_switch = 'skip_scan=on,skip_scan_cost_based=off';
+ explain select a, b, c, d from t where a in (1, 5) and b in (1, 2) and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+@@ -140,9 +140,9 @@
+ set optimizer_switch = 'skip_scan=off';
+ explain select a, b, c, d from t where a in (1, 2, 3, 4, 5) and b in (1, 2, 3) and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t	range	PRIMARY,b	PRIMARY	8	NULL	#	Using where; Using index
++1	SIMPLE	t	range	PRIMARY,b	b	12	NULL	#	Using where; Using index
+ rows_read
+-750
++0
+ set optimizer_switch = 'skip_scan=on,skip_scan_cost_based=off';
+ explain select a, b, c, d from t where a in (1, 2, 3, 4, 5) and b in (1, 2, 3) and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+@@ -154,9 +154,9 @@
+ set optimizer_switch = 'skip_scan=off';
+ explain select a, b, c, d from t where a = 5 and b = 2 and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t	ref	PRIMARY,b	PRIMARY	8	const,const	#	Using where; Using index
++1	SIMPLE	t	range	PRIMARY,b	b	12	NULL	#	Using where; Using index
+ rows_read
+-50
++0
+ set optimizer_switch = 'skip_scan=on,skip_scan_cost_based=off';
+ explain select a, b, c, d from t where a = 5 and b = 2 and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+@@ -271,7 +271,7 @@
+ 1
+ explain select a, b, c, d from t where (a < 1 or a = 4 or a = 5) and b in (1, 2, 3) and d >= 98;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t	range	PRIMARY,b	PRIMARY	8	NULL	#	Using where; Using index
++1	SIMPLE	t	range	PRIMARY,b	b	8	NULL	#	Using where; Using index
+ select count(*) from information_schema.optimizer_trace where trace like '%prefix_not_const_equality%';
+ count(*)
+ 1
+diff -ur a/storage/rocksdb/mysql-test/rocksdb/r/rocksdb_range2.result b/storage/rocksdb/mysql-test/rocksdb/r/rocksdb_range2.result
+--- a/storage/rocksdb/mysql-test/rocksdb/r/rocksdb_range2.result	2020-05-09 21:28:02.000000000 +0200
++++ b/storage/rocksdb/mysql-test/rocksdb/r/rocksdb_range2.result	2020-06-24 21:14:13.082911030 +0200
+@@ -27,3 +27,42 @@
+ date
+ 2018-10-05
+ drop table t1;
++#
++# Issue #1052: ha_rocksdb::records_in_range() vastly overestimates the number of rows in certain ranges
++#
++CREATE TABLE t1 (
++part_id smallint(5) unsigned NOT NULL,
++oid bigint(20) unsigned NOT NULL,
++tid bigint(20) unsigned NOT NULL,
++filler char(32),
++KEY tid (part_id,tid,oid)
++) ENGINE=ROCKSDB;
++create table t2(a int primary key);
++insert into t2 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
++create table t3(a int primary key);
++insert into t3 select A.a + B.a* 10 + C.a * 100 from t2 A, t2 B, t2 C;
++set rocksdb_max_row_locks=1000000;
++insert into t1
++select 
++0, 
++A.a + 1000*B.a,
++A.a + 1000*B.a,
++'filler-data'
++from t2 A, t3 B;
++insert into t1
++select 
++1,
++A.a + 1000*B.a,
++A.a + 1000*B.a,
++'filler-data'
++from t2 A, t3 B;
++set global rocksdb_force_flush_memtable_now=1;
++explain select * from t1 where part_id=0 and tid>100000000;
++id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
++1	SIMPLE	t1	range	tid	tid	10	NULL	#	Using index condition
++# We can't check "rows" in EXPLAIN output directly as that value tends
++# to change a bit. Instead, check that the value is sufficiently low
++select @a < 10 as "MUST BE 1";
++MUST BE 1
++1
++drop table t2,t3,t1;
+diff -ur a/storage/rocksdb/mysql-test/rocksdb/t/rocksdb_range2.test b/storage/rocksdb/mysql-test/rocksdb/t/rocksdb_range2.test
+--- a/storage/rocksdb/mysql-test/rocksdb/t/rocksdb_range2.test	2020-05-09 21:28:02.000000000 +0200
++++ b/storage/rocksdb/mysql-test/rocksdb/t/rocksdb_range2.test	2020-06-24 21:14:13.082911030 +0200
+@@ -31,3 +31,63 @@
+ select * from t1 where date < '2018-10-09' order by date desc limit 1;
+ drop table t1;
+ 
++
++--echo #
++--echo # Issue #1052: ha_rocksdb::records_in_range() vastly overestimates the number of rows in certain ranges
++--echo #
++
++CREATE TABLE t1 (
++  part_id smallint(5) unsigned NOT NULL,
++  oid bigint(20) unsigned NOT NULL,
++  tid bigint(20) unsigned NOT NULL,
++  filler char(32),
++  KEY tid (part_id,tid,oid)
++) ENGINE=ROCKSDB;
++
++create table t2(a int primary key);
++insert into t2 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
++
++create table t3(a int primary key);
++insert into t3 select A.a + B.a* 10 + C.a * 100 from t2 A, t2 B, t2 C;
++
++set rocksdb_max_row_locks=1000000;
++insert into t1
++select 
++  0, 
++  A.a + 1000*B.a,
++  A.a + 1000*B.a,
++  'filler-data'
++from t2 A, t3 B;
++
++insert into t1
++select 
++  1,
++  A.a + 1000*B.a,
++  A.a + 1000*B.a,
++  'filler-data'
++from t2 A, t3 B;
++set global rocksdb_force_flush_memtable_now=1;
++
++--replace_column 9 #
++explain select * from t1 where part_id=0 and tid>100000000;
++
++--echo # We can't check "rows" in EXPLAIN output directly as that value tends
++--echo # to change a bit. Instead, check that the value is sufficiently low
++
++let $explain=`explain select * from t1 where part_id=0 and tid>100000000`;
++--disable_query_log
++eval set @a= '$explain';
++set @a=(select substr(@a, 1+locate('\t', @a))); # id
++set @a=(select substr(@a, 1+locate('\t', @a))); # select_type
++set @a=(select substr(@a, 1+locate('\t', @a))); # table
++set @a=(select substr(@a, 1+locate('\t', @a))); # type
++set @a=(select substr(@a, 1+locate('\t', @a))); # possible_keys
++set @a=(select substr(@a, 1+locate('\t', @a))); # key
++set @a=(select substr(@a, 1+locate('\t', @a))); # key_len
++set @a=(select substr(@a, 1+locate('\t', @a))); # ref
++# ok now at rows
++set @a=(select substr(@a, 1, locate('\t', @a)-1)); # rows
++--enable_query_log
++
++select @a < 10 as "MUST BE 1";
++drop table t2,t3,t1;
