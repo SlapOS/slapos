@@ -56,7 +56,7 @@ create = true
 {%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
 {%-   do slave_instance.__setitem__(prefix, info_dict) %}
 {%- endfor %}
-{%-   do slave_instance.__setitem__('ssl_proxy_verify', slave_instance.get('ssl-proxy-verify', '').lower() in TRUE_VALUES) %}
+{%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
@@ -93,9 +93,14 @@ create = true
 {#-   Pass HTTP2 switch #}
 {%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
-{#-   Pass proxy_try_duration and proxy_try_interval #}
-{%-   do slave_instance.__setitem__('proxy_try_duration', proxy_try_duration) %}
-{%-   do slave_instance.__setitem__('proxy_try_interval', proxy_try_interval) %}
+{#-   Pass backend timeout values #}
+{#-   XXX: maybe support request timeout on master/slave level #}
+{%-   do slave_instance.__setitem__('request-timeout', ('' ~ configuration['request-timeout'])) %}
+{%-   for key in ['timeout-backend-connect', 'timeout-backend-connect-retries'] %}
+{%-     if slave_instance.get(key, '') == '' %}
+{%-       do slave_instance.__setitem__(key, configuration[key]) %}
+{%-     endif %}
+{%-   endfor %}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
@@ -232,7 +237,6 @@ http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 backend_haproxy_http_url = {{ ('' ~ backend_haproxy_http_url) }}
 backend_haproxy_https_url = {{ ('' ~ backend_haproxy_https_url) }}
-request_timeout = {{ ('' ~ request_timeout) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps('' ~ value) }}

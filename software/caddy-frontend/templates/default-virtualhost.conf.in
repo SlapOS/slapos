@@ -40,9 +40,7 @@
 {%- endif %}
 
 {%- macro proxy_header() %}
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    timeout {{ slave_parameter['request_timeout'] }}s
+    timeout {{ slave_parameter['request-timeout'] }}s
     # force reset of X-Forwarded-For
     header_upstream X-Forwarded-For {remote}
 {%-     if enable_cache %}

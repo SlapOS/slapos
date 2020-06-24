@@ -195,6 +195,16 @@
       "title": "type:zope virtualhostroot-https-port",
       "type": "integer"
     },
+    "timeout-backend-connect": {
+      "description": "A time for wait for the backend to be connected..",
+      "title": "Duration in seconds of trying a backend",
+      "type": "integer"
+    },
+    "timeout-backend-connect-retries": {
+      "description": "Amount of retries to connect to the backend. The amount of timeout-backend-connect*timeout-backend-connect-retries seconds will be spent to connect to the backend.",
+      "title": "Amount of retries to connect to the backend.",
+      "type": "integer"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
