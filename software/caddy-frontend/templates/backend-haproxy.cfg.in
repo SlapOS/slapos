@@ -13,15 +13,11 @@ defaults
   option dontlognull
   retries 1
   option redispatch
-  maxconn 2000
   cookie SERVERID rewrite
   balance roundrobin
   stats uri /haproxy
   stats realm Global\ statistics
-  timeout server 305s
   timeout queue 60s
-  timeout connect 5s
-  timeout client 305s
   option httpclose
 
 {%- macro frontend_entry(slave_instance, scheme) %}
@@ -52,12 +48,9 @@ frontend https-backend
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     if info_dict['scheme'] == 'https' %}
 {%-       set ssl = ['ssl verify'] %}
-{%-       if slave_instance['ssl_proxy_verify'] %}
-{%-         do ssl.append('required') %}
-{%-         set path_to_ssl_proxy_ca_crt = slave_instance['path_to_ssl_proxy_ca_crt'] %}
-{%-         if path_to_ssl_proxy_ca_crt %}
-{%-           do ssl.append('ca_file %s' % (path_to_ssl_proxy_ca_crt,)) %}
-{%-         endif %}
+{%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
+{%-       if slave_instance['ssl_proxy_verify'] and path_to_ssl_proxy_ca_crt %}
+{%-         do ssl.append('required ca_file %s' % (path_to_ssl_proxy_ca_crt,)) %}
 {%-       else %}
 {%-         do ssl.append('none') %}
 {%-       endif %}
@@ -65,7 +58,13 @@ frontend https-backend
 {%-     else %}
 {%-       set ssl = '' %}
 {%-     endif %}
+
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout client {{ slave_instance['request-timeout'] }}s
+  # XXX-TODO: somehow support try_duration and try_interval...
+  timeout connect {{ slave_instance['timeout-backend-connect'] }}s
+  retries {{ slave_instance['timeout-backend-connect-retries'] }}s
 {%-     set hostname = info_dict['hostname'] %}
 {%-     set port = info_dict['port'] %}
 {%-     set path = info_dict['path'].rstrip('/') %}
