@@ -54,7 +54,7 @@ frontend https-backend
 {%-       set ssl = ['ssl verify'] %}
 {%-       if slave_instance['ssl_proxy_verify'] %}
 {%-         do ssl.append('required') %}
-{%-         set path_to_ssl_proxy_ca_crt = slave_instance['path_to_ssl_proxy_ca_crt'] %}
+{%-         set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
 {%-         if path_to_ssl_proxy_ca_crt %}
 {%-           do ssl.append('ca_file %s' % (path_to_ssl_proxy_ca_crt,)) %}
 {%-         endif %}
