@@ -141,8 +141,8 @@ context =
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
-{%   set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt') %}
-{%   if ssl_proxy_ca_crt %}
+{%   if 'ssl_proxy_ca_crt' in slave %}
+{%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
 {%     set check_popen = popen([parameter_dict['openssl'], 'x509', '-noout']) %}
 {%     do check_popen.communicate(ssl_proxy_ca_crt) %}
 {%     if check_popen.returncode != 0 %}
