@@ -1683,13 +1683,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Location']
     )
 
-    # check that try_duration == 5 in the test_url slave
-    slave_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '_Url.conf'))[0]
-    with open(slave_configuration_file) as fh:
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue('try_duration 5s' in content)
-      self.assertTrue('try_interval 250ms' in content)
+      self.assertTrue("""backend _Url-http
+  timeout server 12s
+  timeout client 12s
+  timeout connect 5s
+  retries 3s""" in content)
 
   def test_compressed_result(self):
     parameter_dict = self.assertSlaveBase('Url')
