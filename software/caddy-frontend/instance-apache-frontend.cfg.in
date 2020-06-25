@@ -45,6 +45,7 @@ parts =
   backend-haproxy-graceful
   promise-backend-haproxy-http
   promise-backend-haproxy-https
+  promise-backend-haproxy-configuration
   logrotate-entry-backend-haproxy
 
 # Create all needed directories
@@ -763,6 +764,23 @@ wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
+
+[promise-backend-haproxy-configuration]
+<= monitor-promise-base
+module = validate_frontend_configuration
+name = backend-haproxy-configuration.py
+config-verification-script = ${promise-backend-haproxy-configuration-helper:rendered}
+
+[promise-backend-haproxy-configuration-helper]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bin}/backend-haproxy-read-last-configuration-state
+mode = 0700
+content =
+  #!/bin/sh
+  exit `cat ${backend-haproxy-validate:last_state_file}`
+context =
+    key content :content
 
 #######
 # Monitoring sections
