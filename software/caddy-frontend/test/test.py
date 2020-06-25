@@ -3598,21 +3598,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.status_code
     )
 
-    caddy_log_file = glob.glob(
+    backend_haproxy_log_file = glob.glob(
       os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd-cache-direct',
-        '_enable_cache_access_log'
+        self.instance_path, '*', 'var', 'log', 'backend-haproxy.log'
       ))[0]
 
     matching_line_amount = 0
     pattern = re.compile(
-      r'.*GET .test_enable_cache_ats_timeout.*" 499.*')
-    with open(caddy_log_file) as fh:
+      r'.* _enable_cache-http.backend .* 504 .*'
+      '"GET .test_enable_cache_ats_timeout HTTP.1.1"$')
+    with open(backend_haproxy_log_file) as fh:
       for line in fh.readlines():
         if pattern.match(line):
           matching_line_amount += 1
 
-    # Caddy used between ATS and the backend received maximum one connection
+    # Haproxy backend received maximum one connection
     self.assertIn(matching_line_amount, [0, 1])
 
     timeout = 5
