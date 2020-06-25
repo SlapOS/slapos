@@ -26,7 +26,12 @@ defaults
 {%-     do host_list.append(slave_instance.get('custom_domain')) %}
 {%-   endif %}
 {%-   for host in host_list %}
+{%-     if host.startswith('*.') %}
+{#-     hdr_sub has to be used, as anyway something.example.com shall match *.example.com[:port], with optional port #}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_sub(host) -i {{ host[2:] }}
+{%-     else %}
   acl is_{{ slave_instance['slave_reference'] }} hdr_dom(host) -i {{ host }}
+{%-     endif %}
 {%-   endfor %}
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
 {%- endmacro %}
