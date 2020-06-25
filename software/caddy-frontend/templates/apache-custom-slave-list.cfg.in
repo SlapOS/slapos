@@ -129,10 +129,14 @@ create = true
 {%-         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
 {%-       endif %}
 {%-     endif %}
-{%-     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %}
-{%-     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %}
-{%-     do slave_instance.__setitem__('url', cache_access) %}
-{%-     do slave_instance.__setitem__('https-url', ssl_cache_access) %}
+{%-     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %} {# XXX not needed?? #}
+{%-     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %} {# XXX not needed?? #}
+{%-     if slave_instance.get('url') %}
+{%-       do slave_instance.__setitem__('url', cache_access) %}
+{%-     endif %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('https-url', ssl_cache_access) %}
+{%-     endif %}
 {%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
 {%-   endif %}
 {%-   do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}

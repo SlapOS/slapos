@@ -59,7 +59,7 @@
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
 {%- else %}
-{%- set backend_url = slave_parameter['backend_haproxy_http_url'] %}
+{%-   set backend_url = slave_parameter['backend_haproxy_http_url'] %}
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
