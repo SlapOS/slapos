@@ -1551,7 +1551,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     # check that log file contains verbose log
     log_file = glob.glob(
@@ -2875,7 +2875,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2952,7 +2952,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -2987,7 +2987,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3126,7 +3126,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3195,7 +3195,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
@@ -3209,7 +3209,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3246,7 +3246,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
@@ -3284,7 +3284,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
