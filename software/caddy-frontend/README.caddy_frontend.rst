@@ -472,11 +472,22 @@ Instantiating caddy-frontend results with a cluster in various partitions:
  * kedifa (contains kedifa server)
  * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
 
-So it means sites are served in `caddy-frontend-N` partition, and this partition is structured as:
+It means sites are served in `caddy-frontend-N` partition, and this partition is structured as:
 
- * Caddy serving the browser
- * (optional) Apache Traffic Server for caching
- * Caddy connected to the backend
+ * Caddy serving the browser [frontend-caddy]
+ * (optional) Apache Traffic Server for caching [ats]
+ * Haproxy as a way to communicate to the backend [backend-haproxy]
+ * some other additional tools (6tunnel, monitor, etc)
+
+In case of slaves without cache (`enable_cache = False`) the request will travel as follows::
+
+  frontend-caddy --> backend-haproxy --> backend
+
+In case of slaves using cache (`enable_cache = True`) the request will travel as follows::
+
+  frontend-caddy --> ats --> backend-haproxy --> backend
+
+Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from Caddy and allows future developments like client SSL certificates to the backend or even health checks.
 
 Kedifa implementation
 ---------------------
