@@ -17,8 +17,9 @@ T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-1:monitor-httpd-graceful EXITED
 T-2:6tunnel-11080-{hash-generic}-on-watch RUNNING
 T-2:6tunnel-11443-{hash-generic}-on-watch RUNNING
-T-2:6tunnel-26011-{hash-generic}-on-watch RUNNING
-T-2:6tunnel-26012-{hash-generic}-on-watch RUNNING
+T-2:backend-haproxy-df9f71610f869a5b3c61843950f97444-on-watch RUNNING
+T-2:backend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
+T-2:backend-haproxy-safe-graceful EXITED
 T-2:bootstrap-monitor EXITED
 T-2:certificate_authority-{hash-generic}-on-watch RUNNING
 T-2:crond-{hash-generic}-on-watch RUNNING
