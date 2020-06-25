@@ -404,6 +404,13 @@ class TestDataMixin(object):
         'caddy-%s' % (partition_id)] = generateHashFromFiles(
         [caddy_wrapper_path] + hash_file_list
       )
+    for backend_haproxy_wrapper_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'bin', 'backend-haproxy-wrapper')):
+      partition_id = backend_haproxy_wrapper_path.split('/')[-3]
+      hash_value_dict[
+        'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
+        [backend_haproxy_wrapper_path] + hash_file_list
+      )
     for rejected_slave_publish_path in glob.glob(os.path.join(
       self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
