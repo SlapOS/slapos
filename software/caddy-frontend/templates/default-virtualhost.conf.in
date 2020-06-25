@@ -198,6 +198,8 @@
 {{ proxy_header() }}
 {%-     if websocket_transparent %}
     transparent
+{%-     else %}
+    header_upstream Host {host}
 {%-     endif %}
   }
 {%-     for websocket_path in websocket_path_list %}
@@ -206,6 +208,8 @@
     websocket
 {%-       if websocket_transparent %}
     transparent
+{%-       else %}
+    header_upstream Host {host}
 {%-       endif %}
   }
 {%-     endfor %}
@@ -215,6 +219,8 @@
     websocket
 {%-   if websocket_transparent %}
     transparent
+{%-   else %}
+    header_upstream Host {host}
 {%-   endif %}
   }
 {%-   endif %}
