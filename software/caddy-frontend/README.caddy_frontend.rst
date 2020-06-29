@@ -492,4 +492,4 @@ If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there
 Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
 
-X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
