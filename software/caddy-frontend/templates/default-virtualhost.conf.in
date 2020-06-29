@@ -51,15 +51,11 @@
 
 {%- for tls in [True, False] %}
 {%- if tls %}
-{%-   if slave_parameter.get('https-url') %}
-{%-     set backend_url = slave_parameter['backend_haproxy_https_url'] %}
-{%-   else %}
-{%-     set backend_url = slave_parameter['backend_haproxy_http_url'] %}
-{%-   endif %}
+{%-   set backend_url = slave_parameter.get('backend-https-url', slave_parameter.get('backend-http-url')) %}
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
 {%- else %}
-{%-   set backend_url = slave_parameter['backend_haproxy_http_url'] %}
+{%-   set backend_url = slave_parameter['backend-http-url'] %}
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
@@ -173,14 +169,10 @@
   } {# rewrite #}
 {%- endif %} {#- if prefer_gzip #}
 {%- elif slave_type == 'redirect' %}
-{%-   set redirect_backend_url = slave_parameter.get('url') %}
-{%-   if tls and slave_parameter.get('https-url') %}
-{%-     set redirect_backend_url = slave_parameter.get('https-url') %}
-{%-   endif %}
-{%-   if redirect_backend_url %}
+{%-   if backend_url %}
   # Redirect configuration
   redir 302 {
-    /  {{ redirect_backend_url }}{rewrite_uri}
+    /  {{ backend_url }}{rewrite_uri}
   }
 {%-   endif %}
 {%- elif slave_type == 'notebook' %}

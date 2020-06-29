@@ -65,10 +65,34 @@ create = true
 {%-     set slave_cipher_list = ciphers.strip() %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
+{#-   Manage common instance parameters #}
 {%-   set slave_type = slave_instance.get('type', '') %}
 {%-   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
 {%-   set slave_reference = slave_instance.get('slave_reference') %}
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
+{#-   Setup backend URLs for front facing Caddy #}
+{%-   if slave_type == 'redirect' %}
+{%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url')) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', slave_instance['https-url']) %}
+{%-     endif %}
+{%-   elif enable_cache %}
+{%-     if 'domain' in slave_instance %}
+{%-       if not slave_instance.get('custom_domain') %}
+{%-         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
+{%-       endif %}
+{%-     endif %}
+{%-     do slave_instance.__setitem__('backend-http-url', cache_access) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', ssl_cache_access) %}
+{%-     endif %}
+{%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
+{%-   else %}
+{%-     do slave_instance.__setitem__('backend-http-url', backend_haproxy_http_url) %}
+{%-     if slave_instance.get('https-url') %}
+{%-       do slave_instance.__setitem__('backend-https-url', backend_haproxy_https_url) %}
+{%-     endif %}
+{%-   endif %}
 {%-   if slave_kedifa %}
 {%-     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%-   else %}
@@ -122,22 +146,6 @@ create = true
 {%-   if slave_instance.get('custom_domain', None) == None %}
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
 {%-     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
-{%-   endif %}
-{%-   if enable_cache and 'url' in slave_instance %}
-{%-     if 'domain' in slave_instance %}
-{%-       if not slave_instance.get('custom_domain') %}
-{%-         do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) %}
-{%-       endif %}
-{%-     endif %}
-{%-     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) %} {# XXX not needed?? #}
-{%-     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) %} {# XXX not needed?? #}
-{%-     if slave_instance.get('url') %}
-{%-       do slave_instance.__setitem__('url', cache_access) %}
-{%-     endif %}
-{%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('https-url', ssl_cache_access) %}
-{%-     endif %}
-{%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
 {%-   endif %}
 {%-   do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
@@ -239,8 +247,6 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
-backend_haproxy_http_url = {{ ('' ~ backend_haproxy_http_url) }}
-backend_haproxy_https_url = {{ ('' ~ backend_haproxy_https_url) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps('' ~ value) }}

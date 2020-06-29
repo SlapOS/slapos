@@ -414,9 +414,6 @@ reload-path = ${directory:etc-run}/trafficserver-reload
 local-ip = {{ instance_parameter['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
-remap = map /HTTPS/ http://{{ instance_parameter['ipv4-random'] }}:${backend-haproxy-configuration:https-port}
-  map / http://{{ instance_parameter['ipv4-random'] }}:${backend-haproxy-configuration:http-port}
-
 plugin-config =
 ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 cache-path = ${trafficserver-directory:cache-path}
@@ -474,11 +471,18 @@ template = {{ parameter_dict['template_trafficserver_logging_config'] }}
 filename = logging.config
 
 [trafficserver-remap-config]
-< = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+<= trafficserver-jinja2-template-base
+{%- raw %}
+template = inline:
+  map /HTTPS/ http://{{ ipv4 }}:{{ https_port }}
+  map / http://{{ ipv4 }}:{{ http_port }}
+{%- endraw %}
+extra-context =
+  raw ipv4 {{ instance_parameter['ipv4-random'] }}
+  key https_port backend-haproxy-configuration:https-port
+  key http_port backend-haproxy-configuration:http-port
+
 filename = remap.config
-context =
-    key content trafficserver-variable:remap
 
 [trafficserver-plugin-config]
 < = trafficserver-jinja2-template-base
