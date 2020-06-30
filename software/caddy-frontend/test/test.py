@@ -556,11 +556,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   @classmethod
   def startServerProcess(cls):
     server = HTTPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
+      (cls._ipv4_address, cls._server_http_port),
       TestHandler)
 
     server_https = HTTPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
+      (cls._ipv4_address, cls._server_https_port),
       TestHandler)
 
     server_https.socket = ssl.wrap_socket(
@@ -846,6 +846,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     try:
       cls.createWildcardExampleComCertificate()
       cls.prepareCertificate()
+      # find ports once to be able startServerProcess many times
+      cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
