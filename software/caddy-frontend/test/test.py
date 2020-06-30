@@ -1569,7 +1569,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path HTTP\/1.1" 404 \d+ "-" '\
+                 r'"GET \/test-path HTTP\/1.1" \d{3} \d+ "-" '\
                  r'"python-requests.*" \d+'
 
     self.assertRegexpMatches(
@@ -2656,7 +2656,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -2731,7 +2730,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHeaders(
       j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
       ignore_header_list=['Host'])
-    self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(

@@ -54,8 +54,14 @@ frontend https-backend
 {%-     if info_dict['scheme'] == 'https' %}
 {%-       set ssl = ['ssl verify'] %}
 {%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
-{%-       if slave_instance['ssl_proxy_verify'] and path_to_ssl_proxy_ca_crt %}
-{%-         do ssl.append('required ca-file %s' % (path_to_ssl_proxy_ca_crt,)) %}
+{%-       if slave_instance['ssl_proxy_verify'] %}
+{%-         if path_to_ssl_proxy_ca_crt %}
+{%-           do ssl.append('required ca-file %s' % (path_to_ssl_proxy_ca_crt,)) %}
+{%-         else %}
+{#-         Backend SSL shall be verified, but not CA provided, disallow connection #}
+{#-         Simply dropping hostname from the dict will result with ignoring it... #}
+{%-         do info_dict.__setitem__('hostname', '') %}
+{%-         endif %}
 {%-       else %}
 {%-         do ssl.append('none') %}
 {%-       endif %}

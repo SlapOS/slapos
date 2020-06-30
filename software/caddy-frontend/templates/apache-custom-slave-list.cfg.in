@@ -72,9 +72,9 @@ create = true
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
 {#-   Setup backend URLs for front facing Caddy #}
 {%-   if slave_type == 'redirect' %}
-{%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url')) %}
+{%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url', '').rstrip('/')) %}
 {%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('backend-https-url', slave_instance['https-url']) %}
+{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get['https-url'].rstrip('/')) %}
 {%-     endif %}
 {%-   elif enable_cache %}
 {%-     if 'domain' in slave_instance %}
