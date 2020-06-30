@@ -3057,7 +3057,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqual(
-      httplib.BAD_GATEWAY,
+      httplib.SERVICE_UNAVAILABLE,
       result.status_code
     )
 
