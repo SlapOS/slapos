@@ -57,7 +57,7 @@ $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
 # if it was a no-op "migration" - we don't need info about that - only keep
 # logs of actual migration run.
 test -s $migrate_log || rm $migrate_log
-
+touch {{ var_dir }}/gitlab_db_ok
 
 # clear cache
 $RAKE cache:clear   || die "cache:clear failed"

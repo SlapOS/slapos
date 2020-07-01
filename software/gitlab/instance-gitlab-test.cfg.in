@@ -31,9 +31,9 @@ socket  = ${:srv}/unc.socket
 password = ${root-password:passwd}
 # token for default.user user in gitlab demo backup
 # Edit this token if needed
-private-token = SLurtnxPscPsU-SDm4oN
+private-token = 7zdiC6VrZYnUD3yuvna3
 # raw URL for latest commit on setup.py in gitlab demo backup.
-latest-file-uri = ${:backend_url}/open/slapos/raw/94c96d42c22e16836dadddac7c8061f4a8c6ca7a/setup.py
+latest-file-uri = ${:backend_url}/open/slapos/-/blob/4c2fa97791a2b7530b2d71e8760cb11d287d4e53/setup.py
 
 [instance-parameter]
 # backup more often, 10 minutes seems the minimal
@@ -47,14 +47,18 @@ command =
   if [ -f "${:backup-done}" ]; then
     echo "Demo backup installed."
   else
-    rm -rf ${secrets:secrets} ${directory:var}/backup/* &&
-    mkdir -p ${secrets:secrets} ${directory:var}/tmp &&
-    cp -r {{ gitlab_demo_backup_path }}/secrets/* ${secrets:secrets} &&
-    cp -rf {{ gitlab_demo_backup_path }}/backup-gitlab.git/ ${directory:var}/tmp &&
-    cd ${directory:var}/tmp/backup-gitlab.git/
-    PATH=${directory:bin}:{{ gopath_bin }}:{{ git_location }}/bin:$PATH
-    gitlab-backup restore -vupok -go HEAD &&
-    touch ${:backup-done}
+    if [ ! -f "${directory:var}/gitlab_db_ok" ]; then
+      echo "Not ready to start restoration now..."
+    else
+      rm -rf ${secrets:secrets} ${directory:var}/backup/* &&
+      mkdir -p ${secrets:secrets} ${directory:var}/tmp &&
+      cp -r {{ gitlab_demo_backup_path }}/secrets/* ${secrets:secrets} &&
+      cp -rf {{ gitlab_demo_backup_path }}/backup-gitlab.git/ ${directory:var}/tmp &&
+      cd ${directory:var}/tmp/backup-gitlab.git/
+      PATH=${directory:bin}:{{ gopath_bin }}:{{ git_location }}/bin:$PATH
+      gitlab-backup restore -vupok -go HEAD &&
+      touch ${:backup-done}
+    fi
   fi
 update-command = ${:command}
 
