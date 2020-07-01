@@ -107,7 +107,7 @@
   # Zope configuration
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ backend_url }} {
+  proxy "/{{ proxy_name }}" {{ backend_url }} {
 {{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
@@ -197,7 +197,7 @@
 {%-     endif %}
   }
 {%-     for websocket_path in websocket_path_list %}
-  proxy /{{ websocket_path }} {{ backend_url }} {
+  proxy "/{{ websocket_path }}" {{ backend_url }} {
 {{ proxy_header() }}
     websocket
 {%-       if websocket_transparent %}
@@ -230,7 +230,7 @@
 
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ backend_url }} {
+  proxy "/{{ proxy_name }}" {{ backend_url }} {
 {{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
