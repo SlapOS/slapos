@@ -18,6 +18,9 @@ production: &base
     host: {{ external_url.hostname }}
     port: {{ external_url.port or default_port[external_url.scheme] }}
     https: {{ cfg_https }}
+    # The maximum time unicorn/puma can spend on the request. This needs to be smaller than the worker timeout.
+    # Default is 95% of the worker timeout.
+    # max_request_duration_seconds: 57
 
     {# ssh is disabled completely in slapos version
     # Uncommment this line below if your ssh host is different from HTTP/HTTPS one
@@ -413,10 +416,11 @@ production: &base
   #}
 
   # Gitaly settings
+  # This setting controls whether GitLab uses Gitaly
+  # Eventually Gitaly use will become mandatory and
+  # this option will disappear.
   gitaly:
-    # Default Gitaly authentication token. Can be overriden per storage. Can
-    # be left blank when Gitaly is running locally on a Unix socket, which
-    # is the normal way to deploy Gitaly.
+    client_path: {{ gitaly.location }}
     token:
 
 

@@ -31,11 +31,14 @@ preload_app true
 check_client_connection false
 
 require_relative '{{ gitlab_work.location }}/lib/gitlab/cluster/lifecycle_events'
+require_relative '{{ gitlab_work.location }}/lib/gitlab/log_timestamp_formatter.rb'
 
 before_exec do |server|
   # Signal application hooks that we're about to restart
   Gitlab::Cluster::LifecycleEvents.do_before_master_restart
 end
+
+run_once = true
 
 # How many worker processes
 worker_processes {{ cfg('unicorn_worker_processes') }}
@@ -86,7 +89,6 @@ after_fork do |server, worker|
 end
 
 
-
 # Where to drop a pidfile
 pid '{{ directory.run }}/unicorn.pid'
 
@@ -109,3 +111,7 @@ ENV['GITLAB_UNICORN_MEMORY_MIN'] = ({{ cfg('unicorn_worker_memory_limit_min') }}
 
 # Max memory size (RSS) per worker
 ENV['GITLAB_UNICORN_MEMORY_MAX'] = ({{ cfg('unicorn_worker_memory_limit_max') }}).to_s
+
+# Configure the default logger to use a custom formatter that formats the
+# timestamps to be in UTC and in ISO8601.3 format
+Configurator::DEFAULTS[:logger].formatter = Gitlab::LogTimestampFormatter.new
