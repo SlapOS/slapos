@@ -196,7 +196,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {#-   Set Up Certs #}
 {%-   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%-     set cert_title = '%s-crt' % (slave_reference) %}
-{%-     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
+{%-     set cert_file = '/'.join([directory['bbb-ssl-dir'], cert_title.replace('-','.')]) %}
 {%-     do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
 {%-     do part_list.append(cert_title) %}
 {%-     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
@@ -317,7 +317,7 @@ extra-context =
 recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
-wrapper-path = {{ service_directory}}/6tunnel-${:ipv6-port}
+wrapper-path = {{ directory['service'] }}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -388,7 +388,7 @@ command-line = {{ kedifa_updater }}
   ${kedifa-updater-mapping:file}
   {{ kedifa_updater_state_file }}
 
-wrapper-path = {{ service_directory }}/kedifa-updater
+wrapper-path = {{ directory['service'] }}/kedifa-updater
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
@@ -442,8 +442,8 @@ cache-access = {{ cache_access }}
 [store-csr_id]
 recipe = plone.recipe.command
 
-csr_id_path = {{ directory_csr_id }}/csr_id.txt
-csr_work_path = {{ directory_tmp }}/${:_buildout_section_name_}
+csr_id_path = {{ directory['csr_id'] }}/csr_id.txt
+csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 
 stop-on-error = False
 update-command = ${:command}
@@ -458,8 +458,8 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = {{ directory_caddy_csr_id }}/certificate.pem
-key = {{ directory_caddy_csr_id }}/key.pem
+certificate = {{ directory['caddy-csr_id'] }}/certificate.pem
+key = {{ directory['caddy-csr_id'] }}/key.pem
 
 stop-on-error = True
 update-command = ${:command}
@@ -475,7 +475,7 @@ ip = ${slap-network-information:global-ipv6}
 port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory_caddy_csr_id_log }}/expose-csr_id.log
+error-log = {{ directory['caddy-csr_id']_log }}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
@@ -486,7 +486,7 @@ template = inline:
     log ${expose-csr_id-configuration:error-log}
   }
 
-rendered = {{ directory_caddy_csr_id }}/Caddyfile
+rendered = {{ directory['caddy-csr_id'] }}/Caddyfile
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -504,9 +504,9 @@ command-line = {{ caddy_executable }}
   -http2=true
   -disable-http-challenge
   -disable-tls-alpn-challenge
-  -root {{ directory_csr_id }}
+  -root {{ directory['csr_id'] }}
 
-wrapper-path = {{ service_directory }}/expose-csr_id
+wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [get-csr_id-certificate]
