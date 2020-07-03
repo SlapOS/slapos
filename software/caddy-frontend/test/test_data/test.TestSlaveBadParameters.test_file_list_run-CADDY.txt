@@ -1,5 +1,0 @@
-T-0/var/run/monitor-httpd.pid
-T-1/var/run/kedifa.pid
-T-2/var/run/graceful_configuration_state_signature
-T-2/var/run/httpd.pid
-T-2/var/run/monitor-httpd.pid
