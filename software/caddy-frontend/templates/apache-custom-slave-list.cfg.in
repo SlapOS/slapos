@@ -9,7 +9,7 @@
 {%- set backend_haproxy_http_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['http-port']) %}
 {%- set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
+{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
 {%- if extra_slave_instance_list %}
 {%-   set slave_instance_information_list = [] %}
@@ -62,7 +62,7 @@ create = true
 {%-   if slave_ciphers %}
 {%-     set slave_cipher_list = ' '.join(slave_ciphers) %}
 {%-   else %}
-{%-     set slave_cipher_list = ciphers.strip() %}
+{%-     set slave_cipher_list = configuration['ciphers'].strip() %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
@@ -115,8 +115,8 @@ create = true
 {%-     do part_list.extend([slave_logrotate_cache_direct_section]) %}
 {%-   endif %}
 {#-   Pass HTTP2 switch #}
-{%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
-{%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
+{%-   do slave_instance.__setitem__('enable_http2_by_default', configuration['enable-http2-by-default']) %}
+{%-   do slave_instance.__setitem__('global_disable_http2', configuration['global-disable-http2']) %}
 {#-   Pass backend timeout values #}
 {#-   XXX: maybe support request timeout on master/slave level #}
 {%-   do slave_instance.__setitem__('request-timeout', ('' ~ configuration['request-timeout'])) %}
@@ -141,7 +141,7 @@ create = true
 {%-   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
-{%-   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
+{%-   do slave_publish_dict.__setitem__('public-ipv4', configuration['public-ipv4']) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
@@ -222,7 +222,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 {#-   Set Up Certs #}
 {%-   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
 {%-     set cert_title = '%s-crt' % (slave_reference) %}
-{%-     set cert_file = '/'.join([bbb_ssl_directory, cert_title.replace('-','.')]) %}
+{%-     set cert_file = '/'.join([directory['bbb-ssl-dir'], cert_title.replace('-','.')]) %}
 {%-     do kedifa_updater_mapping.append((key_download_url, certificate, cert_file)) %}
 {%-     do part_list.append(cert_title) %}
 {%-     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) %}
@@ -244,8 +244,8 @@ extra-context =
 
 [{{ slave_configuration_section_name }}]
 certificate = {{ certificate }}
-https_port = {{ dumps('' ~ https_port) }}
-http_port = {{ dumps('' ~ http_port) }}
+https_port = {{ dumps('' ~ configuration['port']) }}
+http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ local_ipv4) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
@@ -328,13 +328,13 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
 <= tunnel-6to4-base
-ipv4-port = {{ http_port }}
-ipv6-port = {{ http_port }}
+ipv4-port = {{ configuration['plain_http_port'] }}
+ipv6-port = {{ configuration['plain_http_port'] }}
 
 [tunnel-6to4-base-https_port]
 <= tunnel-6to4-base
-ipv4-port = {{ https_port }}
-ipv6-port = {{ https_port }}
+ipv4-port = {{ configuration['port'] }}
+ipv6-port = {{ configuration['port'] }}
 
 {#- Define log access #}
 
@@ -343,8 +343,8 @@ caddy_log_directory = {{ dumps(caddy_log_directory) }}
 caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
 local_ipv4 = {{ dumps(local_ipv4) }}
 global_ipv6 = {{ dumps(global_ipv6) }}
-https_port = {{ dumps(https_port) }}
-http_port = {{ dumps(http_port) }}
+https_port = {{ dumps(configuration['port']) }}
+http_port = {{ dumps(configuration['plain_http_port']) }}
 ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
 access_log = {{ dumps(access_log) }}
 error_log = {{ dumps(error_log) }}
@@ -363,7 +363,7 @@ extra-context =
 {#- Publish information for the instance #}
 [publish-caddy-information]
 recipe = slapos.cookbook:publish.serialised
-public-ipv4 = {{ public_ipv4 }}
+public-ipv4 = {{ configuration['public-ipv4'] }}
 private-ipv4 = {{ local_ipv4 }}
 {%- if extra_slave_instance_list %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
@@ -456,8 +456,8 @@ cache-access = {{ cache_access }}
 [store-csr_id]
 recipe = plone.recipe.command
 
-csr_id_path = {{ directory_csr_id }}/csr_id.txt
-csr_work_path = {{ directory_tmp }}/${:_buildout_section_name_}
+csr_id_path = {{ directory['csr_id'] }}/csr_id.txt
+csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 
 stop-on-error = False
 update-command = ${:command}
@@ -472,8 +472,8 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = {{ directory_caddy_csr_id }}/certificate.pem
-key = {{ directory_caddy_csr_id }}/key.pem
+certificate = {{ directory['caddy-csr_id'] }}/certificate.pem
+key = {{ directory['caddy-csr_id'] }}/key.pem
 
 stop-on-error = True
 update-command = ${:command}
@@ -489,7 +489,7 @@ ip = ${slap-network-information:global-ipv6}
 port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory_caddy_csr_id_log }}/expose-csr_id.log
+error-log = {{ directory['caddy-csr_id']_log }}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
@@ -500,7 +500,7 @@ template = inline:
     log ${expose-csr_id-configuration:error-log}
   }
 
-rendered = {{ directory_caddy_csr_id }}/Caddyfile
+rendered = {{ directory['caddy-csr_id'] }}/Caddyfile
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -518,7 +518,7 @@ command-line = {{ caddy_executable }}
   -http2=true
   -disable-http-challenge
   -disable-tls-alpn-challenge
-  -root {{ directory_csr_id }}
+  -root {{ directory['csr_id'] }}
 
 wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
