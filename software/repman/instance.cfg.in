@@ -11,6 +11,7 @@ recipe = slapos.cookbook:switch-softwaretype
 default = template-instance-repman.cfg:rendered
 RootSoftwareInstance = ${:default}
 mariadb = template-instance-mariadb.cfg:rendered
+proxydb = template-instance-proxydb-cfg:rendered
 
 
 [slap-configuration]
@@ -102,4 +103,13 @@ filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict template-mariadb-parameters
 
+[template-proxydb-parameters]
 
+[template-instance-proxydb-cfg]
+<= jinja2-template-base
+template = {{ template_proxydb_cfg }}
+filename = instance-proxydb.cfg
+extra-context =
+    section parameter_dict template-proxydb-parameters
+    raw proxysql_location             {{ proxysql_location }}
+    raw template_proxy_need_stopstart {{ proxy_need_stop_start_template }}

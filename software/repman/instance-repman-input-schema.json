@@ -221,6 +221,23 @@
               "type": "string",
               "default": "0 1 * * *"
             },
+            "proxy-type": {
+              "title": "Proxy to deploy",
+              "description": "Type of proxy to deploy with the cluster",
+              "type": "string",
+              "default": "proxysql",
+              "enum": [
+                "proxysql",
+                "sphinx"
+              ]
+            },
+            "proxy-amount": {
+              "title": "Proxy Instances Amount",
+              "description": "Number of Proxy instances de deploy",
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
             "proxy-cpu-cores": {
               "title": "Proxy Cpu cores",
               "description": "Proxy Cpu cores. Default: 2",

@@ -1,0 +1,178 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ip = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set name = slapparameter_dict['proxy-name'] -%}
+{% set monitor_password = slapparameter_dict['monitor-passwd'] -%}
+{% set repman_url = slapparameter_dict['repman-url'] -%}
+{% set proxy_port = slapparameter_dict.get('proxy-port', 6032) -%}
+{% set proxy_admin_port = slapparameter_dict.get('proxy-admin-port', 7032) -%}
+{% set cluster_list = [] -%}
+
+{% do cluster_list.append({'name':name, 'host': ipv4, 'port': proxy_admin_port}) -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+run = ${:var}/run
+srv = ${:home}/srv
+scripts = ${:etc}/run
+service = ${:etc}/service
+controller = ${:etc}/controller
+promise = ${:etc}/promise
+log = ${:var}/log
+tmp = ${:home}/tmp
+data = ${:home}/proxy
+
+{% import "supervisord_lib" as supervisord_lib with context %}
+{% set proxysql_controller = "proxysql-ctl" -%}
+{{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("supervisord-proxysql-ctl") -%}
+
+[download-proxy-config]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!{{ bash_bin }}
+  NAME=$1
+  HOST=$2
+  PORT=$3
+  CONFIG=$4
+  if [ -z "$CONFIG" ]; then
+    CONFIG="${directory:etc}/proxysql-$NAME.cnf"
+  fi
+  mkdir -p ${directory:tmp}/proxies
+  cd ${directory:tmp}/proxies
+  {{ curl_bin }} -o proxy-$NAME.tar.gz {{ repman_url }}/api/clusters/$NAME/servers/$HOST/$PORT/config
+  tar -xzf proxy-$NAME.tar.gz
+  cp conf/proxysql.cnf $CONFIG
+rendered = ${directory:bin}/update-proxysql-config
+mode = 755
+
+
+# Manage Replication Manager clusters
+
+# Donwnload proxysql configuration from repman
+[config-proxysql]
+recipe = plone.recipe.command
+# if Repman is not started, cannot download config from server
+stop-on-error = false
+config = ${directory:etc}/proxysql.cnf
+data = ${directory:data}
+command =
+  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ proxy_admin_port }} ${:config}
+update-command = ${:command}
+
+[proxysql-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ proxysql_location }}/bin/proxysql -f
+  -c ${config-proxysql:config}
+  -D ${config-proxysql:data}
+  --reload
+#  -S /tmp/proxysql_admin.sock
+wrapper-path = ${directory:controller}/proxysql-{{ name }}
+wait-for-files =
+  ${config-proxysql:config}
+#  ${repman:bootstrap}/{{ name }}_bootstrapped
+depends =
+  ${proxysql-admin-promise:recipe}
+  ${proxysql-promise:recipe}
+  ${proxysql-ipv6-promise:recipe}
+
+[proxysql-admin-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-admin-port-listening.py
+config-hostname=  {{ ipv4 }}
+config-port = {{ proxy_admin_port }}
+
+[proxysql-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-port-listening.py
+config-hostname=  {{ ipv4 }}
+config-port = {{ proxy_port }}
+
+[proxysql-ipv6-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = proxysql-ipv6-port-listening.py
+config-hostname=  {{ ip }}
+config-port = {{ proxy_port }}
+
+{% set service_name = "proxy-" ~ name -%}
+{% set proxysql_dict = {"name": service_name, "command": "${proxysql-wrapper:wrapper-path}",
+  "stopwaitsecs": 60, "environment": [],
+  "stdout_logfile": "${directory:log}/" ~ service_name ~ ".log",
+  "stderr_logfile": "${directory:log}/" ~ service_name ~ ".log" } %}
+
+{{ supervisord_lib.supervisord_program(service_name, proxysql_dict) }}
+{% do part_list.append("supervisord-" ~ service_name) %}
+
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+proxy-port = {{ proxy_port }}
+proxy-admin-port = {{ proxy_admin_port }}
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ip }}
+partition-path = ${buildout:directory}
+
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8060
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+username = admin
+password = {{ monitor_password }}
+
+[template-proxysql-need-stop-start]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/proxysql_check_stop_start
+template = {{ template_proxy_need_stopstart }}
+mode = 755
+cluster-list = {{ dumps(cluster_list) }}
+context =
+  key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
+  key get_proxy_config    download-proxy-config:rendered
+  key cluster_list        :cluster-list
+  raw repman_url          {{ repman_url }}
+  raw jq_bin              {{ jq_bin }}
+  raw bash_bin            {{ bash_bin }}
+  raw curl_bin            {{ curl_bin }}
+
+[proxy-need-stop-start]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = proxysql-need-stop-start
+frequency = * * * * *
+command = ${template-proxysql-need-stop-start:rendered}
+
+#############################
+#
+# Deploy replication-manager instance
+#
+#############################
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  monitor-base
+  publish-connection-parameter
+  proxy-need-stop-start
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

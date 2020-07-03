@@ -26,11 +26,6 @@ data = ${:var}/lib
 nginx-prefix = ${:var}/nginx
 tmp = ${:home}/tmp
 
-{% import "supervisord_lib" as supervisord_lib with context %}
-{% set proxysql_controller = "proxysql-ctl" -%}
-{{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
-{% do part_list.append("supervisord-proxysql-ctl") -%}
-
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
@@ -39,24 +34,6 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-
-[download-proxy-config]
-recipe = slapos.recipe.template:jinja2
-template = inline:#!{{ bash_bin }}
-  NAME=$1
-  HOST=$2
-  PORT=$3
-  CONFIG=$4
-  if [ -z "$CONFIG" ]; then
-    CONFIG="${repman:proxies}/proxysql-$NAME.cnf"
-  fi
-  mkdir -p ${repman:config-tmp}/proxies
-  cd ${repman:config-tmp}/proxies
-  {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
-  tar -xzf proxies-$NAME.tar.gz
-  cp conf/proxysql.cnf $CONFIG
-rendered = ${directory:bin}/update-proxysql-config
-mode = 755
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
@@ -67,8 +44,14 @@ mode = 755
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
 {% do mariadb_dict.__setitem__('use-ipv6', parameter_dict.get('use-ipv6', True)) -%}
 
-{% set database_list = parameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set proxy_amount = parameter_dict.get('proxy-amount', 1) -%}
+{% set proxy_type = parameter_dict.get('proxy-type', 'proxysql') -%}
+{% set proxy_port = 6032 + 100*loop.index0 -%}
+{% set proxy_config_dict = {'ip': [], 'ipv6': [], 'partition': [],
+   'port': proxy_port, 'admin-port': proxy_port + 1000} -%}
+
 # Request mariadb instances
+{% set database_list = parameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
 {% set db_amount = parameter_dict.get('database-amount', 2) -%}
 {% if db_amount < 2 -%}
 {% set db_amount = 2 -%}
@@ -76,8 +59,8 @@ mode = 755
 
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
-{% set section = 'request-mariadb-' ~ i -%}
-{% set dbname = 'Mariadb-' ~ i -%}
+{% set section = 'request-mariadb-' ~ name ~ i -%}
+{% set dbname = 'Mariadb-' ~ name ~ '-' ~ i -%}
 
 [{{ section }}]
 <= request-common
@@ -107,31 +90,48 @@ return =
 {% do mariadb_server_list.append('${' ~ section ~ ':connection-database-host}') -%}
 {% do receiver_port_list.append('${' ~ section ~ ':connection-receiver-port}') -%}
 {% do mariadb_path_list.append('${' ~ section ~ ':connection-partition-path}') -%}
-{% do monitor_base_url_dict.__setitem__('mariadb' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% do monitor_base_url_dict.__setitem__('mariadb' ~ name ~ '-' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+
+{% endfor -%}
+
+{% for i in range(0, proxy_amount) -%}
+{% set section = "request-proxy-" ~ name ~ '-' ~ i -%}
+{% set proxy_name = "Proxy-" ~ name ~ '-' ~ i -%}
+[{{ section }}]
+<= request-common
+software-type = proxydb
+name = {{ proxy_name }}
+#sla-computer_guid =
+config-monitor-passwd = ${publish-early:monitor-password}
+config-repman-url = ${nginx-parameter:backend-url}
+config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
+config-proxy-name = {{ name }}
+config-type = {{ parameter_dict.get('proxy-type', "proxysql") }}
+config-proxy-port = {{ proxy_config_dict['port'] }}
+config-admin-proxy-port = {{ proxy_config_dict['admin-port'] }}
+config-bootstraped = false
+return = 
+  partition-path
+  monitor-base-url
+  ipv4
+  ipv6
+
+{% do part_list.append(section) -%}
+{% do proxy_config_dict['ip'].append('${' ~ section ~ ':connection-ipv4}') -%}
+{% do proxy_config_dict['ipv6'].append('${' ~ section ~ ':connection-ipv6}') -%}
+{% do proxy_config_dict['partition'].append('${' ~ section ~ ':connection-partition-path}') -%}
+{% do monitor_base_url_dict.__setitem__('proxy' ~ name ~ '-' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 
 {% endfor -%}
 
 # Manage Replication Manager clusters
-[{{name}}-admin-port]
-recipe = slapos.cookbook:free_port
-ip = {{ ipv4 }}
-minimum = 6032
-maximum = 6132
-
-[{{name}}-port]
-recipe = slapos.cookbook:free_port
-ip = {{ ipv4 }}
-minimum = 7032
-maximum = 7132
 
 {% set prefered_master = parameter_dict.get("db-prefered-master") -%}
 [{{ name ~ '-cluster-parameter' }}]
 {% for key, value in parameter_dict.items() -%}
 {{ key }} = {{ value }}
 {% endfor -%}
-proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
-proxy-port = {{ '${' ~ name ~ '-port:port}' }}
-proxy-admin-port = {{ '${' ~ name ~ '-admin-port:port}' }}
+
 db-user = repman
 db-password = ${publish-early:db-root-password}
 db-list = {{ mariadb_server_list | join(',') }}
@@ -145,10 +145,15 @@ db-prefered-master = {{ prefered_master }}
 # First database is the prefered master
 db-prefered-master = {{ mariadb_server_list[0] }}
 {% endif -%}
-proxysql-servers = {{ ipv4 }}
-proxysql-servers-ipv6 = [{{ ip }}]
+{% if proxy_type == "proxysql" -%}
+proxysql-servers = {{ proxy_config_dict['ip'] | join(',') }}
+proxysql-servers-ipv6 = [{{ proxy_config_dict['ipv6'] | join('],[') }}]
+proxysql-partition = {{ proxy_config_dict['partition'] | join(',') }}
+proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
+{% endif -%}
 password = ${repman-parameter:password}
-proxysql-partition = ${buildout:directory}
+proxy-port = {{ proxy_config_dict['port'] }}
+proxy-admin-port = {{ proxy_config_dict['admin-port'] }}
 receiver-port-list = {{ receiver_port_list | join(',') }}
 enabled-tags = {{ slapparameter_dict.get("tag-list", tag_list) | join(',') }}
 proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit"]) | join(',') }}
@@ -186,81 +191,24 @@ extra-context =
 context =
   section parameter_dict {{ name ~ '-cluster-parameter' }}
 
-# Donwnload mariadb configuration from repman
-[config-proxysql-{{ name }}]
-recipe = plone.recipe.command
-# if Repman is not started, cannot download config from server
-stop-on-error = false
-config = ${repman:proxies}/proxysql-{{ name }}.cnf
-data = ${repman:proxy-data}/{{ name }}
-command =
-  mkdir -p ${:data} &&
-  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }} ${:config}
-update-command = ${:command}
-
-[proxysql-{{ name }}-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line =
-  {{ proxysql_location }}/bin/proxysql -f
-  -c ${config-proxysql-{{ name }}:config}
-  -D ${config-proxysql-{{ name }}:data}
-  --reload
-#  -S /tmp/proxysql_admin.sock
-wrapper-path = ${directory:controller}/proxysql-{{ name }}
-wait-for-files =
-  ${repman:bootstrap}/{{ name }}_bootstrapped
-depends =
-  {{ '${proxysql-' ~ name ~ '-admin-promise:recipe}' }}
-  {{ '${proxysql-' ~ name ~ '-promise:recipe}' }}
-  {{ '${proxysql-' ~ name ~ '-ipv6-promise:recipe}' }}
-
-[proxysql-{{ name }}-admin-promise]
-<= monitor-promise-base
-module = check_port_listening
-name = proxysql-{{ name }}-admin-port-listening.py
-config-hostname=  {{ ipv4 }}
-config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}
-
-[proxysql-{{ name }}-promise]
-<= monitor-promise-base
-module = check_port_listening
-name = proxysql-{{ name }}-port-listening.py
-config-hostname=  {{ ipv4 }}
-config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
-
-[proxysql-{{ name }}-ipv6-promise]
-<= monitor-promise-base
-module = check_port_listening
-name = proxysql-{{ name }}-ipv6-port-listening.py
-config-hostname=  {{ ip }}
-config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
-
-{% set service_name = "proxysql-" ~ name -%}
-{% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "environment": [],
-  "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
-  "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
-
-{{ supervisord_lib.supervisord_program(service_name, proxysql_dict) }}
-{% do part_list.append("supervisord-" ~ service_name) %}
-
-{% do part_list.append('config-' ~ name) -%}
-{% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
-
 {% set publish_database_list = [] -%}
 {% set publish_database_v6_list = [] -%}
-{% for database in database_list -%}
-{%   if database.get('user') -%}
-{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%     do publish_database_v6_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%   else -%}
-{%     do publish_database_list.append("mysql://" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%     do publish_database_v6_list.append("mysql://[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%   endif -%}
+{% for i in range(0, proxy_amount) -%}
+{%   set proxy = "request-proxy-" ~ name ~ '-' ~ i -%}
+{%   for database in database_list -%}
+{%     if database.get('user') -%}
+{%       do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%       do publish_database_v6_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[${" ~ proxy ~ ":connection-ipv6}]:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%     else -%}
+{%       do publish_database_list.append("mysql://${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%       do publish_database_v6_list.append("mysql://[${" ~ proxy ~ ":connection-ipv6}]:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%     endif -%}
+{%   endfor -%}
 {% endfor -%}
 
-{% do publish_dict.__setitem__(name ~ '-database-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
-{% do publish_dict.__setitem__(name ~ '-database-list-v6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
+{% do part_list.append('config-' ~ name) -%}
+{% do publish_dict.__setitem__(name ~ '-db-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
+{% do publish_dict.__setitem__(name ~ '-db-list-v6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
 {% endfor -%}
 
 [slap-configuration]
@@ -286,11 +234,11 @@ etc      = ${directory:etc}/repman
 data-dir = ${directory:var}/lib
 root-dir = ${directory:srv}/repman
 clusters = ${:etc}/cluster.d
-proxies  = ${:etc}/proxy
+#proxies  = ${:etc}/proxy
 proxy-data = ${:data-dir}/proxy
 config-tmp = ${directory:tmp}/config
 bootstrap = ${:etc}/bootstrap
-proxies-log = ${directory:log}/proxy
+#proxies-log = ${directory:log}/proxy
 
 [nginx-parameter]
 ipv6 = ${instance-parameter:ipv6-random}
@@ -520,28 +468,6 @@ name = check_repman_backend.py
 config-url = ${nginx-parameter:backend-ssl-url}
 config-check-secure = 1
 
-[template-proxysql-need-stop-start]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/proxysql_check_stop_start
-template = {{ template_proxy_need_stopstart }}
-mode = 755
-cluster-list = !py![{{ cluster_list | join(', ') }}]
-context =
-  key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
-  key repman_url          nginx-parameter:backend-url
-  key get_proxy_config    download-proxy-config:rendered
-  key cluster_list        :cluster-list
-  raw jq_bin              {{ jq_bin }}
-  raw bash_bin           {{ bash_bin }}
-  raw curl_bin            {{ curl_bin }}
-
-[proxy-need-stop-start]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = proxysql-need-stop-start
-frequency = * * * * *
-command = ${template-proxysql-need-stop-start:rendered}
-
 #############################
 #
 # Deploy replication-manager instance
@@ -558,7 +484,6 @@ parts =
   publish-connection-parameter
   repman-frontend-promise
   repman-backend-promise
-  proxy-need-stop-start
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
