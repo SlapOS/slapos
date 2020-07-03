@@ -210,7 +210,6 @@ kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 kedifa-csr = {{ parameter_dict['kedifa-csr'] }}
-service_directory = ${directory:service}
 extra-context =
     key kedifa_caucase_ca_certificate kedifa-login-config:ca-certificate
     key kedifa_login_certificate kedifa-login-config:certificate
@@ -223,10 +222,6 @@ extra-context =
     key kedifa_csr :kedifa-csr
     key caddy_executable :caddy_executable
     key caucase_url :caucase_url
-    key directory_csr_id directory:csr_id
-    key directory_caddy_csr_id directory:caddy-csr_id
-    key directory_tmp directory:tmp
-    key directory_caddy_csr_id_log directory:caddy-csr_id-log
     key certificate_organization kedifa-login-csr:organization
     key certificate_organizational_unit kedifa-login-csr:organizational_unit
     key csr_id_csr caucase-updater-csr:csr
@@ -255,7 +250,6 @@ extra-context =
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
-    key report_directory directory:bin
     key bin_directory :bin_directory
     key enable_http2_by_default configuration:enable-http2-by-default
     key global_disable_http2 configuration:global-disable-http2
@@ -266,12 +260,9 @@ extra-context =
     key access_log caddy-configuration:access-log
     key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
-    key service_directory directory:service
-    key run_directory directory:etc-run
     key not_found_file caddy-configuration:not-found-file
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
-    key bbb_ssl_directory directory:bbb-ssl-dir
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
