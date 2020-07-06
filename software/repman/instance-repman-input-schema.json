@@ -157,7 +157,8 @@
               "description": "Database amount to deploy with this cluster. Minimal amount is 2 required to enable replication.",
               "type": "integer",
               "default": 2,
-              "minimum": 2
+              "minimum": 2,
+              "maximum": 4
             },
             "-sla-0-computer_guid": {
               "title": "Prefered Master Computer Guid",
@@ -236,7 +237,20 @@
               "description": "Number of Proxy instances de deploy",
               "type": "integer",
               "default": 1,
-              "minimum": 1
+              "minimum": 1,
+              "maximum": 3
+            },
+            "-sla-proxy1-computer_guid": {
+              "title": "Second SQL Proxy Computer Guid",
+              "description": "Computer Guid for the second SQL Proxy instance. The first proxy instance is requested on root partition.",
+              "type": "string",
+              "default": ""
+            },
+            "-sla-proxy2-computer_guid": {
+              "title": "Third Proxy Computer Guid",
+              "description": "Computer Guid for the third SQL Proxy instance. The first proxy instance is requested on root partition.",
+              "type": "string",
+              "default": ""
             },
             "proxy-cpu-cores": {
               "title": "Proxy Cpu cores",

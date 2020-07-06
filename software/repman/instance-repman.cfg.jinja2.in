@@ -101,7 +101,18 @@ return =
 <= request-common
 software-type = proxydb
 name = {{ proxy_name }}
-#sla-computer_guid =
+{% if i == 0 -%}
+{% do proxy_config_dict['ip'].append('${' ~ section ~ ':connection-ipv4}') -%}
+{# set proxysql-servers-ipv6 to also allow access proxy via ipv6 -#}
+{% do proxy_config_dict['ipv6'].append('${' ~ section ~ ':connection-ipv6}') -%}
+sla-computer_guid = ${slap-connection:computer-id}
+{% else -%}
+sla-computer_guid = {{ dumps(parameter_dict.get('-sla-proxy' ~ i ~'-computer_guid', '')) }}
+# This proxy can be on different machine with repman, so we enforce use IPv6
+{% do proxy_config_dict['ip'].append("[${" ~ section ~ ":connection-ipv6}]") -%}
+{% do proxy_config_dict['ipv6'].append('${' ~ section ~ ':connection-ipv6}') -%}
+config-use-ipv6 = True
+{% endif -%}
 config-monitor-passwd = ${publish-early:monitor-password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
@@ -110,15 +121,13 @@ config-type = {{ parameter_dict.get('proxy-type', "proxysql") }}
 config-proxy-port = {{ proxy_config_dict['port'] }}
 config-admin-proxy-port = {{ proxy_config_dict['admin-port'] }}
 config-bootstraped = false
-return = 
+return =
   partition-path
   monitor-base-url
   ipv4
   ipv6
 
 {% do part_list.append(section) -%}
-{% do proxy_config_dict['ip'].append('${' ~ section ~ ':connection-ipv4}') -%}
-{% do proxy_config_dict['ipv6'].append('${' ~ section ~ ':connection-ipv6}') -%}
 {% do proxy_config_dict['partition'].append('${' ~ section ~ ':connection-partition-path}') -%}
 {% do monitor_base_url_dict.__setitem__('proxy' ~ name ~ '-' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 
@@ -197,18 +206,23 @@ context =
 {%   set proxy = "request-proxy-" ~ name ~ '-' ~ i -%}
 {%   for database in database_list -%}
 {%     if database.get('user') -%}
-{%       do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{#       first proxy which is deployed on repman partition can use ipv4 connexion string -#}
+{%       if i == 0 -%}
+{%         do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%       endif -%}
 {%       do publish_database_v6_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[${" ~ proxy ~ ":connection-ipv6}]:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
 {%     else -%}
-{%       do publish_database_list.append("mysql://${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%       if i == 0 -%}
+{%         do publish_database_list.append("mysql://${" ~ proxy ~ ":connection-ipv4}:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
+{%       endif -%}
 {%       do publish_database_v6_list.append("mysql://[${" ~ proxy ~ ":connection-ipv6}]:" ~ proxy_config_dict['port'] ~ "/" ~ database['name']) -%}
 {%     endif -%}
 {%   endfor -%}
 {% endfor -%}
 
 {% do part_list.append('config-' ~ name) -%}
-{% do publish_dict.__setitem__(name ~ '-db-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
-{% do publish_dict.__setitem__(name ~ '-db-list-v6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
+{% do publish_dict.__setitem__(name ~ '-db-list-ipv4', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
+{% do publish_dict.__setitem__(name ~ '-db-list-ipv6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
 {% endfor -%}
 
 [slap-configuration]

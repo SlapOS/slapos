@@ -1,6 +1,6 @@
 {% set publish_dict = {} -%}
 {% set part_list = [] -%}
-{% set ip = (ipv6_set | list)[0] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set name = slapparameter_dict['proxy-name'] -%}
 {% set monitor_password = slapparameter_dict['monitor-passwd'] -%}
@@ -8,8 +8,16 @@
 {% set proxy_port = slapparameter_dict.get('proxy-port', 6032) -%}
 {% set proxy_admin_port = slapparameter_dict.get('proxy-admin-port', 7032) -%}
 {% set cluster_list = [] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set host = ipv4 -%}
+{% set ip = ipv4 -%}
 
-{% do cluster_list.append({'name':name, 'host': ipv4, 'port': proxy_admin_port}) -%}
+{% if use_ipv6 -%}
+{% set host = '[' ~ ipv6 ~ ']' -%}
+{% set ip = ipv6 -%}
+{% endif -%}
+
+{% do cluster_list.append({'name':name, 'host': host, 'port': proxy_admin_port}) -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -60,7 +68,7 @@ stop-on-error = false
 config = ${directory:etc}/proxysql.cnf
 data = ${directory:data}
 command =
-  ${download-proxy-config:rendered} {{ name }} {{ ipv4 }} {{ proxy_admin_port }} ${:config}
+  ${download-proxy-config:rendered} {{ name }} {{ host }} {{ proxy_admin_port }} ${:config}
 update-command = ${:command}
 
 [proxysql-wrapper]
@@ -78,28 +86,30 @@ wait-for-files =
 depends =
   ${proxysql-admin-promise:recipe}
   ${proxysql-promise:recipe}
-  ${proxysql-ipv6-promise:recipe}
 
 [proxysql-admin-promise]
 <= monitor-promise-base
 module = check_port_listening
 name = proxysql-admin-port-listening.py
-config-hostname=  {{ ipv4 }}
+config-hostname=  {{ ip }}
 config-port = {{ proxy_admin_port }}
 
 [proxysql-promise]
 <= monitor-promise-base
 module = check_port_listening
 name = proxysql-port-listening.py
-config-hostname=  {{ ipv4 }}
+config-hostname=  {{ ip }}
 config-port = {{ proxy_port }}
 
+{% if not use_ipv6 -%}
 [proxysql-ipv6-promise]
 <= monitor-promise-base
 module = check_port_listening
 name = proxysql-ipv6-port-listening.py
 config-hostname=  {{ ip }}
 config-port = {{ proxy_port }}
+{% do part_list.append("proxysql-ipv6-promise") -%}
+{% endif -%}
 
 {% set service_name = "proxy-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${proxysql-wrapper:wrapper-path}",
@@ -125,7 +135,7 @@ recipe = slapos.cookbook:publish.serialised
 proxy-port = {{ proxy_port }}
 proxy-admin-port = {{ proxy_admin_port }}
 ipv4 = {{ ipv4 }}
-ipv6 = {{ ip }}
+ipv6 = {{ ipv6 }}
 partition-path = ${buildout:directory}
 
 
