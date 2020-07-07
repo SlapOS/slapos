@@ -19,8 +19,8 @@
 {%- else %}
 {%-   do kedifa_updater_mapping.append(('notreadyyet', master_certificate, apache_certificate)) %}
 {%- endif %}
-{%- if slave_kedifa_information %}
-{%-   set slave_kedifa_information = json_module.loads(slave_kedifa_information) %}
+{%- if kedifa_configuration['slave_kedifa_information'] %}
+{%-   set slave_kedifa_information = json_module.loads(kedifa_configuration['slave_kedifa_information']) %}
 {%- else %}
 {%-   set slave_kedifa_information = {} %}
 {%- endif -%}
@@ -380,13 +380,13 @@ csr_id-certificate = ${get-csr_id-certificate:certificate}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
-command-line = {{ kedifa_updater }}
-  --server-ca-certificate {{ kedifa_caucase_ca_certificate }}
-  --identity {{ kedifa_login_certificate }}
+command-line = {{ kedifa_configuration['kedifa-updater'] }}
+  --server-ca-certificate {{ kedifa_configuration['ca-certificate'] }}
+  --identity {{ kedifa_configuration['certificate'] }}
   --master-certificate {{ master_certificate }}
   --on-update "{{ frontend_graceful_reload }}"
   ${kedifa-updater-mapping:file}
-  {{ kedifa_updater_state_file }}
+  {{ kedifa_configuration['kedifa-updater-state-file'] }}
 
 wrapper-path = {{ directory['service'] }}/kedifa-updater
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -394,12 +394,12 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [kedifa-updater-run]
 recipe = plone.recipe.command
 stop-on-error = True
-command = {{ kedifa_updater }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_graceful_reload }}"
+command = {{ kedifa_configuration['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_graceful_reload }}"
 update-command = ${:command}
 
 [kedifa-updater-mapping]
 recipe = slapos.recipe.template:jinja2
-file = {{ kedifa_updater_mapping_file }}
+file = {{ kedifa_configuration['kedifa-updater-mapping-file'] }}
 template = inline:
 {%- for mapping in kedifa_updater_mapping %}
   {{ mapping[0] }} {{ mapping[1] }} {{ mapping[2] }}
@@ -449,11 +449,11 @@ stop-on-error = False
 update-command = ${:command}
 command =
   {{ bin_directory }}/caucase \
-    --ca-url {{ caucase_url }} \
-    --ca-crt {{ csr_cas_ca_certificate }} \
-    --crl {{ csr_crl }} \
+    --ca-url {{ kedifa_configuration['caucase-url'] }} \
+    --ca-crt {{ kedifa_configuration['cas-ca-certificate'] }} \
+    --crl {{ kedifa_configuration['crl'] }} \
     --mode service \
-    --send-csr {{ csr_id_csr }} > ${:csr_work_path} && \
+    --send-csr {{ kedifa_configuration['csr'] }} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
 [certificate-csr_id]
@@ -466,7 +466,7 @@ update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
     openssl req -new -newkey rsa:2048 -sha256 -subj \
-      "/O={{ certificate_organization }}/OU={{ certificate_organizational_unit }}/CN=${slap-network-information:global-ipv6}" \
+      "/O={{ expose_csr_id_organization }}/OU={{ expose_csr_id_organizational_unit }}/CN=${slap-network-information:global-ipv6}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
 
