@@ -87,6 +87,27 @@ class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_class_diagram.png"))
     self.assertImagesSimilar(Image.open(BytesIO(png)), reference)
 
+  def test_timing_diagram(self):
+    png = self.plantuml.processes(textwrap.dedent("""\
+    @startuml
+    robust "Web Browser" as WB
+    concise "Web User" as WU
+
+    @0
+    WU is Idle
+    WB is Idle
+
+    @100
+    WU is Waiting
+    WB is Processing
+
+    @300
+    WB is Waiting
+    @enduml
+    """))
+    reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_timing_diagram.png"))
+    self.assertImagesSimilar(Image.open(BytesIO(png)), reference)
+
   def test_fonts(self):
     """Test slapos provided fonts are used"""
     png = self.plantuml.processes(textwrap.dedent("""\

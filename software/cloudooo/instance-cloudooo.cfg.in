@@ -24,11 +24,6 @@
 {% endif -%}
 {% do assert(timeout > 0) -%}
 
-{% set ssl_parameter_dict = instance_parameter_dict.get('ssl', {}) %}
-{% if instance_parameter_dict.get('ssl-dict-parameter-name') -%}
-{%   set ssl_parameter_dict = slapparameter_dict.get(instance_parameter_dict['ssl-dict-parameter-name'], ssl_parameter_dict) -%}
-{% endif -%}
-
 {% set mimetype_entry_addition = instance_parameter_dict.get('mimetype-entry-addition', '') -%}
 {% if instance_parameter_dict.get('mimetype-entry-addition-parameter-name') -%}
 {%   set mimetype_entry_addition = mimetype_entry_addition ~ "\n" ~ slapparameter_dict.get(instance_parameter_dict['mimetype-entry-addition-parameter-name'], '') -%}
@@ -110,9 +105,6 @@ cert = ${apache-ssl:cert}
 key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
-# Client x509 auth
-ca-cert = ${apache-ssl-client:cert}
-crl = ${apache-ssl-client:crl}
 
 [apache-promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
@@ -131,28 +123,10 @@ ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
 
 [apache-ssl]
-{% if ssl_parameter_dict.get('key') -%}
-key = ${apache-ssl-key:rendered}
-cert = ${apache-ssl-cert:rendered}
-{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
-{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
-{% else %}
 recipe = plone.recipe.command
 command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
 key = ${apache-conf-ssl:key}
 cert = ${apache-conf-ssl:cert}
-{%- endif %}
-
-[apache-ssl-client]
-{% if ssl_parameter_dict.get('ca-cert') -%}
-cert = ${apache-ssl-ca:rendered}
-crl = ${apache-ssl-crl:rendered}
-{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
-{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
-{% else %}
-cert =
-crl =
-{%- endif %}
 
 [apache-logrotate]
 < = logrotate-entry-base
@@ -189,9 +163,8 @@ includes =
 recipe = slapos.cookbook:generic.cloudooo
 ip = {{ ipv4 }}
 environment =
-  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
   FONTCONFIG_FILE = ${fontconfig-conf:rendered}
-
   PATH = ${binary-link:target-directory}
 mimetype_entry_addition =
 {% for entry in mimetype_entry_addition.splitlines() -%}

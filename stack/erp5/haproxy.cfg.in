@@ -4,10 +4,7 @@ global
   stats socket {{ parameter_dict['socket-path'] }} level admin
 
 defaults
-  log global
   mode http
-  option httplog
-  option dontlognull
   retries 1
   option redispatch
   maxconn 2000
@@ -28,12 +25,12 @@ defaults
   timeout connect 5s
   # As requested in haproxy doc, make this "at least equal to timeout server".
   timeout client 305s
-  # Use "option forceclose" to not preserve client & server persistent connections
+  # Use "option httpclose" to not preserve client & server persistent connections
   # while handling every incoming request individually, dispatching them one after
   # another to servers, in HTTP close mode. This is really needed when haproxy
   # is configured with maxconn to 1, without this option browsers are unable
   # to render a page
-  option forceclose
+  option httpclose
 
 {% for name, (port, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
 listen {{ name }}

@@ -40,6 +40,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 has_kvm = os.access('/dev/kvm', os.R_OK|os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
+skipIfPython3 = unittest.skipIf(six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -327,6 +328,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+@skipIfPython3
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akcb'
@@ -365,6 +367,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+@skipIfPython3
 @skipUnlessKvm
 class TestInstanceResilient(InstanceTestCase):
   __partition_reference__ = 'ir'
@@ -392,6 +395,7 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-url',
         'url']))
 
+@skipIfPython3
 @skipUnlessKvm
 class TestAccessResilientAdditional(InstanceTestCase):
   __partition_reference__ = 'ara'

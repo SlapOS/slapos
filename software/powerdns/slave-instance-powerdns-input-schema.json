@@ -10,12 +10,12 @@
     },
     "origin": {
       "title": "Origin",
-      "description": "Used to qualify RR in the configuration. i.e.: if your origin is a.example.com and the RR for Europe is 'eu' the european clients will use eu.a.exmple.com",
+      "description": "Used to qualify RR in the configuration. i.e.: if your origin is a.example.com and the RR for Europe is 'eu' the european clients will use eu.a.example.com",
       "type": "string"
     },
     "default": {
       "title": "Default RR",
-      "description": "Defautl record to use when the ip is not regognized",
+      "description": "Default record to use when the ip is not recognized",
       "type": "string"
     },
     "europe": {

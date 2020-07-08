@@ -184,6 +184,9 @@ context =
     section my_cnf_parameters my-cnf-parameters
     raw     bin_directory     {{ bin_directory }}
     raw     prepend_path      {{ mariadb_location }}/bin
+{%- if pypy_location is defined %}
+    raw     pypy_location     {{ pypy_location }}/bin/pypy
+{%- endif %}
 {%- if private_tmpfs %}
     key     datadir           my-cnf-parameters:data-directory
     key     results_directory directory:results

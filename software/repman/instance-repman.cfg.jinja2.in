@@ -8,7 +8,7 @@
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
-{% set tags = "gtidstrict,bind,pkg,innodb,noquerycache,slow,pfs,linux,readonly,diskmonitor,sqlerror,compressbinlog,bm4ci,mroonga,utctime,readcommitted,nohandshake" -%}
+{% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 
 [directory]
@@ -60,7 +60,7 @@ mode = 755
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
-  "database-amount": 2, "proxysql-user": "external", "proxy-tags": "pkg,masterslave,linux,noreadwritesplit",
+  "database-amount": 2, "proxysql-user": "external",
   "logical-backup-cron": "0 21 * * *", "physical-backup-cron": "0 1 * * *"}} -%}
 {% for name, parameter_dict in slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).items() -%}
 
@@ -150,7 +150,8 @@ proxysql-servers-ipv6 = [{{ ip }}]
 password = ${repman-parameter:password}
 proxysql-partition = ${buildout:directory}
 receiver-port-list = {{ receiver_port_list | join(',') }}
-proxy-tags = {{ parameter_dict.get("proxy-tags", "pkg,masterslave,linux,noreadwritesplit") }}
+enabled-tags = {{ slapparameter_dict.get("tag-list", tag_list) | join(',') }}
+proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit"]) | join(',') }}
 logical-backup-cron = {{ parameter_dict.get("logical-backup-cron", "0 22 * * *") }}
 physical-backup-cron = {{ parameter_dict.get("physical-backup-cron", "0 0 * * *") }}
 proxy-cpu-cores = {{ parameter_dict.get("proxy-cpu-cores", 2) }}
@@ -158,8 +159,8 @@ proxy-memory = {{ parameter_dict.get("proxy-memory", 1) }}
 db-cpu-cores = {{ parameter_dict.get("db-cpu-cores", 2) }}
 db-disk-iops = {{ parameter_dict.get("db-disk-iops", 300) }}
 db-memory = {{ parameter_dict.get("db-memory", 256) }}
-db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", "threads:16,innodb:60,myisam:10,aria:10,rocksdb:1,tokudb:1,s3:1,archive:1,querycache:0") }}
-db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", "tmp:70,join:20,sort:10") }}
+db-memory-shared-pct = {{ parameter_dict.get("db-memory-shared-pct", ["threads:16", "innodb:60", "myisam:10", "aria:10", "rocksdb:1", "tokudb:1", "s3:1", "archive:1", "querycache:0"]) | join(',') }}
+db-memory-threaded-pct = {{ parameter_dict.get("db-memory-threaded-pct", ["tmp:70", "join:20", "sort:10"]) | join(',') }}
 # failover
 failover-mode = {{ parameter_dict.get('failover-mode', 'manual') }}
 failover-limit = {{ parameter_dict.get('failover-limit', 5) }}
@@ -336,11 +337,11 @@ sysbench-bin  = {{ sysbench_location }}/bin/sysbench
 restic-bin    = {{ restic_bin_location }}
 
 mail-from = {{ slapparameter_dict.get("mail-from", "mrm@localhost") }}
-mail-smtp-addr = {{ slapparameter_dict.get("mail-smtp-addr", "localhost:25") }}
+mail-smtp-addr = {{ slapparameter_dict.get("mail-smtp-addr", "localhost") }}
+mail-smtp-port = {{ slapparameter_dict.get("mail-smtp-port", "25") }}
 mail-smtp-password = {{ slapparameter_dict.get("mail-smtp-password", "") }}
 mail-smtp-user = {{ slapparameter_dict.get("mail-smtp-user", "") }}
 mail-to = {{ slapparameter_dict.get("mail-to", "") }}
-enabled-tags = {{ slapparameter_dict.get("tags", tags) }}
 
 http-session-lifetime = {{ slapparameter_dict.get("http-session-lifetime", 86400) }}
 http-refresh-interval = {{ slapparameter_dict.get("http-refresh-interval", 4) }}
@@ -354,7 +355,7 @@ command =
   {{ rsync_location }}/bin/rsync -av  dashboard ${repman:root-dir}/
 
 update-command = ${:command}
-  
+
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_repman_manager_sh }}

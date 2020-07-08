@@ -53,20 +53,6 @@
       "title": "HTTPS Only",
       "type": "string"
     },
-    "caddy_custom_http": {
-      "default": "",
-      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTP configuration",
-      "type": "string"
-    },
-    "caddy_custom_https": {
-      "default": "",
-      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTPS configuration",
-      "type": "string"
-    },
     "default-path": {
       "default": "",
       "description": "Provide default path to redirect user to when user access / (the site root)",
@@ -151,12 +137,6 @@
         "true"
       ],
       "title": "Prefer gzip Encoding for Backend",
-      "type": "string"
-    },
-    "re6st-optimal-test": {
-      "default": "",
-      "description": "IPv6 and IPv6 Address for the frontend test if re6st is on the optimal status (use ipv6,ipv4)",
-      "title": "IPv6 and IPv4 Address to test Re6st",
       "type": "string"
     },
     "server-alias": {

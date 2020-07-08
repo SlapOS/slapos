@@ -22,6 +22,7 @@ proxysql-bootstrap = true
 proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
 proxysql-password = "{{ parameter_dict['password'] }}"
 
+prov-db-tags = "{{ parameter_dict['enabled-tags'] }}"
 prov-proxy-tags = "{{ parameter_dict['proxy-tags'] }}"
 
 monitoring-scheduler = true

@@ -33,12 +33,10 @@ from requests_toolbelt.adapters import source
 import json
 import multiprocessing
 import subprocess
-from unittest import skip, expectedFailure
+from unittest import skip
 import ssl
-import signal
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
-from forcediphttpsadapter.adapters import ForcedIPHTTPSAdapter
 import time
 import tempfile
 import ipaddress
@@ -48,6 +46,8 @@ import base64
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
+import urlparse
+import socket
 
 
 try:
@@ -76,6 +76,24 @@ HTTP_PORT = '11080'
 HTTPS_PORT = '11443'
 CAUCASE_PORT = '15090'
 KEDIFA_PORT = '15080'
+
+# IP to originate requests from
+# has to be not partition one
+SOURCE_IP = '127.0.0.1'
+
+# "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
+DNS_CACHE = {}
+
+
+def add_custom_dns(domain, port, ip):
+  port = int(port)
+  key = (domain, port)
+  value = (socket.AF_INET, 1, 6, '', (ip, port))
+  DNS_CACHE[key] = [value]
+
+
+def new_getaddrinfo(*args):
+  return DNS_CACHE[args[:2]]
 
 
 # for development: debugging logs and install Ctrl+C handler
@@ -225,17 +243,6 @@ def isHTTP2(domain, ip):
   return 'Using HTTP2, server supports multi-use' in err
 
 
-def getQUIC(url, ip, port):
-  quic_client_command = 'quic_client --disable-certificate-verification '\
-    '--port=%(port)s --host=%(host)s %(url)s' % dict(
-      port=port, host=ip, url=url)
-  try:
-    return True, subprocess.check_output(
-      quic_client_command.split(), stderr=subprocess.STDOUT)
-  except subprocess.CalledProcessError as e:
-    return False, e.output
-
-
 def getPluginParameterDict(software_path, filepath):
   """Load the slapos monitor plugin and returns the configuration used by this plugin.
 
@@ -328,7 +335,7 @@ class TestDataMixin(object):
       )
     except AssertionError:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
-        open(test_data_file, 'w').write(runtime_data.strip())
+        open(test_data_file, 'w').write(runtime_data.strip() + '\n')
       raise
     finally:
       self.maxDiff = maxDiff
@@ -413,39 +420,55 @@ class TestDataMixin(object):
 
 
 def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
-                    headers=None, cookies=None, source_ip=None):
+                    headers=None, cookies=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
   # workaround request problem of setting Accept-Encoding
   # https://github.com/requests/requests/issues/2234
   headers.setdefault('Accept-Encoding', 'dummy')
+  # Headers to tricks the whole system, like rouge user would do
+  headers.setdefault('X-Forwarded-For', '192.168.0.1')
+  headers.setdefault('X-Forwarded-Proto', 'irc')
+  headers.setdefault('X-Forwarded-Port', '17')
+
   session = requests.Session()
-  session.mount(
-    'https://%s:%s' % (domain, port),
-    ForcedIPHTTPSAdapter(
-      dest_ip=real_ip))
+  if source_ip is not None:
+    new_source = source.SourceAddressAdapter(source_ip)
+    session.mount('http://', new_source)
+    session.mount('https://', new_source)
+  socket_getaddrinfo = socket.getaddrinfo
+  try:
+    add_custom_dns(domain, port, real_ip)
+    socket.getaddrinfo = new_getaddrinfo
+    return session.get(
+      'https://%s:%s/%s' % (domain, port, path),
+      verify=False,
+      allow_redirects=False,
+      headers=headers,
+      cookies=cookies
+    )
+  finally:
+    socket.getaddrinfo = socket_getaddrinfo
+
+
+def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
+                   headers=None, source_ip=SOURCE_IP):
+  if headers is None:
+    headers = {}
+  # workaround request problem of setting Accept-Encoding
+  # https://github.com/requests/requests/issues/2234
+  headers.setdefault('Accept-Encoding', 'dummy')
+  # Headers to tricks the whole system, like rouge user would do
+  headers.setdefault('X-Forwarded-For', '192.168.0.1')
+  headers.setdefault('X-Forwarded-Proto', 'irc')
+  headers.setdefault('X-Forwarded-Port', '17')
+  headers['Host'] = '%s:%s' % (domain, port)
+  session = requests.Session()
   if source_ip is not None:
     new_source = source.SourceAddressAdapter(source_ip)
     session.mount('http://', new_source)
     session.mount('https://', new_source)
   return session.get(
-    'https://%s:%s/%s' % (domain, port, path),
-    verify=False,
-    allow_redirects=False,
-    headers=headers,
-    cookies=cookies
-  )
-
-
-def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
-                   headers=None):
-  if headers is None:
-    headers = {}
-  # workaround request problem of setting Accept-Encoding
-  # https://github.com/requests/requests/issues/2234
-  headers.setdefault('Accept-Encoding', 'dummy')
-  headers['Host'] = domain
-  return requests.get(
     'http://%s:%s/%s' % (real_ip, port, path),
     headers=headers,
     allow_redirects=False,
@@ -1044,73 +1067,11 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
-  caddy_custom_https = '''# caddy_custom_https_filled_in_accepted
-https://caddycustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(certificate)s %%(certificate)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  caddy_custom_http = '''# caddy_custom_http_filled_in_accepted
-http://caddycustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  apache_custom_https = '''# apache_custom_https_filled_in_accepted
-https://apachecustomhttpsaccepted.example.com:%%(https_port)s {
-  bind %%(local_ipv4)s
-  tls %%(certificate)s %%(certificate)s
-
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
-  apache_custom_http = '''# apache_custom_http_filled_in_accepted
-http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
-  bind %%(local_ipv4)s
-  log / %%(access_log)s {combined}
-  errors %%(error_log)s
-
-  proxy / %(url)s {
-    transparent
-    timeout 600s
-    insecure_skip_verify
-  }
-}
-'''
-
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -1344,36 +1305,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       'enable-http2-default': {
         'url': cls.backend_url,
       },
-      # 'apache_custom_http_s-rejected': {
-      #   'url': cls.backend_url,
-      #   'apache_custom_https': '# apache_custom_https_filled_in_rejected',
-      #   'apache_custom_http': '# apache_custom_http_filled_in_rejected',
-      # },
-      'apache_custom_http_s-accepted': {
-        'url': cls.backend_url,
-        'apache_custom_https': cls.apache_custom_https % dict(
-          url=cls.backend_url),
-        'apache_custom_http': cls.apache_custom_http % dict(
-          url=cls.backend_url),
-      },
-      # 'caddy_custom_http_s-rejected': {
-      #   'url': cls.backend_url,
-      #   'caddy_custom_https': '# caddy_custom_https_filled_in_rejected',
-      #   'caddy_custom_http': '# caddy_custom_http_filled_in_rejected',
-      # },
-      'caddy_custom_http_s-accepted': {
-        'url': cls.backend_url,
-        'caddy_custom_https': cls.caddy_custom_https % dict(
-          url=cls.backend_url),
-        'caddy_custom_http': cls.caddy_custom_http % dict(
-          url=cls.backend_url),
-      },
-      # # this has to be rejected
-      # 'caddy_custom_http_s': {
-      #   'url': cls.backend_url,
-      #   'caddy_custom_https': '# caddy_custom_https_filled_in_rejected_2',
-      #   'caddy_custom_http': '# caddy_custom_http_filled_in_rejected_2',
-      # },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
         'prefer-gzip-encoding-to-backend': 'true',
@@ -1392,9 +1323,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       },
       'monitor-ipv6-test': {
         'monitor-ipv6-test': 'monitor-ipv6-test',
-      },
-      're6st-optimal-test': {
-        're6st-optimal-test': 'ipv6,ipv4',
       },
       'ciphers': {
         'ciphers': 'RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA',
@@ -1572,9 +1500,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '51',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '51',
       'rejected-slave-dict': {
       }
     }
@@ -1647,7 +1575,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://empty.example.com/test-path',
+      'https://empty.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -1682,6 +1610,33 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       self.assertFalse('connection-parameter-hash' in line)
       self.assertFalse('timestamp' in line)
 
+  def assertBackendHeaders(
+    self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
+    proto='https', ignore_header_list=None):
+    if ignore_header_list is None:
+      ignore_header_list = []
+    self.assertFalse('remote_user' in backend_header_dict.keys())
+    self.assertFalse('x-forwarded-for-real' in backend_header_dict.keys())
+    if 'Host' not in ignore_header_list:
+      self.assertEqual(
+        backend_header_dict['host'],
+        '%s:%s' % (domain, port))
+    # XXX It's really hard to play with Caddy headers, thus we have to keep
+    #     some of them. As other solutions will come in future, more control
+    #     over sent X-Forwarded-For will be possible
+    self.assertEqual(
+      backend_header_dict['x-forwarded-for'].split(',')[0],
+      source_ip
+    )
+    self.assertEqual(
+      backend_header_dict['x-forwarded-port'],
+      port
+    )
+    self.assertEqual(
+      backend_header_dict['x-forwarded-proto'],
+      proto
+    )
+
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
 
@@ -1704,11 +1659,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
-
     self.assertFalse('Content-Encoding' in result.headers)
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -1725,7 +1679,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://url.example.com/test-path/deeper',
+      'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -2350,7 +2304,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2369,7 +2323,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://typezope.example.com/test-path/deep/.././deeper',
+      'https://typezope.example.com:%s/test-path/deep/.././deeper' % (
+        HTTP_PORT,),
       result.headers['Location']
     )
 
@@ -2389,7 +2344,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2424,7 +2379,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2467,7 +2422,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2487,7 +2442,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deep/.././deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deep/.././deeper' % (
+        parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -2504,7 +2460,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -2527,7 +2483,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deep/.././deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deep/.././deeper' % (
+        parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -2626,6 +2583,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2655,6 +2613,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    parsed = urlparse.urlparse(self.backend_url)
+    self.assertBackendHeaders(
+      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
+      ignore_header_list=['Host'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2686,6 +2648,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
@@ -2704,6 +2667,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2725,6 +2689,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2755,6 +2720,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    parsed = urlparse.urlparse(self.backend_url)
+    self.assertBackendHeaders(
+      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
+      ignore_header_list=['Host'])
     self.assertFalse('connection' in j['Incoming Headers'].keys())
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
@@ -2773,6 +2742,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(
+      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
+      ignore_header_list=['Host'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2794,6 +2766,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertBackendHeaders(
+      j['Incoming Headers'], parsed.hostname, port='17', proto='irc',
+      ignore_header_list=['Host'])
     self.assertEqual(
       'Upgrade',
       j['Incoming Headers']['connection']
@@ -2910,7 +2885,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrtunverified.example.com/test-path',
+      'https://sslproxyverifysslproxycacrtunverified.example.com:%s/'
+      'test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -2930,7 +2906,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertFalse('Content-Encoding' in result.headers)
 
@@ -2948,7 +2924,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrt.example.com/test-path',
+      'https://sslproxyverifysslproxycacrt.example.com:%s/test-path' % (
+        HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3021,8 +2998,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://enablecachesslproxyverifysslproxycacrtunverified.example.com/'
-      'test-path/deeper',
+      'https://enablecachesslproxyverifysslproxycacrtunverified.example.com'
+      ':%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3159,8 +3136,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://typezopesslproxyverifysslproxycacrtunverified.example.com/'
-      'test-path',
+      'https://typezopesslproxyverifysslproxycacrtunverified.example.com:%s/'
+      'test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3179,7 +3156,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqualResultJson(
       result,
@@ -3198,7 +3175,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://typezopesslproxyverifysslproxycacrt.example.com/test-path',
+      'https://typezopesslproxyverifysslproxycacrt.example.com:'
+      '%s/test-path' % (HTTP_PORT,),
       result.headers['Location']
     )
 
@@ -3238,7 +3216,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://monitoripv6test.example.com/test-path',
+      'https://monitoripv6test.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3275,7 +3253,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://monitoripv4test.example.com/test-path',
+      'https://monitoripv4test.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3290,44 +3268,6 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
         'frequency': '720',
         'ipv4': 'true',
         'address': 'monitor-ipv4-test',
-      }
-    )
-
-  def test_re6st_optimal_test(self):
-    parameter_dict = self.assertSlaveBase('re6st-optimal-test')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(
-      httplib.FOUND,
-      result_http.status_code
-    )
-
-    self.assertEqual(
-      'https://re6stoptimaltest.example.com/test-path',
-      result_http.headers['Location']
-    )
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-re6st-optimal-test.py'))[0]
-    # get promise module and check that parameters are ok
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'ipv4': 'ipv4',
-        'ipv6': 'ipv6'
       }
     )
 
@@ -3352,7 +3292,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://ciphers.example.com/test-path',
+      'https://ciphers.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -3414,6 +3354,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3455,6 +3396,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3473,18 +3415,23 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://enablecacheserveralias1.example.com/test-path/deeper',
+      'https://enablecacheserveralias1.example.com:%s/test-path/deeper' % (
+        HTTP_PORT,),
       result.headers['Location']
     )
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
+    source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
+        'revalidate=3600, stale-if-error=3600',
+      },
+      source_ip=source_ip
+    )
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
@@ -3511,6 +3458,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3576,6 +3524,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
       )
 
       backend_headers = result.json()['Incoming Headers']
+      self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
       via = backend_headers.pop('via', None)
       self.assertNotEqual(via, None)
       self.assertRegexpMatches(
@@ -3743,6 +3692,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3789,6 +3739,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
     via = backend_headers.pop('via', None)
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
@@ -3879,6 +3830,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3889,6 +3842,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3915,6 +3870,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http')
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3925,6 +3883,9 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http')
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3955,6 +3916,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3965,6 +3928,8 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
@@ -3995,7 +3960,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -4010,7 +3975,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -4024,7 +3989,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -4038,7 +4003,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://%s/test-path/deeper' % (parameter_dict['domain'],),
+      'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
 
@@ -4059,188 +4024,10 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
+    self.assertBackendHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Coffee=present', result.json()['Incoming Headers']['cookie'])
-
-  @skip('Not implemented in new test system')
-  def test_apache_custom_http_s_rejected(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'apache_custom_http_s-rejected')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_https_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_http_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  def test_apache_custom_http_s_accepted(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'apache_custom_http_s-accepted')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      'apachecustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      },
-      headers
-    )
-
-    result_http = fakeHTTPResult(
-      'apachecustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_https_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_https_list))
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'apache_custom_http_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_http_list))
-
-  @skip('Not implemented in new test system')
-  def test_caddy_custom_http_s_rejected(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s-rejected')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_rejected' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  @skip('Not implemented in new test system')
-  def test_caddy_custom_http_s(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s')
-    self.assertEqual(
-      {
-        'request-error-list': ["slave not authorized"]
-      },
-      parameter_dict)
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_rejected_2' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_https_list)
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_rejected_2' in open(q).read()]
-    self.assertEqual([], configuration_file_with_custom_http_list)
-
-  def test_caddy_custom_http_s_accepted(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'caddy_custom_http_s-accepted')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {'replication_number': '1', 'public-ipv4': self._ipv4_address},
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      'caddycustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
-    self.assertEqual(
-      {
-        'Content-type': 'application/json',
-        'Set-Cookie': 'secured=value;secure, nonsecured=value'
-      },
-      headers
-    )
-
-    result_http = fakeHTTPResult(
-      'caddycustomhttpsaccepted.example.com',
-      parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
-
-    slave_configuration_file_list = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', '*slave-conf.d', '*.conf'))
-    # no configuration file contains provided custom http
-    configuration_file_with_custom_https_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_https_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_https_list))
-
-    configuration_file_with_custom_http_list = [
-      q for q in slave_configuration_file_list
-      if 'caddy_custom_http_filled_in_accepted' in open(q).read()]
-    self.assertEqual(1, len(configuration_file_with_custom_http_list))
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
@@ -4265,7 +4052,7 @@ http://apachecustomhttpsaccepted.example.com:%%(http_port)s {
     )
 
     self.assertEqual(
-      'https://urlhttpsurl.example.com/test-path/deeper',
+      'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -4822,104 +4609,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
 
 
-class TestQuicEnabled(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
-      'enable-quic': 'true',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'url': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  # It is known problem that QUIC does not work after sending reload signal,
-  # SIGUSR1, see https://github.com/mholt/caddy/issues/2394
-  @expectedFailure
-  def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'url.example.com',
-        'replication_number': '1',
-        'url': 'http://url.example.com',
-        'site_url': 'http://url.example.com',
-        'secure_access': 'https://url.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    try:
-      j = result.json()
-    except Exception:
-      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('remote_user' in j['Incoming Headers'].keys())
-
-    self.assertKeyWithPop('Date', result.headers)
-    self.assertKeyWithPop('Content-Length', result.headers)
-
-    def assertQUIC():
-      quic_status, quic_result = getQUIC(
-        'https://%s/%s' % (parameter_dict['domain'], 'test-path'),
-        parameter_dict['public-ipv4'],
-        HTTPS_PORT
-      )
-
-      self.assertTrue(quic_status, quic_result)
-
-      try:
-        quic_jsoned = quic_result.split('body: ')[2].split('trailers')[0]
-      except Exception:
-        raise ValueError('JSON not found at all in QUIC result:\n%s' % (
-          quic_result,))
-      try:
-        j = json.loads(quic_jsoned)
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (quic_jsoned,))
-      key = 'Path'
-      self.assertTrue(key in j, 'No key %r in %s' % (key, j))
-      self.assertEqual('/test-path', j[key])
-
-    assertQUIC()
-    # https://github.com/mholt/caddy/issues/2394
-    # after sending USR1 to Caddy QUIC does not work, check current behaviour
-    caddy_pid = [
-      q['pid'] for q
-      in self.callSupervisorMethod('getAllProcessInfo')
-      if 'frontend_caddy' in q['name']][0]
-    os.kill(caddy_pid, signal.SIGUSR1)
-
-    # give caddy a moment to refresh its config, as sending signal does not
-    # block until caddy is refreshed
-    time.sleep(2)
-
-    assertQUIC()
-
-
 @skip('New test system cannot be used with failing promises')
 class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -4937,13 +4626,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
-      're6st-optimal-test-nocomma': {
-        're6st-optimal-test': 'nocomma',
-      },
-      're6st-optimal-test-unsafe': {
-        're6st-optimal-test':
-        'new\nline;rm -fr ~;,new line\n[s${esection:eoption}',
-      },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
@@ -4989,9 +4671,9 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '8',
+      'accepted-slave-amount': '6',
       'rejected-slave-amount': '3',
-      'slave-amount': '11',
+      'slave-amount': '9',
       'rejected-slave-dict': {
         '_bad-ciphers': [
           "Cipher 'bad' is not supported.",
@@ -5036,83 +4718,6 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
       der2pem(result.peercert))
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
-
-  def test_re6st_optimal_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 're6stoptimaltestunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://re6stoptimaltestunsafe.example.com',
-        'site_url': 'http://re6stoptimaltestunsafe.example.com',
-        'secure_access': 'https://re6stoptimaltestunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-unsafe-re6st-optimal-test.py'))[0]
-
-    # Note: The result is a bit differnt from the request (newlines stripped),
-    #       but good enough to prove, that ${esection:eoption} has been
-    #       correctly passed to the script.
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'ipv4': 'new line\n[s${esection:eoption}',
-        'ipv6': 'new\nline;rm -fr ~;',
-      }
-    )
-
-  def test_re6st_optimal_test_nocomma(self):
-    parameter_dict = self.parseSlaveParameterDict('re6st-optimal-test-nocomma')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 're6stoptimaltestnocomma.example.com',
-        'replication_number': '1',
-        'url': 'http://re6stoptimaltestnocomma.example.com',
-        'site_url': 'http://re6stoptimaltestnocomma.example.com',
-        'secure_access': 'https://re6stoptimaltestnocomma.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    # assert that there is no nocomma file
-    monitor_file_list = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_re6st-optimal-test-nocomma-re6st-optimal-test.py'))
-    self.assertEqual(
-      [],
-      monitor_file_list
-    )
 
   def test_custom_domain_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
@@ -6585,8 +6190,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'domain': 'example.com',
       'public-ipv4': cls._ipv4_address,
-      '-frontend-authorized-slave-string':
-      '_apache_custom_http_s-accepted _caddy_custom_http_s-accepted',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
