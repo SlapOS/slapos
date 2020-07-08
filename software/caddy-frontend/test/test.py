@@ -1704,6 +1704,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       content = fh.read()
       self.assertTrue("""backend _Url-http
   timeout server 12s
+  timeout connect 5s
+  retries 3s""" in content)
+      self.assertTrue("""  timeout queue 60s
+  timeout server 12s
   timeout client 12s
   timeout connect 5s
   retries 3s""" in content)
