@@ -1296,6 +1296,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
         'type': 'redirect',
       },
+      'type-redirect-custom_domain': {
+        'url': cls.backend_url,
+        'type': 'redirect',
+        'custom_domain': 'customdomaintyperedirect.example.com',
+      },
       'enable_cache': {
         'url': cls.backend_url,
         'enable_cache': True,
@@ -1540,9 +1545,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '53',
+      'accepted-slave-amount': '54',
       'rejected-slave-amount': '0',
-      'slave-amount': '53',
+      'slave-amount': '54',
       'rejected-slave-dict': {
       }
     }
@@ -3072,6 +3077,43 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_type_redirect(self):
     parameter_dict = self.assertSlaveBase('type-redirect')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%stest-path/deeper' % (self.backend_url,),
+      result.headers['Location']
+    )
+
+  def test_type_redirect_custom_domain(self):
+    reference = 'type-redirect-custom_domain'
+    hostname = 'customdomaintyperedirect'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
