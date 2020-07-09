@@ -18,7 +18,7 @@ defaults
   option httpclose
 
 {%- macro frontend_entry(slave_instance, scheme) %}
-{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   set host_list = (slave_instance.get('server-alias') or  '').split() %}
 {%-   if slave_instance.get('custom_domain') not in host_list %}
 {%-     do host_list.append(slave_instance.get('custom_domain')) %}
 {%-   endif %}
