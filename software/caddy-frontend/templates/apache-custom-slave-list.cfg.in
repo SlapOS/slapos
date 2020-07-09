@@ -277,7 +277,9 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
-{%-  do backend_slave_list.append(slave_instance) %}
+{%-  if slave_type != 'redirect' %}
+{%-    do backend_slave_list.append(slave_instance) %}
+{%-  endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
 [slave-log-directories]
