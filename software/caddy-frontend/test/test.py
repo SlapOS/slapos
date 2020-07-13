@@ -1141,6 +1141,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'url_https-url': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
+        'timeout-backend-connect': 10,
+        'timeout-backend-connect-retries': 5,
       },
       'server-alias': {
         'url': cls.backend_url,
@@ -4255,6 +4257,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
+
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue("""backend url_https-url
+  timeout server 12s
+  timeout connect 5s
+  retries 5s""" in content)
 
 
 @skip('Impossible to instantiate cluster with stopped partition')
