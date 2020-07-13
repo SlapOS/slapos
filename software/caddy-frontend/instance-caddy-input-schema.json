@@ -108,6 +108,16 @@
       "description": "Timeout for HTTP requests.",
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
+    },
+    "authenticate-to-backend": {
+      "default": "false",
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
