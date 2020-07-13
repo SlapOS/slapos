@@ -113,6 +113,8 @@ T-2/var/log/httpd/_type-zope-virtualhostroot-https-port_access_log
 T-2/var/log/httpd/_type-zope-virtualhostroot-https-port_error_log
 T-2/var/log/httpd/_type-zope_access_log
 T-2/var/log/httpd/_type-zope_error_log
+T-2/var/log/httpd/_url-to-auth-backend-not-configured_access_log
+T-2/var/log/httpd/_url-to-auth-backend-not-configured_error_log
 T-2/var/log/httpd/_url-to-auth-backend_access_log
 T-2/var/log/httpd/_url-to-auth-backend_error_log
 T-2/var/log/httpd/_url_https-url_access_log
