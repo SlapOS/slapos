@@ -1129,7 +1129,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         # in here use reserved port for the backend, which is going to be
         # started later
         'url': 'https://%s:%s/' % (
-          cls._ipv4_address, cls._server_https_auth_port)
+          cls._ipv4_address, cls._server_https_auth_port),
+        'authenticate-to-backend': True,
+      },
+      'url-to-auth-backend-not-configured': {
+        # in here use reserved port for the backend, which is going to be
+        # started later
+        'url': 'https://%s:%s/' % (
+          cls._ipv4_address, cls._server_https_auth_port),
       },
       'url_https-url': {
         'url': cls.backend_url + 'http',
@@ -1545,9 +1552,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '54',
+      'accepted-slave-amount': '55',
       'rejected-slave-amount': '0',
-      'slave-amount': '54',
+      'slave-amount': '55',
       'rejected-slave-dict': {
       }
     }
