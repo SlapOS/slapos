@@ -491,7 +491,7 @@ class TestHandler(BaseHTTPRequestHandler):
     time.sleep(timeout)
     self.send_response(200)
 
-    if self.indentification is not None:
+    if self.identification is not None:
       self.send_header('X-Backend-Identification', self.identification)
 
     drop_header_list = []
