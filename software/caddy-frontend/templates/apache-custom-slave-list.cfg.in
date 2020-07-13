@@ -129,6 +129,7 @@ create = true
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%-   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
+{%-   do slave_publish_dict.__setitem__('backend-client-cacucase-url', backend_client_caucase_url) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
 {%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}

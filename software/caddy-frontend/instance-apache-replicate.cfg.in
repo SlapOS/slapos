@@ -69,6 +69,7 @@ context =
 {%     endif %}
 {%   endfor %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
+{%   do config_dict.__setitem__('backend-client-cacucase-url', caucase_url) %}
 {%   do frontend_list.append(frontend_name) %}
 {%   do frontend_section_list.append(request_section_title) %}
 {%   do part_list.append(request_section_title) %}
