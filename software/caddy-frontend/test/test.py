@@ -483,7 +483,7 @@ def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
 
 
 class TestHandler(BaseHTTPRequestHandler):
-  identification = ''
+  identification = None
 
   def do_GET(self):
     timeout = int(self.headers.dict.get('timeout', '0'))
@@ -491,7 +491,8 @@ class TestHandler(BaseHTTPRequestHandler):
     time.sleep(timeout)
     self.send_response(200)
 
-    self.send_header('X-Backend-Identification', self.identification)
+    if self.indentification is not None:
+      self.send_header('X-Backend-Identification', self.identification)
 
     drop_header_list = []
     for header in self.headers.dict.get('x-drop-header', '').split():
