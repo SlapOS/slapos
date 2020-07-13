@@ -1026,7 +1026,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
-        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -1054,7 +1054,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'domain': 'example.com',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1083,7 +1083,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'domain': 'None',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
@@ -1544,7 +1544,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '54',
       'rejected-slave-amount': '0',
@@ -1742,9 +1742,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_url_to_auth_backend(self):
     parameter_dict = self.assertSlaveBase('url-to-auth-backend')
-    # 1. fetch certificate from backend-client-cacucase-url
+    # 1. fetch certificate from backend-client-caucase-url
     master_parameter_dict = self.parseConnectionParameterDict()
-    caucase_url = master_parameter_dict['backend-client-cacucase-url']
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
     ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
     assert ca_certificate.status_code == httplib.OK
     ca_certificate_file = os.path.join(
@@ -1831,9 +1831,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_url_to_auth_backend_not_configured(self):
     parameter_dict = self.assertSlaveBase('url-to-auth-backend-not-configured')
-    # 1. fetch certificate from backend-client-cacucase-url
+    # 1. fetch certificate from backend-client-caucase-url
     master_parameter_dict = self.parseConnectionParameterDict()
-    caucase_url = master_parameter_dict['backend-client-cacucase-url']
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
     ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
     assert ca_certificate.status_code == httplib.OK
     ca_certificate_file = os.path.join(
@@ -1888,26 +1888,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         self.certificate_pem,
         der2pem(result.peercert))
 
-      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-
-      try:
-        j = result.json()
-      except Exception:
-        raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-
-      self.assertEqual(j['Incoming Headers']['timeout'], '10')
-      self.assertFalse('Content-Encoding' in result.headers)
-      self.assertBackendHeaders(
-         j['Incoming Headers'], parameter_dict['domain'])
-
       self.assertEqual(
-        'secured=value;secure, nonsecured=value',
-        result.headers['Set-Cookie']
-      )
-      # proof that proper backend was accessed
-      self.assertEqual(
-        'Auth Backend',
-        result.headers['X-Backend-Identification']
+        result.status_code,
+        httplib.BAD_GATEWAY
       )
     finally:
       self.logger.debug('Stopping process %s' % (server_https_auth_process,))
@@ -2091,6 +2074,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://serveraliaswildcard.example.com',
         'secure_access': 'https://serveraliaswildcard.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2125,6 +2109,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://serveraliasduplicated.example.com',
         'secure_access': 'https://serveraliasduplicated.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2160,6 +2145,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://alias4.example.com',
         'secure_access': 'https://alias4.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2192,6 +2178,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2243,6 +2230,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://sslcacrtonly.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2275,6 +2263,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://sslcacrtgarbage.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2329,6 +2318,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2398,6 +2388,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2425,6 +2416,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2460,6 +2452,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://*.customdomain.example.com',
         'secure_access': 'https://*.customdomain.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2489,6 +2482,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -2761,6 +2755,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3017,6 +3012,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3083,6 +3079,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3121,6 +3118,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://sslproxyverifysslproxycacrtunverified.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3232,6 +3230,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrtunverified.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3331,6 +3330,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrtunverified.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -3539,6 +3539,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4257,6 +4258,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4371,6 +4373,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4391,6 +4394,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2false.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4411,6 +4415,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2true.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4462,6 +4467,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4482,6 +4488,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'secure_access':
         'https://enablehttp2false.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4658,7 +4665,7 @@ class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '2',
@@ -4757,6 +4764,7 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       {
         'domain': 'test.None', 'replication_number': '1',
         'url': 'http://test.None', 'site_url': 'http://test.None',
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'secure_access': 'https://test.None', 'public-ipv4': 'None'},
       parameter_dict
     )
@@ -4834,7 +4842,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '6',
       'rejected-slave-amount': '3',
@@ -4871,6 +4879,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://serveraliassame.example.com',
         'secure_access': 'https://serveraliassame.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4932,6 +4941,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://virtualhostroothttpportunsafe.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4960,6 +4970,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access':
         'https://virtualhostroothttpsportunsafe.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -4990,6 +5001,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5024,6 +5036,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://monitoripv4testunsafe.example.com',
         'secure_access': 'https://monitoripv4testunsafe.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5068,6 +5081,7 @@ class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://monitoripv6testunsafe.example.com',
         'secure_access': 'https://monitoripv6testunsafe.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5139,7 +5153,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '3',
@@ -5168,6 +5182,7 @@ class TestDuplicateSiteKeyProtection(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5221,6 +5236,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5280,6 +5296,7 @@ class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
         'secure_access':
         'https://enablehttp2true.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5311,6 +5328,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'secure_access':
         'https://enablehttp2true.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5331,6 +5349,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'secure_access':
         'https://enablehttp2default.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5391,7 +5410,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5592,7 +5612,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '12',
       'rejected-slave-amount': '0',
@@ -5670,7 +5690,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5697,7 +5718,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5753,6 +5775,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5785,6 +5808,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5843,7 +5867,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5871,7 +5896,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -5929,6 +5955,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5961,6 +5988,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -6038,6 +6066,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': ['ssl_key is obsolete, please use key-upload-url',
                          'ssl_crt is obsolete, please use key-upload-url']
       },
@@ -6067,6 +6096,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -6157,6 +6187,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'secure_access':
         'https://sslcacrtgarbage.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -6188,6 +6219,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
         'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
@@ -6283,7 +6315,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '1',
       'rejected-slave-amount': '0',
@@ -6312,7 +6344,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
@@ -6388,7 +6421,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '2',
       'rejected-slave-amount': '0',
