@@ -269,8 +269,10 @@ caddy_executable = {{ parameter_dict['caddy'] }}
 sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter['configuration.frontend-name'] }}
+backend-client-cacucase-url = {{ slapparameter_dict['backend-client-cacucase-url'] }}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
+    key backend_client_caucase_url :backend-client-cacucase-url
     import urlparse_module urlparse
     key caddy_executable :caddy_executable
     key http_port configuration:plain_http_port
