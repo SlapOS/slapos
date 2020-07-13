@@ -212,7 +212,7 @@
     },
     "authenticate-to-backend": {
       "default": "false",
-      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-cacucase-url'.",
       "enum": [
         "false",
         "true"
