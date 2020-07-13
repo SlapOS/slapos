@@ -73,6 +73,10 @@
     "warning-list": {
       "description": "List of warning found during the request.",
       "type": "array"
+    },
+    "backend-client-cacucase-url": {
+      "description": "URL to caucase used by authentication to the backend.",
+      "type": "string"
     }
   },
   "type": "object"
