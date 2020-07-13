@@ -69,7 +69,7 @@ context =
 {%     endif %}
 {%   endfor %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
-{%   do config_dict.__setitem__('backend-client-cacucase-url', caucase_url) %}
+{%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
 {%   do frontend_list.append(frontend_name) %}
 {%   do frontend_section_list.append(request_section_title) %}
 {%   do part_list.append(request_section_title) %}
@@ -266,7 +266,7 @@ domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
-backend-client-cacucase-url = {{ caucase_url }}
+backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
