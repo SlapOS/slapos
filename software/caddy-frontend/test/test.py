@@ -1026,6 +1026,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'public-ipv4': self._ipv4_address,
+        'backend-client-cacucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
