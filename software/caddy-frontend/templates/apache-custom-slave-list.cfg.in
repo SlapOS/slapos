@@ -110,11 +110,12 @@ create = true
 {%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
 {%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
 {#-   Pass backend timeout values #}
-{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout'] %}
+{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
 {%-     if slave_instance.get(key, '') == '' %}
 {%-       do slave_instance.__setitem__(key, configuration[key]) %}
 {%-     endif %}
 {%-   endfor %}
+{%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
