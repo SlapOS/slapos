@@ -4551,6 +4551,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'replication_number': '1',
         'url': 'http://enablehttp2true.example.com',
         'site_url': 'http://enablehttp2true.example.com',
@@ -4602,6 +4603,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
         'public-ipv4': 'None',
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
