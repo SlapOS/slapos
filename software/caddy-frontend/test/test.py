@@ -282,25 +282,6 @@ print json.dumps(module.extra_config_dict)
 
 
 class TestDataMixin(object):
-  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
-    rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
-
-    try:
-      result = requests.get(rejected_slave_promise_url, verify=False)
-      if result.text == '':
-        result_json = {}
-      else:
-        result_json = result.json()
-      self.assertEqual(
-        parameter_dict['rejected-slave-dict'],
-        result_json
-      )
-    except AssertionError:
-      raise
-    except Exception as e:
-      self.fail(e)
-
   def getTrimmedProcessInfo(self):
     return '\n'.join(sorted([
       '%(group)s:%(name)s %(statename)s' % q for q
@@ -695,6 +676,25 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
 
+  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+    rejected_slave_promise_url = parameter_dict.pop(
+      'rejected-slave-promise-url')
+
+    try:
+      result = requests.get(rejected_slave_promise_url, verify=False)
+      if result.text == '':
+        result_json = {}
+      else:
+        result_json = result.json()
+      self.assertEqual(
+        parameter_dict['rejected-slave-dict'],
+        result_json
+      )
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
+
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
 
@@ -990,10 +990,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
   @classmethod
   def setUpSlaves(cls):
-    cls.slave_connection_parameter_dict_dict = {}
-    # run partition for slaves to be setup
     cls.runComputerPartitionUntil(
       cls.untilSlavePartitionReady)
+    cls.updateSlaveConnectionParameterDictDict()
+
+  @classmethod
+  def updateSlaveConnectionParameterDictDict(cls):
+    cls.slave_connection_parameter_dict_dict = {}
+    # run partition for slaves to be setup
     request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
@@ -1171,11 +1175,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
-      # 'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
-      #   'url': cls.backend_https_url,
-      #   'ssl-proxy-verify': True,
-      #   'ssl_proxy_ca_crt': 'damaged',
-      # },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -3227,15 +3226,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.headers['Location']
     )
 
-  @skip('Not implemented in new test system')
-  def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
-    parameter_dict = self.slave_connection_parameter_dict_dict[
-      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged']
-    self.assertEqual(
-      {'request-error-list': '["ssl_proxy_ca_crt is invalid"]'},
-      parameter_dict
-    )
-
   def test_ssl_proxy_verify_unverified(self):
     parameter_dict = self.assertSlaveBase('ssl-proxy-verify-unverified')
 
@@ -4681,104 +4671,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     )
 
 
-@skip('New test system cannot be used with failing promises')
-class TestMalformedBackenUrlSlave(SlaveHttpFrontendTestCase,
-                                  TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'empty': {
-      },
-      'url': {
-        'url': "https://[fd46::c2ae]:!py!u'123123'",
-      },
-      'https-url': {
-        'https-url': "https://[fd46::c2ae]:!py!u'123123'",
-      }
-    }
-
-  def test_master_partition_state(self):
-    parameter_dict = self.parseConnectionParameterDict()
-    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
-
-    expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      'domain': 'example.com',
-      'accepted-slave-amount': '1',
-      'rejected-slave-amount': '2',
-      'slave-amount': '3',
-      'rejected-slave-dict': {
-        '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
-                       ' invalid'],
-        '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid']
-      }
-    }
-
-    self.assertEqual(
-      expected_parameter_dict,
-      parameter_dict
-    )
-
-  def test_empty(self):
-    parameter_dict = self.parseSlaveParameterDict('empty')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'empty.example.com',
-        'replication_number': '1',
-        'url': 'http://empty.example.com',
-        'site_url': 'http://empty.example.com',
-        'secure_access': 'https://empty.example.com',
-        'public-ipv4': self._ipv4_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-  def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "slave url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
-      },
-      parameter_dict
-    )
-
-  def test_https_url(self):
-    parameter_dict = self.parseSlaveParameterDict('https-url')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "slave https-url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
-      },
-      parameter_dict
-    )
-
-
 @skip('Impossible to instantiate cluster with stopped partition')
 class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -4830,338 +4722,6 @@ class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
       'Listen [%s]:8196' % (self._ipv6_address,) in master_monitor_conf)
     self.assertTrue(
       'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
-
-
-@skip('New test system cannot be used with failing promises')
-class TestSlaveBadParameters(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'mpm-graceful-shutdown-timeout': 2,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'custom_domain-unsafe': {
-        'custom_domain': '${section:option} afterspace\nafternewline',
-      },
-      'server-alias-unsafe': {
-        'server-alias': '${section:option} afterspace',
-      },
-      'server-alias-same': {
-        'url': cls.backend_url,
-        'server-alias': 'serveraliassame.example.com',
-      },
-      'virtualhostroot-http-port-unsafe': {
-        'type': 'zope',
-        'url': cls.backend_url,
-        'virtualhostroot-http-port': '${section:option}',
-      },
-      'virtualhostroot-https-port-unsafe': {
-        'type': 'zope',
-        'url': cls.backend_url,
-        'virtualhostroot-https-port': '${section:option}',
-      },
-      'default-path-unsafe': {
-        'type': 'zope',
-        'url': cls.backend_url,
-        'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
-      },
-      'monitor-ipv4-test-unsafe': {
-        'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
-      },
-      'monitor-ipv6-test-unsafe': {
-        'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
-      },
-      'bad-ciphers': {
-        'ciphers': 'bad ECDHE-ECDSA-AES256-GCM-SHA384 again',
-      }
-    }
-
-  def test_master_partition_state(self):
-    parameter_dict = self.parseConnectionParameterDict()
-    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
-
-    expected_parameter_dict = {
-      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
-      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      'domain': 'example.com',
-      'accepted-slave-amount': '6',
-      'rejected-slave-amount': '3',
-      'slave-amount': '9',
-      'rejected-slave-dict': {
-        '_bad-ciphers': [
-          "Cipher 'bad' is not supported.",
-          "Cipher 'again' is not supported."
-        ],
-        '_custom_domain-unsafe': [
-          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
-        ],
-        '_server-alias-unsafe': [
-          "server-alias '${section:option}' not valid",
-          "server-alias 'afterspace' not valid"
-        ],
-      }
-    }
-
-    self.assertEqual(
-      expected_parameter_dict,
-      parameter_dict
-    )
-
-  def test_server_alias_same(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-same')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'serveraliassame.example.com',
-        'replication_number': '1',
-        'url': 'http://serveraliassame.example.com',
-        'site_url': 'http://serveraliassame.example.com',
-        'secure_access': 'https://serveraliassame.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-  def test_custom_domain_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
-        ]
-      },
-      parameter_dict
-    )
-
-  def test_server_alias_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-unsafe')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "server-alias '${section:option}' not valid", "server-alias "
-          "'afterspace' not valid"]
-      },
-      parameter_dict
-    )
-
-  def test_bad_ciphers(self):
-    parameter_dict = self.parseSlaveParameterDict('bad-ciphers')
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "Cipher 'bad' is not supported.",
-          "Cipher 'again' is not supported."
-        ]
-      },
-      parameter_dict
-    )
-
-  def test_virtualhostroot_http_port_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'virtualhostroot-http-port-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'virtualhostroothttpportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/http//virtualhostroothttpportunsafe'
-      '.example.com:0//VirtualHostRoot/test-path'
-    )
-
-  def test_virtualhostroot_https_port_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict(
-      'virtualhostroot-https-port-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'virtualhostroothttpsportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpsportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
-      '.example.com:0//VirtualHostRoot/test-path'
-    )
-
-  def default_path_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('default-path-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertEqual(
-      {
-        'domain': 'defaultpathunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://defaultpathunsafe.example.com',
-        'site_url': 'http://defaultpathunsafe.example.com',
-        'secure_access': 'https://defaultpathunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(
-      httplib.MOVED_PERMANENTLY,
-      result.status_code
-    )
-
-    self.assertEqual(
-      'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
-      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,),
-      result.headers['Location']
-    )
-
-  def test_monitor_ipv4_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'monitoripv4testunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://monitoripv4testunsafe.example.com',
-        'site_url': 'http://monitoripv4testunsafe.example.com',
-        'secure_access': 'https://monitoripv4testunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
-    # get promise module and check that parameters are ok
-
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'ipv4': 'true',
-        'address': '${section:option}\nafternewline ipv4',
-      }
-    )
-
-  def test_monitor_ipv6_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'monitoripv6testunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://monitoripv6testunsafe.example.com',
-        'site_url': 'http://monitoripv6testunsafe.example.com',
-        'secure_access': 'https://monitoripv6testunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(httplib.NOT_FOUND, result.status_code)
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-    self.assertEqual(httplib.NOT_FOUND, result_http.status_code)
-
-    monitor_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'etc', 'plugin',
-        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
-    # get promise module and check that parameters are ok
-    self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
-      {
-        'frequency': '720',
-        'address': '${section:option}\nafternewline ipv6'
-      }
-    )
 
 
 @skip('New test system cannot be used with failing promises')
@@ -6535,4 +6095,394 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertTrue(
       'ciphers ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256'
       in open(configuration_file).read()
+    )
+
+
+class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': cls._ipv4_address,
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestSlaveRejectReportUnsafeDamaged, cls).setUpClass()
+    cls.fillSlaveParameterDictDict()
+    cls.requestSlaves()
+    try:
+      cls.slap.waitForInstance(
+        max_retry=2  # two runs shall be enough
+      )
+    except Exception:
+      # ignores exceptions, as problems are tested
+      pass
+    cls.updateSlaveConnectionParameterDictDict()
+
+  slave_parameter_dict_dict = {}
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return cls.slave_parameter_dict_dict
+
+  @classmethod
+  def fillSlaveParameterDictDict(cls):
+    cls.slave_parameter_dict_dict = {
+      'url': {
+        'url': "https://[fd46::c2ae]:!py!u'123123'",
+      },
+      'https-url': {
+        'https-url': "https://[fd46::c2ae]:!py!u'123123'",
+      },
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': 'damaged',
+      },
+      'custom_domain-unsafe': {
+        'custom_domain': '${section:option} afterspace\nafternewline',
+      },
+      'server-alias-unsafe': {
+        'server-alias': '${section:option} afterspace',
+      },
+      'server-alias-same': {
+        'url': cls.backend_url,
+        'server-alias': 'serveraliassame.example.com',
+      },
+      'virtualhostroot-http-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-http-port': '${section:option}',
+      },
+      'virtualhostroot-https-port-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'virtualhostroot-https-port': '${section:option}',
+      },
+      'default-path-unsafe': {
+        'type': 'zope',
+        'url': cls.backend_url,
+        'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
+      },
+      'monitor-ipv4-test-unsafe': {
+        'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
+      },
+      'monitor-ipv6-test-unsafe': {
+        'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
+      },
+      'bad-ciphers': {
+        'ciphers': 'bad ECDHE-ECDSA-AES256-GCM-SHA384 again',
+      }
+    }
+
+  def test_master_partition_state(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+
+    expected_parameter_dict = {
+      'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
+      'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      'domain': 'example.com',
+      'accepted-slave-amount': '6',
+      'rejected-slave-amount': '6',
+      'slave-amount': '12',
+      'rejected-slave-dict': {
+        '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
+                       ' invalid'],
+        '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
+        '_ssl-proxy-verify_ssl_proxy_ca_crt_damaged': [
+          'ssl_proxy_ca_crt is invalid'
+        ],
+        '_bad-ciphers': [
+          "Cipher 'bad' is not supported.",
+          "Cipher 'again' is not supported."
+        ],
+        '_custom_domain-unsafe': [
+          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
+        ],
+        '_server-alias-unsafe': [
+          "server-alias '${section:option}' not valid",
+          "server-alias 'afterspace' not valid"
+        ],
+      }
+    }
+
+    self.assertEqual(
+      expected_parameter_dict,
+      parameter_dict
+    )
+
+  def test_url(self):
+    parameter_dict = self.parseSlaveParameterDict('url')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "slave url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
+      },
+      parameter_dict
+    )
+
+  def test_https_url(self):
+    parameter_dict = self.parseSlaveParameterDict('https-url')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "slave https-url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
+      },
+      parameter_dict
+    )
+
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged')
+    self.assertEqual(
+      {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
+      parameter_dict
+    )
+
+  def test_server_alias_same(self):
+    parameter_dict = self.parseSlaveParameterDict('server-alias-same')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'serveraliassame.example.com',
+        'replication_number': '1',
+        'url': 'http://serveraliassame.example.com',
+        'site_url': 'http://serveraliassame.example.com',
+        'secure_access': 'https://serveraliassame.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_custom_domain_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "custom_domain '${section:option} afterspace\\nafternewline' invalid"
+        ]
+      },
+      parameter_dict
+    )
+
+  def test_server_alias_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict('server-alias-unsafe')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "server-alias '${section:option}' not valid", "server-alias "
+          "'afterspace' not valid"]
+      },
+      parameter_dict
+    )
+
+  def test_bad_ciphers(self):
+    parameter_dict = self.parseSlaveParameterDict('bad-ciphers')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "Cipher 'bad' is not supported.",
+          "Cipher 'again' is not supported."
+        ]
+      },
+      parameter_dict
+    )
+
+  def test_virtualhostroot_http_port_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'virtualhostroot-http-port-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'virtualhostroothttpportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpportunsafe.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(httplib.FOUND, result.status_code)
+
+  def test_virtualhostroot_https_port_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'virtualhostroot-https-port-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'virtualhostroothttpsportunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
+        'secure_access':
+        'https://virtualhostroothttpsportunsafe.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
+      '.example.com:0//VirtualHostRoot/test-path'
+    )
+
+  def default_path_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict('default-path-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertEqual(
+      {
+        'domain': 'defaultpathunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://defaultpathunsafe.example.com',
+        'site_url': 'http://defaultpathunsafe.example.com',
+        'secure_access': 'https://defaultpathunsafe.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      httplib.MOVED_PERMANENTLY,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://defaultpathunsafe.example.com:%s/%%24%%7Bsection%%3Aoption%%7D'
+      '%%0An%%22%%0Aewline%%0A%%7D%%0A%%7Dproxy%%0A/slashed' % (HTTPS_PORT,),
+      result.headers['Location']
+    )
+
+  def test_monitor_ipv4_test_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'monitoripv4testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv4testunsafe.example.com',
+        'site_url': 'http://monitoripv4testunsafe.example.com',
+        'secure_access': 'https://monitoripv4testunsafe.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(httplib.FOUND, result_http.status_code)
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'ipv4': 'true',
+        'address': '${section:option}\nafternewline ipv4',
+      }
+    )
+
+  def test_monitor_ipv6_test_unsafe(self):
+    parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'domain': 'monitoripv6testunsafe.example.com',
+        'replication_number': '1',
+        'url': 'http://monitoripv6testunsafe.example.com',
+        'site_url': 'http://monitoripv6testunsafe.example.com',
+        'secure_access': 'https://monitoripv6testunsafe.example.com',
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+    self.assertEqual(httplib.FOUND, result_http.status_code)
+
+    monitor_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'plugin',
+        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
+    # get promise module and check that parameters are ok
+    self.assertEqual(
+      getPluginParameterDict(self.software_path, monitor_file),
+      {
+        'frequency': '720',
+        'address': '${section:option}\nafternewline ipv6'
+      }
     )
