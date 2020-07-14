@@ -4,7 +4,7 @@ Caddy Frontend
 
 Frontend system using Caddy, based on apache-frontend software release, allowing to rewrite and proxy URLs like myinstance.myfrontenddomainname.com to real IP/URL of myinstance.
 
-Caddy Frontend works using the master instance / slave instance design.  It means that a single main instance of Caddy will be used to act as frontend for many slaves.
+Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
 
 Software type
 =============
@@ -21,7 +21,7 @@ About frontend replication
 
 Slaves of the root instance are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the would-be published information to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
 
-These parameters are :
+These parameters are:
 
   * ``-frontend-type`` : the type to deploy frontends with. (default to 2)
   * ``-frontend-quantity`` : The quantity of frontends to request (default to "default")
@@ -30,7 +30,7 @@ These parameters are :
   * ``-frontend-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
-for example::
+For example::
 
   <parameter id="-frontend-quantity">3</parameter>
   <parameter id="-frontend-type">custom-personal</parameter>
@@ -169,24 +169,6 @@ This replaces old request parameters:
 
 (*Note*: They are still supported for backward compatibility, but any value send to the ``key-upload-url`` will supersede information from SlapOS Master.)
 
-
-How to have custom configuration in frontend server - XXX - to be written
-=========================================================================
-
-In your instance directory, you, as sysadmin, can directly edit two
-configuration files that won't be overwritten by SlapOS to customize your
-instance:
-
- * ``$PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.custom.conf``
- * ``$PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.virtualhost.custom.conf``
-
-The first one is included in the end of the main apache configuration file.
-The second one is included in the virtualhost of the main apache configuration file.
-
-SlapOS will just create those two files for you, then completely forget them.
-
-*Note*: make sure that the UNIX user of the instance has read access to those
-files if you edit them.
 
 Instance Parameters
 ===================
