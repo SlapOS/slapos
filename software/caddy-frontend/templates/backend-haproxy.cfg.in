@@ -1,5 +1,4 @@
 global
-  maxconn 4096
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
   master-worker
