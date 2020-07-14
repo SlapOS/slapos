@@ -6065,6 +6065,10 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': 'damaged',
       },
+      'bad-backend': {
+        'url': 'http://1:2:3:4',
+        'https-url': 'http://host.domain:badport',
+      },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
@@ -6133,8 +6137,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '11',
-      'slave-amount': '18',
+      'rejected-slave-amount': '12',
+      'slave-amount': '19',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
@@ -6160,6 +6164,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
           "ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
         '_ssl_key-ssl_crt-unsafe': [
           "slave ssl_key and ssl_crt does not match"],
+        '_bad-backend': [
+          "slave url 'http://1:2:3:4' invalid",
+          "slave https-url 'http://host.domain:badport' invalid"],
       },
       'warning-slave-dict': {
         '_ssl_ca_crt_only': [
@@ -6508,6 +6515,17 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'warning-list': [
           'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url']
+      },
+      parameter_dict
+    )
+
+  def test_bad_backend(self):
+    parameter_dict = self.parseSlaveParameterDict('bad-backend')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "slave url 'http://1:2:3:4' invalid",
+          "slave https-url 'http://host.domain:badport' invalid"],
       },
       parameter_dict
     )
