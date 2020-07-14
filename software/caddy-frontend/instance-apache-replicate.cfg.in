@@ -138,12 +138,12 @@ context =
 {%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
 {%   if slave.get('url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['url']]) == 1 %}
+{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['url']]) == 1 or not validators.url('' ~ slave['url']) %}
 {%       do slave_error_list.append('slave url %r invalid' % (slave['url'],)) %}
 {%     endif %}
 {%   endif %}
 {%   if slave.get('https-url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['https-url']]) == 1 %}
+{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['https-url']]) == 1 or not validators.url('' ~ slave['https-url']) %}
 {%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
 {%     endif %}
 {%   endif %}
