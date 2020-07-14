@@ -710,23 +710,11 @@ cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
 csr = ${backend-client-caucase-updater-csr:csr}
 crl = ${backend-client-login-config:crl}
 
-[backend-haproxy-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = inline:
-  #!/bin/sh
-  ulimit -n $(ulimit -Hn)
-  exec {{ parameter_dict['haproxy_executable'] }} \
-  -f ${backend-haproxy-configuration:file} \
-   "$@"
-rendered = ${directory:bin}/backend-haproxy-wrapper
-mode = 0755
-
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = ${backend-haproxy-wrapper:rendered}
+command-line = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-hash-files = ${backend-haproxy-wrapper:rendered}
 
 [logrotate-entry-backend-haproxy]
 <= logrotate-entry-base
@@ -773,7 +761,7 @@ template = {{ parameter_dict['template_validate_script'] }}
 rendered = ${directory:bin}/backend-haproxy-validate
 mode = 0700
 last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
-validate_command = ${backend-haproxy-wrapper:rendered} -c
+validate_command = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
     key validate_command :validate_command
     key configuration_state_command backend-haproxy-configuration-state-validate:rendered
