@@ -89,6 +89,15 @@ class TestTheia(SlapOSInstanceTestCase):
     # use a large enough terminal so that slapos proxy show table fit in the screen
     process.setwinsize(5000, 5000)
 
+    if self._debug:
+      logger = logging.getLogger('theia-shell')
+      class DebugLogFile:
+        def write(self, msg):
+          logger.info("output from theia-shell: %s", msg)
+        def flush(self):
+          pass
+      process.logfile = DebugLogFile()
+
     process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
     process.expect_exact('Standalone SlapOS for computer `local` activated')
 
