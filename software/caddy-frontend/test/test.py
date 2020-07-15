@@ -6020,6 +6020,10 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://1:2:3:4',
         'https-url': 'http://host.domain:badport',
       },
+      'empty-backend': {
+        'url': '',
+        'https-url': '',
+      },
       'custom_domain-unsafe': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
@@ -6088,8 +6092,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '12',
-      'slave-amount': '19',
+      'rejected-slave-amount': '13',
+      'slave-amount': '20',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
@@ -6118,6 +6122,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         '_bad-backend': [
           "slave url 'http://1:2:3:4' invalid",
           "slave https-url 'http://host.domain:badport' invalid"],
+        '_empty-backend': [
+          "slave url '' invalid",
+          "slave https-url '' invalid"],
       },
       'warning-slave-dict': {
         '_ssl_ca_crt_only': [
@@ -6477,6 +6484,17 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'request-error-list': [
           "slave url 'http://1:2:3:4' invalid",
           "slave https-url 'http://host.domain:badport' invalid"],
+      },
+      parameter_dict
+    )
+
+  def test_empty_backend(self):
+    parameter_dict = self.parseSlaveParameterDict('empty-backend')
+    self.assertEqual(
+      {
+        'request-error-list': [
+          "slave url '' invalid",
+          "slave https-url '' invalid"],
       },
       parameter_dict
     )
