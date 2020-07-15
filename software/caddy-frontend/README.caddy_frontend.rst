@@ -475,3 +475,19 @@ Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
 
 X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+
+Automatic Internal Caucase CSR
+------------------------------
+
+This is a special internal system used to replace human to sign CSRs against internal caucases. It's used to sign certificates for Kedifa (``automatic-internal-kedifa-caucase-csr``) and Backend Client (``automatic-internal-backend-client-caucase-csr``).
+
+As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions. One way would be to use human, which would visit instantiated instance on a partition (eg. by sshing into it), but this is impractical and quite often impossible. So an automatic way to boostrap trust is done.
+
+Having in mind such structure:
+
+ * instance with caucase: ``caucase-instance``
+ * N instances which want to get their CSR signed: ``csr-instance``
+
+On ``caucase-instance`` there is automatic sign of user certificate, which allows to sign service certificates.
+
+The ``csr-instance`` creates CSR, extracts the ID of the CSR, exposes it via HTTP and ask caucase on ``caucase-instance`` to sign it. The ``caucase-instance`` checks that exposed CSR id matches the one send to caucase and by using created user to signs it.
