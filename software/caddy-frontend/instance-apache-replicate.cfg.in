@@ -137,16 +137,17 @@ context =
 {%     endfor %}
 {%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
-{%   if slave.get('url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['url']]) == 1 or not validators.url('' ~ slave['url']) %}
-{%       do slave_error_list.append('slave url %r invalid' % (slave['url'],)) %}
+{%   for url_key in ['url', 'https-url'] %}
+{%     if slave.get(url_key) %}
+{%      set url = (slave[url_key] or '').strip() %}
+{%       if url != slave[url_key] %}
+{%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
+{%       endif %}
+{%       if subprocess_module.call([caddy_backend_url_validator, url]) == 1 or not validators.url(url) %}
+{%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
+{%       endif %}
 {%     endif %}
-{%   endif %}
-{%   if slave.get('https-url') %}
-{%     if subprocess_module.call([caddy_backend_url_validator, '' ~ slave['https-url']]) == 1 or not validators.url('' ~ slave['https-url']) %}
-{%       do slave_error_list.append('slave https-url %r invalid' % (slave['https-url'],)) %}
-{%     endif %}
-{%   endif %}
+{%   endfor %}
 {%   if 'ssl_proxy_ca_crt' in slave %}
 {%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
 {%     set check_popen = popen([parameter_dict['openssl'], 'x509', '-noout']) %}

@@ -1127,7 +1127,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'empty': {
       },
       'Url': {
-        'url': cls.backend_url,
+        # make URL "incorrect", with whitespace, but it shall be correctly handled
+        'url': ' ' + cls.backend_url + ' ',
         # authenticating to backend which does not expect it shall be no-op
         'authenticate-to-backend': True,
       },
