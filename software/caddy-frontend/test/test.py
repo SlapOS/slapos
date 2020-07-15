@@ -1127,7 +1127,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'empty': {
       },
       'Url': {
-        'url': cls.backend_url,
+        # make URL "incorrect", with whitespace, nevertheless it shall be
+        # correctly handled
+        'url': ' ' + cls.backend_url + ' ',
         # authenticating to backend which does not expect it shall be no-op
         'authenticate-to-backend': True,
       },
@@ -1558,7 +1560,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'rejected-slave-amount': '0',
       'slave-amount': '55',
       'rejected-slave-dict': {
-      }
+      },
+      'warning-slave-dict': {
+        '_Url': [
+          "slave url ' %(backend)s ' has been converted to '%(backend)s'" % {
+            'backend': self.backend_url}]}
     }
 
     self.assertEqual(
