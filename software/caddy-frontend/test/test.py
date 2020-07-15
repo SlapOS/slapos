@@ -1128,6 +1128,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'Url': {
         'url': cls.backend_url,
+        # authenticating to backend which does not expect it shall be no-op
+        'authenticate-to-backend': True,
       },
       'url-to-auth-backend': {
         # in here use reserved port for the backend, which is going to be
