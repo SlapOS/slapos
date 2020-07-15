@@ -442,6 +442,18 @@ Then specify in the master instance parameters:
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
 
+Authentication to the backend
+=============================
+
+The cluster generates CA served by caucase, available with ``backend-client-caucase-url`` return parameter.
+
+Then, each slave configured with ``authenticate-to-backend`` to true, will use a certificate signed by this CA while accessing https backend.
+
+This allows backends to:
+
+ * restrict access only from some frontend clusters
+ * trust values (like ``X-Forwarded-For``) sent by the frontend
+
 Technical notes
 ===============
 
@@ -454,11 +466,22 @@ Instantiating caddy-frontend results with a cluster in various partitions:
  * kedifa (contains kedifa server)
  * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
 
-So it means sites are served in `caddy-frontend-N` partition, and this partition is structured as:
+It means sites are served in ``caddy-frontend-N`` partition, and this partition is structured as:
 
- * Caddy serving the browser
- * (optional) Apache Traffic Server for caching
- * Caddy connected to the backend
+ * Caddy serving the browser [client-facing-caddy]
+ * (optional) Apache Traffic Server for caching [ats]
+ * Haproxy as a way to communicate to the backend [backend-facing-haproxy]
+ * some other additional tools (6tunnel, monitor, etc)
+
+In case of slaves without cache (``enable_cache = False``) the request will travel as follows::
+
+  client-facing-caddy --> backend-facing-haproxy --> backend
+
+In case of slaves using cache (``enable_cache = True``) the request will travel as follows::
+
+  client-facing-caddy --> ats --> backend-facing-haproxy --> backend
+
+Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from Caddy and allows future developments like client SSL certificates to the backend or even health checks.
 
 Kedifa implementation
 ---------------------
@@ -475,3 +498,32 @@ Support for X-Real-Ip and X-Forwarded-For
 -----------------------------------------
 
 X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+
+Automatic Internal Caucase CSR
+------------------------------
+
+This is a special internal system used to replace human to sign CSRs against internal caucases. It's used to sign certificates for Kedifa (``automatic-internal-kedifa-caucase-csr``) and Backend Client (``automatic-internal-backend-client-caucase-csr``).
+
+As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions.
+
+There are two options to achieve it:
+
+ * use default, automatic bootstrap, which leads to some issues, described later
+ * switch to manual bootstrap, which requires human to create and manage user certificate (with caucase updater) and then sign new frontend nodes appearing in the system
+
+The issues during automatic bootstrap are:
+
+ * rouge or hacked SlapOS Master can result with adding rouge nodes to the cluster, which will be trusted, so it will be possible to fetch all certificates and keys from Kedifa or to login to backends
+ * when new node is added there is short window, when rouge person is able to trick automatic signing, and have it's own node added
+
+In both cases promises will fail on node which is not able to get signed, but in case of Kedifa the damage already happen (certificates and keys are compromised). So in case if cluster administrator wants to stay on the safe side, both automatic bootstraps shall be turned off.
+ One way would be to use human, but this is impractical and quite often impossible. So an automatic way to boostrap trust is done. Of course, it can be disabled by setting one of the above switches to false.
+
+Having in mind such structure:
+
+ * instance with caucase: ``caucase-instance``
+ * N instances which want to get their CSR signed: ``csr-instance``
+
+On ``caucase-instance`` there is automatic sign of user certificate, which allows to sign service certificates.
+
+The ``csr-instance`` creates CSR, extracts the ID of the CSR, exposes it via HTTP and ask caucase on ``caucase-instance`` to sign it. The ``caucase-instance`` checks that exposed CSR id matches the one send to caucase and by using created user to signs it.
