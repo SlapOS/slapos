@@ -504,7 +504,20 @@ Automatic Internal Caucase CSR
 
 This is a special internal system used to replace human to sign CSRs against internal caucases. It's used to sign certificates for Kedifa (``automatic-internal-kedifa-caucase-csr``) and Backend Client (``automatic-internal-backend-client-caucase-csr``).
 
-As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions. One way would be to use human, but this is impractical and quite often impossible. So an automatic way to boostrap trust is done. Of course, it can be disabled by setting one of the above switches to false.
+As cluster is composed on many instances, which are landing on separate partitions, some way is needed to bootstrap trust between the partitions.
+
+There are two options to achieve it:
+
+ * use default, automatic bootstrap, which leads to some issues, described later
+ * switch to manual bootstrap, which requires human to create and manage user certificate (with caucase updater) and then sign new frontend nodes appearing in the system
+
+The issues during automatic bootstrap are:
+
+ * rouge or hacked SlapOS Master can result with adding rouge nodes to the cluster, which will be trusted, so it will be possible to fetch all certificates and keys from Kedifa or to login to backends
+ * when new node is added there is short window, when rouge person is able to trick automatic signing, and have it's own node added
+
+In both cases promises will fail on node which is not able to get signed, but in case of Kedifa the damage already happen (certificates and keys are compromised). So in case if cluster administrator wants to stay on the safe side, both automatic bootstraps shall be turned off.
+ One way would be to use human, but this is impractical and quite often impossible. So an automatic way to boostrap trust is done. Of course, it can be disabled by setting one of the above switches to false.
 
 Having in mind such structure:
 
