@@ -1116,6 +1116,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
       },
+      'server-alias-empty': {
+        'url': cls.backend_url,
+        'server-alias': '',
+      },
       'server-alias-wildcard': {
         'url': cls.backend_url,
         'server-alias': '*.alias1.example.com',
@@ -1510,9 +1514,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '51',
+      'accepted-slave-amount': '52',
       'rejected-slave-amount': '0',
-      'slave-amount': '51',
+      'slave-amount': '52',
       'rejected-slave-dict': {
       }
     }
@@ -1864,6 +1868,38 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
+
+  def test_server_alias_empty(self):
+    parameter_dict = self.assertSlaveBase('server-alias-empty')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+
+    self.assertEqual(j['Incoming Headers']['timeout'], '10')
+    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
+
+    self.assertEqual(
+      'secured=value;secure, nonsecured=value',
+      result.headers['Set-Cookie']
+    )
 
   def test_server_alias_wildcard(self):
     parameter_dict = self.parseSlaveParameterDict('server-alias-wildcard')
