@@ -29,6 +29,7 @@ from __future__ import unicode_literals
 import os
 import textwrap
 import logging
+import subprocess
 import tempfile
 import time
 from six.moves.urllib.parse import urlparse, urljoin
@@ -131,3 +132,13 @@ class TestTheia(SlapOSInstanceTestCase):
 
     process.terminate()
     process.wait()
+
+  def test_theia_shell_execute_tasks(self):
+    # shell needs to understand -c "comamnd" arguments for theia tasks feature
+    test_file = '{}/test file'.format(self.computer_partition_root_path)
+    subprocess.check_call([
+        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
+        '-c',
+        'touch "{}"'.format(test_file)
+    ])
+    self.assertTrue(os.path.exists(test_file))
