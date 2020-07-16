@@ -112,7 +112,7 @@ recipe = collective.recipe.template
 input = inline: #!/bin/sh
   EXIT_CODE_FILE="${importer:restore-exit-code-file}"
   RECENT_EXIT_CODE_FILE=$(find ${directory:srv} -maxdepth 1 -name "${importer:restore-exit-code-file-basename}" -mtime -2)
-  RESILIENT_LOG_URL=${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
+  RESILIENT_LOG_URL=${monitor-publish-parameters:monitor-base-url}/share/private/log/${importer:resilient-log-basename}
   if [ ! -f "$EXIT_CODE_FILE" ]; then
     exit 0;
   else
