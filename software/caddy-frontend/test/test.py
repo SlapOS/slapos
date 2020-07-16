@@ -6071,6 +6071,11 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': 'damaged',
       },
+      'ssl-proxy-verify_ssl_proxy_ca_crt_empty': {
+        'url': cls.backend_https_url,
+        'ssl-proxy-verify': True,
+        'ssl_proxy_ca_crt': '',
+      },
       'bad-backend': {
         'url': 'http://1:2:3:4',
         'https-url': 'http://host.domain:badport',
@@ -6147,13 +6152,16 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '13',
-      'slave-amount': '20',
+      'rejected-slave-amount': '14',
+      'slave-amount': '21',
       'rejected-slave-dict': {
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
         '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
         '_ssl-proxy-verify_ssl_proxy_ca_crt_damaged': [
+          'ssl_proxy_ca_crt is invalid'
+        ],
+        '_ssl-proxy-verify_ssl_proxy_ca_crt_empty': [
           'ssl_proxy_ca_crt is invalid'
         ],
         '_bad-ciphers': [
@@ -6217,6 +6225,14 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
     parameter_dict = self.parseSlaveParameterDict(
       'ssl-proxy-verify_ssl_proxy_ca_crt_damaged')
+    self.assertEqual(
+      {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
+      parameter_dict
+    )
+
+  def test_ssl_proxy_verify_ssl_proxy_ca_crt_empty(self):
+    parameter_dict = self.parseSlaveParameterDict(
+      'ssl-proxy-verify_ssl_proxy_ca_crt_empty')
     self.assertEqual(
       {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
       parameter_dict
