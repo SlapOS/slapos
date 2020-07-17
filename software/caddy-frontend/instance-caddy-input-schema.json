@@ -66,16 +66,16 @@
       "title": "Test Verification URL",
       "type": "string"
     },
-    "proxy-try-duration": {
+    "backend-connect-timeout": {
       "default": 5,
-      "description": "A time during which Caddy will try to establish connection with a backend. Setting it to 0 will result with immediate return of 502 EOF error to the browser, even if it would be possible to (re)connect to the backend during few moments. More info in https://caddyserver.com/docs/proxy try_durtion.",
-      "title": "Duration in seconds of trying a backend",
+      "description": "Time in seconds for establishing connection to the backend.",
+      "title": "Timeout for backend connection (seconds)",
       "type": "integer"
     },
-    "proxy-try-interval": {
-      "default": 250,
-      "description": "How often Caddy will try to establish connection with a backend during proxy-try-duration. More info in https://caddyserver.com/docs/proxy try_interval",
-      "title": "Interval in milliseconds of tries during proxy-try-duration",
+    "backend-connect-retries": {
+      "default": 3,
+      "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "title": "Amount of retries to connect to the backend.",
       "type": "integer"
     },
     "automatic-internal-kedifa-caucase-csr": {
@@ -88,6 +88,16 @@
       "title": "Automatic Internal KeDiFa's Caucase CSR",
       "type": "string"
     },
+    "automatic-internal-backend-client-caucase-csr": {
+      "default": "true",
+      "description": "Automatically signs CSRs sent to Backend Client's caucase, based on csr_id and matching certificate.",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "title": "Automatic Internal Backend Client's Caucase CSR",
+      "type": "string"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
@@ -98,6 +108,16 @@
       "description": "Timeout for HTTP requests.",
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
+    },
+    "authenticate-to-backend": {
+      "default": "false",
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
