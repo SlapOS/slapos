@@ -43,7 +43,7 @@ def updateMysql(mysql_upgrade_binary, mysql_binary, mysql_script_file):
         break
       print 'SlapOS initialisation script succesfully applied on database.'
       return
-    sleep = max(sleep+1, 30)
+    sleep = min(sleep+1, 30)
     print 'Sleeping for %ss and retrying' % sleep
     sys.stdout.flush()
     sys.stderr.flush()
