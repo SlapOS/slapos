@@ -46,6 +46,9 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestTheia(SlapOSInstanceTestCase):
   __partition_reference__ = 'T' # for sockets in included slapos
+  _save_instance_file_pattern_list  = SlapOSInstanceTestCase._save_instance_file_pattern_list + (
+      'srv/slapos/',
+  )
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
