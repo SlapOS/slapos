@@ -1,6 +1,6 @@
 module(
   load="imuxsock"
-  SysSock.Name="{{ socket }}")
+  SysSock.Name="{{ configuration['log-socket'] }}")
 
 # Use traditional timestamp format.
 # To enable high precision timestamps, comment out the following line.
@@ -10,6 +10,16 @@ $FileCreateMode 0600
 $DirCreateMode 0700
 $Umask 0022
 
-$WorkDirectory {{ spool_directory }}
+$WorkDirectory {{ configuration['spool-directory'] }}
 
-*.* {{ log_file }}
+{%- for slave_instance in backend_slave_list %}
+{#-   matching the way how haproxy emits information regarding the backend #}
+{%-   set match = "backend " ~ slave_instance['slave_reference'] ~ "-http" %}
+:msg, contains, "{{ match }}"
+*.* {{ slave_instance['backend_log'] }}
+{#- after emitting, discard the message, especially to clean up catch-all filter #}
+:msg, contains, "{{ match}}" ~
+{% endfor %}
+
+{#- emit all not catched messages to full log file #}
+*.* {{ configuration['log-file'] }}
