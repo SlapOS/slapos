@@ -711,6 +711,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
+    self.assertEqual(
+      httplib.OK,
+      requests.get(url + 'access.log', verify=False).status_code
+    )
+    self.assertEqual(
+      httplib.OK,
+      requests.get(url + 'error.log', verify=False).status_code
+    )
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
