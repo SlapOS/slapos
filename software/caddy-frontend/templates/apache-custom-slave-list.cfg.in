@@ -156,7 +156,8 @@ backup = {{ slave_log_folder }}
 [{{slave_ln_section}}]
 recipe = plone.recipe.command
 stop-on-error = false
-command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log
+update-command = ${:command}
+command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log
 
 {#-   Set password for slave #}
 
