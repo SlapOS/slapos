@@ -157,7 +157,7 @@ context =
 template-empty = {{ parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
 template-backend-haproxy-configuration = {{ parameter_dict['template_backend_haproxy_configuration'] }}
-template-rsyslogd-conf = {{ parameter_dict['template_rsyslogd_conf'] }}
+template-backend-haproxy-rsyslogd-conf = {{ parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
 caddy-location = {{ parameter_dict['caddy_location'] }}
 
 [kedifa-login-config]
@@ -312,7 +312,9 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
+    key template_backend_haproxy_rsyslogd_configuration software-release-path:template-backend-haproxy-rsyslogd-conf
     section backend_haproxy_configuration backend-haproxy-configuration
+    section backend_haproxy_rsyslogd_configuration backend-haproxy-rsyslogd-configuration
 ## full configuration
     section configuration configuration
 
@@ -716,12 +718,29 @@ command-line = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-c
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
+[backend-haproxy-rsyslogd-lazy-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
+rendered = ${directory:bin}/backend-haproxy-rsyslogd-lazy-graceful
+mode = 0700
+pid-file = ${directory:run}/backend-haproxy-rsyslogd-lazy-graceful.pid
+wait_time = 60
+extra-context =
+    key pid_file :pid-file
+    key wait_time :wait_time
+    key lazy_command backend-haproxy-rsyslogd-configuration:graceful-command
+
 [logrotate-entry-backend-haproxy]
 <= logrotate-entry-base
 name = backend-haproxy
 log = ${backend-haproxy-rsyslogd-configuration:log-file}
 rotate-num = 30
-post = kill -HUP $(cat ${backend-haproxy-rsyslogd-configuration:pid-file})
+# Note: Slaves do not define their own reload, as this would be repeated,
+#       because sharedscripts work per entry, and each slave needs its own
+#       olddir
+#       Here we trust that there will be something to be rotated with error
+#       or access log, and that this will trigger postrotate script.
+post = ${backend-haproxy-rsyslogd-lazy-graceful:rendered} &
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
@@ -767,18 +786,6 @@ extra-context =
     key configuration_state_command backend-haproxy-configuration-state-validate:rendered
     key last_state_file :last_state_file
 
-[backend-haproxy-lazy-graceful]
-< = jinja2-template-base
-template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
-rendered = ${directory:bin}/backend-haproxy-lazy-graceful
-mode = 0700
-pid-file = ${directory:run}/backend-haproxy-lazy-graceful.pid
-wait_time = 60
-extra-context =
-    key pid_file :pid-file
-    key wait_time :wait_time
-    key lazy_command backend-haproxy-configuration:graceful-command
-
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
 module = validate_frontend_configuration
@@ -797,27 +804,25 @@ context =
     key content :content
 
 [backend-haproxy-rsyslogd-configuration]
-<= jinja2-template-base
-template = {{ parameter_dict['template_rsyslogd_conf'] }}
-rendered = ${directory:etc}/backend-haproxy-rsyslogd.conf
-# Note: log-socket shall be backend-haproxy-rsyslogd.sock to refer the part name,
-#       but it results with socket path limit
+file = ${directory:etc}/backend-haproxy-rsyslogd.conf
 log-socket = ${directory:run}/bhlog.sck
 log-file = ${directory:log}/backend-haproxy.log
 pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
-extra-context =
-  key socket :log-socket
-  key log_file :log-file
-  key spool_directory directory:backend-haproxy-rsyslogd-spool
+spool-directory = ${directory:backend-haproxy-rsyslogd-spool}
+graceful-command = kill -HUP $(cat ${:pid-file})
 
 [backend-haproxy-rsyslogd]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:rendered}
+command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+# Unfortunately there is no way to reload rsyslogd configuration without
+# restarting it, but anyway the configuration is already dynamic, so it does
+# not have to be reloaded so often (eg. adding/removing/updating slave does
+# not impact the configuration), so that's why adding configuration file
+# to the hash is good
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg ${backend-haproxy-rsyslogd-configuration:file}
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
-
 #######
 # Monitoring sections
 #

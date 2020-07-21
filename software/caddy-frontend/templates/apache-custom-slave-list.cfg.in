@@ -119,8 +119,10 @@ create = true
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([caddy_log_directory, '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
+{%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
 {#-   Add slave log directory to the slave log access dict #}
 {%-   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
 {%-   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
@@ -148,7 +150,7 @@ create = true
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
+log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}} {{slave_parameter_dict.get('backend_log')}}
 backup = {{ slave_log_folder }}
 
 {#-   integrate current logs inside #}
@@ -157,7 +159,7 @@ backup = {{ slave_log_folder }}
 recipe = plone.recipe.command
 stop-on-error = false
 update-command = ${:command}
-command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log
+command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} {{ slave_log_folder }}/backend.log
 
 {#-   Set password for slave #}
 
@@ -408,6 +410,21 @@ backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
 certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
 
+[backend-haproxy-rsyslogd-configuration]
+<= jinja2-template-base
+template = {{ template_backend_haproxy_rsyslogd_configuration }}
+rendered = ${backend-haproxy-rsyslogd-config:file}
+extra-context =
+  section configuration backend-haproxy-rsyslogd-config
+
+[backend-haproxy-rsyslogd-config]
+file = {{ backend_haproxy_rsyslogd_configuration['file'] }}
+pid-file = {{ backend_haproxy_rsyslogd_configuration['pid-file'] }}
+log-socket = {{ backend_haproxy_rsyslogd_configuration['log-socket'] }}
+log-file = {{ backend_haproxy_rsyslogd_configuration['log-file'] }}
+spool-directory = {{ backend_haproxy_rsyslogd_configuration['spool-directory'] }}
+caddy-log-directory = {{ caddy_log_directory }}
+
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command
 
@@ -437,6 +454,7 @@ parts +=
     kedifa-updater
     kedifa-updater-run
     backend-haproxy-configuration
+    backend-haproxy-rsyslogd-configuration
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
