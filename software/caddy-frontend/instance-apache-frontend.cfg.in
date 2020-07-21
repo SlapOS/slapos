@@ -312,7 +312,9 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
+    key template_backend_haproxy_rsyslogd_configuration software-release-path:template-rsyslogd-conf
     section backend_haproxy_configuration backend-haproxy-configuration
+    section backend_haproxy_rsyslogd_configuration backend-haproxy-rsyslogd-configuration
 ## full configuration
     section configuration configuration
 
@@ -797,24 +799,19 @@ context =
     key content :content
 
 [backend-haproxy-rsyslogd-configuration]
-<= jinja2-template-base
-template = {{ parameter_dict['template_rsyslogd_conf'] }}
-rendered = ${directory:etc}/backend-haproxy-rsyslogd.conf
-# Note: log-socket shall be backend-haproxy-rsyslogd.sock to refer the part name,
-#       but it results with socket path limit
+file = ${directory:etc}/backend-haproxy-rsyslogd.conf
 log-socket = ${directory:run}/bhlog.sck
 log-file = ${directory:log}/backend-haproxy.log
 pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
-extra-context =
-  key socket :log-socket
-  key log_file :log-file
-  key spool_directory directory:backend-haproxy-rsyslogd-spool
+spool-directory = ${directory:backend-haproxy-rsyslogd-spool}
 
 [backend-haproxy-rsyslogd]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:rendered}
+command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+# XXX: NOT FOR MERGE the hash-files here seems possibly bad idea...
+hash-files = ${backend-haproxy-rsyslogd-configuration:file}
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
 
