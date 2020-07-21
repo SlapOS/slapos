@@ -719,6 +719,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       httplib.OK,
       requests.get(url + 'error.log', verify=False).status_code
     )
+    # assert only for few tests, as backend log is not available for many of
+    # them, as it's created on the fly
+    for test_name in ['test_url', 'test_auth_to_backend', 'test_compressed_result']:
+      if self.id().endswith(test_name):
+        self.assertEqual(
+          httplib.OK,
+          requests.get(url + 'backend.log', verify=False).status_code
+        )
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
@@ -1625,20 +1633,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
-    # check that log file contains verbose log
-    log_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd', '_empty_access_log'
-      ))[0]
-
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
-                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path HTTP\/1.1" \d{3} \d+ "-" '\
-                 r'"python-requests.*" \d+'
-
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
     self.assertEqual(
@@ -1736,6 +1730,39 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'secured=value;secure, nonsecured=value',
       result.headers['Set-Cookie']
     )
+
+    # check access log
+    log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_access_log'
+      ))[0]
+
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
+                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
+                 r'"GET \/test-path\/deep\/..\/.\/deeper HTTP\/1.1" \d{3} ' \
+                 r'\d+ "-" "python-requests.*" \d+'
+
+    self.assertRegexpMatches(
+      open(log_file, 'r').readlines()[-1],
+      log_regexp)
+
+    # check backend log
+    log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_backend_log'
+      ))[0]
+
+    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ ' \
+                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] ' \
+                 r'http-backend _Url-http\/backend ' \
+                 r'\d+/\d+\/\d+\/\d+\/\d+ ' \
+                 r'200 \d+ - - ---- ' \
+                 r'\d\/\d\/\d\/\d\/\d \d\/\d ' \
+                 r'"GET /test-path/deeper HTTP/1.1"'
+
+    self.assertRegexpMatches(
+      open(log_file, 'r').readlines()[-1],
+      log_regexp)
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
