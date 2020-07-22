@@ -816,7 +816,7 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-depends = ${backend-haproxy-rsyslod-graceful:rendered}
+depends = ${backend-haproxy-rsyslogd-graceful:rendered}
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
 
