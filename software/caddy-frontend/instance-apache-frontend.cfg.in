@@ -718,12 +718,29 @@ command-line = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-c
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
+[backend-haproxy-rsyslogd-lazy-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
+rendered = ${directory:bin}/backend-haproxy-rsyslogd-lazy-graceful
+mode = 0700
+pid-file = ${directory:run}/backend-haproxy-rsyslogd-lazy-graceful.pid
+wait_time = 60
+extra-context =
+    key pid_file :pid-file
+    key wait_time :wait_time
+    key lazy_command backend-haproxy-rsyslogd-configuration:graceful-command
+
 [logrotate-entry-backend-haproxy]
 <= logrotate-entry-base
 name = backend-haproxy
 log = ${backend-haproxy-rsyslogd-configuration:log-file}
 rotate-num = 30
-post = kill -HUP $(cat ${backend-haproxy-rsyslogd-configuration:pid-file})
+# Note: Slaves do not define their own reload, as this would be repeated,
+#       because sharedscripts work per entry, and each slave needs its own
+#       olddir
+#       Here we trust that there will be something to be rotated with error
+#       or access log, and that this will trigger postrotate script.
+post = ${backend-haproxy-rsyslogd-lazy-graceful:rendered} &
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
@@ -768,18 +785,6 @@ extra-context =
     key validate_command :validate_command
     key configuration_state_command backend-haproxy-configuration-state-validate:rendered
     key last_state_file :last_state_file
-
-[backend-haproxy-lazy-graceful]
-< = jinja2-template-base
-template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
-rendered = ${directory:bin}/backend-haproxy-lazy-graceful
-mode = 0700
-pid-file = ${directory:run}/backend-haproxy-lazy-graceful.pid
-wait_time = 60
-extra-context =
-    key pid_file :pid-file
-    key wait_time :wait_time
-    key lazy_command backend-haproxy-configuration:graceful-command
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
