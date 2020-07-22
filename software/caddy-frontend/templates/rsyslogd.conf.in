@@ -2,9 +2,10 @@ module(
   load="imuxsock"
   SysSock.Name="{{ socket }}")
 
-# Use traditional timestamp format.
-# To enable high precision timestamps, comment out the following line.
-$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+# Just simply output the raw line without any additional information, as
+# haproxy emits enough information by itself
+$template rawoutput,"%msg%\n"
+$ActionFileDefaultTemplate rowaoutput
 
 $FileCreateMode 0600
 $DirCreateMode 0700
