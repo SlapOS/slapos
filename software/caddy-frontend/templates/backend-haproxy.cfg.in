@@ -13,8 +13,6 @@ defaults
   timeout client {{ configuration['request-timeout'] }}s
   timeout connect {{ configuration['backend-connect-timeout'] }}s
   retries {{ configuration['backend-connect-retries'] }}
-  # tentative below https://cbonte.github.io/haproxy-dconv/2.0/configuration.html#option%20httpclose
-  option httpclose
 
 {%- macro frontend_entry(slave_instance, scheme) %}
 {%-   set host_list = (slave_instance.get('server-alias') or  '').split() %}
