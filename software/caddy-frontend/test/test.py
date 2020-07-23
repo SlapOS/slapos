@@ -711,6 +711,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
+    self.fail('Check that links are correctly generated in srv/backup/logrotate/XX/XX')
 
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
