@@ -230,7 +230,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 <= logrotate-entry-base
 name = kedifa
 log = ${kedifa-config:logfile}
-rotate-num = 30
+rotate-num = {{ instance_parameter['configuration.rotate-num'] | int }}
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
