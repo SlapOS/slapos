@@ -297,6 +297,7 @@ extra-context =
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key frontend_graceful_reload caddy-configuration:frontend-graceful-command
     section frontend_configuration frontend-configuration
+    key log_access_hostname log-access-frontend:connection-domain
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key bin_directory :bin_directory
@@ -891,6 +892,15 @@ mode = 0644
 extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
+
+[log-access-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Log Access Frontend For {{ instance_parameter['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+config-url = https://[${frontend-configuration:caddy-ipv6}]:${frontend-configuration:caddy-https-port}
+config-https-only = true
+return = domain secure_access
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
