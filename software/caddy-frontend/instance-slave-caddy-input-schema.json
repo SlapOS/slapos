@@ -195,9 +195,33 @@
       "title": "type:zope virtualhostroot-https-port",
       "type": "integer"
     },
+    "backend-connect-timeout": {
+      "description": "Time in seconds for establishing connection to the backend.",
+      "title": "Timeout for backend connection (seconds)",
+      "type": "integer"
+    },
+    "backend-connect-retries": {
+      "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "title": "Amount of retries to connect to the backend.",
+      "type": "integer"
+    },
+    "request-timeout": {
+      "description": "Timeout for HTTP requests.",
+      "title": "HTTP Request timeout in seconds",
+      "type": "integer"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
+      "type": "string"
+    },
+    "authenticate-to-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
       "type": "string"
     }
   },

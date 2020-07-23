@@ -10,10 +10,10 @@ if [ -f $LAST_STATE_FILE ] ; then
   old_found=$(find $LAST_STATE_FILE -mmin +120 | wc -l)
 fi
 
-if [ "$old_found" -eq 1 ] || {{ caddy_configuration_state }} ; then
+if [ "$old_found" -eq 1 ] || {{ configuration_state_command }} ; then
   # do not catch errors during validation
   set +e
-  {{ wrapper }} -validate
+  {{ validate_command }}
   echo $? > $LAST_STATE_FILE
   set -e
 fi

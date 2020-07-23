@@ -121,7 +121,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:wrapper-path} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
+  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:rendered} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
@@ -132,12 +132,18 @@ hash-existing-files =
   ${theia-wrapper:rendered}
 
 [theia-shell]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
-# reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-# activate slapos configuration
-command-line =
-  ${bash:location}/bin/bash -c ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash"
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+template = inline:
+  #!${python:location}/bin/python
+  import sys
+  import os
+  args = sys.argv[1:]
+  # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
+  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
+  os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
+
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -147,7 +153,16 @@ mode = 0700
 template =
   inline:#!/bin/sh
   export PATH=${buildout:bin-directory}:$PATH
-  ${slapos-standalone:script-path} $${directory:slapos} $${:ipv4} $${:ipv6} $${:port}
+  ${slapos-standalone:script-path} \
+      $${directory:slapos} \
+      $${:ipv4} \
+      $${:ipv6} \
+      $${:port} \
+      $${slap-connection:server-url} \
+      $${slap-connection:computer-id} \
+      $${slap-connection:partition-id} \
+      --key='$${slap-connection:key-file}' \
+      --cert='$${slap-connection:cert-file}'
   export SLAPOS_CONFIGURATION=$${directory:slapos}/etc/slapos.cfg
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
 
