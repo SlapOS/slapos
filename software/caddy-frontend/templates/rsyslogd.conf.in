@@ -5,7 +5,7 @@ module(
 # Just simply output the raw line without any additional information, as
 # haproxy emits enough information by itself
 $template rawoutput,"%msg%\n"
-$ActionFileDefaultTemplate rowaoutput
+$ActionFileDefaultTemplate rawoutput
 
 $FileCreateMode 0600
 $DirCreateMode 0700
