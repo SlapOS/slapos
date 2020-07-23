@@ -414,9 +414,7 @@ certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
 <= jinja2-template-base
 template = {{ template_backend_haproxy_rsyslogd_configuration }}
 rendered = ${backend-haproxy-rsyslogd-config:file}
-backend_slave_list = {{ dumps(sorted(backend_slave_list)) }}
 extra-context =
-  key backend_slave_list :backend_slave_list
   section configuration backend-haproxy-rsyslogd-config
 
 [backend-haproxy-rsyslogd-config]
@@ -425,6 +423,7 @@ pid-file = {{ backend_haproxy_rsyslogd_configuration['pid-file'] }}
 log-socket = {{ backend_haproxy_rsyslogd_configuration['log-socket'] }}
 log-file = {{ backend_haproxy_rsyslogd_configuration['log-file'] }}
 spool-directory = {{ backend_haproxy_rsyslogd_configuration['spool-directory'] }}
+caddy-log-directory = {{ caddy_log_directory }}
 
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command

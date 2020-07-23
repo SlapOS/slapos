@@ -13,14 +13,15 @@ $Umask 0022
 
 $WorkDirectory {{ configuration['spool-directory'] }}
 
-{%- for slave_instance in backend_slave_list %}
-{#-   matching the way how haproxy emits information regarding the backend #}
-{%-   set match = "backend " ~ slave_instance['slave_reference'] ~ "-http" %}
-:msg, contains, "{{ match }}"
-*.* {{ slave_instance['backend_log'] }}
-{#- after emitting, discard the message, especially to clean up catch-all filter #}
-:msg, contains, "{{ match}}" ~
-{% endfor %}
+# Setup logging per slave, by extracting the slave name from the log stream
+{%- set regex = ".*-backend (.*)-http.*" %}
+template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
+set $!slave_name = exec_template("extract_slave_name");
+template(name="slave_output" type="string" string="{{ configuration['caddy-log-directory'] }}/%$!slave_name%_backend_log")
+if (re_match($msg, "{{ regex }}")) then {
+ action(type="omfile" dynaFile="slave_output")
+ stop
+}
 
 {#- emit all not catched messages to full log file #}
 *.* {{ configuration['log-file'] }}

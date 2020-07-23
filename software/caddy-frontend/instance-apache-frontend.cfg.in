@@ -816,9 +816,11 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
 # Unfortunately there is no way to reload rsyslogd configuration without
-# restarting it
-hash-files = ${backend-haproxy-rsyslogd-configuration:file}
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+# restarting it, but anyway the configuration is already dynamic, so it does
+# not have to be reloaded so often (eg. adding/removing/updating slave does
+# not impact the configuration), so that's why adding configuration file
+# to the hash is good
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg ${backend-haproxy-rsyslogd-configuration:file}
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
 #######
