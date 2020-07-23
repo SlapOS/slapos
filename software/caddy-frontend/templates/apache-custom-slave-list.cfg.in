@@ -404,21 +404,6 @@ backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
 certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
 
-[backend-haproxy-rsyslogd-configuration]
-<= jinja2-template-base
-template = {{ template_backend_haproxy_rsyslogd_configuration }}
-rendered = ${backend-haproxy-rsyslogd-config:file}
-extra-context =
-  section configuration backend-haproxy-rsyslogd-config
-
-[backend-haproxy-rsyslogd-config]
-file = {{ backend_haproxy_rsyslogd_configuration['file'] }}
-pid-file = {{ backend_haproxy_rsyslogd_configuration['pid-file'] }}
-log-socket = {{ backend_haproxy_rsyslogd_configuration['log-socket'] }}
-log-file = {{ backend_haproxy_rsyslogd_configuration['log-file'] }}
-spool-directory = {{ backend_haproxy_rsyslogd_configuration['spool-directory'] }}
-caddy-log-directory = {{ caddy_log_directory }}
-
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command
 
@@ -448,7 +433,6 @@ parts +=
     kedifa-updater
     kedifa-updater-run
     backend-haproxy-configuration
-    backend-haproxy-rsyslogd-configuration
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
