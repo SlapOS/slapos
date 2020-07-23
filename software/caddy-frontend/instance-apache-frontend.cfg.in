@@ -425,13 +425,13 @@ rendered = ${directory:bbb-ssl-dir}/frontend.crt
 <= logrotate-entry-base
 name = caddy
 log = ${caddy-configuration:error-log} ${caddy-configuration:access-log}
-rotate-num = 30
 # Note: Slaves do not define their own reload, as this would be repeated,
 #       because sharedscripts work per entry, and each slave needs its own
 #       olddir
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${frontend-caddy-lazy-graceful:rendered} &
+rotate-num = ${configuration:rotate-num}
 
 #################
 # Trafficserver
@@ -734,13 +734,13 @@ extra-context =
 <= logrotate-entry-base
 name = backend-haproxy
 log = ${backend-haproxy-rsyslogd-configuration:log-file}
-rotate-num = 30
 # Note: Slaves do not define their own reload, as this would be repeated,
 #       because sharedscripts work per entry, and each slave needs its own
 #       olddir
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${backend-haproxy-rsyslogd-lazy-graceful:rendered} &
+rotate-num = ${configuration:rotate-num}
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
