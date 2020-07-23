@@ -297,6 +297,7 @@ extra-context =
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key frontend_graceful_reload caddy-configuration:frontend-graceful-command
     section frontend_configuration frontend-configuration
+    key log_access_hostname log-access-frontend-url-ready-promise:hostname
     section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key bin_directory :bin_directory
@@ -891,6 +892,38 @@ mode = 0644
 extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
+
+[log-access-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Log Access Frontend For {{ instance_parameter['configuration.frontend-name'] }}
+slave = true
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+config-url = https://[${frontend-configuration:caddy-ipv6}]:${frontend-configuration:caddy-https-port}
+config-https-only = true
+return = domain secure_access
+
+[log-access-frontend-url-ready-promise-bin]
+recipe = slapos.recipe.template:jinja2
+url = https://${log-access-frontend:connection-domain}
+rendered = ${directory:bin}/log_access_frontend_ready_promise
+template = inline:
+  #!{{ parameter_dict['dash'] }}/bin/dash
+
+  URL="${:url}"
+  CODE=$({{ parameter_dict['curl'] }}/bin/curl -g -k -sL $URL -w %{http_code} --max-time 5 -o /dev/null)
+
+  if [ $? -eq 3 ]; then
+    echo "Custom frontend URL malformed: $URL." >&2
+    exit 1
+  fi
+
+[log-access-frontend-url-ready-promise]
+<= monitor-promise-base
+hostname =  ${log-access-frontend:connection-domain}
+module = check_command_execute
+name = log_access_frontend_ready_promise.py
+config-command = ${log-access-frontend-url-ready-promise-bin:rendered}
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
