@@ -33,13 +33,6 @@ context =
     raw common_profile {{ common_profile }}
     ${:extra-context}
 
-post = {{ frontend_lazy_graceful_reload }} &
-frequency = daily
-rotatep-num = 30
-sharedscripts = true
-notifempty = true
-create = true
-
 # empty sections if no slaves are available
 [slave-log-directory-dict]
 [slave-password]
