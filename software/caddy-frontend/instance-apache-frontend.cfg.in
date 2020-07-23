@@ -815,35 +815,12 @@ graceful-command = kill -HUP $(cat ${:pid-file})
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-configuration:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
+# Unfortunately there is no way to reload rsyslogd configuration without
+# restarting it
+hash-files = ${backend-haproxy-rsyslogd-configuration:file}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-depends = ${backend-haproxy-rsyslogd-graceful:rendered}
 log-socket = ${backend-haproxy-rsyslogd-configuration:log-socket}
 log-file = ${backend-haproxy-rsyslogd-configuration:log-file}
-
-[backend-haproxy-rsyslogd-graceful]
-< = jinja2-template-base
-template = {{ parameter_dict['template_graceful_script'] }}
-rendered = ${directory:etc-run}/backend-haproxy-rsyslogd-safe-graceful
-mode = 0700
-
-extra-context =
-    key graceful_reload_command backend-haproxy-rsyslogd-configuration:graceful-command
-    key caddy_configuration_state backend-haproxy-rsyslogd-configuration-state-graceful:rendered
-
-[backend-haproxy-rsyslogd-configuration-state-graceful]
-<= jinja2-template-base
-template = {{ parameter_dict['template_configuration_state_script'] }}
-rendered = ${directory:bin}/${:_buildout_section_name_}
-mode = 0700
-
-path_list = ${backend-haproxy-rsyslogd-configuration:file}
-sha256sum = {{ parameter_dict['sha256sum'] }}
-signature_file = ${directory:run}/backend_haproxy_rsyslogd_graceful_configuration_state_signature
-extra-context =
-    key path_list :path_list
-    key sha256sum :sha256sum
-    key signature_file :signature_file
-
 #######
 # Monitoring sections
 #
