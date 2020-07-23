@@ -423,7 +423,7 @@ rendered = ${directory:bbb-ssl-dir}/frontend.crt
 <= logrotate-entry-base
 name = caddy
 log = ${caddy-configuration:error-log} ${caddy-configuration:access-log}
-rotate-num = 30
+rotate-num = ${configuration:rotate-num}
 # Note: Slaves do not define their own reload, as this would be repeated,
 #       because sharedscripts work per entry, and each slave needs its own
 #       olddir
@@ -720,7 +720,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 <= logrotate-entry-base
 name = backend-haproxy
 log = ${backend-haproxy-rsyslogd-configuration:log-file}
-rotate-num = 30
+rotate-num = ${configuration:rotate-num}
 post = kill -HUP $(cat ${backend-haproxy-rsyslogd-configuration:pid-file})
 
 [backend-haproxy-configuration-state]

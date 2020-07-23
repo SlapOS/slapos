@@ -143,6 +143,7 @@ context =
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }}
+rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 
 {#-   integrate current logs inside #}
 
