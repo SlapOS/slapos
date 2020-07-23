@@ -123,3 +123,4 @@ configuration.backend-connect-retries = 3
 configuration.backend-haproxy-http-port = 21080
 configuration.backend-haproxy-https-port = 21443
 configuration.authenticate-to-backend = False
+configuration.rotate-num = 4000
