@@ -3,8 +3,8 @@ Changes
 
 Here are listed the most important changes, which might affect upgrades.
 
-1.0.XXX XXXX-XX-XX
-------------------
+1.0.158 (2020-07-24)
+--------------------
 
  * manual customisation of profiles has been dropped, as not used, dropped keys are ``apache_custom_http``, ``apache_custom_https``, ``caddy_custom_http``, ``caddy_custom_https`` from slaves and ``-frontend-authorized-slave-string`` from master
  * ``re6st-optimal-test`` has been dropped from slave
