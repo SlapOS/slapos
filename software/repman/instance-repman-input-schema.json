@@ -190,12 +190,6 @@
               "type": "string",
               "default": ""
             },
-            "proxysql-user": {
-              "title": "Proxysql username",
-              "description": "Proxysql external user, default is 'external'.",
-              "type": "string",
-              "default": "external"
-            },
             "proxy-tags": {
               "title": "Proxy tag list",
               "description": "playbook configuration tags. Default: [\"pkg\", \"masterslave\", \"linux\", \"noreadwritesplit\"]",
@@ -229,7 +223,7 @@
               "default": "proxysql",
               "enum": [
                 "proxysql",
-                "sphinx"
+                "shardproxy"
               ]
             },
             "proxy-amount": {

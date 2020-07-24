@@ -1,6 +1,13 @@
 {% macro setbool(value) -%}
 {% if value in ['true', 'True'] %} true {% else %} false {% endif -%}
 {% endmacro -%}
+{% if parameter_dict['proxy-type'] == 'proxysql' -%}
+{%   set proxysql = True -%}
+{%   set shardproxy = False -%}
+{% elif parameter_dict['proxy-type'] == 'shardproxy' -%}
+{%   set proxysql = False -%}
+{%   set shardproxy = True -%}
+{% endif -%}
 [{{ parameter_dict['name'] }}]
 title = "{{ parameter_dict['name'] }}"
 monitoring-save-config = true
@@ -11,16 +18,30 @@ replication-credential = "{{ parameter_dict['db-user'] }}:{{ parameter_dict['db-
 monitoring-write-heartbeat-credential="{{ parameter_dict['heartbeat-user'] }}:{{ parameter_dict['heartbeat-password'] }}"
 db-servers-connect-timeout = 1
 slapos-db-partitions = "{{ parameter_dict['partition-list'] }}"
-slapos-proxysql-partitions = "{{ parameter_dict['proxysql-partition'] }}"
 
+{% if proxysql %}
 proxysql = true
+slapos-proxysql-partitions = "{{ parameter_dict['proxy-partition'] }}"
 proxysql-port = {{ parameter_dict['proxy-port'] }}
 proxysql-servers = "{{ parameter_dict['proxysql-servers'] }}"
-proxysql-servers-ipv6 = "{{ parameter_dict['proxysql-servers-ipv6'] }}"
+proxysql-servers-ipv6 = "{{ parameter_dict['proxy-servers-ipv6'] }}"
 proxysql-user = "{{ parameter_dict['proxysql-user'] }}"
 proxysql-bootstrap = true
 proxysql-admin-port = {{ parameter_dict['proxy-admin-port'] }}
 proxysql-password = "{{ parameter_dict['password'] }}"
+{% elif shardproxy -%}
+shardproxy = true
+slapos-shardproxy-partitions = "{{ parameter_dict['proxy-partition'] }}"
+shardproxy-servers-ipv6 = "{{ parameter_dict['proxy-servers-ipv6'] }}"
+shardproxy-copy-grants = {{ setbool(parameter_dict['shardproxy-copy-grants']) }}
+shardproxy-credential =  "{{ parameter_dict['shardproxy-user'] }}:{{ parameter_dict['password'] }}"
+{% if parameter_dict['shardproxy-ignore-tables']-%}
+shardproxy-ignore-tables = {{ parameter_dict['shardproxy-ignore-tables'] }}
+{% endif -%}
+shardproxy-load-system = {{ setbool(parameter_dict['shardproxy-load-system']) }}
+shardproxy-servers = "{{ parameter_dict['shardproxy-servers'] }}"
+shardproxy-universal-tables = "replication_manager_schema.bench"
+{% endif %}
 
 prov-db-tags = "{{ parameter_dict['enabled-tags'] }}"
 prov-proxy-tags = "{{ parameter_dict['proxy-tags'] }}"
@@ -66,5 +87,3 @@ switchover-slave-wait-catch = {{ setbool(parameter_dict['switchover-slave-wait-c
 switchover-wait-kill = {{ parameter_dict['switchover-wait-kill'] }}
 switchover-wait-trx = {{ parameter_dict['switchover-wait-trx'] }}
 switchover-wait-write-query = {{ parameter_dict['switchover-wait-write-query'] }}
-
-

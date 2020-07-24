@@ -17,6 +17,8 @@
 {% set ip = ipv6 -%}
 {% endif -%}
 
+{% set proxy = slapparameter_dict.get('proxy-type') -%}
+
 {% do cluster_list.append({'name':name, 'host': host, 'port': proxy_admin_port}) -%}
 
 [directory]
@@ -33,13 +35,18 @@ promise = ${:etc}/promise
 log = ${:var}/log
 tmp = ${:home}/tmp
 data = ${:home}/proxy
+mariadb-ssl = ${:etc}/mariadb-ssl
+config-tmp = ${:tmp}/config
+lib = ${:var}/lib
+mysql = ${:lib}/mysql
+
 
 {% import "supervisord_lib" as supervisord_lib with context %}
-{% set proxysql_controller = "proxysql-ctl" -%}
-{{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
-{% do part_list.append("supervisord-proxysql-ctl") -%}
+{% set proxy_controller = "dbproxy-ctl" -%}
+{{ supervisord_lib.supervisord(proxy_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+{% do part_list.append("supervisord-dbproxy-ctl") -%}
 
-[download-proxy-config]
+[download-proxysql-config]
 recipe = slapos.recipe.template:jinja2
 template = inline:#!{{ bash_bin }}
   NAME=$1
@@ -68,7 +75,7 @@ stop-on-error = false
 config = ${directory:etc}/proxysql.cnf
 data = ${directory:data}
 command =
-  ${download-proxy-config:rendered} {{ name }} {{ host }} {{ proxy_admin_port }} ${:config}
+  ${download-proxysql-config:rendered} {{ name }} {{ host }} {{ proxy_admin_port }} ${:config}
 update-command = ${:command}
 
 [proxysql-wrapper]
@@ -101,7 +108,7 @@ name = proxysql-port-listening.py
 config-hostname=  {{ ip }}
 config-port = {{ proxy_port }}
 
-{% if not use_ipv6 -%}
+{% if not use_ipv6 and proxy == "proxysql" -%}
 [proxysql-ipv6-promise]
 <= monitor-promise-base
 module = check_port_listening
@@ -110,15 +117,6 @@ config-hostname=  {{ ip }}
 config-port = {{ proxy_port }}
 {% do part_list.append("proxysql-ipv6-promise") -%}
 {% endif -%}
-
-{% set service_name = "proxy-" ~ name -%}
-{% set proxysql_dict = {"name": service_name, "command": "${proxysql-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "environment": [],
-  "stdout_logfile": "${directory:log}/" ~ service_name ~ ".log",
-  "stderr_logfile": "${directory:log}/" ~ service_name ~ ".log" } %}
-
-{{ supervisord_lib.supervisord_program(service_name, proxysql_dict) }}
-{% do part_list.append("supervisord-" ~ service_name) %}
 
 
 [slap-configuration]
@@ -152,13 +150,14 @@ template = {{ template_proxy_need_stopstart }}
 mode = 755
 cluster-list = {{ dumps(cluster_list) }}
 context =
-  key proxysql_controller {{proxysql_controller}}-bin:wrapper-path
-  key get_proxy_config    download-proxy-config:rendered
+  key proxy_controller {{proxy_controller}}-bin:wrapper-path
+  key get_proxy_config    download-proxysql-config:rendered
   key cluster_list        :cluster-list
   raw repman_url          {{ repman_url }}
   raw jq_bin              {{ jq_bin }}
   raw bash_bin            {{ bash_bin }}
   raw curl_bin            {{ curl_bin }}
+  raw proxy               {{ proxy }}
 
 [proxy-need-stop-start]
 recipe = slapos.cookbook:cron.d
@@ -167,18 +166,186 @@ name = proxysql-need-stop-start
 frequency = * * * * *
 command = ${template-proxysql-need-stop-start:rendered}
 
+##################### Mariadb Spider Proxy ###################"
+
+[shardproxy-cnf]
+recipe = slapos.recipe.template:jinja2
+mode = 644
+rendered = ${directory:bin}/mysqld_restart
+ssl-crt = ${directory:mariadb-ssl}/crt.pem
+ssl-key = ${directory:mariadb-ssl}/key.pem
+data-directory = ${directory:srv}/mariadb
+template = inline:
+  [mysqld]
+  socket = ${directory:run}/mariadb.sock
+  datadir = ${:data-directory}
+  pid_file = ${directory:run}/mariadb.pid
+  #plugin_load = ha_mroonga
+  plugin-dir = {{ parameter_dict['mroonga-mariadb-plugin-dir'] }}
+  ssl
+  ssl-cert = ${:ssl-crt}
+  ssl-key = ${:ssl-key}
+  ssl-ca = ${certificate-authority:ca-dir}/cacert.pem
+
+  [client]
+  socket = ${directory:run}/mariadb.sock
+  user = root
+
+# XXX - custom wrapper because we need to remove spider before call mysql_install_db
+# XXX - else the script stall
+[mysqld]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/mysqld
+mode = 755
+mariadb-location = {{ parameter_dict['mariadb-location'] }}
+mysql-rc = ${directory:etc}/mysql/rc.d/
+spider-conf = ${:mysql-rc}/01_engine_spider.cnf
+template =
+  inline:{% raw %}#!/bin/sh -e
+  basedir='${:mariadb-location}'
+  datadir='{{datadir}}'
+  [ -e "$datadir" ] || {
+    rm -rvf ${:spider-conf}
+    rm -vrf "$datadir.new"
+    "$basedir/scripts/mysql_install_db" \
+      --defaults-file='{{defaults_file}}' \
+      --skip-name-resolve \
+      --auth-root-authentication-method=normal \
+      --basedir="$basedir" --plugin_dir="$basedir/lib/plugin" \
+      --datadir="$datadir.new"
+    mv -v "$datadir.new" "$datadir"
+    cd ${:mysql-rc} && ln -sf ../engine_spider.cnf 01_engine_spider.cnf
+  }
+  {%- if environ is defined %}
+  {%-   for variable in environ.splitlines() %}
+  {{ variable }} \
+  {%-   endfor %}
+  {%- endif %}
+  exec "$basedir/bin/mysqld" --defaults-file='{{defaults_file}}' "$@"
+  {% endraw %}
+
+context =
+  key defaults_file install-mysql-config:config
+  key datadir shardproxy-cnf:data-directory
+  key environ :environ
+environ =
+  ODBCSYSINI='${directory:etc}'
+  LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}'{{ parameter_dict['unixodbc-location'] }}/lib'
+
+
+[shardproxy-wrapper]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${shardproxy-cnf:ssl-key}
+cert-file = ${shardproxy-cnf:ssl-crt}
+executable = ${mysqld:rendered}
+wrapper = ${directory:controller}/mariadb-spider
+
+[binary-wrap-base]
+recipe = slapos.cookbook:wrapper
+# Note: --defaults-file must be the first argument, otherwise wrapped binary
+# will reject it.
+command-line = 
+  "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
+  --defaults-file="${directory:etc}/mysql/my.cnf" --protocol=socket
+wrapper-path = ${directory:bin}/${:command}
+
+[binary-wrap-mysql]
+<= binary-wrap-base
+command = mysql
+
+[binary-wrap-mysql_upgrade]
+<= binary-wrap-base
+command = mysql_upgrade
+extra-args = --skip-write-binlog
+
+[binary-wrap-mysql_tzinfo_to_sql]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --skip-write-binlog
+command = mysql_tzinfo_to_sql
+
+# Donwnload mariadb configuration from repman
+[mysql-get-config]
+recipe = slapos.recipe.template:jinja2
+mode = 755
+rendered = ${directory:bin}/mysqld-update-config
+cluster = {{ name }}
+template = inline:#!{{ bash_bin }}
+  cd ${directory:config-tmp} &&
+  rm -rf * &&
+  {{ curl_bin }} -o config.tar.gz {{ repman_url }}/api/clusters/${:cluster}/servers/{{ host }}/{{ proxy_port }}/config
+  tar -xzf config.tar.gz
+  cp -r data/.system ${directory:mysql}
+  rm -rf ${directory:etc}/mysql
+  cp -r etc/mysql ${directory:etc}
+  ln -sf ${directory:mysql}/.system ${directory:var}/system
+  ln -sf ${shardproxy-cnf:rendered} ${directory:etc}/mysql/custom/00_spider-proxy.cnf
+
+[install-mysql-config]
+recipe = plone.recipe.command
+stop-on-error = true
+config = ${directory:etc}/mysql/my.cnf
+command = ${mysql-get-config:rendered}
+update-command = ${:command}
+
+[init-proxy-script]
+recipe = slapos.recipe.template:jinja2
+mode = 755
+rendered = ${directory:etc}/.init-root.sql
+template = {{ parameter_dict['template-mariadb-init-root'] }}
+context = section parameter_dict init-proxy-parameters
+mode = 600
+
+[update-mysql]
+recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
+output = ${directory:scripts}/mariadb_update
+binary = ${binary-wrap-mysql_upgrade:wrapper-path}
+mysql = ${binary-wrap-mysql:wrapper-path}
+init-script = ${init-proxy-script:rendered}
+mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
+
+[init-proxy-parameters]
+password = {{ slapparameter_dict['proxy-passwd'] }}
+root-user = {{ slapparameter_dict['proxy-user'] }}
+heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
+heartbeat-password = {{ slapparameter_dict['heartbeat-password'] }}
+
+[shardproxy-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = mariadb.py
+config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "{{ ip }}" "{{ proxy_port }}"
+
 #############################
 #
 # Deploy replication-manager instance
 #
 #############################
+{% set service_name = "proxy-" ~ name -%}
+{% set proxydb_dict = {"name": service_name, "command": "${proxysql-wrapper:wrapper-path}",
+  "stopwaitsecs": 60, "environment": [], "autostart": True,
+  "stdout_logfile": "${directory:log}/" ~ service_name ~ ".log",
+  "stderr_logfile": "${directory:log}/" ~ service_name ~ ".log" } %}
+
+{% if proxy == 'proxysql' -%}
+{% do part_list.append('proxy-need-stop-start') -%}
+{% endif -%}
+{% if proxy == 'shardproxy' -%}
+{% do part_list.append('proxy-need-stop-start') -%}
+{% do part_list.append('update-mysql') -%}
+{% do part_list.append('binary-wrap-mysql') -%}
+{% do part_list.append('shardproxy-promise') -%}
+{% do proxydb_dict.__setitem__("command", "${shardproxy-wrapper:wrapper}") -%}
+{% endif -%}
+{{ supervisord_lib.supervisord_program(service_name, proxydb_dict) }}
+{% do part_list.append("supervisord-" ~ service_name) %}
+
 [buildout]
 extends =
   {{ template_monitor }}
 parts =
   monitor-base
   publish-connection-parameter
-  proxy-need-stop-start
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

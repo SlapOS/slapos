@@ -104,6 +104,13 @@ extra-context =
     section parameter_dict template-mariadb-parameters
 
 [template-proxydb-parameters]
+mariadb-location = {{ mariadb_location }}
+template-mysqld-wrapper = {{ template_mysqld_wrapper }}
+template-mysqld-need-start = {{ mysqld_start_template }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+template-mariadb-init-root = {{ template_init_root_sql }}
+unixodbc-location = {{ unixodbc_location }}
+bin-directory = {{ bin_directory }}
 
 [template-instance-proxydb-cfg]
 <= jinja2-template-base
