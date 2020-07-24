@@ -245,17 +245,6 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-Functionalities for Caddy configuration
----------------------------------------
-
-In the slave Caddy configuration you can use parameters that will be replaced during instantiation. They should be entered as python templates parameters ex: ``%(parameter)s``:
-
-  * ``cache_access`` : url of the cache. Should replace backend url in configuration to use the cache
-  * ``access_log`` : path of the slave error log in order to log in a file.
-  * ``error_log`` : path of the slave access log in order to log in a file.
-  * ``certificate`` : path to the certificate
-
-
 Examples
 ========
 
