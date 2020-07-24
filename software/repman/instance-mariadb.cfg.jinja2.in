@@ -89,6 +89,7 @@ database-list = {{ dumps(database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 root-user = repman
 heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
+heartbeat-password = {{ slapparameter_dict['heartbeat-password'] }}
 
 [init-script]
 < = jinja2-template-executable

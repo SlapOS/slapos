@@ -48,7 +48,8 @@ partition-id = ${slap-connection:partition-id}
 {% set proxy_type = parameter_dict.get('proxy-type', 'proxysql') -%}
 {% set proxy_port = 6032 + 100*loop.index0 -%}
 {% set proxy_config_dict = {'ip': [], 'ipv6': [], 'partition': [],
-   'port': proxy_port, 'admin-port': proxy_port + 1000} -%}
+   'port': proxy_port, 'admin-port': proxy_port + 1000,
+   'user': 'external'} -%}
 
 # Request mariadb instances
 {% set database_list = parameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
@@ -74,7 +75,8 @@ config-monitor-passwd = ${publish-early:monitor-password}
 config-root-password = ${publish-early:db-root-password}
 config-repman-user = ${repman-parameter:username}
 config-heartbeat-user = ${repman-parameter:heartbeat-user}
-#config-repman-passwd =  ${repman-parameter:password}
+config-heartbeat-password = ${publish-early:db-root-password}
+config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
@@ -116,9 +118,14 @@ config-use-ipv6 = True
 config-monitor-passwd = ${publish-early:monitor-password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
+config-repman-passwd =  ${repman-parameter:password}
+config-heartbeat-user = ${repman-parameter:heartbeat-user}
+config-heartbeat-password = ${publish-early:db-root-password}
 config-proxy-name = {{ name }}
-config-type = {{ parameter_dict.get('proxy-type', "proxysql") }}
+config-proxy-type = {{ proxy_type }}
 config-proxy-port = {{ proxy_config_dict['port'] }}
+config-proxy-user = {{ proxy_config_dict['user'] }}
+config-proxy-passwd = ${repman-parameter:password}
 config-admin-proxy-port = {{ proxy_config_dict['admin-port'] }}
 config-bootstraped = false
 return =
@@ -154,15 +161,25 @@ db-prefered-master = {{ prefered_master }}
 # First database is the prefered master
 db-prefered-master = {{ mariadb_server_list[0] }}
 {% endif -%}
+proxy-type = {{ proxy_type }}
 {% if proxy_type == "proxysql" -%}
 proxysql-servers = {{ proxy_config_dict['ip'] | join(',') }}
-proxysql-servers-ipv6 = [{{ proxy_config_dict['ipv6'] | join('],[') }}]
-proxysql-partition = {{ proxy_config_dict['partition'] | join(',') }}
-proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
-{% endif -%}
-password = ${repman-parameter:password}
+proxysql-user = {{ proxy_config_dict['user'] }}
 proxy-port = {{ proxy_config_dict['port'] }}
 proxy-admin-port = {{ proxy_config_dict['admin-port'] }}
+{% elif proxy_type == "shardproxy" -%}
+{% set server_list = [] -%}
+{% for ip in proxy_config_dict['ip'] -%}
+{%   do server_list.append(ip ~ ':' ~ proxy_config_dict['port']) -%}
+{% endfor -%}
+shardproxy-copy-grants = {{ parameter_dict.get('shardproxy-copy-grants', True) }}
+shardproxy-user = {{ proxy_config_dict['user'] }}
+shardproxy-ignore-tables = {{ slapparameter_dict.get("shardproxy-ignore-tables", []) | join(',') }}
+shardproxy-servers = {{ server_list | join(',') }}
+{% endif -%}
+proxy-servers-ipv6 = [{{ proxy_config_dict['ipv6'] | join('],[') }}]
+proxy-partition = {{ proxy_config_dict['partition'] | join(',') }}
+password = ${repman-parameter:password}
 receiver-port-list = {{ receiver_port_list | join(',') }}
 enabled-tags = {{ slapparameter_dict.get("tag-list", tag_list) | join(',') }}
 proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit"]) | join(',') }}
