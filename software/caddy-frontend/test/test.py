@@ -1474,6 +1474,28 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       got_status_code_list
     )
 
+  def test_backend_haproxy_statistic_url(self):
+    connection_parameter_dict = self\
+        .computer_partition.getConnectionParameterDict()
+    backend_haproxy_statistic_url_dict = {}
+    for key, value in connection_parameter_dict.items():
+      if key.startswith('caddy-frontend') and key.endswith(
+        'backend-haproxy-statistic-url'):
+        backend_haproxy_statistic_url_dict[key] = value
+    self.assertEqual(
+      ['caddy-frontend-1-backend-haproxy-statistic-url'],
+      backend_haproxy_statistic_url_dict.keys()
+    )
+
+    backend_haproxy_statistic_url = backend_haproxy_statistic_url_dict[key]
+    result = requests.get(
+      backend_haproxy_statistic_url,
+      verify=False,
+    )
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('Statistics Report for HAProxy', result.text)
+
   def getMasterPartitionPath(self):
     # partition w/o etc/trafficserver, but with buildout.cfg
     return [
