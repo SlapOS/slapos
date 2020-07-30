@@ -38,6 +38,15 @@ defaults
 {%-   endif %}
 {%- endmacro %}
 
+# statistic
+frontend statistic
+  bind {{ configuration['global-ipv6']}}:{{ configuration['statistic-port'] }} ssl crt {{ configuration['statistic-certificate'] }}
+  stats enable
+  stats uri /
+  stats show-desc {{ configuration['statistic-identification'] }}
+  stats auth {{ configuration['statistic-username'] }}:{{ configuration['statistic-password'] }}
+  stats realm {{ configuration['statistic-identification'] }}
+
 frontend http-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
 {%- for slave_instance in backend_slave_list %}
