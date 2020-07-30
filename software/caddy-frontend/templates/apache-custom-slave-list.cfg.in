@@ -394,6 +394,13 @@ monitor-base-url = {{ monitor_base_url }}
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 backend-client-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/backend-haproxy-csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
+{%-   set furled = furl_module.furl(backend_haproxy_configuration['statistic-frontend-secure_access']) %}
+{%-   do furled.set(username = backend_haproxy_configuration['statistic-username']) %}
+{%-   do furled.set(password = backend_haproxy_configuration['statistic-password']) %}
+{%-   do furled.set(path = '/') %}
+{#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
+{%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
+backend-haproxy-statistic-url = {{ statistic_url }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
@@ -442,16 +449,14 @@ extra-context =
   section configuration backend-haproxy-config
 
 [backend-haproxy-config]
-file = {{ backend_haproxy_configuration['file'] }}
-pid-file = {{ backend_haproxy_configuration['pid-file'] }}
-log-socket = {{ backend_haproxy_configuration['log-socket'] }}
+{%- for key, value in backend_haproxy_configuration.items() %}
+{{ key }} = {{ value }}
+{%- endfor %}
 local-ipv4 = {{ dumps('' ~ local_ipv4) }}
-http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
-https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+global-ipv6 = ${slap-network-information:global-ipv6}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
-certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
 
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command

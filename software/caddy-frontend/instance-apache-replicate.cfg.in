@@ -215,7 +215,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
 
 {% for section, frontend_request in request_dict.iteritems() %}
 {%   set state = frontend_request.get('state', '') %}
@@ -292,6 +292,10 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 {{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
 {% endfor %}
 {% endif %}
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+{% endfor %}
 {% if not aibcc_enabled %}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
