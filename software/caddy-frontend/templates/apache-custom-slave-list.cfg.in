@@ -442,16 +442,14 @@ extra-context =
   section configuration backend-haproxy-config
 
 [backend-haproxy-config]
-file = {{ backend_haproxy_configuration['file'] }}
-pid-file = {{ backend_haproxy_configuration['pid-file'] }}
-log-socket = {{ backend_haproxy_configuration['log-socket'] }}
+{%- for key, value in backend_haproxy_configuration.items() %}
+{{ key }} = {{ value }}
+{%- endfor %}
 local-ipv4 = {{ dumps('' ~ local_ipv4) }}
-http-port = {{ ('' ~ backend_haproxy_configuration['http-port']) }}
-https-port = {{ ('' ~ backend_haproxy_configuration['https-port']) }}
+global-ipv6 = ${slap-network-information:global-ipv6}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
-certificate = {{ dumps('' ~ backend_haproxy_configuration['certificate']) }}
 
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command
