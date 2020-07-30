@@ -740,6 +740,11 @@ certificate = ${backend-client-login-config:certificate}
 cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
 csr = ${backend-client-caucase-updater-csr:csr}
 crl = ${backend-client-login-config:crl}
+# the statistics page
+statistic-certificate = ${self-signed-ip-access:certificate}
+statistic-port = ${configuration:backend-haproxy-statistic-port}
+statistic-password = ${monitor-htpasswd:passwd}
+statistic-identification = {{ slapparameter_dict['cluster-identification'] }}
 
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
