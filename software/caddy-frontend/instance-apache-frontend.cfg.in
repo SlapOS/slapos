@@ -740,6 +740,13 @@ certificate = ${backend-client-login-config:certificate}
 cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
 csr = ${backend-client-caucase-updater-csr:csr}
 crl = ${backend-client-login-config:crl}
+# the statistic page
+statistic-certificate = ${self-signed-ip-access:certificate}
+statistic-port = ${configuration:backend-haproxy-statistic-port}
+statistic-username = ${monitor-instance-parameter:username}
+statistic-password = ${monitor-htpasswd:passwd}
+statistic-identification = {{ slapparameter_dict['cluster-identification'] }}
+statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
@@ -929,6 +936,16 @@ name = Slave Introspection Frontend {{ instance_parameter['configuration.fronten
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
+config-https-only = true
+return = domain secure_access
+
+[backend-haproxy-statistic-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Backend Haproxy Statistic Frontend {{ instance_parameter['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
 
