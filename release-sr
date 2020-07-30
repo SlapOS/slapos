@@ -21,7 +21,7 @@ echo "###################################################################"
 git tag 1.0.$NEXT_MINOR_VERSION -m "Release 1.0.$NEXT_MINOR_VERSION"
 
 
-echo " Please review current tag and them push it:"
+echo " Please review current tag and then push it:"
 echo " To review use git log 1.0.$NEXT_MINOR_VERSION"
 
 echo ""

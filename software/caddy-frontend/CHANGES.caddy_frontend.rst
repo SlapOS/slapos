@@ -3,6 +3,12 @@ Changes
 
 Here are listed the most important changes, which might affect upgrades.
 
+1.0.159 (2020-07-30)
+--------------------
+
+ * logs are ensured to be available in slave's ``log-access-url``
+ * logs from backend Haproxy are also available to slaves
+
 1.0.158 (2020-07-24)
 --------------------
 

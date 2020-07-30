@@ -33,13 +33,6 @@ context =
     raw common_profile {{ common_profile }}
     ${:extra-context}
 
-post = {{ frontend_lazy_graceful_reload }} &
-frequency = daily
-rotatep-num = 30
-sharedscripts = true
-notifempty = true
-create = true
-
 # empty sections if no slaves are available
 [slave-log-directory-dict]
 [slave-password]
@@ -119,8 +112,10 @@ create = true
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([caddy_log_directory, '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
+{%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
 {#-   Add slave log directory to the slave log access dict #}
 {%-   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
 {%-   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
@@ -148,15 +143,17 @@ create = true
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
+log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}} {{slave_parameter_dict.get('backend_log')}}
 backup = {{ slave_log_folder }}
+rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 
 {#-   integrate current logs inside #}
 
 [{{slave_ln_section}}]
 recipe = plone.recipe.command
 stop-on-error = false
-command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log
+update-command = ${:command}
+command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} {{ slave_log_folder }}/backend.log
 
 {#-   Set password for slave #}
 
