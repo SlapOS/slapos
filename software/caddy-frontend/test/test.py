@@ -726,6 +726,27 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     return generate_auth_url, upload_url
 
+  def assertBackendHaproxyStatisticUrl(self, parameter_dict):
+    url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
+    backend_haproxy_statistic_url_dict = {}
+    for key in parameter_dict.keys():
+      if key.startswith('caddy-frontend') and key.endswith(
+        'backend-haproxy-statistic-url'):
+        backend_haproxy_statistic_url_dict[key] = parameter_dict.pop(key)
+    self.assertEqual(
+      [url_key],
+      backend_haproxy_statistic_url_dict.keys()
+    )
+
+    backend_haproxy_statistic_url = backend_haproxy_statistic_url_dict[url_key]
+    result = requests.get(
+      backend_haproxy_statistic_url,
+      verify=False,
+    )
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('Statistics Report for HAProxy', result.text)
+
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
@@ -1042,6 +1063,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -1072,6 +1094,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
@@ -1543,6 +1566,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -5229,6 +5253,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -5905,6 +5930,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -6011,6 +6037,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -6206,6 +6233,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
