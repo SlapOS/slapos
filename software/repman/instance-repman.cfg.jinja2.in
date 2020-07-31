@@ -175,7 +175,6 @@ proxy-admin-port = {{ proxy_config_dict['admin-port'] }}
 shardproxy-copy-grants = {{ parameter_dict.get('shardproxy-copy-grants', True) }}
 shardproxy-user = {{ proxy_config_dict['user'] }}
 shardproxy-ignore-tables = {{ slapparameter_dict.get("shardproxy-ignore-tables", []) | join(',') }}
-shardproxy-load-system = {{ parameter_dict.get('shardproxy-load-system', True) }}
 shardproxy-servers = {{ server_list | join(',') }}
 {% endif -%}
 proxy-servers-ipv6 = [{{ proxy_config_dict['ipv6'] | join('],[') }}]

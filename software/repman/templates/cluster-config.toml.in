@@ -38,7 +38,7 @@ shardproxy-credential =  "{{ parameter_dict['shardproxy-user'] }}:{{ parameter_d
 {% if parameter_dict['shardproxy-ignore-tables']-%}
 shardproxy-ignore-tables = {{ parameter_dict['shardproxy-ignore-tables'] }}
 {% endif -%}
-shardproxy-load-system = {{ setbool(parameter_dict['shardproxy-load-system']) }}
+shardproxy-load-system = false
 shardproxy-servers = "{{ parameter_dict['shardproxy-servers'] }}"
 shardproxy-universal-tables = "replication_manager_schema.bench"
 {% endif %}
