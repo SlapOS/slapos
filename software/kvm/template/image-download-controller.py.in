@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import hashlib
+import json
 import os
 import re
 import subprocess
@@ -20,79 +21,80 @@ def md5Checksum(file_path):
 
 
 if __name__ == "__main__":
-  configuration, destination_directory, curl = sys.argv[1:]
+  configuration, curl = sys.argv[1:]
   error_num = 0
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   current_image_dict = {}
   image_prefix = 'image_'
+  maximum_image_amount = 4
 
   # build currently wanted list
   with open(configuration) as fh:
-    for line in fh.readlines():
-      line = line.strip()
-      if not line:
+    try:
+      config = json.load(fh.read())
+    except Exception as e:
+      print 'ERR: Problem loading configuration'
+      sys.exit(1)
+     
+  if config['error-amount'] != 0:
+    print 'ERR: There are problems with configuration'
+    sys.exit(1)
+
+  # clean the destination directory
+  for fname in os.listdir(configuration['destination-directory']):
+    md5sum = fname[len(image_prefix):]
+    if md5sum not in current_image_dict:
+      print 'INF: Removing obsolete %s' % (fname,)
+      os.remove(os.path.join(destination_directory, fname))
+
+  # check if the limit is not reached
+  current_image_amount = len(current_image_dict)
+  if len(current_image_dict) > maximum_image_amount:
+    print 'ERR: Amount of images is %s, which is bigger than maximum '\
+          '(%s), please fix' % (current_image_amount, maximum_image_amount)
+    sys.exit(error_num + 1)
+
+  # fetch the wanted list
+  for md5sum, url in current_image_dict.items():
+    destination = os.path.join(destination_directory, image_prefix + md5sum)
+    tmp_destination = os.path.join(destination_directory, 'tmp_' + md5sum)
+    if os.path.exists(destination):
+      if md5Checksum(destination) == md5sum:
+        print 'INF: %s : already downloaded' % (url,)
         continue
-      split_line = line.split(' ')
-      if len(split_line) != 2:
-        print 'ERR: line %r is incorrect' % (line,)
-        error_num += 1
-        continue
-      url, md5sum = split_line
-      if not md5sum_re.match(md5sum):
-        error_num += 1
-        print 'ERR: checksum in line %r is incorrect' % (line, )
-        continue
-      if md5sum not in current_image_dict.items():
-        current_image_dict[md5sum] = url
       else:
-        error_num += 1
-        print 'ERR: checksum %s repeated' % (md5sum,)
-
-    # clean the destination directory
-    for fname in os.listdir(destination_directory):
-      md5sum = fname[len(image_prefix):]
-      if md5sum not in current_image_dict:
-        print 'Removing obsolete %s' % (fname,)
-        os.remove(os.path.join(destination_directory, fname))
-
-    # fetch the wanted list
-    for md5sum, url in current_image_dict.items():
-      destination = os.path.join(destination_directory, image_prefix + md5sum)
-      tmp_destination = os.path.join(destination_directory, 'tmp_' + md5sum)
-      if os.path.exists(destination):
-        if md5Checksum(destination) == md5sum:
-          print '%s is already downloaded' % (url,)
-          continue
-        else:
-          print 'Removed %s , as expected checksum does not match %s' % (
-            url, md5sum)
-          os.remove(destination)
-      print 'Downloading %s' % (url,)
-      download_success = True
+        print 'INF: %s : Removed, as expected checksum does not match %s' % (
+          url, md5sum)
+        os.remove(destination)
+    print 'INF: %s : Downloading' % (url,)
+    download_success = True
+    try:
+      subprocess.check_output([
+        curl,
+        '--insecure',  # allow any download
+        '--location',  # follow redirects
+        '--no-progress-meter',  # do not tell too much
+        '--max-time', '7200',  # maximum time for download is 2 hours
+        '--max-filesize', '5368709120',  # maximum 5G for an image
+        '--output', tmp_destination, url], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      error_num += 1
+      print 'ERR: %s : Problem while downloading: %r' % (url, e.output.strip())
+      continue
+    if not(os.path.exists(tmp_destination)):
+      error_num += 1
+      print 'ERR: %s : Image disappeared, will retry later'
+      cotninue
+    computed_md5sum = md5Checksum(tmp_destination)
+    if computed_md5sum != md5sum:
+      error_num += 1
       try:
-        subprocess.check_output([
-          curl,
-          '--insecure',  # allow any download
-          '--location',  # follow redirects
-          '--no-progress-meter',  # do not tell too much
-          '--max-time', '7200',  # maximum time for download is 2 hours
-          '--max-filesize', '5368709120',  # maximum 5G for an image
-          '--output', tmp_destination, url], stderr=subprocess.STDOUT)
-      except subprocess.CalledProcessError as e:
-        error_num += 1
-        print 'ERR: Problem downloading %s :' % (url,)
-        print e.output
-        continue
-      computed_md5sum = md5Checksum(tmp_destination)
-      if computed_md5sum != md5sum:
-        error_num += 1
-        try:
-          os.remove(tmp_destination)
-        except Exception:
-          pass
-        print 'ERR: URL %s : MD5 mismtach expected is %s but got instead %s' % (
-          url, md5sum, computed_md5sum)
-      else:
-        os.rename(tmp_destination, destination)
-        print 'Stored %s with checksum %s' % (url, md5sum)
+        os.remove(tmp_destination)
+      except Exception:
+        pass
+      print 'ERR: %s : MD5 mismtach expected is %s but got instead %s' % (
+        url, md5sum, computed_md5sum)
+    else:
+      os.rename(tmp_destination, destination)
+      print 'INF: %s : Stored with checksum %s' % (url, md5sum)
   sys.exit(error_num)
