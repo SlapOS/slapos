@@ -83,6 +83,8 @@ extra-context =
   raw dcron_executable_location ${dcron:location}/sbin/crond
   raw debian_amd64_netinst_location ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
   raw file_download_script ${file-download-script:location}/${file-download-script:filename}
+  raw image_download_controller ${image-download-controller:target}
+  raw image_download_config_creator ${image-download-config-creator:target}
   raw logrotate_cfg ${template-logrotate-base:rendered}
   raw novnc_location ${noVNC:location}
   raw netcat_bin ${netcat:location}/bin/netcat
