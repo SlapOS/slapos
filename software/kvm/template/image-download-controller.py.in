@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+
+
+# stolen from download_file.in
+def md5Checksum(file_path):
+  with open(file_path, 'rb') as fh:
+    m = hashlib.md5()
+    while True:
+      data = fh.read(8192)
+      if not data:
+          break
+      m.update(data)
+    return m.hexdigest()
+
+
+if __name__ == "__main__":
+  configuration, curl = sys.argv[1:]
+  error_num = 0
+  md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
+  image_prefix = 'image_'
+
+  # build currently wanted list
+  with open(configuration) as fh:
+    try:
+      config = json.load(fh)
+    except Exception as e:
+      print 'ERR: Problem loading configuration: %s' % (e,)
+      sys.exit(1)
+
+  if config['error-amount'] != 0:
+    print 'ERR: There are problems with configuration'
+    sys.exit(1)
+
+  # clean the destination directory
+  file_to_keep_list = []
+  for image in config['image-list']:
+    file_to_keep_list.append(image['destination'])
+    file_to_keep_list.append(image['link'])
+  for fname in os.listdir(config['destination-directory']):
+    if fname not in file_to_keep_list:
+      print 'INF: Removing obsolete %s' % (fname,)
+      os.remove(os.path.join(config['destination-directory'], fname))
+
+  # fetch the wanted list
+  for image in config['image-list']:
+    destination = os.path.join(
+      config['destination-directory'], image['destination'])
+    if os.path.exists(destination):
+      if md5Checksum(destination) == image['md5sum']:
+        print 'INF: %s : already downloaded' % (image['url'],)
+        continue
+      else:
+        print 'INF: %s : Removed, as expected checksum does not match %s' % (
+          image['url'], image['md5sum'])
+        os.remove(destination)
+    print 'INF: %s : Downloading' % (image['url'],)
+    download_success = True
+    destination_tmp = os.path.join(
+      config['destination-directory'], image['destination-tmp'])
+    try:
+      subprocess.check_output([
+        curl,
+        '--insecure',  # allow any download
+        '--location',  # follow redirects
+        '--no-progress-meter',  # do not tell too much
+        '--max-time', '7200',  # maximum time for download is 2 hours
+        '--max-filesize', '5368709120',  # maximum 5G for an image
+        '--output', destination_tmp, image['url']],
+        stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      error_num += 1
+      print 'ERR: %s : Problem while downloading: %r' % (
+        image['url'], e.output.strip())
+      continue
+    if not(os.path.exists(destination_tmp)):
+      error_num += 1
+      print 'ERR: %s : Image disappeared, will retry later'
+      continue
+    computed_md5sum = md5Checksum(destination_tmp)
+    if computed_md5sum != image['md5sum']:
+      error_num += 1
+      try:
+        os.remove(destination_tmp)
+      except Exception:
+        pass
+      print 'ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
+        image['url'], image['md5sum'], computed_md5sum)
+    else:
+      os.rename(destination_tmp, destination)
+      print 'INF: %s : Stored with checksum %s' % (
+        image['url'], image['md5sum'])
+  for image in config['image-list']:
+    destination = os.path.join(
+      config['destination-directory'], image['destination'])
+    link = os.path.join(config['destination-directory'], image['link'])
+    if os.path.exists(destination):
+      if os.path.lexists(link):
+        if not os.path.islink(link):
+          os.remove(link)
+        if os.path.islink(link) and os.readlink(link) != destination:
+            os.remove(link)
+      if not os.path.lexists(link):
+        print 'INF: %s : Symlinking %s -> %s' % (image['url'], link, destination)
+        os.symlink(destination, link)
+  sys.exit(error_num)
