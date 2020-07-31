@@ -9,6 +9,7 @@
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set image_url_list_enabled = 'image-url-list' in slapparameter_dict %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -51,6 +52,11 @@ public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
+image-repository = ${:srv}/image-repository
+{%- if image_url_list_enabled %}
+image-url-list-var = ${:var}/image-url-list
+image-url-list-expose = ${monitor-directory:public}/image-url-list
+{%- endif %}
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -64,6 +70,98 @@ storage-path = ${directory:srv}/tap_mac
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
+
+{% if image_url_list_enabled %}
+## image-url-list support BEGIN
+[empty-file-state-base-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+config-url = ${monitor-base:base-url}/public/image-url-list/${:filename}
+
+[image-url-list-source-config]
+# generates configuration of the image from the user parameter
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  ${slap-parameter:image-url-list}
+rendered = ${directory:etc}/image-url-list.conf
+
+[image-url-list-processed-config]
+# compares if the current configuration has been used by
+# the image-url-list-download, if not, exposes it as not empty file with
+# information
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${image-url-list-source-config:rendered}
+state-filename = image-url-list-processed-config.state
+state-file = ${directory:image-url-list-expose}/${:state-filename}
+processed-md5sum = ${directory:image-url-list-var}/update-image-processed.md5sum
+
+[image-url-list-processed-config-promise]
+# promise to check if the configuration provided by the user has been already
+# processed by the image-url-list-download script, which runs asynchronously
+<= empty-file-state-base-promise
+filename = ${image-url-list-processed-config:state-filename}
+config-filename = ${image-url-list-processed-config:state-file}
+
+[image-url-list-json-config]
+# generates json configuration from user configuration
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${image-url-list-source-config:rendered} ${:rendered} ${directory:image-repository} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:image-url-list-var}/image-url-list.json
+error-state-filename = image-url-list-json-config-error.json
+error-state-file = ${directory:image-url-list-expose}/${:error-state-filename}
+
+[image-url-list-config-state-promise]
+# promise to check if configuration has been parsed without errors
+<= empty-file-state-base-promise
+filename = ${image-url-list-json-config:error-state-filename}
+config-filename = ${image-url-list-json-config:error-state-file}
+
+[image-url-list-download-wrapper]
+# wrapper to execute image-url-list-download on each run
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/image-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${image-url-list-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${image-url-list-processed-config:processed-md5sum}
+md5sum-state-filename = image-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:image-url-list-expose}/${:md5sum-state-filename}
+error-state-filename = image-download-controller-error.json
+error-state-file = ${directory:image-url-list-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[image-url-list-download-md5sum-promise]
+# promise to report errors with problems with calculating md5sum of the
+# downloaded images
+<= empty-file-state-base-promise
+filename = ${image-url-list-download-wrapper:md5sum-state-filename}
+config-filename = ${image-url-list-download-wrapper:md5sum-state-file}
+
+[image-url-list-download-state-promise]
+# promise to report errors during download
+<= empty-file-state-base-promise
+filename = ${image-url-list-download-wrapper:error-state-filename}
+config-filename = ${image-url-list-download-wrapper:error-state-file}
+## image-url-list support END
+{% endif %} {# if image_url_list_enabled #}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
@@ -85,6 +183,11 @@ vnc-ip = ${:ipv4}
 vnc-port = 5901
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
+{% if image_url_list_enabled %}
+image-url-list-json-config = ${image-url-list-json-config:rendered}
+{% else %}
+image-url-list-json-config =
+{% endif %}
 nbd-host = ${slap-parameter:nbd-host}
 nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
@@ -708,6 +811,7 @@ nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
 nbd2-host =
+image-url-list =
 
 enable-device-hotplug = False
 ram-size = 1024
@@ -833,6 +937,13 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+{% if image_url_list_enabled %}
+  image-url-list-download-wrapper
+  image-url-list-config-state-promise
+  image-url-list-download-md5sum-promise
+  image-url-list-download-state-promise
+  image-url-list-processed-config-promise
+{% endif %}
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}
