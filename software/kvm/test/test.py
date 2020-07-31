@@ -28,15 +28,19 @@
 import six.moves.http_client as httplib
 import json
 import os
+import hashlib
+import psutil
 import requests
 import six
 import slapos.util
 import sqlite3
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
+import subprocess
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.slap.standalone import SlapOSNodeCommandError
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
@@ -479,3 +483,192 @@ class TestInstanceNbdServer(InstanceTestCase):
     )
     self.assertIn('<title>Upload new File</title>', result.text)
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
+
+
+@skipUnlessKvm
+class TestImageUrlList(InstanceTestCase):
+  __partition_reference__ = 'iul'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    # start with empty, but working configuration
+    return {}
+
+  def tearDown(self):
+    # clean up the instance for other tests
+    # 1st remove all images...
+    self.rerequestInstance({'image-url-list': ''})
+    self.slap.waitForInstance(max_retry=10)
+    # 2nd ...move instance to "default" state
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
+
+  def rerequestInstance(self, parameter_dict, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=parameter_dict,
+        state=state)
+
+  fake_image, = (
+      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
+      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
+      "e5b2721ca4556a0734cb13e65",)
+  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
+  fake_image2, = (
+      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
+      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
+      "2a74b7675a8d8ca20476dba6e",)
+  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
+  fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
+
+  def raising_waitForInstance(self, max_retry):
+    with self.assertRaises(SlapOSNodeCommandError):
+      self.slap.waitForInstance(max_retry=max_retry)
+
+  def test(self):
+    partition_parameter_kw = {
+      'image-url-list': "%s#%s\n%s#%s" % (
+        self.fake_image, self.fake_image_md5sum, self.fake_image2,
+        self.fake_image2_md5sum)
+    }
+    self.rerequestInstance(partition_parameter_kw)
+    self.slap.waitForInstance(max_retry=10)
+    # check that image is correctly downloaded and linked
+    image_repository = os.path.join(
+      self.computer_partition_root_path, 'srv', 'image-repository')
+    image = os.path.join(image_repository, self.fake_image_md5sum)
+    image_link = os.path.join(image_repository, 'image_001')
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, self.fake_image_md5sum)
+    self.assertTrue(os.path.islink(image_link))
+    self.assertEqual(os.readlink(image_link), image)
+
+    image2 = os.path.join(image_repository, self.fake_image2_md5sum)
+    image2_link = os.path.join(image_repository, 'image_002')
+    self.assertTrue(os.path.exists(image2))
+    with open(image2, 'rb') as fh:
+      image2_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image2_md5sum, self.fake_image2_md5sum)
+    self.assertTrue(os.path.islink(image2_link))
+    self.assertEqual(os.readlink(image2_link), image2)
+
+    # check that the image is NOT YET available in kvm
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      cmd_line = ''.join(kvm_process.cmdline())
+      self.assertNotIn(
+        'srv/image-repository/image_001,media=cdrom',
+        cmd_line
+      )
+      self.assertNotIn(
+        'srv/image-repository/image_002,media=cdrom',
+        cmd_line
+      )
+
+    # mimic the requirement: restart the instance by requesting it stopped and
+    # then started started, like user have to do it
+    self.rerequestInstance(partition_parameter_kw, state='stopped')
+    self.slap.waitForInstance(max_retry=1)
+    self.rerequestInstance(partition_parameter_kw, state='started')
+    self.slap.waitForInstance(max_retry=1)
+
+    # now the image is available in the kvm
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      cmd_line = ''.join(kvm_process.cmdline())
+      self.assertIn(
+        'srv/image-repository/image_001,media=cdrom',
+        cmd_line
+      )
+      self.assertIn(
+        'srv/image-repository/image_002,media=cdrom',
+        cmd_line
+      )
+
+    # cleanup of images works, also asserts that configuration changes are
+    # reflected
+    self.rerequestInstance({'image-url-list': ''})
+    self.slap.waitForInstance(max_retry=2)
+    self.assertEqual(
+      os.listdir(image_repository),
+      []
+    )
+
+  def assertPromiseFails(self, promise):
+    monitor_run_promise = os.path.join(
+      self.computer_partition_root_path, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      self.computer_partition_root_path, 'etc', 'monitor.conf')
+
+    self.assertNotEqual(
+      0,
+      subprocess.call([
+        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+        '--run-only', promise])
+    )
+
+  def test_bad_parameter(self):
+    self.rerequestInstance({
+      'image-url-list': "jsutbad"
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
+
+  def test_incorrect_md5sum(self):
+    self.rerequestInstance({
+      'image-url-list': "%s#" % (self.fake_image,)
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
+    self.rerequestInstance({
+      'image-url-list': "url#asdasd"
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
+
+  def test_not_matching_md5sum(self):
+    self.rerequestInstance({
+      'image-url-list': "%s#%s" % (
+        self.fake_image, self.fake_image_wrong_md5sum)
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-download-md5sum-promise.py')
+    self.assertPromiseFails('image-url-list-download-state-promise.py')
+
+  def test_unreachable_host(self):
+    self.rerequestInstance({
+      'image-url-list': "evennotahost#%s" % (
+        self.fake_image_md5sum,)
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-download-state-promise.py')
+
+  def test_too_many_images(self):
+    self.rerequestInstance({
+      'image-url-list': """
+      image1#11111111111111111111111111111111
+      image2#22222222222222222222222222222222
+      image3#33333333333333333333333333333333
+      image4#44444444444444444444444444444444
+      image5#55555555555555555555555555555555
+      image6#66666666666666666666666666666666
+      """
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
