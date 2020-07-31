@@ -51,6 +51,9 @@ public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
+image = ${:srv}/image
+image-var = ${:var}/image
+image-expose = ${monitor-directory:public}/image-expose
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -64,6 +67,83 @@ storage-path = ${directory:srv}/tap_mac
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
+
+[update-image-source-config]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  ${slap-parameter:image-url-list}
+rendered = ${directory:etc}/image-updater.conf
+
+[update-image-processed-config]
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${update-image-source-config:rendered}
+state-filename = update-image-processed-config.state
+state-file = ${directory:image-expose}/${:state-filename}
+processed-md5sum = ${directory:image-var}/update-image-processed.md5sum
+
+[update-image-processed-config-promise]
+<= empty-file-state-base-promise
+filename = ${update-image-processed-config:state-filename}
+config-filename = ${update-image-processed-config:state-file}
+
+[update-image-json-config]
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${update-image-source-config:rendered} ${:rendered} ${directory:image} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:image-var}/image-updater.json
+error-state-filename = image-json-config-error.json
+error-state-file = ${directory:image-expose}/${:error-state-filename}
+
+[empty-file-state-base-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# for now no details are provided
+config-url = ${monitor-base:base-url}/public/image-expose/${:filename}
+
+[image-json-config-state-promise]
+<= empty-file-state-base-promise
+filename = ${update-image-json-config:error-state-filename}
+config-filename = ${update-image-json-config:error-state-file}
+
+[update-image-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/image-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${update-image-processed-config:processed-md5sum}
+md5sum-state-filename = image-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:image-expose}/${:md5sum-state-filename}
+error-state-filename = image-download-controller-error.json
+error-state-file = ${directory:image-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[image-download-md5sum-promise]
+<= empty-file-state-base-promise
+filename = ${update-image-wrapper:md5sum-state-filename}
+config-filename = ${update-image-wrapper:md5sum-state-file}
+
+[image-download-state-promise]
+<= empty-file-state-base-promise
+filename = ${update-image-wrapper:error-state-filename}
+config-filename = ${update-image-wrapper:error-state-file}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
@@ -85,6 +165,7 @@ vnc-ip = ${:ipv4}
 vnc-port = 5901
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
+image-json-config = ${update-image-json-config:rendered}
 nbd-host = ${slap-parameter:nbd-host}
 nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
@@ -708,6 +789,7 @@ nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
 nbd2-host =
+image-url-list =
 
 enable-device-hotplug = False
 ram-size = 1024
@@ -833,6 +915,11 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+  update-image-wrapper
+  image-json-config-state-promise
+  image-download-md5sum-promise
+  image-download-state-promise
+  update-image-processed-config-promise
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}
