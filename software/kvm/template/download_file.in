@@ -22,5 +22,5 @@ if __name__ == "__main__":
   computed_md5sum = md5Checksum(destination_path)
   if computed_md5sum != md5sum:
     os.remove(destination_path)
-    raise Exception('MD5 mismatch. MD5 of downloaded file is %s, Specified MD5 is %s.' % (
-        computed_md5sum, md5sum))
+    print "ERROR URL %s: MD5 mismtach expected is %s but got instead %s" % (url, md5sum, computed_md5sum)
+    sys.exit(1)

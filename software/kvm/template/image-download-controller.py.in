@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+import sys
+
+if __name__ == "__main__":
+  configuration, destination_directory, download_script = sys.argv[1:]
+  error_num = 0
+  with open(configuration) as fh:
+    for line in fh.readlines():
+      line = line.strip()
+      if not line:
+        continue
+      split_line = line.split(' ')
+      if len(split_line) != 2:
+        print 'ERR: line %r is incorrect' % (line,)
+        error_num += 1
+        continue
+      url, md5sum = split_line
+      destination = os.path.join(destination_directory, md5sum)
+      print 'Downloading %r' % (url,)
+      download_success = True
+      try:
+        subprocess.check_output([download_script, url, md5sum, destination])
+      except subprocess.CalledProcessError as e:
+        error_num += 1
+        print 'ERR: Problem downloading %s' % (url,)
+        print e.output
+        continue
+      print 'Stored with correct checksum %s' % (md5sum,)
+  sys.exit(error_num)

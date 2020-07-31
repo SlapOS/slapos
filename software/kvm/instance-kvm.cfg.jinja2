@@ -51,6 +51,7 @@ public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
+image = ${:srv}/image
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -64,6 +65,27 @@ storage-path = ${directory:srv}/tap_mac
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
+
+[image-download-script]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!{{ dash_executable_location }}
+  {{ python_executable }} {{ file_download_script }} $*
+mode = 0700
+rendered = ${directory:bin}/image-download-script
+#command =  {{ bootstrap_url }} {{ bootstrap_url_md5sum }} ${:file-location}
+
+[update-image-wrapper-config]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  ${slap-parameter:image-url-list}
+rendered = ${directory:etc}/image-updater.conf
+
+[update-image-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/image-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-wrapper-config:rendered} ${directory:image} ${image-download-script:rendered}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
@@ -708,6 +730,7 @@ nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
 nbd2-host =
+image-url-list =
 
 enable-device-hotplug = False
 ram-size = 1024
@@ -833,6 +856,7 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+  update-image-wrapper
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}
