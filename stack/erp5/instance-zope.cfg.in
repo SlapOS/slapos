@@ -62,6 +62,7 @@ environment +=
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
 {% endif %}
+  MY2TO3_ACTION={{ slapparameter_dict['my2to3-action'] }}
   ${:environment-extra}
 
 [directory]

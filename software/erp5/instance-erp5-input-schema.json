@@ -110,6 +110,11 @@
       },
       "type": "object"
     },
+    "my2to3-action": {
+      "description": "Set the action my2to3 should perform on ERP5.",
+      "type": "string",
+      "default": ""
+    },
     "wsgi": {
       "description": "If set to true, Zope is run as a WSGI application, instead of using the Medusa HTTP server.",
       "type": "boolean",

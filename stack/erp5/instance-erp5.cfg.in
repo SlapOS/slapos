@@ -204,6 +204,7 @@ config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
+config-my2to3-action = {{ dumps(slapparameter_dict.get('my2to3-action', '')) }}
 config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
