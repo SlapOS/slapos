@@ -1,0 +1,43 @@
+[buildout]
+parts =
+  embulk-service
+  embulk-config
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+var = ${buildout:directory}/var
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promise = ${:etc}/promise/
+home = ${:etc}/home
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap_connection:computer_id}
+partition = ${slap_connection:partition_id}
+url = ${slap_connection:server_url}
+key = ${slap_connection:key_file}
+cert = ${slap_connection:cert_file}
+
+[embulk-service]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:services}/embulk-service
+command-line    = {{ java_location }}/bin/java -jar {{ embulk_location }}/embulk.jar 
+                    run ${embulk-config:rendered} -b {{ embulkPlugins_location }}/plugins
+
+[embulk-config]
+recipe  = slapos.recipe.template:jinja2
+context =
+  key slapparameter_dict instance-parameter:configuration
+template = inline:{% raw -%} 
+  {{ slapparameter_dict['conf_text'] }} 
+  {%- endraw %}
+rendered = ${directory:etc}/config.yml
+mode = 0644
