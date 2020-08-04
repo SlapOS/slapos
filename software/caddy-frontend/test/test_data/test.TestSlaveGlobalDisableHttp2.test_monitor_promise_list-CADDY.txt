@@ -1,2 +1,0 @@
-T-1/etc/monitor-promise/check-_monitor-ipv4-test-ipv4-packet-list-test
-T-1/etc/monitor-promise/check-_monitor-ipv6-test-ipv6-packet-list-test

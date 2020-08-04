@@ -29,6 +29,7 @@ from __future__ import unicode_literals
 import os
 import textwrap
 import logging
+import subprocess
 import tempfile
 import time
 from six.moves.urllib.parse import urlparse, urljoin
@@ -89,6 +90,15 @@ class TestTheia(SlapOSInstanceTestCase):
     # use a large enough terminal so that slapos proxy show table fit in the screen
     process.setwinsize(5000, 5000)
 
+    # log process output for debugging
+    logger = logging.getLogger('theia-shell')
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from theia-shell: %s", msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+
     process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
     process.expect_exact('Standalone SlapOS for computer `local` activated')
 
@@ -122,3 +132,13 @@ class TestTheia(SlapOSInstanceTestCase):
 
     process.terminate()
     process.wait()
+
+  def test_theia_shell_execute_tasks(self):
+    # shell needs to understand -c "comamnd" arguments for theia tasks feature
+    test_file = '{}/test file'.format(self.computer_partition_root_path)
+    subprocess.check_call([
+        '{}/bin/theia-shell'.format(self.computer_partition_root_path),
+        '-c',
+        'touch "{}"'.format(test_file)
+    ])
+    self.assertTrue(os.path.exists(test_file))
