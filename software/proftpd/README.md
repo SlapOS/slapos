@@ -16,5 +16,3 @@ http://www.proftpd.org/docs/
  * make sure SFTPLog is useful (seems very verbose and does not contain more than stdout)
  * make it easier to manage users ( using `mod_auth_web` against an ERP5 endpoint or accepting a list of user/password as instance parameter )
  * allow configuring webhooks when new file is uploaded
-
-

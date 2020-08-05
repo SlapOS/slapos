@@ -149,4 +149,3 @@ context =
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:jupyter_custom_dir}
 link-binary = {{ custom_js_location }}/custom.js
-

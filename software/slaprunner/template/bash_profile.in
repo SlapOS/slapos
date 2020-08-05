@@ -36,4 +36,3 @@ alias l='ls -CF'
 
 echo "Welcome to SlapOS slaprunner shell"
 echo
-

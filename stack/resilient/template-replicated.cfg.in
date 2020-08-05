@@ -301,4 +301,3 @@ pbs-{{namebase}}{{id}}-computer-guid =
 ignore-known-hosts-file = false
 
 {% endmacro %}
-

@@ -154,4 +154,3 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [slap-parameter]
-
