@@ -7,7 +7,7 @@ import sys
 
 if __name__ == "__main__":
   source_configuration, destination_configuration, \
-    destination_directory = sys.argv[1:]
+    destination_directory, error_state_file = sys.argv[1:]
   error_amount = 0
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   image_prefix = 'image_'
@@ -45,11 +45,18 @@ if __name__ == "__main__":
   image_amount = len(image_list)
   if image_amount > maximum_image_amount:
     print('ERR: Amount of images is %s, which is bigger than maximum '
-          '(%s), please fix' % (image_amount, maximum_image_amount))
+          '(%s)' % (image_amount, maximum_image_amount))
     error_amount += 1
   else:
     configuration_dict['image-list'] = image_list
   configuration_dict['error-amount'] = error_amount
   with open(destination_configuration, 'w') as fh:
     json.dump(configuration_dict, fh, indent=2)
+  with open(error_state_file, 'w') as fh:
+    if error_amount == 0:
+      print('INF: Configuration generated without errors')
+      fh.write('')
+    else:
+      print('ERR: Configuration generated with %s errors' % (error_amount,))
+      fh.write('%s' % (error_amount,))
   sys.exit(error_amount)

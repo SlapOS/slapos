@@ -14,6 +14,13 @@
       "type": "string",
       "format": "uri",
       "require": false
+    },
+    "image-url-list-result": {
+      "title": "Result of image-url-list parsing",
+      "description": "Informative result of image-url-list parsing to provide information to the requester.",
+      "type": "string",
+      "require": false,
+      "textarea": true
     }
   }
 }

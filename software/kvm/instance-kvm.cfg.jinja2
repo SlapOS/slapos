@@ -73,11 +73,23 @@ template = inline:
 rendered = ${directory:etc}/image-updater.conf
 
 [update-image-json-config]
-recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${update-image-source-config:rendered} ${:rendered} ${directory:image}
-update-command = ${:command}
-stop-on-error = False
-rendered = ${directory:etc}/image-updater.json
+# Note: collective.recipe.shelloutput executed during init, but the
+#       ${update-image-source-config:rendered} is generated during install,
+#       so it is required to have promise which will fail until config
+#       generation is finished
+# XXX: That's not enough, we can't USE collective.recipe.shelloutput
+recipe = collective.recipe.shelloutput
+commands =
+  result = {{ python_executable }} {{ image_download_config_creator }} ${update-image-source-config:rendered} ${:rendered} ${directory:image}
+rendered = ${directory:etc}/image-updater.json ${:error-state-file}
+error-state-file = ${directory:var}/image-json-config-error.json
+
+[image-json-config-state-promise]
+<= monitor-promise-base
+module = check_file_state
+name = image-json-config-state.py
+config-filename = ${update-image-json-config:error-state-file}
+config-state = empty
 
 [update-image-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -484,6 +496,7 @@ recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+image-url-list-result = ${update-image-json-config:result}
 {% if additional_frontend %}
 url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
@@ -856,6 +869,7 @@ parts =
   cron-entry-logrotate
   frontend-promise
   update-image-wrapper
+  image-json-config-state-promise
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}
