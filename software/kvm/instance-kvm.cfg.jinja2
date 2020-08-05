@@ -82,7 +82,7 @@ rendered = ${directory:etc}/image-updater.json
 [update-image-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/image-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-json-config:rendered} {{ curl_executable_location }}
+command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-json-config:rendered} {{ curl_executable_location }} ${directory:srv}/image-download-controller-md5sum-fail.json
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kvm-controller-parameter-dict]
