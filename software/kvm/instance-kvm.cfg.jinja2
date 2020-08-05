@@ -52,6 +52,8 @@ cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
 image = ${:srv}/image
+image-var = ${:var}/image
+image-expose = ${:srv}/image-expose
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -72,18 +74,68 @@ template = inline:
   ${slap-parameter:image-url-list}
 rendered = ${directory:etc}/image-updater.conf
 
+[update-image-processed-config]
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest() 
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${update-image-source-config:rendered}
+state-file = ${directory:image-var}/update-image-processed-config.state
+processed-md5sum = ${directory:image-var}/update-image-processed.md5sum
+
+[update-image-processed-config-promise]
+<= empty-file-state-base-promise
+config-filename = ${update-image-processed-config:state-file}
+
 [update-image-json-config]
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${update-image-source-config:rendered} ${:rendered} ${directory:image}
+command = {{ python_executable }} {{ image_download_config_creator }} ${update-image-source-config:rendered} ${:rendered} ${directory:image} ${:error-state-file}
 update-command = ${:command}
-stop-on-error = False
-rendered = ${directory:etc}/image-updater.json
+rendered = ${directory:image-var}/image-updater.json
+error-state-file = ${directory:image-var}/image-json-config-error.json
+
+[empty-file-state-base-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# for now no details are provided
+config-url = ''
+
+[image-json-config-state-promise]
+<= empty-file-state-base-promise
+config-filename = ${update-image-json-config:error-state-file}
 
 [update-image-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:scripts}/image-updater
-command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-json-config:rendered} {{ curl_executable_location }} ${directory:srv}/image-download-controller-md5sum-fail.json
+command-line = {{ python_executable }} {{ image_download_controller }} ${update-image-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${update-image-processed-config:processed-md5sum}
+md5sum-state-file = ${directory:image-var}/image-download-controller-md5sum-fail.json
+error-state-file = ${directory:image-var}/image-download-controller-error.json
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[image-download-md5sum-promise]
+<= empty-file-state-base-promise
+config-filename = ${update-image-wrapper:md5sum-state-file}
+
+[image-download-state-promise]
+<= empty-file-state-base-promise
+config-filename = ${update-image-wrapper:error-state-file}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
@@ -856,6 +908,10 @@ parts =
   cron-entry-logrotate
   frontend-promise
   update-image-wrapper
+  image-json-config-state-promise
+  image-download-md5sum-promise
+  image-download-state-promise
+  update-image-processed-config-promise
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}
