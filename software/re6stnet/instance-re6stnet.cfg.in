@@ -253,4 +253,3 @@ offline = true
 
 [slap-parameter]
 slave_instance_list = {}
-

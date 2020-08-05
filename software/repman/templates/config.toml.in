@@ -67,4 +67,3 @@ sysbench-threads = 4
 # Time to run benchmark (default 100)
 sysbench-time = 100
 sysbench-v1 = true
-

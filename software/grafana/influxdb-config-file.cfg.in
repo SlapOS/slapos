@@ -131,4 +131,3 @@ bind-address = "[{{ influxdb['local-host'] }}]:{{ influxdb['rpc-port'] }}"
   enabled = true
   query-stats-enabled = false
   run-interval = "1s"
-

@@ -15,4 +15,3 @@ if expected != "" and value != expected:
 if not_expected != "" and value == not_expected: 
   print "FAIL: %%s == %%s" %% (value, not_expected)
   sys.exit(127)
-
