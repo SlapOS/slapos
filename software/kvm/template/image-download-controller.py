@@ -21,8 +21,8 @@ def md5Checksum(file_path):
 
 
 if __name__ == "__main__":
-  configuration, curl, md5sum_fail_file = sys.argv[1:]
-  error_num = 0
+  configuration, curl, md5sum_fail_file, state_file, processed_md5sum = sys.argv[1:]
+  error_amount = 0
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   image_prefix = 'image_'
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
       print(
         'ERR: %s : Checksum is incorrect after %s tries, will not retry' % (
           image['url'], md5sum_state_amount))
-      error_num += 1
+      error_amount += 1
       continue
     print('INF: %s : Downloading' % (image['url'],))
     download_success = True
@@ -95,17 +95,17 @@ if __name__ == "__main__":
         '--output', destination_tmp, image['url']],
         stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      error_num += 1
+      error_amount += 1
       print('ERR: %s : Problem while downloading: %r' % (
         image['url'], e.output.strip()))
       continue
     if not(os.path.exists(destination_tmp)):
-      error_num += 1
+      error_amount += 1
       print('ERR: %s : Image disappeared, will retry later')
       continue
     computed_md5sum = md5Checksum(destination_tmp)
     if computed_md5sum != image['md5sum']:
-      error_num += 1
+      error_amount += 1
       try:
         os.remove(destination_tmp)
       except Exception:
@@ -138,4 +138,11 @@ if __name__ == "__main__":
     else:
       # if no problems reported, just empty the file
       fh.write('')
-  sys.exit(error_num)
+  with open(state_file, 'w') as fh:
+    if error_amount == 0:
+      fh.write('')
+    else:
+      json.dump({'error-amount': error_amount}, fh)
+  with open(processed_md5sum, 'w') as fh:
+   fh.write(config['config-md5sum'])
+  sys.exit(error_amount)
