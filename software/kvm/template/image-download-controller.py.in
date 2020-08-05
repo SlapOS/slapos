@@ -21,7 +21,7 @@ def md5Checksum(file_path):
 
 
 if __name__ == "__main__":
-  configuration, curl = sys.argv[1:]
+  configuration, curl, md5sum_fail_file = sys.argv[1:]
   error_num = 0
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   image_prefix = 'image_'
@@ -48,6 +48,16 @@ if __name__ == "__main__":
       print('INF: Removing obsolete %s' % (fname,))
       os.remove(os.path.join(config['destination-directory'], fname))
 
+  # prepare state dicts
+  # current and new are used to remove not existing configurations
+  # and also to allow re-add some configuration
+  try:
+    with open(md5sum_fail_file) as fh:
+      md5sum_state_dict = json.load(fh)
+  except Exception:
+    md5sum_state_dict = {}
+  new_md5sum_state_dict = {}
+  
   # fetch the wanted list
   for image in config['image-list']:
     destination = os.path.join(
@@ -60,6 +70,16 @@ if __name__ == "__main__":
         print('INF: %s : Removed, as expected checksum does not match %s' % (
           image['url'], image['md5sum']))
         os.remove(destination)
+    # key is str, as the dict is dumped to JSON which does not accept tuples
+    md5sum_state_key = '%s#%s' % (image['url'], image['md5sum'])
+    md5sum_state_amount = md5sum_state_dict.get(md5sum_state_key, 0)
+    if md5sum_state_amount >= 4:
+      new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount
+      print(
+        'ERR: %s : Checksum is incorrect after %s tries, will not retry' % (
+          image['url'], md5sum_state_amount))
+      error_num += 1
+      continue
     print('INF: %s : Downloading' % (image['url'],))
     download_success = True
     destination_tmp = os.path.join(
@@ -92,6 +112,8 @@ if __name__ == "__main__":
         pass
       print('ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
         image['url'], image['md5sum'], computed_md5sum))
+      # Store yet another failure while computing md5sum for this
+      new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
     else:
       os.rename(destination_tmp, destination)
       print('INF: %s : Stored with checksum %s' % (
@@ -110,4 +132,6 @@ if __name__ == "__main__":
         print('INF: %s : Symlinking %s -> %s' % (
           image['url'], link, destination))
         os.symlink(destination, link)
+  with open(md5sum_fail_file, 'w') as fh:
+    json.dump(new_md5sum_state_dict, fh, indent=2)
   sys.exit(error_num)
