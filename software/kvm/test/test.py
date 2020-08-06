@@ -475,3 +475,18 @@ class TestInstanceNbdServer(InstanceTestCase):
     )
     self.assertIn('<title>Upload new File</title>', result.text)
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
+
+
+@skipUnlessKvm
+class TestImageUrlList(MonitorAccessMixin, InstanceTestCase):
+  __partition_reference__ = 'iul'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    # start with empty, but working configuration
+    return {}
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    self.fail('notimplementederror')
