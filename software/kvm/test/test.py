@@ -668,3 +668,60 @@ class TestImageUrlList(InstanceTestCase):
     })
     self.raising_waitForInstance(3)
     self.assertPromiseFails('image-url-list-config-state-promise.py')
+
+
+@skipUnlessKvm
+class TestImageUrlListKvmCluster(InstanceTestCase):
+  __partition_reference__ = 'iulkc'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  fake_image, = (
+      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
+      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
+      "e5b2721ca4556a0734cb13e65",)
+  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
+  fake_image2, = (
+      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
+      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
+      "2a74b7675a8d8ca20476dba6e",)
+  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "image-url-list": "%s#%s" % (
+              cls.fake_image, cls.fake_image_md5sum)
+        },
+        "KVM1": {
+            "disable-ansible-promise": True,
+            "image-url-list": "%s#%s" % (
+              cls.fake_image2, cls.fake_image2_md5sum)
+        }
+      }
+    })}
+
+  def test(self):
+    # Note: As there is no way to introspect nicely where partition landed
+    #       we assume ordering of the cluster requests
+    KVM0_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
+      'image-url-list.conf')
+    KVM1_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '2', 'etc',
+      'image-url-list.conf')
+    with open(KVM0_config, 'r') as fh:
+      self.assertEqual(
+        "%s#%s" % (self.fake_image, self.fake_image_md5sum),
+        fh.read()
+      )
+    with open(KVM1_config, 'r') as fh:
+      self.assertEqual(
+        "%s#%s" % (self.fake_image2, self.fake_image2_md5sum),
+        fh.read()
+      )
