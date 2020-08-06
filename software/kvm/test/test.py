@@ -38,9 +38,10 @@ import unittest
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-has_kvm = os.access('/dev/kvm', os.R_OK|os.W_OK)
+has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
-skipIfPython3 = unittest.skipIf(six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
+skipIfPython3 = unittest.skipIf(
+  six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -57,19 +58,22 @@ else:
 
 bootstrap_common_param_dict = {
     # the bootstrap script is vm-bootstrap
-    "bootstrap-script-url": "http://shacache.org/shacache/05105cd25d1ad798b71fd46a206c9b73da2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bce5b2721ca4556a0734cb13e65#c98825aa1b6c8087914d2bfcafec3058",
+    "bootstrap-script-url":
+    "http://shacache.org/shacache/05105cd25d1ad798b71fd46a206c9b73da2c285a078"
+    "af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bce5b2721ca455"
+    "6a0734cb13e65#c98825aa1b6c8087914d2bfcafec3058",
     "slave-frontend": {
         "slave-frontend-dict": {}
-        },
+    },
     "authorized-keys": [
         "ssh-rsa %s key_one" % ("A" * 372),
         "ssh-rsa %s key_two" % ("B" * 372),
         "ssh-rsa %s key_three" % ("C" * 372)
-        ],
+    ],
     "fw-restricted-access": "off",
     "fw-authorized-sources": [],
     "fw-reject-sources": ["10.32.0.0/13"]
-    }
+}
 
 bootstrap_machine_param_dict = {
     "computer-guid": "local",
@@ -80,20 +84,23 @@ bootstrap_machine_param_dict = {
     "cpu-count": 2,
     "disk-size": 50,
     # Debian 10 image
-    "virtual-hard-drive-url": "http://shacache.org/shacache/9d3e6d017754fdd08e5ecf78093dec27fd792fb183df6146006adf003b6f4b98c0388d5a11566627101f7855d77f60e3dd4ba7ce66850f4a8f030573b904d5ab",
+    "virtual-hard-drive-url":
+    "http://shacache.org/shacache/9d3e6d017754fdd08e5ecf78093dec27fd792fb183d"
+    "f6146006adf003b6f4b98c0388d5a11566627101f7855d77f60e3dd4ba7ce66850f4a8f0"
+    "30573b904d5ab",
     "virtual-hard-drive-md5sum": "b7928d7b0a2b5e2888f5ddf68f5fe422",
     "virtual-hard-drive-gzipped": False,
     "hard-drive-url-check-certificate": False,
     "use-tap": True,
     "use-nat": True,
-    "nat-restrict-mode":True,
+    "nat-restrict-mode": True,
     "enable-vhost": True,
     "external-disk-number": 1,
     "external-disk-size": 100,
     "external-disk-format": "qcow2",
     "enable-monitor": True,
     "keyboard-layout-language": "fr"
-    }
+}
 @skipUnlessKvm
 class ServicesTestCase(InstanceTestCase):
   def test_hashes(self):
@@ -237,6 +244,7 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+
 @skipUnlessKvm
 class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'adb'
@@ -244,7 +252,8 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps(dict(bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
+    return {'_': json.dumps(dict(
+      bootstrap_common_param_dict, **bootstrap_machine_param_dict))}
 
   def test(self):
     connection_parameter_dict = self.computer_partition\
@@ -256,6 +265,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+
 
 @skipUnlessKvm
 class TestAccessKvmCluster(MonitorAccessMixin, InstanceTestCase):
@@ -328,6 +338,7 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+
 @skipIfPython3
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
@@ -345,27 +356,33 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
           "test-machine1": bootstrap_machine_param_dict,
           "test-machine2": dict(bootstrap_machine_param_dict, **{
               # Debian 9 image
-              "virtual-hard-drive-url": "http://shacache.org/shacache/ce07873dbab7fa8501d1bf5565c2737b2eed6c8b9361b4997b21daf5f5d1590972db9ac00131cc5b27d9aa353f2f94071e073f9980cc61badd6d2427f592e6e8",
+              "virtual-hard-drive-url":
+              "http://shacache.org/shacache/ce07873dbab7fa8501d1bf5565c2737b2"
+              "eed6c8b9361b4997b21daf5f5d1590972db9ac00131cc5b27d9aa353f2f940"
+              "71e073f9980cc61badd6d2427f592e6e8",
               "virtual-hard-drive-md5sum": "2b113e3cd8276b9740189622603d6f99"
-              })
-          }
-      }))}
+          })
+      }
+    }))}
 
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['test-machine1-url'], verify=False)
+    result = requests.get(
+      connection_parameter_dict['test-machine1-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
-    result = requests.get(connection_parameter_dict['test-machine2-url'], verify=False)
+    result = requests.get(
+      connection_parameter_dict['test-machine2-url'], verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+
 
 @skipIfPython3
 @skipUnlessKvm
@@ -394,6 +411,7 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-password',
         'takeover-kvm-1-url',
         'url']))
+
 
 @skipIfPython3
 @skipUnlessKvm
@@ -430,6 +448,7 @@ class TestAccessResilientAdditional(InstanceTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
+
 class TestInstanceNbdServer(InstanceTestCase):
   __partition_reference__ = 'ins'
   instance_max_retry = 5
@@ -448,7 +467,8 @@ class TestInstanceNbdServer(InstanceTestCase):
   def test(self):
     connection_parameter_dict = self.computer_partition\
       .getConnectionParameterDict()
-    result = requests.get(connection_parameter_dict['upload_url'].strip(), verify=False)
+    result = requests.get(
+      connection_parameter_dict['upload_url'].strip(), verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
