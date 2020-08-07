@@ -9,6 +9,8 @@
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict('cpu-count', 1)) + 1)) %}
+{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict('ram-size', 1024)) + 512)) %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -104,10 +106,10 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 
 enable-device-hotplug = ${kvm-controller-parameter-dict:enable-device-hotplug}
 smp-count = ${kvm-controller-parameter-dict:cpu-count}
-smp-max-count = ${slap-parameter:cpu-max-count}
+smp-max-count = {{ cpu_max_count }}
 
 ram-size = ${kvm-controller-parameter-dict:ram-size}
-ram-max-size = ${slap-parameter:ram-max-size}
+ram-max-size = {{ ram_max_size }}
 init-ram-size = 1024
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
@@ -711,7 +713,6 @@ nbd2-host =
 
 enable-device-hotplug = False
 ram-size = 1024
-ram-max-size = 51200
 ram-hotplug-slot-size = 512
 disk-size = 10
 disk-type = virtio
@@ -719,7 +720,6 @@ disk-format = qcow2
 disk-device-path =
 
 cpu-count = 1
-cpu-max-count = 24
 disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
