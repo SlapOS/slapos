@@ -494,6 +494,15 @@ class TestImageUrlList(InstanceTestCase):
     # start with empty, but working configuration
     return {}
 
+  def tearDown(self):
+    # clean up the instance for other tests
+    # 1st remove all images...
+    self.rerequestInstance({'image-url-list': ''})
+    self.slap.waitForInstance(max_retry=10)
+    # 2nd ...move instance to "default" state
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
+
   def rerequestInstance(self, parameter_dict, state='started'):
     software_url = self.getSoftwareURL()
     software_type = self.getInstanceSoftwareType()
@@ -609,13 +618,6 @@ class TestImageUrlList(InstanceTestCase):
         monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
         '--run-only', promise])
     )
-
-  def test_empty_parameter(self):
-    self.rerequestInstance({
-      'image-url-list': ""
-    })
-    self.raising_waitForInstance(3)
-    self.assertPromiseFails('image-url-list-config-state-promise.py')
 
   def test_bad_parameter(self):
     self.rerequestInstance({
