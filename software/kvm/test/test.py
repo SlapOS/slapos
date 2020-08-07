@@ -521,7 +521,6 @@ class TestImageUrlList(InstanceTestCase):
       self.slap.waitForInstance(max_retry=max_retry)
 
   def test(self):
-    # XXX: more than one image, show ordering
     partition_parameter_kw = {
       'image-url-list': "%s#%s\n%s#%s" % (
         self.fake_image, self.fake_image_md5sum, self.fake_image2,
