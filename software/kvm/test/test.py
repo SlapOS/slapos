@@ -725,3 +725,18 @@ class TestImageUrlListKvmCluster(InstanceTestCase):
         "%s#%s" % (self.fake_image2, self.fake_image2_md5sum),
         fh.read()
       )
+
+
+@skipUnlessKvm
+class TestCpuMemMax(InstanceTestCase):
+  __partition_reference__ = 'cmm'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'cpu-count': 2,
+      'ram-size': 2048
+    }
+
+  def test(self):
+    self.fail('TODO')
