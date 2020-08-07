@@ -19,9 +19,8 @@
     },
     "ram-max-size": {
       "title": "Maximum RAM size, in MB",
-      "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512.",
+      "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
       "type": "integer",
-      "default": 51200,
       "minimum": 1024,
       "multipleOf": 512
     },
@@ -106,9 +105,8 @@
     },
     "cpu-max-count": {
       "title": "Maximum CPU amount",
-      "description": "Specifies the maximum number of CPUs.",
+      "description": "Specifies the maximum number of CPUs. Defaults to cpu-count + 1",
       "type": "integer",
-      "default": 24,
       "minimum": 1
     },
     "numa": {
