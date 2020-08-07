@@ -503,43 +503,43 @@ class TestImageUrlList(InstanceTestCase):
     })
     # connection_parameter_dict = self.computer_partition\
     #  .getConnectionParameterDict()
-    self.fail('notimplementederror')
+    self.fail('TODO')
 
   def test_empty_parameter(self):
     self.rerequestInstance({
       'image-url-list': ""
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
 
   def test_bad_parameter(self):
     self.rerequestInstance({
       'image-url-list': "jsutbad"
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       'image-url-list': "%s#" % (self.fake_image,)
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
     self.rerequestInstance({
       'image-url-list': "url#asdasd"
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
 
   def test_not_matching_md5sum(self):
     self.rerequestInstance({
       'image-url-list': "%s#%s" % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
 
   def test_unreachable_host(self):
     self.rerequestInstance({
       'image-url-list': "evennotahost#%s" % (
         self.fake_image, self.fake_image_md5sum)
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
 
   def test_too_many_images(self):
     self.rerequestInstance({
@@ -552,4 +552,4 @@ class TestImageUrlList(InstanceTestCase):
       image6#66666666666666666666666666666666
       """
     })
-    self.fail('notimplemtneted')
+    self.fail('TODO')
