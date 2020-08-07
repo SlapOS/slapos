@@ -725,3 +725,24 @@ class TestImageUrlListKvmCluster(InstanceTestCase):
         "%s#%s" % (self.fake_image2, self.fake_image2_md5sum),
         fh.read()
       )
+
+
+@skipUnlessKvm
+class TestCpuMemMaxDynamic(InstanceTestCase):
+  __partition_reference__ = 'cmm'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'cpu-count': 2,
+      'ram-size': 2048
+    }
+
+  def test(self):
+    with open(os.path.join(
+     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'rb') as fh:
+      kvm_raw = fh.read()
+    self.assertTrue('smp_count = 2' in kvm_raw)
+    self.assertTrue('smp_max_count = 3' in kvm_raw)
+    self.assertTrue('ram_size = 2048' in kvm_raw)
+    self.assertTrue("ram_max_size = '2560'" in kvm_raw)
