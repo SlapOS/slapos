@@ -2,4 +2,3 @@
   path %(path)s
   # pack-gc false
 </filestorage>
-

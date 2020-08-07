@@ -57,4 +57,3 @@ command =
     touch ${:backup-done}
   fi
 update-command = ${:command}
-

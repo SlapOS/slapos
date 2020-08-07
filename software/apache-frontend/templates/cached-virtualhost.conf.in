@@ -48,4 +48,3 @@
 
   RewriteRule ^/(.*)$ {{ slave_parameter.get('https_backend_url', '') }}/$1 [L,P]
 </VirtualHost>
-

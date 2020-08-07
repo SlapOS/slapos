@@ -104,4 +104,3 @@ extra-context =
     key ipv6_set slap-configuration:ipv6
     raw bin_directory {{ bin_directory }}
     section parameter_dict dynamic-template-mariadb-parameters
-
