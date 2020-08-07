@@ -82,9 +82,15 @@ config-url = ${monitor-base:base-url}/public/image-url-list/${:filename}
 
 [image-url-list-source-config]
 # generates configuration of the image from the user parameter
+# special "magic" is used, to properly support multiline image-url-list
+# but in the same time correctly generate the configuration file
 recipe = slapos.recipe.template:jinja2
 template = inline:
-  ${slap-parameter:image-url-list}
+{%- raw %}
+  {{ image_url_list }}
+{% endraw -%}
+context =
+  key image_url_list slap-parameter:image-url-list
 rendered = ${directory:etc}/image-url-list.conf
 
 [image-url-list-processed-config]
@@ -864,7 +870,8 @@ keyboard-layout-language = fr
 {{ k }} =
   {{ key_list | join('\n  ') }}
 {% else -%}
-{{ k }} = {{ v }}
+{#- values are decorated with dumps to safely represent them in buildout profile #}
+{{ k }} = {{ dumps(v) }}
 {% endif -%}
 {% endfor -%}
 

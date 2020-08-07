@@ -28,6 +28,8 @@
 import six.moves.http_client as httplib
 import json
 import os
+import hashlib
+import psutil
 import requests
 import six
 import slapos.util
@@ -482,28 +484,110 @@ class TestImageUrlList(InstanceTestCase):
   __partition_reference__ = 'iul'
 
   @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  @classmethod
   def getInstanceParameterDict(cls):
     # start with empty, but working configuration
     return {}
 
-  def rerequestInstance(self, parameter_dict):
-    self._instance_parameter_dict = parameter_dict.copy()
-    self.requestDefaultInstance()
+  def rerequestInstance(self, parameter_dict, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=parameter_dict,
+        state=state)
 
   fake_image, = (
-      "http://shacache.org/shacache/05105cd25d1ad798b71fd46a206c9b73da2c285a0"
-      "78af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bce5b2721c"
-      "a4556a0734cb13e65",)
+      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
+      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
+      "e5b2721ca4556a0734cb13e65",)
   fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
+  fake_image2, = (
+      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
+      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
+      "2a74b7675a8d8ca20476dba6e",)
+  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
   fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
 
   def test(self):
-    self.rerequestInstance({
-      'image-url-list': "%s#%s" % (self.fake_image, self.fake_image_md5sum)
-    })
-    # connection_parameter_dict = self.computer_partition\
-    #  .getConnectionParameterDict()
-    self.fail('TODO')
+    # XXX: more than one image, show ordering
+    partition_parameter_kw = {
+      'image-url-list': "%s#%s\n%s#%s" % (
+        self.fake_image, self.fake_image_md5sum, self.fake_image2,
+        self.fake_image2_md5sum)
+    }
+    self.rerequestInstance(partition_parameter_kw)
+    self.slap.waitForInstance(max_retry=10)
+    # check that image is correctly downloaded and linked
+    image_repository = os.path.join(
+      self.computer_partition_root_path, 'srv', 'image-repository')
+    image = os.path.join(image_repository, self.fake_image_md5sum)
+    image_link = os.path.join(image_repository, 'image_001')
+    self.assertTrue(os.path.exists(image))
+    with open(image, 'rb') as fh:
+      image_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image_md5sum, self.fake_image_md5sum)
+    self.assertTrue(os.path.islink(image_link))
+    self.assertEqual(os.readlink(image_link), image)
+
+    image2 = os.path.join(image_repository, self.fake_image2_md5sum)
+    image2_link = os.path.join(image_repository, 'image_002')
+    self.assertTrue(os.path.exists(image2))
+    with open(image2, 'rb') as fh:
+      image2_md5sum = hashlib.md5(fh.read()).hexdigest()
+    self.assertEqual(image2_md5sum, self.fake_image2_md5sum)
+    self.assertTrue(os.path.islink(image2_link))
+    self.assertEqual(os.readlink(image2_link), image2)
+
+    # check that the image is NOT YET available in kvm
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      cmd_line = ''.join(kvm_process.cmdline())
+      self.assertNotIn(
+        'srv/image-repository/image_001,media=cdrom',
+        cmd_line
+      )
+      self.assertNotIn(
+        'srv/image-repository/image_002,media=cdrom',
+        cmd_line
+      )
+
+    # mimic the requirement: restart the instance by requesting it stopped and
+    # then started started, like user have to do it
+    self.rerequestInstance(partition_parameter_kw, state='stopped')
+    self.slap.waitForInstance(max_retry=1)
+    self.rerequestInstance(partition_parameter_kw, state='started')
+    self.slap.waitForInstance(max_retry=1)
+
+    # now the image is available in the kvm
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      cmd_line = ''.join(kvm_process.cmdline())
+      self.assertIn(
+        'srv/image-repository/image_001,media=cdrom',
+        cmd_line
+      )
+      self.assertIn(
+        'srv/image-repository/image_002,media=cdrom',
+        cmd_line
+      )
+
+    # cleanup of images works
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=1)
+    self.assertEqual(
+      os.listdir(image_repository),
+      []
+    )
 
   def test_empty_parameter(self):
     self.rerequestInstance({
