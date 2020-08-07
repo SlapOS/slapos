@@ -478,7 +478,7 @@ class TestInstanceNbdServer(InstanceTestCase):
 
 
 @skipUnlessKvm
-class TestImageUrlList(MonitorAccessMixin, InstanceTestCase):
+class TestImageUrlList(InstanceTestCase):
   __partition_reference__ = 'iul'
 
   @classmethod
@@ -486,7 +486,70 @@ class TestImageUrlList(MonitorAccessMixin, InstanceTestCase):
     # start with empty, but working configuration
     return {}
 
+  def rerequestInstance(self, parameter_dict):
+    self._instance_parameter_dict = parameter_dict.copy()
+    self.requestDefaultInstance()
+
+  fake_image, = (
+      "http://shacache.org/shacache/05105cd25d1ad798b71fd46a206c9b73da2c285a0"
+      "78af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bce5b2721c"
+      "a4556a0734cb13e65",)
+  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
+  fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
+
   def test(self):
-    connection_parameter_dict = self.computer_partition\
-      .getConnectionParameterDict()
+    self.rerequestInstance({
+      'image-url-list': "%s#%s" % (self.fake_image, self.fake_image_md5sum)
+    })
+    # connection_parameter_dict = self.computer_partition\
+    #  .getConnectionParameterDict()
     self.fail('notimplementederror')
+
+  def test_empty_parameter(self):
+    self.rerequestInstance({
+      'image-url-list': ""
+    })
+    self.fail('notimplemtneted')
+
+  def test_bad_parameter(self):
+    self.rerequestInstance({
+      'image-url-list': "jsutbad"
+    })
+    self.fail('notimplemtneted')
+
+  def test_incorrect_md5sum(self):
+    self.rerequestInstance({
+      'image-url-list': "%s#" % (self.fake_image,)
+    })
+    self.fail('notimplemtneted')
+    self.rerequestInstance({
+      'image-url-list': "url#asdasd"
+    })
+    self.fail('notimplemtneted')
+
+  def test_not_matching_md5sum(self):
+    self.rerequestInstance({
+      'image-url-list': "%s#%s" % (
+        self.fake_image, self.fake_image_wrong_md5sum)
+    })
+    self.fail('notimplemtneted')
+
+  def test_unreachable_host(self):
+    self.rerequestInstance({
+      'image-url-list': "evennotahost#%s" % (
+        self.fake_image, self.fake_image_md5sum)
+    })
+    self.fail('notimplemtneted')
+
+  def test_too_many_images(self):
+    self.rerequestInstance({
+      'image-url-list': """
+      image1#11111111111111111111111111111111
+      image2#22222222222222222222222222222222
+      image3#33333333333333333333333333333333
+      image4#44444444444444444444444444444444
+      image5#55555555555555555555555555555555
+      image6#66666666666666666666666666666666
+      """
+    })
+    self.fail('notimplemtneted')
