@@ -86,11 +86,12 @@ config-url = ${monitor-base:base-url}/public/image-url-list/${:filename}
 # but in the same time correctly generate the configuration file
 recipe = slapos.recipe.template:jinja2
 template = inline:
+{#- Do special trick to support image-url-list being None, if key is present with value "" #}
 {%- raw %}
-  {{ image_url_list }}
+  {{ slap_parameter.get('image-url-list') or '' }}
 {% endraw -%}
 context =
-  key image_url_list slap-parameter:image-url-list
+  section slap_parameter slap-parameter
 rendered = ${directory:etc}/image-url-list.conf
 
 [image-url-list-processed-config]
@@ -134,7 +135,7 @@ recipe = plone.recipe.command
 command = {{ python_executable }} {{ image_download_config_creator }} ${image-url-list-source-config:rendered} ${:rendered} ${directory:image-repository} ${:error-state-file}
 update-command = ${:command}
 rendered = ${directory:image-url-list-var}/image-url-list.json
-error-state-filename = image-url-list-json-config-error.json
+error-state-filename = image-url-list-json-config-error.txt
 error-state-file = ${directory:image-url-list-expose}/${:error-state-filename}
 
 [image-url-list-config-state-promise]
@@ -150,7 +151,7 @@ wrapper-path = ${directory:scripts}/image-updater
 command-line = {{ python_executable }} {{ image_download_controller }} ${image-url-list-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${image-url-list-processed-config:processed-md5sum}
 md5sum-state-filename = image-download-controller-md5sum-fail.json
 md5sum-state-file = ${directory:image-url-list-expose}/${:md5sum-state-filename}
-error-state-filename = image-download-controller-error.json
+error-state-filename = image-download-controller-error.text
 error-state-file = ${directory:image-url-list-expose}/${:error-state-filename}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 

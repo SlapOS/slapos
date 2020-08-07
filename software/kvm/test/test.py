@@ -582,7 +582,7 @@ class TestImageUrlList(InstanceTestCase):
       )
 
     # cleanup of images works
-    self.rerequestInstance({})
+    self.rerequestInstance({'image-url-list': ''})
     self.slap.waitForInstance(max_retry=1)
     self.assertEqual(
       os.listdir(image_repository),

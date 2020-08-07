@@ -23,9 +23,9 @@ def md5Checksum(file_path):
 # Note: Assuring only one running instance is not done, as this script is only
 #       run from supervisord, which does it already
 if __name__ == "__main__":
-  configuration, curl, md5sum_fail_file, state_file, \
+  configuration, curl, md5sum_fail_file, error_state_file, \
     processed_md5sum = sys.argv[1:]
-  error_amount = 0
+  error_list = []
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   image_prefix = 'image_'
 
@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
   if config['error-amount'] != 0:
     print('ERR: There are problems with configuration')
-    sys.exit(1)
 
+  print('INF: Storing errors in %s' % (error_state_file,))
   # clean the destination directory
   file_to_keep_list = []
   for image in config['image-list']:
@@ -78,10 +78,9 @@ if __name__ == "__main__":
     md5sum_state_amount = md5sum_state_dict.get(md5sum_state_key, 0)
     if md5sum_state_amount >= 4:
       new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount
-      print(
+      error_list.append(
         'ERR: %s : Checksum is incorrect after %s tries, will not retry' % (
           image['url'], md5sum_state_amount))
-      error_amount += 1
       continue
     print('INF: %s : Downloading' % (image['url'],))
     download_success = True
@@ -98,23 +97,21 @@ if __name__ == "__main__":
         '--output', destination_tmp, image['url']],
         stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      error_amount += 1
-      print('ERR: %s : Problem while downloading: %r' % (
+      error_list.append('ERR: %s : Problem while downloading: %r' % (
         image['url'], e.output.strip()))
       continue
     if not(os.path.exists(destination_tmp)):
-      error_amount += 1
-      print('ERR: %s : Image disappeared, will retry later')
+      error_list.append('ERR: %s : Image disappeared, will retry later')
       continue
     computed_md5sum = md5Checksum(destination_tmp)
     if computed_md5sum != image['md5sum']:
-      error_amount += 1
       try:
         os.remove(destination_tmp)
       except Exception:
         pass
-      print('ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
-        image['url'], image['md5sum'], computed_md5sum))
+      error_list.append(
+        'ERR: %s : MD5 mismatch expected is %s but got instead %s' % (
+          image['url'], image['md5sum'], computed_md5sum))
       # Store yet another failure while computing md5sum for this
       new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
     else:
@@ -141,11 +138,8 @@ if __name__ == "__main__":
     else:
       # if no problems reported, just empty the file
       fh.write('')
-  with open(state_file, 'w') as fh:
-    if error_amount == 0:
-      fh.write('')
-    else:
-      json.dump({'error-amount': error_amount}, fh)
+  with open(error_state_file, 'w') as fh:
+    fh.write('\n'.join(error_list))
   with open(processed_md5sum, 'w') as fh:
-   fh.write(config['config-md5sum'])
-  sys.exit(error_amount)
+    fh.write(config['config-md5sum'])
+  sys.exit(len(error_list))
