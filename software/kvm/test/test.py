@@ -36,9 +36,11 @@ import slapos.util
 import sqlite3
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
+import subprocess
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.slap.standalone import SlapOSNodeCommandError
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
@@ -514,6 +516,10 @@ class TestImageUrlList(InstanceTestCase):
   fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
   fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
 
+  def raising_waitForInstance(self, max_retry):
+    with self.assertRaises(SlapOSNodeCommandError):
+      self.slap.waitForInstance(max_retry=max_retry)
+
   def test(self):
     # XXX: more than one image, show ordering
     partition_parameter_kw = {
@@ -581,49 +587,72 @@ class TestImageUrlList(InstanceTestCase):
         cmd_line
       )
 
-    # cleanup of images works
+    # cleanup of images works, also asserts that configuration changes are
+    # reflected
     self.rerequestInstance({'image-url-list': ''})
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
       []
+    )
+
+  def assertPromiseFails(self, promise):
+    monitor_run_promise = os.path.join(
+      self.computer_partition_root_path, 'software_release', 'bin',
+      'monitor.runpromise'
+    )
+    monitor_configuration = os.path.join(
+      self.computer_partition_root_path, 'etc', 'monitor.conf')
+
+    self.assertNotEqual(
+      0,
+      subprocess.call([
+        monitor_run_promise, '-c', monitor_configuration, '-a', '-f',
+        '--run-only', promise])
     )
 
   def test_empty_parameter(self):
     self.rerequestInstance({
       'image-url-list': ""
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
 
   def test_bad_parameter(self):
     self.rerequestInstance({
       'image-url-list': "jsutbad"
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
       'image-url-list': "%s#" % (self.fake_image,)
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
     self.rerequestInstance({
       'image-url-list': "url#asdasd"
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
 
   def test_not_matching_md5sum(self):
     self.rerequestInstance({
       'image-url-list': "%s#%s" % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-download-md5sum-promise.py')
+    self.assertPromiseFails('image-url-list-download-state-promise.py')
 
   def test_unreachable_host(self):
     self.rerequestInstance({
       'image-url-list': "evennotahost#%s" % (
-        self.fake_image, self.fake_image_md5sum)
+        self.fake_image_md5sum,)
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-download-state-promise.py')
 
   def test_too_many_images(self):
     self.rerequestInstance({
@@ -636,4 +665,5 @@ class TestImageUrlList(InstanceTestCase):
       image6#66666666666666666666666666666666
       """
     })
-    self.fail('TODO')
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails('image-url-list-config-state-promise.py')
