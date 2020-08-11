@@ -707,5 +707,21 @@ class TestImageUrlListKvmCluster(InstanceTestCase):
     })}
 
   def test(self):
-    # check that each partition containt given id has a proper image in etc/image-url-list.conf
-    self.fail('TODO')
+    # Note: As there is no way to introspect nicely where partition landed
+    #       we assume ordering of the cluster requests
+    KVM0_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
+      'image-url-list.conf')
+    KVM1_config = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '2', 'etc',
+      'image-url-list.conf')
+    with open(KVM0_config, 'rb') as fh:
+      self.assertEqual(
+        "%s#%s" % (self.fake_image, self.fake_image_md5sum),
+        fh.read()
+      )
+    with open(KVM1_config, 'rb') as fh:
+      self.assertEqual(
+        "%s#%s" % (self.fake_image2, self.fake_image2_md5sum),
+        fh.read()
+      )
