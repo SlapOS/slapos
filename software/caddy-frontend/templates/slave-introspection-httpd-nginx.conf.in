@@ -1,0 +1,33 @@
+# Access log configuration
+error-log: {{ parameter_dict['error-log'] }}
+access-log:
+  path: {{ parameter_dict['access-log'] }}
+# XXX  format: %h %{REMOTE_USER}i %{Host}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"
+  escape: apache
+
+listen:
+  port: {{ parameter_dict['https-port'] }}
+  host: {{ parameter_dict['global-ipv6'] }}
+  ssl: &ssl
+    certificate-file: {{ parameter_dict['ip-access-certificate'] }}
+    key-file: {{ parameter_dict['ip-access-certificate'] }}
+
+listen:
+  port: {{ parameter_dict['https-port'] }}
+  host: {{ parameter_dict['local-ipv4'] }}
+  ssl: *ssl
+
+hosts:
+  "[{{ parameter_dict['global-ipv6'] }}]":
+    paths: &slave_paths
+{% for slave, directory in slave_log_directory.iteritems() %}
+      "/{{ slave }}":
+        file.dir: {{ directory }}
+        # XXX: basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
+        # XXX:   "Log Access {{ slave }}"
+        # XXX:   /
+        # XXX: }
+{% endfor %}
+  "{{ parameter_dict['local-ipv4'] }}":
+    {#- reuse #}
+    paths: *slave_paths
