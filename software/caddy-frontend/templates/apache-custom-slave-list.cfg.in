@@ -287,6 +287,7 @@ recipe = slapos.cookbook:mkdirectory
 {%- do part_list.append('slave-log-directories') %}
 
 {%- do part_list.append('caddy-log-access') %}
+{%- do part_list.append('slave-introspection') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
 {#- Define IPv6 to IPV4 tunneling #}
@@ -330,6 +331,23 @@ extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
     section parameter_dict caddy-log-access-parameters
+
+[slave-introspection-parameters]
+local-ipv4 = {{ dumps(local_ipv4) }}
+global-ipv6 = {{ dumps(global_ipv6) }}
+https-port = 56783 {# XXX #}
+ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
+access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
+error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
+
+[slave-introspection]
+<= jinja2-template-base
+template = {{ frontend_configuration['slave-introspection-template'] }}
+rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
+extra-context =
+    section slave_log_directory slave-log-directory-dict
+    section slave_password slave-password
+    section parameter_dict slave-introspection-parameters
 
 
 {#- Publish information for the instance #}
