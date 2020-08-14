@@ -36,6 +36,7 @@ context =
 # empty sections if no slaves are available
 [slave-log-directory-dict]
 [slave-password]
+[slave-htpassd]
 
 {#- Loop thought slave list to set up slaves #}
 {%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
@@ -94,6 +95,7 @@ context =
 {%-   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%-   set slave_logrotate_section = slave_reference + "-logs" %}
 {%-   set slave_password_section = slave_reference + "-password" %}
+{%-   set slave_htpasswd_section = slave_reference + "-htpasswd" %}
 {%-   set slave_ln_section = slave_reference + "-ln" %}
 {#-   extend parts #}
 {%-   do part_list.extend([slave_ln_section]) %}
@@ -139,6 +141,9 @@ context =
 [slave-password]
 {{ slave_reference }} = {{ '${' + slave_password_section + ':passwd}' }}
 
+[slave-htpasswd]
+{{ slave_reference }} = {{ '${' + slave_htpasswd_section + ':file}' }}
+
 {#-   Set slave logrotate entry #}
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
@@ -161,6 +166,13 @@ command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }
 recipe = slapos.cookbook:generate.password
 storage-path = {{caddy_configuration_directory}}/.{{slave_reference}}.passwd
 bytes = 8
+
+[{{ slave_htpasswd_section }}]
+recipe = plone.recipe.command
+stop-on-error = True
+file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
+command = {{ frontend_configuration['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} {{ '${' + slave_password_section + ':passwd}' }}
+update-command = ${:command}
 
 {#-   ################################################## #}
 {#-   Set Slave Certificates if needed                   #}
@@ -287,6 +299,7 @@ recipe = slapos.cookbook:mkdirectory
 {%- do part_list.append('slave-log-directories') %}
 
 {%- do part_list.append('caddy-log-access') %}
+{%- do part_list.append('slave-introspection') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
 {#- Define IPv6 to IPV4 tunneling #}
@@ -330,6 +343,34 @@ extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
     section parameter_dict caddy-log-access-parameters
+
+[slave-introspection-parameters]
+local-ipv4 = {{ dumps(local_ipv4) }}
+global-ipv6 = {{ dumps(global_ipv6) }}
+https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
+ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
+access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
+error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
+var = {{ directory['slave-introspection-var'] }}
+pid = {{ directory['var'] }}/slave-introspection.pid
+
+[slave-introspection-config]
+<= jinja2-template-base
+template = {{ frontend_configuration['slave-introspection-template'] }}
+rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
+extra-context =
+    section slave_log_directory slave-log-directory-dict
+    section slave_htpasswd slave-htpasswd
+    section parameter_dict slave-introspection-parameters
+
+[slave-introspection]
+recipe = slapos.cookbook:wrapper
+command-line = {{ frontend_configuration['nginx'] }}
+  -c ${slave-introspection-config:rendered}
+
+wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
 
 
 {#- Publish information for the instance #}
