@@ -52,6 +52,11 @@ parts =
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
 
+  slave-introspection-frontend
+
+[caddyprofiledeps]
+recipe = caddyprofiledeps
+
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -83,6 +88,9 @@ csr_id = ${:srv}/csr_id
 caddy-csr_id = ${:etc}/caddy-csr_id
 caddy-csr_id-log = ${:log}/httpd-csr_id
 
+# slave introspection
+slave-introspection-var = ${:var}/slave-introspection
+
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -95,6 +103,13 @@ ip-access-certificate = ${self-signed-ip-access:certificate}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+nginx = {{ parameter_dict['nginx'] }}
+htpasswd = {{ parameter_dict['htpasswd'] }}
+slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_nginx'] }}
+slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
+slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
+slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -258,6 +273,7 @@ stop-on-error = True
 
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
+depends = ${caddyprofiledeps:recipe}
 template = {{ parameter_dict['template_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
@@ -276,6 +292,7 @@ extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
+    import furl_module furl
     key caddy_executable :caddy_executable
     key http_port configuration:plain_http_port
     key https_port configuration:port
@@ -400,6 +417,9 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
+# slave instrspection
+slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
+slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -891,6 +911,16 @@ mode = 0644
 extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
+
+[slave-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Slave Introspection Frontend {{ instance_parameter['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
+config-https-only = true
+return = domain secure_access
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
