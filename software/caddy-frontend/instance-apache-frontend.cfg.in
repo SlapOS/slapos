@@ -95,6 +95,8 @@ ip-access-certificate = ${self-signed-ip-access:certificate}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_h2o'] }}
+slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-h2o.yaml
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -400,6 +402,9 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
+# slave instrspection
+slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
+slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
