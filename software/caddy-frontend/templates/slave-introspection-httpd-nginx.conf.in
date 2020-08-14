@@ -1,0 +1,21 @@
+# Access log configuration
+error_log {{ parameter_dict['error-log'] }};
+server {
+  access_log {{ parameter_dict['access-log'] }};
+  listen {{ parameter_dict['global-ipv6'] }}:443 ssl;
+  listen {{ parameter_dict['local-ipv4'] }}:443 ssl;
+  ssl_certificate {{ parameter_dict['ip-access-certificate'] }};
+  ssl_certificate_key {{ parameter_dict['ip-access-certificate'] }};
+{% for slave, directory in slave_log_directory.iteritems() %}
+  location /{{ slave }} {
+    root {{ directory }};
+    autoindex on;
+    sendfile on;
+    sendfile_max_chunk 1m;
+    sendfile on;
+    # auth_basic "Log Access {{ slave }}"
+    # auth_basic_user_file XXX -- only one user/password
+    # XXX: basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
+  }
+{% endfor %}
+}
