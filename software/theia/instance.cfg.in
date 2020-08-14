@@ -114,6 +114,69 @@ install =
 location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
 
+[tasks.json]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot_theia}/tasks.json
+template =
+  inline:
+  {
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "slapos node software",
+        "detail": "Build all software supplied to the node",
+        "type": "shell",
+        "command": "${buildout:bin-directory}/slapos",
+        "args": [
+          "node",
+          "software",
+          // debug mode can be enabled by commenting out this line:
+          // "--buildout-debug",
+          "--all"
+        ],
+        "options": {
+          "env": {
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "GIT_EXEC_PATH": ""
+          }
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "slapos node instance",
+        "detail": "Create all instances requested on the node",
+        "type": "shell",
+        "command": "${buildout:bin-directory}/slapos",
+        "args": [
+          "node",
+          "instance",
+          // debug mode can be enabled by commenting out this line:
+          // "--buildout-debug",
+          "--all"
+        ],
+        "options": {
+          "env": {
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "GIT_EXEC_PATH": ""
+          }
+        },
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      }
+    ]
+  }
+
+
+
 [user]
 recipe = slapos.cookbook:userinfo
 
@@ -163,13 +226,13 @@ template =
       $${slap-connection:partition-id} \
       --key='$${slap-connection:key-file}' \
       --cert='$${slap-connection:cert-file}'
-  export SLAPOS_CONFIGURATION=$${directory:slapos}/etc/slapos.cfg
+  export SLAPOS_CONFIGURATION=$${:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
 
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
 port = 4000
-
+slapos-configuration = $${directory:slapos}/etc/slapos.cfg
 
 [promises]
 recipe =
@@ -233,6 +296,7 @@ var = $${buildout:directory}/var
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
+dot_theia = $${buildout:directory}.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
