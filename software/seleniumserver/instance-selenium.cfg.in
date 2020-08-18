@@ -115,17 +115,23 @@ capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
 port = 7779
 
+[selenium-server-node-instance-firefox-78]
+<= selenium-server-node-instance
+capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-78:version},firefox_binary=${firefox-wrapper-78:location}
+java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
+port = 7780
+
 [selenium-server-node-instance-chromium-69]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-69:version},chrome_binary=${chromium-wrapper-69:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
-port = 7780
+port = 7781
 
 [selenium-server-node-instance-chromium-91]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
-port = 7781
+port = 7782
 
 
 [selenium-server-admin-password]
@@ -270,6 +276,7 @@ instance-promises =
   $${selenium-server-node-firefox-52-listen-promise:name}
   $${selenium-server-node-firefox-60-listen-promise:name}
   $${selenium-server-node-firefox-68-listen-promise:name}
+  $${selenium-server-node-firefox-78-listen-promise:name}
   $${selenium-server-node-instance-chromium-69-listen-promise:name}
   $${selenium-server-node-instance-chromium-91-listen-promise:name}
 
@@ -301,8 +308,8 @@ module = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
-# We have 5 nodes with 3 slots each
-expected-node-count = 15
+# We have 6 nodes with 3 slots each
+expected-node-count = 18
 
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template:jinja2
@@ -332,6 +339,11 @@ config-port = $${selenium-server-node-instance-firefox-60:port}
 <= check-port-listening-promise
 config-host = $${selenium-server-node-instance-firefox-68:hostname}
 config-port = $${selenium-server-node-instance-firefox-68:port}
+
+[selenium-server-node-firefox-78-listen-promise]
+<= check-port-listening-promise
+config-host = $${selenium-server-node-instance-firefox-78:hostname}
+config-port = $${selenium-server-node-instance-firefox-78:port}
 
 [selenium-server-node-instance-chromium-69-listen-promise]
 <= check-port-listening-promise
