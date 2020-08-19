@@ -353,11 +353,17 @@ port = {{ port }}
 {%- endif %}
 
 [{{ section("promise-" ~ name) }}]
+{% if six.PY3 -%}
+# Disable the promise in Python 3. ERP5 is not compatible with Python 3 yet, so
+# the promise would always fail.
+recipe =
+{% else -%}
 <= monitor-promise-base
 module = check_port_listening
 name = {{ name }}.py
 config-hostname = {{ ipv4 }}
 config-port = {{ port }}
+{% endif -%}
 
 {% set extra_path_list = [] -%}
 {% set shell_escaped_extra_path_list = [] -%}
