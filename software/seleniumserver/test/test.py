@@ -430,6 +430,15 @@ class TestFirefox68(
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
 
+class TestFirefox78(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
+  user_agent = 'Gecko/20100101 Firefox/78.1'
+
+
 class TestChrome69(
     BrowserCompatibilityMixin,
     SeleniumServerTestCase,
