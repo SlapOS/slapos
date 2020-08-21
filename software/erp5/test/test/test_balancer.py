@@ -116,7 +116,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         pass
       time.sleep(1)
     else:
-      raise RuntimeError, 'caucased failed to start.'
+      raise RuntimeError('caucased failed to start.')
 
     cau_args = [
       caucase_path,
@@ -145,7 +145,6 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       stderr=subprocess.STDOUT,
     )
     result = caucase_process.communicate()
-    print result
     csr_id = result[0].split()[0]
 
     subprocess.check_call(
@@ -196,7 +195,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       else:
         time.sleep(1)
     else:
-      raise RuntimeError, 'getting service certificate failed.'
+      raise RuntimeError('getting service certificate failed.')
 
     # start a caucased and server certificate.
     cls.backend_caucase_dir = tempfile.mkdtemp()
@@ -223,7 +222,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
         pass
       time.sleep(1)
     else:
-      raise RuntimeError, 'caucased failed to start.'
+      raise RuntimeError('caucased failed to start.')
 
     super(TestFrontendXForwardedFor, cls).setUpClass()
 
