@@ -31,13 +31,18 @@ import json
 import glob
 import urlparse
 import socket
+import sys
 import time
 import contextlib
 import datetime
 import subprocess
 import gzip
 
+from backports import lzma
 import MySQLdb
+
+from slapos.testing.utils import CrontabMixin
+from slapos.testing.utils import getPromisePluginParameterDict
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
@@ -58,8 +63,8 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     return {
         'tcpv4-port': 3306,
         'max-connection-count': 5,
-        'max-slowqueries-threshold': 5,
-        'slowest-query-threshold': 10,
+        'max-slowqueries-threshold': 1,
+        'slowest-query-threshold': 0.1,
         # XXX what is this ? should probably not be needed here
         'name': cls.__name__,
         'monitor-passwd': 'secret',
@@ -88,31 +93,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     )
 
 
-class TestCrontabs(MariaDBTestCase):
-
-  def _getCrontabCommand(self, crontab_name):
-    # type: (str) -> str
-    """Read a crontab and return the command that is executed.
-    """
-    with open(
-        os.path.join(
-            self.computer_partition_root_path,
-            'etc',
-            'cron.d',
-            crontab_name,
-        )) as f:
-      crontab_spec = f.read()
-    return " ".join(crontab_spec.split()[5:])
-
-  def _executeCrontabAtDate(self, crontab_name, date):
-    # type: (str, str) -> None
-    """Executes a crontab as if the current date was date
-    """
-    crontab_command =  self._getCrontabCommand(crontab_name)
-    subprocess.check_call(
-        "faketime {date} bash -o pipefail -e -c '{crontab_command}'".format(**locals()),
-        shell=True,
-    )
+class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
   def test_full_backup(self):
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
@@ -126,6 +107,72 @@ class TestCrontabs(MariaDBTestCase):
         ),
         'r') as dump:
       self.assertIn('CREATE TABLE', dump.read())
+
+  def test_logrotate_and_slow_query_digest(self):
+    # slow query digest needs to run after logrotate, since it operates on the rotated
+    # file, so this tests both logrotate and slow query digest.
+
+    # run logrotate a first time so that it create state files
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+
+    # make two slow queries
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query("SELECT SLEEP(1.1)")
+      cnx.store_result()
+      cnx.query("SELECT SLEEP(1.2)")
+
+    # slow query crontab depends on crontab for log rotation
+    # to be executed first.
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+    # this logrotate leaves the log for the day as non compressed
+    rotated_log_file = os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'logrotate',
+        'mariadb_slowquery.log-20500101',
+    )
+    self.assertTrue(os.path.exists(rotated_log_file))
+
+    # then crontab to generate slow query report is executed
+    self._executeCrontabAtDate('generate-mariadb-slow-query-report', '2050-01-01')
+    # and it creates a report for the day
+    slow_query_report = os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'monitor',
+        'private',
+        'slowquery_digest',
+        'slowquery_digest.txt-2050-01-01.xz',
+    )
+    with lzma.open(slow_query_report, 'r') as f:
+      # this is the hash for our "select sleep(n)" slow query
+      self.assertIn("ID 0xF9A57DD5A41825CA", f.read())
+
+    # on next day execution of logrotate, log files are compressed
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
+    self.assertFalse(os.path.exists(rotated_log_file))
+
+    # there's a promise checking that the threshold is not exceeded
+    # and it reports a problem since we set a threshold of 1 slow query
+    check_slow_query_promise_plugin = getPromisePluginParameterDict(
+        os.path.join(
+            self.computer_partition_root_path,
+            'etc',
+            'plugin',
+            'check-slow-query-pt-digest-result.py',
+        ))
+    with self.assertRaises(subprocess.CalledProcessError) as error_context:
+      subprocess.check_output('faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'], shell=True)
+    self.assertEqual(
+        error_context.exception.output,
+"""\
+Threshold is lower than expected: 
+Expected total queries : 1.0 and current is: 2
+Expected slowest query : 0.1 and current is: 1
+""")
 
 
 class TestMariaDB(MariaDBTestCase):
