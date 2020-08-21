@@ -34,6 +34,8 @@ import socket
 import time
 import contextlib
 import datetime
+import subprocess
+import gzip
 
 import MySQLdb
 
@@ -84,6 +86,46 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         port=db_url.port,
         db=database_name,
     )
+
+
+class TestCrontabs(MariaDBTestCase):
+
+  def _getCrontabCommand(self, crontab_name):
+    # type: (str) -> str
+    """Read a crontab and return the command that is executed.
+    """
+    with open(
+        os.path.join(
+            self.computer_partition_root_path,
+            'etc',
+            'cron.d',
+            crontab_name,
+        )) as f:
+      crontab_spec = f.read()
+    return " ".join(crontab_spec.split()[5:])
+
+  def _executeCrontabAtDate(self, crontab_name, date):
+    # type: (str, str) -> None
+    """Executes a crontab as if the current date was date
+    """
+    crontab_command =  self._getCrontabCommand(crontab_name)
+    subprocess.check_call(
+        "faketime {date} bash -o pipefail -e -c '{crontab_command}'".format(**locals()),
+        shell=True,
+    )
+
+  def test_full_backup(self):
+    self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
+    with gzip.open(
+        os.path.join(
+            self.computer_partition_root_path,
+            'srv',
+            'backup',
+            'mariadb-full',
+            '20500101000000.sql.gz',
+        ),
+        'r') as dump:
+      self.assertIn('CREATE TABLE', dump.read())
 
 
 class TestMariaDB(MariaDBTestCase):
