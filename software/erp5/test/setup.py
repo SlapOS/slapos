@@ -51,6 +51,7 @@ setup(name=name,
         'backports.lzma',
         'cryptography',
         'pyOpenSSL',
+        'typing; python_version<"3"',
       ],
       test_suite='test',
     )
