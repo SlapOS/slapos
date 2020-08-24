@@ -746,7 +746,7 @@ class TestCpuMemMaxDynamic(InstanceTestCase):
     with open(os.path.join(
      self.computer_partition_root_path, 'bin', 'kvm_raw'), 'r') as fh:
       kvm_raw = fh.read()
-    self.assertTrue('smp_count = 2' in kvm_raw)
-    self.assertTrue('smp_max_count = 3' in kvm_raw)
-    self.assertTrue('ram_size = 2048' in kvm_raw)
-    self.assertTrue("ram_max_size = '2560'" in kvm_raw)
+    self.assertIn('smp_count = 2', kvm_raw)
+    self.assertIn('smp_max_count = 3', kvm_raw)
+    self.assertIn('ram_size = 2048', kvm_raw)
+    self.assertIn("ram_max_size = '2560'", kvm_raw)
