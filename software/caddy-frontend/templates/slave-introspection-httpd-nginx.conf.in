@@ -1,33 +1,21 @@
 # Access log configuration
-error-log: {{ parameter_dict['error-log'] }}
-access-log:
-  path: {{ parameter_dict['access-log'] }}
-# XXX  format: %h %{REMOTE_USER}i %{Host}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"
-  escape: apache
-
-listen:
-  port: {{ parameter_dict['https-port'] }}
-  host: {{ parameter_dict['global-ipv6'] }}
-  ssl: &ssl
-    certificate-file: {{ parameter_dict['ip-access-certificate'] }}
-    key-file: {{ parameter_dict['ip-access-certificate'] }}
-
-listen:
-  port: {{ parameter_dict['https-port'] }}
-  host: {{ parameter_dict['local-ipv4'] }}
-  ssl: *ssl
-
-hosts:
-  "[{{ parameter_dict['global-ipv6'] }}]":
-    paths: &slave_paths
+error_log {{ parameter_dict['error-log'] }};
+server {
+  access_log {{ parameter_dict['access-log'] }};
+  listen {{ parameter_dict['global-ipv6'] }}:443 ssl;
+  listen {{ parameter_dict['local-ipv4'] }}:443 ssl;
+  ssl_certificate {{ parameter_dict['ip-access-certificate'] }};
+  ssl_certificate_key {{ parameter_dict['ip-access-certificate'] }};
 {% for slave, directory in slave_log_directory.iteritems() %}
-      "/{{ slave }}":
-        file.dir: {{ directory }}
-        # XXX: basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
-        # XXX:   "Log Access {{ slave }}"
-        # XXX:   /
-        # XXX: }
+  location /{{ slave }} {
+    root {{ directory }};
+    autoindex on;
+    sendfile on;
+    sendfile_max_chunk 1m;
+    sendfile on;
+    # auth_basic "Log Access {{ slave }}"
+    # auth_basic_user_file XXX -- only one user/password
+    # XXX: basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
+  }
 {% endfor %}
-  "{{ parameter_dict['local-ipv4'] }}":
-    {#- reuse #}
-    paths: *slave_paths
+}
