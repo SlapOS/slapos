@@ -744,7 +744,7 @@ class TestCpuMemMaxDynamic(InstanceTestCase):
 
   def test(self):
     with open(os.path.join(
-     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'rb') as fh:
+     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'r') as fh:
       kvm_raw = fh.read()
     self.assertTrue('smp_count = 2' in kvm_raw)
     self.assertTrue('smp_max_count = 3' in kvm_raw)
