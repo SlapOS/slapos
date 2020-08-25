@@ -66,5 +66,3 @@ switchover-slave-wait-catch = {{ setbool(parameter_dict['switchover-slave-wait-c
 switchover-wait-kill = {{ parameter_dict['switchover-wait-kill'] }}
 switchover-wait-trx = {{ parameter_dict['switchover-wait-trx'] }}
 switchover-wait-write-query = {{ parameter_dict['switchover-wait-write-query'] }}
-
-

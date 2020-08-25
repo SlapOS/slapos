@@ -213,4 +213,3 @@ server {
   <%= @custom_gitlab_server_config %>
   #}
 }
-

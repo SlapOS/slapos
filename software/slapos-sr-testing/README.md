@@ -16,39 +16,35 @@ slaprunner to develop a slapos profile, in the example `helloworld`, make
 changes to the code, run tests and publish changes.
 
 ```bash
-# install this software release
+# install this software release and request an instance
 SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-sr-testing/software.cfg
-COMP=slaprunner
+COMP=slaprunner # or "local" if using theia
 INSTANCE_NAME=$COMP
 
 slapos supply $SR $COMP
 slapos node software
-slapos request --node=node=$COMP $INSTANCE_NAME $SR
+slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
 slapos node instance
+
+# note the `environment-script` published value
+slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
+# and load this script to set environment variables
+source ( environment-script from step above )
 
 # Clone a working copy somewhere
 cd ~/srv/runner/project/
 git clone https://lab.nexedi.com/nexedi/slapos.git slapos_work
 
-# Create a directory to hold the slapos test environment
-SLAPOS_TEST_WORKING_DIR=~/tmp/slapos/
-mkdir -p $SLAPOS_TEST_WORKING_DIR
-
 # change directory to the directory containing test for this software
 cd ~/srv/runner/project/slapos_work/software/helloworld/test/
 
-# run tests, using bundled python intepreter with pre-installed eggs dependencies.
-SLAPOS_TEST_IPV6=::1 \
-SLAPOS_TEST_IPV4=127.0.0.1 \
-SLAPOS_TEST_WORKING_DIR=$SLAPOS_TEST_WORKING_DIR \
-SLAPOS_TEST_SHARED_PART_LIST=/opt/slapos/shared/:~/srv/runner/shared \
-SLAPOS_TEST_VERBOSE=1 \
-SLAPOS_TEST_DEBUG=1 \
-~/srv/runner/instance/slappart0/software_release/bin/python_for_test setup.py test
-
+# run test (with debugging features activated)
+SLAPOS_TEST_DEBUG= 1 python_for_test setup.py test
 ```
 
 ## Environment variables
+
+The `environment-script` set all variabels except `SLAPOS_TEST_DEBUG` and `SLAPOS_TEST_VERBOSE` for you, but for reference, here is the list of variables which control the test runner:
 
 | Variable | Description |
 | --- | --- |
@@ -83,3 +79,6 @@ To use a development version of `slapos.cookbook` on test nodes, you can try usi
 ### Test pass locally but fail on test nodes, what can I do ?
 
 At the end of the test, a snapshot of the slapos instances is created. Sometimes examining the log files can help understanding what went wrong.
+
+Most of the time, problems are because on test nodes paths are very long. One advanced technique to reproduce the problem in your development environment is to set `SLAPOS_TEST_WORKING_DIR` environment variable to a path with the same length as the ones on test nodes.
+One way to make instances uses a slightly shorter path is to define `__partition_reference__` class attribute, so that the instances uses this as prefix instead of the class name.

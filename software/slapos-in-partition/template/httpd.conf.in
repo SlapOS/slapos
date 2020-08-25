@@ -47,4 +47,3 @@ LoadModule autoindex_module modules/mod_autoindex.so
     order allow,deny
     Allow from All
 </Directory>
-

@@ -74,14 +74,14 @@ config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | joi
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
-config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', '51200')) }}
+config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 1024)) + 512)) }}
 config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
 config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-disk-format = {{ dumps(kvm_parameter_dict.get('disk-format', 'qcow2')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
-config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
+config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', int(kvm_parameter_dict.get('cpu-count', 1)) + 1)) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
 {{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
 {{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
@@ -127,6 +127,10 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
+{%- if 'image-url-list' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-image-url-list = {{ kvm_parameter_dict['image-url-list'] }}
+{%- endif %}
 config-type = cluster
 
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
