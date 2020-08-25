@@ -339,8 +339,10 @@ https-port = 56783 {# XXX #}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
 access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
 error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
+var = {{ directory['slave-introspection-var'] }}
+pid = {{ directory['var'] }}/slave-introspection.pid
 
-[slave-introspection]
+[slave-introspection-config]
 <= jinja2-template-base
 template = {{ frontend_configuration['slave-introspection-template'] }}
 rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
@@ -348,6 +350,15 @@ extra-context =
     section slave_log_directory slave-log-directory-dict
     section slave_password slave-password
     section parameter_dict slave-introspection-parameters
+
+[slave-introspection]
+recipe = slapos.cookbook:wrapper
+command-line = {{ frontend_configuration['nginx'] }}
+  -c ${slave-introspection-config:rendered}
+
+wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
 
 
 {#- Publish information for the instance #}
