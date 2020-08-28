@@ -8,6 +8,8 @@ events {
 
 http {
   server {
+    server_name_in_redirect off;
+    port_in_redirect off;
     error_log {{ parameter_dict['error-log'] }};
     access_log {{ parameter_dict['access-log'] }};
     listen [{{ parameter_dict['global-ipv6'] }}]:{{ parameter_dict['https-port'] }} ssl;
