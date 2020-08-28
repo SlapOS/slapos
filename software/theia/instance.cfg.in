@@ -185,7 +185,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:rendered} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
+  env HOME=$${buildout:directory} LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:rendered} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
 
 ip =  $${instance-parameter:ipv4-random}
 hostname =  $${:ip}
