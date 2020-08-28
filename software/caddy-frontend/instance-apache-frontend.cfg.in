@@ -52,6 +52,8 @@ parts =
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
 
+  slave-introspection-frontend
+
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -102,6 +104,7 @@ nginx = {{ parameter_dict['nginx'] }}
 htpasswd = {{ parameter_dict['htpasswd'] }}
 slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_nginx'] }}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
+slave-introspection-https-port = ${configuration:slave-introspection-https-port}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -901,6 +904,16 @@ mode = 0644
 extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
+
+[slave-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Slave Introspection Frontend {{ instance_parameter['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:${configuration:slave-introspection-https-port}
+config-https-only = true
+return = domain secure_access
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}

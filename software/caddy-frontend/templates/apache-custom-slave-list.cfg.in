@@ -347,7 +347,7 @@ extra-context =
 [slave-introspection-parameters]
 local-ipv4 = {{ dumps(local_ipv4) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
-https-port = 56783 {# XXX #}
+https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
 access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
 error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
