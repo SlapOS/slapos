@@ -911,7 +911,7 @@ recipe = slapos.cookbook:requestoptional
 name = Slave Introspection Frontend {{ instance_parameter['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:${configuration:slave-introspection-https-port}
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
 return = domain secure_access
 
