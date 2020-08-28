@@ -99,6 +99,7 @@ caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
 nginx = {{ parameter_dict['nginx'] }}
+htpasswd = {{ parameter_dict['htpasswd'] }}
 slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_nginx'] }}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
 

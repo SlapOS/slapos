@@ -27,9 +27,8 @@ http {
       autoindex_format json;
       sendfile on;
       sendfile_max_chunk 1m;
-      # auth_basic "Log Access {{ slave }}"
-      # auth_basic_user_file XXX -- only one user/password
-      # XXX: basicauth "{{ slave }}" {{ slave_password[slave] | trim }} {
+      auth_basic "Log Access {{ slave }}";
+      auth_basic_user_file "{{ slave_htpasswd[slave] | trim }}";
     }
   {% endfor %}
   }
