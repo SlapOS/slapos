@@ -10,6 +10,7 @@
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
+{% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
 {% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 1024)) + 512)) %}
 {% set extends_list = [] -%}
@@ -59,6 +60,11 @@ boot-image-url-list-repository = ${:srv}/boot-image-url-list-repository
 boot-image-url-list-var = ${:var}/boot-image-url-list
 boot-image-url-list-expose = ${monitor-directory:private}/boot-image-url-list
 {%- endif %}
+{%- if boot_image_url_select_enabled %}
+boot-image-url-select-repository = ${:srv}/boot-image-url-select-repository
+boot-image-url-select-var = ${:var}/boot-image-url-select
+boot-image-url-select-expose = ${monitor-directory:private}/boot-image-url-select
+{%- endif %}
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -72,6 +78,108 @@ storage-path = ${directory:srv}/tap_mac
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
+
+{% if boot_image_url_select_enabled %}
+## boot-image-url-select support BEGIN
+[empty-file-state-base-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# It's very hard to put the username and password correctly, after schema://
+# and before the host, as it's not the way how one can use monitor provided
+# information, so just show the information in the URL
+config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename} with username ${monitor-publish-parameters:monitor-user} and password ${monitor-publish-parameters:monitor-password}
+
+[boot-image-url-select-source-config]
+# generates configuration of the image from the user parameter
+# special "magic" is used, to properly support multiline boot-image-url-select
+# but in the same time correctly generate the configuration file
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{#- Do special trick to support boot-image-url-select being None, if key is present with value "" #}
+{%- raw %}
+  {{ slap_parameter.get('boot-image-url-select') or '' }}
+{% endraw -%}
+context =
+  section slap_parameter slap-parameter
+rendered = ${directory:etc}/boot-image-url-select.conf
+
+[boot-image-url-select-processed-config]
+# compares if the current configuration has been used by
+# the boot-image-url-select-download, if not, exposes it as not empty file with
+# information
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${boot-image-url-select-source-config:rendered}
+state-filename = boot-image-url-select-processed-config.state
+state-file = ${directory:boot-image-url-select-expose}/${:state-filename}
+processed-md5sum = ${directory:boot-image-url-select-var}/update-image-processed.md5sum
+
+[boot-image-url-select-processed-config-promise]
+# promise to check if the configuration provided by the user has been already
+# processed by the boot-image-url-select-download script, which runs asynchronously
+<= empty-file-state-base-promise
+filename = ${boot-image-url-select-processed-config:state-filename}
+config-filename = ${boot-image-url-select-processed-config:state-file}
+
+[boot-image-url-select-json-config]
+# generates json configuration from user configuration
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:rendered} ${:rendered} ${directory:boot-image-url-select-repository} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:boot-image-url-select-var}/boot-image-url-select.json
+error-state-filename = boot-image-url-select-json-config-error.txt
+error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
+
+[boot-image-url-select-config-state-promise]
+# promise to check if configuration has been parsed without errors
+<= empty-file-state-base-promise
+filename = ${boot-image-url-select-json-config:error-state-filename}
+config-filename = ${boot-image-url-select-json-config:error-state-file}
+
+[boot-image-url-select-download-wrapper]
+# wrapper to execute boot-image-url-select-download on each run
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/boot-image-url-select-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-select-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+md5sum-state-filename = boot-image-url-select-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:boot-image-url-select-expose}/${:md5sum-state-filename}
+error-state-filename = boot-image-url-select-download-controller-error.text
+error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[boot-image-url-select-download-md5sum-promise]
+# promise to report errors with problems with calculating md5sum of the
+# downloaded images
+<= empty-file-state-base-promise
+filename = ${boot-image-url-select-download-wrapper:md5sum-state-filename}
+config-filename = ${boot-image-url-select-download-wrapper:md5sum-state-file}
+
+[boot-image-url-select-download-state-promise]
+# promise to report errors during download
+<= empty-file-state-base-promise
+filename = ${boot-image-url-select-download-wrapper:error-state-filename}
+config-filename = ${boot-image-url-select-download-wrapper:error-state-file}
+## boot-image-url-select support END
+{% endif %} {# if boot_image_url_select_enabled #}
 
 {% if boot_image_url_list_enabled %}
 ## boot-image-url-list support BEGIN
@@ -956,6 +1064,13 @@ parts =
   boot-image-url-list-download-md5sum-promise
   boot-image-url-list-download-state-promise
   boot-image-url-list-processed-config-promise
+{% endif %}
+{% if boot_image_url_select_enabled %}
+  boot-image-url-select-download-wrapper
+  boot-image-url-select-config-state-promise
+  boot-image-url-select-download-md5sum-promise
+  boot-image-url-select-download-state-promise
+  boot-image-url-select-processed-config-promise
 {% endif %}
 {% if additional_frontend %}
   frontend-additional-promise
