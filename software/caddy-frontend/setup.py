@@ -7,6 +7,8 @@ setup(
   name='caddyprofiledeps',
   install_requires=[
     'validators',
+    'furl',
+    'orderedmultidict',
   ],
   entry_points={
     'zc.buildout': [
