@@ -52,6 +52,14 @@ parts =
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
 
+  slave-introspection-frontend
+  slave-introspection-graceful
+  promise-slave-introspection-https
+  promise-slave-introspection-configuration
+
+[caddyprofiledeps]
+recipe = caddyprofiledeps
+
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -83,6 +91,9 @@ csr_id = ${:srv}/csr_id
 caddy-csr_id = ${:etc}/caddy-csr_id
 caddy-csr_id-log = ${:log}/httpd-csr_id
 
+# slave introspection
+slave-introspection-var = ${:var}/slave-introspection
+
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
 single-default = ${dynamic-custom-personal-template-slave-list:rendered}
@@ -95,6 +106,14 @@ ip-access-certificate = ${self-signed-ip-access:certificate}
 caddy-directory = {{ parameter_dict['caddy_location'] }}
 caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+nginx = {{ parameter_dict['nginx'] }}
+nginx_mime = {{ parameter_dict['nginx_mime'] }}
+htpasswd = {{ parameter_dict['htpasswd'] }}
+slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_nginx'] }}
+slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
+slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
+slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -258,6 +277,7 @@ stop-on-error = True
 
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
+depends = ${caddyprofiledeps:recipe}
 template = {{ parameter_dict['template_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
@@ -276,6 +296,7 @@ extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
+    import furl_module furl
     key caddy_executable :caddy_executable
     key http_port configuration:plain_http_port
     key https_port configuration:port
@@ -400,6 +421,11 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
+# slave instrspection
+slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
+slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
+slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
+slave-introspection-graceful-command = ${slave-introspection-validate:rendered} && kill -USR2 $(cat ${:slave-introspection-pid-file})
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -901,6 +927,74 @@ slave = true
 config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
 return = domain secure_access
+
+[slave-introspection-configuration-state]
+<= jinja2-template-base
+template = {{ parameter_dict['template_configuration_state_script'] }}
+rendered = ${directory:bin}/${:_buildout_section_name_}
+mode = 0700
+
+path_list = ${frontend-configuration:slave-introspection-configuration} ${frontend-configuration:ip-access-certificate}
+sha256sum = {{ parameter_dict['sha256sum'] }}
+
+extra-context =
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[slave-introspection-configuration-state-graceful]
+<= slave-introspection-configuration-state
+signature_file = ${directory:run}/slave_introspection_graceful_configuration_state_signature
+
+[slave-introspection-configuration-state-validate]
+<= slave-introspection-configuration-state
+signature_file = ${directory:run}/slave_introspection_validate_configuration_state_signature
+
+[slave-introspection-graceful]
+< = jinja2-template-base
+template = {{ parameter_dict['template_graceful_script'] }}
+rendered = ${directory:etc-run}/slave-introspection-safe-graceful
+mode = 0700
+
+extra-context =
+    key graceful_reload_command caddy-configuration:slave-introspection-graceful-command
+    key caddy_configuration_state slave-introspection-configuration-state-graceful:rendered
+
+[slave-introspection-validate]
+<= jinja2-template-base
+template = {{ parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/slave-introspection-validate
+mode = 0700
+last_state_file = ${directory:run}/slave_introspection_configuration_last_state
+validate_command = {{ parameter_dict['nginx'] }} -c ${frontend-configuration:slave-introspection-configuration} -t
+extra-context =
+    key validate_command :validate_command
+    key configuration_state_command slave-introspection-configuration-state-validate:rendered
+    key last_state_file :last_state_file
+
+[promise-slave-introspection-configuration]
+<= monitor-promise-base
+module = validate_frontend_configuration
+name = slave-introspection-configuration.py
+config-verification-script = ${promise-slave-introspection-configuration-helper:rendered}
+
+[promise-slave-introspection-configuration-helper]
+< = jinja2-template-base
+template = {{ parameter_dict['template_empty'] }}
+rendered = ${directory:bin}/slave-introspection-read-last-configuration-state
+mode = 0700
+content =
+  #!/bin/sh
+  exit `cat ${slave-introspection-validate:last_state_file}`
+context =
+    key content :content
+
+[promise-slave-introspection-https]
+<= monitor-promise-base
+module = check_port_listening
+name = slave_introspection_https.py
+config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-port = ${frontend-configuration:slave-introspection-https-port}
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
