@@ -105,6 +105,8 @@ htpasswd = {{ parameter_dict['htpasswd'] }}
 slave-introspection-template = {{ parameter_dict['template_slave_introspection_httpd_nginx'] }}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
 slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
+slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
@@ -286,6 +288,7 @@ extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
+    import furl_module furl_module
     key caddy_executable :caddy_executable
     key http_port configuration:plain_http_port
     key https_port configuration:port
