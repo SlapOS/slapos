@@ -892,6 +892,16 @@ extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
 
+[slave-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Slave Introspection Frontend {{ instance_parameter['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
+config-https-only = true
+return = domain secure_access
+
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}
 {%-   if key.startswith('configuration.') %}
