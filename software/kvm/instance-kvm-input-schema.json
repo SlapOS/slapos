@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema",
+  "$schema": "http://json-schema.org/draft-06/schema",
   "title": "Input Parameters",
   "properties": {
     "enable-device-hotplug": {
@@ -375,13 +375,16 @@
     "image-url-select": {
       "title": "Provided OS images",
       "type": "string",
-  "oneOf": [{
-    "enum": ["foo"],
-    "title": "Foo"
-  }, {
-    "enum": ["bar"],
-    "title": "Bar"
-  }]
+      "oneOf": [
+        {
+        "enum": ["foo"],
+        "title": "Foo"
+        },
+        {
+        "enum": ["bar"],
+        "title": "Bar"
+        }
+      ]
     }
   }
 }
