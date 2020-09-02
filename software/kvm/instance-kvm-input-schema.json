@@ -374,12 +374,14 @@
     },
     "image-url-select": {
       "title": "Provided OS images",
-      "type": "array",
-      "oneOf": [
-        {"const": "Bu", "title": "Debian Buster"},
-        {"const": "bar", "title": "Ubuntu Focal"},
-        {"const": "whatever", "title": "Centos"}
-      ]
+      "type": "string",
+  "oneOf": [{
+    "enum": ["foo"],
+    "title": "Foo"
+  }, {
+    "enum": ["bar"],
+    "title": "Bar"
+  }]
     }
   }
 }
