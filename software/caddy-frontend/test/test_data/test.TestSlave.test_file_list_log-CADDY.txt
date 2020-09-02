@@ -177,5 +177,7 @@ T-2/var/log/httpd/_url_https-url_backend_log
 T-2/var/log/httpd/_url_https-url_error_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
+T-2/var/log/slave-introspection-access.log
+T-2/var/log/slave-introspection-error.log
 T-2/var/log/trafficserver/manager.log
 T-2/var/log/trafficserver/traffic.out
