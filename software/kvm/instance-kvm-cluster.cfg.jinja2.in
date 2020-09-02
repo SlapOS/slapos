@@ -131,6 +131,10 @@ config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layo
 {#- play nice: if parameter was not constructed by the original request, do not send it at all #}
 config-boot-image-url-list = {{ kvm_parameter_dict['boot-image-url-list'] }}
 {%- endif %}
+{%- if 'boot-image-url-select' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-boot-image-url-select = {{ kvm_parameter_dict['boot-image-url-select'] }}
+{%- endif %}
 config-type = cluster
 
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
