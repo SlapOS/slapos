@@ -41,6 +41,7 @@ template = {{ template_caddy_frontend }}
 filename = instance-caddy-frontend.cfg
 extensions = jinja2.ext.do
 extra-context =
+  import furl_module furl
   section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type single-custom-personal
 caucase-jinja2-library = {{ caucase_jinja2_library }}

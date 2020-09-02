@@ -120,7 +120,13 @@ context =
 {%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
 {#-   Add slave log directory to the slave log access dict #}
 {%-   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
-{%-   set slave_log_access_url = 'https://' + slave_reference.lower() + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('caddy-ipv6') + ']:' + frontend_configuration.get('caddy-https-port') + '/' + slave_reference.lower() + '/' %}
+{%-   set furled = furl_module.furl(frontend_configuration['slave-introspection-secure_access']) %}
+{%-   do furled.set(username = slave_reference.lower()) %}
+{%-   do furled.set(password = '${'+ slave_password_section +':passwd}') %}
+{%-   do furled.set(path = slave_reference.lower() + '/') %}
+{#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
+{%-   set slave_log_access_url = urlparse_module.unquote(furled.tostr()) %}
+# XXX-Luke: {{ slave_log_access_url }}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
 {%-   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
