@@ -489,6 +489,28 @@ class TestInstanceNbdServer(InstanceTestCase):
 class TestBootImageUrlList(InstanceTestCase):
   __partition_reference__ = 'biul'
 
+  # variations
+  key = 'boot-image-url-list'
+  test_input = "%s#%s\n%s#%s"
+  image_directory = 'boot-image-url-list-repository'
+  config_state_promise = 'boot-image-url-list-config-state-promise.py'
+  download_md5sum_promise = 'boot-image-url-list-download-md5sum-promise.py'
+  download_state_promise = 'boot-image-url-list-download-state-promise.py'
+
+  bad_value = "jsutbad"
+  incorrect_md5sum_value_image = "%s#"
+  incorrect_md5sum_value = "url#asdasd"
+  single_image_value = "%s#%s"
+  unreachable_host_value = "evennotahost#%s"
+  too_many_image_value = """
+      image1#11111111111111111111111111111111
+      image2#22222222222222222222222222222222
+      image3#33333333333333333333333333333333
+      image4#44444444444444444444444444444444
+      image5#55555555555555555555555555555555
+      image6#66666666666666666666666666666666
+      """
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'default'
@@ -501,7 +523,7 @@ class TestBootImageUrlList(InstanceTestCase):
   def tearDown(self):
     # clean up the instance for other tests
     # 1st remove all images...
-    self.rerequestInstance({'boot-image-url-list': ''})
+    self.rerequestInstance({self.key: ''})
     self.slap.waitForInstance(max_retry=10)
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
@@ -535,7 +557,7 @@ class TestBootImageUrlList(InstanceTestCase):
 
   def test(self):
     partition_parameter_kw = {
-      'boot-image-url-list': "%s#%s\n%s#%s" % (
+      self.key: self.test_input % (
         self.fake_image, self.fake_image_md5sum, self.fake_image2,
         self.fake_image2_md5sum)
     }
@@ -543,8 +565,7 @@ class TestBootImageUrlList(InstanceTestCase):
     self.slap.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
     image_repository = os.path.join(
-      self.computer_partition_root_path, 'srv',
-      'boot-image-url-list-repository')
+      self.computer_partition_root_path, 'srv', self.image_directory)
     image = os.path.join(image_repository, self.fake_image_md5sum)
     image_link = os.path.join(image_repository, 'image_001')
     self.assertTrue(os.path.exists(image))
@@ -597,8 +618,8 @@ class TestBootImageUrlList(InstanceTestCase):
     # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
-        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-list-repository/image_002,media=cdrom',
+        'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
+        'file=/srv/%s/image_002,media=cdrom' % (self.image_directory,),
         'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
         'media=cdrom'
       ],
@@ -607,7 +628,7 @@ class TestBootImageUrlList(InstanceTestCase):
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    self.rerequestInstance({'boot-image-url-list': ''})
+    self.rerequestInstance({self.key: ''})
     self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
@@ -645,53 +666,84 @@ class TestBootImageUrlList(InstanceTestCase):
 
   def test_bad_parameter(self):
     self.rerequestInstance({
-      'boot-image-url-list': "jsutbad"
+      self.key: self.bad_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
-      'boot-image-url-list': "%s#" % (self.fake_image,)
+      self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_staet_promise)
     self.rerequestInstance({
-      'boot-image-url-list': "url#asdasd"
+      self.key: self.incorrect_md5sum_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
     self.rerequestInstance({
-      'boot-image-url-list': "%s#%s" % (
+      self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-download-md5sum-promise.py')
-    self.assertPromiseFails('boot-image-url-list-download-state-promise.py')
+    self.assertPromiseFails(self.download_md5sum_promise)
+    self.assertPromiseFails(self.download_state_promise)
 
   def test_unreachable_host(self):
     self.rerequestInstance({
-      'boot-image-url-list': "evennotahost#%s" % (
+      self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-download-state-promise.py')
+    self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
-      'boot-image-url-list': """
-      image1#11111111111111111111111111111111
-      image2#22222222222222222222222222222222
-      image3#33333333333333333333333333333333
-      image4#44444444444444444444444444444444
-      image5#55555555555555555555555555555555
-      image6#66666666666666666666666666666666
-      """
+      self.key: self.too_many_image_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
+
+
+@skipUnlessKvm
+class TestBootImageUrlSelect(InstanceTestCase):
+  __partition_reference__ = 'bius'
+
+  # variations
+  key = 'boot-image-select-list'
+  test_input = "[\"%s#%s\", \"%s#%s\"]"
+  image_directory = 'boot-image-url-select-repository'
+  config_state_promise = 'boot-image-url-select-config-state-promise.py'
+  download_md5sum_promise = 'boot-image-url-select-download-md5sum-promise.py'
+  download_state_promise = 'boot-image-url-select-download-state-promise.py'
+
+  bad_value = "[\"jsutbad\"]"
+  incorrect_md5sum_value_image = "[\"%s#\"]"
+  incorrect_md5sum_value = "[\"url#asdasd\"]"
+  single_image_value = "[\"%s#%s\"]"
+  unreachable_host_value = "[\"evennotahost#%s\"]"
+  too_many_image_value = """[
+      "image1#11111111111111111111111111111111",
+      "image2#22222222222222222222222222222222",
+      "image3#33333333333333333333333333333333",
+      "image4#44444444444444444444444444444444",
+      "image5#55555555555555555555555555555555",
+      "image6#66666666666666666666666666666666"
+      ]"""
+
+  def test_no_json(self):
+    self.fail('TODO')
+
+
+@skipUnlessKvm
+class TestBootImageUrlListSelect(InstanceTestCase):
+  __partition_reference__ = 'biuls'
+
+  def test(self):
+    self.fail('TODO')
 
 
 @skipUnlessKvm
