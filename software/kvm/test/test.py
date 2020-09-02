@@ -489,6 +489,28 @@ class TestInstanceNbdServer(InstanceTestCase):
 class TestBootImageUrlList(InstanceTestCase):
   __partition_reference__ = 'biul'
 
+  # variations
+  key = 'boot-image-url-list'
+  test_input = "%s#%s\n%s#%s"
+  image_directory = 'boot-image-url-list-repository'
+  config_state_promise = 'boot-image-url-list-config-state-promise.py'
+  download_md5sum_promise = 'boot-image-url-list-download-md5sum-promise.py'
+  download_state_promise = 'boot-image-url-list-download-state-promise.py'
+
+  bad_value = "jsutbad"
+  incorrect_md5sum_value_image = "%s#"
+  incorrect_md5sum_value = "url#asdasd"
+  single_image_value = "%s#%s"
+  unreachable_host_value = "evennotahost#%s"
+  too_many_image_value = """
+      image1#11111111111111111111111111111111
+      image2#22222222222222222222222222222222
+      image3#33333333333333333333333333333333
+      image4#44444444444444444444444444444444
+      image5#55555555555555555555555555555555
+      image6#66666666666666666666666666666666
+      """
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'default'
@@ -501,7 +523,7 @@ class TestBootImageUrlList(InstanceTestCase):
   def tearDown(self):
     # clean up the instance for other tests
     # 1st remove all images...
-    self.rerequestInstance({'boot-image-url-list': ''})
+    self.rerequestInstance({self.key: ''})
     self.slap.waitForInstance(max_retry=10)
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
@@ -535,7 +557,7 @@ class TestBootImageUrlList(InstanceTestCase):
 
   def test(self):
     partition_parameter_kw = {
-      'boot-image-url-list': "%s#%s\n%s#%s" % (
+      self.key: self.test_input % (
         self.fake_image, self.fake_image_md5sum, self.fake_image2,
         self.fake_image2_md5sum)
     }
@@ -543,8 +565,7 @@ class TestBootImageUrlList(InstanceTestCase):
     self.slap.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
     image_repository = os.path.join(
-      self.computer_partition_root_path, 'srv',
-      'boot-image-url-list-repository')
+      self.computer_partition_root_path, 'srv', self.image_directory)
     image = os.path.join(image_repository, self.fake_image_md5sum)
     image_link = os.path.join(image_repository, 'image_001')
     self.assertTrue(os.path.exists(image))
@@ -597,8 +618,8 @@ class TestBootImageUrlList(InstanceTestCase):
     # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
-        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-list-repository/image_002,media=cdrom',
+        'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
+        'file=/srv/%s/image_002,media=cdrom' % (self.image_directory,),
         'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
         'media=cdrom'
       ],
@@ -607,7 +628,7 @@ class TestBootImageUrlList(InstanceTestCase):
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    self.rerequestInstance({'boot-image-url-list': ''})
+    self.rerequestInstance({self.key: ''})
     self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
@@ -645,53 +666,186 @@ class TestBootImageUrlList(InstanceTestCase):
 
   def test_bad_parameter(self):
     self.rerequestInstance({
-      'boot-image-url-list': "jsutbad"
+      self.key: self.bad_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
 
   def test_incorrect_md5sum(self):
     self.rerequestInstance({
-      'boot-image-url-list': "%s#" % (self.fake_image,)
+      self.key: self.incorrect_md5sum_value_image % (self.fake_image,)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
     self.rerequestInstance({
-      'boot-image-url-list': "url#asdasd"
+      self.key: self.incorrect_md5sum_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
 
   def test_not_matching_md5sum(self):
     self.rerequestInstance({
-      'boot-image-url-list': "%s#%s" % (
+      self.key: self.single_image_value % (
         self.fake_image, self.fake_image_wrong_md5sum)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-download-md5sum-promise.py')
-    self.assertPromiseFails('boot-image-url-list-download-state-promise.py')
+    self.assertPromiseFails(self.download_md5sum_promise)
+    self.assertPromiseFails(self.download_state_promise)
 
   def test_unreachable_host(self):
     self.rerequestInstance({
-      'boot-image-url-list': "evennotahost#%s" % (
+      self.key: self.unreachable_host_value % (
         self.fake_image_md5sum,)
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-download-state-promise.py')
+    self.assertPromiseFails(self.download_state_promise)
 
   def test_too_many_images(self):
     self.rerequestInstance({
-      'boot-image-url-list': """
-      image1#11111111111111111111111111111111
-      image2#22222222222222222222222222222222
-      image3#33333333333333333333333333333333
-      image4#44444444444444444444444444444444
-      image5#55555555555555555555555555555555
-      image6#66666666666666666666666666666666
-      """
+      self.key: self.too_many_image_value
     })
     self.raising_waitForInstance(3)
-    self.assertPromiseFails('boot-image-url-list-config-state-promise.py')
+    self.assertPromiseFails(self.config_state_promise)
+
+
+@skipUnlessKvm
+class TestBootImageUrlSelect(TestBootImageUrlList):
+  __partition_reference__ = 'bius'
+
+  # variations
+  key = 'boot-image-url-select'
+  test_input = '["%s#%s", "%s#%s"]'
+  image_directory = 'boot-image-url-select-repository'
+  config_state_promise = 'boot-image-url-select-config-state-promise.py'
+  download_md5sum_promise = 'boot-image-url-select-download-md5sum-promise.py'
+  download_state_promise = 'boot-image-url-select-download-state-promise.py'
+
+  bad_value = '["jsutbad"]'
+  incorrect_md5sum_value_image = '["%s#"]'
+  incorrect_md5sum_value = '["url#asdasd"]'
+  single_image_value = '["%s#%s"]'
+  unreachable_host_value = '["evennotahost#%s"]'
+  too_many_image_value = """[
+      "image1#11111111111111111111111111111111",
+      "image2#22222222222222222222222222222222",
+      "image3#33333333333333333333333333333333",
+      "image4#44444444444444444444444444444444",
+      "image5#55555555555555555555555555555555",
+      "image6#66666666666666666666666666666666"
+      ]"""
+
+  def test_not_json(self):
+    self.rerequestInstance({
+      self.key: 'notjson#notjson'
+    })
+    self.raising_waitForInstance(3)
+    self.assertPromiseFails(self.config_state_promise)
+
+  def test_together(self):
+    partition_parameter_kw = {
+      'boot-image-url-list': "%s#%s\n%s#%s" % (
+        self.fake_image, self.fake_image_md5sum, self.fake_image2,
+        self.fake_image2_md5sum),
+      'boot-image-url-select': '["%s#%s", "%s#%s"]' % (
+        self.fake_image, self.fake_image_md5sum, self.fake_image2,
+        self.fake_image2_md5sum)
+    }
+    self.rerequestInstance(partition_parameter_kw)
+    self.slap.waitForInstance(max_retry=10)
+    # check that image is correctly downloaded and linked
+    for image_directory in [
+      'boot-image-url-list-repository', 'boot-image-url-select-repository']:
+      image_repository = os.path.join(
+        self.computer_partition_root_path, 'srv', image_directory)
+      image = os.path.join(image_repository, self.fake_image_md5sum)
+      image_link = os.path.join(image_repository, 'image_001')
+      self.assertTrue(os.path.exists(image))
+      with open(image, 'rb') as fh:
+        image_md5sum = hashlib.md5(fh.read()).hexdigest()
+      self.assertEqual(image_md5sum, self.fake_image_md5sum)
+      self.assertTrue(os.path.islink(image_link))
+      self.assertEqual(os.readlink(image_link), image)
+
+      image2 = os.path.join(image_repository, self.fake_image2_md5sum)
+      image2_link = os.path.join(image_repository, 'image_002')
+      self.assertTrue(os.path.exists(image2))
+      with open(image2, 'rb') as fh:
+        image2_md5sum = hashlib.md5(fh.read()).hexdigest()
+      self.assertEqual(image2_md5sum, self.fake_image2_md5sum)
+      self.assertTrue(os.path.islink(image2_link))
+      self.assertEqual(os.readlink(image2_link), image2)
+
+    def getRunningImageList():
+      running_image_list = []
+      with self.slap.instance_supervisor_rpc as instance_supervisor:
+        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                   if 'kvm-' in q['name']][0]['pid']
+        kvm_process = psutil.Process(kvm_pid)
+        software_root = '/'.join([
+          self.slap.software_directory,
+          hashlib.md5(self.getSoftwareURL()).hexdigest()])
+        for entry in kvm_process.cmdline():
+          if entry.startswith('file') and 'media=cdrom' in entry:
+            # do cleanups
+            entry = entry.replace(software_root, '')
+            entry = entry.replace(self.computer_partition_root_path, '')
+            running_image_list.append(entry)
+      return running_image_list
+
+    # check that the image is NOT YET available in kvm
+    self.assertEqual(
+      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+       'media=cdrom'],
+      getRunningImageList()
+    )
+
+    # mimic the requirement: restart the instance by requesting it stopped and
+    # then started started, like user have to do it
+    self.rerequestInstance(partition_parameter_kw, state='stopped')
+    self.slap.waitForInstance(max_retry=1)
+    self.rerequestInstance(partition_parameter_kw, state='started')
+    self.slap.waitForInstance(max_retry=1)
+
+    # now the image is available in the kvm, and its above default image
+    self.assertEqual(
+      [
+        'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
+        'file=/srv/boot-image-url-select-repository/image_002,media=cdrom',
+        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
+        'file=/srv/boot-image-url-list-repository/image_002,media=cdrom',
+        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+        'media=cdrom'
+      ],
+      getRunningImageList()
+    )
+
+    # cleanup of images works, also asserts that configuration changes are
+    # reflected
+    self.rerequestInstance(
+      {'boot-image-url-list': '', 'boot-image-url-select': ''})
+    self.slap.waitForInstance(max_retry=2)
+    for image_directory in [
+      'boot-image-url-list-repository', 'boot-image-url-select-repository']:
+      image_repository = os.path.join(
+        self.computer_partition_root_path, 'srv', image_directory)
+      self.assertEqual(
+        os.listdir(image_repository),
+        []
+      )
+
+    # mimic the requirement: restart the instance by requesting it stopped and
+    # then started started, like user have to do it
+    self.rerequestInstance(partition_parameter_kw, state='stopped')
+    self.slap.waitForInstance(max_retry=1)
+    self.rerequestInstance(partition_parameter_kw, state='started')
+    self.slap.waitForInstance(max_retry=1)
+
+    # again only default image is available in the running process
+    self.assertEqual(
+      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+       'media=cdrom'],
+      getRunningImageList()
+    )
 
 
 @skipUnlessKvm
@@ -713,18 +867,22 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
       "2a74b7675a8d8ca20476dba6e",)
   fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
 
+  input_value = "%s#%s"
+  key = 'boot-image-url-list'
+  config_file_name = 'boot-image-url-list.conf'
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
       "kvm-partition-dict": {
         "KVM0": {
             "disable-ansible-promise": True,
-            "boot-image-url-list": "%s#%s" % (
+            cls.key: cls.input_value % (
               cls.fake_image, cls.fake_image_md5sum)
         },
         "KVM1": {
             "disable-ansible-promise": True,
-            "boot-image-url-list": "%s#%s" % (
+            cls.key: cls.input_value % (
               cls.fake_image2, cls.fake_image2_md5sum)
         }
       }
@@ -735,20 +893,29 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
     #       we assume ordering of the cluster requests
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
-      'boot-image-url-list.conf')
+      self.config_file_name)
     KVM1_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '2', 'etc',
-      'boot-image-url-list.conf')
+      self.config_file_name)
     with open(KVM0_config, 'r') as fh:
       self.assertEqual(
-        "%s#%s" % (self.fake_image, self.fake_image_md5sum),
+        self.input_value % (self.fake_image, self.fake_image_md5sum),
         fh.read()
       )
     with open(KVM1_config, 'r') as fh:
       self.assertEqual(
-        "%s#%s" % (self.fake_image2, self.fake_image2_md5sum),
+        self.input_value % (self.fake_image2, self.fake_image2_md5sum),
         fh.read()
       )
+
+
+@skipUnlessKvm
+class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
+  __partition_reference__ = 'biuskc'
+
+  input_value = "[\"%s#%s\"]"
+  key = 'boot-image-url-select'
+  config_file_name = 'boot-image-url-select.json'
 
 
 @skipUnlessKvm
