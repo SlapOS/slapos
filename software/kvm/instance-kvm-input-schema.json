@@ -375,10 +375,11 @@
     "image-url-select": {
       "title": "Image from selection",
       "type": "string",
-      "oneOf": [
-        {"const": "foo", "title": "Pick Foo"},
-        {"const": "bar", "title": "Pick Bar"},
-        {"const": "whatever", "title": "Don't Care"}
+      "enum": [
+        "paczynek1",
+        "paczynek2",
+        "paczynek3",
+        "Debian | http://download.shacache.org/0f56a59ab3bc3193e70c1996fe69260e1b225bc53bbb7509cb3ae036006653dec69b3384cd624eefed81c85e692e4b4b7cb3d25c6244c298070569dddf7216b#asdasdas"
       ]
     }
   }
