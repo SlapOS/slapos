@@ -24,7 +24,15 @@ if __name__ == "__main__":
     image_number = 0
     data = fh.read()
     configuration_dict['config-md5sum'] = hashlib.md5(data).hexdigest()
-    for entry in data.decode('utf-8').split():
+    if source_configuration.endswith('.json'):
+      try:
+        data_list = json.loads(data)
+      except Exception:
+        error_list.append('ERR: Data is not a JSON')
+        data_list = []
+    else:
+      data_list = data.decode('utf-8').split()
+    for entry in data_list:
       split_entry = entry.split('#')
       if len(split_entry) != 2:
         error_list.append('ERR: entry %r is incorrect' % (entry,))
