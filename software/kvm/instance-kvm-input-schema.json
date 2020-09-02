@@ -374,7 +374,7 @@
     },
     "image-url-select": {
       "title": "Provided OS images",
-      "type": "string",
+      "type": "array",
       "oneOf": [
         {"const": "Bu", "title": "Debian Buster"},
         {"const": "bar", "title": "Ubuntu Focal"},
