@@ -373,12 +373,12 @@
       "textarea": "true"
     },
     "image-url-select": {
-      "title": "Image from selection",
+      "title": "Provided OS images",
       "type": "string",
-      "enum": [
-        "Debian Buster | http://download.shacache.org/0f56a59ab3bc3193e70c1996fe69260e1b225bc53bbb7509cb3ae036006653dec69b3384cd624eefed81c85e692e4b4b7cb3d25c6244c298070569dddf7216b#asdasdas",
-        "Ubuntu 20.04 | http://download.shacache.org/af56a59ab3bc3193e70c1996fe69260e1b225bc53bbb7509cb3ae036006653dec69b3384cd624eefed81c85e692e4b4b7cb3d25c6244c298070569dddf7216b#asdasdas",
-        "CentOS 7.2003 | http://download.shacache.org/af56a59ab3bc3193e70c1996fe69260e1b225bc53bbb7509cb3ae036006653dec69b3384cd624eefed81c85e692e4b4b7cb3d25c6244c298070569dddf7216b#asdasdas"
+      "oneOf": [
+        {"const": "Bu", "title": "Debian Buster"},
+        {"const": "bar", "title": "Ubuntu Focal"},
+        {"const": "whatever", "title": "Centos"}
       ]
     }
   }
