@@ -54,6 +54,9 @@ parts =
 
   slave-introspection-frontend
 
+[caddyprofiledeps]
+recipe = caddyprofiledeps
+
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -270,6 +273,7 @@ stop-on-error = True
 
 [dynamic-custom-personal-template-slave-list]
 < = jinja2-template-base
+depends = ${caddyprofiledeps:recipe}
 template = {{ parameter_dict['template_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
@@ -288,7 +292,7 @@ extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
-    import furl_module furl_module
+    import furl_module furl
     key caddy_executable :caddy_executable
     key http_port configuration:plain_http_port
     key https_port configuration:port
