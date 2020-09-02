@@ -674,6 +674,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
+    # check that the result is correct JSON, which allows to access
+    # information about all logs
+    self.assertEqual(
+      'application/json',
+      result.headers['Content-Type']
+    )
+    self.assertEqual(
+      sorted([q['name'] for q in result.json()]),
+      ['access.log', 'backend.log', 'error.log'])
     self.assertEqual(
       httplib.OK,
       requests.get(url + 'access.log', verify=False).status_code
