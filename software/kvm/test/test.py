@@ -563,20 +563,29 @@ class TestBootImageUrlList(InstanceTestCase):
     self.assertTrue(os.path.islink(image2_link))
     self.assertEqual(os.readlink(image2_link), image2)
 
+    def getRunningImageList():
+      running_image_list = []
+      with self.slap.instance_supervisor_rpc as instance_supervisor:
+        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                   if 'kvm-' in q['name']][0]['pid']
+        kvm_process = psutil.Process(kvm_pid)
+        software_root = '/'.join([
+          self.slap.software_directory,
+          hashlib.md5(self.getSoftwareURL()).hexdigest()])
+        for entry in kvm_process.cmdline():
+          if entry.startswith('file') and 'media=cdrom' in entry:
+            # do cleanups
+            entry = entry.replace(software_root, '')
+            entry = entry.replace(self.computer_partition_root_path, '')
+            running_image_list.append(entry)
+      return running_image_list
+
     # check that the image is NOT YET available in kvm
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
-      kvm_process = psutil.Process(kvm_pid)
-      cmd_line = ''.join(kvm_process.cmdline())
-      self.assertNotIn(
-        'srv/boot-image-url-list-repository/image_001,media=cdrom',
-        cmd_line
-      )
-      self.assertNotIn(
-        'srv/boot-image-url-list-repository/image_002,media=cdrom',
-        cmd_line
-      )
+    self.assertEqual(
+      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+       'media=cdrom'],
+      getRunningImageList()
+    )
 
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
@@ -585,20 +594,16 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw, state='started')
     self.slap.waitForInstance(max_retry=1)
 
-    # now the image is available in the kvm
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
-      kvm_process = psutil.Process(kvm_pid)
-      cmd_line = ''.join(kvm_process.cmdline())
-      self.assertIn(
-        'srv/boot-image-url-list-repository/image_001,media=cdrom',
-        cmd_line
-      )
-      self.assertIn(
-        'srv/boot-image-url-list-repository/image_002,media=cdrom',
-        cmd_line
-      )
+    # now the image is available in the kvm, and its above default image
+    self.assertEqual(
+      [
+        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
+        'file=/srv/boot-image-url-list-repository/image_002,media=cdrom',
+        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+        'media=cdrom'
+      ],
+      getRunningImageList()
+    )
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
@@ -607,6 +612,20 @@ class TestBootImageUrlList(InstanceTestCase):
     self.assertEqual(
       os.listdir(image_repository),
       []
+    )
+
+    # mimic the requirement: restart the instance by requesting it stopped and
+    # then started started, like user have to do it
+    self.rerequestInstance(partition_parameter_kw, state='stopped')
+    self.slap.waitForInstance(max_retry=1)
+    self.rerequestInstance(partition_parameter_kw, state='started')
+    self.slap.waitForInstance(max_retry=1)
+
+    # again only default image is available in the running process
+    self.assertEqual(
+      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
+       'media=cdrom'],
+      getRunningImageList()
     )
 
   def assertPromiseFails(self, promise):
