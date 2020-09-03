@@ -59,6 +59,9 @@ template = inline:
     proxy /services $${theia-instance:base-url} {
       websocket
     }
+    proxy /file-upload $${theia-instance:base-url} {
+      websocket
+    }
     basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
       realm "Theia"
       /
@@ -273,7 +276,7 @@ slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
-config-websocket-path-list = /services
+config-websocket-path-list = /services /file-upload
 return = domain secure_access
 
 [publish-connection-parameter]
