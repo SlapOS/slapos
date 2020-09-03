@@ -370,7 +370,6 @@ for nbd_ip, nbd_port in nbd_list:
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
 else:
-  boot_image_url_list_used = False
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     with open(boot_image_url_list_json_config) as fh:
@@ -379,16 +378,14 @@ else:
       for image in sorted(image_config['image-list'], key=lambda k: k['link']):
         link = os.path.join(image_config['destination-directory'], image['link'])
         if os.path.exists(link) and os.path.islink(link):
-          boot_image_url_list_used = True
           kvm_argument_list.extend([
             '-drive',
             'file=%s,media=cdrom' % (link,)
           ])
-  if not boot_image_url_list_used:
-    # If no NBD is specified/available not downloadable image: use internal disk image
-    kvm_argument_list.extend([
-        '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-    ])
+  # Always add by default the default image
+  kvm_argument_list.extend([
+      '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
+  ])
 
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
