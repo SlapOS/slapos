@@ -378,7 +378,7 @@
       "oneOf": [
         {
           "const": "https://debian/buster/image#md5sum",
-          "title": "Debian Buster"
+          "title": "<img src=\"https://www.iconfinder.com/data/icons/flat-round-system/512/debian-512.png\"> Debian Buster"
         },
         {
           "const": "https://centos/8/image#md5sum",
