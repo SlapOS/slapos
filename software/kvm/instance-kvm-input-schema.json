@@ -374,18 +374,18 @@
     },
     "image-url-select": {
       "title": "Provided OS images",
-      "type": "string",
+      "type": "array",
       "oneOf": [
         {
-          "const": "https://debian/buster/image#md5sum",
+          "const": ["https://debian/buster/image#md5sum"],
           "title": "Debian Buster"
         },
         {
-          "const": "https://centos/8/image#md5sum",
+          "const": ["https://centos/8/image#md5sum"],
           "title": "Centos 8"
         },
         {
-          "const": "https://ubuntu/focal/image#md5sum",
+          "const": ["https://ubuntu/focal/image#md5sum"],
           "title": "Ubuntu Focal"
         }
       ]
