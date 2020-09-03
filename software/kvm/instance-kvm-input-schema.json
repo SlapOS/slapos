@@ -387,6 +387,10 @@
         {
           "const": ["https://ubuntu/focal/image#md5sum"],
           "title": "Ubuntu Focal"
+        },
+        {
+          "const": ["https://special/install/image#md5sum", "https://special/driver/image#md5sum"],
+          "title": "Special"
         }
       ]
     }
