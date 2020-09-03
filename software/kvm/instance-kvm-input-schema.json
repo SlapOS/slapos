@@ -373,7 +373,7 @@
       "textarea": "true"
     },
     "image-url-select": {
-      "title": "Provided OS images",
+      "title": "Installation image",
       "type": "array",
       "oneOf": [
         {
