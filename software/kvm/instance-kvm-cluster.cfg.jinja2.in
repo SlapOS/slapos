@@ -127,9 +127,9 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
-{%- if 'image-url-list' in kvm_parameter_dict %}
+{%- if 'boot-image-url-list' in kvm_parameter_dict %}
 {#- play nice: if parameter was not constructed by the original request, do not send it at all #}
-config-image-url-list = {{ kvm_parameter_dict['image-url-list'] }}
+config-boot-image-url-list = {{ kvm_parameter_dict['boot-image-url-list'] }}
 {%- endif %}
 config-type = cluster
 
