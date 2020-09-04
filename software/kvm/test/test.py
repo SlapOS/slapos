@@ -743,12 +743,10 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
   def test_together(self):
     partition_parameter_kw = {
-      'boot-image-url-list': "%s#%s\n%s#%s" % (
-        self.fake_image, self.fake_image_md5sum, self.fake_image2,
-        self.fake_image2_md5sum),
-      'boot-image-url-select': '["%s#%s", "%s#%s"]' % (
-        self.fake_image, self.fake_image_md5sum, self.fake_image2,
-        self.fake_image2_md5sum)
+      'boot-image-url-list': "%s#%s" % (
+        self.fake_image, self.fake_image_md5sum),
+      'boot-image-url-select': '["%s#%s"]' % (
+        self.fake_image, self.fake_image_md5sum)
     }
     self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=10)
@@ -765,15 +763,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
       self.assertEqual(image_md5sum, self.fake_image_md5sum)
       self.assertTrue(os.path.islink(image_link))
       self.assertEqual(os.readlink(image_link), image)
-
-      image2 = os.path.join(image_repository, self.fake_image2_md5sum)
-      image2_link = os.path.join(image_repository, 'image_002')
-      self.assertTrue(os.path.exists(image2))
-      with open(image2, 'rb') as fh:
-        image2_md5sum = hashlib.md5(fh.read()).hexdigest()
-      self.assertEqual(image2_md5sum, self.fake_image2_md5sum)
-      self.assertTrue(os.path.islink(image2_link))
-      self.assertEqual(os.readlink(image2_link), image2)
 
     def getRunningImageList():
       running_image_list = []
@@ -810,9 +799,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     self.assertEqual(
       [
         'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-select-repository/image_002,media=cdrom',
         'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-list-repository/image_002,media=cdrom',
         'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
         'media=cdrom'
       ],
