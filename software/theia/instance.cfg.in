@@ -180,23 +180,39 @@ template =
   }
 
 
-
-[user]
-recipe = slapos.cookbook:userinfo
+[theia-service]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+template =
+  inline:#!/bin/sh
+  {% raw %}
+  export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
+  {% endraw %}
+  export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
+  export THEIA_URL=$${:base-url}
+  export THEIA_SHELL=$${theia-shell:rendered}
+  export HOME=$${buildout:directory}
+  export TMP=$${directory:tmp}
+  export TEMP=$TMP
+  export LC_ALL=C.UTF-8
+  export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
+  exec ${theia-wrapper:rendered} $@
+ip =  $${instance-parameter:ipv4-random}
+port = 3000
+base-url = http://$${:ip}:$${:port}/
 
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line =
-  env HOME=$${buildout:directory} LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:rendered} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
-
-ip =  $${instance-parameter:ipv4-random}
-hostname =  $${:ip}
-port = 3000
-base-url = http://$${:hostname}:$${:port}/
+command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
+ip =  $${instance-parameter:ipv4-random}
+hostname =  $${:ip}
+port = $${theia-service:port}
+base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
@@ -210,7 +226,6 @@ template = inline:
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
-
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -249,7 +264,7 @@ instance-promises =
 <= monitor-promise-base
 module = check_port_listening
 name = $${:_buildout_section_name_}.py
-config-hostname=  $${theia-instance:ip}
+config-hostname = $${theia-instance:ip}
 config-port = $${theia-instance:port}
 
 [frontend-listen-promise]
