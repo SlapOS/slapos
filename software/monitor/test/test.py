@@ -470,6 +470,90 @@ URL =
     )
 
 
+class TestEdgeCheckHTTPHeaderDict(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.com/
+  https://www.erp5.org/"""}
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'check-http-header-dict':
+        '{"B": "BBB"}',
+    }
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'http-header-dict': '{\"A\": \"AAA\"}'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'failure-amount': '2'"
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'http-header-dict': '{\"B\": \"BBB\"}'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'failure-amount': '2'"
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-http-header',
+      {'url': 'https://www.erp5.org/', 'check-http-header-dict': '{"A": "AAA"}'},
+    )
+
+
 class TestEdgeCheckCertificateExpirationDays(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
