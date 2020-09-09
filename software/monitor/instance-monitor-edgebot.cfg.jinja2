@@ -13,6 +13,9 @@
 {%-   if 'check-status-code' not in slave %}
 {%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
 {%-   endif %}
+{%-   if 'check-http-header-dict' not in slave %}
+{%-     do slave.__setitem__('check-http-header-dict', CONFIGURATION['check-http-header-dict']) %}
+{%-   endif %}
 {%-   if 'check-certificate-expiration-days' not in slave %}
 {%-     do slave.__setitem__('check-certificate-expiration-days', CONFIGURATION['check-certificate-expiration-days']) %}
 {%-   endif %}
@@ -48,6 +51,7 @@ name = {{ safe_name }}.py
 config-report = http_query
 config-url = {{ slave['url'] }}
 config-status-code = {{ slave['check-status-code'] }}
+config-http-header-dict = {{ slave['check-http-header-dict'] }}
 config-certificate-expiration-days = {{ slave['check-certificate-expiration-days'] }}
 config-failure-amount = {{ slave['failure-amount'] }}
 config-maximum-elapsed-time = {{ slave['check-maximum-elapsed-time'] }}
