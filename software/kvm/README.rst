@@ -18,9 +18,8 @@ KVM instance (1GB of RAM, 10GB of SSD, one core)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note that the KVM instance will try to request a frontend slave instance in order
-to be accessible from IPv4.
+to be accessible from IPv4::
 
-::
   myawesomekvm = request(
       software_release=kvm,
       partition_reference="My awesome KVM",
@@ -92,16 +91,15 @@ KVM instance parameters:
 - keyboard-layout-language (default: fr)
     Change keyboard layout language (Change to en-us if you face some bad bihaviors)
     Language list: ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
-      'fo', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'hr', 'hu', 'is', 'it', 'ja', 'lt',
-      'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
-      'th', 'tr']
+    'fo', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'hr', 'hu', 'is', 'it', 'ja', 'lt',
+    'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
+    'th', 'tr']
 
 Resilient KVM instance
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
-Like KVM instance, but backed-up (with history) in two places.
+Like KVM instance, but backed-up (with history) in two places::
 
-::
   kvm = 'https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.188/software/kvm/software.cfg'
   myresilientkvm = request(
       software_release=kvm,
