@@ -12,6 +12,12 @@
       "description": "HTTP code to check against (default: comes from master partition).",
       "type": "string"
     },
+    "check-http-header-dict": {
+      "default": "Master default",
+      "title": "HTTP header dict to check",
+      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
+      "type": "object"
+    },
     "check-frontend-ip": {
       "default": "Master default",
       "title": "Space separated list of Frontend IPs to check",
