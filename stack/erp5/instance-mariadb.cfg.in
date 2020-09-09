@@ -326,17 +326,18 @@ context =
   raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
+  raw xz {{ parameter_dict['xz-utils-location'] }}/bin/xz
   key output_folder directory:slowquery
 
-[slow-query-digest-parameters]
-max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
-slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
-
+{%if slapparameter_dict.get('max-slowqueries-threshold') and slapparameter_dict.get('slowest-query-threshold') %}
 [{{ section('monitor-promise-slowquery-result') }}]
 <= monitor-promise-base
 module = check_command_execute
 name = check-slow-query-pt-digest-result.py
-config-command = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
+config-command = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${:max_queries_threshold}" --slowest_query_threshold "${:slowest_queries_threshold}"
+max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
+slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
+{%-endif%}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
