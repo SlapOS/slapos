@@ -3,6 +3,7 @@ parts =
   monitor-base
   promises
   frontend-reload
+  tasks.json
   publish-connection-parameter
 
 extends = ${monitor-template:rendered}
@@ -56,6 +57,9 @@ template = inline:
       except public $${favicon.ico:filename}
     }
     proxy /services $${theia-instance:base-url} {
+      websocket
+    }
+    proxy /file-upload $${theia-instance:base-url} {
       websocket
     }
     basicauth $${frontend-instance-password:username} $${frontend-instance-password:passwd} {
@@ -114,22 +118,101 @@ install =
 location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
 
-[user]
-recipe = slapos.cookbook:userinfo
+[tasks.json]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot-theia}/tasks.json
+template =
+  inline:
+  {
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "slapos node software",
+        "detail": "Build all software supplied to the node",
+        "type": "shell",
+        "command": "${buildout:bin-directory}/slapos",
+        "args": [
+          "node",
+          "software",
+          // debug mode can be enabled by commenting out this line:
+          // "--buildout-debug",
+          "--all"
+        ],
+        "options": {
+          "env": {
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "GIT_EXEC_PATH": ""
+          }
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "slapos node instance",
+        "detail": "Create all instances requested on the node",
+        "type": "shell",
+        "command": "${buildout:bin-directory}/slapos",
+        "args": [
+          "node",
+          "instance",
+          // debug mode can be enabled by commenting out this line:
+          // "--buildout-debug",
+          "--all"
+        ],
+        "options": {
+          "env": {
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "GIT_EXEC_PATH": ""
+          }
+        },
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      }
+    ]
+  }
+
+
+[theia-service]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+template =
+  inline:#!/bin/sh
+  {% raw %}
+  export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
+  {% endraw %}
+  export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
+  export THEIA_URL=$${:base-url}
+  export THEIA_SHELL=$${theia-shell:rendered}
+  export HOME=$${buildout:directory}
+  export TMP=$${directory:tmp}
+  export TEMP=$TMP
+  export LC_ALL=C.UTF-8
+  export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
+  exec ${theia-wrapper:rendered} $@
+ip =  $${instance-parameter:ipv4-random}
+port = 3000
+base-url = http://$${:ip}:$${:port}/
 
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line =
-  env LC_ALL=C.UTF-8 TMP=$${directory:tmp} THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}' THEIA_SHELL=$${theia-shell:rendered} ${theia-wrapper:rendered} --hostname=$${:hostname} --port=$${:port} $${directory:project}
-
-ip =  $${instance-parameter:ipv4-random}
-hostname =  $${:ip}
-port = 3000
-base-url = http://$${:hostname}:$${:port}/
+command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
+ip =  $${instance-parameter:ipv4-random}
+hostname =  $${:ip}
+port = $${theia-service:port}
+base-url = $${theia-service:base-url}
 
 [theia-shell]
 recipe = slapos.recipe.template:jinja2
@@ -143,7 +226,6 @@ template = inline:
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
-
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -163,13 +245,13 @@ template =
       $${slap-connection:partition-id} \
       --key='$${slap-connection:key-file}' \
       --cert='$${slap-connection:cert-file}'
-  export SLAPOS_CONFIGURATION=$${directory:slapos}/etc/slapos.cfg
+  export SLAPOS_CONFIGURATION=$${:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
 
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
 port = 4000
-
+slapos-configuration = $${directory:slapos}/etc/slapos.cfg
 
 [promises]
 recipe =
@@ -182,7 +264,7 @@ instance-promises =
 <= monitor-promise-base
 module = check_port_listening
 name = $${:_buildout_section_name_}.py
-config-hostname=  $${theia-instance:ip}
+config-hostname = $${theia-instance:ip}
 config-port = $${theia-instance:port}
 
 [frontend-listen-promise]
@@ -209,7 +291,7 @@ slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
-config-websocket-path-list = /services
+config-websocket-path-list = /services /file-upload
 return = domain secure_access
 
 [publish-connection-parameter]
@@ -233,6 +315,7 @@ var = $${buildout:directory}/var
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
+dot-theia = $${buildout:directory}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
