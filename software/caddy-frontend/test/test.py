@@ -684,7 +684,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     # assert only for few tests, as backend log is not available for many of
     # them, as it's created on the fly
-    for test_name in ['test_url', 'test_auth_to_backend', 'test_compressed_result']:
+    for test_name in [
+      'test_url', 'test_auth_to_backend', 'test_compressed_result']:
       if self.id().endswith(test_name):
         self.assertEqual(
           httplib.OK,
