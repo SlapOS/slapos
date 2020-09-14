@@ -33,7 +33,7 @@ with open("README.md") as f:
 
 setup(name=name,
       version=version,
-      description="Test for SlapOS' ERP5 software releae",
+      description="Test for SlapOS' ERP5 software release",
       long_description=long_description,
       long_description_content_type='text/markdown',
       maintainer="Nexedi",
@@ -51,7 +51,6 @@ setup(name=name,
         'backports.lzma',
         'cryptography',
         'pyOpenSSL',
-        ],
-      zip_safe=True,
+      ],
       test_suite='test',
     )
