@@ -1000,7 +1000,7 @@ config-port = ${frontend-configuration:slave-introspection-https-port}
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base
 name = slave-introspection
-log = ${backend-haproxy-rsyslogd-config:log-file}
+log = ${caddy-configuration:slave-introspection-access-log} ${caddy-configuration:slave-introspection-error-log}
 rotate-num = ${configuration:rotate-num}
 post = kill -USR1 $(cat ${caddy-configuration:slave-introspection-pid-file})
 
