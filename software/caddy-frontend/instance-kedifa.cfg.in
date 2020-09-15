@@ -236,6 +236,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 name = kedifa
 log = ${kedifa-config:logfile}
 rotate-num = {{ instance_parameter['configuration.rotate-num'] | int }}
+delaycompress =
 
 [kedifa]
 recipe = slapos.cookbook:wrapper

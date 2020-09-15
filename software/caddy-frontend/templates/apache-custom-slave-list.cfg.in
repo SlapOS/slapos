@@ -156,6 +156,8 @@ name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}} {{slave_parameter_dict.get('backend_log')}}
 backup = {{ slave_log_folder }}
 rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
+# disable delayed compression, as log filenames shall be stable
+delaycompress =
 
 {#-   integrate current logs inside #}
 
