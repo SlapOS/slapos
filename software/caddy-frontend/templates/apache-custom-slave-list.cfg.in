@@ -482,6 +482,7 @@ parts +=
     kedifa-updater
     kedifa-updater-run
     backend-haproxy-configuration
+    promise-logrotate-setup
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -573,4 +574,10 @@ recipe = collective.recipe.shelloutput
 commands =
   certificate = cat ${certificate-csr_id:certificate}
 
+[promise-logrotate-setup]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
+  ${logrotate:wrapper-path} -d
 {%- endif %} {# if software_type == slap_software_type #}
