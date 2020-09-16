@@ -592,7 +592,7 @@ class TestBootImageUrlList(InstanceTestCase):
         kvm_process = psutil.Process(kvm_pid)
         software_root = '/'.join([
           self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL()).hexdigest()])
+          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
         for entry in kvm_process.cmdline():
           if entry.startswith('file') and 'media=cdrom' in entry:
             # do cleanups
@@ -774,7 +774,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
         kvm_process = psutil.Process(kvm_pid)
         software_root = '/'.join([
           self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL()).hexdigest()])
+          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
         for entry in kvm_process.cmdline():
           if entry.startswith('file') and 'media=cdrom' in entry:
             # do cleanups
