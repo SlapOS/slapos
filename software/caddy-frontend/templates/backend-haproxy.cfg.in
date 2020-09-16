@@ -14,32 +14,46 @@ defaults
   timeout connect {{ configuration['backend-connect-timeout'] }}s
   retries {{ configuration['backend-connect-retries'] }}
 
-{%- macro frontend_entry(slave_instance, scheme) %}
+{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
+{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
 {%-   set host_list = (slave_instance.get('server-alias') or  '').split() %}
 {%-   if slave_instance.get('custom_domain') not in host_list %}
 {%-     do host_list.append(slave_instance.get('custom_domain')) %}
 {%-   endif %}
+{%-   set matched = {'count': 0} %}
 {%-   for host in host_list %}
-{%-     if host.startswith('*.') %}
-{#-     hdr_sub has to be used, as anyway something.example.com shall match *.example.com[:port], with optional port #}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_sub(host) -i {{ host[2:] }}
-{%-     else %}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_dom(host) -i {{ host }}
+{#-     Match up to the end or optional port (starting with ':') #}
+{#-     Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
+{%-     if wildcard and host.startswith('*.') %}
+{%-       do matched.__setitem__('count', matched['count'] + 1) %}
+# match wildcard {{ host }}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+{%-     elif not wildcard and not host.startswith('*.') %}
+{%-       do matched.__setitem__('count', matched['count'] + 1) %}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
 {%-     endif %}
 {%-   endfor %}
+{%-   if matched['count'] > 0 %}
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%-   endif %}
 {%- endmacro %}
 
 frontend http-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
 {%- for slave_instance in backend_slave_list %}
-{{ frontend_entry(slave_instance, 'http') }}
+{{ frontend_entry(slave_instance, 'http', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'http', True) }}
 {%- endfor %}
 
 frontend https-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
 {%- for slave_instance in backend_slave_list %}
-{{ frontend_entry(slave_instance, 'https') }}
+{{ frontend_entry(slave_instance, 'https', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'https', True) }}
 {%- endfor %}
 
 {%- for slave_instance in backend_slave_list %}
