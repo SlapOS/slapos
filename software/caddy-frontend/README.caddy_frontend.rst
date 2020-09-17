@@ -23,8 +23,8 @@ Slaves of the root instance are sent as a parameter to requested frontends which
 
 These parameters are:
 
-  * ``-frontend-type`` : the type to deploy frontends with. (default to 2)
-  * ``-frontend-quantity`` : The quantity of frontends to request (default to "default")
+  * ``-frontend-type`` : the type to deploy frontends with. (default to "default")
+  * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo
