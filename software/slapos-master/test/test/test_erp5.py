@@ -37,7 +37,7 @@ import requests
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
-setUpModule # pyflakes
+setUpModule  # pyflakes
 
 
 class TestPublishedURLIsReachableMixin(object):
@@ -46,15 +46,17 @@ class TestPublishedURLIsReachableMixin(object):
   def _checkERP5IsReachable(self, url):
     # What happens is that instanciation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
-    # instanciated, but zope is still busy creating the site and haproxy replies
-    # with 503 Service Unavailable when zope is not started yet, with 404 when
-    # erp5 site is not created, with 500 when mysql is not yet reachable, so we
-    # retry in a loop until we get a succesful response.
+    # instanciated, but zope is still busy creating the site and haproxy
+    # replies with 503 Service Unavailable when zope is not started yet, with
+    # 404 when erp5 site is not created, with 500 when mysql is not yet
+    # reachable, so we retry in a loop until we get a succesful response.
     for i in range(1, 60):
-      r = requests.get(url, verify=False)  # XXX can we get CA from caucase already ?
+      # XXX can we get CA from caucase already ?
+      r = requests.get(url, verify=False)
       if r.status_code != requests.codes.ok:
         delay = i * 2
-        self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
+        self.logger.warn(
+          "ERP5 was not available, sleeping for %ds and retrying", delay)
         time.sleep(delay)
         continue
       r.raise_for_status()
@@ -77,7 +79,8 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+class TestDefaultParameters(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated with no parameters
   """
   __partition_reference__ = 'defp'
@@ -125,16 +128,19 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     self.assertTrue(parsed.port)
 
   def test_published_family_parameters(self):
-    # when we request two families, we have two published family-{family_name} URLs
+    # when we request two families, we have two published family-{family_name}
+    # URLs
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       self.checkValidHTTPSURL(
           param_dict['family-{family_name}'.format(family_name=family_name)])
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}-v6'.format(family_name=family_name)])
+          param_dict['family-{family_name}-v6'.format(
+            family_name=family_name)])
 
   def test_published_test_runner_url(self):
-    # each family's also a list of test test runner URLs, by default 3 per family
+    # each family's also a list of test test runner URLs, by default 3 per
+    # family
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       family_test_runner_url_list = param_dict[
@@ -144,7 +150,8 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
         self.checkValidHTTPSURL(url)
 
   def test_zope_listen(self):
-    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8 zope running.
+    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8
+    # zope running.
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
     self.assertEqual(
@@ -179,7 +186,8 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     ])
 
 
-class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+class TestDisableTestRunner(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instanciated without test runner.
   """
   __partition_reference__ = 'distr'
@@ -192,15 +200,17 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     """
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
-    bin_programs = map(os.path.basename,
+    bin_programs = map(
+      os.path.basename,
       glob.glob(self.computer_partition_root_path + "/../*/bin/*"))
 
-    self.assertTrue(bin_programs) # just to check the glob was correct.
+    self.assertTrue(bin_programs)  # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
     self.assertNotIn('runTestSuite', bin_programs)
 
   def test_no_apache_testrunner_port(self):
-    # Apache only listen on two ports, there is no apache ports allocated for test runner
+    # Apache only listen on two ports, there is no apache ports allocated for
+    # test runner
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
     process_info, = [p for p in all_process_info if p['name'] == 'apache']
@@ -213,7 +223,9 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
             if c.status == 'LISTEN'
         ))
 
-class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+
+class TestZopeNodeParameterOverride(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test override zope node parameters
   """
   __partition_reference__ = 'override'
@@ -228,7 +240,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
         "server": {},
         "cache-size-bytes": "20MB",
         "cache-size-bytes!": [
-          ("bb-0", 1<<20),
+          ("bb-0", 1 << 20),
           ("bb-.*", "500MB"),
         ],
         "pool-timeout": "10m",
@@ -299,7 +311,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
     partition = self.getComputerPartitionPath('zope-bb')
     for zope in xrange(5):
       checkConf({
-          "cache-size-bytes": "500MB" if zope else 1<<20,
+          "cache-size-bytes": "500MB" if zope else 1 << 20,
         }, {
           "cache-size": None,
         })
