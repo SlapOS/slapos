@@ -75,13 +75,17 @@ context =
 {%   do part_list.append(request_section_title) %}
 # Filling request dict for slave
 {%   set state_key = "-frontend-%s-state" % i %}
-{%   do request_dict.__setitem__(request_section_title,
-                                  {
+{%   set request_content_dict = {
                                   'config': config_dict,
                                   'name': frontend_name,
                                   'sla': sla_dict,
                                   'state': slapparameter_dict.pop(state_key, None)
-                                  }) %}
+                                  } %}
+{%   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
+{%   if slapparameter_dict.has_key(frontend_software_url_key) %}
+{%     do request_content_dict.__setitem__('software-url', slapparameter_dict[frontend_software_url_key], '${slap-connection:software-release-url}') %}
+{%   endif %}
+{%   do request_dict.__setitem__(request_section_title, request_content_dict) %}
 {% endfor %}
 
 {% set authorized_slave_string_list = [] %}
@@ -212,12 +216,6 @@ config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
-{% set frontend_software_url_key = "-frontend-software-release-url" %}
-{% if slapparameter_dict.has_key(frontend_software_url_key) %}
-software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
-{% else %}
-software-url = ${slap-connection:software-release-url}
-{% endif %}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate
 
@@ -226,6 +224,7 @@ return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-u
 [{{section}}]
 <= replicate
 name = {{ frontend_request.get('name') }}
+software-url = {{ frontend_request['software-url'] }}
 {%   if state %}
 state = {{ state }}
 {%   endif %}
@@ -328,9 +327,9 @@ config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 config-slave-list = {{ dumps(authorized_slave_list) }}
 config-cluster-identification = {{ cluster_identification }}
 
-{% set frontend_software_url_key = "-frontend-software-release-url" %}
-{% if slapparameter_dict.has_key(frontend_software_url_key) %}
-software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
+{% set software_url_key = "-kedifa-software-release-url" %}
+{% if slapparameter_dict.has_key(software_url_key) %}
+software-url = {{ slapparameter_dict.pop(software_url_key) }}
 {% else %}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
