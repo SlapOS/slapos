@@ -23,14 +23,14 @@
  #       #  The path given to "SSLSessionCache shmcb:<folder_path>(512000)"
  #       "ssl-session-cache": "<folder_path>",
  #
- #       #  The path given to "SSLCACertificatePath" (can be empty)
+ #       #  The path given to "SSLCACertificateFile" (can be empty)
  #       #  If this value is not empty, it enables client certificate check.
  #       #  (Enabling "SSLVerifyClient require")
- #       "ca-cert-dir": "<directory_path>",
+ #       "ca-cert": "<file_path>",
  #
- #       #  The path given to "SSLCARevocationPath" (used if ca-cert-dir is not
+ #       #  The path given to "SSLCARevocationFile" (used if ca-cert is not
  #       #  empty)
- #       "crl-dir": "<directory_path>",
+ #       "crl": "<file_path>",
  #
  #       #  The path given to "ErrorLog"
  #       "error-log": "<file_path>",
@@ -69,7 +69,7 @@
  #  From to `backend-list`:
  #   - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001 and
  #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
- #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert-dir`.
+ #  only accepting requests from clients who provide a valid SSL certificate trusted in `ca-cert`.
  #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
  #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
  #  accepting requests from any client.
@@ -83,8 +83,6 @@
  #  For more details, refer to
  #  https://docs.zope.org/zope2/zope2book/VirtualHosting.html#using-virtualhostroot-and-virtualhostbase-together
 -#}
-{% set ca_cert_dir = parameter_dict.get('ca-cert-dir') -%}
-{% set crl_dir = parameter_dict.get('crl-dir') -%}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
@@ -105,7 +103,7 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule deflate_module modules/mod_deflate.so
 LoadModule filter_module modules/mod_filter.so
 
-AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript application/javascript image/svg+xml application/x-font-ttf application/font-woff application/font-woff2 application/x-font-opentype application/wasm
+AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript image/svg+xml application/x-font-ttf application/font-woff application/font-woff2 application/x-font-opentype application/wasm
 
 PidFile "{{ parameter_dict['pid-file'] }}"
 ServerAdmin admin@
@@ -135,16 +133,17 @@ SSLProxyEngine On
 
 # As backend is trusting Remote-User header unset it always
 RequestHeader unset Remote-User
-{% if ca_cert_dir -%}
+{% if parameter_dict['ca-cert'] -%}
 SSLVerifyClient optional
 RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
-RequestHeader unset X-Forwarded-For "expr=%{SSL_CLIENT_VERIFY} != 'SUCCESS'"
-SSLCACertificatePath {{ ca_cert_dir }}
-{%   if crl_dir -%}
+SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+{%   if not parameter_dict['shared-ca-cert'] %}
+{%     if parameter_dict['crl'] -%}
 SSLCARevocationCheck chain
-SSLCARevocationPath {{ crl_dir }}
-{%   endif -%}
-{% endif -%}
+SSLCARevocationFile {{ parameter_dict['crl'] }}
+{%-     endif %}
+{%-   endif %}
+{%- endif %}
 
 ErrorLog "{{ parameter_dict['error-log'] }}"
 # Default apache log format with request time in microsecond at the end
@@ -164,8 +163,12 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-{% if enable_authentication and ca_cert_dir -%}
+{% if enable_authentication and parameter_dict['shared-ca-cert'] and parameter_dict['shared-crl'] -%}
   SSLVerifyClient require
+  # Custom block we use for now different parameters.
+  RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s
+  SSLCACertificateFile {{ parameter_dict['shared-ca-cert'] }}
+  SSLCARevocationPath {{ parameter_dict['shared-crl'] }}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
@@ -183,8 +186,11 @@ Listen {{ ip }}:{{ port }}
 <VirtualHost {{ ip }}:{{ port }}>
   SSLEngine on
   Timeout 3600
-{%   if enable_authentication and ca_cert_dir -%}
+{%   if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
   SSLVerifyClient require
+  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+  SSLCARevocationCheck chain
+  SSLCARevocationFile {{ parameter_dict['crl'] }}
 
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 
