@@ -512,6 +512,7 @@ command-name = runTestSuite
 command-line-extra =
   --db_list '{{ ','.join(connection_string_list) }}'
 environment-extra +=
+  RUN_UNIT_TEST=${directory:bin}/runUnitTest
   {#- turn a list of (ip, port) in a list of 'ip:port' #}
   {% set zserver_address_list = [] -%}
   {% for ip, port in test_runner_address_list %}
