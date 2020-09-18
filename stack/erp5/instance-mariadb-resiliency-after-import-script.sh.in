@@ -1,23 +1,19 @@
 #!{{ dash }}
+set -eu
 
-# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
-# OR MYSQL DATA WILL BE ERASED.
+if [ $# -ne 1 ]; then
+  echo "Restaure a mariadb instance from available backup data."
+  echo "  $0 <BACKUP FILE>"
+  exit 1
+fi
 
-# This script will import the dump of the mysql database to the real
-# database. It is launched by the clone (importer) instance of webrunner
-# in the end of the import script.
-
-# Depending on the output, it will create a file containing
-# the status of the restoration (success or failure)
-
-set -e
-
+dump=$1
 mysql_executable='{{ mysql_executable }}'
-mariadb_data_directory='{{ mariadb_data_directory }}'
-mariadb_backup_directory='{{ mariadb_backup_directory }}'
+mariadb_data_directory='{{ data_directory }}'
 pid_file='{{ pid_file }}'
 binlog_path='{{ binlog_path }}'
 server_executable='{{ server_executable }}'
+server_socket='{{ socket }}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then
@@ -31,7 +27,16 @@ if [ -e "$pid_file" ]; then
   fi
 fi
 
-echo "Deleting existing database..."
+echo "EXISTING DATABASE CONTENT WILL BE DESTROYED"
+echo "You have 5 seconds to interrupt this script..."
+if sleep 5; then
+  echo "Expired, proceeding"
+else
+  echo "Interrupted, aborting"
+  exit 1
+fi
+
+echo "Emptying data directory..."
 find "$mariadb_data_directory" -mindepth 1 -delete
 
 # $binlog_path can be empty if incremental_backup_retention_days <= -1
@@ -45,24 +50,35 @@ if [ -n "$binlog_path" ]; then
   fi
 fi
 
-echo "Starting mariadb..."
+echo -n "Starting mariadb for backup restoration"
 "$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
 mysqld_pid=$!
-trap "kill $mysqld_pid" EXIT TERM INT
-sleep 30
-# If mysql has stopped, abort
-if ! [ -d /proc/$mysql_pid ]; then
-  echo "mysqld exited, aborting."
-  exit 1
-fi
+trap "kill $mysqld_pid; wait; exit 1" EXIT TERM INT
+while true; do
+  if [ ! -e "/proc/$mysqld_pid" ]; then
+    trap EXIT TERM INT
+    echo "Service exited, check logs"
+    wait
+    exit 1
+  fi
+  if [ -e "$server_socket" ]; then
+    echo "started."
+    break
+  fi
+  echo -n .
+  sleep 0.5
+done
 
-echo "Importing data..."
-# Use latest dump XXX can contain funny characters
-dump=$(ls -r "$mariadb_backup_directory" | head -1)
-zcat "$mariadb_backup_directory/$dump" | $mysql_executable || {
+echo "Importing $dump ..."
+zcat "$dump" | "$mysql_executable" || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE
 }
 
-echo 'Backup restoration successfully completed.'
+echo "Stopping mariadb..."
+trap EXIT TERM INT
+kill $mysqld_pid
+wait
+
+echo "Done. Start mariadb normally."
