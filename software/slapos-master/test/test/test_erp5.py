@@ -315,3 +315,72 @@ class TestZopeNodeParameterOverride(
         }, {
           "cache-size": None,
         })
+
+
+class TestDeploymentScriptInstantiation(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """This check deployment script like instantiation
+
+  Low level assertions are done here in roder to assure that
+  https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/
+  slapos-master-standalone.yml
+  works correctly
+  """
+  __partition_reference__ = 'tdsi'
+
+  # Give more time to stabilise the cluster
+  instance_max_retry = 40
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    # As close as possible configuration to deployment script
+    parameter_dict = {
+      "timezone": "UTC",
+      "site-id": "erp5",
+      "bt5": "erp5_full_text_myisam_catalog slapos_configurator",
+      "wsgi": False,
+      "zope-partition-dict": {
+        "admin": {
+          "family": "admin",
+          "thread-amount": 4,
+          "port-base": 2220,
+          "instance-count": 1
+        },
+        "activities-node": {
+          "family": "activities",
+          "thread-amount": 4,
+          "instance-count": 1,
+          "timerserver-interval": 1,
+          "port-base": 2230
+        },
+        "distribution-node": {
+          "family": "distribution",
+          "thread-amount": 1,
+          "instance-count": 1,
+          "port-base": 2210,
+          "timerserver-interval": 1
+        },
+        "web-node": {
+          "family": "web",
+          "thread-amount": 2,
+          "instance-count": 1,
+          "port-base": 2240
+        },
+        "service-slapos": {
+          "family": "service",
+          "thread-amount": 2,
+          "instance-count": 1,
+          "port-base": 2250,
+          "ssl-authentication": True,
+          "backend-path": "/%(site-id)s/portal_slap"
+        }
+      }
+    }
+
+    # put shared-certificate-authority-path in controlled location
+    cls.ca_path = os.path.join(cls.slap.instance_directory, 'ca_path')
+    parameter_dict["shared-certificate-authority-path"] = cls.ca_path
+    return {'_': json.dumps(parameter_dict)}
+
+  def test_ssl_auth(self):
+    self.fail('TODO')
