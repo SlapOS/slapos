@@ -55,6 +55,7 @@ environment +=
   HOME=${buildout:directory}
   PATH=${binary-link:target-directory}:{{ parameter_dict['coreutils'] }}/bin:{{ parameter_dict['perl_dbd_mariadb_path'] }}
   TZ={{ slapparameter_dict['timezone'] }}
+  RUN_UNIT_TEST=${directory:bin}/runUnitTest
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
   INSTANCE_HOME=${:instance-home}
   CAUCASE={{ slapparameter_dict['caucase-url'] }}
@@ -477,6 +478,7 @@ wrapper-path = ${buildout:bin-directory}/runTestSuite
 < = run-common
 environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
+  RUN_UNIT_TEST=${directory:bin}/runUnitTest
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
 {%- if wsgi %}
@@ -512,7 +514,6 @@ command-name = runTestSuite
 command-line-extra =
   --db_list '{{ ','.join(connection_string_list) }}'
 environment-extra +=
-  RUN_UNIT_TEST=${directory:bin}/runUnitTest
   {#- turn a list of (ip, port) in a list of 'ip:port' #}
   {% set zserver_address_list = [] -%}
   {% for ip, port in test_runner_address_list %}
