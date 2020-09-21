@@ -94,20 +94,15 @@ New promises should be placed into the folder etc/plugin, legacy promises are in
 You will use slapos.cookbook:promise.plugin to generate your promise script into `etc/plugin` directory. Adding a promise will look like this:
 
     [promise-check-site]
-    recipe = slapos.cookbook:promise.plugin
-    eggs =
-      slapos.toolbox
-    output = ${directory:plugins}/promise-check-mysite-status.py
-    content = 
-      from slapos.promise.plugin.check_site_state import RunPromise
-    config-site-url = ${publish:site-url}
-    config-connection-timeout = 20
+    <= monitor-promise-base
+    module = check_port_listening
+    config-hostname = ${publish:ipv6}
+    config-port = 2020
     config-foo = bar
-    mode = 600
 
-Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
+The section `monitor-promise-base` is defined in the monitor stack. Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
 
-In your promise code, you will be able to call `self.getConfig('site-url')`, `self.getConfig('connection-timeout')` and `self.getConfig('foo')`. The returned value is `None` if the config parameter is not set.
+In your promise code, you will be able to call `self.getConfig('hostname')`, `self.getConfig('port')` and `self.getConfig('foo')`. The returned value is `None` if the config parameter is not set.
 
 Slapgrid will run each promise every time a partition is processed (every minutes in theory), if the partition is up to date, slapgrid will only run promises anomaly check and save the result in a json file. Here is an exemple of promise result:
 
