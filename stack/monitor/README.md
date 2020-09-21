@@ -96,11 +96,14 @@ You will use slapos.cookbook:promise.plugin to generate your promise script into
     [promise-check-site]
     <= monitor-promise-base
     module = check_port_listening
+    name = check_site.py
     config-hostname = ${publish:ipv6}
     config-port = 2020
     config-foo = bar
 
-The section `monitor-promise-base` is defined in the monitor stack. Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
+The section `monitor-promise-base` is defined in the monitor stack, `name` is the filename of the script that will be generated under `etc/plugin` directory, `module` is the name of your promise module (you can find a list of existing module in https://lab.nexedi.com/nexedi/slapos.toolbox/tree/master/slapos/promise/plugin).
+
+Then you will have to add `promise-check-site` section to buildout parts, so it will be installed.
 
 In your promise code, you will be able to call `self.getConfig('hostname')`, `self.getConfig('port')` and `self.getConfig('foo')`. The returned value is `None` if the config parameter is not set.
 
