@@ -3,6 +3,15 @@ Changes
 
 Here are listed the most important changes, which might affect upgrades.
 
+1.0.164 (2020-09-24)
+--------------------
+
+ * feature: serve a stale result up to 1 day if the origin server is down
+ * feature: request real frontend for slave introspection (aka log access)
+ * fix: Kedifa reloading, it was resulting with kedifa server disallowing access after some time
+ * feature: allow to set software release for each node, instead for the whole cluster
+ * fix: haproxy matches correct hostname in case of wildcards, instead of using wildcard host instead of the specific one
+
 1.0.160 (2020-08-25)
 --------------------
 
