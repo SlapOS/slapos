@@ -42,6 +42,10 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class ERP5MariadbCrashTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'crash'
 
+  _save_instance_file_pattern_list = SlapOSInstanceTestCase._save_instance_file_pattern_list + (
+      '*/srv/mariadb/core',
+  )
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
