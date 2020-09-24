@@ -1,0 +1,49 @@
+From 47d01e14c26855323fba181936a77643e963d5a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 24 Sep 2020 08:52:07 +0200
+Subject: [PATCH] Workaround double definiton of openssl 1.11 macros
+
+---
+ mysys_ssl/openssl.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/mysys_ssl/openssl.c b/mysys_ssl/openssl.c
+index e0f3d646ca9..9d1067a377b 100644
+--- a/mysys_ssl/openssl.c
++++ b/mysys_ssl/openssl.c
+@@ -30,8 +30,32 @@ int check_openssl_compatibility()
+   return 0;
+ }
+ #else
++
++// XXX workaround double definition of these macros ( in ssl_compat.h and openssl/evp.h )
++#undef EVP_MD_CTX_init
++#undef EVP_CIPHER_CTX_init
++#undef ERR_free_strings
++#undef EVP_cleanup
++#undef CRYPTO_cleanup_all_ex_data
++#undef SSL_load_error_strings
++
+ #include <openssl/evp.h>
+ 
++// XXX workaround double definition macros continued
++#undef EVP_MD_CTX_init
++#define EVP_MD_CTX_init(X) do { memset((X), 0, EVP_MD_CTX_SIZE); EVP_MD_CTX_reset(X); } while(0)
++#undef EVP_CIPHER_CTX_init
++#define EVP_CIPHER_CTX_init(X) do { memset((X), 0, EVP_CIPHER_CTX_SIZE); EVP_CIPHER_CTX_reset(X); } while(0)
++#undef ERR_free_strings
++#define ERR_free_strings()
++#undef EVP_cleanup
++#define EVP_cleanup()
++#undef CRYPTO_cleanup_all_ex_data
++#define CRYPTO_cleanup_all_ex_data()
++#undef SSL_load_error_strings
++#define SSL_load_error_strings()
++
++
+ static uint testing;
+ size_t alloc_size, alloc_count;
+ 
+-- 
+2.25.1
+
