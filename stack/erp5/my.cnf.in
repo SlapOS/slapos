@@ -73,6 +73,8 @@ skip_character_set_client_handshake
 
 # debugging
 core_file
+general_log
+general_log_file = ../../var/log/mariadb_general_.log
 
 {% if 'ssl-key' in parameter_dict -%}
 ssl_cert = {{ parameter_dict['ssl-crt'] }}
