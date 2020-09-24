@@ -6575,3 +6575,92 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       },
       parameter_dict
     )
+
+
+class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': cls._ipv4_address,
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    # Note: The slaves are specifically constructed to have an order which
+    #       is triggering the problem. Slave list is sorted in many places,
+    #       and such slave configuration will result with them begin seen
+    #       by backend haproxy configuration in exactly the way seen below
+    #       Ordering it here will not help at all.
+    return {
+      'wildcard': {
+        'url': cls.backend_url + 'wildcard',
+        'custom_domain': '*.alias1.example.com',
+      },
+      'zspecific': {
+        'url': cls.backend_url + 'zspecific',
+        'custom_domain': 'zspecific.alias1.example.com',
+      },
+    }
+
+  def test(self):
+    parameter_dict_wildcard = self.parseSlaveParameterDict('wildcard')
+    self.assertLogAccessUrlWithPop(parameter_dict_wildcard)
+    self.assertKedifaKeysWithPop(parameter_dict_wildcard, '')
+    hostname = '*.alias1'
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict_wildcard
+    )
+    parameter_dict_specific = self.parseSlaveParameterDict('zspecific')
+    self.assertLogAccessUrlWithPop(parameter_dict_specific)
+    self.assertKedifaKeysWithPop(parameter_dict_specific, '')
+    hostname = 'zspecific.alias1'
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+      },
+      parameter_dict_specific
+    )
+
+    result_wildcard = fakeHTTPSResult(
+      'other.alias1.example.com', parameter_dict_wildcard['public-ipv4'],
+      'test-path',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertEqual(self.certificate_pem, der2pem(result_wildcard.peercert))
+    self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
+
+    result_specific = fakeHTTPSResult(
+      'zspecific.alias1.example.com', parameter_dict_specific['public-ipv4'],
+      'test-path',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertEqual(self.certificate_pem, der2pem(result_specific.peercert))
+    self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
