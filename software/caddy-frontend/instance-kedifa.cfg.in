@@ -105,7 +105,7 @@ stop-on-error = True
      ca_path='${kedifa-config:ca-certificate}',
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
-     on_renew='${kedifa-reloader:wrapper-path}',
+     on_renew='${kedifa-reloader:rendered}',
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
@@ -213,9 +213,14 @@ pidfile = ${directory:run}/kedifa.pid
 logfile = ${directory:log}/kedifa.log
 
 [kedifa-reloader]
-recipe = slapos.cookbook:wrapper
-command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
-wrapper-path = ${directory:etc-run}/kedifa-reloader
+<= jinja2-template-base
+template = {{ parameter_dict['template_wrapper'] }}
+rendered = ${directory:etc-run}/kedifa-reloader
+command =
+  kill -HUP `cat ${kedifa-config:pidfile}`
+mode = 0700
+extra-context =
+  key content :command
 
 [promise-kedifa-http-reply]
 <= monitor-promise-base
