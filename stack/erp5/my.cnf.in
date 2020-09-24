@@ -71,6 +71,9 @@ character_set_server = utf8mb4
 collation_server = utf8mb4_general_ci
 skip_character_set_client_handshake
 
+# debugging
+core_file
+
 {% if 'ssl-key' in parameter_dict -%}
 ssl_cert = {{ parameter_dict['ssl-crt'] }}
 ssl_key = {{ parameter_dict['ssl-key'] }}
