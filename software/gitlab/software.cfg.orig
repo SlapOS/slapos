@@ -1,0 +1,418 @@
+# GitLab software-release
+[buildout]
+extends =
+    buildout.hash.cfg
+    ../../stack/slapos.cfg
+    ../../stack/monitor/buildout.cfg
+    ../../component/ruby/buildout.cfg
+    ../../component/golang/buildout.cfg
+    ../../component/postgresql/buildout.cfg
+    ../../component/redis/buildout.cfg
+    ../../component/cmake/buildout.cfg
+    ../../component/icu/buildout.cfg
+    ../../component/pkgconfig/buildout.cfg
+    ../../component/nodejs/buildout.cfg
+    ../../component/openssl/buildout.cfg
+    ../../component/nginx/buildout.cfg
+    ../../component/xz-utils/buildout.cfg
+    ../../component/zlib/buildout.cfg
+    gowork.cfg
+
+#   for instance
+    ../../component/coreutils/buildout.cfg
+    ../../component/bash/buildout.cfg
+    ../../component/grep/buildout.cfg
+    ../../component/bzip2/buildout.cfg
+    ../../component/curl/buildout.cfg
+    ../../component/tar/buildout.cfg
+    ../../component/gzip/buildout.cfg
+    ../../component/dcron/buildout.cfg
+    ../../component/logrotate/buildout.cfg
+
+parts =
+    ruby2.3
+    golang1.12
+    git
+    postgresql10
+    redis28
+    cmake
+    icu
+    pkgconfig
+    nginx-output
+
+    gowork
+    gitlab-workhorse
+    gitaly-build
+    python-4gitlab
+    gitlab-shell/vendor
+    gitlab/vendor/bundle
+    gitlab_npm
+    github-markup-patch
+    gitlab-backup
+
+#   for instance
+    instance.cfg
+
+    slapos-cookbook
+    eggs
+
+    bash
+    curl
+    watcher
+    gitlab-export
+    gzip
+    dcron-output
+    logrotate
+
+[slapos.cookbook-repository]
+revision = 571d6514f7290e8faa9439c4b86aa2f6c87df261
+
+
+[yarn]
+# need this version of Yarn
+recipe = slapos.recipe.build:download-unpacked
+url = https://github.com/yarnpkg/yarn/releases/download/v1.3.2/yarn-v1.3.2.tar.gz
+md5sum = db82fa09c996e9318f2f1d2ab99228f9
+
+############################
+#   Software compilation   #
+############################
+
+# python with eggs, that will be used in gitlab
+[python-4gitlab]
+recipe  = zc.recipe.egg
+interpreter = python2
+eggs    =
+    docutils
+
+# rubygemsrecipe with fixed url and this way pinned rubygems version
+[rubygemsrecipe]
+recipe  = rubygemsrecipe
+url     = https://rubygems.org/rubygems/rubygems-3.1.2.zip
+
+# bundler, that we'll use to
+# - install gems for gitlab
+# - run gitlab services / jobs  (via `bundle exec ...`)
+[bundler-4gitlab]
+<= rubygemsrecipe
+ruby-location = ${ruby2.3:location}
+ruby-executable = ${:ruby-location}/bin/ruby
+gems    =
+  bundler==1.17.3
+
+# bin installed here
+bundle  = ${buildout:bin-directory}/bundle
+# Gitaly need bundler 1.17.3 which is not the default version at the end
+bundle1.17.3 = ${buildout:parts-directory}/${:_buildout_section_name_}/lib/ruby/gems/1.8/gems/bundler-1.17.3/exe/
+
+# install together with dependencies of gitlab, which we cannot specify using
+#   --with-... gem option
+# ( reason: rubygemsrecipe hardcodes PATH inside generated bin/* and it is
+#   impossible to adjust it later )
+#
+# bundle exec <smth>                ; <smth> starts with `#!/usr/bin/env ruby` as rubygems
+# Rugged needs: cmake, pkgconfig
+# execjs needs: nodejs
+# rails needs db client program on path: psql
+# gitlab wants to check redis version via running: redis-cli
+# gitlab wants git to be really on path ( it uses git from abspath defined in
+#   gitlab.yml, but there are not all cases like this, e.g. in
+#   https://gitlab.com/gitlab-org/gitlab_git/blob/2f0d3c1a/lib/gitlab_git/repository.rb#L259 )
+# gitlab (via github-markup) wants to convert rst -> html via running: python2 (with docutils egg)
+# (python-4gitlab puts interpreter into ${buildout:bin-directory})
+environment =
+
+  PATH    = ${yarn:location}/bin:${:ruby-location}/bin:${cmake:location}/bin:${pkgconfig:location}/bin:${nodejs-8.12.0:location}/bin:${postgresql10:location}/bin:${redis28:location}/bin:${git:location}/bin:${buildout:bin-directory}:%(PATH)s
+
+
+# gitlab, gitlab-shell & gitlab-workhorse checked out as git repositories
+# pinned to exact commit
+[git-repository]
+recipe  = slapos.recipe.build:gitclone
+git-executable = ${git:location}/bin/git
+
+[gitlab-repository]
+<= git-repository
+repository = https://lab.nexedi.com/nexedi/gitlab-ce.git
+# 9.5.10 + NXD patches:
+revision = v9.5.10-8-gc290e22a08cb
+location = ${buildout:parts-directory}/gitlab
+
+[gitlab-shell-repository]
+<= git-repository
+#repository = https://lab.nexedi.com/nexedi/gitlab-shell.git
+repository = https://gitlab.com/gitlab-org/gitlab-shell.git
+# gitlab 9.5.10 wants gitlab-shell 5.6.1
+revision = v5.6.1-10-g1e587d3b7f
+location = ${buildout:parts-directory}/gitlab-shell
+
+[gitaly-repository]
+<= git-repository
+repository = https://gitlab.com/gitlab-org/gitaly.git
+# for version v0.35.0 (gitlab 9.5.10)
+revision = v0.35.0-0-gf99a57b19a
+location = ${buildout:parts-directory}/gitaly
+
+[gitlab-workhorse-repository]
+<= git-repository
+repository = https://lab.nexedi.com/nexedi/gitlab-workhorse.git
+<<<<<<< HEAD
+revision = v3.0.0-8-g74793ad3cc
+=======
+# 0.6.4 + NXD patches for blob download speedup
+# (https://gitlab.com/gitlab-org/gitlab-workhorse/merge_requests/17)
+revision = v0.6.4-3-g32ec77c4db3556dc66e8c863326325f8ec970849
+location = ${buildout:parts-directory}/gitlab-workhorse
+
+>>>>>>> 24006b22b... gitlab: v↑ gitlab-workhorse 0.6.4-X
+
+# Patch github markup to not call "python2 -S /path/to/rest2html" but only "python2 /path/to/rest2html"
+# NOTE github-markup invokes it as `python2`, that's why we are naming it this way
+# https://github.com/github/markup/blob/5393ae93/lib/github/markups.rb#L36
+[github-markup-patch]
+recipe = plone.recipe.command
+command =
+  files=$(ls ${gitlab-repository:location}/vendor/bundle/ruby/*/gems/git*-markup-*/lib/github/markups.rb) || true
+  if [ ! -z "$files" ]; then
+    for file in $files; do
+      sed -i 's#python2 -S#python2#' $file
+    done
+  fi
+update-command = ${:command}
+stop-on-error = True
+
+# build needed-by-gitlab gems via bundler
+[gitlab/vendor/bundle]
+recipe  = slapos.recipe.cmmi
+path    = ${gitlab-repository:location}
+bundle  = ${bundler-4gitlab:bundle}
+
+configure-command = cd ${:path} &&
+    ${:bundle} config --local build.charlock_holmes --with-icu-dir=${icu:location}  &&
+    ${:bundle} config --local build.pg --with-pg-config=${postgresql10:location}/bin/pg_config &&
+    ${:bundle} config --local build.re2 --with-re2-dir=${re2:location} &&
+    ${:bundle} config --local build.nokogiri --with-zlib-dir=${zlib:location} --with-cflags=-I${xz-utils:location}/include --with-ldflags="-L${xz-utils:location}/lib -Wl,-rpath=${xz-utils:location}/lib"
+
+make-binary =
+make-targets= cd ${:path} &&
+    ${:bundle} install --deployment  --without development test mysql aws kerberos
+environment =
+  PKG_CONFIG_PATH=${openssl-1.0:location}/lib/pkgconfig:${re2:location}/lib/pkgconfig:${xz-utils:location}/lib/pkgconfig
+  PATH=${pkgconfig:location}/bin:%(PATH)s
+  CFLAGS=-I${xz-utils:location}/include
+
+################## Google re2
+[re2]
+recipe = slapos.recipe.cmmi
+url = https://github.com/google/re2/archive/2019-12-01.tar.gz
+md5sum = 527eab0c75d6a1a0044c6eefd816b2fb
+configure-command = :
+
+
+[gitlab_npm]
+recipe  = slapos.recipe.cmmi
+path    = ${gitlab-repository:location}
+
+configure-command = :
+make-binary =
+make-targets= cd ${:path} && npm install
+
+environment =
+  PATH=${nodejs-8.12.0:location}/bin/:%(PATH)s
+
+#our go infrastructure not currently supporting submodules, IIRC
+# https://lab.nexedi.com/nexedi/slapos/merge_requests/337
+[go_github.com_libgit2_git2go_prepare]
+recipe  = slapos.recipe.cmmi
+path = ${go_github.com_libgit2_git2go:location}
+configure-command = :
+make-binary =
+make-targets= cd ${go_github.com_libgit2_git2go:location}
+              && git submodule update --init
+              && sed -i 's/.*--build.*/cmake --build . --target install/' script/build-libgit2-static.sh
+              && make install
+environment =
+  PKG_CONFIG_PATH=${openssl-1.0:location}/lib/pkgconfig:${zlib:location}/lib/pkgconfig
+  PATH=${cmake:location}/bin:${pkgconfig:location}/bin:${git:location}/bin:${golang1.12:location}/bin:${buildout:bin-directory}:%(PATH)s
+  GOPATH=${gowork:directory}
+
+[gowork.goinstall]
+git2go = ${go_github.com_libgit2_git2go_prepare:path}/vendor/libgit2/install
+command = bash -c ". ${gowork:env.sh} && CGO_CFLAGS=-I${:git2go}/include CGO_LDFLAGS='-L${:git2go}/lib -lgit2' go install ${gowork:buildflags} -v $(echo -n '${gowork:install}' |tr '\n' ' ')"
+
+[gowork]
+golang  = ${golang1.12:location}
+# gitlab.com/gitlab-org/gitlab-workhorse
+# gitlab.com/gitlab-org/gitlab-workhorse/cmd/gitlab-zip-cat
+# gitlab.com/gitlab-org/gitlab-workhorse/cmd/gitlab-zip-metadata
+install =
+  lab.nexedi.com/kirr/git-backup
+cpkgpath =
+    ${openssl-1.0:location}/lib/pkgconfig
+    ${zlib:location}/lib/pkgconfig
+    ${go_github.com_libgit2_git2go_prepare:path}/vendor/libgit2/install/lib/pkgconfig
+buildflags = --tags "static"
+
+[gitlab-workhorse]
+recipe = slapos.recipe.cmmi
+path = ${gitlab-workhorse-repository:location}
+md5sum = 2988c944d58c4a08880498c4981cc7b7
+configure-command = :
+make-binary =
+make-targets = 
+  . ${gowork:env.sh} && make install PREFIX=${gowork:directory}
+
+[gitlab-backup]
+recipe = plone.recipe.command
+command =
+  cp -a ${go_lab.nexedi.com_kirr_git-backup:location}/contrib/gitlab-backup ${gowork:bin}
+update-command = ${:command}
+
+[gitaly-build]
+recipe = slapos.recipe.cmmi
+path = ${gitaly-repository:location}
+bundle  = ${bundler-4gitlab:bundle}
+
+configure-command = cd ${:path}/ruby &&
+    ${:bundle} config --local build.charlock_holmes --with-icu-dir=${icu:location}
+make-binary =
+make-targets =
+  . ${gowork:env.sh} && make
+environment =
+  PKG_CONFIG_PATH=${openssl-1.0:location}/lib/pkgconfig:${icu:location}/lib/pkgconfig
+  PATH=${pkgconfig:location}/bin:${ruby2.3:location}/bin:%(PATH)s
+
+
+[xnice-repository]
+# to get kirr's misc repo containing xnice script for executing processes
+# with lower priority (used for backup script inside the cron)
+<= git-repository
+repository = https://lab.nexedi.com/kirr/misc.git
+revision =  4073572ea700bf1b115f3a135aebebe5b3b824e4
+location = ${buildout:parts-directory}/misc
+
+# build needed-by-gitlab-shell gems via bundler
+# ( there is not vendor/ dir in gitlab-shell, so to avoid having buildout error
+#   on mkdir vendor/bundle, this part name is just /vendor )
+[gitlab-shell/vendor]
+recipe  = slapos.recipe.cmmi
+path    = ${gitlab-shell-repository:location}
+bundle  = ${bundler-4gitlab:bundle}
+
+configure-command = true
+make-binary =
+make-targets= cd ${:path} &&
+    ${:bundle} install --deployment  --without development test
+
+
+###############################
+#   Trampoline for instance   #
+###############################
+
+# eggs for instance.cfg
+[eggs]
+recipe  = zc.recipe.egg
+eggs    =
+    plone.recipe.command
+    cns.recipe.symlink
+    collective.recipe.template
+
+
+[instance.cfg]
+recipe  = slapos.recipe.template
+url     = ${:_profile_base_location_}/${:filename}
+output  = ${buildout:directory}/instance.cfg
+
+# macro: download a shell script and put it rendered into <software>/bin/
+[binsh]
+recipe  = slapos.recipe.template:jinja2
+template= ${:_profile_base_location_}/${:_update_hash_filename_}
+rendered= ${buildout:bin-directory}/${:_buildout_section_name_}
+mode    = 0755
+context =
+    section bash    bash
+
+[watcher]
+<= binsh
+
+[gitlab-export]
+<= binsh
+
+
+
+# macro: download a file named in buildout.hash.cfg via _update_hash_filename_
+#
+#   [filename]
+#   <= download-file
+[download-file]
+recipe  = slapos.recipe.build:download
+url     = ${:_profile_base_location_}/${:_update_hash_filename_}
+destination = ${buildout:directory}/${:_buildout_section_name_}
+
+[database.yml.in]
+<= download-file
+
+[gitconfig.in]
+<= download-file
+
+[gitlab-parameters.cfg]
+<= download-file
+
+[gitlab-shell-config.yml.in]
+<= download-file
+
+[gitlab-unicorn-startup.in]
+<= download-file
+
+[gitlab.yml.in]
+<= download-file
+
+[gitaly-config.toml.in]
+<= download-file
+
+[instance-gitlab.cfg.in]
+<= download-file
+
+[instance-gitlab-export.cfg.in]
+<= download-file
+
+[instance-gitlab-test.cfg.in]
+<= download-file
+
+[macrolib.cfg.in]
+<= download-file
+
+[nginx-gitlab-http.conf.in]
+<= download-file
+
+[nginx.conf.in]
+<= download-file
+
+[rack_attack.rb.in]
+<= download-file
+
+[resque.yml.in]
+<= download-file
+
+[smtp_settings.rb.in]
+<= download-file
+
+[template-gitlab-resiliency-restore.sh.in]
+<= download-file
+
+[unicorn.rb.in]
+<= download-file
+
+[gitlab-demo-backup.git]
+recipe = hexagonit.recipe.download
+url = https://lab.nexedi.com/alain.takoudjou/labdemo.backup/repository/archive.tar.gz?ref=master
+md5sum = d40e5e211dc9a4e5ada9c0250377c639
+strip-top-level-dir = true
+
+[versions]
+cns.recipe.symlink = 0.2.3
+docutils = 0.12
+plone.recipe.command = 1.1
+rubygemsrecipe = 0.2.2+slapos002
+slapos.recipe.template = 4.3
+z3c.recipe.scripts = 1.0.1

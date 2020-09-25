@@ -1,0 +1,45 @@
+# git - a distributed version control system with speed and efficiency
+# http://git-scm.com/
+
+[buildout]
+extends =
+  ../curl/buildout.cfg
+  ../gettext/buildout.cfg
+  ../libexpat/buildout.cfg
+  ../openssl/buildout.cfg
+  ../pcre/buildout.cfg
+  ../perl/buildout.cfg
+  ../tar/buildout.cfg
+  ../xz-utils/buildout.cfg
+  ../zlib/buildout.cfg
+parts =
+  git
+
+[git]
+recipe = slapos.recipe.cmmi
+<<<<<<< HEAD
+shared = true
+url = https://www.kernel.org/pub/software/scm/git/git-2.25.1.tar.xz 
+md5sum = 92bf65673b4fc08b64108d807f36f4d9
+=======
+url = https://www.kernel.org/pub/software/scm/git/git-2.7.4.tar.xz
+md5sum = b0219fcb6d73104361f4fbdba3741d00
+>>>>>>> e0e3592b7... version up : git 2.7.4, including security fixes.
+configure-options =
+  --with-curl=${curl:location}
+  --with-openssl=${openssl:location}
+  --with-zlib=${zlib:location}
+  --with-libpcre=${pcre:location}
+  --with-expat=${libexpat:location}
+  --with-perl=${perl:location}/bin/perl
+environment =
+  NO_PYTHON=y
+  NO_TCLTK=y
+  PATH=${curl:location}/bin:${gettext:location}/bin:${tar:location}/bin:${xz-utils:location}/bin:%(PATH)s
+  CPPFLAGS=-I${zlib:location}/include
+  LDFLAGS=-L${zlib:location}/lib -L${openssl:location}/lib -Wl,-rpath=${openssl:location}/lib -Wl,-rpath=${zlib:location}/lib
+
+[gitweb]
+<= git
+make-targets = install-gitweb
+make-options = bindir="${git:location}/bin/"

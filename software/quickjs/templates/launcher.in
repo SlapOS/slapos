@@ -1,0 +1,8 @@
+#! {{ param_quickjs['path_shell'] }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Test quickjs
+cd {{ param_quickjs['docroot'] }}
+echo 'console.log("Hello World");' > hello.js
+{{ param_quickjs['bin_quickjs'] }} hello.js > {{ param_quickjs['path_log'] }}

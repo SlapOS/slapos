@@ -1,0 +1,81 @@
+[buildout]
+extends =
+  buildout.hash.cfg
+  ../../stack/slapos.cfg
+  ../../component/git/buildout.cfg
+  ../../component/lxml-python/buildout.cfg
+  ../../component/zip/buildout.cfg
+  ../../component/bash/buildout.cfg
+  ../../component/caddy/buildout.cfg
+  ../../component/coreutils/buildout.cfg
+  ../../component/shellinabox/buildout.cfg
+  ../../component/pwgen/buildout.cfg
+  ../../component/apache/buildout.cfg
+  ../../stack/monitor/buildout.cfg
+
+parts =
+  slapos-command
+  slapos-cookbook
+  template
+  eggs
+  zip
+  git
+  apache
+
+[eggs]
+recipe = zc.recipe.egg
+eggs =
+  erp5.util[testnode]
+  ${lxml-python:egg}
+
+
+[template]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance.cfg
+output = ${buildout:directory}/template.cfg
+mode = 0644
+
+[template-default]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-default.cfg
+output = ${buildout:directory}/template-default.cfg
+mode = 0644
+
+[versions]
+slapos.recipe.template = 4.4
+dnspython = 1.15.0
+PyXML = 0.8.5
+<<<<<<< HEAD
+WebOb = 1.8.5
+WebTest = 2.0.33
+backports.functools-lru-cache = 1.5
+soupsieve = 1.8
+#gitdb2 = 2.0.4
+#smmap2 = 2.0.4
+waitress = 1.2.1
+z3c.etestbrowser = 2.0.1
+zope.testbrowser = 5.3.2
+
+# Required by:
+# zope.testbrowser==5.3.2
+WSGIProxy2 = 0.4.6
+
+# Required by:
+# WebTest==2.0.33
+beautifulsoup4 = 4.7.1
+
+# Required by:
+# zope.testbrowser==5.3.2
+zope.cachedescriptors = 4.3.1
+
+# Required by:
+# zope.schema==4.9.3
+zope.event = 4.4
+
+# Required by:
+# zope.testbrowser==5.3.2
+zope.schema = 4.9.3
+=======
+erp5.util = 0.4.44
+slapos.recipe.template = 2.7
+>>>>>>> fd0caaf1d... erp5testnode: erp5.util version up 0.4.44

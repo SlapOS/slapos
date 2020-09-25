@@ -1,0 +1,140 @@
+[buildout]
+extends = {{ template_runner_path }}
+          {{ pbsready_export_template_path }}
+
+<<<<<<< HEAD
+# parts from {{ template_runner_path }} are overriden by
+# {{ pbsready_export_template_path }} so we reinclude them here
+parts += ${:common-runner-parts}
+=======
+parts +=
+  nginx_conf
+  nginx-launcher
+  certificate-authority
+  ca-nginx
+  gunicorn-launcher
+  gunicorn-graceful
+  sshkeys-dropbear-runner
+  dropbear-server-add-authorized-key
+  sshkeys-authority
+  publish-connection-information
+  slaprunner-promise
+  slaprunner-frontend-promise
+  apache-httpd-promise
+  httpd-frontend-promise
+  slaprunner-supervisord-wrapper
+  dropbear-promise
+  runtestsuite
+  symlinks
+  shellinabox
+  slapos-cfg
+  slapos-repo
+  cron-entry-prepare-software
+  deploy-instance-parameters
+  instance-software
+  instance-software-type
+  minishell-cwd
+  bash-profile
+  supervisord-wrapper
+  supervisord-promise
+  httpd-graceful-wrapper
+## Monitoring part
+## Monitor for runner
+  monitor-base
+  monitor-check-resilient-feed-file
+  monitor-check-webrunner-internal-instance
+>>>>>>> 98a6cd5c1... slaprunner: backward compatibility, keep previous httpd port and frontend url
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+# XXX - keep srv path with slash at the end.
+srv = ${:home}/srv/
+
+[proxy-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 49980
+maximum = 49989
+ip = ${slap-network-information:local-ipv4}
+
+[runner-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 50005
+maximum = 50014
+ip = ${slap-network-information:global-ipv6}
+
+[slaprunner]
+proxy_port = ${proxy-free-port:port}
+runner_port = ${runner-free-port:port}
+
+[supervisord-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 39986
+maximum = 39995
+ip = ${slaprunner:ipv4}
+
+[supervisord]
+port = ${supervisord-free-port:port}
+
+[exporter-raw]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter-raw
+command-line = {{ software_release_bin }}/${slap-parameter:namebase}-exporter --srv-path ${directory:srv} --etc-path ${directory:etc} --backup-path ${directory:backup} --backup-wait-time {{ backup_wait_time }}
+environment =
+  PATH={{ rsync_bin_folder }}:/bin:/usr/bin
+
+[exporter]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bash_executable_location }} -c "exec ${exporter-raw:wrapper-path} > >(tee -ai "${directory:log}/resilient.log") 2>&1"
+wrapper-path = ${directory:bin}/${slap-parameter:namebase}-exporter
+# wrapper parameter is needed by resilience stack
+wrapper = ${:wrapper-path}
+
+[monitor-httpd-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 8437
+maximum = 8446
+ip = ${slap-network-information:global-ipv6}
+
+# XXX Redefine Monitor parameters for runner-export
+[monitor-instance-parameter]
+monitor-httpd-port = ${monitor-httpd-free-port:port}
+{% if slapparameter_dict.get('name', '') -%}
+monitor-title = {{ slapparameter_dict['name'] }}
+{% endif -%}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-url-list', '') -%}
+monitor-url-list = {{ slapparameter_dict['monitor-url-list'] }}
+{% endif -%}
+instance-configuration =
+  httpdcors cors-domain ${slaprunner-httpd-cors:location} ${httpd-graceful-wrapper:output}
+configuration-file-path = ${buildout:directory}/knowledge0.cfg
+
+[monitor-conf-parameters]
+private-path-list +=
+  $${logrotate-directory:logrotate-backup}
+
+# Extends publish section with resilient parameters
+[publish-connection-information]
+<= resilient-publish-connection-parameter
+
+[monitor-check-resilient-feed-file]
+recipe = slapos.recipe.template:jinja2
+<<<<<<< HEAD
+template = {{ monitor_check_resilient_feed_template_path }}
+rendered = ${monitor-directory:bin}/check-create-resilient-feed-files
+=======
+template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+rendered = $${monitor-directory:reports}/check-create-resilient-feed-files
+>>>>>>> 98a6cd5c1... slaprunner: backward compatibility, keep previous httpd port and frontend url
+mode = 700
+context =
+  key input_feed_directory directory:notifier-feeds
+  key monitor_feed_directory monitor-directory:public
+  raw base_url http://[${notifier:host}]:${notifier:port}/get/
+  raw python_executable ${buildout:executable}

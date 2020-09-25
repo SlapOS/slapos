@@ -1,0 +1,857 @@
+[buildout]
+
+extends =
+# Exact version of Zope
+  ztk-versions.cfg
+  zope-versions.cfg
+  buildout.hash.cfg
+  ../../component/fonts/buildout.cfg
+  ../../component/git/buildout.cfg
+  ../../component/graphviz/buildout.cfg
+  ../../component/gzip/buildout.cfg
+  ../../component/xz-utils/buildout.cfg
+  ../../component/haproxy/buildout.cfg
+  ../../component/findutils/buildout.cfg
+  ../../component/librsvg/buildout.cfg
+  ../../component/imagemagick/buildout.cfg
+  ../../component/jpegoptim/buildout.cfg
+  ../../component/kumo/buildout.cfg
+  ../../component/libdmtx/buildout.cfg
+  ../../component/matplotlib/buildout.cfg
+  ../../component/numpy/buildout.cfg
+  ../../component/statsmodels/buildout.cfg
+  ../../component/h5py/buildout.cfg
+  ../../component/ocropy/buildout.cfg
+  ../../component/optipng/buildout.cfg
+  ../../component/pandas/buildout.cfg
+  ../../component/percona-toolkit/buildout.cfg
+  ../../component/patch/buildout.cfg
+  ../../component/pillow/buildout.cfg
+  ../../component/pycrypto-python/buildout.cfg
+  ../../component/pysvn-python/buildout.cfg
+  ../../component/python-ldap-python/buildout.cfg
+  ../../component/rdiff-backup/buildout.cfg
+  ../../component/scikit-learn/buildout.cfg
+  ../../component/scikit-image/buildout.cfg
+  ../../component/PyWavelets/buildout.cfg
+  ../../component/subversion/buildout.cfg
+  ../../component/tesseract/buildout.cfg
+  ../../component/w3m/buildout.cfg
+  ../../component/poppler/buildout.cfg
+  ../../component/zabbix/buildout.cfg
+  ../../component/sed/buildout.cfg
+  ../../component/coreutils/buildout.cfg
+  ../../component/grep/buildout.cfg
+  ../../component/dash/buildout.cfg
+  ../../component/bash/buildout.cfg
+  ../../component/wget/buildout.cfg
+  ../../component/aspell/buildout.cfg
+  ../../component/jsl/buildout.cfg
+  ../../component/6tunnel/buildout.cfg
+  ../../component/userhosts/buildout.cfg
+  ../../component/postfix/buildout.cfg
+  ../../component/zbarlight/buildout.cfg
+  ../../component/pylint/buildout.cfg
+  ../../component/perl-Image-ExifTool/buildout.cfg
+  ../../stack/caucase/buildout.cfg
+  ../../software/jupyter/software.cfg
+  ../../software/neoppod/software-common.cfg
+# keep neoppod extends last
+
+parts +=
+  erp5-util-develop
+  slapos-cookbook
+  rdiff-backup
+  mroonga-mariadb
+  tesseract
+  tesseract-eng-traineddata
+  tesseract-osd-traineddata
+  zabbix-agent
+
+# Buildoutish
+  eggs-all-scripts
+  testrunner
+  test_suite_runner
+
+# get git repositories
+  genbt5list
+
+# some additional utils
+  zodbanalyze
+  zodbpack
+
+# Create instance template
+  template
+
+# jupyter
+  jupyter-notebook-initialized-scripts
+
+
+# override instance-jupyter-notebook not to render into default template.cfg
+[instance-jupyter-notebook]
+rendered = ${buildout:directory}/template-jupyter.cfg
+
+[download-base]
+<= download-base-neo
+url = ${:_profile_base_location_}/${:filename}
+
+[mariadb-start-clone-from-backup]
+<= download-base
+mode = 755
+
+[mariadb-resiliency-after-import-script]
+<= download-base
+mode = 755
+
+[mariadb-slow-query-report-script]
+<= download-base
+mode = 755
+
+[template-mariadb]
+<= download-base
+link-binary =
+  ${coreutils:location}/bin/basename
+  ${coreutils:location}/bin/cat
+  ${coreutils:location}/bin/cp
+  ${coreutils:location}/bin/ls
+  ${coreutils:location}/bin/tr
+  ${coreutils:location}/bin/uname
+  ${gettext:location}/lib/gettext/hostname
+  ${grep:location}/bin/grep
+  ${sed:location}/bin/sed
+  ${mariadb:location}/bin/mysqlbinlog
+
+[template-kumofs]
+<= download-base
+
+[template-zope-conf]
+<= download-base
+
+[site-zcml]
+<= download-base
+
+[template-my-cnf]
+<= download-base
+
+[template-mariadb-initial-setup]
+<= download-base
+
+[template-postfix]
+< = download-base
+
+[template-postfix-master-cf]
+< = download-base
+
+[template-postfix-main-cf]
+< = download-base
+
+[template-postfix-aliases]
+< = download-base
+
+[template-run-zelenium]
+< = download-base
+
+
+[template]
+recipe = slapos.recipe.template:jinja2
+# XXX: "template.cfg" is hardcoded in instanciation recipe
+rendered = ${buildout:directory}/template.cfg
+template = ${:_profile_base_location_}/${:filename}
+mode = 640
+context =
+    key mariadb_link_binary template-mariadb:link-binary
+    key zope_link_binary template-zope:link-binary
+    key zope_fonts template-zope:fonts
+    key zope_fontconfig_includes template-zope:fontconfig-includes
+    key apache_location apache:location
+    key bin_directory buildout:bin-directory
+    key buildout_bin_directory buildout:bin-directory
+    key caucase_jinja2_library caucase-jinja2-library:target
+    key coreutils_location coreutils:location
+    key curl_location curl:location
+    key cyrus_sasl_location cyrus-sasl:location
+    key dash_location dash:location
+    key bash_location bash:location
+    key dcron_location dcron:location
+    key default_cloudooo_url erp5-defaults:cloudooo-connection-url
+    key erp5_location erp5:location
+    key findutils_location findutils:location
+    key gzip_location gzip:location
+    key xz_utils_location xz-utils:location
+    key haproxy_location haproxy:location
+    key instance_common_cfg instance-common:rendered
+    key jsl_location jsl:location
+    key jupyter_enable_default erp5-defaults:jupyter-enable-default
+    key kumo_location kumo:location
+    key local_bt5_repository local-bt5-repository:list
+    key logrotate_location logrotate:location
+    key mariadb_location mariadb:location
+    key mariadb_resiliency_after_import_script mariadb-resiliency-after-import-script:target
+    key mariadb_slow_query_report_script mariadb-slow-query-report-script:target
+    key mariadb_start_clone_from_backup mariadb-start-clone-from-backup:target
+    key mroonga_mariadb_install_sql mroonga-mariadb:install-sql
+    key mroonga_mariadb_plugin_dir mroonga-mariadb:plugin-dir
+    key groonga_plugin_dir groonga:groonga-plugin-dir
+    key groonga_mysql_normalizer_plugin_dir groonga-normalizer-mysql:groonga-plugin-dir
+    key matplotlibrc_location matplotlibrc:location
+    key parts_directory buildout:parts-directory
+    key openssl_location openssl:location
+    key percona_toolkit_location percona-toolkit:location
+    key perl_dbd_mariadb_path perl-DBD-mariadb:perl-PATH
+    key postfix_location postfix:location
+    key root_common root-common:target
+    key site_zcml site-zcml:target
+    key sixtunnel_location 6tunnel:location
+    key template_run_zelenium template-run-zelenium:target
+    key egg_interpreter eggs:interpreter
+    key template_apache_conf template-apache-backend-conf:target
+    key template_balancer template-balancer:target
+    key template_erp5 template-erp5:target
+    key template_haproxy_cfg template-haproxy-cfg:target
+    key template_jupyter_cfg instance-jupyter-notebook:rendered
+    key template_kumofs template-kumofs:target
+    key template_mariadb template-mariadb:target
+    key template_mariadb_initial_setup template-mariadb-initial-setup:target
+    key template_my_cnf template-my-cnf:target
+    key template_mysqld_wrapper template-mysqld-wrapper:rendered
+    key template_postfix template-postfix:target
+    key template_postfix_aliases template-postfix-aliases:target
+    key template_postfix_main_cf template-postfix-main-cf:target
+    key template_postfix_master_cf template-postfix-master-cf:target
+    key template_zeo template-zeo:target
+    key template_zope template-zope:target
+    key template_zope_conf template-zope-conf:target
+    key template_fonts_conf template-fonts-conf:output
+    key userhosts_location userhosts:location
+    key unixodbc_location unixodbc:location
+    key wget_location wget:location
+    key extra_path_list eggs:extra-paths
+
+[template-erp5]
+<= download-base
+
+[template-zeo]
+<= download-base
+
+[template-zope]
+<= download-base
+link-binary =
+  ${aspell-en-dictionary:bin-aspell}
+  ${dmtx-utils:location}/bin/dmtxwrite
+  ${git:location}/bin/git
+  ${graphviz:location}/bin/dot
+  ${grep:location}/bin/grep
+  ${imagemagick:location}/bin/convert
+  ${imagemagick:location}/bin/identify
+  ${jpegoptim:location}/bin/jpegoptim
+  ${jsl:location}/bin/jsl
+  ${librsvg:location}/bin/rsvg-convert
+  ${mariadb:location}/bin/mysql
+  ${mariadb:location}/bin/mysqldump
+  ${openssl:location}/bin/openssl
+  ${optipng:location}/bin/optipng
+  ${perl-Image-ExifTool:location}/bin/exiftool
+  ${poppler:location}/bin/pdfinfo
+  ${poppler:location}/bin/pdftohtml
+  ${poppler:location}/bin/pdftotext
+  ${sed:location}/bin/sed
+  ${tesseract:location}/bin/tesseract
+  ${w3m:location}/bin/w3m
+fonts =
+  ${liberation-fonts:location}
+  ${ipaex-fonts:location}
+  ${ipa-fonts:location}
+  ${ocrb-fonts:location}
+  ${android-fonts:location}
+fontconfig-includes =
+  ${fontconfig:location}/etc/fonts/conf.d
+
+
+[template-balancer]
+<= download-base
+
+[template-haproxy-cfg]
+<= download-base
+
+[erp5-bin]
+<= erp5
+repository = https://lab.nexedi.com/nexedi/erp5-bin.git
+branch = master
+
+[erp5-doc]
+<= erp5
+repository = https://lab.nexedi.com/nexedi/erp5-doc.git
+branch = master
+
+[bt5-repository]
+# Format:
+#   <url or path> [...]
+#
+# Use absolute paths for local repositories, and URLs for non-local otherwise.
+#
+list = ${local-bt5-repository:list}
+
+[local-bt5-repository]
+# Same as bt5-repository, but only local repository.
+# Used to generate bt5lists.
+list = ${erp5:location}/bt5 ${erp5:location}/product/ERP5/bootstrap ${erp5-bin:location}/bt5 ${erp5-doc:location}/bt5
+
+[genbt5list]
+recipe = plone.recipe.command
+stop-on-error = true
+genbt5list = ${erp5:location}/product/ERP5/bin/genbt5list
+command =
+  echo '${local-bt5-repository:list}' |xargs ${buildout:executable} ${:genbt5list}
+update-command = ${:command}
+
+[erp5_repository_list]
+repository_id_list = erp5 erp5-bin erp5-doc
+
+# ERP5 defaults, which can be overridden in inheriting recipes (e.g. wendelin)
+[erp5-defaults]
+cloudooo-connection-url = https://cloudooo.erp5.net/
+# Jupyter is by default disabled in ERP5
+jupyter-enable-default = false
+
+[erp5]
+recipe = slapos.recipe.build:gitclone
+repository = https://lab.nexedi.com/nexedi/erp5.git
+branch = master
+git-executable = ${git:location}/bin/git
+
+[testrunner]
+# XXX: Workaround for fact ERP5Type is not an distribution and does not
+#      expose entry point for test runner
+recipe = zc.recipe.egg
+eggs = ${eggs:eggs}
+extra-paths = ${eggs:extra-paths}
+entry-points =
+  runUnitTest=runUnitTest:main
+scripts = runUnitTest
+initialization =
+  import glob, os, sys
+  import Products
+  Products.__path__[:0] = filter(None,
+    os.getenv('INSERT_PRODUCTS_PATH', '').split(os.pathsep))
+  os.environ['ZOPE_SCRIPTS'] = ''
+  parts_directory = '''${buildout:parts-directory}'''
+  repository_id_list = \
+    '''${erp5_repository_list:repository_id_list}'''.split()[::-1]
+  os.environ['erp5_tests_bt5_path'] = ','.join(
+    os.path.join(parts_directory, x, 'bt5') for x in repository_id_list)
+  extra_path_list = '''${:extra-paths}'''.split()
+  sys.path[:0] = sum((
+    glob.glob(os.path.join(x, 'tests'))
+    for x in extra_path_list), [])
+  sys.path[:0] = sum((
+    glob.glob(os.path.join(x, 'Products', '*', 'tests'))
+    for x in extra_path_list), [])
+  sys.path[:0] = sum((
+    glob.glob(os.path.join(x, 'Products', '*', 'tests'))
+    for x in os.getenv('INSERT_PRODUCTS_PATH', '').split(os.pathsep)), [])
+  os.environ['PATH'] = '${jsl:location}/bin:%s' % os.environ['PATH']
+
+[test_suite_runner]
+# XXX: Workaround for fact ERP5Type is not an distribution and does not
+#      expose entry point for test runner
+recipe = zc.recipe.egg
+eggs = ${eggs:eggs}
+extra-paths = ${eggs:extra-paths}
+entry-points =
+  runTestSuite=Products.ERP5Type.tests.runTestSuite:main
+scripts = runTestSuite
+initialization =
+  import os
+  import sys
+  import Products
+  [Products.__path__.insert(0, p) for p in reversed(os.environ.get('INSERT_PRODUCTS_PATH', '').split(':')) if p]
+  os.environ['ZOPE_SCRIPTS'] = ''
+  repository_id_list = list(reversed('''${erp5_repository_list:repository_id_list}'''.split()))
+  sys.path[0:0] = ['/'.join(['''${buildout:parts-directory}''', x]) for x in repository_id_list]
+
+[eggs]
+<= neoppod
+eggs = ${neoppod:eggs}
+  ${caucase-eggs:eggs}
+  ${numpy:egg}
+  ${matplotlib:egg}
+  ${lxml-python:egg}
+  ${ocropy:egg}
+  ${pandas:egg}
+  ${pillow-python:egg}
+  ${python-ldap-python:egg}
+  ${pysvn-python:egg}
+  ${pycrypto-python:egg}
+  ${scipy:egg}
+  ${scikit-learn:egg}
+  ${scikit-image:egg}
+  sympy
+  more-itertools
+  ${h5py:egg}
+  openpyxl
+  ${statsmodels:egg}
+  ${zbarlight:egg}
+  lock_file
+  astor
+  APacheDEX
+  PyStemmer
+  PyXML
+  Pympler
+  SOAPpy
+  chardet
+  collective.recipe.template
+  coverage
+  erp5diff
+  interval
+  ipdb
+  Jinja2
+  jsonschema
+  mechanize
+  mock
+  objgraph
+  paramiko
+  ply
+  pyflakes
+  PyPDF2
+  python-magic
+  python-memcached
+  pytz
+  requests
+  responses
+  threadframe
+  timerserver
+  urlnorm
+  uuid
+  xml_marshaller
+  xupdate_processor
+  feedparser
+  validictory
+  erp5.util
+  z3c.etestbrowser
+  huBarcode
+  qrcode
+  spyne
+  httplib2
+  suds
+  pprofile
+  pycountry
+  xfw
+  jsonschema
+  selenium
+  pytesseract
+  decorator
+  networkx
+# Needed for checking ZODB Components source code
+  ${pylint:egg}
+  jedi
+  yapf
+  typing
+  pytracemalloc
+  xlrd
+
+# Zope
+  Zope2
+# Zope acquisition patch
+  Acquisition
+# for runzeo
+  ZEO
+
+# Other Zope 2 packages
+  Products.PluggableAuthService
+  Products.PluginRegistry
+
+# CMF 2.2
+  Products.CMFActionIcons
+  Products.CMFCalendar
+  Products.CMFCore
+  Products.CMFDefault
+  Products.CMFTopic
+  Products.CMFUid
+  Products.DCWorkflow
+  Products.GenericSetup
+  five.localsitemanager
+
+# Other products
+  Products.DCWorkflowGraph
+  Products.MimetypesRegistry
+  Products.ExternalEditor
+  Products.TIDStorage
+  Products.LongRequestLogger
+
+# BBB: Temporarily keep zope.app.testing awaiting we use newer version of CMF
+#      (for tests like testCookieCrumbler).
+  zope.app.testing
+
+# Currently forked in our repository
+#    Products.PortalTransforms
+# Dependency for our fork of PortalTransforms
+  StructuredText
+
+# Needed for parsing .po files from our Localizer subset
+  polib
+
+# Needed for Google OAuth
+  google-api-python-client
+
+# Need for Facebook OAuth
+  facebook-sdk
+
+# Used by ERP5 Jupyter backend
+  ipykernel
+
+# Used by DiffTool
+  xmltodict
+  deepdiff
+  unidiff
+  jsonpickle
+
+# WSGI server
+  zope.globalrequest
+  waitress
+
+# parameterizing the version of the generated python interpreter name by the
+# python section version causes dependency between this egg section and the
+# installation of python, which we don't want on an instance
+interpreter = ${buildout:python}
+entry-points =
+  runwsgi=Products.ERP5.bin.zopewsgi:runwsgi
+scripts =
+  apachedex
+  performance_tester_erp5
+  runwsgi
+  runzope
+  runzeo
+  tidstoraged
+  tidstorage_repozo
+  web_checker_utility
+
+extra-paths =
+  ${erp5:location}
+
+# patches for eggs
+patch-binary = ${patch:location}/bin/patch
+PyPDF2-patches = ${:_profile_base_location_}/../../component/egg-patch/PyPDF2/0001-Custom-implementation-of-warnings.formatwarning-remo.patch#d25bb0f5dde7f3337a0a50c2f986f5c8
+PyPDF2-patch-options = -p1
+Acquisition-patches = ${:_profile_base_location_}/../../component/egg-patch/Acquisition/aq_dynamic.patch#1d9a56e9af4371f5b6951ebf217a15d7
+Acquisition-patch-options = -p1
+Products.DCWorkflow-patches = ${:_profile_base_location_}/../../component/egg-patch/Products.DCWorkflow/workflow_method.patch#975b49e96bae33ac8563454fe5fa9899
+Products.DCWorkflow-patch-options = -p1
+python-magic-patches = ${:_profile_base_location_}/../../component/egg-patch/python_magic/magic.patch#de0839bffac17801e39b60873a6c2068
+python-magic-patch-options = -p1
+
+[eggs-all-scripts]
+recipe = zc.recipe.egg
+eggs =
+  munnel
+patch-binary = ${eggs:patch-binary}
+
+[zodbanalyze]
+recipe = zc.recipe.egg
+eggs = erp5.util
+entry-points =
+  zodbanalyze=erp5.util.zodbanalyze:main
+scripts = zodbanalyze
+
+# develop erp5.util from parts/erp5/
+[erp5-util-develop]
+recipe = zc.recipe.egg:develop
+setup = ${erp5:location}
+
+[zodbpack]
+recipe = zc.recipe.egg
+eggs =
+  slapos.toolbox[zodbpack]
+scripts =
+  zodbpack
+depends =
+  ${slapos-toolbox-dependencies:eggs}
+
+[versions]
+# See ../../software/neoppod/software-common.cfg for versions common with NEO:
+#  neoppod, mysqlclient, slapos.recipe.template
+
+# patched eggs
+Acquisition = 2.13.12+SlapOSPatched001
+Products.DCWorkflow = 2.2.4+SlapOSPatched001
+ocropy = 1.0+SlapOSPatched001
+pysvn = 1.7.10+SlapOSPatched002
+python-ldap = 2.4.32+SlapOSPatched001
+python-magic = 0.4.12+SlapOSPatched001
+PyPDF2 = 1.26.0+SlapOSPatched001
+## https://lab.nexedi.com/nexedi/slapos/merge_requests/648
+pylint = 1.4.4
+
+# use newer version than specified in ZTK
+PasteDeploy = 1.5.2
+<<<<<<< HEAD
+=======
+Pygments = 2.1.3
+>>>>>>> f769130d1... version up eggs.
+argparse = 1.4.0
+zope.dottedname = 4.1.0
+
+# test_UserManagerInterfaces in testERP5Security fails with 1.10.0.
+Products.PluggableAuthService = 1.9.0
+
+# we are still using this old stable version.
+rdiff-backup = 1.0.5+SlapOSPatched001
+
+# modified version that works fine for buildout installation
+SOAPpy = 0.12.0nxd001
+
+# CMF 2.3 is not yet supported.
+Products.CMFCalendar = 2.2.3
+Products.CMFCore = 2.2.10
+Products.CMFDefault = 2.2.4
+Products.CMFTopic = 2.2.1
+Products.CMFUid = 2.2.1
+
+# newer version requires zope.traversing>=4.0.0a2.
+zope.app.appsetup = 3.16.0
+
+# newer version requires zope.i18n>=4.0.0a3
+zope.app.publication = 3.14.0
+
+# newer version requires zope.testbrowser>=4
+zope.app.testing = 3.8.1
+
+# Pinned versions
+APacheDEX = 1.6.2
+Pillow = 6.2.2
+Products.CMFActionIcons = 2.1.3
+Products.DCWorkflowGraph = 0.4.1
+<<<<<<< HEAD
+# Products.ExternalEditor 2.0.0's dtml is not based on Zope2 OFS's one.
+Products.ExternalEditor = 1.1.1
+Products.GenericSetup = 1.8.6
+Products.LongRequestLogger = 2.1.0
+# Products.MimetypesRegistry 2.1 requires AccessControl>=3.0.0Acquisition.
+Products.MimetypesRegistry = 2.0.10
+Products.PluginRegistry = 1.4
+Products.TIDStorage = 5.5.0
+pyPdf = 1.13
+=======
+Products.ExternalEditor = 2.0.0
+Products.GenericSetup = 1.8.2
+Products.LongRequestLogger = 2.0.0
+Products.MimetypesRegistry = 2.0.8
+Products.PluginRegistry = 1.4
+Products.TIDStorage = 5.4.9
+PyPDF2 = 1.25.1
+>>>>>>> f769130d1... version up eggs.
+PyStemmer = 1.3.0
+PyXML = 0.8.5
+Pympler = 0.4.3
+StructuredText = 2.11.1
+WSGIUtils = 0.7
+ZODB3 = 3.11.0
+# astroid 1.4.1 breaks testDynamicClassGeneration
+astroid = 1.3.8
+erp5diff = 0.8.1.7
+five.formlib = 1.0.4
+five.localsitemanager = 2.0.5
+google-api-python-client = 1.6.1
+httplib2 = 0.10.3
+huBarcode = 1.0.0
+interval = 1.0.0
+<<<<<<< HEAD
+ipdb = 0.10.2
+logilab-common = 1.3.0
+munnel = 0.3
+nt-svcutils = 2.13.0
+oauth2client = 4.0.0
+objgraph = 3.1.0
+ply = 3.10
+polib = 1.0.8
+pprofile = 2.0.4
+pyasn1-modules = 0.0.8
+pycountry = 17.1.8
+pycrypto = 2.6.1
+pycurl = 7.43.0
+pyflakes = 1.5.0
+python-memcached = 1.58
+=======
+ipdb = 0.9.0
+ipython = 4.1.2
+ipywidgets = 4.1.1
+logilab-common = 1.1.0
+matplotlib = 1.5.1
+mistune = 0.7.2
+numpy = 1.10.4
+objgraph = 2.0.1
+pandas = 0.18.0
+path.py = 8.1.2
+ply = 3.8
+polib = 1.0.7
+pprofile = 1.8
+ptyprocess = 0.5.1
+pycountry = 1.20
+pyflakes = 1.1.0
+# pylint 1.5.1 breaks testDynamicClassGeneration
+pylint = 1.4.4
+python-memcached = 1.57
+>>>>>>> f769130d1... version up eggs.
+pytracemalloc = 1.2
+qrcode = 5.3
+rsa = 3.4.2
+spyne = 2.12.14
+suds = 0.4
+facebook-sdk = 2.0.0
+threadframe = 0.2
+timerserver = 2.0.4
+urlnorm = 1.1.4
+uuid = 1.30
+validictory = 1.1.0
+xfw = 0.10
+xupdate-processor = 0.4
+selenium = 3.8.0
+scikit-image = 0.14.0
+PyWavelets = 0.5.2
+networkx = 2.1
+pytesseract = 0.2.2
+zbarlight = 2.0
+cloudpickle = 0.5.3
+dask = 0.18.1
+toolz = 0.9.0
+zope.globalrequest = 1.5
+waitress = 1.3.0
+xlrd = 1.1.0
+
+# Re-add for as it is required to be there for uninstallation
+erp5.recipe.w3validator = 1.0.2
+
+# Required by:
+<<<<<<< HEAD
+# Products.CMFCore==2.2.10
+Products.ZSQLMethods = 2.13.5
+
+# Required by:
+# SOAPpy===0.12.0nxd001
+fpconst = 0.7.2
+=======
+# Products.CMFCore==2.2.9
+Products.ZSQLMethods = 2.13.4
+
+# Required by:
+# tornado==4.3
+backports.ssl-match-hostname = 3.5.0.1
+
+# Required by:
+# tornado==4.3
+certifi = 2016.2.28
+
+# Required by:
+# qrcode==5.2.2
+colorama = 0.3.7
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# objgraph==3.1.0
+graphviz = 0.5.2
+
+# Required by:
+<<<<<<< HEAD
+# Pillow==6.2.2
+olefile = 0.44
+=======
+# ipython==4.1.2
+# traitlets==4.1.0
+decorator = 4.0.9
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# munnel==0.3
+python-libmilter = 1.0.3
+
+# Required by:
+<<<<<<< HEAD
+# zope.app.testing==3.8.1
+zope.app.debug = 3.4.1
+=======
+# ipywidgets==4.1.1
+# notebook==4.1.0
+ipykernel = 4.3.1
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# zope.app.testing==3.8.1
+zope.app.dependable = 3.5.1
+
+# Required by:
+# Products.CMFCalendar==2.2.3
+# five.formlib==1.0.4
+zope.app.form = 4.0.2
+
+et-xmlfile = 1.0.1
+h5py = 2.7.1
+mpmath = 0.19
+openpyxl = 2.4.8
+sympy = 1.1.1
+
+# Required by:
+# openpyxl==2.4.8
+jdcal = 1.3
+
+<<<<<<< HEAD
+xmltodict = 0.11.0
+deepdiff = 3.3.0
+unidiff = 0.5.5
+
+# Required by:
+# deepdiff = 3.3.0
+jsonpickle = 0.9.6
+
+responses = 0.10.6
+=======
+# Required by:
+# ipython==4.1.2
+pexpect = 4.0.1
+
+# Required by:
+# ipython==4.1.2
+pickleshare = 0.6
+
+# Required by:
+# matplotlib==1.5.1
+# pandas==0.18.0
+python-dateutil = 2.5.0
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# responses = 0.10.6
+cookies = 2.2.1
+
+<<<<<<< HEAD
+jedi = 0.15.1
+parso = 0.5.1
+=======
+# Required by:
+# ipython==4.1.2
+# ipywidgets==4.1.1
+# notebook==4.1.0
+traitlets = 4.1.0
+>>>>>>> f769130d1... version up eggs.
+
+yapf = 0.28.0
+
+# Required by:
+# erp5.util==0.4.65
+z3c.etestbrowser = 3.0.1
+zope.testbrowser = 5.5.1
+
+# Required by:
+<<<<<<< HEAD
+# zope.testbrowser==5.5.1
+WSGIProxy2 = 0.4.6
+WebTest = 2.0.33
+beautifulsoup4 = 4.8.2
+
+# Required by:
+# WSGIProxy2==0.4.6
+WebOb = 1.8.5
+soupsieve = 1.9.5
+=======
+# Products.CMFCalendar==2.2.3
+# five.formlib==1.0.4
+zope.app.form = 4.0.2
+>>>>>>> f769130d1... version up eggs.

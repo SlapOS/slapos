@@ -1,0 +1,222 @@
+[buildout]
+
+extends =
+  ../../component/6tunnel/buildout.cfg
+  ../../component/curl/buildout.cfg
+  ../../component/dash/buildout.cfg
+  ../../component/dcron/buildout.cfg
+  ../../component/gzip/buildout.cfg
+  ../../component/qemu-kvm/buildout.cfg
+  ../../component/logrotate/buildout.cfg
+  ../../component/noVNC/buildout.cfg
+  ../../component/openssl/buildout.cfg
+  ../../component/dcron/buildout.cfg
+  ../../component/netcat/buildout.cfg
+  ../../component/pycurl/buildout.cfg
+  ../../stack/slapos.cfg
+  ../../stack/nodejs.cfg
+  ../../stack/resilient/buildout.cfg
+  ../../stack/monitor/buildout.cfg
+
+# stacks are listed from most generic to most specific,
+# to avoid versioning issues
+
+parts =
+  template
+  eggs
+
+# XXX: we have to manually add this for resilience
+  rdiff-backup
+  collective.recipe.template-egg
+
+#XXX-Cedric : Currently, one can only access to KVM using noVNC.
+#             Ideally one should be able to access KVM by using either NoVNC or VNC.
+#             Problem is : no native crypto support in web browsers. So we have to disable ssl
+#             In qemu builtin vnc server, and make it available only for localhost
+#             so that only novnc can listen to it.
+
+#XXX-Cedric: Check status of https://github.com/kanaka/noVNC/issues/13 to see
+#            When qemu has builtin support for websockets in vnc server to get rid of
+#            Websockify (socket <-> websocket proxy server) when it is ready.
+#            May solve previous XXX depending on the implementation.
+
+#XXX-Cedric : add list of keyboard layouts (azerty/us querty/...) parameter to qemu
+
+[eggs]
+recipe = z3c.recipe.scripts
+eggs =
+  ${lxml-python:egg}
+  websockify
+  slapos.cookbook
+  slapos.toolbox
+  erp5.util
+  cns.recipe.symlink
+  collective.recipe.template
+  plone.recipe.command
+  ${pycurl:egg}
+
+[http-proxy]
+# https://github.com/nodejitsu/node-http-proxy
+recipe = slapos.recipe.build:download-unpacked
+#XXX-Cedric : use upstream when merged
+url = https://nodeload.github.com/desaintmartin/node-http-proxy/zipball/20120621
+md5sum = 20204d0b29c2cef26e1c91e99eedca6b
+
+[proxy-by-url]
+# https://github.com/dominictarr/proxy-by-url
+recipe = slapos.recipe.build:download-unpacked
+#XXX-Cedric : use upstream when merged
+url = https://nodeload.github.com/desaintmartin/proxy-by-url/zipball/20120621
+md5sum = c2609948aa708581f93b981b23880314
+
+[npm-modules]
+recipe = plone.recipe.command
+destination = ${buildout:parts-directory}/${:_buildout_section_name_}
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+command =
+  export HOME=${:location};
+  rm -fr ${:destination} &&
+  mkdir -p ${:destination} &&
+  cd ${:destination} &&
+  ${nodejs:location}/bin/node ${nodejs:location}/bin/npm install colors@0.6.0-1 &&
+  ${nodejs:location}/bin/node ${nodejs:location}/bin/npm install socket.io@0.8.7 &&
+  ${nodejs:location}/bin/node ${nodejs:location}/bin/npm install socket.io-client@0.8.7 &&
+  ${nodejs:location}/bin/node ${nodejs:location}/bin/npm install optimist@0.3.1 &&
+  ${nodejs:location}/bin/node ${nodejs:location}/bin/npm install pkginfo@0.2.3
+
+
+# Create all templates that will be used to deploy instances
+
+[template]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance.cfg.in
+md5sum = 41eb12b66bd1af86b1b98b2166e86417
+output = ${buildout:directory}/template.cfg
+mode = 0644
+
+[template-kvm]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-kvm.cfg.jinja2
+mode = 644
+md5sum = da3b3bde94ac2c06759a89c78168df91
+download-only = true
+on-update = true
+
+[template-kvm-cluster]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-kvm-cluster.cfg.jinja2.in
+mode = 644
+md5sum = 3fc6611feaabcacd7e51f3b5681120fd
+download-only = true
+on-update = true
+
+[template-kvm-resilient]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-kvm-resilient.cfg.jinja2
+mode = 644
+md5sum = 7071b61a862ee681c2e4323e6435e98d
+download-only = true
+on-update = true
+
+[template-kvm-resilient-test]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-kvm-resilient-test.cfg.jinja2
+md5sum = e3d275621420f0b8c081228caeb571f9
+mode = 0644
+download-only = true
+on-update = true
+
+[template-kvm-import]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-kvm-import.cfg.in
+md5sum = 6835c9309ff4bf4a0efd1850e6c66b24
+output = ${buildout:directory}/template-kvm-import.cfg
+mode = 0644
+
+[template-kvm-import-script]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/kvm-import.sh.jinja2
+filename = kvm-import.sh.jinja2
+md5sum = 926a11421921c29f91fae8240bbcf585
+download-only = true
+mode = 0755
+
+[template-kvm-export]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-kvm-export.cfg.jinja2
+mode = 644
+md5sum = c9f13c1f481ed08c75089aef1d3c6981
+download-only = true
+on-update = true
+
+[template-kvm-export-script]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/kvm-export.sh.jinja2
+filename = kvm-export.sh.jinja2
+md5sum = 22bd2e0c8fdb39a764a14c403a3bd752
+download-only = true
+mode = 0755
+
+[template-nbd]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-nbd.cfg.in
+md5sum = f634a5249b773658b7a7bc9fa9bb0368
+output = ${buildout:directory}/template-nbd.cfg
+mode = 0644
+
+[template-frontend]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-frontend.cfg.in
+md5sum = cdb690495e9eb007d2b7d2f8e12f5c59
+output = ${buildout:directory}/template-frontend.cfg
+mode = 0644
+
+[template-ansible-promise]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/ansible-promise.in
+md5sum = d0bd07d5a7799b7aea7720ffdf46f322
+mode = 0644
+download-only = true
+filename = ansible-promise.in
+
+[template-apache-conf]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/apache.conf.in
+mode = 644
+filename = apache.conf.in
+md5sum = 355fdabdb86fee8e9714b6d357149958
+download-only = true
+on-update = true
+
+[template-content]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/template-content.in
+mode = 644
+filename = template-content.in
+md5sum = 822737e483864bf255ad1259237bef2a
+download-only = true
+on-update = true
+
+[template-logrotate-base]
+recipe = slapos.recipe.template:jinja2
+filename = instance-logrotate-base.cfg
+template = ${:_profile_base_location_}/instance-logrotate-base.cfg.in
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/instance-logrotate-base.cfg
+md5sum = f28fbd310944f321ccb34b2a34c82005
+context =
+    key dcron_location dcron:location
+    key gzip_location gzip:location
+    key logrotate_location logrotate:location
+
+[template-httpd]
+recipe = slapos.recipe.template:jinja2
+filename = template-httpd.cfg
+template = ${:_profile_base_location_}/instance-kvm-http.cfg.in
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/instance-kvm-http.cfg
+md5sum = fc8b3259942d6dedbc01065358a00d71
+context =
+    key apache_location apache:location
+    raw openssl_executable_location ${openssl:location}/bin/openssl
+    raw template_apache_conf ${template-apache-conf:location}/${template-apache-conf:filename}
+
+

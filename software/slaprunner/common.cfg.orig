@@ -1,0 +1,201 @@
+[buildout]
+extends =
+  ../../component/bash/buildout.cfg
+  ../../component/busybox/buildout.cfg
+  ../../component/curl/buildout.cfg
+  ../../component/dash/buildout.cfg
+  ../../component/dcron/buildout.cfg
+  ../../component/dropbear/buildout.cfg
+  ../../component/git/buildout.cfg
+  ../../component/tig/buildout.cfg
+  ../../component/logrotate/buildout.cfg
+  ../../component/lxml-python/buildout.cfg
+  ../../component/nano/buildout.cfg
+  ../../component/nginx/buildout.cfg
+  ../../component/rsync/buildout.cfg
+  ../../component/python-2.7/buildout.cfg
+  ../../component/screen/buildout.cfg
+  ../../component/shellinabox/buildout.cfg
+  ../../component/vim/buildout.cfg
+  ../../component/zip/buildout.cfg
+  ../../stack/slapos.cfg
+  ../../stack/flask.cfg
+  ../../stack/resilient/buildout.cfg
+  ../../stack/monitor/buildout.cfg
+
+# stacks are listed from most generic to most specific,
+# to avoid versioning issues
+
+common-parts =
+  template
+  eggs
+  instance-runner-import
+  instance-runner-export
+  template-slapos-cfg
+# XXX: we have to manually add this for resilience
+  rdiff-backup
+  collective.recipe.template-egg
+
+parts =
+  ${:common-parts}
+
+# Use shellinabox from github with AF_UNIX support
+[shellinabox]
+<= shellinabox-github
+
+[template]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance.cfg
+output = ${buildout:directory}/template.cfg
+md5sum = bb7e0bf9959c4437ff1e23e645315ccf
+mode = 0644
+
+[template-runner]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-runner.cfg
+output = ${buildout:directory}/template-runner.cfg.in
+md5sum = 66dba3331f49492d317e9c14d68d1bcb
+mode = 0644
+
+[template-runner-import-script]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/runner-import.sh.jinja2
+download-only = true
+md5sum = d7f88b58b2508ce5af42ea7d7241626e
+filename = runner-import.sh.jinja2
+mode = 0644
+
+[instance-runner-import]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-runner-import.cfg.in
+output = ${buildout:directory}/instance-runner-import.cfg
+md5sum = 673c30e5e7f9b7bb543f79465a56e43d
+mode = 0644
+
+[template-runner-export-script]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/runner-export.sh.jinja2
+download-only = true
+md5sum = 9dc934fe5015ff53869830a833266192
+filename = runner-export.sh.jinja2
+mode = 0644
+
+[instance-runner-export]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-runner-export.cfg.in
+output = ${buildout:directory}/instance-runner-export.cfg
+md5sum = 4b0ab39bc655ae0b865207147cb2e5bf
+mode = 0644
+
+[template-resilient]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/instance-resilient.cfg.jinja2
+md5sum = 6373b2cf3c0cee78bd858959976271d3
+filename = instance-resilient.cfg.jinja2
+mode = 0644
+
+[template-resilient-test]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/instance-resilient-test.cfg.jinja2
+download-only = true
+md5sum = fb8c45e5c35548331fb06c4633ec592a
+filename = instance-resilient-test.cfg.jinja2
+mode = 0644
+
+[template_nginx_conf]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/nginx_conf.in
+download-only = true
+md5sum = e6c2e1dd2153afefa0805c4065066e4e
+filename = nginx_conf.in
+mode = 0644
+
+[template_httpd_conf]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/httpd_conf.in
+download-only = true
+md5sum = 505edf5a6a39edf0238bd42934503f1b
+filename = httpd_conf.in
+mode = 0644
+
+[template_launcher]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/launcher.in
+md5sum = 525e37ea8b2acf6209869999b15071a6
+filename = launcher.in
+mode = 0644
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+
+[template-slapos-cfg]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/${:filename}
+md5sum = f406b91c5b0261b198a1c1930c195071
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+filename = slapos.cfg.in
+download-only = true
+mode = 0644
+
+[template-parameters]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/${:filename}
+md5sum = f8446fcf254b4929eb828a9a1d7e5f62
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+filename = parameters.xml.in
+download-only = true
+mode = 0644
+
+[template-bash-profile]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/${:filename}
+md5sum = 1c88cbca0c1e705eeb4b544ef4616097
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+filename = bash_profile.in
+download-only = true
+mode = 0644
+
+[template-supervisord]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/${:filename}
+md5sum = d294d0dafd265048399de6da8c96345f
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+filename = supervisord.conf.in
+download-only = true
+mode = 0644
+
+[template-listener-slapgrid]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/${:filename}
+md5sum = 49d50410cf7467175a841eb7cd0d93d4
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+filename = listener_slapgrid.py.in
+download-only = true
+mode = 0644
+
+[monitor-check-webrunner-internal-instance]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/template/${:filename}
+download-only = true
+#md5sum = 4c44d617d5bfd1db8695200e896480c0
+destination = ${buildout:parts-directory}/${:filename}
+filename = monitor-check-webrunner-internal-instances.py
+mode = 0644
+
+[eggs]
+recipe = zc.recipe.egg
+eggs =
+  collective.recipe.environment
+  collective.recipe.template
+  cns.recipe.symlink
+  erp5.util
+  lock-file
+  plone.recipe.command
+  slapos.recipe.build
+  slapos.toolbox[flask_auth]
+  Gunicorn
+  ${slapos-cookbook:eggs}
+
+[extra-eggs]
+recipe = zc.recipe.egg
+interpreter = pythonwitheggs
+eggs +=
+  supervisor

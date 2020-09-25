@@ -1,0 +1,139 @@
+[buildout]
+extends =
+  buildout.hash.cfg
+  ../../component/bash/buildout.cfg
+  ../../component/dropbear/buildout.cfg
+  ../../component/openssh/buildout.cfg
+  ../../component/rdiff-backup/buildout.cfg
+  ../../component/rsync/buildout.cfg
+  ../monitor/buildout.cfg
+
+parts =
+  pbs-recipe-egg
+  pbsready
+  pbsready-import
+  pbsready-export
+  notifier-feed-promise-template
+  template-replicated
+  template-parts
+  instance-frozen
+
+  # needed tools for resiliency
+  gzip
+  rdiff-backup
+  dash
+
+[pbs-recipe-egg]
+recipe = zc.recipe.egg
+eggs =
+  collective.recipe.template
+  collective.recipe.environment
+
+#----------------
+#--
+#-- Profiles needed to setup automated backup and recovery.
+#--
+
+[pbsready]
+# Common parts for pbsready-import and pbsready-export.
+# Provides rdiff-backup, notification queue, ssh authentication,
+# dropbear server, and the takeover script.
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/pbsready.cfg.in
+output = ${buildout:directory}/pbsready.cfg
+mode = 0644
+
+[pbsready-import]
+# An import instance has an importer script, which is called
+# by the parent PBS instance when the dump content is propagated.
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/pbsready-import.cfg.in
+output = ${buildout:directory}/pbsready-import.cfg
+mode = 0644
+
+[pbsready-export]
+# An export instance has an exporter script, and communicates
+# to parent PBS instances to deliver the exported dump.
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/pbsready-export.cfg.in
+filename = pbsready-export.cfg.in
+mode = 0644
+
+[template-pull-backup]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-pull-backup.cfg.in
+output = ${buildout:directory}/instance-pull-backup.cfg
+<<<<<<< HEAD
+=======
+md5sum = cb7acac7ab41bf44c20d6d03bfad8217
+>>>>>>> 61868a690... monitor: add support for report script folder
+mode = 0644
+
+[template-replicated]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/template-replicated.cfg.in
+mode = 0644
+
+[template-parts]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/template-parts.cfg.in
+mode = 0644
+
+[template-resilient-templates]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/${:filename}.in
+output = ${buildout:directory}/${:filename}
+mode = 0644
+filename = template-resilient-templates.cfg
+
+[instance-frozen]
+# When an instance is detected as broken, its software type is changed to "frozen".
+# On the next run of slapgrid-cp, the buildout profile is replaced by instance-frozen.cfg,
+# which will run without removing any content because it raises an error.
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance-frozen.cfg.in
+output = ${buildout:directory}/instance-frozen.cfg
+
+[resilient-web-takeover-cgi-script-download]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/resilient-web-takeover-cgi-script.py.in
+filename = resilient-web-takeover-cgi-script.py.in
+mode = 0644
+
+# Provide an empty wrapper
+[template-wrapper]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/templates/wrapper.in
+output = ${buildout:directory}/template-wrapper.cfg
+mode = 0644
+
+[notifier-feed-promise-template]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/templates/notifier-feed-promise.py.in
+filename = notifier-feed-promise.py.in
+mode = 0644
+
+##################
+# Monitor element
+#
+
+[template-monitor-check-resilient-feed]
+recipe = hexagonit.recipe.download
+ignore-existing = true
+url = ${:_profile_base_location_}/templates/monitor-check-resilient-feed.in
+download-only = true
+filename = monitor-check-resilient-feed.in
+mode = 0644
+
+[exporter-default-configuration]
+# Time in minutes to wait for the backup to finish
+backup_wait_time = 10
+
+[rdiff-backup]
+eggs =
+  ${rdiff-backup-build-1.3.4:egg}
+
+[versions]
+# 1.3.4nxdX is invalid version string, thus pached version string is not '1.3.4nxdX+SlapOSPatched001'
+# but '1.3.4nxdX-SlapOSPatched001'.
+rdiff-backup = 1.3.4nxd6-SlapOSPatched001

@@ -1,0 +1,105 @@
+[buildout]
+versions = versions
+extends =
+  ../../component/wendelin.core/buildout.cfg
+  ../../component/msgpack-python/buildout.cfg
+  ../../component/msgpack-numpy/buildout.cfg
+  ../../component/scipy/buildout.cfg
+  ../../software/erp5/software.cfg
+parts +=
+  wendelin
+  scipy
+  msgpack-python
+  msgpack-numpy
+  ipython
+  wendelin.core
+<<<<<<< HEAD
+  jupyter
+  jupyter-notebook-initialized-scripts
+=======
+  ipython-notebook
+>>>>>>> 8e940cd1e... fluentd is needed only client side not server side where Wendelin resides.
+
+[eggs]
+initialization =
+  import scipy.spatial.ckdtree # load our own libstdc++ explicitly at the very beginning
+extra-paths +=
+  ${wendelin:location}
+eggs +=
+  astor
+  ${scipy:egg}
+  ${msgpack-python:egg}
+  ${msgpack-numpy:egg}
+  ${wendelin.core:egg}
+  ${ipython:egg}
+  
+[generic_testrunner_init]
+recipe = slapos.recipe.build
+init =
+  import struct
+  gcc = self.buildout['gcc']
+  options['initialization'] %= (
+    gcc['prefix'] + '/lib%s/libstdc++.so' % (8 * struct.calcsize("P"))
+    ) if 'part' in gcc else ''
+initialization =
+  # The 4 lines below will replace the process with another one, with the proper
+  # LD_PRELOAD environment variable. This is necessary because LD_PRELOAD is only
+  # taken into account when the process starts. Modifying it in runtime doesn't
+  # work.
+  import os
+  if not os.getenv('LD_PRELOAD'):
+    os.environ['LD_PRELOAD'] = %r
+    os.execve(os.path.realpath(__file__), sys.argv, os.environ)
+
+[test_suite_runner]
+# we need to override the test suite runner to add our custom libstdc++ dynamic
+# library to the path
+initialization +=
+  ${generic_testrunner_init:initialization}
+  
+[testrunner]
+# we need to override the test suite runner to add our custom libstdc++ dynamic
+# library to the path
+initialization +=
+  ${generic_testrunner_init:initialization}
+ 
+[erp5_repository_list]
+repository_id_list += wendelin
+
+[local-bt5-repository]
+list += ${wendelin:location}/bt5
+
+# Jupyter is by default enabled in Wendelin
+[erp5-defaults]
+jupyter-enable-default = true
+
+[wendelin]
+recipe = slapos.recipe.build:gitclone
+git-executable = ${git:location}/bin/git
+repository = https://lab.nexedi.com/nexedi/wendelin.git
+branch = master
+revision = 295e145ceca37b19798853af7bfdd481c1fe87d8 
+
+[erp5]
+revision = 45973767477a211ef8f604b9f668e4d007163ef0 
+
+[slapos-cookbook.repository]
+revision = 82c5eb22ace26f7239dec624e87cc577ea639476
+
+[neoppod-repository]
+revision = 645920e81b13319581ea2c494471669d2b3ab1a5
+
+[versions]
+<<<<<<< HEAD
+msgpack-numpy = 0.4.4.3
+wendelin.core = 0.13
+=======
+scikit-learn = 0.16.1
+scipy = 0.15.1
+pandas = 0.16.1
+msgpack-python = 0.4.6
+numpy = 1.9.2
+wendelin.core = 0.2.post1
+ipython = 3.1.0
+matplotlib = 1.4.3
+>>>>>>> 2f3ff417b... Release Candidate for Wendelin

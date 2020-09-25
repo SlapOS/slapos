@@ -1,0 +1,226 @@
+[buildout]
+
+extends =
+  buildout.hash.cfg
+  ../../component/apache/buildout.cfg
+  ../../component/curl/buildout.cfg
+  ../../component/dash/buildout.cfg
+  ../../component/openssl/buildout.cfg
+  ../../component/lxml-python/buildout.cfg
+  ../../component/python-cryptography/buildout.cfg
+  ../../stack/logrotate/buildout.cfg
+  ../../stack/slapos.cfg
+
+parts =
+  slapos-cookbook
+  monitor-eggs
+  monitor2-template
+
+[monitor-download-base]
+recipe = hexagonit.recipe.download
+ignore-existing = true
+download-only = true
+url = ${:_profile_base_location_}/${:_update_hash_filename_}
+mode = 0644
+
+[monitor-template-script]
+<= monitor-download-base
+url = ${:_profile_base_location_}/scripts/${:filename}
+destination = ${buildout:parts-directory}/monitor-scripts
+on-update = true
+
+[monitor-eggs]
+recipe = zc.recipe.egg
+interpreter = monitor-pythonwitheggs
+eggs =
+  plone.recipe.command
+  collective.recipe.template
+  cns.recipe.symlink
+  psutil
+  PyRSS2Gen
+  Jinja2
+depends =
+  ${slapos-toolbox:recipe}
+
+<<<<<<< HEAD
+=======
+[make-rss-script]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/make-rss.sh.in
+md5sum = 98c8f6fd81e405b0ad10db07c3776321
+output = ${buildout:directory}/template-make-rss.sh.in
+mode = 0644
+
+[monitor-template]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/monitor.cfg.in
+output = ${buildout:directory}/monitor.cfg
+filename = monitor.cfg
+md5sum = 51284c0aeb62eccd37f8a4e1621ee28c
+mode = 0644
+
+[monitor-bin]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/${:filename}
+download-only = true
+md5sum = 5b12e864f1762d7984f7d4863d0b795d
+destination = ${buildout:parts-directory}/monitor-template-monitor-bin
+filename = monitor.py.in
+mode = 0644
+
+[monitor-httpd-template]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/${:filename}
+download-only = true
+md5sum = 93e1dda50cb71bfe29966b2946c02dd1
+filename = cgi-httpd.conf.in
+mode = 0644
+
+[index]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+md5sum = e759977b21c70213daa4c2701f2c2078
+destination = ${buildout:parts-directory}/monitor-index
+filename = index.cgi.in
+mode = 0644
+
+[index-template]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+destination = ${buildout:parts-directory}/monitor-template-index
+md5sum = 7400c8cfa16a15a0d41f512b8bbb1581
+filename = index.html.jinja2
+mode = 0644
+
+[status-cgi]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+md5sum = e43d79bec8824265e22df7960744113a
+destination = ${buildout:parts-directory}/monitor-template-status-cgi
+filename = status.cgi.in
+mode = 0644
+
+[status-history-cgi]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+#md5sum = 4fb26753ee669b8ac90ffe33dbd12e8f
+destination = ${buildout:parts-directory}/monitor-template-status-history-cgi
+filename = status-history.cgi.in
+mode = 0644
+
+[settings-cgi]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+md5sum = b4cef123a3273e848e8fe496e22b20a8
+destination = ${buildout:parts-directory}/monitor-template-settings-cgi
+filename = settings.cgi.in
+mode = 0644
+
+[monitor-password-cgi]
+recipe = hexagonit.recipe.download
+url = ${:_profile_base_location_}/webfile-directory/${:filename}
+download-only = true
+md5sum = c7ba7ecb09d0d1d24e7cb73a212cc33f
+destination = ${buildout:parts-directory}/monitor-template-monitor-password-cgi
+filename = monitor-password.cgi.in
+mode = 0644
+>>>>>>> 62c2b0a86... monitor: wait for dependencies files before start apache server
+
+# Monitor templates files
+[monitor-httpd-conf]
+<= monitor-download-base
+filename = monitor-httpd.conf.in
+
+[monitor-template-wrapper]
+<= monitor-download-base
+filename = wrapper.in
+
+[monitor-conf]
+<= monitor-download-base
+filename = monitor.conf.in
+
+[monitor-httpd-cors]
+<= monitor-download-base
+filename = httpd-cors.cfg.in
+# End templates files
+
+# XXX keep compatibility (with software/ipython_notebook/software.cfg )
+[monitor-template]
+rendered = ${monitor2-template:rendered}
+output = ${monitor2-template:rendered}
+
+[monitor2-template]
+recipe = slapos.recipe.template:jinja2
+filename = template-monitor.cfg
+template = ${:_profile_base_location_}/instance-monitor.cfg.jinja2.in
+rendered = ${buildout:directory}/template-monitor.cfg
+<<<<<<< HEAD
+=======
+md5sum = b6da7709da533c5c8280e5e103809c58  
+>>>>>>> 61868a690... monitor: add support for report script folder
+context =
+    key apache_location apache:location
+    key template_logrotate_base template-logrotate-base:rendered
+    raw monitor_bin ${buildout:bin-directory}/monitor.bootstrap
+    raw monitor_collect ${buildout:bin-directory}/monitor.collect
+    raw monitor_statistic ${buildout:bin-directory}/monitor.statistic
+    raw monitor_runpromise ${buildout:bin-directory}/monitor.runpromise
+    raw monitor_genstatus ${buildout:bin-directory}/monitor.genstatus
+    raw monitor_configwrite ${buildout:bin-directory}/monitor.configwrite
+    raw monitor_conf_template ${monitor-conf:location}/${monitor-conf:filename}
+    raw monitor_https_cors ${monitor-httpd-cors:location}/${monitor-httpd-cors:filename}
+    raw curl_executable_location ${curl:location}/bin/curl
+    raw dash_executable_location ${dash:location}/bin/dash
+    raw dcron_executable_location ${dcron:location}/sbin/crond
+    raw logrotate_executable_location ${logrotate:location}/usr/sbin/logrotate
+    raw monitor_httpd_template ${monitor-httpd-conf:location}/${monitor-httpd-conf:filename}
+    raw openssl_executable_location ${openssl:location}/bin/openssl
+    raw python_executable ${buildout:executable}
+    raw python_with_eggs ${buildout:bin-directory}/${monitor-eggs:interpreter}
+    raw template_wrapper ${monitor-template-wrapper:location}/${monitor-template-wrapper:filename}
+<<<<<<< HEAD
+    raw check_disk_space ${buildout:bin-directory}/check-free-disk
+    raw bin_directory ${buildout:directory}/bin
+=======
+    raw status2rss_executable_path ${status2rss-executable:location}/${status2rss-executable:filename}
+depends = 
+  ${monitor-eggs:eggs}
+
+
+[monitor2-bin]
+<= monitor-template-script
+filename = monitor.py
+md5sum = 6db3d9fcfff32c556f2bedee804ffb47
+
+[run-promise-py]
+recipe = slapos.recipe.template:jinja2
+template = ${:_profile_base_location_}/scripts/run-promise.py
+rendered = ${buildout:parts-directory}/monitor-scripts/run-promise.py
+md5sum = 5694920c5789f4d953cb5d41adfa7f8b
+mode = 0755
+context =
+  raw python ${buildout:directory}/bin/${extra-eggs:interpreter}
+
+[monitor-password-promise]
+<= monitor-template-script
+filename = monitor-password-promise.py
+md5sum = f7e937d6619eb674f39f34718928d91d
+
+[status2rss-executable]
+<= monitor-template-script
+filename = status2rss.py
+md5sum = f297779d0881f4bd48081506efb492a4
+
+[monitor-globalstate]
+<= monitor-template-script
+filename = globalstate.py
+md5sum = 384a1148cb3da9cf353a108fe70709c5
+>>>>>>> 61868a690... monitor: add support for report script folder
+
+[versions]
+cns.recipe.symlink = 0.2.3

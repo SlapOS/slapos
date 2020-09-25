@@ -1,0 +1,43 @@
+[buildout]
+extends =
+  ../patch/buildout.cfg
+  ../perl/buildout.cfg
+
+parts =
+  openblas
+
+[openblas]
+recipe = slapos.recipe.cmmi
+<<<<<<< HEAD
+shared = true
+url = http://github.com/xianyi/OpenBLAS/archive/v0.2.18.tar.gz
+md5sum = 805e7f660877d588ea7e3792cda2ee65
+=======
+url = http://github.com/xianyi/OpenBLAS/archive/v0.2.15.tar.gz
+md5sum = b1190f3d3471685f17cfd1ec1d252ac9
+>>>>>>> 5fda3f71a... OpenBLAS: disable USE_OPENMP when building on a single core machine.
+patch-options = -p0
+patches =
+  ${:_profile_base_location_}/disable_openmp_if_single_core.patch#ee553ccaf9dd4bc37374588e49956f62
+
+build-common-options = NO_STATIC=1 USE_OPENMP=1 USE_THREAD=1 DYNAMIC_ARCH=1
+
+# We build for multiple targets with runtime detection of the target CPU but
+# you can specify more options with openblas:build-ext-options parameter.
+# Example :
+# * to specify the oldest model you expect to encounter
+#   (see https://github.com/xianyi/OpenBLAS/blob/v0.2.18/TargetList.txt )
+#   TARGET=HASWELL
+build-ext-options =
+
+# Fortran is required for LAPACK, which is required for matplotlib.
+pre-configure = type gfortran
+
+configure-command =
+  make ${:build-common-options} ${:build-ext-options}
+make-options =
+  dummy
+make-targets =
+  PREFIX="@@LOCATION@@" install
+environment =
+  PATH=${patch:location}/bin:${perl:location}/bin:%(PATH)s

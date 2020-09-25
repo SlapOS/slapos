@@ -1,0 +1,98 @@
+[buildout]
+extends =
+  ../../software/erp5/software.cfg
+  buildout.hash.cfg
+
+parts +=
+  vifib-fix-products-paths
+
+[local-bt5-repository]
+# Same as bt5-repository, but only local repository.
+# Used to generate bt5lists.
+list = ${erp5:location}/bt5 ${erp5:location}/product/ERP5/bootstrap ${erp5-bin:location}/bt5 ${erp5-doc:location}/bt5 ${vifib:location}/master/bt5
+
+[erp5_repository_list]
+repository_id_list = erp5 erp5-bin erp5-doc vifib/master
+
+[erp5]
+branch = erp5-vifib
+<<<<<<< HEAD
+=======
+git-executable = ${git:location}/bin/git
+<<<<<<< HEAD
+revision = c5ff14eb3c49d4a13cfaa5ed47347d7656b7ace8
+>>>>>>> a9a3c3c12... slapos-master: set repository revision
+
+[vifib]
+<= erp5
+repository = https://lab.nexedi.com/nexedi/slapos.core.git
+=======
+revision = b22077622b356aade6981957ddc6ff271c228bbb 
+
+[vifib]
+recipe = slapos.recipe.build:gitclone
+>>>>>>> b0de36da8... Release: Version up for ERP5, Cloudooo, wendelin and others git repositories
+branch = master
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+[slapos-bin]
+<= erp5
+repository = https://lab.nexedi.com/nexedi/slapos-bin.git
+branch = master
+=======
+=======
+repository = https://lab.nexedi.com/nexedi/slapos.core.git
+>>>>>>> 77adedc09... slapos-master: re-add line as it was removed by mistake
+git-executable = ${git:location}/bin/git
+<<<<<<< HEAD
+revision = f0da361a148cc57c79661e6eaab5f90778dde73f
+>>>>>>> a9a3c3c12... slapos-master: set repository revision
+=======
+revision = b3b9da6158f0dd3956e72a804c57f18b6f966fc1 
+>>>>>>> b0de36da8... Release: Version up for ERP5, Cloudooo, wendelin and others git repositories
+
+[vifib-fix-products-paths]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  for DIR in "${vifib:location}/master"; do cd "$DIR"; rm -f Products ; ln -s product Products; touch product/__init__.py; done
+update-command = ${:command}
+
+[eggs]
+eggs +=
+  slapos.core
+  
+dummy +=
+  ${vifib:location}
+  ${slapos-bin:location}
+  
+extra-paths +=
+  ${vifib:location}/master
+  ${slapos-bin:location}
+
+
+### Overwrite recipes to introduce customized changes
+[download-base-part]
+recipe = slapos.recipe.build:download
+url = ${:_profile_base_location_}/${:filename}
+mode = 644
+
+[template-erp5]
+< = download-base-part
+filename = instance-erp5.cfg.in
+
+[template-balancer]
+< = download-base-part
+filename = instance-balancer.cfg.in
+
+[template-apache-backend-conf]
+url = ${:_profile_base_location_}/${:filename}
+filename = apache-backend.conf.in 
+
+[neoppod-repository]
+revision = 4dfdf05a89445a9286dbdf364d495bedf10f9394 
+
+[versions]
+python-memcached = 1.47
+xml-marshaller = 1.0.2

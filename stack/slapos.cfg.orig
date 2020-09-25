@@ -1,0 +1,549 @@
+# This stack list all parameters used in every Software Release or other stack.
+# Software Releases or Stacks can safely extend this stack.
+
+[buildout]
+# Developers need to add explicitely this part in their software profile
+# parts = slapos-cookbook
+# Note that if you want a develop version of slapos-cookbook from a git
+# checkout, you must add both slapos-cookbook-develop and slapos-cookbook in parts
+
+extensions +=
+  slapos.rebootstrap
+  slapos.extension.strip
+  slapos.extension.shared
+
+show-picked-versions = true
+
+# To increase the chances of being able to rebuild profiles in the future,
+# by default, fail if eggs are not pinned.
+allow-picked-versions = false
+
+# Use shacache and lxml
+extends =
+  ../component/defaults.cfg
+  ../component/git/buildout.cfg
+  ../component/lxml-python/buildout.cfg
+  ../component/python-backports-lzma/buildout.cfg
+  ../component/python-cffi/buildout.cfg
+  ../component/python-cliff/buildout.cfg
+  ../component/python-cachecontrol/buildout.cfg
+  ../component/python-cryptography/buildout.cfg
+  ../component/python-PyYAML/buildout.cfg
+  ../component/pycurl/buildout.cfg
+
+
+# Separate from site eggs
+allowed-eggs-from-site-packages =
+include-site-packages = false
+exec-sitecustomize = false
+
+# Add location for modified non-official slapos.buildout
+find-links +=
+  http://www.nexedi.org/static/packages/source/
+  http://www.nexedi.org/static/packages/source/hexagonit.recipe.download/
+  http://www.nexedi.org/static/packages/source/slapos.buildout/
+
+# Use only quite well working sites.
+allow-hosts +=
+  pypi.org
+  *.googlecode.com
+  *.nexedi.org
+  *.python.org
+  *.sourceforge.net
+  alastairs-place.net
+  bitbucket.org
+  code.google.com
+  effbot.org
+  files.pythonhosted.org
+  github.com
+  launchpad.net
+  peak.telecommunity.com
+  sourceforge.net
+  www.dabeaz.com
+  www.owlfish.com
+
+# Use an https index
+index = https://pypi.org/simple/
+
+# XXX: Workaround of SlapOS limitation
+# Unzippig of eggs is required, as SlapOS do not yet provide nicely working
+# development / fast switching environment for whole software
+unzip = true
+
+# Define where is defined what version of eggs we should use
+versions = versions
+
+# Define networkcache with shacache.org
+networkcache-section = networkcache
+
+[slapos.cookbook-repository]
+recipe = slapos.recipe.build:gitclone
+repository = https://lab.nexedi.com/nexedi/slapos.git
+branch = master
+git-executable = ${git:location}/bin/git
+
+[slapos-cookbook-develop]
+recipe = zc.recipe.egg:develop
+setup = ${slapos.cookbook-repository:location}
+
+# Install slapos.cookbook containing all officials recipes
+[slapos-cookbook]
+recipe = zc.recipe.egg
+eggs = slapos.cookbook
+depends = ${slapos-cookbook-dependencies:eggs}
+
+[slapos-cookbook-dependencies]
+recipe = zc.recipe.egg
+eggs =
+  ${lxml-python:egg}
+  ${python-cffi:egg}
+  ${python-PyYAML:egg}
+  ${python-cachecontrol:egg}
+  ${python-cliff:egg}
+  ${python-cryptography:egg}
+  ${jsonschema:egg}
+
+# slapos.toolbox containing utilities
+[slapos-toolbox]
+recipe = zc.recipe.egg
+eggs = slapos.toolbox
+depends = ${slapos-toolbox-dependencies:eggs}
+
+[slapos-toolbox-dependencies]
+# slapos.toolbox depends on eggs with C-extensions that needs to be
+# installed with slapos provided libraries. This section installs all
+# slapos.toolbox dependencies.
+recipe = zc.recipe.egg
+eggs =
+  ${lxml-python:egg}
+  ${pycurl:egg}
+  ${python-cryptography:egg}
+  ${backports.lzma:egg}
+
+[jsonschema]
+recipe = zc.recipe.egg:custom
+egg = ${:_buildout_section_name_}
+setup-eggs = setuptools_scm
+
+# Install a slapos command with networkcache enabled in ${buildout:bin-directory}
+[slapos-command]
+recipe = zc.recipe.egg
+eggs =
+  ${lxml-python:egg}
+  slapos.core
+  slapos.libnetworkcache
+
+[versions]
+setuptools = 44.0.0
+# Use SlapOS patched zc.buildout
+zc.buildout = 2.7.1+slapos009
+# Use SlapOS patched zc.recipe.egg (zc.recipe.egg 2.x is for Buildout 2)
+zc.recipe.egg = 2.0.3+slapos003
+# Use own version of h.r.download to be able to open .xz and .lz archives
+hexagonit.recipe.download = 1.7.post4
+
+Jinja2 = 2.9.5
+MarkupSafe = 1.0
+PyYAML = 3.13
+Werkzeug = 0.12
+asn1crypto = 1.3.0
+backports.lzma = 0.0.14
+cffi = 1.14.0
+click = 6.7
+cliff = 2.4.0
+cmd2 = 0.7.0
+collective.recipe.shelloutput = 0.1
+collective.recipe.template = 2.0
+cryptography = 2.9.2
+decorator = 4.3.0
+idna = 2.9
+inotify-simple = 1.1.1
+itsdangerous = 0.24
+lock-file = 2.0
+lxml = 4.4.3
+meld3 = 1.0.2
+netaddr = 0.7.19
+pbr = 2.0.0
+plone.recipe.command = 1.1
+prettytable = 0.7.2
+<<<<<<< HEAD
+<<<<<<< HEAD
+psutil = 5.6.3
+pyOpenSSL = 19.1.0
+pyparsing = 2.2.0
+pytz = 2016.10
+requests = 2.24.0
+six = 1.12.0
+slapos.cookbook = 1.0.152
+slapos.core = 1.6.2
+slapos.extension.strip = 0.4
+slapos.extension.shared = 1.0
+slapos.libnetworkcache = 0.20
+slapos.rebootstrap = 4.5
+slapos.recipe.build = 0.46
+slapos.recipe.cmmi = 0.16
+slapos.toolbox = 0.111
+stevedore = 1.21.0
+subprocess32 = 3.5.3
+=======
+psutil = 3.2.2
+pyOpenSSL = 0.15.1
+pyasn1 = 0.1.9
+pyparsing = 2.0.3
+pytz = 2015.6
+requests = 2.8.1
+setuptools = 18.1
+simplejson = 3.8.0
+=======
+psutil = 4.1.0
+pyOpenSSL = 0.15.1
+pyasn1 = 0.1.9
+pyparsing = 2.1.0
+pytz = 2016.1
+requests = 2.9.1
+setuptools = 19.6.2
+simplejson = 3.8.2
+>>>>>>> f769130d1... version up eggs.
+six = 1.10.0
+<<<<<<< HEAD
+slapos.cookbook = 1.0.14
+slapos.core = 1.3.13
+=======
+slapos.cookbook = 1.0.44
+slapos.core = 1.3.18
+>>>>>>> cac1bba1d... slapos.cookbook version up 1.0.44
+slapos.extension.strip = 0.1
+slapos.libnetworkcache = 0.14.5
+slapos.recipe.build = 0.23
+slapos.recipe.cmmi = 0.2
+stevedore = 1.9.0
+>>>>>>> a833b75d1... use slapos.cookbook 1.0.14 and slapos.core 1.3.13
+unicodecsv = 0.14.1
+xml-marshaller = 1.0.2
+paramiko = 2.1.3
+CacheControl = 0.12.5
+msgpack = 0.6.2
+
+# Required by:
+# slapos.core==1.5.0
+Flask = 0.12
+
+# Required by:
+# slapos.toolbox==0.94
+GitPython = 2.1.11
+
+# Required by:
+# GitPython==2.1.11
+gitdb2 = 2.0.5
+
+# Required by:
+# gitdb==2.0.5
+smmap2 = 2.0.5
+
+# Required by:
+# slapos.toolbox==0.94
+PyRSS2Gen = 1.1
+
+# Required by:
+# slapos.toolbox==0.94
+apache-libcloud = 2.4.0
+
+# Required by:
+# slapos.toolbox==0.94
+atomize = 0.2.0
+
+# Required by:
+<<<<<<< HEAD
+# slapos.toolbox==0.94
+croniter = 0.3.25
+=======
+# slapos.core==1.3.13
+Flask = 0.10.1
+>>>>>>> a833b75d1... use slapos.cookbook 1.0.14 and slapos.core 1.3.13
+
+# Required by:
+# slapos.toolbox==0.94
+dnspython = 1.15.0
+
+# Required by:
+# cryptography==1.8.1
+enum34 = 1.1.10
+
+# Required by:
+# slapos.toolbox==0.94
+erp5.util = 0.4.68
+
+# Required by:
+<<<<<<< HEAD
+# slapos.toolbox==0.94
+feedparser = 5.2.1
+=======
+# cryptography==1.2.3
+enum34 = 1.1.2
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# jsonschema==3.0.0a3
+functools32 = 3.2.3.post2
+
+# Required by:
+<<<<<<< HEAD
+# jsonschema==3.0.0a3
+attrs = 18.2.0
+=======
+# cryptography==1.2.3
+ipaddress = 1.0.16
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+<<<<<<< HEAD
+<<<<<<< HEAD
+# jsonschema==3.0.0a3
+pyrsistent = 0.14.5
+
+# Required by:
+# jsonschema==3.0.2
+setuptools-scm = 3.5.0
+
+# Required by:
+# cryptography==1.8.1
+ipaddress = 1.0.23
+
+# Required by:
+# slapos.cookbook==1.0.143
+jsonschema = 3.0.2
+
+# Required by:
+# slapos.toolbox==0.94
+lockfile = 0.12.2
+
+# Required by:
+# slapos.core==1.5.0
+# XXX 'slapos node format' raises an exception with netifaces 0.10.5.
+netifaces = 0.10.7
+=======
+# slapos.cookbook==1.0.14
+jsonschema = 2.5.1
+
+# Required by:
+# slapos.cookbook==1.0.14
+=======
+# slapos.cookbook==1.0.44
+jsonschema = 2.5.1
+
+# Required by:
+# slapos.cookbook==1.0.44
+>>>>>>> cac1bba1d... slapos.cookbook version up 1.0.44
+lock-file = 2.0
+
+# Required by:
+# slapos.core==1.3.13
+netifaces = 0.10.4
+>>>>>>> a833b75d1... use slapos.cookbook 1.0.14 and slapos.core 1.3.13
+
+# Required by:
+# cryptography==1.8.1
+packaging = 16.8
+
+# Required by:
+<<<<<<< HEAD
+# slapos.toolbox==0.94
+passlib = 1.7.1
+
+# Required by:
+# slapos.toolbox==0.94
+pyasn1 = 0.4.5
+
+# Required by:
+# cffi==1.9.1
+pycparser = 2.20
+
+# Required by:
+# slapos.toolbox==0.94
+pycurl = 7.43.0
+
+# Required by:
+# slapos.toolbox==0.94
+python-dateutil = 2.7.3
+
+# Required by:
+<<<<<<< HEAD
+# slapos.toolbox==0.94
+rpdb = 0.1.5
+=======
+# slapos.core==1.3.15
+supervisor = 3.2.2
+>>>>>>> f769130d1... version up eggs.
+
+# Required by:
+# slapos.core==1.5.0
+supervisor = 4.1.0
+
+# Required by:
+# slapos.toolbox==0.94
+tzlocal = 1.5.1
+
+# Required by:
+# slapos.core==1.5.0
+uritemplate = 3.0.0
+
+# Required by:
+# slapos.core==1.5.0
+zope.interface = 4.3.3
+
+# Required by:
+# requests==2.24.0
+certifi = 2020.6.20
+
+# Required by:
+# requests==2.24.0
+chardet = 3.0.4
+
+# Required by:
+# requests==2.24.0
+urllib3 = 1.25.9
+=======
+# slapos.core==1.3.13
+supervisor = 3.1.3
+
+# Required by:
+# slapos.core==1.3.13
+uritemplate = 0.6
+
+# Required by:
+# slapos.core==1.3.13
+zope.interface = 4.1.3
+>>>>>>> a833b75d1... use slapos.cookbook 1.0.14 and slapos.core 1.3.13
+
+[networkcache]
+download-cache-url = http://shacache.nxdcdn.com
+download-dir-url = http://shadir.nxdcdn.com
+
+# signature certificates of the following uploaders.
+#   Sebastien Robin
+#   Kazuhiko Shiozaki
+#   Gabriel Monnerat
+#   Test Agent (Automatic update from tests)
+#   Aurélien Calonne
+#   Rafael Monnerat
+#   Ivan Tyagov
+#   Julien Muchembled
+#   Yusei Tahara
+signature-certificate-list =
+  -----BEGIN CERTIFICATE-----
+  MIIB8jCCAVugAwIBAgIJAPu2zchZ2BxoMA0GCSqGSIb3DQEBBQUAMBIxEDAOBgNV
+  BAMMB3RzeGRldjMwHhcNMTExMDE0MTIxNjIzWhcNMTIxMDEzMTIxNjIzWjASMRAw
+  DgYDVQQDDAd0c3hkZXYzMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrPbh+
+  YGmo6mWmhVb1vTqX0BbeU0jCTB8TK3i6ep3tzSw2rkUGSx3niXn9LNTFNcIn3MZN
+  XHqbb4AS2Zxyk/2tr3939qqOrS4YRCtXBwTCuFY6r+a7pZsjiTNddPsEhuj4lEnR
+  L8Ax5mmzoi9nE+hiPSwqjRwWRU1+182rzXmN4QIDAQABo1AwTjAdBgNVHQ4EFgQU
+  /4XXREzqBbBNJvX5gU8tLWxZaeQwHwYDVR0jBBgwFoAU/4XXREzqBbBNJvX5gU8t
+  LWxZaeQwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQA07q/rKoE7fAda
+  FED57/SR00OvY9wLlFEF2QJ5OLu+O33YUXDDbGpfUSF9R8l0g9dix1JbWK9nQ6Yd
+  R/KCo6D0sw0ZgeQv1aUXbl/xJ9k4jlTxmWbPeiiPZEqU1W9wN5lkGuLxV4CEGTKU
+  hJA/yXa1wbwIPGvX3tVKdOEWPRXZLg==
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB7jCCAVegAwIBAgIJAJWA0jQ4o9DGMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNV
+  BAMMBHg2MXMwIBcNMTExMTI0MTAyNDQzWhgPMjExMTEwMzExMDI0NDNaMA8xDTAL
+  BgNVBAMMBHg2MXMwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBANdJNiFsRlkH
+  vq2kHP2zdxEyzPAWZH3CQ3Myb3F8hERXTIFSUqntPXDKXDb7Y/laqjMXdj+vptKk
+  3Q36J+8VnJbSwjGwmEG6tym9qMSGIPPNw1JXY1R29eF3o4aj21o7DHAkhuNc5Tso
+  67fUSKgvyVnyH4G6ShQUAtghPaAwS0KvAgMBAAGjUDBOMB0GA1UdDgQWBBSjxFUE
+  RfnTvABRLAa34Ytkhz5vPzAfBgNVHSMEGDAWgBSjxFUERfnTvABRLAa34Ytkhz5v
+  PzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4GBAFLDS7zNhlrQYSQO5KIj
+  z2RJe3fj4rLPklo3TmP5KLvendG+LErE2cbKPqnhQ2oVoj6u9tWVwo/g03PMrrnL
+  KrDm39slYD/1KoE5kB4l/p6KVOdeJ4I6xcgu9rnkqqHzDwI4v7e8/D3WZbpiFUsY
+  vaZhjNYKWQf79l6zXfOvphzJ
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB9jCCAV+gAwIBAgIJAPHoWu90gbsgMA0GCSqGSIb3DQEBBQUAMBQxEjAQBgNV
+  BAMMCXZpZmlibm9kZTAeFw0xMjAzMTkyMzIwNTVaFw0xMzAzMTkyMzIwNTVaMBQx
+  EjAQBgNVBAMMCXZpZmlibm9kZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+  ozBijpO8PS5RTeKTzA90vi9ezvv4vVjNaguqT4UwP9+O1+i6yq1Y2W5zZxw/Klbn
+  oudyNzie3/wqs9VfPmcyU9ajFzBv/Tobm3obmOqBN0GSYs5fyGw+O9G3//6ZEhf0
+  NinwdKmrRX+d0P5bHewadZWIvlmOupcnVJmkks852BECAwEAAaNQME4wHQYDVR0O
+  BBYEFF9EtgfZZs8L2ZxBJxSiY6eTsTEwMB8GA1UdIwQYMBaAFF9EtgfZZs8L2ZxB
+  JxSiY6eTsTEwMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAc43YTfc6
+  baSemaMAc/jz8LNLhRE5dLfLOcRSoHda8y0lOrfe4lHT6yP5l8uyWAzLW+g6s3DA
+  Yme/bhX0g51BmI6gjKJo5DoPtiXk/Y9lxwD3p7PWi+RhN+AZQ5rpo8UfwnnN059n
+  yDuimQfvJjBFMVrdn9iP6SfMjxKaGk6gVmI=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB9jCCAV+gAwIBAgIJAKRvzcy7OH0UMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
+  BAMMCENPTVAtNzcyMCAXDTEyMDgxMDE1NDI1MVoYDzIxMTIwNzE3MTU0MjUxWjAT
+  MREwDwYDVQQDDAhDT01QLTc3MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+  o7aipd6MbnuGDeR1UJUjuMLQUariAyQ2l2ZDS6TfOwjHiPw/mhzkielgk73kqN7A
+  sUREx41eTcYCXzTq3WP3xCLE4LxLg1eIhd4nwNHj8H18xR9aP0AGjo4UFl5BOMa1
+  mwoyBt3VtfGtUmb8whpeJgHhqrPPxLoON+i6fIbXDaUCAwEAAaNQME4wHQYDVR0O
+  BBYEFEfjy3OopT2lOksKmKBNHTJE2hFlMB8GA1UdIwQYMBaAFEfjy3OopT2lOksK
+  mKBNHTJE2hFlMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAaNRx6YN2
+  M/p3R8/xS6zvH1EqJ3FFD7XeAQ52WuQnKSREzuw0dsw12ClxjcHiQEFioyTiTtjs
+  5pW18Ry5Ie7iFK4cQMerZwWPxBodEbAteYlRsI6kePV7Gf735Y1RpuN8qZ2sYL6e
+  x2IMeSwJ82BpdEI5niXxB+iT0HxhmR+XaMI=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB+DCCAWGgAwIBAgIJAKGd0vpks6T/MA0GCSqGSIb3DQEBBQUAMBQxEjAQBgNV
+  BAMMCUNPTVAtMTU4NDAgFw0xMzA2MjAxMjE5MjBaGA8yMTEzMDUyNzEyMTkyMFow
+  FDESMBAGA1UEAwwJQ09NUC0xNTg0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB
+  gQDZTH9etPUC+wMZQ3UIiOwyyCfHsJ+7duCFYjuo1uZrhtDt/fp8qb8qK9ob+df3
+  EEYgA0IgI2j/9jNUEnKbc5+OrfKznzXjrlrH7zU8lKBVNCLzQuqBKRNajZ+UvO8R
+  nlqK2jZCXP/p3HXDYUTEwIR5W3tVCEn/Vda4upTLcPVE5wIDAQABo1AwTjAdBgNV
+  HQ4EFgQU7KXaNDheQWoy5uOU01tn1M5vNkEwHwYDVR0jBBgwFoAU7KXaNDheQWoy
+  5uOU01tn1M5vNkEwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQASmqCU
+  Znbvu6izdicvjuE3aKnBa7G++Fdp2bdne5VCwVbVLYCQWatB+n4crKqGdnVply/u
+  +uZ16u1DbO9rYoKgWqjLk1GfiLw5v86pd5+wZd5I9QJ0/Sbz2vZk5S4ciMIGwArc
+  m711+GzlW5xe6GyH9SZaGOPAdUbI6JTDwLzEgA==
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB9jCCAV+gAwIBAgIJAOcKrOH/2Da6MA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
+  BAMMCENPTVAtMjk3MCAXDTEyMDYyNjAzMDU1MVoYDzIxMTIwNjAyMDMwNTUxWjAT
+  MREwDwYDVQQDDAhDT01QLTI5NzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+  xzbOGlcoin2q+Mtp52r26Njliz2aoxIXbnOBUyDc/OGtk9nWA5uBtTc2zwR17um6
+  KV0bGyvuBA78XcvU+AIV/5s0ohBAX7yjRKmEhAYcFvov3EyWSdjOrqqo4qFSzOrK
+  sVQBlxIDpjQBH4F3lf6dBv6/M+tCT3iSv3aOZbsG0E8CAwEAAaNQME4wHQYDVR0O
+  BBYEFLqtrfTu+BIVt+TFiRUkIoiWIYrxMB8GA1UdIwQYMBaAFLqtrfTu+BIVt+TF
+  iRUkIoiWIYrxMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAc8N5P5gW
+  Jrdk9gF/3Cpp6THDiy93+WcuAm7zFwXPFNttJtFKMNObP2YRZvsQkvjezfrZoRBF
+  j8LgKB3tZCbBj+HDj+AeD+q9V+cqMFLKc6LezvQYUuum6bZdfUNnPv1K1ULYSPjq
+  /jsRBbabCWSXqxR6gYEM6ooauj3udBMXhHE=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIICAjCCAWugAwIBAgIJAL+BMtL+NJiHMA0GCSqGSIb3DQEBBQUAMBkxFzAVBgNV
+  BAMMDmxvY2FsX2NvbXB1dGVyMCAXDTE1MDgxODExMDQyNFoYDzIxMTUwNzI1MTEw
+  NDI0WjAZMRcwFQYDVQQDDA5sb2NhbF9jb21wdXRlcjCBnzANBgkqhkiG9w0BAQEF
+  AAOBjQAwgYkCgYEAvePhZuVoTvmX8f1N31FEpw/nfp9+Fl7TrIym+5norVvkj5Ps
+  c4bFIr2tfdj/GlmYLX3NtH2v26c1vbZ3Nt2lwCfi2rPXTJq9s1+NPPX9BnPXdSsz
+  iSp4LzAx/XgWQzHS1/tue989OXYGlroyQ842fHCCulHWmClVN5fDZbc/BwkCAwEA
+  AaNQME4wHQYDVR0OBBYEFOrHMBWcobogcdxbr0LAai35dWblMB8GA1UdIwQYMBaA
+  FOrHMBWcobogcdxbr0LAai35dWblMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEF
+  BQADgYEAYWOB2/WKJHL2GI4mh7F6TbqR+EODOgsqL5fSWG7LJeKo1rUWE4dW6h0T
+  8dEAOMIcdrPBzldf0JS+poCrLUw7qx9VZxa0ee3+F6WGEgsr2xhu2WpmTzpRWaFR
+  0I+saiiJCkOkLoyLxeQcgwe62em/DGn6PdcmRDYaVXBHygrRXus=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB6jCCAVOgAwIBAgIJAMhx/tG6zHFJMA0GCSqGSIb3DQEBBQUAMA0xCzAJBgNV
+  BAMMAmptMCAXDTEzMDcwMTE3NDcyOVoYDzIxMTMwNjA3MTc0NzI5WjANMQswCQYD
+  VQQDDAJqbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAyFJp6K3HAle6oUB4
+  /TxIvc06wju+ZzZuPX4fxq2GqOV9QX2jhPfYCyr/cJh4pOZEW1gwMw+9kzghmjNT
+  6RoBEWMS3E0F2K/waYb+doGb1Dffp2FIi3m547b20XnpnaIj3DS7FF30lRNo8jtR
+  1Dg+RDGpA23Pr1/3IAskC5qSydkCAwEAAaNQME4wHQYDVR0OBBYEFHHmUnqEVNEo
+  FpLiBjCmR5ZJsPndMB8GA1UdIwQYMBaAFHHmUnqEVNEoFpLiBjCmR5ZJsPndMAwG
+  A1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAPP5oOZWVrYjc5BB+pDVQm/rF
+  gVhgPPg+23oCiz0p9NzWgnYXhGmQWtzXVVVaL4aftkmX04mlT2Fgd4msEzQB6pAa
+  SOvU9E1802JN7Q1mrMbgJeNmk+18o4ze7ABKljqtvo+ZjUXthuWw3BNt+PtQjlX3
+  5wE+Yc4sypYGmAfU7Gc=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIICAjCCAWugAwIBAgIJAP/k6bltwfZCMA0GCSqGSIb3DQEBCwUAMBkxFzAVBgNV
+  BAMMDmxvY2FsX2NvbXB1dGVyMCAXDTE3MTEwOTA2NTU1M1oYDzIxMTcxMDE2MDY1
+  NTUzWjAZMRcwFQYDVQQDDA5sb2NhbF9jb21wdXRlcjCBnzANBgkqhkiG9w0BAQEF
+  AAOBjQAwgYkCgYEAuWN8O1PQ23mulMu45fDxTHeoI33MDWDLHP9gthsMbTplftDf
+  k8BAKCp/ugbAkCD5LTx/6RH1RdyM/LApUI/n+fxFnnVZn8Fyuzwu/TlvGdNT5yrj
+  RhBkcxeCpWWz9Ysezj9jVnK+TCSjJeb/N55aMgXAVjrIeJkR4SkPDdMBtcMCAwEA
+  AaNQME4wHQYDVR0OBBYEFJ+1cOY78rvaNAzqshFjVOWfqoMzMB8GA1UdIwQYMBaA
+  FJ+1cOY78rvaNAzqshFjVOWfqoMzMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEL
+  BQADgYEAJDLdo6fXZxEaHYJuZ6XuYPNAYAcSOiSbJoMSSz7qQJ+4FWPGCBnhiZbU
+  SyslQFs59yqNxb046uKi7D4JeUd0zdBO3TtceGRK3iyEFNx8GF+em/6pNnC3A/XH
+  +L1VRZsQdvh7NHsl/dVvWmmlmOANQ/+JkLbe98c/rCmBDH48Ldc=
+  -----END CERTIFICATE-----

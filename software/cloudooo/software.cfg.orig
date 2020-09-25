@@ -1,0 +1,55 @@
+[buildout]
+extends =
+  software-common.cfg
+
+parts =
+  ${cloudooo-buildout:parts}
+  template-cloudooo
+
+[cloudooo-software-parameter-dict]
+publish-url-name = cloudooo
+port-parameter-name = tcpv4-port
+port = 8000
+backend-count-parameter-name = backend-count
+backend-count = 1
+timeout-parameter-name = timeout
+# timeout in seconds
+timeout = 600
+ssl-dict-parameter-name = ssl
+#ssl-dict =
+mimetype-entry-addition-parameter-name = mimetype-entry-addition
+<<<<<<< HEAD
+#mimetype-entry-addition =
+#  text/html application/pdf wkhtmltopdf
+=======
+mimetype-entry-addition =
+  text/html application/pdf wkhtmltopdf
+
+# Release Incremments
+[cloudooo-software-parameter-dict]
+mimetype-entry-addition =
+
+[cloudooo-repository]
+branch = master
+revision = 00604a3a5a69082f7c607665cc6badd5104a32b9
+
+[slapos-cookbook.repository]
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+revision = 0af8127c34e691f04b6307acd7db4b8e82b82620 
+
+>>>>>>> b0de36da8... Release: Version up for ERP5, Cloudooo, wendelin and others git repositories
+=======
+revision = ad7c3f6451154a2a4e4ce073beeb03dd043a4da5
+>>>>>>> efca2e820... Update revisions for the release.
+=======
+revision = cf57b1f4070d2387c7c177e92f5a95283e8e68d8
+>>>>>>> e69c67ba6... Update revisions for RC.
+=======
+revision = 8a03f3c8ac64e48189b92170f293288b7462a862
+>>>>>>> 0fccd2b1c... Update revisions for RC
+=======
+revision = b44c288e849773ba1c35a60374397eff936ea998
+>>>>>>> 84305f57f... Update revisions for RC

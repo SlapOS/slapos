@@ -1,0 +1,338 @@
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
+{% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
+{% set slave_frontend_dict = slapparameter_dict.get('slave-frontend', {}) -%}
+{% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
+{% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'custom-personal') -%}
+{% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
+{% set WEBSOCKET_FRONTEND_DEFAULT_SR = 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg' %}
+{% set WEBSOCKET_FRONTEND_DEFAULT_ST = 'RootSoftwareInstance' %}
+{% set kvm_instance_dict = {} -%}
+{% set kvm_hostname_list = [] -%}
+{% set monitor_base_url_dict = {} -%}
+
+{% macro setconfig(name, value) -%}
+{# will set a config-name = value if value is not empty -#}
+{% if value and value != '' -%}
+config-{{ name }} = {{ dumps(value) }}
+{% endif -%}
+{% endmacro -%}
+
+[slap-network-information]
+global-ipv6 = {{ ipv6 }}
+
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
+[request-common]
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+
+# Request kvm instances
+{% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
+{% set section = 'request-' ~ instance_name -%}
+{% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
+[{{ section }}]
+<= request-common
+software-type = kvm
+name = {{ instance_name }}
+{% if kvm_parameter_dict.get('sticky-computer', '') -%}
+sla-computer_guid = ${slap-connection:computer-id} 
+{% else -%}
+sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', '')) }}
+{% endif -%}
+
+sla-network_guid = {{ dumps(kvm_parameter_dict.get('network-guid', '')) }}
+sla-project_guid = {{ dumps(kvm_parameter_dict.get('project-guid', '')) }}
+{% if kvm_parameter_dict.get('state', '') == 'stopped' -%}
+state = stopped
+{% endif -%}
+
+config-frontend-instance-name = {{ instance_name ~ ' VNC Real Frontend' }}
+{{ setconfig('frontend-software-url', frontend_dict.get('frontend-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-software-type', frontend_dict.get('frontend-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
+{{ setconfig('frontend-instance-guid', frontend_dict.get('frontend-instance-guid', '')) }}
+
+config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Frontend Additional' }}
+{{ setconfig('frontend-additional-software-url', frontend_dict.get('frontend-additional-software-url', WEBSOCKET_FRONTEND_DEFAULT_SR)) }}
+{{ setconfig('frontend-additional-software-type', frontend_dict.get('frontend-additional-software-type', WEBSOCKET_FRONTEND_DEFAULT_ST)) }}
+{{ setconfig('frontend-additional-instance-guid', frontend_dict.get('frontend-additional-instance-guid', '')) }}
+
+config-name = {{ instance_name }}
+{% if slapparameter_dict.get('authorized-keys', []) -%}
+config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
+{% endif -%}
+config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
+config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
+config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
+config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 1024)) + 512)) }}
+config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
+config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
+config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
+config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
+config-disk-format = {{ dumps(kvm_parameter_dict.get('disk-format', 'qcow2')) }}
+config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
+config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', int(kvm_parameter_dict.get('cpu-count', 1)) + 1)) }}
+{{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
+{{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
+{{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
+{{ setconfig('host2', kvm_parameter_dict.get('host2', '')) }}
+
+config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}
+{{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
+{{ setconfig('disk-aio', kvm_parameter_dict.get('disk-aio', '')) }}
+{{ setconfig('cpu-model', kvm_parameter_dict.get('cpu-model', 'host')) }}
+{{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
+{{ setconfig('disk-device-path', kvm_parameter_dict.get('disk-device-path', '')) }}
+
+{% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
+{{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
+config-publish-nat-url = True
+config-use-nat = {{ dumps(use_nat) }}
+config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
+config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
+config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
+{{ setconfig('virtual-hard-drive-url', kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
+{{ setconfig('virtual-hard-drive-md5sum', kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
+config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
+config-hard-drive-url-check-certificate = {{ dumps(kvm_parameter_dict.get('hard-drive-url-check-certificate', True)) }}
+config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
+config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
+config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
+config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
+config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
+
+{{ setconfig('data-to-vm', kvm_parameter_dict.get('data-to-vm', '')) }}
+
+config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${publish-early:monitor-password}
+# Enable disk wipe options
+{% if kvm_parameter_dict.get('wipe-disk-ondestroy', False) -%}
+config-wipe-disk-ondestroy = True
+config-wipe-disk-iterations = {{ dumps(kvm_parameter_dict.get('wipe-disk-iterations', 1)) }}
+{% endif -%}
+# Enable simple http server on ipv6 so all VMs will access it
+config-document-host = ${apache-conf:ip}
+config-document-port = ${apache-conf:port}
+config-document-path = ${hash-code:passwd}
+config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
+{%- if 'boot-image-url-list' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-boot-image-url-list = {{ kvm_parameter_dict['boot-image-url-list'] }}
+{%- endif %}
+{%- if 'boot-image-url-select' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-boot-image-url-select = {{ kvm_parameter_dict['boot-image-url-select'] }}
+{%- endif %}
+config-type = cluster
+
+{% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
+{% if bootstrap_script_url -%}
+config-bootstrap-script-url = {{ bootstrap_script_url }}
+{% endif -%}
+
+{% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
+{% set rejected_source_list = slapparameter_dict.get('fw-reject-sources', []) -%}
+sla-fw_authorized_sources = {{ authorized_source_list | join(' ') }}
+sla-fw_rejected_sources = {{ rejected_source_list | join(' ') }}
+sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access', 'off')) }}
+
+return = 
+  url
+<<<<<<< HEAD
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
+  url-additional
+{% endif %}
+  backend-url
+{% if use_nat -%}
+=======
+{% if str(use_nat).lower() == 'true' -%}
+>>>>>>> b6e38ca48... kvm: fix the check of use_nat parameter
+{%   for port in nat_rules_list -%}
+{%     if ':' in port -%}
+{%       set proto, port = port.split(':') -%}
+{%     else -%}
+{%       set proto, port = 'tcp', port -%}
+{%     endif -%}
+{{ '  ' }}nat-rule-url-{{proto}}-{{ port }}
+{%   endfor -%}
+{% endif -%}
+{{ '  ' }}monitor-base-url
+{% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
+{{ '  ' }}tap-ipv4
+{{ '  ' }}tap-ipv6
+{{ '  ' }}ipv6-network-info
+
+{% do publish_dict.__setitem__(instance_name ~ '-ipv4', '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv6', '${' ~ section ~ ':connection-tap-ipv6}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-ipv6-info', '${' ~ section ~ ':connection-ipv6-network-info}') -%}
+{% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% endif -%}
+{% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
+{% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
+{% endif %}
+{% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
+{% endfor %}
+
+
+#request custom kvm frontend
+{% for frontend_name, frontend_parameter_dict in slave_frontend_dict.get('slave-frontend-dict', {}).items() -%}
+{%   set name = frontend_name -%}
+{%   set url = frontend_parameter_dict.get('url', '') -%}
+{%   set error = '' -%}
+{%   if frontend_parameter_dict.get('kvm-partition-name', '') != '' -%}
+{%     set kvm_name = frontend_parameter_dict['kvm-partition-name'] -%}
+{%     set service_port = str(frontend_parameter_dict['service-port']) -%}
+{%     if kvm_name in kvm_instance_dict.keys()  and not kvm_instance_dict[kvm_name][0] -%}
+{%       set error = "You should set parameter use-nat to 'true' for '" ~ kvm_name ~ "', or provide url to use for frontend." -%}
+{%     elif kvm_name in kvm_instance_dict.keys() and service_port in kvm_instance_dict[kvm_name][1] -%}
+{%       set url = '${request-' ~ kvm_name ~ ':connection-nat-rule-url-' ~ service_port ~ '}' -%}
+{%       set url = frontend_parameter_dict.get('url-scheme', 'http') ~ '://' ~ url -%}
+{%     else -%}
+{%       set error = kvm_name ~ " and/or port " ~ service_port ~ " doesn't match any KVM name and/or related nat-rules in your request parameters." -%}
+{%     endif -%}
+{%   endif -%}
+{%   set section = 'request-' ~ name ~ '-slave-frontend' -%}
+[{{ section }}]
+<= request-common
+recipe = slapos.cookbook:request
+software-url = {{ slave_frontend_sr }}
+name = Frontend {{ name }}
+software-type = {{ slave_frontend_stype }}
+slave = true
+config-url = {{ url }}
+{{ setconfig('custom_domain', kvm_parameter_dict.get('domain', '')) }}
+config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}
+config-https-only = {{ dumps(frontend_parameter_dict.get('https-only', False)) }}
+{%  if frontend_parameter_dict.get('type', '') -%}
+config-type = {{ dumps(frontend_parameter_dict['type']) }}
+{%    if frontend_parameter_dict.get('path', '') -%}
+config-path = {{ dumps(frontend_parameter_dict['path']) }}
+{%    endif -%}
+{%  endif -%}
+return = 
+  site_url
+sla-instance_guid = {{ slave_frontend_iguid }}
+{%   do publish_dict.__setitem__(name ~ '-url', '${' ~ section ~ ':connection-site_url}') -%}
+{%   if error != '' -%}
+{%     do publish_dict.__setitem__('1_error', error) -%}
+{%   endif -%}
+{% endfor %}
+
+# Enable simple http server on ipv6 so all VMs will access it
+[hash-code]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/code
+bytes = 24
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+webroot = ${:srv}/document
+ssl = ${:etc}/ssl
+
+[directory-doc]
+recipe = slapos.cookbook:mkdirectory
+document = ${directory:webroot}/${hash-code:passwd}
+
+[apache-conf]
+denied-root-access = true
+root = ${directory:webroot}/
+index = ${directory:webroot}/${hash-code:passwd}
+port = 9002
+
+{% if len(kvm_hostname_list) -%}
+{%   do part_list.append('write-vm-hostname') -%}
+[write-vm-hostname]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
+filename = hosts
+rendered = ${directory:webroot}/${hash-code:passwd}/${:filename}
+context =
+    raw content_list {{ kvm_hostname_list | join('#') }}
+    raw sep #
+{% endif -%}
+
+{% macro writefile(section_name, file_path, content, mode='') -%}
+{% do part_list.append(section_name) -%}
+{% set data_list =  content.split('\n') -%}
+[{{ section_name }}]
+recipe = collective.recipe.template
+input = inline:
+  {{ data_list | join('\n  ') }}
+output = {{ file_path }}
+mode = {{ mode }}
+{% endmacro -%}
+
+# write cluster-data into file public/data
+{% if slapparameter_dict.get('cluster-data', '') -%}
+{{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
+{% endif -%}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  monitor-password monitor-htpasswd:passwd
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8060
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+username = admin
+password = ${publish-early:monitor-password}
+
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
+[monitor-conf-parameters]
+private-path-list += 
+  ${directory:webroot}/
+
+[publish-connection-information]
+<= monitor-publish
+-extends = publish-early
+recipe = slapos.cookbook:publish
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
+{% endfor %}
+{% do part_list.append('monitor-base') -%}
+
+[buildout]
+extends = 
+  {{ template_httpd_cfg }}
+{{ '  ' ~ template_monitor }}
+
+parts = 
+  httpd
+  httpd-graceful
+  httpd-promise
+  publish-connection-information
+  directory-doc
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+ 
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
