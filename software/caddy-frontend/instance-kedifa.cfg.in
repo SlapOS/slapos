@@ -19,6 +19,7 @@ parts =
   caucase-updater
   expose-csr_id
   promise-expose-csr_id-ip-port
+  promise-logrotate-setup
 
 [monitor-instance-parameter]
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
@@ -236,6 +237,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 name = kedifa
 log = ${kedifa-config:logfile}
 rotate-num = {{ instance_parameter['configuration.rotate-num'] | int }}
+delaycompress =
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
@@ -301,4 +303,12 @@ master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
+  ${logrotate:wrapper-path} -d
+
 {%- endif -%} {# if slap_software_type in software_type #}
