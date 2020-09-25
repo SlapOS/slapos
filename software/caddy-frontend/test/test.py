@@ -1682,6 +1682,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       proto
     )
 
+  def test_telemetry_disabled(self):
+    # here we trust that telemetry not present in error log means it was
+    # really disabled
+    error_log_file = glob.glob(
+      os.path.join(
+       self.instance_path, '*', 'var', 'log', 'frontend-error.log'))[0]
+    with open(error_log_file) as fh:
+      self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
+
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
 
