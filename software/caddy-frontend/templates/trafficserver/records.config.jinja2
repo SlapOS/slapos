@@ -5,7 +5,7 @@
 ##############################################################################
 
 ##############################################################################
-# SlapOS Specific configuration
+# SlapOS Specific configuration not available in default records.config
 ##############################################################################
 CONFIG proxy.config.proxy_name STRING {{ ats_configuration['hostname'] }}
 CONFIG proxy.config.local_state_dir STRING {{ ats_directory['local-state'] }}
@@ -19,7 +19,6 @@ CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.admin.user_id STRING {{ '#%s' % os_module.geteuid() }}
 CONFIG proxy.config.admin.number_config_bak INT 0
 CONFIG proxy.config.process_manager.mgmt_port INT {{ ats_configuration['mgmt-port'] }}
-CONFIG proxy.config.admin.synthetic_port INT {{ ats_configuration['synthetic-port'] }}
 LOCAL proxy.local.incoming_ip_to_bind STRING {{ ats_configuration['local-ip'] }}
 CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Implement RFC 5861 with core
@@ -28,14 +27,6 @@ CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration[
 # Support stale-if-error by returning cached content on backend 5xx or unavailability
 CONFIG proxy.config.http.negative_revalidating_enabled INT 1
 CONFIG proxy.config.http.negative_revalidating_lifetime INT 86400
-##############################################################################
-# Proxy users variables. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
-##############################################################################
-# Do not modify headers, as it needlessly pollutes information
-CONFIG proxy.config.http.insert_client_ip INT 0
-CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 0
-
 
 ##############################################################################
 # Thread configurations. Docs:
@@ -80,7 +71,7 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30 {{ ats_configuration['request-timeout'] }}
 CONFIG proxy.config.http.transaction_active_timeout_in INT 900
 CONFIG proxy.config.http.transaction_active_timeout_out INT 0
 CONFIG proxy.config.http.accept_no_activity_timeout INT 120
@@ -108,6 +99,13 @@ CONFIG proxy.config.http.negative_caching_enabled INT 0
 CONFIG proxy.config.http.negative_caching_lifetime INT 1800
 
 ##############################################################################
+# Proxy users variables. Docs:
+#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
+##############################################################################
+CONFIG proxy.config.http.insert_client_ip INT 0
+CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 0
+
+##############################################################################
 # Security. Docs:
 #    https://docs.trafficserver.apache.org/records.config#security
 ##############################################################################
@@ -125,7 +123,7 @@ CONFIG proxy.config.http.cache.http INT 1
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
 ##############################################################################
 CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
-CONFIG proxy.config.http.normalize_ae_gzip INT 0
+CONFIG proxy.config.http.normalize_ae INT 0
 CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
 CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
     # https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-when-to-revalidate
@@ -165,7 +163,7 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
 ##############################################################################
 # Logging Config. Docs:
 #    https://docs.trafficserver.apache.org/records.config#logging-configuration
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logging.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logging.yaml.en.html
 ##############################################################################
 CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
@@ -194,14 +192,14 @@ CONFIG proxy.config.reverse_proxy.enabled INT 1
 ##############################################################################
 CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
-CONFIG proxy.config.ssl.server.cipher_suite STRING ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
+CONFIG proxy.config.ssl.server.cipher_suite STRING ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
 
 ##############################################################################
 # Debugging. Docs:
 #    https://docs.trafficserver.apache.org/records.config#diagnostic-logging-configuration
 ##############################################################################
 CONFIG proxy.config.diags.debug.enabled INT 0
-CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
+CONFIG proxy.config.diags.debug.tags STRING http|dns
 # ToDo: Undocumented
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0

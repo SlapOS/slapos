@@ -33,7 +33,7 @@ parts =
   trafficserver-plugin-config
   trafficserver-storage-config
   trafficserver-ip-allow-config
-  trafficserver-logging-config
+  trafficserver-logging-yaml
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
@@ -497,7 +497,7 @@ target = ${trafficserver-directory:configuration}
 
 [trafficserver-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_cop
+command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_manager
 wrapper-path = ${trafficserver-variable:wrapper-path}
 environment = TS_ROOT=${buildout:directory}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -531,10 +531,10 @@ extra-context =
 template = {{ parameter_dict['template_trafficserver_storage_config'] }}
 filename = storage.config
 
-[trafficserver-logging-config]
+[trafficserver-logging-yaml]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_logging_config'] }}
-filename = logging.config
+template = {{ parameter_dict['template_trafficserver_logging_yaml'] }}
+filename = logging.yaml
 
 [trafficserver-remap-config]
 <= trafficserver-jinja2-template-base
