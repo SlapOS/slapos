@@ -4337,7 +4337,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   retries 5""" in content)
 
 
-@skip('Impossible to instantiate cluster with stopped partition')
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
@@ -4346,7 +4345,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': cls.slap._computer_id,
-      '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
