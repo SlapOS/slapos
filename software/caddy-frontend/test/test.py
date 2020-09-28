@@ -48,6 +48,7 @@ from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
 import socket
+import sqlite3
 
 
 try:
@@ -6720,3 +6721,90 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     self.assertEqual(self.certificate_pem, der2pem(result_specific.peercert))
     self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
+
+
+class TestPassedRequestParameter(HttpFrontendTestCase):
+  # special SRs to check out
+  frontend_2_sr = 'special_sr_for_2'
+  frontend_3_sr = 'special_sr_for_3'
+  kedifa_sr = 'special_sr_for_kedifa'
+
+  @classmethod
+  def setUpClass(cls):
+    cls.slap.supply(cls.frontend_2_sr, cls.slap._computer_id)
+    cls.slap.supply(cls.frontend_3_sr, cls.slap._computer_id)
+    cls.slap.supply(cls.kedifa_sr, cls.slap._computer_id)
+    super(TestPassedRequestParameter, cls).setUpClass()
+
+  instance_parameter_dict = {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
+
+  def test(self):
+    self.instance_parameter_dict.update({
+      '-frontend-quantity': 3,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-frontend-2-state': 'stopped',
+      '-frontend-2-software-release-url': self.frontend_2_sr,
+      '-sla-3-computer_guid': self.slap._computer_id,
+      '-frontend-3-state': 'stopped',
+      '-frontend-3-software-release-url': self.frontend_3_sr,
+      '-kedifa-software-release-url': self.kedifa_sr,
+    })
+
+    # re-request instance with updated parameters
+    self.requestDefaultInstance()
+
+    # run once instance, it's only needed for later checks
+    try:
+      self.slap.waitForInstance()
+    except Exception:
+      pass
+
+    # inspect slapproxy, that the master correctly requested other partitions
+    sqlitedb_file = os.path.join(
+      os.path.abspath(
+        os.path.join(
+          self.slap.instance_directory, os.pardir
+        )
+      ), 'var', 'proxy.db'
+    )
+    connection = sqlite3.connect(sqlitedb_file)
+
+    def dict_factory(cursor, row):
+      d = {}
+      for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+      return d
+    connection.row_factory = dict_factory
+    cursor = connection.cursor()
+
+    cursor.execute(
+      "select partition_reference, software_release "
+      "from partition14 where slap_state='busy';")
+
+    requested_partition_information = cursor.fetchall()
+
+    base_software_url = self.getSoftwareURL()
+    self.assertEqual(
+      requested_partition_information,
+      [
+        {'software_release': base_software_url,
+         'partition_reference': 'testing partition 0'},
+        {'software_release': self.kedifa_sr,
+         'partition_reference': 'kedifa'},
+        # that one is base, as expected
+        {'software_release': base_software_url,
+         'partition_reference': 'caddy-frontend-1'},
+        {'software_release': self.frontend_2_sr,
+         'partition_reference': 'caddy-frontend-2'},
+        {'software_release': self.frontend_3_sr,
+         'partition_reference': 'caddy-frontend-3'}]
+    )
