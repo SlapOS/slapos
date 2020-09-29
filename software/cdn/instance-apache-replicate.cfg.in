@@ -1,0 +1,787 @@
+{% if slap_software_type in software_type %}
+{% set aibcc_enabled = True %}
+{% import "caucase" as caucase with context %}
+{#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
+{%- set SERVER_POLLUTED_KEY_LIST = ['connection-parameter-hash', 'timestamp', 'slave_title', 'slap_software_type'] -%}
+{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- set GOOD_CIPHER_LIST = ['ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-ECDSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-WITH-CHACHA20-POLY1305', 'ECDHE-RSA-AES256-CBC-SHA', 'ECDHE-RSA-AES128-CBC-SHA', 'ECDHE-ECDSA-AES256-CBC-SHA', 'ECDHE-ECDSA-AES128-CBC-SHA', 'RSA-AES256-CBC-SHA', 'RSA-AES128-CBC-SHA', 'ECDHE-RSA-3DES-EDE-CBC-SHA', 'RSA-3DES-EDE-CBC-SHA'] %}
+{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
+{% set master_partition_monitor_monitor_httpd_port = 8401 %}
+{% set kedifa_partition_monitor_httpd_port = 8402 %}
+{% set frontend_monitor_httpd_base_port = 8410 %}
+{% set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_backend_client_port'] %}
+{% set caucase_url = 'http://' ~ caucase_netloc %}
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    raw common_profile {{ common_profile }}
+    ${:extra-context}
+
+{% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
+{% set part_list = [] %}
+{% set single_type_key = 'single-' %}
+{% if slap_software_type == "replicate" %}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
+{% elif slap_software_type in ['default', 'RootSoftwareInstance'] %}
+{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
+{% else %}
+{%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) %}
+{% endif %}
+{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
+{% set slave_list_name = 'extra_slave_instance_list' %}
+{% set frontend_list = [] %}
+{% set frontend_section_list = [] %}
+{% set request_dict = {} %}
+{% set namebase = 'caddy-frontend' %}
+# XXX Dirty hack, not possible to define default value before
+{% set sla_computer_caddy_1_key = '-sla-1-computer_guid' %}
+{% if not sla_computer_caddy_1_key in slapparameter_dict %}
+{%   do slapparameter_dict.__setitem__(sla_computer_caddy_1_key, '${slap-connection:computer-id}') %}
+{% endif %}
+{% set sla_computer_kedifa_key = '-sla-kedifa-computer_guid' %}
+{% if not sla_computer_kedifa_key in slapparameter_dict %}
+{%   do slapparameter_dict.__setitem__(sla_computer_kedifa_key, '${slap-connection:computer-id}') %}
+{% endif %}
+
+# Here we request individually each frontend.
+# The presence of sla parameters is checked and added if found
+{% for i in range(1, frontend_quantity + 1) %}
+{%   set frontend_name = "%s-%s" % (namebase, i) %}
+{%   set request_section_title = 'request-%s' % frontend_name %}
+{%   set sla_key = "-sla-%s-" % i %}
+{%   set sla_key_length = sla_key | length %}
+{%   set sla_dict = {} %}
+{%   set config_key = "-frontend-config-%s-" % i %}
+{%   set config_key_length = config_key | length %}
+{%   set config_dict = {} %}
+{%   for key in slapparameter_dict.keys() %}
+{%     if key.startswith(sla_key) %}
+{%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
+# We check for specific configuration regarding the frontend
+{%     elif key.startswith(config_key) %}
+{%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
+{%     endif %}
+{%   endfor %}
+{%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
+{%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
+{%   do frontend_list.append(frontend_name) %}
+{%   do frontend_section_list.append(request_section_title) %}
+{%   do part_list.append(request_section_title) %}
+# Filling request dict for slave
+{%   set state_key = "-frontend-%s-state" % i %}
+{%   set request_content_dict = {
+                                  'config': config_dict,
+                                  'name': frontend_name,
+                                  'sla': sla_dict,
+                                  'state': slapparameter_dict.pop(state_key, None)
+                                  } %}
+{%   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
+{%   do request_content_dict.__setitem__('software-url', slapparameter_dict.get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
+{%   do request_dict.__setitem__(request_section_title, request_content_dict) %}
+{% endfor %}
+
+{% set authorized_slave_string_list = [] %}
+{% set authorized_slave_list = [] %}
+{% set rejected_slave_dict = {} %}
+{% set rejected_slave_title_dict = {} %}
+{% set warning_slave_dict = {} %}
+{% set used_host_list = [] %}
+{% for slave in sorted(slave_instance_list) %}
+{%   set slave_error_list = [] %}
+{%   set slave_warning_list = [] %}
+{%   set slave_server_alias_unclashed = [] %}
+{%   set slave_type = slave.get('type') %}
+{%   if slave_type == 'eventsource' %}
+{%     do slave_error_list.append('type:eventsource is not implemented') %}
+{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
+{%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
+{%   endif %}
+{#   Check ciphers #}
+{%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
+{%   if slave_cipher_list %}
+{%     for cipher in slave_cipher_list %}
+{%       if cipher not in GOOD_CIPHER_LIST  %}
+{%         do slave_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
+{%       endif %}
+{%     endfor %}
+{%   endif %}
+{%   set custom_domain = slave.get('custom_domain') %}
+{%   if custom_domain and custom_domain in used_host_list %}
+{%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
+{%   else %}
+{%      do used_host_list.append(custom_domain) %}
+{%   endif %}
+{%   if slave.get('server-alias') %}
+{%     for slave_alias in ('' ~ slave['server-alias']).split() %}
+{%       if slave_alias.startswith('*.') %}
+{%         set clean_slave_alias = slave_alias[2:] %}
+{%       else %}
+{%         set clean_slave_alias = slave_alias %}
+{%       endif %}
+{%       if not validators.domain(clean_slave_alias) %}
+{%         do slave_error_list.append('server-alias \'%s\' not valid' % (slave_alias,)) %}
+{%       else %}
+{%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
+{#           optionally do something about reporting back that server-alias has been unclashed #}
+{%         elif slave_alias in used_host_list %}
+{%           do slave_error_list.append('server-alias \'%s\' clashes' % (slave_alias,)) %}
+{%         else %}
+{%           do slave_server_alias_unclashed.append(slave_alias) %}
+{%           do used_host_list.append(slave_alias) %}
+{%         endif %}
+{%       endif %}
+{%     endfor %}
+{%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
+{%   endif %}
+{%   for url_key in ['url', 'https-url'] %}
+{%     if url_key in slave %}
+{%       set url = (slave[url_key] or '').strip() %}
+{%       if subprocess_module.call([caddy_backend_url_validator, url]) == 1 or not validators.url(url) %}
+{%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
+{%       elif url != slave[url_key] %}
+{%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{%   if 'ssl_proxy_ca_crt' in slave %}
+{%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
+{%     set check_popen = popen([parameter_dict['openssl'], 'x509', '-noout']) %}
+{%     do check_popen.communicate(ssl_proxy_ca_crt) %}
+{%     if check_popen.returncode != 0 %}
+{%       do slave_error_list.append('ssl_proxy_ca_crt is invalid') %}
+{%     endif %}
+{%   endif %}
+{# BBB: SlapOS Master non-zero knowledge BEGIN #}
+{%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
+{%     if key in slave %}
+{%       do slave_warning_list.append('%s is obsolete, please use key-upload-url' % (key,)) %}
+{%     endif %}
+{%   endfor %}
+{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
+{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
+{%   endif %}
+{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
+{%     set key_popen = popen([parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
+{%     set crt_popen = popen([parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
+{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
+{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
+{%     if not key_modulus or key_modulus != crt_modulus  %}
+{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
+{%     endif %}
+{%   endif %}
+{# BBB: SlapOS Master non-zero knowledge END #}
+{%   if slave.get('custom_domain') %}
+{%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
+{%     if slave_custom_domain.startswith('*.') %}
+{%       set clean_custom_domain = slave_custom_domain[2:] %}
+{%     else %}
+{%       set clean_custom_domain = slave_custom_domain %}
+{%     endif %}
+{%     if not validators.domain(clean_custom_domain) %}
+{%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
+{%     endif %}
+{%   endif %}
+{%   if len(slave_error_list) == 0 %}
+{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
+{%     set authorized_slave = slave.copy() %}
+{%     for key in SERVER_POLLUTED_KEY_LIST %}
+{%       do authorized_slave.pop(key, None) %}
+{%     endfor %}
+{%     do authorized_slave_list.append(authorized_slave) %}
+{%   else %}
+{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
+{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
+{%   endif %}
+{%   if len(slave_warning_list) > 0 %}
+{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
+{%   endif %}
+{% endfor %}
+{% do authorized_slave_list.sort() %}
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
+
+[replicate]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+
+software-type = {{frontend_type}}
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate
+
+{% for section, frontend_request in request_dict.iteritems() %}
+{%   set state = frontend_request.get('state', '') %}
+[{{section}}]
+<= replicate
+name = {{ frontend_request.get('name') }}
+software-url = {{ frontend_request['software-url'] }}
+{%   if state %}
+state = {{ state }}
+{%   endif %}
+config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
+config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+config-backend-client-caucase-url = {{ caucase_url }}
+config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
+config-cluster-identification = {{ cluster_identification }}
+{#   Do not send additional parameters for destroyed nodes #}
+{%   if state != 'destroyed' %}
+{%     set slave_configuration_dict = slapparameter_dict %}
+{%     do slave_configuration_dict.update(frontend_request.get('config')) %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{%     do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
+{%     do slave_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
+{%-     for config_key, config_value in slave_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%     endfor -%}
+{%   endif %}
+{%   if frontend_request.get('sla') %}
+{%     for parameter, value in frontend_request.get('sla').iteritems() %}
+sla-{{ parameter }} = {{ value }}
+{%     endfor %}
+{%   endif %}
+{% endfor %}
+
+{%  set warning_list = [] %}
+{%  for key in ['apache-certificate', 'apache-key'] %}
+{%    if key in slapparameter_dict %}
+{%      do warning_list.append('%s is obsolete, please use master-key-upload-url' % (key, )) %}
+{%    endif %}
+{%  endfor %}
+
+[publish-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+domain = {{ slapparameter_dict.get('domain') }}
+slave-amount = {{ slave_instance_list | length }}
+accepted-slave-amount = {{ authorized_slave_list | length }}
+rejected-slave-amount = {{ rejected_slave_dict | length }}
+backend-client-caucase-url = {{ caucase_url }}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
+rejected-slave-promise-url = ${rejected-slave-promise:config-url}
+master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
+master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
+kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
+{% if len(warning_list) > 0 %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
+{% endif %}
+{% if len(warning_slave_dict) > 0 %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
+{% endif %}
+{% if not aikc_enabled or not aibcc_enabled %}
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-csr_id-certificate = {{ section_part }}:connection-csr_id-certificate}
+{% endfor %}
+{% endif %}
+{% if not aikc_enabled %}
+kedifa-csr_id-url = ${request-kedifa:connection-csr_id-url}
+kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-csr_id-url = {{ section_part }}:connection-csr_id-url}
+{% endfor %}
+{% endif %}
+{% if not aibcc_enabled %}
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-backend-client-csr_id-url = {{ section_part }}:connection-backend-client-csr_id-url}
+{% endfor %}
+{% endif %}
+
+#----------------------------
+#--
+#-- Publish slave information
+[publish-slave-information]
+recipe = slapos.cookbook:softwaretype
+default = ${dynamic-publish-slave-information:rendered}
+RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
+replicate = ${dynamic-publish-slave-information:rendered}
+custom-personal = ${dynamic-publish-slave-information:rendered}
+custom-group = ${dynamic-publish-slave-information:rendered}
+
+[request-kedifa]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
+{% for key in ['kedifa_port', 'caucase_port'] -%}
+{%-   if key in slapparameter_dict %}
+config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
+{%-   endif %}
+{%- endfor %}
+config-slave-list = {{ dumps(authorized_slave_list) }}
+config-cluster-identification = {{ cluster_identification }}
+
+{% set software_url_key = "-kedifa-software-release-url" %}
+{% if slapparameter_dict.has_key(software_url_key) %}
+software-url = {{ slapparameter_dict.pop(software_url_key) }}
+{% else %}
+software-url = ${slap-connection:software-release-url}
+{% endif %}
+software-type = kedifa
+name = kedifa
+return = slave-kedifa-information master-key-generate-auth-url master-key-upload-url master-key-download-url caucase-url csr_id-url csr_id-certificate  monitor-base-url
+{% set sla_kedifa_key = "-sla-kedifa-" %}
+{% set sla_kedifa_key_length = sla_kedifa_key | length %}
+{% for key in slapparameter_dict.keys() %}
+{%   if key.startswith(sla_kedifa_key) %}
+sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
+{%   endif %}
+{% endfor %}
+
+[rejected-slave-information]
+{% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list, sort_keys=True)) }}
+{% endfor %}
+
+[warning-slave-information]
+{% for slave_id, warning_list in warning_slave_dict.iteritems() %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+{{ slave_id }} = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
+{% endfor %}
+
+[slave-information]
+{% for frontend_section in frontend_section_list %}
+{{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
+{% endfor %}
+
+[active-slave-instance]
+{% set active_slave_instance_list = [] %}
+{% for slave_instance in slave_instance_list %}
+{# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
+{# Note: This functionality is not yet covered by tests, please modify with care #}
+{%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
+{% endfor %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
+
+[dynamic-publish-slave-information]
+< = jinja2-template-base
+template = {{ template_publish_slave_information }}
+filename = dynamic-publish-slave-information.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section slave_information slave-information
+    section rejected_slave_information rejected-slave-information
+    section active_slave_instance_dict active-slave-instance
+    section warning_slave_information warning-slave-information
+    key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
+
+[monitor-base-url-dict]
+kedifa = ${request-kedifa:connection-monitor-base-url}
+{% for frontend in frontend_section_list %}
+{{ frontend }} = {{ '${' + frontend + ':connection-monitor-base-url}' }}
+{% endfor %}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin/
+srv = ${buildout:directory}/srv/
+backup = ${:srv}/backup
+# CAUCASE directories
+caucased = ${:srv}/caucased
+backup-caucased = ${:backup}/caucased
+
+{% if aikc_enabled %}
+[directory]
+aikc = ${:srv}/aikc
+
+[aikc-config]
+caucase-url = ${request-kedifa:connection-caucase-url}
+
+csr = ${directory:aikc}/csr.pem
+key = ${directory:aikc}/key.pem
+ca-certificate = ${directory:aikc}/cas-ca-certificate.pem
+crl = ${directory:aikc}/crl.pem
+user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
+user-crl = ${directory:aikc}/user-crl.pem
+user-created = ${directory:aikc}/user-created
+csr_id = ${directory:aikc}/csr_id
+
+[aikc-user-csr]
+recipe = plone.recipe.command
+organization = {{ cluster_identification }}
+organizational_unit = Automatic Internal Kedifa Caucase CSR
+command =
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:csr}
+  fi
+update-command = ${:command}
+csr = ${aikc-config:csr}
+key = ${aikc-config:key}
+stop-on-error = True
+
+
+[aikc-caucase-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key caucase_url aikc-config:caucase-url
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  exec {{ parameter_dict['bin_directory'] }}/caucase \
+{# raw block to use context #}
+{% raw %}
+  --ca-url {{ caucase_url }} \
+{% endraw %}
+  --ca-crt ${aikc-config:ca-certificate} \
+  --user-ca-crt ${aikc-config:user-ca-certificate} \
+  --user-crl ${aikc-config:user-crl} \
+  --crl ${aikc-config:crl} \
+  "$@"
+
+rendered = ${directory:bin}/aikc-caucase-wrapper
+mode = 0700
+
+{% do part_list.append('aikc-create-user') %}
+[aikc-create-user]
+recipe = plone.recipe.command
+stop-on-error = True
+update-command = ${:command}
+command =
+  if ! [ -f ${aikc-config:user-created} ] ; then
+    ${aikc-caucase-wrapper:rendered} --mode user --send-csr ${aikc-user-csr:csr} > ${aikc-config:csr_id} || exit 1
+    cut -d ' ' -f 1 ${aikc-config:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${aikc-config:csr_id}`
+    sleep 1
+    ${aikc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aikc-config:key} || exit 1
+    touch ${aikc-config:user-created}
+  fi
+
+{% do part_list.append('aikc-user-caucase-updater') %}
+{% do part_list.append('aikc-user-caucase-updater-promise') %}
+{{ caucase.updater(
+     prefix='aikc-user-caucase-updater',
+     buildout_bin_directory=parameter_dict['bin_directory'],
+     updater_path='${directory:service}/aikc-user-caucase-updater',
+     url='${aikc-config:caucase-url}',
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${aikc-config:key}',
+     ca_path='${aikc-config:user-ca-certificate}',
+     crl_path='${aikc-config:user-crl}',
+     key_path='${aikc-config:key}',
+     mode='user',
+)}}
+
+
+[aikc-check-certificate]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/aikc-check-certificate
+template = inline:
+  import sys
+  import ssl
+  import urlparse
+  certificate = sys.argv[2]
+  parsed = urlparse.urlparse(sys.argv[1])
+  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
+  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
+
+{% for csr in frontend_list + ['kedifa'] %}
+[aikc-{{ csr }}-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key csr_id_url request-{{ csr }}:connection-csr_id-url
+  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  test -f ${directory:aikc}/{{ csr }}-done && exit 0
+  ${buildout:executable} ${aikc-check-certificate:rendered} \
+{# raw block to use context #}
+{% raw %}
+  {{ csr_id_url }} \
+  """{{ csr_id_certificate }}"""
+{% endraw %}
+  if [ $? = 0 ]; then
+    csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
+{% raw %}
+  {{ csr_id_url }} \
+{% endraw %}
+  ` || exit 1
+    ${aikc-caucase-wrapper:rendered} --user-key ${aikc-config:key} --sign-csr $csr_id && touch ${directory:aikc}/{{ csr }}-done
+  fi
+rendered = ${directory:bin}/aikc-{{ csr }}-wrapper
+mode = 0700
+
+{% do part_list.append('aikc-%s' % (csr,)) %}
+[aikc-{{ csr }}]
+recipe = plone.recipe.command
+stop-on-error = True
+command =
+  ${aikc-{{ csr }}-wrapper:rendered}
+update-command = ${:command}
+{% endfor %}
+{% endif %} {# if aikc_enabled #}
+
+{% if aibcc_enabled %}
+[directory]
+aibcc = ${:srv}/aibcc
+
+[aibcc-config]
+caucase-url = {{ caucase_url }}
+
+csr = ${directory:aibcc}/csr.pem
+key = ${directory:aibcc}/key.pem
+ca-certificate = ${directory:aibcc}/cas-ca-certificate.pem
+crl = ${directory:aibcc}/crl.pem
+user-ca-certificate = ${directory:aibcc}/user-ca-certificate.pem
+user-crl = ${directory:aibcc}/user-crl.pem
+user-created = ${directory:aibcc}/user-created
+csr_id = ${directory:aibcc}/csr_id
+
+[aibcc-user-csr]
+recipe = plone.recipe.command
+organization = {{ cluster_identification }}
+organizational_unit = Automatic Sign Backend Client Caucase CSR
+command =
+  if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
+    {{ parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -out ${:csr}
+  fi
+update-command = ${:command}
+csr = ${aibcc-config:csr}
+key = ${aibcc-config:key}
+stop-on-error = True
+
+
+[aibcc-caucase-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key caucase_url aibcc-config:caucase-url
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  exec {{ parameter_dict['bin_directory'] }}/caucase \
+{# raw block to use context #}
+{% raw %}
+  --ca-url {{ caucase_url }} \
+{% endraw %}
+  --ca-crt ${aibcc-config:ca-certificate} \
+  --user-ca-crt ${aibcc-config:user-ca-certificate} \
+  --user-crl ${aibcc-config:user-crl} \
+  --crl ${aibcc-config:crl} \
+  "$@"
+
+rendered = ${directory:bin}/aibcc-caucase-wrapper
+mode = 0700
+
+{% do part_list.append('aibcc-create-user') %}
+[aibcc-create-user]
+recipe = plone.recipe.command
+# the caucase for this part is provided in this profile, so we can't fail
+# as otherwise caucase will never be started...
+stop-on-error = False
+update-command = ${:command}
+command =
+  if ! [ -f ${aibcc-config:user-created} ] ; then
+    ${aibcc-caucase-wrapper:rendered} --mode user --send-csr ${aibcc-user-csr:csr} > ${aibcc-config:csr_id} || exit 1
+    cut -d ' ' -f 1 ${aibcc-config:csr_id} || exit 1
+    csr_id=`cut -d ' ' -f 1 ${aibcc-config:csr_id}`
+    sleep 1
+    ${aibcc-caucase-wrapper:rendered} --mode user --get-crt $csr_id ${aibcc-config:key} || exit 1
+    touch ${aibcc-config:user-created}
+  fi
+
+{% do part_list.append('aibcc-user-caucase-updater') %}
+{% do part_list.append('aibcc-user-caucase-updater-promise') %}
+{{ caucase.updater(
+     prefix='aibcc-user-caucase-updater',
+     buildout_bin_directory=parameter_dict['bin_directory'],
+     updater_path='${directory:service}/aibcc-user-caucase-updater',
+     url='${aibcc-config:caucase-url}',
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${aibcc-config:key}',
+     ca_path='${aibcc-config:user-ca-certificate}',
+     crl_path='${aibcc-config:user-crl}',
+     key_path='${aibcc-config:key}',
+     mode='user',
+)}}
+
+[aibcc-check-certificate]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/aibcc-check-certificate
+template = inline:
+  import sys
+  import ssl
+  import urlparse
+  certificate = sys.argv[2]
+  parsed = urlparse.urlparse(sys.argv[1])
+  got_certificate = ssl.get_server_certificate((parsed.hostname, parsed.port))
+  sys.exit(0) if certificate.strip() == got_certificate.strip() else sys.exit(1)
+
+{% for csr in frontend_list %}
+[aibcc-{{ csr }}-wrapper]
+{# jinja2 instead of wrapper is used with context to remove py'u' #}
+recipe = slapos.recipe.template:jinja2
+context =
+  key csr_id_url request-{{ csr }}:connection-backend-client-csr_id-url
+  key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  test -f ${directory:aibcc}/{{ csr }}-done && exit 0
+  ${buildout:executable} ${aibcc-check-certificate:rendered} \
+{# raw block to use context #}
+{% raw %}
+  {{ csr_id_url }} \
+  """{{ csr_id_certificate }}"""
+{% endraw %}
+  if [ $? = 0 ]; then
+    csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
+{% raw %}
+  {{ csr_id_url }} \
+{% endraw %}
+  ` || exit 1
+    ${aibcc-caucase-wrapper:rendered} --user-key ${aibcc-config:key} --sign-csr $csr_id && touch ${directory:aibcc}/{{ csr }}-done
+  fi
+rendered = ${directory:bin}/aibcc-{{ csr }}-wrapper
+mode = 0700
+
+{% do part_list.append('aibcc-%s' % (csr,)) %}
+[aibcc-{{ csr }}]
+recipe = plone.recipe.command
+stop-on-error = True
+command =
+  ${aibcc-{{ csr }}-wrapper:rendered}
+update-command = ${:command}
+{% endfor %}
+{% endif %} {# if aibcc_enabled #}
+
+[rejected-slave-json]
+recipe = slapos.recipe.template:jinja2
+filename = rejected-slave.json
+directory = ${directory:promise-output}
+rendered = ${:directory}/${:filename}
+template = {{ parameter_dict['template_empty'] }}
+{% if rejected_slave_title_dict %}
+{# sort_keys are important in order to avoid shuffling parameters on each run #}
+content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2, sort_keys=True)) }}
+{% else %}
+content =
+{% endif %}
+context =
+  key content :content
+
+[directory]
+service = ${:etc}/service
+promise-output = ${:srv}/promise-output
+
+[rejected-slave-publish-configuration]
+ip = {{ instance_parameter['ipv6-random'] }}
+port = 14455
+
+[rejected-slave-publish]
+directory = ${rejected-slave-json:directory}
+url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['caddy'] }}
+  -conf ${rejected-slave-template:rendered}
+  -log stderr
+  -http2=true
+  -disable-http-challenge
+  -disable-tls-alpn-challenge
+  -root ${:directory}
+
+wrapper-path = ${directory:service}/rejected-slave-publish
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
+hash-files =
+  ${rejected-slave-template:rendered}
+  ${rejected-slave-certificate:certificate}
+
+[rejected-slave-certificate]
+recipe = plone.recipe.command
+certificate = ${directory:etc}/rejected-slave.pem
+key = ${:certificate}
+
+stop-on-error = True
+update-command = ${:command}
+command =
+  [ -f ${:certificate} ] && find ${:certificate} -type f -mtime +3 -delete
+  if ! [ -f ${:certificate} ] ; then
+    openssl req -new -newkey rsa:2048 -sha256 -subj \
+      "/CN=${rejected-slave-publish-configuration:ip}" \
+      -days 5 -nodes -x509 -keyout ${:certificate} -out ${:certificate}
+  fi
+
+[rejected-slave-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.rejected-slave.passwd
+bytes = 8
+user = admin
+
+[rejected-slave-template]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  https://:${rejected-slave-publish-configuration:port}/ {
+    basicauth / ${rejected-slave-password:user} ${rejected-slave-password:passwd}
+    tls ${rejected-slave-certificate:certificate} ${rejected-slave-certificate:key}
+    bind ${rejected-slave-publish-configuration:ip}
+    log stderr
+    errors stderr
+  }
+
+rendered = ${directory:etc}/Caddyfile-rejected-slave
+
+[promise-rejected-slave-publish-ip-port]
+<= monitor-promise-base
+module = check_port_listening
+name = rejected-slave-publish-ip-port-listening.py
+config-hostname = ${rejected-slave-publish-configuration:ip}
+config-port = ${rejected-slave-publish-configuration:port}
+
+[rejected-slave-promise]
+<= monitor-promise-base
+module = check_port_listening
+module = check_file_state
+name = rejected-slave.py
+config-filename = ${rejected-slave-json:rendered}
+config-state = empty
+config-url = ${rejected-slave-publish:url}
+
+[caucased-backend-client]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{  caucase.caucased(
+      prefix='caucased-backend-client',
+      buildout_bin_directory=parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/caucased-backend-client',
+      backup_dir='${directory:backup-caucased}',
+      data_dir='${directory:caucased}',
+      netloc=caucase_netloc,
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
+      key_len=2048,
+)}}
+
+[buildout]
+extends =
+  {{ common_profile }}
+  {{ template_monitor }}
+parts =
+  monitor-base
+  publish-slave-information
+  publish-information
+  request-kedifa
+  rejected-slave-promise
+  promise-rejected-slave-publish-ip-port
+  caucased-backend-client
+  caucased-backend-client-promise
+{% for part in part_list %}
+{{ '  %s' % part }}
+{% endfor %}
+#      publish-information
+{% endif %}
