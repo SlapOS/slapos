@@ -1,0 +1,99 @@
+global
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+
+log {{ configuration['log-socket'] }} local0
+defaults
+  log global
+  mode http
+  option httplog
+  timeout queue 60s
+  timeout server {{ configuration['request-timeout'] }}s
+  timeout client {{ configuration['request-timeout'] }}s
+  timeout connect {{ configuration['backend-connect-timeout'] }}s
+  retries {{ configuration['backend-connect-retries'] }}
+
+{%- macro frontend_entry(slave_instance, scheme, wildcard) %}
+{#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
+{%-   set host_list = (slave_instance.get('server-alias') or  '').split() %}
+{%-   if slave_instance.get('custom_domain') not in host_list %}
+{%-     do host_list.append(slave_instance.get('custom_domain')) %}
+{%-   endif %}
+{%-   set matched = {'count': 0} %}
+{%-   for host in host_list %}
+{#-     Match up to the end or optional port (starting with ':') #}
+{#-     Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
+{%-     if wildcard and host.startswith('*.') %}
+{%-       do matched.__setitem__('count', matched['count'] + 1) %}
+# match wildcard {{ host }}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+{%-     elif not wildcard and not host.startswith('*.') %}
+{%-       do matched.__setitem__('count', matched['count'] + 1) %}
+  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
+{%-     endif %}
+{%-   endfor %}
+{%-   if matched['count'] > 0 %}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%-   endif %}
+{%- endmacro %}
+
+frontend http-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'http', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'http', True) }}
+{%- endfor %}
+
+frontend https-backend
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'https', False) }}
+{%- endfor %}
+{%- for slave_instance in backend_slave_list %}
+{{ frontend_entry(slave_instance, 'https', True) }}
+{%- endfor %}
+
+{%- for slave_instance in backend_slave_list %}
+{%-   for (scheme, prefix) in [('http', 'http_backend'), ('https', 'https_backend')] %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     if info_dict['scheme'] == 'https' %}
+{%-       set ssl = [] %}
+{%-       if slave_instance['authenticate-to-backend'] %}
+{%-         set ssl = ['crt %s' % (configuration['certificate'],)] %}
+{%-       endif %}
+{%-       do ssl.append('ssl verify') %}
+{%-       set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
+{%-       if slave_instance['ssl_proxy_verify'] %}
+{%-         if path_to_ssl_proxy_ca_crt %}
+{%-           do ssl.append('required ca-file %s' % (path_to_ssl_proxy_ca_crt,)) %}
+{%-         else %}
+{#-         Backend SSL shall be verified, but not CA provided, disallow connection #}
+{#-         Simply dropping hostname from the dict will result with ignoring it... #}
+{%-         do info_dict.__setitem__('hostname', '') %}
+{%-         endif %}
+{%-       else %}
+{%-         do ssl.append('none') %}
+{%-       endif %}
+{%-       set ssl = ' '.join(ssl) %}
+{%-     else %}
+{%-       set ssl = '' %}
+{%-     endif %}
+
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     set hostname = info_dict['hostname'] %}
+{%-     set port = info_dict['port'] %}
+{%-     set path = info_dict['path'].rstrip('/') %}
+{%-     if hostname and port %}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+  server backend {{ hostname }}:{{ port }} {{ ssl }}
+{%-       if path %}
+  http-request set-path {{ path }}%[path]
+{%-       endif %}
+{%-     endif %}
+{%-   endfor %}
+{%- endfor %}
