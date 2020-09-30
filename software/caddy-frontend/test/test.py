@@ -307,12 +307,13 @@ class TestDataMixin(object):
       'trafficserver/.diags.log.meta',
       'trafficserver/.manager.log.meta',
       'trafficserver/.squid.log.meta',
-      'trafficserver/.traffic.out.meta',
       'trafficserver/diags.log',
       'trafficserver/squid.log',
       # not important, appears sometimes
       'trafficserver/.error.log.meta',
       'trafficserver/error.log',
+      'trafficserver/.traffic.out.meta',
+      'trafficserver/traffic.out',
     ])
 
   def test_file_list_run(self):
