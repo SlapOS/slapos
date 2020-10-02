@@ -23,6 +23,7 @@ parts =
   promise-caddy-frontend-v4-http
   promise-caddy-frontend-v6-https
   promise-caddy-frontend-v6-http
+  promise-logrotate-setup
 
   trafficserver-launcher
   trafficserver-reload
@@ -32,7 +33,7 @@ parts =
   trafficserver-plugin-config
   trafficserver-storage-config
   trafficserver-ip-allow-config
-  trafficserver-logging-config
+  trafficserver-logging-yaml
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
@@ -459,6 +460,7 @@ rotate-num = ${configuration:rotate-num}
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${frontend-caddy-lazy-graceful:rendered} &
+delaycompress =
 
 #################
 # Trafficserver
@@ -482,8 +484,6 @@ plugin-config =
 ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 cache-path = ${trafficserver-directory:cache-path}
 disk-cache-size = ${configuration:disk-cache-size}
-synthetic-port = ${configuration:trafficserver-synthetic-port}
-mgmt-port = ${configuration:trafficserver-mgmt-port}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
@@ -495,7 +495,7 @@ target = ${trafficserver-directory:configuration}
 
 [trafficserver-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_cop
+command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_manager
 wrapper-path = ${trafficserver-variable:wrapper-path}
 environment = TS_ROOT=${buildout:directory}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -529,10 +529,10 @@ extra-context =
 template = {{ parameter_dict['template_trafficserver_storage_config'] }}
 filename = storage.config
 
-[trafficserver-logging-config]
+[trafficserver-logging-yaml]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_logging_config'] }}
-filename = logging.config
+template = {{ parameter_dict['template_trafficserver_logging_yaml'] }}
+filename = logging.yaml
 
 [trafficserver-remap-config]
 <= trafficserver-jinja2-template-base
@@ -768,6 +768,7 @@ rotate-num = ${configuration:rotate-num}
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${backend-haproxy-rsyslogd-lazy-graceful:rendered} &
+delaycompress =
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
@@ -1003,6 +1004,14 @@ name = slave-introspection
 log = ${caddy-configuration:slave-introspection-access-log} ${caddy-configuration:slave-introspection-error-log}
 rotate-num = ${configuration:rotate-num}
 post = kill -USR1 $(cat ${caddy-configuration:slave-introspection-pid-file})
+delaycompress =
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
+  ${logrotate:wrapper-path} -d
 
 [configuration]
 {%- for key, value in instance_parameter.iteritems() -%}

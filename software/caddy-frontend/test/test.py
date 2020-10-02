@@ -307,12 +307,13 @@ class TestDataMixin(object):
       'trafficserver/.diags.log.meta',
       'trafficserver/.manager.log.meta',
       'trafficserver/.squid.log.meta',
-      'trafficserver/.traffic.out.meta',
       'trafficserver/diags.log',
       'trafficserver/squid.log',
       # not important, appears sometimes
       'trafficserver/.error.log.meta',
       'trafficserver/error.log',
+      'trafficserver/.traffic.out.meta',
+      'trafficserver/traffic.out',
     ])
 
   def test_file_list_run(self):
@@ -1628,9 +1629,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   <title>Instance not found</title>
 </head>
 <body>
-<h1>This instance has not been found.</h1>
-<p>If this error persists, please check your instance URL and status on S"""
-      """lapOS Master.</p>
+<h1>The instance has not been found</h1>
+<p>The reasons of this could be:</p>
+<ul>
+<li>the instance does not exists or the URL is incorrect
+<ul>
+<li>in this case please check the URL
+</ul>
+<li>the instance has been stopped
+<ul>
+<li>in this case please check in the SlapOS Master if the instance is """
+      """started or wait a bit for it to start
+</ul>
+</ul>
 </body>
 </html>
 """,
@@ -1671,6 +1682,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       backend_header_dict['x-forwarded-proto'],
       proto
     )
+
+  def test_telemetry_disabled(self):
+    # here we trust that telemetry not present in error log means it was
+    # really disabled
+    error_log_file = glob.glob(
+      os.path.join(
+       self.instance_path, '*', 'var', 'log', 'frontend-error.log'))[0]
+    with open(error_log_file) as fh:
+      self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
 
   def test_url(self):
     parameter_dict = self.assertSlaveBase('Url')
@@ -3676,7 +3696,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
     )
 
   def test_enable_cache_server_alias(self):
@@ -3718,7 +3738,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
     )
 
     result = fakeHTTPResult(
@@ -3780,7 +3800,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
     )
 
     # check stale-if-error support (assumes stale-while-revalidate is same)
@@ -3832,11 +3852,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertNotEqual(via, None)
       self.assertRegexpMatches(
         via,
-        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
       )
     finally:
       self.startServerProcess()
     # END: check stale-if-error support
+    # BEGIN: Check that squid.log is correctly filled in
+    ats_log_file_list = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
+      ))
+    if len(ats_log_file_list) == 1:
+      ats_log_file = ats_log_file_list[0]
+    direct_pattern = re.compile(
+      r'.*TCP_MISS/200 .*test-path/deeper.*enablecache.example.com'
+      '.* - DIRECT*')
+    refresh_pattern = re.compile(
+      r'.*TCP_REFRESH_MISS/200 .*test-path/deeper.*enablecache.example.com'
+      '.* - DIRECT*')
+    # ATS needs some time to flush logs
+    timeout = 5
+    b = time.time()
+    while True:
+      direct_pattern_match = 0
+      refresh_pattern_match = 0
+      if (time.time() - b) > timeout:
+        break
+      with open(ats_log_file) as fh:
+        for line in fh.readlines():
+          if direct_pattern.match(line):
+            direct_pattern_match += 1
+          if refresh_pattern.match(line):
+            refresh_pattern_match += 1
+      if direct_pattern_match > 0 and refresh_pattern_match:
+        break
+      time.sleep(0.1)
+
+    with open(ats_log_file) as fh:
+      ats_log = fh.read()
+    self.assertRegexpMatches(ats_log, direct_pattern)
+    self.assertRegexpMatches(ats_log, refresh_pattern)
+    # END: Check that squid.log is correctly filled in
 
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3957,7 +4013,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
     )
 
     try:
@@ -4004,7 +4060,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/7.1.11\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
     )
 
   def test_enable_http2_false(self):
