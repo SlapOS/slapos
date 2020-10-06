@@ -247,11 +247,14 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template = inline:
   #!${python:location}/bin/python
-  import sys
   import os
+  import sys
+  import time
   args = sys.argv[1:]
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
+  # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
+  else: time.sleep(1)
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
 
 [slapos-standalone-activate]
