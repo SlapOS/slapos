@@ -54,7 +54,7 @@ template = inline:
     root $${directory:frontend-static}
     browse
     proxy / $${theia-instance:base-url} {
-      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename}
+      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
     }
     proxy /services $${theia-instance:base-url} {
       websocket
@@ -95,11 +95,20 @@ command =
   ln -s ${jetbrains-mono-fonts:location} $${:location}/jetbrains-mono
 stop-on-error = true
 
+[frontend-instance-logo]
+recipe = plone.recipe.command
+filename = logo.png
+command =
+  ln -s ${logo.png:output} $${directory:frontend-static}/$${:filename}
+stop-on-error = true
+
 [frontend-instance-slapos.css]
 recipe = slapos.recipe.template:jinja2
 template = ${slapos.css.in:output}
 rendered = $${directory:frontend-static}/$${:folder-name}/slapos.css
 folder-name = css
+context =
+  key logo_image frontend-instance-logo:filename
 
 [frontend-reload]
 recipe = slapos.cookbook:wrapper

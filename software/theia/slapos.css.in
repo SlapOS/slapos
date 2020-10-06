@@ -1,3 +1,10 @@
+/* logo */
+.theia-icon {
+    background-image: url('/{{ logo_image }}');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
 /* Source Code Pro */
 @font-face{
     font-family: 'Source Code Pro';
