@@ -58,8 +58,9 @@ output = $${directory:data}/ice-servers.json
 recipe = collective.recipe.template
 input = inline:{
     "public":true,
-    "op":[{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
-    "presenter":[{}],
+    "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
+    "presenter": [],
+    "other": [{"username": "", "password": "nexedi"}],
     "max-users":100
   }
 output = $${directory:groups}/public.json
@@ -68,7 +69,7 @@ output = $${directory:groups}/public.json
 recipe = plone.recipe.command
 static = $${directory:srv}/static
 command =
-  cp -ax ${sfu-repository:location}/static $${:static}
+  cp -ax ${sfu-repository:location}/static $${directory:srv}
   echo "$${admin-password:username}:$${admin-password:passwd}" > $${directory:data}/passwd
 update-command = $${:command}
 stop-on-error = true
