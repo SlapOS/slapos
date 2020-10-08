@@ -1,4 +1,4 @@
-{%- if slap_software_type == software_type -%}
+{%- if instance_parameter['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 # KeDiFa instance profile
 [buildout]
@@ -311,4 +311,4 @@ name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
 
-{%- endif -%} {# if slap_software_type in software_type #}
+{%- endif -%} {# if instance_parameter['slap-software-type'] == software_type #}
