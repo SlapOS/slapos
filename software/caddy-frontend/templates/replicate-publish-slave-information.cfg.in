@@ -75,7 +75,7 @@ log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {% endfor %}
 
 [buildout]
-extends = {{ common_profile }}
+extends = {{ profile_common }}
 parts =
 {% for part in part_list %}
 {{ '  %s' % part }}

@@ -3,9 +3,9 @@
 # KeDiFa instance profile
 [buildout]
 extends =
-  {{ parameter_dict['common_profile'] }}
-  {{ parameter_dict['monitor_template'] }}
-  {{ parameter_dict['logrotate_base_instance'] }}
+  {{ parameter_dict['profile_common'] }}
+  {{ parameter_dict['profile_monitor'] }}
+  {{ parameter_dict['profile_logrotate_base'] }}
 
 parts =
   monitor-base
@@ -195,7 +195,7 @@ slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
 context =
     import json_module json
-    raw common_profile {{ parameter_dict['common_profile'] }}
+    raw profile_common {{ parameter_dict['profile_common'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory
