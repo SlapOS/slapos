@@ -1,4 +1,4 @@
-{% if slap_software_type in software_type %}
+{% if instance_parameter['slap-software-type'] in software_type %}
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
 {#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
@@ -20,18 +20,18 @@ rendered = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    raw profile_common {{ profile_common }}
+    raw profile_common {{ parameter_dict['profile_common'] }}
     ${:extra-context}
 
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
-{% if slap_software_type == "replicate" %}
+{% if instance_parameter['slap-software-type'] == "replicate" %}
 {%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
-{% elif slap_software_type in ['default', 'RootSoftwareInstance'] %}
+{% elif instance_parameter['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
 {%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% else %}
-{%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) %}
+{%   set frontend_type = "%s%s" % (single_type_key, instance_parameter['slap-software-type']) %}
 {% endif %}
 {% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
 {% set slave_list_name = 'extra_slave_instance_list' %}
@@ -142,7 +142,7 @@ context =
 {%   for url_key in ['url', 'https-url'] %}
 {%     if url_key in slave %}
 {%       set url = (slave[url_key] or '').strip() %}
-{%       if subprocess_module.call([caddy_backend_url_validator, url]) == 1 or not validators.url(url) %}
+{%       if subprocess_module.call([parameter_dict['caddy_backend_url_validator'], url]) == 1 or not validators.url(url) %}
 {%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
 {%       elif url != slave[url_key] %}
 {%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
@@ -375,7 +375,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
-template = {{ template_publish_slave_information }}
+template = {{ parameter_dict['profile_replicate_publish_slave_information'] }}
 filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -773,8 +773,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [buildout]
 extends =
-  {{ profile_common }}
-  {{ profile_monitor2 }}
+  {{ parameter_dict['profile_common'] }}
+  {{ parameter_dict['profile_monitor2'] }}
 parts =
   monitor-base
   publish-slave-information
