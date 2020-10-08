@@ -3,9 +3,9 @@
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
 extends =
-  {{ parameter_dict['common_profile'] }}
-  {{ parameter_dict['monitor_template'] }}
-  {{ parameter_dict['logrotate_base_instance'] }}
+  {{ parameter_dict['profile_common'] }}
+  {{ parameter_dict['profile_monitor'] }}
+  {{ parameter_dict['profile_logrotate_base'] }}
 
 parts =
   directory
@@ -98,8 +98,8 @@ slave-introspection-var = ${:var}/slave-introspection
 
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
-single-default = ${dynamic-custom-personal-template-slave-list:rendered}
-single-custom-personal = ${dynamic-custom-personal-template-slave-list:rendered}
+single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
+single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
 
 [frontend-configuration]
 template-log-access = {{ parameter_dict['template_log_access'] }}
@@ -168,9 +168,9 @@ slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
 slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
 context =
     import json_module json
-    raw common_profile {{ parameter_dict['common_profile'] }}
-    raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
-    raw monitor_template {{ parameter_dict['monitor_template'] }}
+    raw profile_common {{ parameter_dict['profile_common'] }}
+    raw profile_logrotate_base {{ parameter_dict['profile_logrotate_base'] }}
+    raw profile_monitor {{ parameter_dict['profile_monitor'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory
@@ -277,10 +277,10 @@ stop-on-error = True
      template_csr='${backend-client-login-csr:template-csr}'
 )}}
 
-[dynamic-custom-personal-template-slave-list]
+[dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
-template = {{ parameter_dict['template_slave_list'] }}
+template = {{ parameter_dict['profile_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
 slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
 extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
