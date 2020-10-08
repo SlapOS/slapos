@@ -20,7 +20,7 @@ rendered = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    raw common_profile {{ common_profile }}
+    raw profile_common {{ profile_common }}
     ${:extra-context}
 
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
@@ -773,8 +773,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [buildout]
 extends =
-  {{ common_profile }}
-  {{ template_monitor }}
+  {{ profile_common }}
+  {{ profile_monitor2 }}
 parts =
   monitor-base
   publish-slave-information
