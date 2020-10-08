@@ -17,6 +17,7 @@ context =
     key slapparameter_dict instance-parameter:configuration
     key slave_instance_list instance-parameter:slave-instance-list
     section instance_parameter instance-parameter
+    section parameter_dict dynamic-parameter-section
     ${:extra-context}
 
 [switch-softwaretype]
@@ -41,7 +42,6 @@ filename = instance-caddy-frontend.cfg
 extensions = jinja2.ext.do
 extra-context =
   import furl_module furl
-  section parameter_dict dynamic-parameter-section
   raw software_type single-custom-personal
 caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
 import-list =
@@ -64,7 +64,6 @@ extra-context =
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
     raw profile_monitor2 {{ template_frontend_parameter_dict['profile_monitor2'] }}
     raw profile_common {{ template_frontend_parameter_dict['profile_common'] }}
-    section parameter_dict dynamic-parameter-section
 caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
@@ -75,7 +74,6 @@ template = {{ template_frontend_parameter_dict['profile_kedifa'] }}
 filename = instance-kedifa.cfg
 extensions = jinja2.ext.do
 extra-context =
-  section parameter_dict dynamic-parameter-section
   raw software_type kedifa
 caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
 import-list =
