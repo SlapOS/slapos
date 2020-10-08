@@ -13,7 +13,6 @@ rendered = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    key slap_software_type instance-parameter:slap-software-type
     key slapparameter_dict instance-parameter:configuration
     key slave_instance_list instance-parameter:slave-instance-list
     section instance_parameter instance-parameter
@@ -58,12 +57,8 @@ extra-context =
     import functools_module functools
     import validators validators
     key cluster_identification instance-parameter:root-instance-title
-    raw caddy_backend_url_validator {{ template_frontend_parameter_dict['caddy_backend_url_validator'] }}
-    raw template_publish_slave_information {{ template_frontend_parameter_dict['profile_replicate_publish_slave_information'] }}
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
-    raw profile_monitor2 {{ template_frontend_parameter_dict['profile_monitor2'] }}
-    raw profile_common {{ template_frontend_parameter_dict['profile_common'] }}
 caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
