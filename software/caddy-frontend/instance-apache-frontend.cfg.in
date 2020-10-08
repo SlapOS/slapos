@@ -1,4 +1,4 @@
-{%- if slap_software_type == software_type -%}
+{%- if instance_parameter['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
@@ -1036,4 +1036,4 @@ config-command =
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor -%}
-{%- endif -%} {# if slap_software_type == software_type #}
+{%- endif -%} {# if instance_parameter['slap-software-type'] == software_type #}
