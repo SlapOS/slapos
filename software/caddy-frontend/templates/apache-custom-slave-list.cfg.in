@@ -30,7 +30,7 @@ recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
 extra-context =
 context =
-    raw common_profile {{ common_profile }}
+    raw profile_common {{ profile_common }}
     ${:extra-context}
 
 # empty sections if no slaves are available
@@ -479,9 +479,9 @@ command =
 
 [buildout]
 extends =
-  {{ common_profile }}
-  {{ logrotate_base_instance }}
-  {{ monitor_template }}
+  {{ profile_common }}
+  {{ profile_logrotate_base }}
+  {{ profile_monitor }}
 
 parts +=
     kedifa-updater
