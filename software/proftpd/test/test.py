@@ -27,9 +27,9 @@
 
 import os
 import shutil
-import urlparse
+from urllib.parse import urlparse
 import tempfile
-import StringIO
+import io
 import subprocess
 
 import pysftp
@@ -58,7 +58,7 @@ class ProFTPdTestCase(SlapOSInstanceTestCase):
     cnopts.hostkeys = None
 
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    sftp_url = urlparse.urlparse(parameter_dict['url'])
+    sftp_url = urlparse(parameter_dict['url'])
 
     return pysftp.Connection(
         hostname or sftp_url.hostname,
@@ -95,7 +95,7 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_simple_sftp_session(self):
     with self._getConnection() as sftp:
       # put a file
-      with tempfile.NamedTemporaryFile() as f:
+      with tempfile.NamedTemporaryFile(mode='w') as f:
         f.write("Hello FTP !")
         f.flush()
         sftp.put(f.name, remotepath='testfile')
@@ -117,14 +117,14 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_uploaded_file_not_visible_until_fully_uploaded(self):
     test_self = self
 
-    class PartialFile(StringIO.StringIO):
+    class PartialFile(io.StringIO):
       def read(self, *args):
         # file is not visible yet
         test_self.assertNotIn('destination', os.listdir(test_self.upload_dir))
         # it's just a hidden file
         test_self.assertEqual(
             ['.in.destination.'], os.listdir(test_self.upload_dir))
-        return StringIO.StringIO.read(self, *args)
+        return super().read(*args)
 
     with self._getConnection() as sftp:
       sftp.sftp_client.putfo(PartialFile("content"), "destination")
@@ -136,7 +136,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     test_self = self
     with self._getConnection() as sftp:
 
-      class ErrorFile(StringIO.StringIO):
+      class ErrorFile(io.StringIO):
         def read(self, *args):
           # at this point, file is already created on server
           test_self.assertEqual(
@@ -152,17 +152,17 @@ class TestSFTPOperations(ProFTPdTestCase):
 
   def test_user_cannot_escape_home(self):
     with self._getConnection() as sftp:
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('..')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('/')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('/tmp/')
 
 
 class TestUserManagement(ProFTPdTestCase):
   def test_user_can_be_added_from_script(self):
-    with self.assertRaisesRegexp(AuthenticationException,
+    with self.assertRaisesRegex(AuthenticationException,
                                  'Authentication failed'):
       self._getConnection(username='bob', password='secret')
 
@@ -177,12 +177,12 @@ class TestBan(ProFTPdTestCase):
   def test_client_are_banned_after_5_wrong_passwords(self):
     # Simulate failed 5 login attempts
     for i in range(5):
-      with self.assertRaisesRegexp(AuthenticationException,
+      with self.assertRaisesRegex(AuthenticationException,
                                    'Authentication failed'):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
-    with self.assertRaisesRegexp(SSHException, 'Connection reset by peer'):
+    with self.assertRaisesRegex(SSHException, 'Connection reset by peer'):
       self._getConnection()
 
     # ban event is logged
@@ -190,7 +190,7 @@ class TestBan(ProFTPdTestCase):
                            'var',
                            'log',
                            'proftpd-ban.log')) as ban_log_file:
-      self.assertRegexpMatches(
+      self.assertRegex(
           ban_log_file.readlines()[-1],
           'login from host .* denied due to host ban')
 
@@ -203,7 +203,7 @@ class TestInstanceParameterPort(ProFTPdTestCase):
 
   def test_instance_parameter_port(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    sftp_url = urlparse.urlparse(parameter_dict['url'])
+    sftp_url = urlparse(parameter_dict['url'])
     self.assertEqual(self.free_port, sftp_url.port)
     self.assertTrue(self._getConnection())
 
