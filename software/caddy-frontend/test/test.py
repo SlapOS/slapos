@@ -358,7 +358,7 @@ class TestDataMixin(object):
         [backend_haproxy_wrapper_path] + hash_file_list
       )
     for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
       rejected_slave_pem_path = os.path.join(
         self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
