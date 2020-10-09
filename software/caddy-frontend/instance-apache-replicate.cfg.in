@@ -230,7 +230,7 @@ config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-infor
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
-config-cluster-identification = {{ cluster_identification }}
+config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 {#   Do not send additional parameters for destroyed nodes #}
 {%   if state != 'destroyed' %}
 {%     set slave_configuration_dict = slapparameter_dict %}
@@ -327,7 +327,7 @@ config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
 {%-   endif %}
 {%- endfor %}
 config-slave-list = {{ dumps(authorized_slave_list) }}
-config-cluster-identification = {{ cluster_identification }}
+config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 {% set software_url_key = "-kedifa-software-release-url" %}
 {% if slapparameter_dict.has_key(software_url_key) %}
@@ -418,7 +418,7 @@ csr_id = ${directory:aikc}/csr_id
 
 [aikc-user-csr]
 recipe = plone.recipe.command
-organization = {{ cluster_identification }}
+organization = {{ instance_parameter_dict['root-instance-title'] }}
 organizational_unit = Automatic Internal Kedifa Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
@@ -550,7 +550,7 @@ csr_id = ${directory:aibcc}/csr_id
 
 [aibcc-user-csr]
 recipe = plone.recipe.command
-organization = {{ cluster_identification }}
+organization = {{ instance_parameter_dict['root-instance-title'] }}
 organizational_unit = Automatic Sign Backend Client Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
