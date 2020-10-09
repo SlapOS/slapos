@@ -10,6 +10,7 @@ recipe = caddyprofiledeps
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
 extra-context =
 context =
     import json_module json
@@ -18,6 +19,9 @@ context =
     section instance_parameter_dict instance-parameter
     section software_parameter_dict software-parameter-section
     ${:extra-context}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
+import-list =
+  file caucase :caucase-jinja2-library
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
@@ -38,20 +42,15 @@ kedifa = ${dynamic-profile-kedifa:rendered}
 < = jinja2-template-base
 template = {{ software_parameter_dict['profile_caddy_frontend'] }}
 filename = instance-caddy-frontend.cfg
-extensions = jinja2.ext.do
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
-caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
-import-list =
-  file caucase :caucase-jinja2-library
 
 [dynamic-profile-caddy-replicate]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
 template = {{ software_parameter_dict['profile_caddy_replicate'] }}
 filename = instance-caddy-replicate.cfg
-extensions = jinja2.ext.do
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
@@ -59,20 +58,13 @@ extra-context =
     key cluster_identification instance-parameter:root-instance-title
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
-caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
-import-list =
-  file caucase :caucase-jinja2-library
 
 [dynamic-profile-kedifa]
 < = jinja2-template-base
 template = {{ software_parameter_dict['profile_kedifa'] }}
 filename = instance-kedifa.cfg
-extensions = jinja2.ext.do
 extra-context =
   raw software_type kedifa
-caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
-import-list =
-  file caucase :caucase-jinja2-library
 
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.
