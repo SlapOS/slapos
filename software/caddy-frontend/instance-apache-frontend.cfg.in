@@ -282,11 +282,7 @@ stop-on-error = True
 depends = ${caddyprofiledeps:recipe}
 template = {{ parameter_dict['profile_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
-slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
-extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
-local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
-local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
 software_type = single-custom-personal
 bin_directory = {{ parameter_dict['bin_directory'] }}
 caddy_executable = {{ parameter_dict['caddy'] }}
@@ -300,46 +296,32 @@ extra-context =
     import urlparse_module urlparse
     import furl_module furl
     key caddy_executable :caddy_executable
-    key http_port configuration:plain_http_port
-    key https_port configuration:port
-    key public_ipv4 configuration:public-ipv4
-    key slave_instance_list :slave_instance_list
-    key extra_slave_instance_list :extra_slave_instance_list
     key master_key_download_url :master_key_download_url
     key autocert caddy-directory:autocert
-    key master_certificate caddy-configuration:master-certificate
     key caddy_log_directory caddy-directory:slave-log
     key expose_csr_id_organization :organization
     key expose_csr_id_organizational_unit :organizational-unit
-    key local_ipv4 :local_ipv4
-    key local_ipv6 :local_ipv6
     key global_ipv6 slap-network-information:global-ipv6
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
-    key frontend_graceful_reload caddy-configuration:frontend-graceful-command
-    section frontend_configuration frontend-configuration
-    section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key bin_directory :bin_directory
-    key enable_http2_by_default configuration:enable-http2-by-default
-    key global_disable_http2 configuration:global-disable-http2
-    key ciphers configuration:ciphers
-    key access_log caddy-configuration:access-log
-    key error_log caddy-configuration:error-log
     key sixtunnel_executable :sixtunnel_executable
-    key not_found_file caddy-configuration:not-found-file
     key custom_ssl_directory caddy-directory:custom-ssl-directory
-    section kedifa_configuration kedifa-configuration
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
-    section backend_haproxy_configuration backend-haproxy-configuration
-## full configuration
+## Configuration passed by section
     section configuration configuration
+    section backend_haproxy_configuration backend-haproxy-configuration
+    section instance_parameter instance-parameter
+    section frontend_configuration frontend-configuration
+    section caddy_configuration caddy-configuration
+    section kedifa_configuration kedifa-configuration
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
@@ -1034,6 +1016,16 @@ config-command =
 {%- for key, value in instance_parameter.iteritems() -%}
 {%-   if key.startswith('configuration.') %}
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
+{%-   endif -%}
+{%- endfor %}
+
+[instance-parameter]
+{#- There are dangerous keys like recipe, etc #}
+{#- XXX: Some other approach would be useful #}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- for key, value in instance_parameter.iteritems() -%}
+{%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
+{{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor -%}
 {%- endif -%} {# if instance_parameter['slap-software-type'] == software_type #}
