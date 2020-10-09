@@ -164,7 +164,7 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-slapparameter_dict = {{ dumps(instance_parameter_dict['configuration']) }}
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
