@@ -4,16 +4,17 @@
 {%- set backend_slave_list = [] %}
 {%- set part_list = [] %}
 {%- set cache_port = caddy_configuration.get('cache-port') %}
-{%- set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
-{%- set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
-{%- set backend_haproxy_http_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['http-port']) %}
-{%- set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['https-port']) %}
+{%- set cache_access = "http://%s:%s" % (instance_parameter['ipv4-random'], cache_port) %}
+{%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter['ipv4-random'], cache_port) %}
+{%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter['ipv4-random'], backend_haproxy_configuration['http-port']) %}
+{%- set backend_haproxy_https_url = 'http://%s:%s' % (instance_parameter['ipv4-random'], backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
+{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter['ipv4-random'], 'http_port': http_port, 'https_port': https_port} %}
 {%- set slave_log_dict = {} %}
-{%- if extra_slave_instance_list %}
-{%-   set slave_instance_information_list = [] %}
-{%-   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) %}
+{%- set slave_instance_information_list = [] %}
+{%- set slave_instance_list = instance_parameter['slave_instance_list'] %}
+{%- if configuration['extra_slave_instance_list'] %}
+{%-   set slave_instance_list = slave_instance_list + json_module.loads(configuration['extra_slave_instance_list']) %}
 {%- endif %}
 {%- if master_key_download_url %}
 {%-   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
@@ -235,7 +236,7 @@ extra-context =
 certificate = {{ certificate }}
 https_port = {{ dumps('' ~ https_port) }}
 http_port = {{ dumps('' ~ http_port) }}
-local_ipv4 = {{ dumps('' ~ local_ipv4) }}
+local_ipv4 = {{ dumps('' ~ instance_parameter['ipv4-random']) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps('' ~ value) }}
@@ -283,7 +284,7 @@ config-frequency = 720
 
 {#-   ###############################  #}
 {#-   Publish Slave Information        #}
-{%-   if not extra_slave_instance_list %}
+{%-   if not configuration['extra_slave_instance_list'] %}
 {%-     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') %}
 {%-     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
@@ -333,7 +334,7 @@ ipv6-port = {{ https_port }}
 [caddy-log-access-parameters]
 caddy_log_directory = {{ dumps(caddy_log_directory) }}
 caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
-local_ipv4 = {{ dumps(local_ipv4) }}
+local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 global_ipv6 = {{ dumps(global_ipv6) }}
 https_port = {{ dumps(https_port) }}
 http_port = {{ dumps(http_port) }}
@@ -352,7 +353,7 @@ extra-context =
     section parameter_dict caddy-log-access-parameters
 
 [slave-introspection-parameters]
-local-ipv4 = {{ dumps(local_ipv4) }}
+local-ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
@@ -385,8 +386,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [publish-caddy-information]
 recipe = slapos.cookbook:publish.serialised
 public-ipv4 = {{ public_ipv4 }}
-private-ipv4 = {{ local_ipv4 }}
-{%- if extra_slave_instance_list %}
+private-ipv4 = {{ instance_parameter['ipv4-random'] }}
+{%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {%- endif %}
@@ -452,7 +453,7 @@ extra-context =
 {%- for key, value in backend_haproxy_configuration.items() %}
 {{ key }} = {{ value }}
 {%- endfor %}
-local-ipv4 = {{ dumps('' ~ local_ipv4) }}
+local-ipv4 = {{ dumps('' ~ instance_parameter['ipv4-random']) }}
 global-ipv6 = ${slap-network-information:global-ipv6}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
