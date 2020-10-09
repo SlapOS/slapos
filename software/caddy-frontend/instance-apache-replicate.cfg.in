@@ -92,7 +92,7 @@ context =
 {% set rejected_slave_title_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
-{% for slave in sorted(slave_instance_list) %}
+{% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
 {%   set slave_error_list = [] %}
 {%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
@@ -260,7 +260,7 @@ sla-{{ parameter }} = {{ value }}
 <= monitor-publish
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
-slave-amount = {{ slave_instance_list | length }}
+slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
@@ -365,7 +365,7 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 
 [active-slave-instance]
 {% set active_slave_instance_list = [] %}
-{% for slave_instance in slave_instance_list %}
+{% for slave_instance in instance_parameter_dict['slave-instance-list'] %}
 {# Provide a list of slave titles send by master, in order to filter out already destroyed slaves #}
 {# Note: This functionality is not yet covered by tests, please modify with care #}
 {%   do active_slave_instance_list.append(slave_instance['slave_reference']) %}
