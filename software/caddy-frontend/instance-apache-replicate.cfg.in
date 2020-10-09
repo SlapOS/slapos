@@ -399,6 +399,8 @@ backup = ${:srv}/backup
 # CAUCASE directories
 caucased = ${:srv}/caucased
 backup-caucased = ${:backup}/caucased
+# NGINX
+rejected-var = ${:var}/rejected-nginx
 
 {% if aikc_enabled %}
 [directory]
@@ -692,13 +694,8 @@ port = 14455
 directory = ${rejected-slave-json:directory}
 url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['caddy'] }}
-  -conf ${rejected-slave-template:rendered}
-  -log stderr
-  -http2=true
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-  -root ${:directory}
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${rejected-slave-template:rendered}
 
 wrapper-path = ${directory:service}/rejected-slave-publish
 hash-existing-files =
@@ -728,18 +725,52 @@ storage-path = ${directory:etc}/.rejected-slave.passwd
 bytes = 8
 user = admin
 
+[rejected-slave-htpasswd]
+recipe = plone.recipe.command
+stop-on-error = True
+file = ${directory:var}/nginx-rejected.htpasswd
+command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slave-password:user} ${rejected-slave-password:passwd}
+update-command = ${:command}
+
 [rejected-slave-template]
 recipe = slapos.recipe.template:jinja2
+var = ${directory:rejected-var}
+pid = ${directory:var}/nginx-rejected.pid
 template = inline:
-  https://:${rejected-slave-publish-configuration:port}/ {
-    basicauth / ${rejected-slave-password:user} ${rejected-slave-password:passwd}
-    tls ${rejected-slave-certificate:certificate} ${rejected-slave-certificate:key}
-    bind ${rejected-slave-publish-configuration:ip}
-    log stderr
-    errors stderr
+  daemon off;
+  pid ${:pid};
+  error_log stderr;
+  events {
+  }
+  http {
+    include {{ software_parameter_dict['nginx_mime'] }};
+    server {
+      server_name_in_redirect off;
+      port_in_redirect off;
+      error_log stderr;
+      access_log /dev/null;
+      listen [${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port} ssl;
+      ssl_certificate ${rejected-slave-certificate:certificate};
+      ssl_certificate_key ${rejected-slave-certificate:certificate};
+      default_type application/octet-stream;
+      client_body_temp_path ${:var} 1 2;
+      proxy_temp_path ${:var} 1 2;
+      fastcgi_temp_path ${:var} 1 2;
+      uwsgi_temp_path ${:var} 1 2;
+      scgi_temp_path ${:var} 1 2;
+
+      location / {
+        alias ${rejected-slave-json:directory}/;
+        autoindex off;
+        sendfile on;
+        sendfile_max_chunk 1m;
+        auth_basic "Rejected slave template";
+        auth_basic_user_file ${rejected-slave-htpasswd:file};
+      }
+    }
   }
 
-rendered = ${directory:etc}/Caddyfile-rejected-slave
+rendered = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
