@@ -15,7 +15,6 @@ extra-context =
 context =
     import json_module json
     key slapparameter_dict instance-parameter:configuration
-    key slave_instance_list instance-parameter:slave-instance-list
     section instance_parameter_dict instance-parameter
     section software_parameter_dict software-parameter-section
     ${:extra-context}
