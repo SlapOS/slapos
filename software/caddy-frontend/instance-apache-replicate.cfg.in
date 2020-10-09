@@ -20,7 +20,7 @@ rendered = ${buildout:directory}/${:filename}
 extra-context =
 context =
     import json_module json
-    raw profile_common {{ parameter_dict['profile_common'] }}
+    raw profile_common {{ software_parameter_dict['profile_common'] }}
     ${:extra-context}
 
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
@@ -142,7 +142,7 @@ context =
 {%   for url_key in ['url', 'https-url'] %}
 {%     if url_key in slave %}
 {%       set url = (slave[url_key] or '').strip() %}
-{%       if subprocess_module.call([parameter_dict['caddy_backend_url_validator'], url]) == 1 or not validators.url(url) %}
+{%       if subprocess_module.call([software_parameter_dict['caddy_backend_url_validator'], url]) == 1 or not validators.url(url) %}
 {%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
 {%       elif url != slave[url_key] %}
 {%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
@@ -151,7 +151,7 @@ context =
 {%   endfor %}
 {%   if 'ssl_proxy_ca_crt' in slave %}
 {%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
-{%     set check_popen = popen([parameter_dict['openssl'], 'x509', '-noout']) %}
+{%     set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
 {%     do check_popen.communicate(ssl_proxy_ca_crt) %}
 {%     if check_popen.returncode != 0 %}
 {%       do slave_error_list.append('ssl_proxy_ca_crt is invalid') %}
@@ -167,8 +167,8 @@ context =
 {%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
 {%   endif %}
 {%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
-{%     set key_popen = popen([parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
-{%     set crt_popen = popen([parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
+{%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
+{%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
 {%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
 {%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
 {%     if not key_modulus or key_modulus != crt_modulus  %}
@@ -375,7 +375,7 @@ active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, so
 
 [dynamic-publish-slave-information]
 < = jinja2-template-base
-template = {{ parameter_dict['profile_replicate_publish_slave_information'] }}
+template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
 filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -422,7 +422,7 @@ organization = {{ cluster_identification }}
 organizational_unit = Automatic Internal Kedifa Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} req -new -sha256 \
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:csr}
@@ -438,8 +438,8 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aikc-config:caucase-url
-template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
-  exec {{ parameter_dict['bin_directory'] }}/caucase \
+template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+  exec {{ software_parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
 {% raw %}
   --ca-url {{ caucase_url }} \
@@ -472,7 +472,7 @@ command =
 {% do part_list.append('aikc-user-caucase-updater-promise') %}
 {{ caucase.updater(
      prefix='aikc-user-caucase-updater',
-     buildout_bin_directory=parameter_dict['bin_directory'],
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aikc-user-caucase-updater',
      url='${aikc-config:caucase-url}',
      data_dir='${directory:srv}/caucase-updater',
@@ -503,7 +503,7 @@ recipe = slapos.recipe.template:jinja2
 context =
   key csr_id_url request-{{ csr }}:connection-csr_id-url
   key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
-template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   test -f ${directory:aikc}/{{ csr }}-done && exit 0
   ${buildout:executable} ${aikc-check-certificate:rendered} \
 {# raw block to use context #}
@@ -512,7 +512,7 @@ template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
   """{{ csr_id_certificate }}"""
 {% endraw %}
   if [ $? = 0 ]; then
-    csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
+    csr_id=`{{ software_parameter_dict['curl'] }}/bin/curl -s -k -g \
 {% raw %}
   {{ csr_id_url }} \
 {% endraw %}
@@ -554,7 +554,7 @@ organization = {{ cluster_identification }}
 organizational_unit = Automatic Sign Backend Client Caucase CSR
 command =
   if [ ! -f ${:csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} req -new -sha256 \
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:csr}
@@ -570,8 +570,8 @@ stop-on-error = True
 recipe = slapos.recipe.template:jinja2
 context =
   key caucase_url aibcc-config:caucase-url
-template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
-  exec {{ parameter_dict['bin_directory'] }}/caucase \
+template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
+  exec {{ software_parameter_dict['bin_directory'] }}/caucase \
 {# raw block to use context #}
 {% raw %}
   --ca-url {{ caucase_url }} \
@@ -606,7 +606,7 @@ command =
 {% do part_list.append('aibcc-user-caucase-updater-promise') %}
 {{ caucase.updater(
      prefix='aibcc-user-caucase-updater',
-     buildout_bin_directory=parameter_dict['bin_directory'],
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aibcc-user-caucase-updater',
      url='${aibcc-config:caucase-url}',
      data_dir='${directory:srv}/caucase-updater',
@@ -636,7 +636,7 @@ recipe = slapos.recipe.template:jinja2
 context =
   key csr_id_url request-{{ csr }}:connection-backend-client-csr_id-url
   key csr_id_certificate request-{{ csr }}:connection-csr_id-certificate
-template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+template = inline:#!{{ software_parameter_dict['dash'] }}/bin/dash
   test -f ${directory:aibcc}/{{ csr }}-done && exit 0
   ${buildout:executable} ${aibcc-check-certificate:rendered} \
 {# raw block to use context #}
@@ -645,7 +645,7 @@ template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
   """{{ csr_id_certificate }}"""
 {% endraw %}
   if [ $? = 0 ]; then
-    csr_id=`{{ parameter_dict['curl'] }}/bin/curl -s -k -g \
+    csr_id=`{{ software_parameter_dict['curl'] }}/bin/curl -s -k -g \
 {% raw %}
   {{ csr_id_url }} \
 {% endraw %}
@@ -670,7 +670,7 @@ recipe = slapos.recipe.template:jinja2
 filename = rejected-slave.json
 directory = ${directory:promise-output}
 rendered = ${:directory}/${:filename}
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 {% if rejected_slave_title_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2, sort_keys=True)) }}
@@ -692,7 +692,7 @@ port = 14455
 directory = ${rejected-slave-json:directory}
 url = https://${rejected-slave-password:user}:${rejected-slave-password:passwd}@[${rejected-slave-publish-configuration:ip}]:${rejected-slave-publish-configuration:port}/${rejected-slave-json:filename}
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['caddy'] }}
+command-line = {{ software_parameter_dict['caddy'] }}
   -conf ${rejected-slave-template:rendered}
   -log stderr
   -http2=true
@@ -761,7 +761,7 @@ config-url = ${rejected-slave-publish:url}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {{  caucase.caucased(
       prefix='caucased-backend-client',
-      buildout_bin_directory=parameter_dict['bin_directory'],
+      buildout_bin_directory=software_parameter_dict['bin_directory'],
       caucased_path='${directory:service}/caucased-backend-client',
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
@@ -773,8 +773,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [buildout]
 extends =
-  {{ parameter_dict['profile_common'] }}
-  {{ parameter_dict['profile_monitor2'] }}
+  {{ software_parameter_dict['profile_common'] }}
+  {{ software_parameter_dict['profile_monitor2'] }}
 parts =
   monitor-base
   publish-slave-information
