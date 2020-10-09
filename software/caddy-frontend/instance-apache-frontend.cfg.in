@@ -175,7 +175,6 @@ template-empty = {{ software_parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
-caddy-location = {{ software_parameter_dict['caddy_location'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -318,8 +317,6 @@ template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }
 rendered = ${caddy-configuration:frontend-configuration}
 local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
 extra-context =
-    key httpd_home software-release-path:caddy-location
-    key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
     key master_certificate caddy-configuration:master-certificate
     key access_log caddy-configuration:access-log
@@ -376,8 +373,6 @@ command = ln -sf  {{ software_parameter_dict['template_not_found_html'] }} ${cad
 recipe = slapos.cookbook:mkdirectory
 document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/caddy-slave-conf.d/
-cache = ${directory:var}/cache
-mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
