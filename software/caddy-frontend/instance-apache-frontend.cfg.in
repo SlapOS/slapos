@@ -1,4 +1,4 @@
-{%- if instance_parameter['slap-software-type'] == software_type -%}
+{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
@@ -106,7 +106,7 @@ template-log-access = {{ software_parameter_dict['template_log_access'] }}
 log-access-configuration = ${directory:etc}/log-access.conf
 ip-access-certificate = ${self-signed-ip-access:certificate}
 caddy-directory = {{ software_parameter_dict['caddy_location'] }}
-caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
+caddy-ipv6 = {{ instance_parameter_dict['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
 nginx = {{ software_parameter_dict['nginx'] }}
 nginx_mime = {{ software_parameter_dict['nginx_mime'] }}
@@ -122,7 +122,7 @@ slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
-ipv4 = {{instance_parameter['ipv4-random']}}
+ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 stop-on-error = True
 command =
@@ -145,7 +145,7 @@ command =
 recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
-ipv4 = {{instance_parameter['ipv4-random']}}
+ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
 stop-on-error = True
 command =
@@ -156,7 +156,7 @@ command =
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ instance_parameter['configuration.frontend-name'] }}" \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
      -out ${:certificate}'
 
 [jinja2-template-base]
@@ -164,8 +164,8 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
-slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+slapparameter_dict = {{ dumps(instance_parameter_dict['configuration']) }}
+slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
     raw profile_common {{ software_parameter_dict['profile_common'] }}
@@ -195,7 +195,7 @@ crl = ${:d}/kedifa-login-crl.pem
 [kedifa-login-csr]
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
@@ -248,7 +248,7 @@ crl = ${:d}/crl.pem
 [backend-client-login-csr]
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
@@ -288,7 +288,7 @@ bin_directory = {{ software_parameter_dict['bin_directory'] }}
 caddy_executable = {{ software_parameter_dict['caddy'] }}
 sixtunnel_executable = {{ software_parameter_dict['sixtunnel'] }}/bin/6tunnel
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational-unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
@@ -318,7 +318,7 @@ extra-context =
 ## Configuration passed by section
     section configuration configuration
     section backend_haproxy_configuration backend-haproxy-configuration
-    section instance_parameter instance-parameter
+    section instance_parameter_dict instance-parameter-section
     section frontend_configuration frontend-configuration
     section caddy_configuration caddy-configuration
     section kedifa_configuration kedifa-configuration
@@ -328,7 +328,7 @@ extra-context =
 < = jinja2-template-base
 template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }}
 rendered = ${caddy-configuration:frontend-configuration}
-local_ipv4 =  {{ dumps(instance_parameter['ipv4-random']) }}
+local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
 extra-context =
     key httpd_home software-release-path:caddy-location
     key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
@@ -359,12 +359,12 @@ template = inline:
   -conf ${dynamic-caddy-frontend-template:rendered} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \
-{% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
+{% if instance_parameter_dict['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false \
 {% else %}
   -http2=true \
 {% endif %}
-  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s \
+  -grace {{ instance_parameter_dict['configuration.mpm-graceful-shutdown-timeout'] }}s \
   -disable-http-challenge \
   -disable-tls-alpn-challenge \
    "$@"
@@ -459,7 +459,7 @@ logrotate-backup = ${logrotate-directory:logrotate-backup}/trafficserver
 [trafficserver-variable]
 wrapper-path = ${directory:service}/trafficserver
 reload-path = ${directory:etc-run}/trafficserver-reload
-local-ip = {{ instance_parameter['ipv4-random'] }}
+local-ip = {{ instance_parameter_dict['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
 plugin-config =
@@ -524,7 +524,7 @@ template = inline:
   map / http://{{ ipv4 }}:{{ http_port }}
 {%- endraw %}
 extra-context =
-  raw ipv4 {{ instance_parameter['ipv4-random'] }}
+  raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
   key https_port backend-haproxy-configuration:https-port
   key http_port backend-haproxy-configuration:http-port
 
@@ -668,42 +668,42 @@ config-verification-script = ${promise-helper-last-configuration-state:rendered}
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_https.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_http.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_https.py
-config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_http.py
-config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
 module = check_port_listening
 name = backend_haproxy_http.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
 module = check_port_listening
 name = backend_haproxy_https.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
 
 [backend-haproxy-configuration]
@@ -849,8 +849,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list += 
@@ -881,7 +881,7 @@ extra-context =
 template = {{ software_parameter_dict['template_wrapper'] }}
 rendered = ${directory:bin}/monitor-caddy-server-status-wrapper
 mode = 0700
-command = {{ software_parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
+command = {{ software_parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter_dict['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
 extra-context =
   key content monitor-caddy-server-status-wrapper:command
 
@@ -912,20 +912,20 @@ extra-context =
 [slave-introspection-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Slave Introspection Frontend {{ instance_parameter['configuration.frontend-name'] }}
+name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
 return = domain secure_access
 
 [backend-haproxy-statistic-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Backend Haproxy Statistic Frontend {{ instance_parameter['configuration.frontend-name'] }}
+name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
 
@@ -994,7 +994,7 @@ context =
 <= monitor-promise-base
 module = check_port_listening
 name = slave_introspection_https.py
-config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
 
 [logrotate-entry-slave-introspection]
@@ -1013,19 +1013,19 @@ config-command =
   ${logrotate:wrapper-path} -d
 
 [configuration]
-{%- for key, value in instance_parameter.iteritems() -%}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
 {%-   if key.startswith('configuration.') %}
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor %}
 
-[instance-parameter]
+[instance-parameter-section]
 {#- There are dangerous keys like recipe, etc #}
 {#- XXX: Some other approach would be useful #}
 {%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
-{%- for key, value in instance_parameter.iteritems() -%}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
 {%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
 {{ key }} = {{ dumps(value) }}
 {%-   endif -%}
 {%- endfor -%}
-{%- endif -%} {# if instance_parameter['slap-software-type'] == software_type #}
+{%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}
