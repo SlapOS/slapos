@@ -179,7 +179,7 @@ bytes = 8
 recipe = plone.recipe.command
 stop-on-error = True
 file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
-command = {{ frontend_configuration['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} {{ '${' + slave_password_section + ':passwd}' }}
+command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} {{ '${' + slave_password_section + ':passwd}' }}
 update-command = ${:command}
 
 {#-   ################################################## #}
@@ -316,7 +316,7 @@ recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 wrapper-path = {{ directory['service'] }}/6tunnel-${:ipv6-port}
-command-line = {{ sixtunnel_executable }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+command-line = {{ software_parameter_dict['sixtunnel'] }}/bin/6tunnel -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
@@ -345,7 +345,7 @@ not_found_file = {{ dumps(caddy_configuration['not-found-file']) }}
 
 [caddy-log-access]
 < = jinja2-template-base
-template = {{frontend_configuration.get('template-log-access')}}
+template = {{ software_parameter_dict['template_log_access'] }}
 rendered = {{frontend_configuration.get('log-access-configuration')}}
 extra-context =
     section slave_log_directory slave-log-directory-dict
@@ -357,7 +357,7 @@ local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
-nginx-mime = {{ frontend_configuration['nginx_mime'] }}
+nginx-mime = {{ software_parameter_dict['nginx_mime'] }}
 access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
 error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
 var = {{ directory['slave-introspection-var'] }}
@@ -365,7 +365,7 @@ pid = {{ caddy_configuration['slave-introspection-pid-file'] }}
 
 [slave-introspection-config]
 <= jinja2-template-base
-template = {{ frontend_configuration['slave-introspection-template'] }}
+template = {{ software_parameter_dict['template_slave_introspection_httpd_nginx'] }}
 rendered = {{ frontend_configuration['slave-introspection-configuration'] }}
 extra-context =
     section slave_log_directory slave-log-directory-dict
@@ -374,7 +374,7 @@ extra-context =
 
 [slave-introspection]
 recipe = slapos.cookbook:wrapper
-command-line = {{ frontend_configuration['nginx'] }}
+command-line = {{ software_parameter_dict['nginx'] }}
   -c ${slave-introspection-config:rendered}
 
 wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
@@ -405,7 +405,7 @@ backend-haproxy-statistic-url = {{ statistic_url }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
-command-line = {{ kedifa_configuration['kedifa-updater'] }}
+command-line = {{ software_parameter_dict['kedifa-updater'] }}
   --server-ca-certificate {{ kedifa_configuration['ca-certificate'] }}
   --identity {{ kedifa_configuration['certificate'] }}
   --master-certificate {{ caddy_configuration['master-certificate'] }}
@@ -419,7 +419,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [kedifa-updater-run]
 recipe = plone.recipe.command
 stop-on-error = True
-command = {{ kedifa_configuration['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
+command = {{ software_parameter_dict['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
 update-command = ${:command}
 
 [kedifa-updater-mapping]
@@ -468,7 +468,7 @@ csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
-  {{ bin_directory }}/caucase \
+  {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ backend_haproxy_configuration['caucase-url'] }} \
     --ca-crt {{ backend_haproxy_configuration['cas-ca-certificate'] }} \
     --crl {{ backend_haproxy_configuration['crl'] }} \
@@ -512,7 +512,7 @@ csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
-  {{ bin_directory }}/caucase \
+  {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ kedifa_configuration['caucase-url'] }} \
     --ca-crt {{ kedifa_configuration['cas-ca-certificate'] }} \
     --crl {{ kedifa_configuration['crl'] }} \
@@ -564,7 +564,7 @@ depends =
   ${store-csr_id:command}
   ${store-backend-haproxy-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ caddy_executable }}
+command-line = {{ software_parameter_dict['caddy'] }}
   -conf ${expose-csr_id-template:rendered}
   -log ${expose-csr_id-configuration:error-log}
   -http2=true
