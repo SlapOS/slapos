@@ -1,4 +1,4 @@
-{% if instance_parameter['slap-software-type'] in software_type %}
+{% if instance_parameter_dict['slap-software-type'] in software_type %}
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
 {#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
@@ -11,8 +11,8 @@
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
 {% set frontend_monitor_httpd_base_port = 8410 %}
-{% set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
-{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_backend_client_port'] %}
+{% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
+{% set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
 {% set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -26,12 +26,12 @@ context =
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
-{% if instance_parameter['slap-software-type'] == "replicate" %}
+{% if instance_parameter_dict['slap-software-type'] == "replicate" %}
 {%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
-{% elif instance_parameter['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
+{% elif instance_parameter_dict['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
 {%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% else %}
-{%   set frontend_type = "%s%s" % (single_type_key, instance_parameter['slap-software-type']) %}
+{%   set frontend_type = "%s%s" % (single_type_key, instance_parameter_dict['slap-software-type']) %}
 {% endif %}
 {% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
 {% set slave_list_name = 'extra_slave_instance_list' %}
@@ -685,7 +685,7 @@ service = ${:etc}/service
 promise-output = ${:srv}/promise-output
 
 [rejected-slave-publish-configuration]
-ip = {{ instance_parameter['ipv6-random'] }}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
 port = 14455
 
 [rejected-slave-publish]
