@@ -1,5 +1,5 @@
 [buildout]
-extends = {{ template_frontend_parameter_dict['profile_common'] }}
+extends = {{ software_parameter_dict['profile_common'] }}
 
 parts =
   switch-softwaretype
@@ -16,7 +16,7 @@ context =
     key slapparameter_dict instance-parameter:configuration
     key slave_instance_list instance-parameter:slave-instance-list
     section instance_parameter instance-parameter
-    section parameter_dict dynamic-parameter-section
+    section software_parameter_dict software-parameter-section
     ${:extra-context}
 
 [switch-softwaretype]
@@ -29,27 +29,27 @@ single-custom-personal = ${dynamic-profile-caddy-frontend:rendered}
 replicate = ${dynamic-profile-caddy-replicate:rendered}
 kedifa = ${dynamic-profile-kedifa:rendered}
 
-[dynamic-parameter-section]
-{% for key,value in template_frontend_parameter_dict.iteritems() %}
+[software-parameter-section]
+{% for key,value in software_parameter_dict.iteritems() %}
 {{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
 [dynamic-profile-caddy-frontend]
 < = jinja2-template-base
-template = {{ template_frontend_parameter_dict['profile_caddy_frontend'] }}
+template = {{ software_parameter_dict['profile_caddy_frontend'] }}
 filename = instance-caddy-frontend.cfg
 extensions = jinja2.ext.do
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
-caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
 
 [dynamic-profile-caddy-replicate]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
-template = {{ template_frontend_parameter_dict['profile_caddy_replicate'] }}
+template = {{ software_parameter_dict['profile_caddy_replicate'] }}
 filename = instance-caddy-replicate.cfg
 extensions = jinja2.ext.do
 extra-context =
@@ -59,18 +59,18 @@ extra-context =
     key cluster_identification instance-parameter:root-instance-title
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
-caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
 
 [dynamic-profile-kedifa]
 < = jinja2-template-base
-template = {{ template_frontend_parameter_dict['profile_kedifa'] }}
+template = {{ software_parameter_dict['profile_kedifa'] }}
 filename = instance-kedifa.cfg
 extensions = jinja2.ext.do
 extra-context =
   raw software_type kedifa
-caucase-jinja2-library = {{ template_frontend_parameter_dict['caucase_jinja2_library'] }}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
 
