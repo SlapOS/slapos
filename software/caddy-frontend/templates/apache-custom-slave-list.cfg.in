@@ -4,21 +4,22 @@
 {%- set backend_slave_list = [] %}
 {%- set part_list = [] %}
 {%- set cache_port = caddy_configuration.get('cache-port') %}
-{%- set cache_access = "http://%s:%s" % (local_ipv4, cache_port) %}
-{%- set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) %}
-{%- set backend_haproxy_http_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['http-port']) %}
-{%- set backend_haproxy_https_url = 'http://%s:%s' % (local_ipv4, backend_haproxy_configuration['https-port']) %}
+{%- set cache_access = "http://%s:%s" % (instance_parameter['ipv4-random'], cache_port) %}
+{%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter['ipv4-random'], cache_port) %}
+{%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter['ipv4-random'], backend_haproxy_configuration['http-port']) %}
+{%- set backend_haproxy_https_url = 'http://%s:%s' % (instance_parameter['ipv4-random'], backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': local_ipv4, 'http_port': http_port, 'https_port': https_port} %}
+{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
-{%- if extra_slave_instance_list %}
-{%-   set slave_instance_information_list = [] %}
-{%-   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) %}
+{%- set slave_instance_information_list = [] %}
+{%- set slave_instance_list = instance_parameter['slave-instance-list'] %}
+{%- if configuration['extra_slave_instance_list'] %}
+{%-   do slave_instance_list.extend(json_module.loads(configuration['extra_slave_instance_list'])) %}
 {%- endif %}
 {%- if master_key_download_url %}
-{%-   do kedifa_updater_mapping.append((master_key_download_url, master_certificate, apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append((master_key_download_url, caddy_configuration['master-certificate'], apache_certificate)) %}
 {%- else %}
-{%-   do kedifa_updater_mapping.append(('notreadyyet', master_certificate, apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append(('notreadyyet', caddy_configuration['master-certificate'], apache_certificate)) %}
 {%- endif %}
 {%- if kedifa_configuration['slave_kedifa_information'] %}
 {%-   set slave_kedifa_information = json_module.loads(kedifa_configuration['slave_kedifa_information']) %}
@@ -53,7 +54,7 @@ context =
 {%-   if slave_ciphers %}
 {%-     set slave_cipher_list = ' '.join(slave_ciphers) %}
 {%-   else %}
-{%-     set slave_cipher_list = ciphers.strip() %}
+{%-     set slave_cipher_list = configuration['ciphers'].strip() %}
 {%-   endif %}
 {%-   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
@@ -102,8 +103,8 @@ context =
 {%-   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {#-   Pass HTTP2 switch #}
-{%-   do slave_instance.__setitem__('enable_http2_by_default', enable_http2_by_default) %}
-{%-   do slave_instance.__setitem__('global_disable_http2', global_disable_http2) %}
+{%-   do slave_instance.__setitem__('enable_http2_by_default', configuration['enable-http2-by-default']) %}
+{%-   do slave_instance.__setitem__('global_disable_http2', configuration['global-disable-http2']) %}
 {#-   Pass backend timeout values #}
 {%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
 {%-     if slave_instance.get(key, '') == '' %}
@@ -128,7 +129,7 @@ context =
 {%-   set slave_log_access_url = urlparse_module.unquote(furled.tostr()) %}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
-{%-   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
+{%-   do slave_publish_dict.__setitem__('public-ipv4', configuration['public-ipv4']) %}
 {%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
@@ -224,7 +225,7 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.ge
 extra-context =
     key content :cert-content
 {%-   else %}
-{%-     do kedifa_updater_mapping.append((key_download_url, certificate, master_certificate)) %}
+{%-     do kedifa_updater_mapping.append((key_download_url, certificate, caddy_configuration['master-certificate'])) %}
 {%-   endif %}
 {#-   BBB: SlapOS Master non-zero knowledge END #}
 
@@ -233,9 +234,9 @@ extra-context =
 
 [{{ slave_configuration_section_name }}]
 certificate = {{ certificate }}
-https_port = {{ dumps('' ~ https_port) }}
-http_port = {{ dumps('' ~ http_port) }}
-local_ipv4 = {{ dumps('' ~ local_ipv4) }}
+https_port = {{ dumps('' ~ configuration['port']) }}
+http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
+local_ipv4 = {{ dumps('' ~ instance_parameter['ipv4-random']) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps('' ~ value) }}
@@ -283,7 +284,7 @@ config-frequency = 720
 
 {#-   ###############################  #}
 {#-   Publish Slave Information        #}
-{%-   if not extra_slave_instance_list %}
+{%-   if not configuration['extra_slave_instance_list'] %}
 {%-     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') %}
 {%-     do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
@@ -320,27 +321,27 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [tunnel-6to4-base-http_port]
 <= tunnel-6to4-base
-ipv4-port = {{ http_port }}
-ipv6-port = {{ http_port }}
+ipv4-port = {{ configuration['plain_http_port'] }}
+ipv6-port = {{ configuration['plain_http_port'] }}
 
 [tunnel-6to4-base-https_port]
 <= tunnel-6to4-base
-ipv4-port = {{ https_port }}
-ipv6-port = {{ https_port }}
+ipv4-port = {{ configuration['port'] }}
+ipv6-port = {{ configuration['port'] }}
 
 {#- Define log access #}
 
 [caddy-log-access-parameters]
 caddy_log_directory = {{ dumps(caddy_log_directory) }}
 caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
-local_ipv4 = {{ dumps(local_ipv4) }}
+local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 global_ipv6 = {{ dumps(global_ipv6) }}
-https_port = {{ dumps(https_port) }}
-http_port = {{ dumps(http_port) }}
+https_port = {{ dumps(configuration['port']) }}
+http_port = {{ dumps(configuration['plain_http_port']) }}
 ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
-access_log = {{ dumps(access_log) }}
-error_log = {{ dumps(error_log) }}
-not_found_file = {{ dumps(not_found_file) }}
+access_log = {{ dumps(caddy_configuration['access-log']) }}
+error_log = {{ dumps(caddy_configuration['error-log']) }}
+not_found_file = {{ dumps(caddy_configuration['not-found-file']) }}
 
 [caddy-log-access]
 < = jinja2-template-base
@@ -352,7 +353,7 @@ extra-context =
     section parameter_dict caddy-log-access-parameters
 
 [slave-introspection-parameters]
-local-ipv4 = {{ dumps(local_ipv4) }}
+local-ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
@@ -384,9 +385,9 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {#- Publish information for the instance #}
 [publish-caddy-information]
 recipe = slapos.cookbook:publish.serialised
-public-ipv4 = {{ public_ipv4 }}
-private-ipv4 = {{ local_ipv4 }}
-{%- if extra_slave_instance_list %}
+public-ipv4 = {{ configuration['public-ipv4'] }}
+private-ipv4 = {{ instance_parameter['ipv4-random'] }}
+{%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {%- endif %}
@@ -407,8 +408,8 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ kedifa_configuration['kedifa-updater'] }}
   --server-ca-certificate {{ kedifa_configuration['ca-certificate'] }}
   --identity {{ kedifa_configuration['certificate'] }}
-  --master-certificate {{ master_certificate }}
-  --on-update "{{ frontend_graceful_reload }}"
+  --master-certificate {{ caddy_configuration['master-certificate'] }}
+  --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
   ${kedifa-updater-mapping:file}
   {{ kedifa_configuration['kedifa-updater-state-file'] }}
 
@@ -418,7 +419,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [kedifa-updater-run]
 recipe = plone.recipe.command
 stop-on-error = True
-command = {{ kedifa_configuration['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_graceful_reload }}"
+command = {{ kedifa_configuration['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
 update-command = ${:command}
 
 [kedifa-updater-mapping]
@@ -452,7 +453,7 @@ extra-context =
 {%- for key, value in backend_haproxy_configuration.items() %}
 {{ key }} = {{ value }}
 {%- endfor %}
-local-ipv4 = {{ dumps('' ~ local_ipv4) }}
+local-ipv4 = {{ dumps('' ~ instance_parameter['ipv4-random']) }}
 global-ipv6 = ${slap-network-information:global-ipv6}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
