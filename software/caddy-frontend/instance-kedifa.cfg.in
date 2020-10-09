@@ -1,4 +1,4 @@
-{%- if instance_parameter['slap-software-type'] == software_type -%}
+{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 # KeDiFa instance profile
 [buildout]
@@ -25,14 +25,14 @@ parts =
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-{%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
+{%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
+{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
@@ -139,12 +139,12 @@ update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
     {{ software_parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
-      "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
+      "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter_dict['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
 
 [expose-csr_id-configuration]
-ip = {{ instance_parameter['ipv6-random'] }}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
 port = 17000
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
@@ -191,8 +191,8 @@ commands =
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
 extra-context =
-slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
-slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+slapparameter_dict = {{ dumps(instance_parameter_dict['configuration']) }}
+slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
     raw profile_common {{ software_parameter_dict['profile_common'] }}
@@ -202,8 +202,8 @@ context =
     ${:extra-context}
 
 [kedifa-config]
-ip = {{ instance_parameter['ipv6-random'] }}
-port = {{ instance_parameter['configuration.kedifa_port'] }}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -236,7 +236,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 <= logrotate-entry-base
 name = kedifa
 log = ${kedifa-config:logfile}
-rotate-num = {{ instance_parameter['configuration.rotate-num'] | int }}
+rotate-num = {{ instance_parameter_dict['configuration.rotate-num'] | int }}
 delaycompress =
 
 [kedifa]
@@ -311,4 +311,4 @@ name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
 
-{%- endif -%} {# if instance_parameter['slap-software-type'] == software_type #}
+{%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}
