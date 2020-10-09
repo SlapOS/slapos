@@ -6764,6 +6764,16 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     cls.slap.supply(cls.frontend_3_sr, cls.slap._computer_id)
     cls.slap.supply(cls.kedifa_sr, cls.slap._computer_id)
 
+  @classmethod
+  def tearDownClass(cls):
+    cls.slap.supply(
+      cls.frontend_2_sr, cls.slap._computer_id, state="destroyed")
+    cls.slap.supply(
+      cls.frontend_3_sr, cls.slap._computer_id, state="destroyed")
+    cls.slap.supply(
+      cls.kedifa_sr, cls.slap._computer_id, state="destroyed")
+    super(TestPassedRequestParameter, cls).tearDownClass()
+
   instance_parameter_dict = {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
