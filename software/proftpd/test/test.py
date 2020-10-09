@@ -27,9 +27,10 @@
 
 import os
 import shutil
-import urlparse
+import urllib.parse as urlparse
+
 import tempfile
-import StringIO
+import io
 import subprocess
 
 import pysftp
@@ -96,7 +97,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     with self._getConnection() as sftp:
       # put a file
       with tempfile.NamedTemporaryFile() as f:
-        f.write("Hello FTP !")
+        f.write("Hello FTP !".encode())
         f.flush()
         sftp.put(f.name, remotepath='testfile')
 
@@ -117,14 +118,14 @@ class TestSFTPOperations(ProFTPdTestCase):
   def test_uploaded_file_not_visible_until_fully_uploaded(self):
     test_self = self
 
-    class PartialFile(StringIO.StringIO):
+    class PartialFile(io.StringIO):
       def read(self, *args):
         # file is not visible yet
         test_self.assertNotIn('destination', os.listdir(test_self.upload_dir))
         # it's just a hidden file
         test_self.assertEqual(
             ['.in.destination.'], os.listdir(test_self.upload_dir))
-        return StringIO.StringIO.read(self, *args)
+        return io.StringIO.read(self, *args)
 
     with self._getConnection() as sftp:
       sftp.sftp_client.putfo(PartialFile("content"), "destination")
@@ -136,7 +137,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     test_self = self
     with self._getConnection() as sftp:
 
-      class ErrorFile(StringIO.StringIO):
+      class ErrorFile(io.StringIO):
         def read(self, *args):
           # at this point, file is already created on server
           test_self.assertEqual(
