@@ -832,14 +832,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(
       sorted([q['name'] for q in result.json()]),
-      ['access.log', 'backend.log', 'error.log'])
+      ['access.log', 'backend.log'])
     self.assertEqual(
       httplib.OK,
       requests.get(url + 'access.log', verify=False).status_code
     )
     self.assertEqual(
       httplib.OK,
-      requests.get(url + 'error.log', verify=False).status_code
+      requests.get(url + 'backend.log', verify=False).status_code
     )
     # assert only for few tests, as backend log is not available for many of
     # them, as it's created on the fly
