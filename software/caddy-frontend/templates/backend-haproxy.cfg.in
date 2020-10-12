@@ -169,4 +169,4 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
 {%-       endif %}
 {%-     endif %}
 {%-   endfor %}
-{%- endfor %}
+{% endfor %}
