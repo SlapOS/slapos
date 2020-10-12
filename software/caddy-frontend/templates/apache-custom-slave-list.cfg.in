@@ -2,8 +2,9 @@
 {%- set kedifa_updater_mapping = [] %}
 {%- set cached_server_dict = {} %}
 {%- set backend_slave_list = [] %}
+{%- set frontend_slave_list = [] %}
 {%- set part_list = [] %}
-{%- set cache_port = caddy_configuration.get('cache-port') %}
+{%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
 {%- set cache_access = "http://%s:%s" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
@@ -17,9 +18,9 @@
 {%-   do slave_instance_list.extend(json_module.loads(configuration['extra_slave_instance_list'])) %}
 {%- endif %}
 {%- if master_key_download_url %}
-{%-   do kedifa_updater_mapping.append((master_key_download_url, caddy_configuration['master-certificate'], apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append((master_key_download_url, frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
 {%- else %}
-{%-   do kedifa_updater_mapping.append(('notreadyyet', caddy_configuration['master-certificate'], apache_certificate)) %}
+{%-   do kedifa_updater_mapping.append(('notreadyyet', frontend_haproxy_configuration['master-certificate'], apache_certificate)) %}
 {%- endif %}
 {%- if kedifa_configuration['slave_kedifa_information'] %}
 {%-   set slave_kedifa_information = json_module.loads(kedifa_configuration['slave_kedifa_information']) %}
@@ -90,7 +91,6 @@ context =
 {%-   else %}
 {%-     set key_download_url = 'notreadyyet' %}
 {%-   endif %}
-{%-   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference %}
 {%-   set slave_parameter_dict = generic_instance_parameter_dict.copy() %}
 {%-   set slave_publish_dict = {} %}
 {%-   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
@@ -101,7 +101,6 @@ context =
 {%-   set slave_ln_section = slave_reference + "-ln" %}
 {#-   extend parts #}
 {%-   do part_list.extend([slave_ln_section]) %}
-{%-   do part_list.extend([slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {#-   Pass HTTP2 switch #}
 {%-   do slave_instance.__setitem__('enable_http2_by_default', configuration['enable-http2-by-default']) %}
@@ -141,9 +140,9 @@ context =
 {%-     do slave_instance.__setitem__('backend-active-check-http-path', '') %}
 {%-   endif %} {# if backend_active_check #}
 {#-   Set Up log files #}
-{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
-{%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
-{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([caddy_log_directory, '%s_backend_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_access_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([frontend_directory['slave-log'], '%s_error_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([frontend_directory['slave-log'], '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
 {%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
@@ -204,14 +203,14 @@ command = ln -sf {{slave_parameter_dict.get('error_log')}} ${:log-directory}/err
 
 [{{slave_password_section}}]
 recipe = slapos.cookbook:generate.password
-storage-path = {{caddy_configuration_directory}}/.{{slave_reference}}.passwd
+storage-path = {{ frontend_directory['slave-configuration'] }}/.{{slave_reference}}.passwd
 bytes = 8
 
 [{{ slave_htpasswd_section }}]
 recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
-file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
+file = {{ frontend_directory['slave-configuration'] }}/.{{ slave_reference }}.htpasswd
 {#- update-command is not needed, as if the ${:password} would change, the whole part will be recalculated #}
 password = {{ '${' + slave_password_section + ':passwd}' }}
 command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} ${:password}
@@ -220,13 +219,13 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {#-   Set Slave Certificates if needed                   #}
 {#-   Set certificate key for custom configuration       #}
 {%-   set cert_name = slave_reference.replace('-','.') + '.pem' %}
-{%-   set certificate = '%s/%s' % (autocert, cert_name) %}
+{%-   set certificate = '%s/%s' % (frontend_directory['autocert'], cert_name) %}
 {%-   do slave_parameter_dict.__setitem__('certificate', certificate )%}
 {#-   Set ssl certificates for each slave #}
 {%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%-       if cert_name in slave_instance %}
 {%-         set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
-{%-         set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%-         set cert_file = '/'.join([frontend_directory['custom-ssl-directory'], cert_title.replace('-','.')]) %}
 {%-         do part_list.append(cert_title) %}
 {%-         do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
 {%-         do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
@@ -259,7 +258,7 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt') + '\n' + slave_instance.ge
 extra-context =
     key content :cert-content
 {%-   else %}
-{%-     do kedifa_updater_mapping.append((key_download_url, certificate, caddy_configuration['master-certificate'])) %}
+{%-     do kedifa_updater_mapping.append((key_download_url, certificate, frontend_haproxy_configuration['master-certificate'])) %}
 {%-   endif %}
 {#-   BBB: SlapOS Master non-zero knowledge END #}
 
@@ -276,19 +275,6 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 {{ key }} = {{ dumps('' ~ value) }}
 {%-     endif %}
 {%-   endfor %}
-
-[{{ slave_section_title }}]
-< = jinja2-template-base
-rendered = {{ caddy_configuration_directory }}/${:filename}
-
-template = {{ template_default_slave_configuration }}
-extra-context =
-    section slave_parameter {{ slave_configuration_section_name }}
-    import urllib_module urllib
-
-filename = {{ '%s.conf' % slave_reference }}
-{{ '\n' }}
-
 
 {%-   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
 {%-   if monitor_ipv6_test %}
@@ -329,6 +315,7 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
+{%-  do frontend_slave_list.append(slave_instance) %}
 {%-  if slave_type != 'redirect' %}
 {%-    do backend_slave_list.append(slave_instance) %}
 {%-  endif %}
@@ -362,10 +349,10 @@ global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}
 nginx-mime = {{ software_parameter_dict['nginx_mime'] }}
-access-log = {{ dumps(caddy_configuration['slave-introspection-access-log']) }}
-error-log = {{ dumps(caddy_configuration['slave-introspection-error-log']) }}
+access-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-access-log']) }}
+error-log = {{ dumps(frontend_haproxy_configuration['slave-introspection-error-log']) }}
 var = {{ directory['slave-introspection-var'] }}
-pid = {{ caddy_configuration['slave-introspection-pid-file'] }}
+pid = {{ frontend_haproxy_configuration['slave-introspection-pid-file'] }}
 
 [slave-introspection-config]
 <= jinja2-template-base
@@ -412,8 +399,8 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['kedifa-updater'] }}
   --server-ca-certificate {{ kedifa_configuration['ca-certificate'] }}
   --identity {{ kedifa_configuration['certificate'] }}
-  --master-certificate {{ caddy_configuration['master-certificate'] }}
-  --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
+  --master-certificate {{ frontend_haproxy_configuration['master-certificate'] }}
+  --on-update "{{ frontend_haproxy_configuration['frontend-graceful-command'] }}"
   ${kedifa-updater-mapping:file}
   {{ kedifa_configuration['kedifa-updater-state-file'] }}
 
@@ -424,7 +411,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service but on service which comes from another partition #}
 stop-on-error = True
-command = {{ software_parameter_dict['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
+command = {{ software_parameter_dict['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ frontend_haproxy_configuration['frontend-graceful-command'] }}"
 update-command = ${:command}
 
 [kedifa-updater-mapping]
@@ -436,6 +423,28 @@ template = inline:
 {%- endfor %}
 
 rendered = ${:file}
+
+##<Frontend haproxy>
+[frontend-haproxy-configuration]
+< = jinja2-template-base
+template = {{ template_frontend_haproxy_configuration }}
+rendered = ${frontend-haproxy-config:file}
+frontend_slave_list = {{ dumps(sorted(frontend_slave_list)) }}
+extra-context =
+  key frontend_slave_list :frontend_slave_list
+  section configuration frontend-haproxy-config
+
+[frontend-haproxy-config]
+{%- for key, value in frontend_haproxy_configuration.items() %}
+{{ key }} = {{ value }}
+{%- endfor %}
+local-ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
+global-ipv6 = ${slap-network-information:global-ipv6}
+request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
+{#- backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }} XXX TODO #}
+{#- backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }} XXX TODO #}
+
+##</Frontend haproxy>
 
 ##<Backend haproxy>
 [backend-haproxy-configuration]
@@ -474,7 +483,7 @@ command =
     --send-csr {{ backend_haproxy_configuration['csr'] }} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
-##<Backend haproxy>
+##</Backend haproxy>
 
 [buildout]
 extends =
@@ -485,6 +494,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-logrotate-setup
 {%- for part in part_list %}
