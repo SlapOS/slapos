@@ -32,12 +32,9 @@ plugin = ${:etc}/plugin
 pureftpd-dir = ${:srv}/pureftpd/
 
 [check-port-listening-promise]
-recipe = slapos.cookbook:promise.plugin
-eggs =
-  slapos.toolbox
-output = ${directory:plugin}/${:_buildout_section_name_}
-content =
-  from slapos.promise.plugin.check_port_listening import RunPromise
+<= monitor-promise-base
+module = check_port_listening
+name = check_nginx_port.py
 
 [pureftpd-listen-promise]
 <= check-port-listening-promise
