@@ -987,14 +987,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(
       sorted([q['name'] for q in result.json()]),
-      ['access.log', 'backend.log', 'error.log'])
+      ['access.log', 'backend.log'])
     self.assertEqual(
       http.client.OK,
       requests.get(url + 'access.log', verify=False).status_code
-    )
-    self.assertEqual(
-      http.client.OK,
-      requests.get(url + 'error.log', verify=False).status_code
     )
     # assert only for few tests, as backend log is not available for many of
     # them, as it's created on the fly
@@ -2225,15 +2221,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         ],
         backend_header_dict['via']
       )
-
-  def test_telemetry_disabled(self):
-    # here we trust that telemetry not present in error log means it was
-    # really disabled
-    error_log_file = glob.glob(
-      os.path.join(
-       self.instance_path, '*', 'var', 'log', 'frontend-error.log'))[0]
-    with open(error_log_file) as fh:
-      self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
 
   def test_url(self):
     parameter_dict = self.assertSlaveBase(
