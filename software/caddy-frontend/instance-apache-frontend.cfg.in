@@ -16,7 +16,7 @@ parts =
   caucase-updater-promise
   backend-client-caucase-updater
   backend-client-caucase-updater-promise
-  frontend-caddy-graceful
+  frontend-haproxy-graceful
   port-redirection
   promise-frontend-caddy-configuration
   promise-caddy-frontend-v4-https
@@ -296,7 +296,7 @@ extra-context =
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key software_type :software_type
-    key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
+    key frontend_lazy_graceful_reload frontend-haproxy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
@@ -343,7 +343,7 @@ template = inline:
   #!/bin/sh
   export CADDYPATH=${directory:frontend_cluster}
   ulimit -n $(ulimit -Hn)
-  exec {{ software_parameter_dict['caddy'] }} \
+  exec {{ software_parameter_dict['haproxy_executable'] }} \
   -conf ${dynamic-caddy-frontend-template:rendered} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \
@@ -362,7 +362,7 @@ mode = 0755
 [caddy-frontend]
 recipe = slapos.cookbook:wrapper
 command-line = ${caddy-wrapper:rendered} -pidfile ${caddy-configuration:pid-file}
-wrapper-path = ${directory:service}/frontend_caddy
+wrapper-path = ${directory:service}/frontend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files = ${caddy-wrapper:rendered}
 
@@ -427,7 +427,7 @@ rotate-num = ${configuration:rotate-num}
 #       olddir
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
-post = ${frontend-caddy-lazy-graceful:rendered} &
+post = ${frontend-haproxy-lazy-graceful:rendered} &
 delaycompress =
 
 #################
@@ -598,10 +598,10 @@ signature_file = ${directory:run}/graceful_configuration_state_signature
 < = frontend-caddy-configuration-state
 signature_file = ${directory:run}/validate_configuration_state_signature
 
-[frontend-caddy-graceful]
+[frontend-haproxy-graceful]
 < = jinja2-template-base
 template = {{ software_parameter_dict['template_graceful_script'] }}
-rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
+rendered = ${directory:etc-run}/frontend-haproxy-safe-graceful
 mode = 0700
 
 extra-context =
@@ -620,10 +620,10 @@ extra-context =
     key configuration_state_command frontend-caddy-configuration-state-validate:rendered
     key last_state_file :last_state_file
 
-[frontend-caddy-lazy-graceful]
+[frontend-haproxy-lazy-graceful]
 < = jinja2-template-base
 template = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
-rendered = ${directory:bin}/frontend-caddy-lazy-graceful
+rendered = ${directory:bin}/frontend-haproxy-lazy-graceful
 mode = 0700
 pid-file = ${directory:run}/lazy-graceful.pid
 wait_time = 60
