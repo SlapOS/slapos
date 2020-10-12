@@ -75,7 +75,8 @@ reservation = ${:srv}/reservation
 
 # csr_id publication
 csr_id = ${:srv}/csr_id
-caddy-csr_id = ${:etc}/caddy-csr_id
+certificate-csr_id = ${:var}/certificate-csr_id
+expose-csr_id-var = ${:var}/expose-csr_id
 
 [kedifa-csr]
 recipe = plone.recipe.command
@@ -131,8 +132,8 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = ${directory:caddy-csr_id}/certificate.pem
-key = ${directory:caddy-csr_id}/key.pem
+certificate = ${directory:certificate-csr_id}/certificate.pem
+key = ${directory:certificate-csr_id}/key.pem
 
 stop-on-error = True
 update-command = ${:command}
@@ -152,14 +153,40 @@ error-log = ${directory:log}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
+var = ${directory:expose-csr_id-var}
+pid = ${directory:var}/nginx-expose-csr_id.pid
+rendered = ${directory:etc}/nginx-expose-csr_id.conf
 template = inline:
-  https://:${expose-csr_id-configuration:port}/ {
-    bind ${expose-csr_id-configuration:ip}
-    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
-    log ${expose-csr_id-configuration:error-log}
+  daemon off;
+  pid ${:pid};
+  error_log ${expose-csr_id-configuration:error-log};
+  events {
   }
+  http {
+    include {{ software_parameter_dict['nginx_mime'] }};
+    server {
+      server_name_in_redirect off;
+      port_in_redirect off;
+      error_log ${expose-csr_id-configuration:error-log};
+      access_log /dev/null;
+      listen [${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port} ssl;
+      ssl_certificate ${expose-csr_id-configuration:certificate};
+      ssl_certificate_key ${expose-csr_id-configuration:key};
+      default_type application/octet-stream;
+      client_body_temp_path ${:var} 1 2;
+      proxy_temp_path ${:var} 1 2;
+      fastcgi_temp_path ${:var} 1 2;
+      uwsgi_temp_path ${:var} 1 2;
+      scgi_temp_path ${:var} 1 2;
 
-rendered = ${directory:caddy-csr_id}/Caddyfile
+      location / {
+        alias ${directory:csr_id}/;
+        autoindex off;
+        sendfile on;
+        sendfile_max_chunk 1m;
+      }
+    }
+  }
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -171,13 +198,8 @@ config-port = ${expose-csr_id-configuration:port}
 [expose-csr_id]
 depends = ${store-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['caddy'] }}
-  -conf ${expose-csr_id-template:rendered}
-  -log ${expose-csr_id-configuration:error-log}
-  -http2=true
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-  -root ${directory:csr_id}
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${expose-csr_id-template:rendered}
 
 wrapper-path = ${directory:service}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
