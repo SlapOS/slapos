@@ -340,7 +340,7 @@ template = inline:
   #!/bin/sh
   export CADDYPATH=${directory:frontend_cluster}
   ulimit -n $(ulimit -Hn)
-  exec {{ software_parameter_dict['caddy'] }} \
+  exec {{ software_parameter_dict['haproxy_executable'] }} \
   -conf ${dynamic-caddy-frontend-template:rendered} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \

@@ -1,4 +1,4 @@
 #!${dash:location}/bin/dash
 config="https://example.com {\n  proxy / $1 {\n  }\n}"
 
-echo -e $config | ${caddy:output} -conf stdin -validate > /dev/null 2>&1
+echo -e $config | ${software-parameter-section:haproxy_executable} -conf stdin -validate > /dev/null 2>&1
