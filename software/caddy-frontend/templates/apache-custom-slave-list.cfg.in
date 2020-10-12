@@ -594,7 +594,7 @@ depends =
   ${store-csr_id:command}
   ${store-backend-haproxy-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['caddy'] }}
+command-line = {{ software_parameter_dict['haproxy_executable'] }}
   -conf ${expose-csr_id-template:rendered}
   -log ${expose-csr_id-configuration:error-log}
   -http2=true
