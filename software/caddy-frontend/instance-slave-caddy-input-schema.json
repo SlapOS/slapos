@@ -84,16 +84,6 @@
       "title": "Disabled Cookies",
       "type": "string"
     },
-    "enable-http2": {
-      "default": "true",
-      "description": "Use HTTP2 Protocol for the site",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "title": "Enable HTTP2 Protocol",
-      "type": "string"
-    },
     "https-url": {
       "description": "HTTPS URL of the backend if it is different from url parameter",
       "pattern": "^(http|https|ftp)://",
@@ -208,11 +198,6 @@
       "description": "Timeout for HTTP requests.",
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
-    },
-    "ciphers": {
-      "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
-      "title": "Ordered space separated list of ciphers",
-      "type": "string"
     },
     "authenticate-to-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
