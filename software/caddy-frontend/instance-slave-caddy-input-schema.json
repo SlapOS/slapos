@@ -223,6 +223,34 @@
       ],
       "title": "Authenticate to backend",
       "type": "string"
+    },
+    "backend-active-check": {
+      "title": "Backend Active Check",
+      "description": "Enables active checks of the backend",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "type": "string"
+    },
+    "backend-active-check-http-method": {
+      "title": "Backend Active Check HTTP Metod",
+      "description": "Selects method to do the active check. Disabling it uses TCP-level check only.",
+      "enum": [
+        "GET",
+        "OPTIONS",
+        "POST",
+        ""
+      ],
+      "default": "GET",
+      "type": "string"
+    },
+    "backend-active-check-http-path": {
+      "title": "Backend Active Check HTTP Path",
+      "description": "A path on which do the active check.",
+      "default": "/",
+      "type": "string"
     }
   },
   "title": "Input Parameters",
