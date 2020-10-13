@@ -112,6 +112,33 @@ context =
 {%-     endif %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
+{#-   Setup active check #}
+{%-   do slave_instance.__setitem__('backend-active-check',  ('' ~ slave_instance.get('backend-active-check', '')).lower() in TRUE_VALUES) %}
+{%-   if slave_instance['backend-active-check']  %}
+{%-     if 'backend-active-check-http-method' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-http-method', 'GET') %}
+{%-     endif %}
+{%-     if 'backend-active-check-http-version' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-http-version', 'HTTP/1.1') %}
+{%-     endif %}
+{%-     if 'backend-active-check-interval' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-interval', '5') %}
+{%-     endif %}
+{%-     if 'backend-active-check-rise' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-rise', '1') %}
+{%-     endif %}
+{%-     if 'backend-active-check-fall' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-fall', '2') %}
+{%-     endif %}
+{%-     if 'backend-active-check-timeout' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-timeout', '2') %}
+{%-     endif %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-path', slave_instance.get('backend-active-check-http-path') or '/') %}
+{%-   else %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-method', '') %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-version', '') %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-path', '') %}
+{%-   endif %} {# if backend_active_check #}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
