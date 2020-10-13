@@ -1801,15 +1801,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue("""backend _Url-http
+    self.assertIn("""backend _Url-http
   timeout server 12s
   timeout connect 5s
-  retries 3""" in content)
-      self.assertTrue("""  timeout queue 60s
+  retries 3""", content)
+    self.assertIn("""  timeout queue 60s
   timeout server 12s
   timeout client 12s
   timeout connect 5s
-  retries 3""" in content)
+  retries 3""", content)
+    # check that no needless entries are generated
+    self.assertIn("backend _Url-http\n", content)
+    self.assertNotIn("backend _Url-https\n", content)
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
