@@ -48,6 +48,7 @@ from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
 import socket
+import sys
 
 
 try:
@@ -429,6 +430,9 @@ def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
 
 class TestHandler(BaseHTTPRequestHandler):
   identification = None
+
+  def do_POST(self):
+    return self.do_GET()
 
   def do_GET(self):
     timeout = int(self.headers.dict.get('timeout', '0'))
@@ -7021,3 +7025,19 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       expected_partition_parameter_dict_dict,
       partition_parameter_dict_dict
     )
+
+
+if __name__ == '__main__':
+  class HTTP6Server(HTTPServer):
+    address_family = socket.AF_INET6
+  ip, port = sys.argv[1], int(sys.argv[2])
+  if ':' in ip:
+    klass = HTTP6Server
+    url_template = 'http://[%s]:%s/'
+  else:
+    klass = HTTPServer
+    url_template = 'http://%s:%s/'
+
+  server = klass((ip, port), TestHandler)
+  print url_template % server.server_address[:2]
+  server.serve_forever()
