@@ -7027,6 +7027,128 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     )
 
 
+class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': cls._ipv4_address,
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    cls.setUpAssertionDict()
+    return {
+      'backend-active-check-disabled': {
+        'url': cls.backend_url,
+      },
+      'backend-active-check-default': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+      },
+      'backend-active-check-connect': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'CONNECT',
+        'backend-active-check-http-path': 'backend-active-check-http-path',
+        'backend-active-check-http-version': 'HTTP/1.0',
+      },
+      'backend-active-check-custom': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'POST',
+        'backend-active-check-http-path': 'POST-path',
+        'backend-active-check-http-version': 'HTTP/1.0',
+        'backend-active-check-timeout': '7',
+        'backend-active-check-interval': '15',
+        'backend-active-check-rise': '3',
+        'backend-active-check-fall': '7',
+      },
+    }
+
+  @classmethod
+  def setUpAssertionDict(cls):
+    backend = urlparse.urlparse(cls.backend_url).netloc
+    cls.assertion_dict = {
+      'backend-active-check-disabled': """\
+backend _backend-active-check-disabled-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-disabled-backend %s""" % (backend,),
+      'backend-active-check-connect': """\
+backend _backend-active-check-connect-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-connect-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  timeout check 2s""" % (backend,),
+      'backend-active-check-custom': """\
+backend _backend-active-check-custom-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-custom-backend %s   check inter 15s"""
+      """ rise 3 fall 7
+  option httpchk POST POST-path HTTP/1.0
+  timeout check 7s""" % (backend,),
+      'backend-active-check-default': """\
+backend _backend-active-check-default-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-default-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  option httpchk GET / HTTP/1.1
+  timeout check 2s""" % (backend, )
+    }
+
+  def _get_backend_haproxy_configuration(self):
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      return fh.read()
+
+  def _test(self, key):
+    parameter_dict = self.assertSlaveBase(key)
+    self.assertIn(
+      self.assertion_dict[key],
+      self._get_backend_haproxy_configuration()
+    )
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+  def test_backend_active_check_disabled(self):
+    self._test('backend-active-check-disabled')
+
+  def test_backend_active_check_default(self):
+    self._test('backend-active-check-default')
+
+  def test_backend_active_check_connect(self):
+    self._test('backend-active-check-connect')
+
+  def test_backend_active_check_custom(self):
+    self._test('backend-active-check-custom')
+
+
 if __name__ == '__main__':
   class HTTP6Server(HTTPServer):
     address_family = socket.AF_INET6
