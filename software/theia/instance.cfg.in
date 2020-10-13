@@ -54,7 +54,7 @@ template = inline:
     root $${directory:frontend-static}
     browse
     proxy / $${theia-instance:base-url} {
-      except public $${favicon.ico:filename}
+      except $${frontend-instance-fonts:folder-name} $${frontend-instance-slapos.css:folder-name} public $${favicon.ico:filename} $${frontend-instance-logo:filename}
     }
     proxy /services $${theia-instance:base-url} {
       websocket
@@ -82,6 +82,33 @@ hostname = $${frontend-instance-config:hostname}
 port = $${frontend-instance-config:port}
 pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
 url = https://$${:hostname}:$${:port}/
+
+[frontend-instance-fonts]
+; XXX caddy 1 does not seem to serve different folders at different locations
+; so we link fonts in static folder
+recipe = plone.recipe.command
+location = $${directory:frontend-static}/$${:folder-name}
+folder-name = fonts
+command =
+  mkdir $${:location}
+  ln -s ${source-code-pro-fonts:location} $${:location}/source-code-pro
+  ln -s ${jetbrains-mono-fonts:location} $${:location}/jetbrains-mono
+stop-on-error = true
+
+[frontend-instance-logo]
+recipe = plone.recipe.command
+filename = logo.png
+command =
+  ln -s ${logo.png:output} $${directory:frontend-static}/$${:filename}
+stop-on-error = true
+
+[frontend-instance-slapos.css]
+recipe = slapos.recipe.template:jinja2
+template = ${slapos.css.in:output}
+rendered = $${directory:frontend-static}/$${:folder-name}/slapos.css
+folder-name = css
+context =
+  key logo_image frontend-instance-logo:filename
 
 [frontend-reload]
 recipe = slapos.cookbook:wrapper
@@ -220,11 +247,14 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template = inline:
   #!${python:location}/bin/python
-  import sys
   import os
+  import sys
+  import time
   args = sys.argv[1:]
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
+  # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
+  else: time.sleep(1)
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
 
 [slapos-standalone-activate]
@@ -323,3 +353,4 @@ project = $${:srv}/project
 slapos = $${:srv}/slapos
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
+frontend-static-css = $${:frontend-static}/css
