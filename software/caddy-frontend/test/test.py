@@ -49,6 +49,7 @@ import xml.etree.ElementTree as ET
 import urlparse
 import socket
 import sqlite3
+import sys
 
 
 try:
@@ -6846,3 +6847,16 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         {'software_release': self.frontend_3_sr,
          'partition_reference': 'caddy-frontend-3'}]
     )
+
+
+if __name__ == '__main__':
+  class HTTP6Server(HTTPServer):
+    address_family = socket.AF_INET6
+  ip, port = sys.argv[1], int(sys.argv[2])
+  if ':' in ip:
+    klass = HTTP6Server
+  else:
+    klass = HTTPServer
+  server = klass((ip, port), TestHandler)
+  print 'http://%s:%s/' % server.server_address[:2]
+  server.serve_forever()
