@@ -6235,6 +6235,46 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
+      'backend-active-check-http-method': {
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'WRONG',
+      },
+      'backend-active-check-http-version': {
+        'backend-active-check': True,
+        'backend-active-check-http-version': 'WRONG/1.1',
+      },
+      'backend-active-check-timeout': {
+        'backend-active-check': True,
+        'backend-active-check-timeout': 'WRONG',
+      },
+      'backend-active-check-timeout-negative': {
+        'backend-active-check': True,
+        'backend-active-check-timeout': '-2',
+      },
+      'backend-active-check-interval': {
+        'backend-active-check': True,
+        'backend-active-check-interval': 'WRONG',
+      },
+      'backend-active-check-interval-negative': {
+        'backend-active-check': True,
+        'backend-active-check-interval': '-2',
+      },
+      'backend-active-check-rise': {
+        'backend-active-check': True,
+        'backend-active-check-rise': 'WRONG',
+      },
+      'backend-active-check-rise-negative': {
+        'backend-active-check': True,
+        'backend-active-check-rise': '-2',
+      },
+      'backend-active-check-fall': {
+        'backend-active-check': True,
+        'backend-active-check-fall': 'WRONG',
+      },
+      'backend-active-check-fall-negative': {
+        'backend-active-check': True,
+        'backend-active-check-fall': '-2',
+      }
     }
 
   def test_master_partition_state(self):
@@ -6249,9 +6289,29 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '14',
-      'slave-amount': '21',
+      'rejected-slave-amount': '24',
+      'slave-amount': '31',
       'rejected-slave-dict': {
+        '_backend-active-check-fall': [
+          'Wrong backend-active-check-fall WRONG'],
+        '_backend-active-check-fall-negative': [
+          'Wrong backend-active-check-fall -2'],
+        '_backend-active-check-http-method': [
+          'Wrong backend-active-check-http-method WRONG'],
+        '_backend-active-check-http-version': [
+          'Wrong backend-active-check-http-version WRONG/1.1'],
+        '_backend-active-check-interval': [
+          'Wrong backend-active-check-interval WRONG'],
+        '_backend-active-check-interval-negative': [
+          'Wrong backend-active-check-interval -2'],
+        '_backend-active-check-rise': [
+          'Wrong backend-active-check-rise WRONG'],
+        '_backend-active-check-rise-negative': [
+          'Wrong backend-active-check-rise -2'],
+        '_backend-active-check-timeout': [
+          'Wrong backend-active-check-timeout WRONG'],
+        '_backend-active-check-timeout-negative': [
+          'Wrong backend-active-check-timeout -2'],
         '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
         '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
@@ -7025,6 +7085,126 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       expected_partition_parameter_dict_dict,
       partition_parameter_dict_dict
     )
+
+
+class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': cls._ipv4_address,
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    cls.setUpAssertionDict()
+    return {
+      'backend-active-check-disabled': {
+        'url': cls.backend_url,
+      },
+      'backend-active-check-default': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+      },
+      'backend-active-check-connect': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'CONNECT',
+      },
+      'backend-active-check-custom': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'POST',
+        'backend-active-check-http-path': '/POST-path to be encoded',
+        'backend-active-check-http-version': 'HTTP/1.0',
+        'backend-active-check-timeout': '7',
+        'backend-active-check-interval': '15',
+        'backend-active-check-rise': '3',
+        'backend-active-check-fall': '7',
+      },
+    }
+
+  @classmethod
+  def setUpAssertionDict(cls):
+    backend = urlparse.urlparse(cls.backend_url).netloc
+    cls.assertion_dict = {
+      'backend-active-check-disabled': """\
+backend _backend-active-check-disabled-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-disabled-backend %s""" % (backend,),
+      'backend-active-check-connect': """\
+backend _backend-active-check-connect-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-connect-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  timeout check 2s""" % (backend,),
+      'backend-active-check-custom': """\
+backend _backend-active-check-custom-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-custom-backend %s   check inter 15s"""
+      """ rise 3 fall 7
+  option httpchk POST POST-path HTTP/1.0
+  timeout check 7s""" % (backend,),
+      'backend-active-check-default': """\
+backend _backend-active-check-default-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-default-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  option httpchk GET / HTTP/1.1
+  timeout check 2s""" % (backend, )
+    }
+
+  def _get_backend_haproxy_configuration(self):
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      return fh.read()
+
+  def _test(self, key):
+    parameter_dict = self.assertSlaveBase(key)
+    self.assertIn(
+      self.assertion_dict[key],
+      self._get_backend_haproxy_configuration()
+    )
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+  def test_backend_active_check_disabled(self):
+    self._test('backend-active-check-disabled')
+
+  def test_backend_active_check_default(self):
+    self._test('backend-active-check-default')
+
+  def test_backend_active_check_connect(self):
+    self._test('backend-active-check-connect')
+
+  def test_backend_active_check_custom(self):
+    self._test('backend-active-check-custom')
 
 
 if __name__ == '__main__':
