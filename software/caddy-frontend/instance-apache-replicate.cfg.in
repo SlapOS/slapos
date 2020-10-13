@@ -124,6 +124,35 @@ context =
 {%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
 {%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
 {%   endif %}
+{#   Check backend-active-check-* #}
+{%   set backend_active_check = (str(slave.get('backend-active-check', False)) or 'false').lower() %}
+{%   if backend_active_check in TRUE_VALUES %}
+{%     set backend_active_check_http_method = slave.get('backend-active-check-http-method') or 'GET' %}
+{%     if backend_active_check_http_method not in ['GET', 'OPTIONS', 'CONNECT', 'POST'] %}
+{%       do slave_error_list.append('Wrong backend-active-check-http-method %s' % (backend_active_check_http_method,)) %}
+{%     endif %}
+{%     set backend_active_check_http_path = slave.get('backend-active-check-http-path') or '/' %}
+{%     set backend_active_check_http_version = slave.get('backend-active-check-http-version') or 'HTTP/1.1' %}
+{%     if backend_active_check_http_version not in ['HTTP/1.1', 'HTTP/1.0'] %}
+{%       do slave_error_list.append('Wrong backend-active-check-http-version %s' % (backend_active_check_http_version,)) %}
+{%     endif %}
+{%     set backend_active_check_timeout = (slave.get('backend-active-check-timeout') or '2') | int(False) %}
+{%     if backend_active_check_timeout in [False] or backend_active_check_timeout <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-timeout %s' % (slave.get('backend-active-check-timeout'),)) %}
+{%     endif %}
+{%     set backend_active_check_interval = (slave.get('backend-active-check-interval') or '5') | int(False) %}
+{%     if backend_active_check_interval in [False] or backend_active_check_interval <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-interval %s' % (slave.get('backend-active-check-interval'),)) %}
+{%     endif %}
+{%     set backend_active_check_rise = (slave.get('backend-active-check-rise') or '1') | int(False) %}
+{%     if backend_active_check_rise in [False] or backend_active_check_rise <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-rise %s' % (slave.get('backend-active-check-rise'),)) %}
+{%     endif %}
+{%     set backend_active_check_fall = (slave.get('backend-active-check-fall') or '1') | int(False) %}
+{%     if backend_active_check_fall in [False] or backend_active_check_fall <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-fall %s' % (slave.get('backend-active-check-fall'),)) %}
+{%     endif %}
+{%   endif %}
 {#   Check ciphers #}
 {%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
 {%   if slave_cipher_list %}
