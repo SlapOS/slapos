@@ -92,7 +92,7 @@ frontend https-backend
 {%-         endif %}
 {%-         set ssl = ' '.join(ssl) %}
 {%-       else %}
-{%-         set ssl = '' %}
+{%-         set ssl = ' ' %}
 {%-       endif %}
 
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
@@ -115,7 +115,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           endif %}
 {%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['backend-active-check-timeout'])) %}
 {%-         endif %}
-  server backend {{ hostname }}:{{ port }} {{ ssl }} {{- ' '.join(active_check_list)}}
+  server backend {{ hostname }}:{{ port }} {{- ssl }} {{- ' '.join(active_check_list)}}
 {%-         for active_check_option in active_check_option_list %}
   {{ active_check_option }}
 {%-         endfor %}
