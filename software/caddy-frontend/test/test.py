@@ -48,7 +48,6 @@ from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
 import socket
-import sqlite3
 
 
 try:
@@ -6791,6 +6790,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
   def test(self):
     self.instance_parameter_dict.update({
       '-frontend-quantity': 3,
+      '-frontend-config-1-ram-cache-size': '512K',
+      '-frontend-config-2-ram-cache-size': '256K',
       '-sla-2-computer_guid': self.slap._computer_id,
       '-frontend-2-state': 'stopped',
       '-frontend-2-software-release-url': self.frontend_2_sr,
@@ -6809,43 +6810,144 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     except Exception:
       pass
 
-    # inspect slapproxy, that the master correctly requested other partitions
-    sqlitedb_file = os.path.join(
-      os.path.abspath(
-        os.path.join(
-          self.slap.instance_directory, os.pardir
-        )
-      ), 'var', 'proxy.db'
-    )
-    connection = sqlite3.connect(sqlitedb_file)
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    cursor.execute(
-      "select partition_reference, software_release "
-      "from partition14 where slap_state='busy';")
-
-    requested_partition_information = cursor.fetchall()
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    partition_parameter_dict_dict = {}
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      instance_title = parameter_dict['instance_title']
+      if '_' in parameter_dict:
+        # "flatten" the instance parameter
+        parameter_dict = json.loads(parameter_dict['_'])
+      partition_parameter_dict_dict[instance_title] = parameter_dict
+      parameter_dict[
+        'X-software_release_url'] = partition.getSoftwareRelease().getURI()
 
     base_software_url = self.getSoftwareURL()
+
+    # drop some very varying parameters
+    def assertKeyWithPop(d, k):
+      self.assertIn(k, d)
+      d.pop(k)
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-1'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-2'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-3'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['testing partition 0'],
+      'timestamp')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['testing partition 0'],
+      'ip_list')
+
+    monitor_password = partition_parameter_dict_dict[
+      'caddy-frontend-1'].pop('monitor-password')
     self.assertEqual(
-      requested_partition_information,
-      [
-        {'software_release': base_software_url,
-         'partition_reference': 'testing partition 0'},
-        {'software_release': self.kedifa_sr,
-         'partition_reference': 'kedifa'},
-        # that one is base, as expected
-        {'software_release': base_software_url,
-         'partition_reference': 'caddy-frontend-1'},
-        {'software_release': self.frontend_2_sr,
-         'partition_reference': 'caddy-frontend-2'},
-        {'software_release': self.frontend_3_sr,
-         'partition_reference': 'caddy-frontend-3'}]
+      monitor_password,
+      partition_parameter_dict_dict[
+        'caddy-frontend-2'].pop('monitor-password')
+    )
+    self.assertEqual(
+      monitor_password,
+      partition_parameter_dict_dict[
+        'caddy-frontend-3'].pop('monitor-password')
+    )
+    self.assertEqual(
+      monitor_password,
+      partition_parameter_dict_dict[
+        'kedifa'].pop('monitor-password')
+    )
+
+    expected_partition_parameter_dict_dict = {
+      'caddy-frontend-1': {
+        'X-software_release_url': base_software_url,
+        u'backend-client-caucase-url': u'http://[%s]:8990' % self._ipv6_address,
+        u'caucase_port': u'15090',
+        u'cluster-identification': u'testing partition 0',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-1',
+        u'full_address_list': [],
+        u'kedifa-caucase-url': u'http://[%s]:15090' % self._ipv6_address,
+        u'kedifa_port': u'15080',
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8411,
+        u'monitor-username': u'admin',
+        u'plain_http_port': u'11080',
+        u'port': u'11443',
+        u'ram-cache-size': u'512K',
+        u'slave-kedifa-information': u'{}'},
+      'caddy-frontend-2': {
+        'X-software_release_url': 'special_sr_for_2',
+        u'backend-client-caucase-url': u'http://[%s]:8990' % self._ipv6_address,
+        u'caucase_port': u'15090',
+        u'cluster-identification': u'testing partition 0',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-2',
+        u'full_address_list': [],
+        u'kedifa-caucase-url': u'http://[%s]:15090' % self._ipv6_address,
+        u'kedifa_port': u'15080',
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8412,
+        u'monitor-username': u'admin',
+        u'plain_http_port': u'11080',
+        u'port': u'11443',
+        u'ram-cache-size': u'256K',
+        u'slave-kedifa-information': u'{}'},
+      'caddy-frontend-3': {
+        'X-software_release_url': 'special_sr_for_3',
+        u'backend-client-caucase-url': u'http://[%s]:8990' % self._ipv6_address,
+        u'caucase_port': u'15090',
+        u'cluster-identification': u'testing partition 0',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-3',
+        u'full_address_list': [],
+        u'kedifa-caucase-url': u'http://[%s]:15090' % self._ipv6_address,
+        u'kedifa_port': u'15080',
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8413,
+        u'monitor-username': u'admin',
+        u'plain_http_port': u'11080',
+        u'port': u'11443',
+        u'slave-kedifa-information': u'{}'},
+      'kedifa': {
+        'X-software_release_url': 'special_sr_for_kedifa',
+        u'caucase_port': u'15090',
+        u'cluster-identification': u'testing partition 0',
+        u'kedifa_port': u'15080',
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': u'8402',
+        u'monitor-username': u'admin',
+        u'slave-list': []},
+      'testing partition 0': {
+        '-frontend-2-software-release-url': 'special_sr_for_2',
+        '-frontend-2-state': 'stopped',
+        '-frontend-3-software-release-url': 'special_sr_for_3',
+        '-frontend-3-state': 'stopped',
+        '-frontend-config-1-ram-cache-size': '512K',
+        '-frontend-config-2-ram-cache-size': '256K',
+        '-frontend-quantity': '3',
+        '-kedifa-software-release-url': 'special_sr_for_kedifa',
+        '-sla-2-computer_guid': 'local',
+        '-sla-3-computer_guid': 'local',
+        'X-software_release_url': base_software_url,
+        'caucase_port': '15090',
+        'full_address_list': [],
+        'instance_title': 'testing partition 0',
+        'kedifa_port': '15080',
+        'plain_http_port': '11080',
+        'port': '11443',
+        'root_instance_title': 'testing partition 0',
+        'slap_software_type': 'RootSoftwareInstance',
+        'slave_instance_list': []}
+    }
+    self.assertEqual(
+      partition_parameter_dict_dict,
+      expected_partition_parameter_dict_dict
     )
