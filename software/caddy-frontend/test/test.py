@@ -48,7 +48,6 @@ from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
 import socket
-import sqlite3
 
 
 try:
@@ -6791,6 +6790,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
   def test(self):
     self.instance_parameter_dict.update({
       '-frontend-quantity': 3,
+      '-frontend-config-1-ram-cache-size': '512K',
+      '-frontend-config-2-ram-cache-size': '256K',
       '-sla-2-computer_guid': self.slap._computer_id,
       '-frontend-2-state': 'stopped',
       '-frontend-2-software-release-url': self.frontend_2_sr,
@@ -6809,43 +6810,48 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     except Exception:
       pass
 
-    # inspect slapproxy, that the master correctly requested other partitions
-    sqlitedb_file = os.path.join(
-      os.path.abspath(
-        os.path.join(
-          self.slap.instance_directory, os.pardir
-        )
-      ), 'var', 'proxy.db'
-    )
-    connection = sqlite3.connect(sqlitedb_file)
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    cursor.execute(
-      "select partition_reference, software_release "
-      "from partition14 where slap_state='busy';")
-
-    requested_partition_information = cursor.fetchall()
+    computer = self.slap._slap.registerComputer('local')
+    partition_parameter_dict_dict = {}
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      instance_title = parameter_dict['instance_title']
+      if '_' in parameter_dict:
+        parameter_dict = json.loads(parameter_dict['_'])
+      partition_parameter_dict_dict[instance_title] = parameter_dict
+      parameter_dict[
+        'X-software_release_url'] = partition.getSoftwareRelease().getURI()
 
     base_software_url = self.getSoftwareURL()
     self.assertEqual(
-      requested_partition_information,
       [
-        {'software_release': base_software_url,
-         'partition_reference': 'testing partition 0'},
-        {'software_release': self.kedifa_sr,
-         'partition_reference': 'kedifa'},
+        partition_parameter_dict_dict['testing partition 0'][
+          'X-software_release_url'],
+        partition_parameter_dict_dict['kedifa']['X-software_release_url'],
+        partition_parameter_dict_dict['caddy-frontend-1'][
+          'X-software_release_url'],
+        partition_parameter_dict_dict['caddy-frontend-2'][
+          'X-software_release_url'],
+        partition_parameter_dict_dict['caddy-frontend-3'][
+          'X-software_release_url'],
+      ],
+      [
+        base_software_url,
+        self.kedifa_sr,
         # that one is base, as expected
-        {'software_release': base_software_url,
-         'partition_reference': 'caddy-frontend-1'},
-        {'software_release': self.frontend_2_sr,
-         'partition_reference': 'caddy-frontend-2'},
-        {'software_release': self.frontend_3_sr,
-         'partition_reference': 'caddy-frontend-3'}]
+        base_software_url,
+        self.frontend_2_sr,
+        self.frontend_3_sr,
+      ]
     )
+    self.assertEqual(
+      [
+        partition_parameter_dict_dict['caddy-frontend-1']['ram-cache-size'],
+        partition_parameter_dict_dict['caddy-frontend-2']['ram-cache-size'],
+        'ram-cache-size' in partition_parameter_dict_dict['caddy-frontend-3']],
+      ['512K', '256K', False]
+    )
+    # XXX-TODO: Test much more parameters (all!?), as a lot are leaking,
+    #           not only the config- ones
+    self.fail()
