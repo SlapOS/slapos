@@ -100,7 +100,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   timeout server {{ slave_instance['request-timeout'] }}s
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
-  server backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
+  server {{ slave_instance['slave_reference'] }}-backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
 {%-         if path %}
   http-request set-path {{ path }}%[path]
 {%-         endif %}

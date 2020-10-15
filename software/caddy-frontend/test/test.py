@@ -1772,7 +1772,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] ' \
-                 r'http-backend _Url-http\/backend ' \
+                 r'http-backend _Url-http\/_Url-backend ' \
                  r'\d+/\d+\/\d+\/\d+\/\d+ ' \
                  r'200 \d+ - - ---- ' \
                  r'\d\/\d\/\d\/\d\/\d \d\/\d ' \
