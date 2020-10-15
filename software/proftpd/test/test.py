@@ -27,7 +27,7 @@
 
 import os
 import shutil
-import urllib.parse as urlparse
+from urllib.parse import urlparse
 
 import tempfile
 import io
@@ -59,7 +59,7 @@ class ProFTPdTestCase(SlapOSInstanceTestCase):
     cnopts.hostkeys = None
 
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    sftp_url = urlparse.urlparse(parameter_dict['url'])
+    sftp_url = urlparse(parameter_dict['url'])
 
     return pysftp.Connection(
         hostname or sftp_url.hostname,
@@ -97,7 +97,7 @@ class TestSFTPOperations(ProFTPdTestCase):
     with self._getConnection() as sftp:
       # put a file
       with tempfile.NamedTemporaryFile() as f:
-        f.write("Hello FTP !".encode())
+        f.write("Hello FTP !")
         f.flush()
         sftp.put(f.name, remotepath='testfile')
 
@@ -153,17 +153,17 @@ class TestSFTPOperations(ProFTPdTestCase):
 
   def test_user_cannot_escape_home(self):
     with self._getConnection() as sftp:
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('..')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('/')
-      with self.assertRaisesRegexp(IOError, 'Permission denied'):
+      with self.assertRaisesRegex(IOError, 'Permission denied'):
         sftp.listdir('/tmp/')
 
 
 class TestUserManagement(ProFTPdTestCase):
   def test_user_can_be_added_from_script(self):
-    with self.assertRaisesRegexp(AuthenticationException,
+    with self.assertRaisesRegex(AuthenticationException,
                                  'Authentication failed'):
       self._getConnection(username='bob', password='secret')
 
@@ -178,12 +178,12 @@ class TestBan(ProFTPdTestCase):
   def test_client_are_banned_after_5_wrong_passwords(self):
     # Simulate failed 5 login attempts
     for i in range(5):
-      with self.assertRaisesRegexp(AuthenticationException,
+      with self.assertRaisesRegex(AuthenticationException,
                                    'Authentication failed'):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
-    with self.assertRaisesRegexp(SSHException, 'Connection reset by peer'):
+    with self.assertRaisesRegex(SSHException, 'Connection reset by peer'):
       self._getConnection()
 
     # ban event is logged
@@ -191,7 +191,7 @@ class TestBan(ProFTPdTestCase):
                            'var',
                            'log',
                            'proftpd-ban.log')) as ban_log_file:
-      self.assertRegexpMatches(
+      self.assertRegex(
           ban_log_file.readlines()[-1],
           'login from host .* denied due to host ban')
 
@@ -204,7 +204,7 @@ class TestInstanceParameterPort(ProFTPdTestCase):
 
   def test_instance_parameter_port(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
-    sftp_url = urlparse.urlparse(parameter_dict['url'])
+    sftp_url = urlparse(parameter_dict['url'])
     self.assertEqual(self.free_port, sftp_url.port)
     self.assertTrue(self._getConnection())
 
