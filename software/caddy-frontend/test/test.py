@@ -6791,6 +6791,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
   def test(self):
     self.instance_parameter_dict.update({
       '-frontend-quantity': 3,
+      '-frontend-config-1-ram-cache-size': '512K',
+      '-frontend-config-2-ram-cache-size': '256K',
       '-sla-2-computer_guid': self.slap._computer_id,
       '-frontend-2-state': 'stopped',
       '-frontend-2-software-release-url': self.frontend_2_sr,
@@ -6849,3 +6851,23 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         {'software_release': self.frontend_3_sr,
          'partition_reference': 'caddy-frontend-3'}]
     )
+
+    # XXX-TODO: possibly rewrite the test by using register computer
+    computer = self.slap._slap.registerComputer('local')
+    partition_parmeter_dict_dict = [
+      {
+        q.getInstanceParameterDict()['instance_title']:
+        json.loads(q.getInstanceParameterDict().get('_', '{}'))}
+      for q in computer.getComputerPartitionList()
+      if q.getState() != 'destroyed']
+
+    # XXX-TODO: Test much more parameters (all!?), as a lot are leaking,
+    #           not only the config- ones
+    self.assertEqual(
+      [
+        partition_parmeter_dict_dict['caddy-frontend-1']['ram-cache-size'],
+        partition_parmeter_dict_dict['caddy-frontend-2']['ram-cache-size'],
+        'ram-cache-size' in partition_parmeter_dict_dict['caddy-frontend-3']],
+      ['512K', '256K', False]
+    )
+    self.fail()

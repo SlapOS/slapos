@@ -233,7 +233,7 @@ config-master-key-download-url = ${request-kedifa:connection-master-key-download
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 {#   Do not send additional parameters for destroyed nodes #}
 {%   if state != 'destroyed' %}
-{%     set slave_configuration_dict = slapparameter_dict %}
+{%     set slave_configuration_dict = slapparameter_dict.copy() %}
 {%     do slave_configuration_dict.update(frontend_request.get('config')) %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 {%     do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list, sort_keys=True)) %}
