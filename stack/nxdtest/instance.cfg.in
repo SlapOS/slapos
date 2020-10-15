@@ -1,4 +1,4 @@
-# NEO test instance: run neotest under Nexedi testing infrastructure
+# instance to test a software via nxdtest under Nexedi testing infrastructure.
 [buildout]
 parts = runTestSuite
 
@@ -17,12 +17,17 @@ bin     = {{ buildout['bin-directory'] }}
 recipe  = slapos.cookbook:mkdirectory
 home    = ${buildout:directory}
 bin     = ${:home}/bin
-neotest = ${:home}/neotest
 
-# script to run the testsuite from inside <instance>/neotest/
+# script to run the testsuite via nxdtest
 # located @ <instance>/bin/runTestSuite so testnode can see this as run tests entrypoint.
+#
+# instance that uses stack/nxdtest.cfg must provide
+#
+#   [runTestSuite]
+#   env.sh  = ...
+#   workdir = ...
 [runTestSuite]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
-command-line = /bin/bash -c 'cd ${directory:neotest} && ${software:bin}/neotest-runTestSuite "$@"' runTestSuite
+command-line = /bin/bash -c '. ${:env.sh} && cd ${:workdir} && {{ nxdtest['exe'] }} "$@"' nxdtest
 # "$@" is implicitly added to argv
