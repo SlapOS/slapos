@@ -28,7 +28,6 @@
 import os
 import shutil
 from urllib.parse import urlparse
-
 import tempfile
 import io
 import subprocess
