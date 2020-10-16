@@ -461,6 +461,7 @@ command =
 update-command = ${:command}
 csr = ${aikc-config:csr}
 key = ${aikc-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 
@@ -487,7 +488,8 @@ mode = 0700
 {% do part_list.append('aikc-create-user') %}
 [aikc-create-user]
 recipe = plone.recipe.command
-stop-on-error = True
+{#- The called command is smart enough to survive errors and retry #}
+stop-on-error = False
 update-command = ${:command}
 command =
   if ! [ -f ${aikc-config:user-created} ] ; then
@@ -556,7 +558,8 @@ mode = 0700
 {% do part_list.append('aikc-%s' % (csr,)) %}
 [aikc-{{ csr }}]
 recipe = plone.recipe.command
-stop-on-error = True
+{#- The called command is smart enough to survive errors and retry #}
+stop-on-error = False
 command =
   ${aikc-{{ csr }}-wrapper:rendered}
 update-command = ${:command}
@@ -593,6 +596,7 @@ command =
 update-command = ${:command}
 csr = ${aibcc-config:csr}
 key = ${aibcc-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 
@@ -621,6 +625,7 @@ mode = 0700
 recipe = plone.recipe.command
 # the caucase for this part is provided in this profile, so we can't fail
 # as otherwise caucase will never be started...
+{#- XXX: Create promise #}
 stop-on-error = False
 update-command = ${:command}
 command =
@@ -689,7 +694,8 @@ mode = 0700
 {% do part_list.append('aibcc-%s' % (csr,)) %}
 [aibcc-{{ csr }}]
 recipe = plone.recipe.command
-stop-on-error = True
+{#- The called command is smart enough to survive errors and retry #}
+stop-on-error = False
 command =
   ${aibcc-{{ csr }}-wrapper:rendered}
 update-command = ${:command}
@@ -738,6 +744,7 @@ recipe = plone.recipe.command
 certificate = ${directory:etc}/rejected-slave.pem
 key = ${:certificate}
 
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 update-command = ${:command}
 command =
@@ -756,6 +763,7 @@ user = admin
 
 [rejected-slave-htpasswd]
 recipe = plone.recipe.command
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 file = ${directory:var}/nginx-rejected.htpasswd
 command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slave-password:user} ${rejected-slave-password:passwd}
