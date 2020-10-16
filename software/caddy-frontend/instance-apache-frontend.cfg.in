@@ -118,6 +118,7 @@ update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
   [ -f ${:certificate} ] && exit 0
@@ -141,6 +142,7 @@ update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
   [ -f ${:certificate} ] && exit 0
@@ -202,6 +204,7 @@ command =
 update-command = ${:command}
 template-csr = ${kedifa-login-config:template-csr}
 key = ${kedifa-login-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
@@ -254,6 +257,7 @@ command =
 update-command = ${:command}
 template-csr = ${backend-client-login-config:template-csr}
 key = ${backend-client-login-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
