@@ -177,6 +177,7 @@ bytes = 8
 
 [{{ slave_htpasswd_section }}]
 recipe = plone.recipe.command
+# XXX: Allow errors, convert to promise
 stop-on-error = True
 file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
 command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} {{ '${' + slave_password_section + ':passwd}' }}
@@ -418,6 +419,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [kedifa-updater-run]
 recipe = plone.recipe.command
+# XXX: Allow errors, convert to promise
 stop-on-error = True
 command = {{ software_parameter_dict['kedifa-updater'] }} --prepare-only ${kedifa-updater-mapping:file} --on-update "{{ caddy_configuration['frontend-graceful-command'] }}"
 update-command = ${:command}
@@ -525,6 +527,7 @@ recipe = plone.recipe.command
 certificate = {{ directory['caddy-csr_id'] }}/certificate.pem
 key = {{ directory['caddy-csr_id'] }}/key.pem
 
+# XXX: Allow errors, convert to promise
 stop-on-error = True
 update-command = ${:command}
 command =
