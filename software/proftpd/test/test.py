@@ -124,7 +124,7 @@ class TestSFTPOperations(ProFTPdTestCase):
         # it's just a hidden file
         test_self.assertEqual(
             ['.in.destination.'], os.listdir(test_self.upload_dir))
-        return io.StringIO.read(self, *args)
+        return super().read(*args)
 
     with self._getConnection() as sftp:
       sftp.sftp_client.putfo(PartialFile("content"), "destination")
@@ -152,11 +152,11 @@ class TestSFTPOperations(ProFTPdTestCase):
 
   def test_user_cannot_escape_home(self):
     with self._getConnection() as sftp:
-      with self.assertRaisesRegex(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('..')
-      with self.assertRaisesRegex(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('/')
-      with self.assertRaisesRegex(IOError, 'Permission denied'):
+      with self.assertRaises(PermissionError):
         sftp.listdir('/tmp/')
 
 
