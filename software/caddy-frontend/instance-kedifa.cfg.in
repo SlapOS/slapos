@@ -95,6 +95,7 @@ command =
 update-command = ${:command}
 template-csr = ${kedifa-config:template-csr}
 key = ${kedifa-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
@@ -135,6 +136,7 @@ recipe = plone.recipe.command
 certificate = ${directory:certificate-csr_id}/certificate.pem
 key = ${directory:certificate-csr_id}/key.pem
 
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 update-command = ${:command}
 command =
