@@ -246,6 +246,94 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self.assertFalse(os.path.exists(rotated_log_file))
 
 
+class BalancerCookieHTTPServer(ManagedHTTPServer):
+  """An HTTP Server which can set balancer cookie.
+
+  This server set cookie when requested /set-cookie path.
+
+  The reply body is the name used when registering this resource
+  using getManagedResource. This way we can assert which
+  backend replied.
+  """
+
+  @property
+  def RequestHandler(self):
+    server = self
+    class RequestHandler(BaseHTTPRequestHandler):
+      def do_GET(self):
+        # type: () -> None
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        if self.path == '/set_cookie':
+          # the balancer tells the backend what's the name of the balancer cookie with
+          # the X-Balancer-Current-Cookie header.
+          self.send_header('Set-Cookie', '%s=anything' % self.headers['X-Balancer-Current-Cookie'])
+          # The name of this cookie is SERVERID
+          assert self.headers['X-Balancer-Current-Cookie'] == 'SERVERID'
+        self.end_headers()
+        self.wfile.write(server._name)
+      log_message = logging.getLogger(__name__ + '.BalancerCookieHTTPServer').info
+
+    return RequestHandler
+
+
+class TestBalancer(BalancerTestCase):
+  """Check balancing capabilities
+  """
+  __partition_reference__ = 'b'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(TestBalancer, cls)._getInstanceParameterDict()
+
+    # use two backend servers
+    parameter_dict['dummy_http_server'] = [
+        [cls.getManagedResource("backend_web_server1", BalancerCookieHTTPServer).netloc, 1, False],
+        [cls.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).netloc, 1, False],
+    ]
+    return parameter_dict
+
+  def test_balancer_round_robin(self):
+    # requests are by default balanced to both servers
+    self.assertEqual(
+        {requests.get(self.default_balancer_url, verify=False).text for _ in range(10)},
+        {'backend_web_server1', 'backend_web_server2'}
+    )
+
+  def test_balancer_server_down(self):
+    # if one backend is down, it is excluded from balancer
+    self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).close()
+    self.addCleanup(self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).open)
+    self.assertEqual(
+        {requests.get(self.default_balancer_url, verify=False).text for _ in range(10)},
+        {'backend_web_server1',}
+    )
+
+  def test_balancer_set_cookie(self):
+    # if backend provides a "SERVERID" cookie, balancer will overwrite it with the
+    # backend selected by balancing algorithm
+    self.assertIn(
+        requests.get(urlparse.urljoin(self.default_balancer_url, '/set_cookie'), verify=False).cookies['SERVERID'],
+        ('default-0', 'default-1'),
+    )
+
+  def test_balancer_respects_sticky_cookie(self):
+    # if request is made with the sticky cookie, the client stick on one balancer
+    cookies = dict(SERVERID='default-1')
+    self.assertEqual(
+        {requests.get(self.default_balancer_url, verify=False, cookies=cookies).text for _ in range(10)},
+        {'backend_web_server2',}
+    )
+
+    # if that backend becomes down, requests are balanced to another server
+    self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).close()
+    self.addCleanup(self.getManagedResource("backend_web_server2", BalancerCookieHTTPServer).open)
+    self.assertEqual(
+        requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
+        'backend_web_server1')
+
+
+
 class CaucaseClientCertificate(ManagedResource):
   """A client certificate issued by a caucase services.
   """
