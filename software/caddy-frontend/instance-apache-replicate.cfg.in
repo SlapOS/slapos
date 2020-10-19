@@ -24,8 +24,8 @@
         'authenticate-to-backend',
     ]
 %}
-{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'false').lower() in TRUE_VALUES %}
+{% set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'false').lower() in TRUE_VALUES %}
 {# Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {% set master_partition_monitor_monitor_httpd_port = 8401 %}
 {% set kedifa_partition_monitor_httpd_port = 8402 %}
