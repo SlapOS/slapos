@@ -89,16 +89,19 @@ context =
 {%   endfor %}
 {%   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
 {%   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
-{%   do frontend_list.append(frontend_name) %}
-{%   do frontend_section_list.append(request_section_title) %}
+{%   set state_key = "-frontend-%s-state" % i %}
+{%   set frontend_state = slapparameter_dict.pop(state_key, None) %}
+{%   if frontend_state != 'destroyed' %}
+{%     do frontend_list.append(frontend_name) %}
+{%     do frontend_section_list.append(request_section_title) %}
+{%   endif %}
 {%   do part_list.append(request_section_title) %}
 # Filling request dict for slave
-{%   set state_key = "-frontend-%s-state" % i %}
 {%   set request_content_dict = {
                                   'config': config_dict,
                                   'name': frontend_name,
                                   'sla': sla_dict,
-                                  'state': slapparameter_dict.pop(state_key, None)
+                                  'state': frontend_state
                                   } %}
 {%   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
 {%   do request_content_dict.__setitem__('software-url', slapparameter_dict.get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
