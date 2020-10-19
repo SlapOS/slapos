@@ -1,3 +1,4 @@
+import glob
 import hashlib
 import json
 import logging
@@ -7,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler
 from typing import Dict
 
@@ -140,6 +142,108 @@ class BalancerTestCase(ERP5InstanceTestCase):
   def setUp(self):
     self.default_balancer_url = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])['default']
+
+
+class SlowHTTPServer(ManagedHTTPServer):
+  """An HTTP Server which reply after 3 seconds.
+  """
+  class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+      # type: () -> None
+      self.send_response(200)
+      self.send_header("Content-Type", "text/plain")
+      time.sleep(3)
+      self.end_headers()
+      self.wfile.write("OK\n")
+
+    log_message = logging.getLogger(__name__ + '.SlowHandler').info
+
+
+class TestAccessLog(BalancerTestCase, CrontabMixin):
+  """Check access logs emitted by balancer
+  """
+  __partition_reference__ = 'l'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(TestAccessLog, cls)._getInstanceParameterDict()
+    # use a slow server instead
+    parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
+    return parameter_dict
+
+  def test_access_log_format(self):
+    # type: () -> None
+    requests.get(
+        urlparse.urljoin(self.default_balancer_url, '/url_path'),
+        verify=False,
+    )
+    with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-access.log')) as access_log_file:
+      access_line = access_log_file.read()
+    self.assertIn('/url_path', access_line)
+
+    # last \d is the request time in micro seconds, since this SlowHTTPServer
+    # sleeps for 3 seconds, it should take between 3 and 4 seconds to process
+    # the request - but our test machines can be slow sometimes, so we tolerate
+    # it can take up to 20 seconds.
+    match = re.match(
+        r'([(\d\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+)',
+        access_line
+    )
+    self.assertTrue(match)
+    assert match
+    request_time = int(match.groups()[-1])
+    self.assertGreater(request_time, 3 * 1000 * 1000)
+    self.assertLess(request_time, 20 * 1000 * 1000)
+
+  def test_access_log_apachedex_report(self):
+    # type: () -> None
+    # make a request so that we have something in the logs
+    requests.get(self.default_balancer_url, verify=False)
+
+    # crontab for apachedex is executed
+    self._executeCrontabAtDate('generate-apachedex-report', '23:59')
+    # it creates a report for the day
+    apachedex_report, = glob.glob(
+        os.path.join(
+            self.computer_partition_root_path,
+            'srv',
+            'monitor',
+            'private',
+            'apachedex',
+            'ApacheDex-*.html',
+        ))
+    with open(apachedex_report, 'r') as f:
+      report_text = f.read()
+    self.assertIn('APacheDEX', report_text)
+    # having this table means that apachedex could parse some lines.
+    self.assertIn('<h2>Hits per status code</h2>', report_text)
+
+  def test_access_log_rotation(self):
+    # type: () -> None
+    # run logrotate a first time so that it create state files
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+
+    # make a request so that we have something in the logs
+    requests.get(self.default_balancer_url, verify=False).raise_for_status()
+
+    # slow query crontab depends on crontab for log rotation
+    # to be executed first.
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+    # this logrotate leaves the log for the day as non compressed
+    rotated_log_file = os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'logrotate',
+        'apache-access.log-20500101',
+    )
+    self.assertTrue(os.path.exists(rotated_log_file))
+
+    requests.get(self.default_balancer_url, verify=False).raise_for_status()
+    # on next day execution of logrotate, log files are compressed
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
+    self.assertFalse(os.path.exists(rotated_log_file))
 
 
 class CaucaseClientCertificate(ManagedResource):
