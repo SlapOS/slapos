@@ -334,6 +334,78 @@ class TestBalancer(BalancerTestCase):
 
 
 
+class ContentTypeHTTPServer(ManagedHTTPServer):
+  """An HTTP Server which reply with content type from path.
+
+  For example when requested http://host/text/plain it will reply
+  with Content-Type: text/plain header.
+
+  The body is always "OK"
+  """
+
+  class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+      # type: () -> None
+      self.send_response(200)
+      if self.path == '/':
+        return self.end_headers()
+      content_type = self.path[1:]
+      self.send_header("Content-Type", content_type)
+      self.end_headers()
+      self.wfile.write("OK")
+
+    log_message = logging.getLogger(__name__ + '.ContentTypeHTTPServer').info
+
+
+class TestContentEncoding(BalancerTestCase):
+  """Test how responses are gzip encoded or not depending on content type header.
+  """
+  __partition_reference__ = 'ce'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(TestContentEncoding, cls)._getInstanceParameterDict()
+    parameter_dict['dummy_http_server'] = [
+        [cls.getManagedResource("content_type_server", ContentTypeHTTPServer).netloc, 1, False],
+    ]
+    return parameter_dict
+
+  def test_gzip_encoding(self):
+    # type: () -> None
+    for content_type in (
+        'text/cache-manifest',
+        'text/html',
+        'text/plain',
+        'text/css',
+        'application/hal+json',
+        'application/json',
+        'application/x-javascript',
+        'text/xml',
+        'application/xml',
+        'application/rss+xml',
+        'text/javascript',
+        'application/javascript',
+        'image/svg+xml',
+        'application/x-font-ttf',
+        'application/font-woff',
+        'application/font-woff2',
+        'application/x-font-opentype',
+        'application/wasm',):
+      resp = requests.get(urlparse.urljoin(self.default_balancer_url, content_type), verify=False)
+      self.assertEqual(resp.headers['Content-Type'], content_type)
+      self.assertEqual(
+          resp.headers['Content-Encoding'],
+          'gzip',
+          '%s uses wrong encoding: %s' % (content_type, resp.headers['Content-Encoding']))
+      self.assertEqual(resp.text, 'OK')
+
+  def test_no_gzip_encoding(self):
+    # type: () -> None
+    resp = requests.get(urlparse.urljoin(self.default_balancer_url, '/image/png'), verify=False)
+    self.assertNotIn('Content-Encoding', resp.headers)
+    self.assertEqual(resp.text, 'OK')
+
+
 class CaucaseClientCertificate(ManagedResource):
   """A client certificate issued by a caucase services.
   """
