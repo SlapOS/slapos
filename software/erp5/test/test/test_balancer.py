@@ -5,15 +5,18 @@ import logging
 import os
 import re
 import shutil
+import socket
 import subprocess
 import tempfile
 import time
 import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler
-from typing import Dict
+from typing import Any, Dict, Optional
 
+import idna
 import mock
 import OpenSSL.SSL
+import pexpect
 import requests
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -102,6 +105,20 @@ class CaucaseService(ManagedResource):
     self._caucased_process.wait()
     shutil.rmtree(self.directory)
 
+  @property
+  def ca_crt_path(self):
+    # type: () -> str
+    """Path of the CA certificate from this caucase.
+    """
+    ca_crt_path = os.path.join(self.directory, 'ca.crt.pem')
+    if not os.path.exists(ca_crt_path):
+      with open(ca_crt_path, 'w') as f:
+        f.write(
+            requests.get(urlparse.urljoin(
+                self.url,
+                '/cas/crt/ca.crt.pem',
+            )).text)
+    return ca_crt_path
 
 class BalancerTestCase(ERP5InstanceTestCase):
 
@@ -332,6 +349,84 @@ class TestBalancer(BalancerTestCase):
         requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
         'backend_web_server1')
 
+
+class TestTLS(BalancerTestCase):
+  """Check TLS
+  """
+  __partition_reference__ = 's'
+
+  def _getServerCertificate(self, hostname, port):
+    # type: (Optional[str], Optional[int]) -> Any
+    hostname_idna = idna.encode(hostname)
+    sock = socket.socket()
+
+    sock.connect((hostname, port))
+    ctx = OpenSSL.SSL.Context(OpenSSL.SSL.SSLv23_METHOD)
+    ctx.check_hostname = False
+    ctx.verify_mode = OpenSSL.SSL.VERIFY_NONE
+
+    sock_ssl = OpenSSL.SSL.Connection(ctx, sock)
+    sock_ssl.set_connect_state()
+    sock_ssl.set_tlsext_host_name(hostname_idna)
+    sock_ssl.do_handshake()
+    cert = sock_ssl.get_peer_certificate()
+    crypto_cert = cert.to_cryptography()
+    sock_ssl.close()
+    sock.close()
+    return crypto_cert
+
+  def test_certificate_validates_with_caucase_ca(self):
+    # type: () -> None
+    caucase = self.getManagedResource("caucase", CaucaseService)
+    requests.get(self.default_balancer_url, verify=caucase.ca_crt_path)
+
+  def test_certificate_renewal(self):
+    # type: () -> None
+    caucase = self.getManagedResource("caucase", CaucaseService)
+    balancer_parsed_url = urlparse.urlparse(self.default_balancer_url)
+    certificate_before_renewal = self._getServerCertificate(
+        balancer_parsed_url.hostname,
+        balancer_parsed_url.port)
+
+    # run caucase updater 90 days in the future, so that certificate is
+    # renewed.
+    caucase_updater = os.path.join(
+        self.computer_partition_root_path,
+        'etc',
+        'service',
+        'caucase-updater',
+    )
+    process = pexpect.spawnu(
+       "faketime +90days %s" % caucase_updater,
+        env=dict(os.environ, PYTHONPATH=''),
+    )
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from caucase_updater: %s", msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect(u"Renewing .*\nNext wake-up.*")
+    process.terminate()
+    process.wait()
+
+    # wait for server to use new certificate
+    for _ in range(30):
+      certificate_after_renewal = self._getServerCertificate(
+          balancer_parsed_url.hostname,
+          balancer_parsed_url.port)
+      if certificate_after_renewal.not_valid_before > certificate_before_renewal.not_valid_before:
+        break
+      time.sleep(.5)
+
+    self.assertGreater(
+        certificate_after_renewal.not_valid_before,
+        certificate_before_renewal.not_valid_before,
+    )
+
+    # requests are served properly after cert renewal
+    requests.get(self.default_balancer_url, verify=caucase.ca_crt_path).raise_for_status()
 
 
 class ContentTypeHTTPServer(ManagedHTTPServer):
