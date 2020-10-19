@@ -108,7 +108,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT,
     )
-    for _ in range(10):
+    for _ in range(30):
       try:
         if requests.get(cls.frontend_caucased_url).status_code == 200:
           break
@@ -185,7 +185,7 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
     result = caucase_process.communicate()
     csr_id = result[0].split()[0]
 
-    for _ in range(10):
+    for _ in range(30):
       if not subprocess.call(
         cas_args + [
           '--get-crt', csr_id, frontend_service_key,
