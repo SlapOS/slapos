@@ -1,8 +1,7 @@
 [buildout]
-extends = {{ common_profile }}
+extends = {{ software_parameter_dict['profile_common'] }}
 
 parts =
-  dynamic-template-caddy-replicate
   switch-softwaretype
 
 [caddyprofiledeps]
@@ -11,76 +10,59 @@ recipe = caddyprofiledeps
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
 extra-context =
 context =
     import json_module json
-    key slap_software_type instance-parameter:slap-software-type
     key slapparameter_dict instance-parameter:configuration
-    key slave_instance_list instance-parameter:slave-instance-list
-    section instance_parameter instance-parameter
+    section instance_parameter_dict instance-parameter
+    section software_parameter_dict software-parameter-section
     ${:extra-context}
-
-[switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = ${dynamic-template-caddy-replicate:rendered}
-RootSoftwareInstance = ${dynamic-template-caddy-replicate:rendered}
-custom-personal = ${dynamic-template-caddy-replicate:rendered}
-single-default = ${dynamic-template-caddy-frontend:rendered}
-single-custom-personal = ${dynamic-template-caddy-frontend:rendered}
-replicate = ${dynamic-template-caddy-replicate:rendered}
-kedifa = ${dynamic-template-kedifa:rendered}
-
-[dynamic-template-caddy-frontend-parameters]
-{% for key,value in template_frontend_parameter_dict.iteritems() %}
-{{ key }} = {{ dumps(value) }}
-{% endfor -%}
-
-[dynamic-template-caddy-frontend]
-< = jinja2-template-base
-template = {{ template_caddy_frontend }}
-filename = instance-caddy-frontend.cfg
-extensions = jinja2.ext.do
-extra-context =
-  import furl_module furl
-  section parameter_dict dynamic-template-caddy-frontend-parameters
-  raw software_type single-custom-personal
-caucase-jinja2-library = {{ caucase_jinja2_library }}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
 import-list =
   file caucase :caucase-jinja2-library
 
-[dynamic-template-caddy-replicate]
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${dynamic-profile-caddy-replicate:rendered}
+RootSoftwareInstance = ${dynamic-profile-caddy-replicate:rendered}
+custom-personal = ${dynamic-profile-caddy-replicate:rendered}
+single-default = ${dynamic-profile-caddy-frontend:rendered}
+single-custom-personal = ${dynamic-profile-caddy-frontend:rendered}
+replicate = ${dynamic-profile-caddy-replicate:rendered}
+kedifa = ${dynamic-profile-kedifa:rendered}
+
+[software-parameter-section]
+{% for key,value in software_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+[dynamic-profile-caddy-frontend]
+< = jinja2-template-base
+template = {{ software_parameter_dict['profile_caddy_frontend'] }}
+filename = instance-caddy-frontend.cfg
+extra-context =
+  import furl_module furl
+  raw software_type single-custom-personal
+
+[dynamic-profile-caddy-replicate]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
-template = {{ template_caddy_replicate }}
+template = {{ software_parameter_dict['profile_caddy_replicate'] }}
 filename = instance-caddy-replicate.cfg
-extensions = jinja2.ext.do
 extra-context =
     import subprocess_module subprocess
     import functools_module functools
     import validators validators
-    key cluster_identification instance-parameter:root-instance-title
-    raw caddy_backend_url_validator {{ caddy_backend_url_validator }}
-    raw template_publish_slave_information {{ template_replicate_publish_slave_information }}
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type RootSoftwareInstance-default-custom-personal-replicate
-    raw template_monitor {{ monitor2_template }}
-    raw common_profile {{ common_profile }}
-    section parameter_dict dynamic-template-caddy-frontend-parameters
-caucase-jinja2-library = {{ caucase_jinja2_library }}
-import-list =
-  file caucase :caucase-jinja2-library
 
-[dynamic-template-kedifa]
+[dynamic-profile-kedifa]
 < = jinja2-template-base
-template = {{ template_kedifa }}
+template = {{ software_parameter_dict['profile_kedifa'] }}
 filename = instance-kedifa.cfg
-extensions = jinja2.ext.do
 extra-context =
-  section parameter_dict dynamic-template-caddy-frontend-parameters
   raw software_type kedifa
-caucase-jinja2-library = {{ caucase_jinja2_library }}
-import-list =
-  file caucase :caucase-jinja2-library
 
 [instance-parameter]
 # Fetches parameters defined in SlapOS Master for this instance.
