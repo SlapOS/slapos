@@ -17,6 +17,7 @@ import idna
 import mock
 import OpenSSL.SSL
 import pexpect
+import psutil
 import requests
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -349,6 +350,42 @@ class TestBalancer(BalancerTestCase):
     self.assertEqual(
         requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
         'backend_web_server1')
+
+
+class TestHTTP(BalancerTestCase):
+  """Check HTTP protocol
+  """
+  __partition_reference__ = 'h'
+
+  def test_http_version(self):
+    # type: () -> None
+    # https://stackoverflow.com/questions/37012486/python-3-x-how-to-get-http-version-using-requests-library/37012810
+    self.assertEqual(
+        requests.get(self.default_balancer_url, verify=False).raw.version, 11)
+
+  def test_keep_alive(self):
+    # type: () -> None
+    # when doing two requests, connection is established only once
+    session = requests.Session()
+    session.verify = False
+
+    # do a first request, which establish a first connection
+    session.get(self.default_balancer_url).raise_for_status()
+
+    # "break" new connection method and check we can make another request
+    with mock.patch(
+        "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
+    ) as new_conn:
+      session.get(self.default_balancer_url).raise_for_status()
+    new_conn.assert_not_called()
+
+    parsed_url = urlparse.urlparse(self.default_balancer_url)
+    # check that we have an open file for the ip connection
+    self.assertTrue([
+        c for c in psutil.Process(os.getpid()).connections()
+        if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
+        and c.raddr.port == parsed_url.port
+    ])
 
 
 class TestTLS(BalancerTestCase):
