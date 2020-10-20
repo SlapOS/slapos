@@ -83,6 +83,40 @@ Those slave instances will be redirected to the "master" instance, and you will 
 
 Finally, the slave instance will be accessible from: https://someidentifier.moulefrite.org.
 
+Node CSR signing - XXX bad version, two CAs
+-------------------------------------------
+
+Caucase is used internally in order to serve CA across frontend nodes and provide authenticity between frontend nodes, kedifa node and master node. For adding any node (kedifa or frontend) it's required to check it's authenticity while adding it to the cluster and sign the CSR send by the added node. By default it requires manual operations described below, but there are automatic systems, which can be used in environments, where the risk of having rouge node in a cluster is acceptable..
+
+The system which needs such operation are:
+
+ * Kedfia, which can be automated with ``automatic-internal-kedifa-caucase-csr``
+ * Backend authentication, which can be automated with ``automatic-internal-backend-client-caucase-csr``.
+
+*Note*: This procedure below is for Kedifa subsystem, but the same applies to backend authentication, just replace ``kedifa-`` with ``backend-client-``.
+
+Information gathering
+~~~~~~~~~~~~~~~~~~~~~
+
+Prerequisites:
+
+ * ``caucase``
+ * ``curl`` or any other HTTP client
+
+After having partially instantiated cluster such connection parameters are presented:
+
+ * ``kedifa-caucase-url``, which is the caucase for the Kedifa subsystem
+ * ``caddy-frontend-<N>-kedifa-csr_id-url``, URL containing the CSR id of the node which want to join to the cluster XXX OOPS it's not named like this!!!
+ * ``caddy-frontend-<N->-csr_id-certificate``, SSL certificate used to expose ``csr_id`` with ``caddy-frontend-<N>-kedifa-csr_id-url``
+ * ``kedifa-kedifa-csr_id-url``, URL containing the CSR id of the kedifa node which wants to join to the cluster XXX OOPS it's not named like this!!!
+ * ``kedifa-csr_id-certificate``, SSL certificate used to expose ``csr_id`` with ``kedifa-kedifa-csr_id-url``
+
+The procedure
+~~~~~~~~~~~~~
+
+Using ``caucase`` create the directory structure to store CA information:
+
+
 About SSL and SlapOS Master Zero Knowledge
 ==========================================
 
