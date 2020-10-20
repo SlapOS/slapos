@@ -357,7 +357,7 @@ class TestDataMixin(object):
         [backend_haproxy_wrapper_path] + hash_file_list
       )
     for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave')):
+      self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
       partition_id = rejected_slave_publish_path.split('/')[-3]
       rejected_slave_pem_path = os.path.join(
         self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
@@ -726,6 +726,27 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     return generate_auth_url, upload_url
 
+  def assertBackendHaproxyStatisticUrl(self, parameter_dict):
+    url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
+    backend_haproxy_statistic_url_dict = {}
+    for key in parameter_dict.keys():
+      if key.startswith('caddy-frontend') and key.endswith(
+        'backend-haproxy-statistic-url'):
+        backend_haproxy_statistic_url_dict[key] = parameter_dict.pop(key)
+    self.assertEqual(
+      [url_key],
+      backend_haproxy_statistic_url_dict.keys()
+    )
+
+    backend_haproxy_statistic_url = backend_haproxy_statistic_url_dict[url_key]
+    result = requests.get(
+      backend_haproxy_statistic_url,
+      verify=False,
+    )
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('Statistics Report for HAProxy', result.text)
+
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
@@ -1042,6 +1063,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -1072,6 +1094,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
@@ -1543,6 +1566,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -1747,7 +1771,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ ' \
                  r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] ' \
-                 r'http-backend _Url-http\/backend ' \
+                 r'http-backend _Url-http\/_Url-backend ' \
                  r'\d+/\d+\/\d+\/\d+\/\d+ ' \
                  r'200 \d+ - - ---- ' \
                  r'\d\/\d\/\d\/\d\/\d \d\/\d ' \
@@ -1776,15 +1800,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue("""backend _Url-http
+    self.assertIn("""backend _Url-http
   timeout server 12s
   timeout connect 5s
-  retries 3""" in content)
-      self.assertTrue("""  timeout queue 60s
+  retries 3""", content)
+    self.assertIn("""  timeout queue 60s
   timeout server 12s
   timeout client 12s
   timeout connect 5s
-  retries 3""" in content)
+  retries 3""", content)
+    # check that no needless entries are generated
+    self.assertIn("backend _Url-http\n", content)
+    self.assertNotIn("backend _Url-https\n", content)
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
@@ -5229,6 +5256,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -5905,6 +5933,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -6011,6 +6040,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -6206,6 +6236,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
@@ -6720,3 +6751,273 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     self.assertEqual(self.certificate_pem, der2pem(result_specific.peercert))
     self.assertEqualResultJson(result_specific, 'Path', '/zspecific/test-path')
+
+
+class TestPassedRequestParameter(HttpFrontendTestCase):
+  # special SRs to check out
+  frontend_2_sr = 'special_sr_for_2'
+  frontend_3_sr = 'special_sr_for_3'
+  kedifa_sr = 'special_sr_for_kedifa'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestPassedRequestParameter, cls).setUpClass()
+    cls.slap.supply(cls.frontend_2_sr, cls.slap._computer_id)
+    cls.slap.supply(cls.frontend_3_sr, cls.slap._computer_id)
+    cls.slap.supply(cls.kedifa_sr, cls.slap._computer_id)
+
+  @classmethod
+  def tearDownClass(cls):
+    cls.slap.supply(
+      cls.frontend_2_sr, cls.slap._computer_id, state="destroyed")
+    cls.slap.supply(
+      cls.frontend_3_sr, cls.slap._computer_id, state="destroyed")
+    cls.slap.supply(
+      cls.kedifa_sr, cls.slap._computer_id, state="destroyed")
+    super(TestPassedRequestParameter, cls).tearDownClass()
+
+  instance_parameter_dict = {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
+
+  def test(self):
+    self.instance_parameter_dict.update({
+      # master partition parameters
+      '-frontend-quantity': 3,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-sla-3-computer_guid': self.slap._computer_id,
+      '-frontend-2-state': 'stopped',
+      '-frontend-2-software-release-url': self.frontend_2_sr,
+      '-frontend-3-state': 'stopped',
+      '-frontend-3-software-release-url': self.frontend_3_sr,
+      '-kedifa-software-release-url': self.kedifa_sr,
+      'automatic-internal-kedifa-caucase-csr': False,
+      'automatic-internal-backend-client-caucase-csr': False,
+      # all nodes partition parameters
+      'apache-certificate': self.certificate_pem,
+      'apache-key': self.key_pem,
+      'domain': 'example.com',
+      'enable-http2-by-default': True,
+      'global-disable-http2': True,
+      'mpm-graceful-shutdown-timeout': 2,
+      'public-ipv4': '255.255.255.255',
+      're6st-verification-url': 're6st-verification-url',
+      'backend-connect-timeout': 2,
+      'backend-connect-retries': 1,
+      'ciphers': 'ciphers',
+      'request-timeout': 100,
+      'authenticate-to-backend': True,
+      # specific parameters
+      '-frontend-config-1-ram-cache-size': '512K',
+      '-frontend-config-2-ram-cache-size': '256K',
+    })
+
+    # re-request instance with updated parameters
+    self.requestDefaultInstance()
+
+    # run once instance, it's only needed for later checks
+    try:
+      self.slap.waitForInstance()
+    except Exception:
+      pass
+
+    computer = self.slap._slap.registerComputer('local')
+    # state of parameters of all instances
+    partition_parameter_dict_dict = {}
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      parameter_dict = partition.getInstanceParameterDict()
+      instance_title = parameter_dict['instance_title']
+      if '_' in parameter_dict:
+        # "flatten" the instance parameter
+        parameter_dict = json.loads(parameter_dict['_'])
+      partition_parameter_dict_dict[instance_title] = parameter_dict
+      parameter_dict[
+        'X-software_release_url'] = partition.getSoftwareRelease().getURI()
+
+    base_software_url = self.getSoftwareURL()
+
+    # drop some very varying parameters
+    def assertKeyWithPop(d, k):
+      self.assertIn(k, d)
+      d.pop(k)
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-1'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-2'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['caddy-frontend-3'],
+      'master-key-download-url')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['testing partition 0'],
+      'timestamp')
+    assertKeyWithPop(
+      partition_parameter_dict_dict['testing partition 0'],
+      'ip_list')
+
+    monitor_password = partition_parameter_dict_dict[
+      'caddy-frontend-1'].pop('monitor-password')
+    self.assertEqual(
+      monitor_password,
+      partition_parameter_dict_dict[
+        'caddy-frontend-2'].pop('monitor-password')
+    )
+    self.assertEqual(
+      monitor_password,
+      partition_parameter_dict_dict[
+        'caddy-frontend-3'].pop('monitor-password')
+    )
+    self.assertEqual(
+      monitor_password,
+      partition_parameter_dict_dict[
+        'kedifa'].pop('monitor-password')
+    )
+
+    backend_client_caucase_url = u'http://[%s]:8990' % (self._ipv6_address,)
+    kedifa_caucase_url = u'http://[%s]:15090' % (self._ipv6_address,)
+    expected_partition_parameter_dict_dict = {
+      'caddy-frontend-1': {
+        'X-software_release_url': base_software_url,
+        u'apache-certificate': unicode(self.certificate_pem),
+        u'apache-key': unicode(self.key_pem),
+        u'authenticate-to-backend': u'True',
+        u'backend-client-caucase-url': backend_client_caucase_url,
+        u'backend-connect-retries': u'1',
+        u'backend-connect-timeout': u'2',
+        u'ciphers': u'ciphers',
+        u'cluster-identification': u'testing partition 0',
+        u'domain': u'example.com',
+        u'enable-http2-by-default': u'True',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-1',
+        u'global-disable-http2': u'True',
+        u'kedifa-caucase-url': kedifa_caucase_url,
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8411,
+        u'monitor-username': u'admin',
+        u'mpm-graceful-shutdown-timeout': u'2',
+        u'plain_http_port': '11080',
+        u'port': '11443',
+        u'public-ipv4': u'255.255.255.255',
+        u'ram-cache-size': u'512K',
+        u're6st-verification-url': u're6st-verification-url',
+        u'request-timeout': u'100',
+        u'slave-kedifa-information': u'{}'
+      },
+      'caddy-frontend-2': {
+        'X-software_release_url': self.frontend_2_sr,
+        u'apache-certificate': unicode(self.certificate_pem),
+        u'apache-key': unicode(self.key_pem),
+        u'authenticate-to-backend': u'True',
+        u'backend-client-caucase-url': backend_client_caucase_url,
+        u'backend-connect-retries': u'1',
+        u'backend-connect-timeout': u'2',
+        u'ciphers': u'ciphers',
+        u'cluster-identification': u'testing partition 0',
+        u'domain': u'example.com',
+        u'enable-http2-by-default': u'True',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-2',
+        u'global-disable-http2': u'True',
+        u'kedifa-caucase-url': kedifa_caucase_url,
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8412,
+        u'monitor-username': u'admin',
+        u'mpm-graceful-shutdown-timeout': u'2',
+        u'plain_http_port': u'11080',
+        u'port': u'11443',
+        u'public-ipv4': u'255.255.255.255',
+        u'ram-cache-size': u'256K',
+        u're6st-verification-url': u're6st-verification-url',
+        u'request-timeout': u'100',
+        u'slave-kedifa-information': u'{}'
+      },
+      'caddy-frontend-3': {
+        'X-software_release_url': self.frontend_3_sr,
+        u'apache-certificate': unicode(self.certificate_pem),
+        u'apache-key': unicode(self.key_pem),
+        u'authenticate-to-backend': u'True',
+        u'backend-client-caucase-url': backend_client_caucase_url,
+        u'backend-connect-retries': u'1',
+        u'backend-connect-timeout': u'2',
+        u'ciphers': u'ciphers',
+        u'cluster-identification': u'testing partition 0',
+        u'domain': u'example.com',
+        u'enable-http2-by-default': u'True',
+        u'extra_slave_instance_list': u'[]',
+        u'frontend-name': u'caddy-frontend-3',
+        u'global-disable-http2': u'True',
+        u'kedifa-caucase-url': kedifa_caucase_url,
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': 8413,
+        u'monitor-username': u'admin',
+        u'mpm-graceful-shutdown-timeout': u'2',
+        u'plain_http_port': u'11080',
+        u'port': u'11443',
+        u'public-ipv4': u'255.255.255.255',
+        u're6st-verification-url': u're6st-verification-url',
+        u'request-timeout': u'100',
+        u'slave-kedifa-information': u'{}'
+      },
+      'kedifa': {
+        'X-software_release_url': self.kedifa_sr,
+        u'caucase_port': u'15090',
+        u'cluster-identification': u'testing partition 0',
+        u'kedifa_port': u'15080',
+        u'monitor-cors-domains': u'monitor.app.officejs.com',
+        u'monitor-httpd-port': u'8402',
+        u'monitor-username': u'admin',
+        u'slave-list': []
+      },
+      'testing partition 0': {
+        '-frontend-2-software-release-url': self.frontend_2_sr,
+        '-frontend-2-state': 'stopped',
+        '-frontend-3-software-release-url': self.frontend_3_sr,
+        '-frontend-3-state': 'stopped',
+        '-frontend-config-1-ram-cache-size': '512K',
+        '-frontend-config-2-ram-cache-size': '256K',
+        '-frontend-quantity': '3',
+        '-kedifa-software-release-url': self.kedifa_sr,
+        '-sla-2-computer_guid': 'local',
+        '-sla-3-computer_guid': 'local',
+        'X-software_release_url': base_software_url,
+        'apache-certificate': unicode(self.certificate_pem),
+        'apache-key': unicode(self.key_pem),
+        'authenticate-to-backend': 'True',
+        'automatic-internal-backend-client-caucase-csr': 'False',
+        'automatic-internal-kedifa-caucase-csr': 'False',
+        'backend-connect-retries': '1',
+        'backend-connect-timeout': '2',
+        'caucase_port': '15090',
+        'ciphers': 'ciphers',
+        'domain': 'example.com',
+        'enable-http2-by-default': 'True',
+        'full_address_list': [],
+        'global-disable-http2': 'True',
+        'instance_title': 'testing partition 0',
+        'kedifa_port': '15080',
+        'mpm-graceful-shutdown-timeout': '2',
+        'plain_http_port': '11080',
+        'port': '11443',
+        'public-ipv4': '255.255.255.255',
+        're6st-verification-url': 're6st-verification-url',
+        'request-timeout': '100',
+        'root_instance_title': 'testing partition 0',
+        'slap_software_type': 'RootSoftwareInstance',
+        'slave_instance_list': []
+      }
+    }
+    self.assertEqual(
+      expected_partition_parameter_dict_dict,
+      partition_parameter_dict_dict
+    )

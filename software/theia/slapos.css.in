@@ -1,0 +1,267 @@
+/* logo */
+.theia-icon {
+    background-image: url('/{{ logo_image }}');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* Source Code Pro */
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 200;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-ExtraLight.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-ExtraLight.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-ExtraLight.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-ExtraLight.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 200;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-ExtraLightIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-ExtraLightIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-ExtraLightIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-ExtraLightIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 300;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Light.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Light.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Light.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Light.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 300;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-LightIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-LightIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-LightIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-LightIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 400;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Regular.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Regular.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Regular.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Regular.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 400;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-It.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-It.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-It.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-It.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Medium.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Medium.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Medium.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Medium.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 500;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-MediumIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-MediumIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-MediumIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-MediumIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 600;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Semibold.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Semibold.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Semibold.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Semibold.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 600;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-SemiboldIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-SemiboldIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-SemiboldIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-SemiboldIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 700;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Bold.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Bold.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Bold.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Bold.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 700;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-BoldIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-BoldIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-BoldIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-BoldIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 900;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-Black.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-Black.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-Black.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-Black.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 900;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fonts/source-code-pro/WOFF2/TTF/SourceCodePro-BlackIt.ttf.woff2') format('woff2'),
+         url('/fonts/source-code-pro/WOFF/OTF/SourceCodePro-BlackIt.otf.woff') format('woff'),
+         url('/fonts/source-code-pro/OTF/SourceCodePro-BlackIt.otf') format('opentype'),
+         url('/fonts/source-code-pro/TTF/SourceCodePro-BlackIt.ttf') format('truetype');
+}
+
+/* JetBrains Mono */
+/* CSS come from https://github.com/paleite/typeface-jetbrains-mono/blob/6cbded1fa6283c29b9e5d93e5c70f5702e17bc68/index.css */
+/* JetBrainsMono-Bold-Italic - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 700;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Bold-Italic.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Bold-Italic.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Bold-Italic.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Bold-Italic.ttf") format("truetype");
+}
+
+/* JetBrainsMono-Bold - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Bold.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Bold.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Bold.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Bold.ttf") format("truetype");
+}
+
+/* JetBrainsMono-ExtraBold-Italic - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono ExtraBold";
+  font-style: italic;
+  font-weight: 800;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-ExtraBold-Italic.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-ExtraBold-Italic.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-ExtraBold-Italic.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-ExtraBold-Italic.ttf") format("truetype");
+}
+
+/* JetBrainsMono-ExtraBold - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono ExtraBold";
+  font-style: normal;
+  font-weight: 800;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-ExtraBold.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-ExtraBold.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-ExtraBold.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-ExtraBold.ttf") format("truetype");
+}
+
+/* JetBrainsMono-Italic - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 400;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Italic.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Italic.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Italic.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Italic.ttf") format("truetype");
+}
+
+/* JetBrainsMono-Medium-Italic - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono Medium";
+  font-style: italic;
+  font-weight: 500;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Medium-Italic.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Medium-Italic.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Medium-Italic.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Medium-Italic.ttf") format("truetype");
+}
+
+/* JetBrainsMono-Medium - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono Medium";
+  font-style: normal;
+  font-weight: 500;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Medium.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Medium.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Medium.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Medium.ttf") format("truetype");
+}
+
+/* JetBrainsMono-Regular - © 2000-2020 JetBrains s.r.o. Developed with drive and IntelliJ IDEA. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-feature-settings: "calt" 1, "zero" 1;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono/web/eot/JetBrainsMono-Regular.eot") format("embedded-opentype"),
+       url("/fonts/jetbrains-mono/web/woff2/JetBrainsMono-Regular.woff2") format("woff2"),
+       url("/fonts/jetbrains-mono/web/woff/JetBrainsMono-Regular.woff") format("woff"),
+       url("/fonts/jetbrains-mono/ttf/JetBrainsMono-Regular.ttf") format("truetype");
+}

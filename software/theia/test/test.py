@@ -32,6 +32,7 @@ import logging
 import subprocess
 import tempfile
 import time
+import re
 from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
@@ -80,6 +81,16 @@ class TestTheia(SlapOSInstanceTestCase):
         urljoin(authenticated_url, '/favicon.ico'), verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertTrue(resp.raw)
+
+    # there is a CSS referencing fonts
+    css_text = requests.get(urljoin(authenticated_url, '/css/slapos.css'), verify=False).text
+    css_urls = re.findall(r'url\([\'"]+([^\)]+)[\'"]+\)', css_text)
+    self.assertTrue(css_urls)
+    # and fonts are served
+    for url in css_urls:
+      resp = requests.get(urljoin(authenticated_url, url), verify=False)
+      self.assertEqual(requests.codes.ok, resp.status_code)
+      self.assertTrue(resp.raw)
 
   def test_theia_slapos(self):
     # Make sure we can use the shell and the integrated slapos command
@@ -134,7 +145,7 @@ class TestTheia(SlapOSInstanceTestCase):
     process.wait()
 
   def test_theia_shell_execute_tasks(self):
-    # shell needs to understand -c "comamnd" arguments for theia tasks feature
+    # shell needs to understand -c "command" arguments for theia tasks feature
     test_file = '{}/test file'.format(self.computer_partition_root_path)
     subprocess.check_call([
         '{}/bin/theia-shell'.format(self.computer_partition_root_path),
