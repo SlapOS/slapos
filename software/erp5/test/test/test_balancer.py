@@ -562,20 +562,25 @@ class CaucaseClientCertificate(ManagedResource):
     # type: () -> None
     shutil.rmtree(self.tmpdir)
 
+  @property
+  def _caucase_path(self):
+    # type: () -> str
+    """path of caucase executable.
+    """
+    software_release_root_path = os.path.join(
+        self._cls.slap._software_root,
+        hashlib.md5(self._cls.getSoftwareURL().encode()).hexdigest(),
+    )
+    return os.path.join(software_release_root_path, 'bin', 'caucase')
+
   def request(self, common_name, caucase):
     # type: (str, CaucaseService) -> None
     """Generate certificate and request signature to the caucase service.
 
     This overwrite any previously requested certificate for this instance.
     """
-    software_release_root_path = os.path.join(
-        self._cls.slap._software_root,
-        hashlib.md5(self._cls.getSoftwareURL().encode()).hexdigest(),
-    )
-    caucase_path = os.path.join(software_release_root_path, 'bin', 'caucase')
-
     cas_args = [
-        caucase_path,
+        self._caucase_path,
         '--ca-url', caucase.url,
         '--ca-crt', self.ca_crt_file,
         '--crl', self.crl_file,
@@ -629,6 +634,18 @@ class CaucaseClientCertificate(ManagedResource):
     with open(self.cert_file) as f:
       assert 'BEGIN CERTIFICATE' in f.read()
 
+  def revoke(self, caucase):
+    # type: (str, CaucaseService) -> None
+    """Revoke the client certificate on this caucase instance.
+    """
+    subprocess.check_call([
+        self._caucase_path,
+        '--ca-url', caucase.url,
+        '--ca-crt', self.ca_crt_file,
+        '--crl', self.crl_file,
+        '--revoke-crt', self.cert_file, self.key_file,
+    ])
+
 
 class TestFrontendXForwardedFor(BalancerTestCase):
   __partition_reference__ = 'xff'
@@ -681,3 +698,73 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         headers={'X-Forwarded-For': '1.2.3.4'},
         verify=False,
       )
+
+
+class TestClientTLS(BalancerTestCase):
+  __partition_reference__ = 'c'
+
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    frontend_caucase = cls.getManagedResource('frontend_caucase', CaucaseService)
+    certificate = cls.getManagedResource('client_certificate', CaucaseClientCertificate)
+    certificate.request(u'shared frontend', frontend_caucase)
+
+    parameter_dict = super(TestClientTLS, cls)._getInstanceParameterDict()
+    parameter_dict['ssl-authentication-dict'] = {
+        'default': True,
+    }
+    parameter_dict['ssl']['frontend-caucase-url-list'] = [frontend_caucase.url]
+    return parameter_dict
+
+  def test_refresh_crl(self):
+    # type: () -> None
+    client_certificate = self.getManagedResource('client_certificate', CaucaseClientCertificate)
+
+    # when client certificate can be authenticated, backend receive the CN of
+    # the client certificate in "remote-user" header
+    def _make_request():
+      return requests.get(
+        self.default_balancer_url,
+        cert=(client_certificate.cert_file, client_certificate.key_file),
+        verify=False,
+      ).json()
+
+    self.assertEqual(_make_request()['Incoming Headers'].get('remote-user'), 'shared frontend')
+
+    # when certificate is revoked, updater service should update the CRL
+    # used by balancer from the caucase service used for client certificates
+    # (ie. the one used by frontend).
+    client_certificate.revoke(self.getManagedResource('frontend_caucase', CaucaseService))
+
+    # until the CRL is updated, the client certificate is still accepted.
+    self.assertEqual(_make_request()['Incoming Headers'].get('remote-user'), 'shared frontend')
+
+    # simulate running updater service in the future, to confirm that it fetches
+    # the new CRL and make sure balancer uses that new CRL.
+    caucase_updater, = glob.glob(
+        os.path.join(
+            self.computer_partition_root_path,
+            'etc',
+            'service',
+            'caucase-updater-*',
+        ))
+    self.assertTrue(os.path.exists(caucase_updater))
+
+    process = pexpect.spawnu(
+       "faketime +1day %s" % caucase_updater,
+        env=dict(os.environ, PYTHONPATH=''),
+    )
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from caucase_updater: %s", msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect(u"Got new CRL.*Next wake-up at.*")
+    process.terminate()
+    process.wait()
+
+    with self.assertRaisesRegexp(Exception, 'certificate revoked'):
+      _make_request()
