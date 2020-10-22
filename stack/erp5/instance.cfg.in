@@ -56,14 +56,14 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 <= default-dynamic-template-parameters
-apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
+rsyslogd = {{ rsyslogd_location }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
-template-apache-conf = {{ template_apache_conf }}
+template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
 
 [dynamic-template-balancer]
 <= jinja2-template-base
