@@ -769,8 +769,9 @@ recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 file = ${directory:var}/nginx-rejected.htpasswd
-command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slave-password:user} ${rejected-slave-password:passwd}
-update-command = ${:command}
+{#- update-command is not needed, as if the ${:password} would change, the whole part will be recalculated #}
+password = ${rejected-slave-password:passwd}
+command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} ${rejected-slave-password:user} ${:password}
 
 [rejected-slave-template]
 recipe = slapos.recipe.template:jinja2
