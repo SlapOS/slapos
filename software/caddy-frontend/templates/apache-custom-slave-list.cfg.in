@@ -95,12 +95,13 @@ context =
 {%-   set slave_publish_dict = {} %}
 {%-   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%-   set slave_logrotate_section = slave_reference + "-logs" %}
+{%-   set slave_log_directory_section = slave_reference + "-log-directory" %}
 {%-   set slave_password_section = slave_reference + "-password" %}
 {%-   set slave_htpasswd_section = slave_reference + "-htpasswd" %}
 {%-   set slave_ln_section = slave_reference + "-ln" %}
 {#-   extend parts #}
 {%-   do part_list.extend([slave_ln_section]) %}
-{%-   do part_list.extend([slave_logrotate_section, slave_section_title]) %}
+{%-   do part_list.extend([slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {#-   Pass HTTP2 switch #}
 {%-   do slave_instance.__setitem__('enable_http2_by_default', configuration['enable-http2-by-default']) %}
@@ -151,11 +152,15 @@ context =
 {{ slave_reference }} = {{ '${' + slave_htpasswd_section + ':file}' }}
 
 {#-   Set slave logrotate entry #}
+[{{slave_log_directory_section}}]
+recipe = slapos.cookbook:mkdirectory
+log-directory = {{ '${slave-log-directory-dict:' + slave_reference.lower() + '}' }}
+
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}} {{slave_parameter_dict.get('backend_log')}}
-backup = {{ slave_log_folder }}
+backup = {{ '${' + slave_log_directory_section + ':log-directory}' }}
 rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 # disable delayed compression, as log filenames shall be stable
 delaycompress =
@@ -165,8 +170,8 @@ delaycompress =
 [{{slave_ln_section}}]
 recipe = plone.recipe.command
 stop-on-error = false
-update-command = ${:command}
-command = ln -sf {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} {{ slave_log_folder }}/backend.log
+log-directory = {{ '${' + slave_logrotate_section + ':backup}' }}
+command = ln -sf {{slave_parameter_dict.get('error_log')}} ${:log-directory}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
 
 {#-   Set password for slave #}
 
@@ -301,12 +306,6 @@ recipe = slapos.cookbook:publish
 {%-    do backend_slave_list.append(slave_instance) %}
 {%-  endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
-
-[slave-log-directories]
-<= slave-log-directory-dict
-recipe = slapos.cookbook:mkdirectory
-
-{%- do part_list.append('slave-log-directories') %}
 
 {%- do part_list.append('caddy-log-access') %}
 {%- do part_list.append('slave-introspection') %}
