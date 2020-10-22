@@ -180,8 +180,9 @@ recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
-command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} {{ '${' + slave_password_section + ':passwd}' }}
-update-command = ${:command}
+{#- update-command is not needed, as if the ${:password} would change, the whole part will be recalculated #}
+password = {{ '${' + slave_password_section + ':passwd}' }}
+command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} ${:password}
 
 {#-   ################################################## #}
 {#-   Set Slave Certificates if needed                   #}
