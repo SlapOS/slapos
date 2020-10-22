@@ -8,10 +8,8 @@ XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
-{% set apache_ip_list = [ipv4] -%}
 {% if ipv6_set -%}
 {%   set ipv6 = (ipv6_set | list)[0] -%}
-{%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
 [jinja2-template-base]
@@ -28,7 +26,7 @@ mode = 644
      ca_path='${directory:srv}/caucase-updater/ca.crt',
      crl_path='${directory:srv}/caucase-updater/crl.pem',
      key_path='${apache-conf-ssl:caucase-key}',
-     on_renew='${apache-graceful:output}',
+     on_renew='${haproxy-reload:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
      template_csr_pem=ssl_parameter_dict.get('csr'),
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
@@ -42,7 +40,7 @@ mode = 644
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
 {%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
 {%   do frontend_caucase_url_hash_list.append(hash) -%}
-{%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
+{%   set data_dir = '${directory:client-cert-ca}/%s' % hash -%}
 {{   caucase.updater(
        prefix='caucase-updater-%s' % hash,
        buildout_bin_directory=parameter_dict['bin-directory'],
@@ -51,7 +49,7 @@ mode = 644
        data_dir=data_dir,
        ca_path='%s/ca.crt' % data_dir,
        crl_path='%s/crl.pem' % data_dir,
-       on_renew='${caucase-updater-housekeeper:output}; ${apache-graceful:output}',
+       on_renew='${caucase-updater-housekeeper:output}',
        max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
        openssl=parameter_dict['openssl'] ~ '/bin/openssl',
      )}}
@@ -71,24 +69,47 @@ input =
   import subprocess
   hash_list = {{ repr(frontend_caucase_url_hash_list) }}
   crt_list = ['%s.crt' % e for e in hash_list]
-  crl_list = ['%s.crl' % e for e in hash_list]
-  for path in glob.glob('${apache-conf-ssl:ca-cert-dir}/*.crt'):
+  for path in glob.glob('${haproxy-conf-ssl:ca-cert-dir}/*.crt'):
     if os.path.basename(path) not in crt_list:
       os.unlink(path)
-  for path in glob.glob('${apache-conf-ssl:crl-dir}/*.crl'):
+  crl_list = ['%s.crl' % e for e in hash_list]
+  for path in glob.glob('${haproxy-conf-ssl:crl-dir}/*.crl'):
     if os.path.basename(path) not in crl_list:
       os.unlink(path)
+
   for hash in hash_list:
-    crt = '${directory:srv}/client-cert-ca/%s/ca.crt' % hash
-    crt_link = '${apache-conf-ssl:ca-cert-dir}/%s.crt' % hash
-    crl = '${directory:srv}/client-cert-ca/%s/crl.pem' % hash
-    crl_link = '${apache-conf-ssl:crl-dir}/%s.crl' % hash
+    crt = '${directory:client-cert-ca}/%s/ca.crt' % hash
+    crt_link = '${haproxy-conf-ssl:ca-cert-dir}/%s.crt' % hash
+    crl = '${directory:client-cert-ca}/%s/crl.pem' % hash
+    crl_link = '${haproxy-conf-ssl:crl-dir}/%s.crl' % hash
     if os.path.isfile(crt) and not os.path.islink(crt_link):
       os.symlink(crt, crt_link)
     if os.path.isfile(crl) and not os.path.islink(crl_link):
       os.symlink(crl, crl_link)
-  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:ca-cert-dir}'])
-  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:crl-dir}'])
+  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${haproxy-conf-ssl:ca-cert-dir}'])
+  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${haproxy-conf-ssl:crl-dir}'])
+
+  # assemble all CA and all CRLs in one file for haproxy
+  with open('${haproxy-conf-ssl:ca-cert}.tmp', 'w') as f:
+    for path in glob.glob('${haproxy-conf-ssl:ca-cert-dir}/*.crt'):
+      with open(path) as in_f:
+        f.write('#{}\n'.format(path))
+        f.write(in_f.read() + '\n')
+  with open('${haproxy-conf-ssl:crl}.tmp', 'w') as f:
+    for path in glob.glob('${haproxy-conf-ssl:crl-dir}/*.crl'):
+      with open(path) as in_f:
+        f.write('#{}\n'.format(path))
+        f.write(in_f.read() + '\n')
+
+  if os.path.exists('${haproxy-conf-ssl:ca-cert}'):
+    os.unlink('${haproxy-conf-ssl:ca-cert}')
+  if os.path.exists('${haproxy-conf-ssl:crl}'):
+    os.unlink('${haproxy-conf-ssl:crl}')
+  os.rename('${haproxy-conf-ssl:ca-cert}.tmp', '${haproxy-conf-ssl:ca-cert}')
+  os.rename('${haproxy-conf-ssl:crl}.tmp', '${haproxy-conf-ssl:crl}')
+
+  subprocess.check_call(['${haproxy-reload:output}'])
+
 
 [caucase-updater-housekeeper-run]
 recipe = plone.recipe.command
@@ -97,9 +118,8 @@ update-command = ${:command}
 {% endif -%}
 
 {% set haproxy_dict = {} -%}
-{% set apache_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
-{% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
+{% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
@@ -120,19 +140,19 @@ update-command = ${:command}
 {%     set test_runner_address_list = slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', []) %}
 {%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
-{%       set test_runner_apache_url_list = [] %}
+{%       set test_runner_balancer_url_list = [] %}
 {%       set test_runner_external_port = next_port() %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
                 'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
-{%         do test_runner_apache_url_list.append(
+{%         do test_runner_balancer_url_list.append(
                 'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
 {%       endfor %}
 {%       do zope_virtualhost_monster_backend_dict.__setitem__(
               (ipv4, test_runner_external_port),
               ( ssl_authentication, test_runner_backend_mapping ) ) -%}
-{%       do test_runner_url_dict.__setitem__(family_name, test_runner_apache_url_list) -%}
+{%       do test_runner_url_dict.__setitem__(family_name, test_runner_balancer_url_list) -%}
 {%     endif -%}
 {%   endfor -%}
 
@@ -143,50 +163,69 @@ update-command = ${:command}
  # do a no-op getitem.
 -#}
 {%   do zope_family_address_list[0][0] -%}
+
+{#
+ # We use to have haproxy then apache, now haproxy is playing apache's role
+ # To keep port stable, we consume one port so that haproxy use the same port
+ # that apache was using before.
+-#}
+{%   set _ = next_port() -%}
+
 {%   set haproxy_port = next_port() -%}
 {%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
 {%   if has_webdav -%}
-{%     set internal_scheme = 'http' -%}{# mod_rewrite does not recognise webdav scheme -#}
 {%     set external_scheme = 'webdavs' -%}
 {%   else %}
-{%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, slapparameter_dict['ssl-authentication-dict'].get(family_name, False))) -%}
+{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'].get(family_name, False), zope_family_address_list)) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
-socket-path = ${directory:run}/haproxy.sock
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ipv6 }}
+cert = ${haproxy-conf-ssl:certificate}
+{% if frontend_caucase_url_list -%}
+ca-cert = ${haproxy-conf-ssl:ca-cert}
+crl = ${haproxy-conf-ssl:crl}
+{% endif %}
+stats-socket = ${directory:run}/haproxy.sock
+pidfile = ${directory:run}/haproxy.pid
+log-socket = ${rsyslogd-cfg-parameter-dict:log-socket}
 server-check-path = {{ dumps(slapparameter_dict['haproxy-server-check-path']) }}
 backend-dict = {{ dumps(haproxy_dict) }}
-ip = {{ ipv4 }}
+zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
+
 
 [haproxy-cfg]
 < = jinja2-template-base
 template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
-context = section parameter_dict haproxy-cfg-parameter-dict
+context =
+  section parameter_dict haproxy-cfg-parameter-dict
+  import urlparse urlparse
 extensions = jinja2.ext.do
+
+[haproxy-reload]
+recipe = collective.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+mode = 700
+input =
+  inline:
+  #!/bin/sh
+  kill -USR2 $(cat "${haproxy-cfg-parameter-dict:pidfile}")
 
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:services}/haproxy
+wrapper-path = ${directory:services-on-watch}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
 hash-files = ${haproxy-cfg:rendered}
 
 [apache-conf-ssl]
-cert = ${directory:apache-conf}/apache.crt
-key = ${directory:apache-conf}/apache.pem
 # XXX caucase is/was buggy and this certificate does not match key for instances
 # that were updated, so don't use it yet.
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
-{% if frontend_caucase_url_list -%}
-depends = ${caucase-updater-housekeeper-run:recipe}
-ca-cert-dir = ${directory:apache-ca-cert-dir}
-crl-dir = ${directory:apache-crl-dir}
-{%- endif %}
 
 [simplefile]
 < = jinja2-template-base
@@ -204,95 +243,84 @@ context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
 
-[apache-ssl]
+[rsyslogd-cfg-parameter-dict]
+log-socket = ${directory:run}/log.sock
+access-log-file = ${directory:log}/apache-access.log
+error-log-file = ${directory:log}/apache-error.log
+pid-file = ${directory:run}/rsyslogd.pid
+spool-directory = ${directory:rsyslogd-spool}
+
+[rsyslogd-cfg]
+<= jinja2-template-base
+template = {{ parameter_dict['template-rsyslogd-cfg'] }}
+rendered = ${directory:etc}/rsyslogd.conf
+context = section parameter_dict rsyslogd-cfg-parameter-dict
+
+[{{ section ('rsyslogd') }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['rsyslogd'] }}/sbin/rsyslogd -i ${rsyslogd-cfg-parameter-dict:pid-file} -n -f ${rsyslogd-cfg:rendered}
+wrapper-path = ${directory:services-on-watch}/rsyslogd
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files = ${rsyslogd-cfg:rendered}
+
+[{{ section ('rsyslogd-listen-promise') }}]
+<= monitor-promise-base
+module = check_command_execute
+name = rsyslogd_listen_promise.py
+config-command = test -S ${rsyslogd-cfg-parameter-dict:log-socket}
+
+
+[haproxy-conf-ssl]
+certificate = ${build-certificate-and-key:certificate-and-key}
+{% if frontend_caucase_url_list -%}
+ca-cert = ${directory:etc}/frontend-ca.pem
+ca-cert-dir = ${directory:ca-cert}
+crl = ${directory:etc}/frontend-crl.pem
+crl-dir = ${directory:crl}
+depends = ${caucase-updater-housekeeper-run:recipe}
+{%- endif %}
+
+[build-certificate-and-key]
 {% if ssl_parameter_dict.get('key') -%}
-key = ${apache-ssl-key:rendered}
-cert = ${apache-ssl-cert:rendered}
-{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
-{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+certificate-and-key = ${tls-certificate-and-key-from-parameters:rendered}
+{{ simplefile(
+    'tls-certificate-and-key-from-parameters',
+    '${directory:etc}/certificate-and-key-from-parameters.pem',
+    ssl_parameter_dict['cert'] ~ "\n" ~ ssl_parameter_dict['key']) }}
 {% else %}
 recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
-key = ${apache-conf-ssl:key}
-cert = ${apache-conf-ssl:cert}
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:certificate-and-key}" -out "${:certificate-and-key}"
+certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 {%- endif %}
 
-[apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
-zope-virtualhost-monster-backend-dict = {{ dumps(zope_virtualhost_monster_backend_dict) }}
-ip-list = {{ dumps(apache_ip_list) }}
-pid-file = ${directory:run}/apache.pid
-log-dir = ${directory:log}
-error-log = ${directory:log}/apache-error.log
-access-log = ${directory:log}/apache-access.log
-# Apache 2.4's default value (60 seconds) can be a bit too short
-timeout = 300
-# Basic SSL server configuration
-cert = ${apache-ssl:cert}
-key = ${apache-ssl:key}
-cipher =
-ssl-session-cache = ${directory:log}/apache-ssl-session-cache
-{% if frontend_caucase_url_list -%}
-# Client x509 auth
-ca-cert-dir = ${apache-conf-ssl:ca-cert-dir}
-crl-dir = ${apache-conf-ssl:crl-dir}
-{%- endif %}
-
-[apache-conf]
-< = jinja2-template-base
-template = {{ parameter_dict['template-apache-conf'] }}
-rendered = ${directory:apache-conf}/apache.conf
-context = section parameter_dict apache-conf-parameter-dict
-
-[{{ section('apache') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:services}/apache
-command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
-wait-for-files =
-  ${apache-conf-ssl:cert}
-  ${apache-conf-ssl:key}
-
-[apache-graceful]
-recipe = collective.recipe.template
-output = ${directory:bin}/apache-httpd-graceful
-mode = 700
-input = inline:
-  #!/bin/sh
-  kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
-
-[{{ section('apache-promise') }}]
+[{{ section('haproxy-promise') }}]
 <= monitor-promise-base
-# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+# Check any haproxy port in ipv4, expect other ports and ipv6 to behave consistently
 module = check_port_listening
-name = apache.py
+name = haproxy.py
 config-hostname = {{ ipv4 }}
-config-port = {{ apache_dict.values()[0][0] }}
+config-port = {{ haproxy_dict.values()[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (apache_port, scheme, _, _) in apache_dict.items() -%}
-{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
-{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
+{% for family_name, (port, scheme, _, _) in haproxy_dict.items() -%}
+{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ port }}{% endif %}
+{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ port }}
 {% endfor -%}
 {% for family_name, test_runner_url_list in test_runner_url_dict.items() -%}
 {{    family_name ~ '-test-runner-url-list' }} = {{ dumps(test_runner_url_list) }}
 {% endfor -%}
-
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
-[{{ section('logrotate-apache') }}]
+[{{ section('logrotate-rsyslogd') }}]
 < = logrotate-entry-base
-name = apache
-log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
-post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+name = rsyslogd
+log = ${rsyslogd-cfg-parameter-dict:access-log-file} ${rsyslogd-cfg-parameter-dict:error-log-file}
+post = test ! -s ${rsyslogd-cfg-parameter-dict:pid-file} || kill -HUP $(cat ${rsyslogd-cfg-parameter-dict:pid-file})
+
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-apache-conf = ${:etc}/apache
-{% if frontend_caucase_url_list -%}
-apache-ca-cert-dir = ${:apache-conf}/ssl.crt
-apache-crl-dir = ${:apache-conf}/ssl.crl
-{% endif -%}
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
@@ -302,6 +330,12 @@ run = ${:var}/run
 log = ${:var}/log
 srv = ${buildout:directory}/srv
 apachedex = ${monitor-directory:private}/apachedex
+rsyslogd-spool = ${:run}/rsyslogd-spool
+{% if frontend_caucase_url_list -%}
+ca-cert = ${:etc}/ssl.crt
+crl = ${:etc}/ssl.crl
+client-cert-ca = ${:srv}/client-cert-ca
+{% endif -%}
 
 [{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
@@ -325,9 +359,7 @@ command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_di
 command = generate-apachedex-report
 
 [apachedex-parameters]
-# XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
-# which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
-apache-log-list = ${apache-conf-parameter-dict:access-log}
+apache-log-list = ${rsyslogd-cfg-parameter-dict:access-log-file}
 configuration = {{ slapparameter_dict['apachedex-configuration'] }}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
