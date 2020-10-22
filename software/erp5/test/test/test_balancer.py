@@ -50,7 +50,31 @@ class EchoHTTPServer(ManagedHTTPServer):
       self.end_headers()
       self.wfile.write(response)
 
-    log_message = logging.getLogger(__name__ + '.HeaderEchoHandler').info
+    log_message = logging.getLogger(__name__ + '.EchoHTTPServer').info
+
+
+class EchoHTTP11Server(ManagedHTTPServer):
+  """An HTTP/1.1 Server responding with the request path and incoming headers,
+  encoded in json.
+  """
+  class RequestHandler(BaseHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
+    def do_GET(self):
+      # type: () -> None
+      self.send_response(200)
+      self.send_header("Content-Type", "application/json")
+      response = json.dumps(
+          {
+              'Path': self.path,
+              'Incoming Headers': self.headers.dict
+          },
+          indent=2,
+      )
+      self.send_header("Content-Length", len(response))
+      self.end_headers()
+      self.wfile.write(response)
+
+    log_message = logging.getLogger(__name__ + '.EchoHTTP11Server').info
 
 
 class CaucaseService(ManagedResource):
@@ -105,6 +129,7 @@ class CaucaseService(ManagedResource):
     shutil.rmtree(self.directory)
 
 
+
 class BalancerTestCase(ERP5InstanceTestCase):
 
   @classmethod
@@ -120,7 +145,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
         # XXX what is this ? should probably not be needed here
         'name': cls.__name__,
         'monitor-passwd': 'secret',
-        'apachedex-configuration': '--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet',
+        'apachedex-configuration': '--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet --logformat=\\"%h %l %u %t "%r" %>s %O "%{Referer}i" "%{User-Agent}i" %{ms}T\\"',
         'apachedex-promise-threshold': 100,
         'haproxy-server-check-path': '/',
         'zope-family-dict': {
@@ -184,7 +209,7 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
       access_line = access_log_file.read().splitlines()[-1]
     self.assertIn('/url_path', access_line)
 
-    # last \d is the request time in micro seconds, since this SlowHTTPServer
+    # last \d is the request time in milli seconds, since this SlowHTTPServer
     # sleeps for 2 seconds, it should take between 2 and 3 seconds to process
     # the request - but our test machines can be slow sometimes, so we tolerate
     # it can take up to 20 seconds.
@@ -195,8 +220,8 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self.assertTrue(match)
     assert match
     request_time = int(match.groups()[-1])
-    self.assertGreater(request_time, 2 * 1000 * 1000)
-    self.assertLess(request_time, 20 * 1000 * 1000)
+    self.assertGreater(request_time, 2 * 1000)
+    self.assertLess(request_time, 20 * 1000)
 
   def test_access_log_apachedex_report(self):
     # type: () -> None
@@ -337,15 +362,34 @@ class TestBalancer(BalancerTestCase):
 
 
 class TestHTTP(BalancerTestCase):
-  """Check HTTP protocol
+  """Check HTTP protocol with a HTTP/1.1 backend
   """
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(TestHTTP, cls)._getInstanceParameterDict()
+    # use a HTTP/1.1 server instead
+    parameter_dict['dummy_http_server'] = [[cls.getManagedResource("HTTP/1.1 Server", EchoHTTP11Server).netloc, 1, False]]
+    return parameter_dict
+
   __partition_reference__ = 'h'
 
   def test_http_version(self):
     # type: () -> None
-    # https://stackoverflow.com/questions/37012486/python-3-x-how-to-get-http-version-using-requests-library/37012810
     self.assertEqual(
-        requests.get(self.default_balancer_url, verify=False).raw.version, 11)
+        subprocess.check_output([
+            'curl',
+            '--silent',
+            '--show-error',
+            '--output',
+            '/dev/null',
+            '--insecure',
+            '--write-out',
+            '%{http_version}',
+            self.default_balancer_url,
+        ]),
+        '2',
+    )
 
   def test_keep_alive(self):
     # type: () -> None
@@ -373,24 +417,27 @@ class TestHTTP(BalancerTestCase):
 
 
 class ContentTypeHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply with content type from path.
+  """An HTTP/1.1 Server which reply with content type from path.
 
   For example when requested http://host/text/plain it will reply
   with Content-Type: text/plain header.
 
   The body is always "OK"
   """
-
   class RequestHandler(BaseHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       if self.path == '/':
+        self.send_header("Content-Length", 0)
         return self.end_headers()
       content_type = self.path[1:]
+      body = "OK"
       self.send_header("Content-Type", content_type)
+      self.send_header("Content-Length", len(body))
       self.end_headers()
-      self.wfile.write("OK")
+      self.wfile.write(body)
 
     log_message = logging.getLogger(__name__ + '.ContentTypeHTTPServer').info
 
@@ -432,9 +479,9 @@ class TestContentEncoding(BalancerTestCase):
       resp = requests.get(urlparse.urljoin(self.default_balancer_url, content_type), verify=False)
       self.assertEqual(resp.headers['Content-Type'], content_type)
       self.assertEqual(
-          resp.headers['Content-Encoding'],
+          resp.headers.get('Content-Encoding'),
           'gzip',
-          '%s uses wrong encoding: %s' % (content_type, resp.headers['Content-Encoding']))
+          '%s uses wrong encoding: %s' % (content_type, resp.headers.get('Content-Encoding')))
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self):
