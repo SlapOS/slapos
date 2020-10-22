@@ -43,23 +43,44 @@ setUpModule # pyflakes
 class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
   """
-  def _checkERP5IsReachable(self, url):
+
+  def _checkERP5IsReachable(self, base_url, site_id, verify):
+    # We access ERP5 trough a "virtual host", which should make
+    # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
+    # as base.
+    virtual_host_url = urlparse.urljoin(
+        base_url,
+        '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
+        .format(site_id))
+
     # What happens is that instanciation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
     # instanciated, but zope is still busy creating the site and haproxy replies
     # with 503 Service Unavailable when zope is not started yet, with 404 when
     # erp5 site is not created, with 500 when mysql is not yet reachable, so we
-    # retry in a loop until we get a succesful response.
-    for i in range(1, 60):
-      r = requests.get(url, verify=False)  # XXX can we get CA from caucase already ?
-      if r.status_code != requests.codes.ok:
-        delay = i * 2
-        self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
-        time.sleep(delay)
-        continue
-      r.raise_for_status()
-      break
+    # configure this requests session to retry.
+    # XXX we should probably add a promise instead
+    session = requests.Session()
+    session.mount(
+        base_url,
+        requests.adapters.HTTPAdapter(
+            max_retries=requests.packages.urllib3.util.retry.Retry(
+                total=60,
+                backoff_factor=.5,
+                status_forcelist=(404, 500, 503))))
 
+    r = session.get(virtual_host_url, verify=verify, allow_redirects=False)
+    self.assertEqual(r.status_code, requests.codes.found)
+    # access on / are redirected to login form, with virtual host preserved
+    self.assertEqual(r.headers.get('location'), 'https://virtual-host-name:1234/virtual_host_root/login_form')
+
+    # login page can be rendered and contain the text "ERP5"
+    r = session.get(
+        urlparse.urljoin(base_url, '{}/login_form'.format(site_id)),
+        verify=verify,
+        allow_redirects=False,
+    )
+    self.assertEqual(r.status_code, requests.codes.ok)
     self.assertIn("ERP5", r.text)
 
   def test_published_family_default_v6_is_reachable(self):
@@ -67,14 +88,20 @@ class TestPublishedURLIsReachableMixin(object):
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']))
+      param_dict['family-default-v6'],
+      param_dict['site-id'],
+      verify=False,
+    )
 
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
+      param_dict['family-default'],
+      param_dict['site-id'],
+      verify=False,
+    )
 
 
 class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -93,7 +120,7 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
     return {'_': json.dumps({'wsgi': False})}
 
 
-class TestApacheBalancerPorts(ERP5InstanceTestCase):
+class TestBalancerPorts(ERP5InstanceTestCase):
   """Instanciate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
    - a balancer entry point for test runner
@@ -151,32 +178,21 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
         3 + 5,
         len([p for p in all_process_info if p['name'].startswith('zope-')]))
 
-  def test_apache_listen(self):
-    # We have 2 families, apache should listen to a total of 3 ports per family
+  def test_haproxy_listen(self):
+    # We have 2 families, haproxy should listen to a total of 3 ports per family
     # normal access on ipv4 and ipv6 and test runner access on ipv4 only
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'] == 'apache']
-    apache_process = psutil.Process(process_info['pid'])
+    process_info, = [p for p in all_process_info if p['name'].startswith('haproxy-')]
+    haproxy_master_process = psutil.Process(process_info['pid'])
+    haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
         sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
         sorted([
             c.family
-            for c in apache_process.connections()
+            for c in haproxy_worker_process.connections()
             if c.status == 'LISTEN'
         ]))
-
-  def test_haproxy_listen(self):
-    # There is one haproxy per family
-    with self.slap.instance_supervisor_rpc as supervisor:
-      all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [
-        p for p in all_process_info if p['name'].startswith('haproxy-')
-    ]
-    haproxy_process = psutil.Process(process_info['pid'])
-    self.assertEqual([socket.AF_INET, socket.AF_INET], [
-        c.family for c in haproxy_process.connections() if c.status == 'LISTEN'
-    ])
 
 
 class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -199,19 +215,21 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     self.assertNotIn('runUnitTest', bin_programs)
     self.assertNotIn('runTestSuite', bin_programs)
 
-  def test_no_apache_testrunner_port(self):
-    # Apache only listen on two ports, there is no apache ports allocated for test runner
+  def test_no_haproxy_testrunner_port(self):
+    # Haproxy only listen on two ports, there is no haproxy ports allocated for test runner
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'] == 'apache']
-    apache_process = psutil.Process(process_info['pid'])
+    process_info, = [p for p in all_process_info if p['name'].startswith('haproxy')]
+    haproxy_master_process = psutil.Process(process_info['pid'])
+    haproxy_worker_process, = haproxy_master_process.children()
     self.assertEqual(
         sorted([socket.AF_INET, socket.AF_INET6]),
         sorted(
             c.family
-            for c in apache_process.connections()
+            for c in haproxy_worker_process.connections()
             if c.status == 'LISTEN'
         ))
+
 
 class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test override zope node parameters
