@@ -359,7 +359,7 @@ update-command = ${:command}
 [replication-manager-reload]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_repman_manager_sh }}
-cluster-list = {{ dumps(slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).keys() ) }}
+cluster-list = {{ dumps( list(slapparameter_dict.get('repman-cluster-dict', default_parameter_dict).keys()) ) }}
 context =
   section parameter_dict repman
   key username repman-parameter:username

@@ -156,7 +156,7 @@ wrapper = ${directory:controller}/mariadb
 {% do part_list.append("supervisord-mariadb") %}
 
 [odbc-ini-text]
-text = {{ dumps(slapparameter_dict.get('odbc-ini', '').encode('base64')) }}
+text = {{ dumps(base64.b64encode( slapparameter_dict.get('odbc-ini', '').encode('ascii') )) }}
 
 [{{ section('odbc-ini') }}]
 < = jinja2-template-base
