@@ -101,3 +101,4 @@ template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict template-mariadb-parameters
+    import base64 base64
