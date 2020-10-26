@@ -164,7 +164,7 @@ context =
 {%   for url_key in ['url', 'https-url'] %}
 {%     if url_key in slave %}
 {%       set url = (slave[url_key] or '').strip() %}
-{%       if subprocess_module.call([software_parameter_dict['caddy_backend_url_validator'], url]) == 1 or not validators.url(url) %}
+{%       if not validators.url(url) %}
 {%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
 {%       elif url != slave[url_key] %}
 {%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
