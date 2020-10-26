@@ -171,7 +171,7 @@ delaycompress =
 recipe = plone.recipe.command
 stop-on-error = false
 log-directory = {{ '${' + slave_logrotate_section + ':backup}' }}
-command = ln -sf {{slave_parameter_dict.get('error_log')}} ${:log-directory}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}
+command = ln -sf {{slave_parameter_dict.get('error_log')}} ${:log-directory}/error.log && ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
 
 {#-   Set password for slave #}
 
