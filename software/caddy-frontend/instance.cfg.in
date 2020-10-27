@@ -24,12 +24,12 @@ import-list =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${dynamic-profile-caddy-replicate:rendered}
-RootSoftwareInstance = ${dynamic-profile-caddy-replicate:rendered}
-custom-personal = ${dynamic-profile-caddy-replicate:rendered}
+default = ${dynamic-profile-generate-slave-list-profile:rendered}
+RootSoftwareInstance = ${dynamic-profile-generate-slave-list-profile:rendered}
+custom-personal = ${dynamic-profile-generate-slave-list-profile:rendered}
+replicate = ${dynamic-profile-generate-slave-list-profile:rendered}
 single-default = ${dynamic-profile-caddy-frontend:rendered}
 single-custom-personal = ${dynamic-profile-caddy-frontend:rendered}
-replicate = ${dynamic-profile-caddy-replicate:rendered}
 kedifa = ${dynamic-profile-kedifa:rendered}
 
 [software-parameter-section]
@@ -42,20 +42,14 @@ kedifa = ${dynamic-profile-kedifa:rendered}
 template = {{ software_parameter_dict['profile_caddy_frontend'] }}
 filename = instance-caddy-frontend.cfg
 extra-context =
-  import furl_module furl
   raw software_type single-custom-personal
 
-[dynamic-profile-caddy-replicate]
-< = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
-template = {{ software_parameter_dict['profile_caddy_replicate'] }}
-filename = instance-caddy-replicate.cfg
+[dynamic-profile-generate-slave-list-profile]
+<= jinja2-template-base
+template = {{ software_parameter_dict['profile_generate_slave_list_profile'] }}
+filename = instance-slave-generated-list.cfg
 extra-context =
-    import subprocess_module subprocess
-    import functools_module functools
-    import validators validators
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type RootSoftwareInstance-default-custom-personal-replicate
+  raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
 [dynamic-profile-kedifa]
 < = jinja2-template-base

@@ -1,0 +1,81 @@
+{%- if instance_parameter_dict['slap-software-type'] in software_type %}
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+parts =
+  switch-merged-slave-list-softwaretype
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+profile-depot = ${buildout:directory}/var/profile-depot
+
+[merge-slave-list]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/instance-merged-slave-list.cfg
+extensions = jinja2.ext.do
+context =
+  import json_module json
+  key slave_profile_list :slave-profile-list
+  section software_parameter_dict software-parameter-section
+  section slapparameter_dict slapparameter-section
+  section instance_parameter_dict instance-parameter-section
+
+template = {{ software_parameter_dict['profile_slave_base'] }}
+
+[switch-merged-slave-list-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${merge-slave-list:rendered}
+
+
+[slave-parse-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ software_parameter_dict['profile_slave_parse'] }}
+rendered = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+context =
+  key slave_information :slave-information
+
+{%-   set output_list = [] %}
+{%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
+{%-     set section_name = 'generate-profile-' + slave['slave_reference'] %}
+{%-     do output_list.append('${' + section_name + ':rendered}') %}
+{#- Clean up slave from variable information, but which do not impact #}
+{%-     set SLAVE_VARY_KEY_LIST = ['timestamp', 'connection-parameter-hash'] %}
+{%-     set clean_slave = {} %}
+{%-     for k, v in slave.items() %}
+{%-       if k not in SLAVE_VARY_KEY_LIST %}
+{%-         do clean_slave.__setitem__(k, v) %}
+{%-       endif %}
+{%-     endfor %}
+[{{ section_name }}]
+<= slave-parse-base
+slave-information = {{ dumps(clean_slave) }}
+
+{%-   endfor %}
+
+[merge-slave-list]
+slave-profile-list =
+{%-   for output in output_list %}
+  {{ output }}
+{%-   endfor %}
+
+[software-parameter-section]
+{%- for key, value in software_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+[slapparameter-section]
+{%- for key, value in slapparameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+[instance-parameter-section]
+{#- There are dangerous keys like recipe, etc #}
+{#- XXX: Some other approach would be useful #}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%-   if key not in DROP_KEY_LIST %}
+{{ key }} = {{ dumps(value) }}
+{%-   endif -%}
+{%- endfor %}
+
+{%- endif %}
