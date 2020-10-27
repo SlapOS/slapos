@@ -1,0 +1,6 @@
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+{%- for slave_profile in slave_profile_list.splitlines() %}
+  {{ slave_profile }}
+{%- endfor %}
