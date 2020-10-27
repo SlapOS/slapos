@@ -45,12 +45,20 @@ extra-context =
   import furl_module furl
   raw software_type single-custom-personal
 
+[dynamic-profile-slave-parse]
+<= jinja2-template-base
+template = {{ software_parameter_dict['profile_slave_parse'] }}
+filename = slave-parse.cfg
+extra-context =
+    raw software_type RootSoftwareInstance-default-custom-personal-replicate
+
 [dynamic-profile-caddy-replicate]
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
 template = {{ software_parameter_dict['profile_caddy_replicate'] }}
 filename = instance-caddy-replicate.cfg
 extra-context =
+    key dynamic_profile_slave_parse dynamic-profile-slave-parse:rendered
     import subprocess_module subprocess
     import functools_module functools
     import validators validators
