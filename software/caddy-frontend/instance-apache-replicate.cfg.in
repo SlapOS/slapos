@@ -115,114 +115,6 @@ context =
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
-{%   set slave_error_list = [] %}
-{%   set slave_warning_list = [] %}
-{%   set slave_server_alias_unclashed = [] %}
-{%   set slave_type = slave.get('type') %}
-{%   if slave_type == 'eventsource' %}
-{%     do slave_error_list.append('type:eventsource is not implemented') %}
-{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
-{%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
-{%   endif %}
-{#   Check ciphers #}
-{%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
-{%   if slave_cipher_list %}
-{%     for cipher in slave_cipher_list %}
-{%       if cipher not in GOOD_CIPHER_LIST  %}
-{%         do slave_error_list.append('Cipher %r is not supported.' % (cipher,)) %}
-{%       endif %}
-{%     endfor %}
-{%   endif %}
-{%   set custom_domain = slave.get('custom_domain') %}
-{%   if custom_domain and custom_domain in used_host_list %}
-{%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
-{%   else %}
-{%      do used_host_list.append(custom_domain) %}
-{%   endif %}
-{%   if slave.get('server-alias') %}
-{%     for slave_alias in ('' ~ slave['server-alias']).split() %}
-{%       if slave_alias.startswith('*.') %}
-{%         set clean_slave_alias = slave_alias[2:] %}
-{%       else %}
-{%         set clean_slave_alias = slave_alias %}
-{%       endif %}
-{%       if not validators.domain(clean_slave_alias) %}
-{%         do slave_error_list.append('server-alias \'%s\' not valid' % (slave_alias,)) %}
-{%       else %}
-{%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
-{#           optionally do something about reporting back that server-alias has been unclashed #}
-{%         elif slave_alias in used_host_list %}
-{%           do slave_error_list.append('server-alias \'%s\' clashes' % (slave_alias,)) %}
-{%         else %}
-{%           do slave_server_alias_unclashed.append(slave_alias) %}
-{%           do used_host_list.append(slave_alias) %}
-{%         endif %}
-{%       endif %}
-{%     endfor %}
-{%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
-{%   endif %}
-{%   for url_key in ['url', 'https-url'] %}
-{%     if url_key in slave %}
-{%       set url = (slave[url_key] or '').strip() %}
-{%       if not validators.url(url) %}
-{%         do slave_error_list.append('slave %s %r invalid' % (url_key, url)) %}
-{%       elif url != slave[url_key] %}
-{%         do slave_warning_list.append('slave %s %r has been converted to %r' % (url_key, slave[url_key], url)) %}
-{%       endif %}
-{%     endif %}
-{%   endfor %}
-{%   if 'ssl_proxy_ca_crt' in slave %}
-{%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
-{%     set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
-{%     do check_popen.communicate(ssl_proxy_ca_crt) %}
-{%     if check_popen.returncode != 0 %}
-{%       do slave_error_list.append('ssl_proxy_ca_crt is invalid') %}
-{%     endif %}
-{%   endif %}
-{# BBB: SlapOS Master non-zero knowledge BEGIN #}
-{%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
-{%     if key in slave %}
-{%       do slave_warning_list.append('%s is obsolete, please use key-upload-url' % (key,)) %}
-{%     endif %}
-{%   endfor %}
-{%   if slave.get('ssl_ca_crt') and not (slave.get('ssl_crt') and slave.get('ssl_key')) %}
-{%     do slave_error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')  %}
-{%   endif %}
-{%   if slave.get('ssl_key') and slave.get('ssl_crt') %}
-{%     set key_popen = popen([software_parameter_dict['openssl'], 'rsa', '-noout', '-modulus']) %}
-{%     set crt_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout', '-modulus']) %}
-{%     set key_modulus = key_popen.communicate(slave['ssl_key'])[0] | trim %}
-{%     set crt_modulus = crt_popen.communicate(slave['ssl_crt'])[0] | trim %}
-{%     if not key_modulus or key_modulus != crt_modulus  %}
-{%       do slave_error_list.append('slave ssl_key and ssl_crt does not match')  %}
-{%     endif %}
-{%   endif %}
-{# BBB: SlapOS Master non-zero knowledge END #}
-{%   if slave.get('custom_domain') %}
-{%     set slave_custom_domain = '' ~ slave['custom_domain'] %}
-{%     if slave_custom_domain.startswith('*.') %}
-{%       set clean_custom_domain = slave_custom_domain[2:] %}
-{%     else %}
-{%       set clean_custom_domain = slave_custom_domain %}
-{%     endif %}
-{%     if not validators.domain(clean_custom_domain) %}
-{%       do slave_error_list.append('custom_domain %r invalid' % (slave['custom_domain'],)) %}
-{%     endif %}
-{%   endif %}
-{%   if len(slave_error_list) == 0 %}
-{#   Cleanup slave from not needed keys which come from implementation of SlapOS Master #}
-{%     set authorized_slave = slave.copy() %}
-{%     for key in SERVER_POLLUTED_KEY_LIST %}
-{%       do authorized_slave.pop(key, None) %}
-{%     endfor %}
-{%     do authorized_slave_list.append(authorized_slave) %}
-{%   else %}
-{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
-{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
-{%   endif %}
-{%   if len(slave_warning_list) > 0 %}
-{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
-{%   endif %}
 {% endfor %}
 {% do authorized_slave_list.sort() %}
 
@@ -338,13 +230,13 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 #----------------------------
 #--
 #-- Publish slave information
-[publish-slave-information]
+[slave-parse]
 recipe = slapos.cookbook:softwaretype
-default = ${dynamic-publish-slave-information:rendered}
-RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
-replicate = ${dynamic-publish-slave-information:rendered}
-custom-personal = ${dynamic-publish-slave-information:rendered}
-custom-group = ${dynamic-publish-slave-information:rendered}
+default = {{ dynamic_profile_slave_parse }} 
+RootSoftwareInstance = ${:default}
+replicate = ${:default}
+custom-personal = ${:default}
+custom-group = ${:default}
 
 [request-kedifa]
 <= slap-connection
@@ -404,18 +296,6 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {% endfor %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
-
-[dynamic-publish-slave-information]
-< = jinja2-template-base
-template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
-filename = dynamic-publish-slave-information.cfg
-extensions = jinja2.ext.do
-extra-context =
-    section slave_information slave-information
-    section rejected_slave_information rejected-slave-information
-    section active_slave_instance_dict active-slave-instance
-    section warning_slave_information warning-slave-information
-    key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
 
 [monitor-base-url-dict]
 kedifa = ${request-kedifa:connection-monitor-base-url}
@@ -849,7 +729,7 @@ extends =
   {{ software_parameter_dict['profile_monitor2'] }}
 parts =
   monitor-base
-  publish-slave-information
+  slave-parse
   publish-information
   request-kedifa
   rejected-slave-promise
