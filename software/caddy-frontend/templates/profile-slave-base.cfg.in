@@ -1,0 +1,5 @@
+[buildout]
+extends =
+{%- for slave_profile in slave_profile_list.splitlines() %}
+  {{ slave_profile }}
+{%- endfor %}

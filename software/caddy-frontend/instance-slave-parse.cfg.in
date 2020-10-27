@@ -1,0 +1,39 @@
+{%- if instance_parameter_dict['slap-software-type'] in software_type %}
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+parts =
+  merge-slave-list
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+profile-depot = ${buildout:directory}/var/profile-depot
+
+[slave-parse-base]
+recipe = caddyprofiledeps:cdnslaveparse
+output = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+
+[merge-slave-list]
+recipe = slapos.recipe.template:jinja2
+filename = paczynka.cfg
+rendered = ${buildout:directory}/paczynka.cfg
+context =
+  key slave_profile_list :slave-profile-list
+template = {{ software_parameter_dict['profile_slave_base'] }}
+
+{%-   set output_list = [] %}
+{%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
+{%-     set name = slave['slave_reference'] %}
+{%-     do output_list.append('${' + name + ':output}') %}
+[{{ name }}]
+<= slave-parse-base
+slave-information = {{ dumps(slave) }}
+
+{%-   endfor %}
+
+[merge-slave-list]
+slave-profile-list =
+{%-   for output in output_list %}
+  {{ output }}
+{%-   endfor %}
+{%- endif %}

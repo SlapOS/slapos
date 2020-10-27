@@ -13,6 +13,7 @@ setup(
   entry_points={
     'zc.buildout': [
       'default = caddyprofiledummy:Recipe',
+      'cdnslaveparse = caddyprofiledummy:CdnSlaveParse',
     ]
   }
 )
