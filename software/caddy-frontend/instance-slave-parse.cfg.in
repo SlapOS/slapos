@@ -1,0 +1,41 @@
+{#- XXX:
+  * implement checking
+  * fill in error-list and warning-list
+  * reject slave if not noice (consider dropping rejected-amount, or something...)
+  * keep the speed
+#}
+{#- provides information to instance-slave-base.cfg.in #}
+{%- set SLAVE_NAME = slave_information['slave_reference'] %}
+{%- set PUBLISH_PART_NAME = 'publish-%s' % (SLAVE_NAME,) %}
+{%- set MASTER_STATE_PART_NAME = 'master-state-%s' % (SLAVE_NAME,) %}
+
+{#- This is THE place to take decisions and actions
+
+This profile needs to expose slave to the list of published slaves
+This profile needs to expose slave to be published
+This profile needs to provide entry for request to other places
+This profile needs to extend part list correctly
+
+#}
+[slave-list]
+list +=
+  {{ '${' + PUBLISH_PART_NAME + ':-request-information}'  }}
+
+[{{ MASTER_STATE_PART_NAME }}]
+value = {{ dumps(slave_information) }}
+
+[{{ PUBLISH_PART_NAME }}]
+<= publish-slave-base
+-slave-reference = {{ SLAVE_NAME }}
+{%- set log_access_url = slave_information.pop('log-access-urls', None) %}
+{%- if log_access_url %}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
+log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
+{%- endif %}
+{%- for key, value in slave_information.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+{#- XXX: implement correctly the request... #}
+-request-information = {{ dumps(slave_information) }}
+{#- Configuration of the comparison system #}
+-master-state-section-key = {{ MASTER_STATE_PART_NAME }}:value
