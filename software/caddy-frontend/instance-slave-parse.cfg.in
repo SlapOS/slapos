@@ -1,0 +1,33 @@
+{#- provides information to instance-slave-base.cfg.in #}
+{%- set SLAVE_NAME = slave_information['slave_reference'] %}
+{%- set PART_NAME = 'publish-%s' % (SLAVE_NAME,) %}
+
+{#- This is THE place to take decisions and actions
+
+This profile needs to expose slave to the list of published slaves
+This profile needs to expose slave to be published
+This profile needs to provide entry for request to other places
+This profile needs to extend part list correctly
+
+#}
+[slave-list]
+list +=
+  {{ '${' + PART_NAME + ':-request-information}'  }}
+
+[{{ SLAVE_NAME }}]
+master-state = {{ dumps(slave_information) }}
+
+[{{ PART_NAME }}]
+<= publish-slave-base
+-slave-reference = {{ SLAVE_NAME }}
+{%- set log_access_url = slave_information.pop('log-access-urls', None) %}
+{%- if log_access_url %}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
+log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
+{%- endif %}
+{%- for key, value in slave_information.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+-request-information = {{ dumps(slave_information) }}
+{#- Configuration of the comparison system #}
+-master-state-section-key = {{ SLAVE_NAME }}:master-state

@@ -1,0 +1,160 @@
+{#- uses instance-slave-parse.cfg.in information #}
+{#- BEGIN: Preparations #}
+{#- Allow to pass only some parameters to frontend nodes #}
+{%- set FRONTEND_NODE_PASSED_KEY_LIST = [
+        'plain_http_port',
+        'port',
+        'apache-certificate',
+        'apache-key',
+        'domain',
+        'enable-http2-by-default',
+        'global-disable-http2',
+        'mpm-graceful-shutdown-timeout',
+        'public-ipv4',
+        're6st-verification-url',
+        'backend-connect-timeout',
+        'backend-connect-retries',
+        'ciphers',
+        'request-timeout',
+        'authenticate-to-backend',
+    ]
+%}
+{#- Send only needed parameters to frontend nodes #}
+{%- set base_node_configuration_dict = {} %}
+{%- for key in FRONTEND_NODE_PASSED_KEY_LIST %}
+{%-   if key in slapparameter_dict %}
+{%-     do base_node_configuration_dict.__setitem__(key,  slapparameter_dict[key]) %}
+{%-   endif %}
+{%- endfor %}
+{%- set single_type_key = 'single-' %}
+{%- if instance_parameter_dict['slap-software-type'] == "replicate" %}
+{%-   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
+{%- elif instance_parameter_dict['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
+{%-   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
+{%- else %}
+{%-   set frontend_type = "%s%s" % (single_type_key, instance_parameter_dict['slap-software-type']) %}
+{%- endif %}
+{%- set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
+{%- set frontend_monitor_httpd_base_port = 8410 %}
+{%- set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
+{%- set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{%- set caucase_url = 'http://' ~ caucase_netloc %}
+{#- END: Preparations #}
+
+[replicate]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{#- XXX config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd} #}
+software-type = {{ frontend_type }}
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
+
+{#- BEING: Request all frontend nodes #}
+{% set slave_list_name = 'extra_slave_instance_list' %}
+{%- set frontend_list = [] %}
+{%- set frontend_section_list = [] %}
+{%- set part_list = [] %}
+{%- set request_dict = {} %}
+{%- set namebase = 'caddy-frontend' %}
+{%- for i in range(1, frontend_quantity + 1) %}
+{%-   set frontend_name = "%s-%s" % (namebase, i) %}
+{%-   set request_section_title = 'request-%s' % frontend_name %}
+{%-   set sla_key = "-sla-%s-" % i %}
+{%-   set sla_key_length = sla_key | length %}
+{%-   set sla_dict = {} %}
+{%-   set config_key = "-frontend-config-%s-" % i %}
+{%-   set config_key_length = config_key | length %}
+{%-   set config_dict = {} %}
+{%-   for key in slapparameter_dict.keys() %}
+{%-     if key.startswith(sla_key) %}
+{%-       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
+{#- We check for specific configuration regarding the frontend #}
+{%-     elif key.startswith(config_key) %}
+{%-       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   do config_dict.__setitem__('monitor-httpd-port', frontend_monitor_httpd_base_port + i) %}
+{%-   do config_dict.__setitem__('backend-client-caucase-url', caucase_url) %}
+{%-   set state_key = "-frontend-%s-state" % i %}
+{%-   set frontend_state = slapparameter_dict.pop(state_key, None) %}
+{%-   if frontend_state != 'destroyed' %}
+{%-     do frontend_list.append(frontend_name) %}
+{%-     do frontend_section_list.append(request_section_title) %}
+{%-   endif %}
+{%-   do part_list.append(request_section_title) %}
+{%-   set request_content_dict = {
+                                  'config': config_dict,
+                                  'name': frontend_name,
+                                  'sla': sla_dict,
+                                  'state': frontend_state
+                                  } %}
+{%-   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
+{%-   do request_content_dict.__setitem__('software-url', slapparameter_dict.get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
+{%-   do request_dict.__setitem__(request_section_title, request_content_dict) %}
+{%- endfor %}
+
+{%- for section, frontend_request in request_dict.iteritems() %}
+{%-   set state = frontend_request.get('state', '') %}
+[{{section}}]
+<= replicate
+name = {{ frontend_request.get('name') }}
+software-url = {{ frontend_request['software-url'] }}
+{%-   if state %}
+state = {{ state }}
+{%-   endif %}
+{#- config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information} #}
+{#- config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url} #}
+config-backend-client-caucase-url = {{ caucase_url }}
+{#- config-master-key-download-url = ${request-kedifa:connection-master-key-download-url} #}
+config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
+config-{{ slave_list_name }} = ${slave-list:list}
+{#-   Do not send additional parameters for destroyed nodes #}
+{%-   if state != 'destroyed' %}
+{%-     set node_configuration_dict = {} %}
+{%-     do node_configuration_dict.update(frontend_request.get('config')) %}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
+{%-     do node_configuration_dict.__setitem__("frontend-name", frontend_request.get('name')) %}
+{%-     for config_key, config_value in node_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%     endfor -%}
+{%-     for config_key, config_value in base_node_configuration_dict.iteritems() %}
+config-{{ config_key }} = {{ dumps(config_value) }}
+{%     endfor -%}
+{%   endif %}
+{%   if frontend_request.get('sla') %}
+{%     for parameter, value in frontend_request.get('sla').iteritems() %}
+sla-{{ parameter }} = {{ value }}
+{%-     endfor %}
+{%-   endif %}
+{%- endfor %}
+{#- END: Request all frontend nodes #}
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+{%- for slave_profile in slave_profile_list.splitlines() %}
+  {{ slave_profile }}
+{%- endfor %}
+parts =
+{%- for part in part_list %}
+  {{ part }}
+{%- endfor %}
+
+[publish-slave-base]
+recipe = slapos.cookbook:publish
+{#- Configuration of the comparison system #}
+{#- List of keys which shall be compared during the update run of the publish recipe #}
+-master-state-key-list =
+  backend-client-caucase-url
+  domain
+  kedifa-caucase-url
+  key-generate-auth-url
+  key-upload-url
+  log-access-url
+  public-ipv4
+  replication_number
+  request-error-list
+  secure_access
+  site_url
+  url
+  warning-list
