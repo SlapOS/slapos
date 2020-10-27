@@ -1,0 +1,25 @@
+{#- provides information to instance-slave-base.cfg.in #}
+
+{#- This is THE place to take decisions and actions
+
+This profile needs to expose slave to the list of published slaves
+This profile needs to expose slave to be published
+This profile needs to provide entry for request to other places
+This profile needs to extend part list correctly
+
+#}
+[buildout]
+parts +=
+  {{ slave_information['slave_title'] }}
+
+[slave-list]
+list +=
+  {{ dumps(slave_information) }}
+
+[{{ slave_information['slave_title'] }}]
+{#- this is section for publishment #}
+recipe = plone.recipe.command
+command = echo OK
+{%- for k, v in slave_information.items() %}
+{{ k }} = {{ dumps(v) }}
+{%- endfor %}

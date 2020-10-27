@@ -1,0 +1,53 @@
+{%- if instance_parameter_dict['slap-software-type'] in software_type %}
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+parts =
+  switch-merged-slave-list-softwaretype
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+profile-depot = ${buildout:directory}/var/profile-depot
+
+[slave-parse-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ software_parameter_dict['profile_slave_parse'] }}
+rendered = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+context =
+  key slave_information :slave-information
+
+[merge-slave-list]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/instance-merged-slave-list.cfg
+context =
+  key slave_profile_list :slave-profile-list
+  section software_parameter_dict software-parameter-section
+template = {{ software_parameter_dict['profile_slave_base'] }}
+
+[switch-merged-slave-list-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${merge-slave-list:rendered}
+
+
+{%-   set output_list = [] %}
+{%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
+{%-     set name = slave['slave_reference'] %}
+{%-     do output_list.append('${' + name + ':rendered}') %}
+[{{ name }}]
+<= slave-parse-base
+slave-information = {{ dumps(slave) }}
+
+{%-   endfor %}
+
+[merge-slave-list]
+slave-profile-list =
+{%-   for output in output_list %}
+  {{ output }}
+{%-   endfor %}
+
+[software-parameter-section]
+{%- for key, value in software_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+{%- endif %}
