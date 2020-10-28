@@ -9,13 +9,6 @@ parts =
 recipe = slapos.cookbook:mkdirectory
 profile-depot = ${buildout:directory}/var/profile-depot
 
-[slave-parse-base]
-recipe = slapos.recipe.template:jinja2
-template = {{ software_parameter_dict['profile_slave_parse'] }}
-rendered = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
-context =
-  key slave_information :slave-information
-
 [merge-slave-list]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/instance-merged-slave-list.cfg
@@ -34,11 +27,18 @@ recipe = slapos.cookbook:softwaretype
 default = ${merge-slave-list:rendered}
 
 
+[slave-parse-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ software_parameter_dict['profile_slave_parse'] }}
+rendered = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+context =
+  key slave_information :slave-information
+
 {%-   set output_list = [] %}
 {%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
-{%-     set name = slave['slave_reference'] %}
-{%-     do output_list.append('${' + name + ':rendered}') %}
-[{{ name }}]
+{%-     set section_name = 'generate-profile-' + slave['slave_reference'] %}
+{%-     do output_list.append('${' + section_name + ':rendered}') %}
+[{{ section_name }}]
 <= slave-parse-base
 slave-information = {{ dumps(slave) }}
 
