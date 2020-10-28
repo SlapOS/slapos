@@ -14,6 +14,9 @@ This profile needs to extend part list correctly
 list +=
   {{ '${' + PART_NAME + ':-request-information}'  }}
 
+[{{ SLAVE_NAME }}]
+master-state = {{ dumps(slave_information) }}
+
 [{{ PART_NAME }}]
 <= publish-slave-base
 -slave-reference = {{ SLAVE_NAME }}
@@ -25,4 +28,6 @@ log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {%- for key, value in slave_information.iteritems() %}
 {{ key }} = {{ dumps(value) }}
 {%- endfor %}
-request-information = {{ dumps(slave_information) }}
+-request-information = {{ dumps(slave_information) }}
+{#- Configuration of the comparison system #}
+-master-state-section-key = {{ SLAVE_NAME }}:master-state
