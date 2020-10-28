@@ -138,4 +138,11 @@ extends =
 parts =
 {%- for part in part_list %}
   {{ part }}
+
+{#- Configuration of the comparison system #}
+[publish-slave-base]
+recipe = slapos.cookbook:publish
+{#- List of keys which shall be compared during the update run of the publish recipe #}
+-master-state-key-list =
+  log-access-url
 {%- endfor %}

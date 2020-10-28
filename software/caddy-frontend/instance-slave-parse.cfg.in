@@ -11,10 +11,10 @@ This profile needs to extend part list correctly
 #}
 [slave-list]
 list +=
-  {{ '${' + SLAVE_NAME + ':request-information}'  }}
+  {{ '${' + SLAVE_NAME + ':-request-information}'  }}
 
 [{{ SLAVE_NAME }}]
-recipe = slapos.cookbook:publish
+<= publish-slave-base
 -slave-reference = {{ SLAVE_NAME }}
 {%- set log_access_url = slave_information.pop('log-access-urls', None) %}
 {%- if log_access_url %}
@@ -24,4 +24,6 @@ log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
 {%- for key, value in slave_information.iteritems() %}
 {{ key }} = {{ dumps(value) }}
 {%- endfor %}
-request-information = {{ dumps(slave_information) }}
+-request-information = {{ dumps(slave_information) }}
+{#- Configuration of the comparison system #}
+-master-state = {{ dumps(slave_information) }}
