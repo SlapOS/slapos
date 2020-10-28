@@ -1,4 +1,5 @@
 {#- provides information to instance-slave-base.cfg.in #}
+{%- set SLAVE_NAME = slave_information['slave_reference'] %}
 
 {#- This is THE place to take decisions and actions
 
@@ -8,18 +9,15 @@ This profile needs to provide entry for request to other places
 This profile needs to extend part list correctly
 
 #}
-[buildout]
-parts +=
-  {{ slave_information['slave_title'] }}
-
 [slave-list]
 list +=
-  {{ dumps(slave_information) }}
+  {{ '${' + SLAVE_NAME + ':request-information}'  }}
 
-[{{ slave_information['slave_title'] }}]
+[{{ SLAVE_NAME }}]
 {#- this is section for publishment #}
 recipe = plone.recipe.command
 command = echo OK
 {%- for k, v in slave_information.items() %}
 {{ k }} = {{ dumps(v) }}
 {%- endfor %}
+request-information = {{ dumps(slave_information) }}
