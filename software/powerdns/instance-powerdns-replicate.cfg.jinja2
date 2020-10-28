@@ -43,6 +43,7 @@ context =
 {%   set dns_name = 'ns%s' % i -%}
 {%   set dns_domain = dns_name_template_string % i %}
 {%   set request_section_title = 'request-%s' % dns_name -%}
+{%   set promise_section_title = 'promise-listen-port-%s' % dns_name -%}
 {%   set sla_key = "-sla-%s-" % i -%}
 {%   set sla_key_length = sla_key | length %}
 {%   set sla_parameters = [] %}
@@ -55,6 +56,7 @@ context =
 {%   do dns_domain_list.append(dns_domain) -%}
 {%   do dns_section_list.append(request_section_title) -%}
 {%   do part_list.append(request_section_title) -%}
+{%   do part_list.append(promise_section_title) -%}
 
 [{{request_section_title}}]
 <= replicate
@@ -68,6 +70,15 @@ config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
 {%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endfor -%}
+
+[{{promise_section_title}}]
+<= monitor-promise-base
+module = check_port_listening
+name = pdns-port-listening.py
+{%   set ipv4 = '${' ~ request_section_title ~ ':connection-powerdns-ipv4}' -%}
+config-hostname = {{ipv4}}
+{%   set port = '${' ~ request_section_title ~ ':connection-powerdns-port}' -%}
+config-port = {{port}}
 
 {%  do monitor_url_list.append('${' ~ request_section_title ~ ':connection-monitor-base-url}') -%}
 {% endfor -%}
@@ -101,7 +112,7 @@ software-url = {{ slapparameter_dict.pop(dns_software_url_key) }}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{dns_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
+return = slave-instance-information-list monitor-base-url powerdns-ipv6 powerdns-port powerdns-ipv4
 config-server-admin = {{ server_admin }}
 config-ns-record = {{ ns_record }}
 {% for parameter, value in slapparameter_dict.items() -%}
@@ -114,12 +125,17 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 
 [publish-information]
 recipe = slapos.cookbook:publish
-domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 ns-record = {{ ns_record }}
 monitor-url = ${monitor-publish-parameters:monitor-url}
 monitor-user = ${monitor-publish-parameters:monitor-user}
 monitor-password = ${monitor-publish-parameters:monitor-password}
+{% for dns_name, dns_section in zip(dns_list, dns_section_list) -%}
+{%   set dns_ipv6 = '${' ~ dns_section ~ ':connection-powerdns-ipv6}' -%}
+{%   set dns_port = '${' ~ dns_section ~ ':connection-powerdns-port}' -%}
+{{ dns_name }}-ipv6 = {{ dns_ipv6 }}
+{{ dns_name }}-port = {{ dns_port }}
+{% endfor -%}
 {% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {% if monitor_interface_url -%}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}
