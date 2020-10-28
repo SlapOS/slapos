@@ -23,7 +23,7 @@ context =
 {% set dns_quantity = slapparameter_dict.pop('-dns-quantity', '1') | int -%}
 {% set slave_list_name = 'extra_slave_instance_list' -%}
 {% set dns_list = [] %}
-{% set dns_domain_list = [] %}
+{% set dns_domain_list_list = [] %}
 {% set dns_section_list = [] %}
 {% set namebase = 'powerdns' -%}
 # XXX Dirty hack, not possible to define default value before
@@ -33,15 +33,18 @@ context =
 {% endif -%}
 
 ## DNS set up
-{% set zone = slapparameter_dict.pop('zone', 'domain.com') %}
+{%- set supported_zone_list = slapparameter_dict.pop('supported-zone-list', 'domain.com').split() %}
 {% set server_admin = slapparameter_dict.pop('server-admin', 'admin@domain.com') %}
-{% set dns_name_template_string = slapparameter_dict.pop('dns-name-template-string', 'ns%s.' + zone) %}
+{% set dns_name_template_string_list = slapparameter_dict.pop('dns-name-template-string-list', map('ns%s.'.__add__, supported_zone_list)) %}
 
 # Here we request individualy each dns.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, dns_quantity + 1) -%}
 {%   set dns_name = 'ns%s' % i -%}
-{%   set dns_domain = dns_name_template_string % i %}
+{%   set dns_domain_list = [] %}
+{%   for dns_template_string in dns_name_template_string_list %}
+{%     do dns_domain_list.append(dns_template_string % i) %}
+{%   endfor -%}
 {%   set request_section_title = 'request-%s' % dns_name -%}
 {%   set promise_section_title = 'promise-listen-port-%s' % dns_name -%}
 {%   set sla_key = "-sla-%s-" % i -%}
@@ -53,7 +56,7 @@ context =
 {%     endif -%}
 {%   endfor -%}
 {%   do dns_list.append(dns_name) -%}
-{%   do dns_domain_list.append(dns_domain) -%}
+{%   do dns_domain_list_list.append(','.join(dns_domain_list)) -%}
 {%   do dns_section_list.append(request_section_title) -%}
 {%   do part_list.append(request_section_title) -%}
 {%   do part_list.append(promise_section_title) -%}
@@ -65,8 +68,12 @@ name = {{dns_name}}
 {%   if state_key in slapparameter_dict %}
 state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
-config-zone = {{ zone }}
-config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
+config-supported-zone-list = {{ ' '.join(supported_zone_list) }}
+{%   set soa_list = [] %}
+{%   for dns_domain in dns_domain_list %}
+{%     do soa_list.append("%s,%s" % (dns_domain, server_admin)) %}
+{%   endfor -%}
+config-soa-list = {{ ' '.join(soa_list) }}
 {%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endfor -%}
@@ -101,7 +108,7 @@ monitor-url-list +=
 {{ '  ' ~ url }}
 {% endfor %}
 
-{% set ns_record = slapparameter_dict.pop('ns-record', ','.join(dns_domain_list)) %}
+{% set ns_record_list = ' '.join(slapparameter_dict.pop('ns-record-list', dns_domain_list_list)) %}
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -114,7 +121,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{dns_type}}
 return = slave-instance-information-list monitor-base-url powerdns-ipv6 powerdns-port powerdns-ipv4
 config-server-admin = {{ server_admin }}
-config-ns-record = {{ ns_record }}
+config-ns-record-list = {{ ns_record_list }}
 {% for parameter, value in slapparameter_dict.items() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
@@ -126,7 +133,7 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 [publish-information]
 recipe = slapos.cookbook:publish
 slave-amount = {{ slave_instance_list | length }}
-ns-record = {{ ns_record }}
+ns-record-list = {{ ns_record_list }}
 monitor-url = ${monitor-publish-parameters:monitor-url}
 monitor-user = ${monitor-publish-parameters:monitor-user}
 monitor-password = ${monitor-publish-parameters:monitor-password}

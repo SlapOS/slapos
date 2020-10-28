@@ -33,12 +33,13 @@
       "default": "",
       "type": "string"
     },
-    "zone": {
+    "supported-zone-list": {
       "title": "Zone",
       "description": "Zone to be handled by the DNS cluster",
       "type": "string",
       "default": "domain.com",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}(\s([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6})*$"
+
     },
     "server-admin": {
       "title": "Zone Administrator Email",
@@ -46,11 +47,11 @@
       "type": "string",
       "default": "admin@domain.com"
     },
-    "dns-name-template-string": {
+    "dns-name-template-string-list": {
       "title": "DNS domains template string",
       "description": "Template used to generate DNS domain name",
       "type": "string",
-      "default": "ns%s. + zone"
+      "default": "map('ns%s.'.__add__, supported_zone_list)"
     },
     "monitor-interface-url": {
       "title": "Monitor Web Interface URL",

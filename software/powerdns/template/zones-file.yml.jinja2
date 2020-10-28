@@ -1,7 +1,9 @@
 # See https://doc.powerdns.com/authoritative/backends/geoip.html
 
 {%- set slave_instance_list = json_module.loads(slapparameter_dict.get('extra_slave_instance_list', '[]')) %}
-{%- set zone = slapparameter_dict.get('zone', 'example.com') %}
+{%- set supported_zone_list = slapparameter_dict.get('supported-zone-list', 'example.com').split() %}
+{%- set soa_list = slapparameter_dict.get('soa-list', 'ns0.example.com,admin@example.com').split() %}
+{%- set ns_record_list = slapparameter_dict.get('ns-record-list', 'ns0.example.com,ns1.example.com').split() %}
 
 {%- macro disambiguate_domain_name(a, b) %}
 {#- See http://www.dns-sd.org/trailingdotsindomainnames.html #}
@@ -13,6 +15,7 @@
 {%- endmacro %}
 
 domains:
+{%- for zone, soa, ns_record in zip(supported_zone_list, soa_list, ns_record_list) %}
 - domain: {{ zone }}
   # TODO: what value for ttl?
   ttl: 300
@@ -20,8 +23,8 @@ domains:
   # Note: For each domain, one record of the domain name MUST exist with a soa record.
   records:
     {{ zone }}:
-      - soa: {{ slapparameter_dict.get('soa', 'ns0.example.com,admin@example.com').replace(',', ' ') }}
-      {%- for ns in slapparameter_dict.get('ns-record', 'ns0.example.com,ns1.example.com').split(',') %}
+      - soa: {{ soa.replace(',', ' ') }}
+      {%- for ns in ns_record.split(',') %}
       - ns: {{ ns }}
       {%- endfor %}
 
@@ -83,7 +86,7 @@ domains:
     {%- for slave in slave_instance_list %}
     {%-   set origin = slave['origin'] %}
     {%-   set unique_slave_id = slave['slave_reference'] %}
-    {{ disambiguate_domain_name(slave['record'], zone) }}:
+    {{ disambiguate_domain_name(slave['record'], slave['applicable-zone']) }}:
       {#- Note: Placeholders (i.e. "country." and "continent.") are used to avoid
           possible name collisions, e.g.:
           - %cc for American Samoa is 'as'
@@ -95,3 +98,5 @@ domains:
       {{ ip_range }}: {{ country_code }}.country.{{ unique_slave_id }}
       {%- endfor %}
     {%- endfor %}
+
+{%- endfor %}
