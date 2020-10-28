@@ -33,9 +33,9 @@ context =
 {% endif -%}
 
 ## DNS set up
-{% set zone = slapparameter_dict.pop('zone', 'domain.com') %}
+{%- set supported_zone_list = slapparameter_dict.pop('supported-zone-list', 'domain.com').split() %}
 {% set server_admin = slapparameter_dict.pop('server-admin', 'admin@domain.com') %}
-{% set dns_name_template_string = slapparameter_dict.pop('dns-name-template-string', 'ns%s.' + zone) %}
+{% set dns_name_template_string = slapparameter_dict.pop('dns-name-template-string', 'ns%s.domain.com') %}
 
 # Here we request individualy each dns.
 # The presence of sla parameters is checked and added if found
@@ -65,7 +65,7 @@ name = {{dns_name}}
 {%   if state_key in slapparameter_dict %}
 state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
-config-zone = {{ zone }}
+config-supported-zone-list = {{ ' '.join(supported_zone_list) }}
 config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
 {%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
