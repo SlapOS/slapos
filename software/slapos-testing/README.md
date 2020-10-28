@@ -2,13 +2,11 @@
 
 This software release is used to run unit test of slapos eggs.
 
-The approach is to use setuptools' integrated test runner, `python setup.py test`, to run tests.
+The approach is to use nxdtest test runner, which will run tests for each
+projects, as described in `.nxdtest` file.
 
-The `python` used in this command will be a `zc.recipe.egg` interpreter with
-all eggs pre-installed by this software release.
-
-The results of this test suite running on Nexedi ERP5 are published as `SlapOS.Eggs.UnitTest-Master.Python3`
-and `SlapOS.Eggs.UnitTest-Master.Python2`.
+The results of this test suite running on Nexedi ERP5 are published as 
+`SlapOS.Eggs.UnitTest-Master.Python3` and `SlapOS.Eggs.UnitTest-Master.Python2`.
 
 
 Here's an example session of how a developer could use this software release in
@@ -18,26 +16,31 @@ changes to the code, run tests and publish changes.
 ```bash
 # install this software release
 SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-testing/software.cfg
-COMP=slaprunner
+COMP=slaprunner # or "local" with theia
 INSTANCE_NAME=$COMP
 
 slapos supply $SR $COMP
 slapos node software
-slapos request --node=node=$COMP $INSTANCE_NAME $SR
+slapos request $INSTANCE_NAME $SR
 slapos node instance
 
+# The path of a an environment script was published by slapos parameters, as
+# "environment-script"
+slapos request $INSTANCE_NAME $SR
+
+# sourcing the script in the shell configure all environment variables and
+# print a message explaining how to run tests
+. /srv/slapgrid/slappartX/etc/slapos-test-runner-nxdtest-environment.sh
+
+# To make change to the 
 # The source code is a git clone working copy on the instance
 cd ~/srv/runner/instance/slappart0/parts/slapos.core/
 
 # make some changes to the code
 vim slapos/tests/client.py
 
-# run tests, using bundled python intepreter with pre-installed eggs dependencies
-SLAPOS_TEST_IPV6=::1 \
-SLAPOS_TEST_IPV4=127.0.0.1 \
-SLAPOS_TEST_VERBOSE=1 \
-SLAPOS_TEST_DEBUG=1 \
-~/srv/runner/instance/slappart0/software_release/bin/python_for_test setup.py test
+# run tests
+~/srv/runner/instance/slappart0/bin/runTestSuite
 
 # when satified, commit changes
 git add -p && git commit
