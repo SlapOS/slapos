@@ -59,7 +59,7 @@ WEST_ASIAN_SUBNET = '46.70.0.0'
 class PowerDNSTestCase(SlapOSInstanceTestCase):
   # power dns uses sockets and need shorter paths on test nodes.
   __partition_reference__ = 'pdns'
-  default_zone = 'domain.com'
+  default_supported_zone = 'domain.com'
 
   # focus to test connexion parameters only depending on PowerDNS
   def getPowerDNSParameterDict(self, parameter_dict):
@@ -79,22 +79,20 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
       self.requestDefaultInstance().getConnectionParameterDict()
     )
 
-  def _test_parameter_dict(self, zone=None, dns_quantity=1, slave_amount=0):
-    if zone is None:
-      zone = self.default_zone
+  def _test_parameter_dict(self, dns_quantity=1, slave_amount=0):
 
     parameter_dict = self.getPowerDNSConnexionParameterDict()
     expected_dict = {
       'ns-record': '',
     }
 
-    ns_record = ''
+    ns_record = []
     for replicate_nb in range(1, dns_quantity + 1):
-      prefix = 'ns%s' % replicate_nb
-      ns_record += prefix + '.%s' % zone
-      expected_dict[prefix + '-port'] = str(DNS_PORT)
-      expected_dict[prefix + '-ipv6'] = self._ipv6_address
-    expected_dict['ns-record'] = ns_record
+      ns_id = 'ns%s' % replicate_nb
+      ns_record.append(ns_id + '.' + self.default_supported_zone)
+      expected_dict[ns_id + '-port'] = str(DNS_PORT)
+      expected_dict[ns_id + '-ipv6'] = self._ipv6_address
+    expected_dict['ns-record'] = ','.join(ns_record)
     expected_dict['slave-amount'] = str(slave_amount)
 
     self.assertEqual(expected_dict, parameter_dict)
@@ -149,24 +147,11 @@ class TestMasterRequest(PowerDNSTestCase):
     self._test_parameter_dict()
 
 
-class TestMasterRequestDomain(PowerDNSTestCase):
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'zone': 'toto.example.com',
-    }
-
-  def test(self):
-    self._test_parameter_dict(zone=self.getInstanceParameterDict()['zone'])
-
-
 class PowerDNSSlaveTestCase(PowerDNSTestCase):
 
   @classmethod
-  def requestDefaultInstance(cls):
-    default_instance = super(PowerDNSSlaveTestCase, cls)\
-        .requestDefaultInstance()
+  def requestDefaultInstance(cls, state='started'):
+    default_instance = super().requestDefaultInstance(state=state)
     cls.requestSlaves()
     return default_instance
 
@@ -178,7 +163,8 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
             .getSlaveParameterDictDict().items():
       cls.logger.debug(
         'requesting slave "%s" software:%s parameters:%s',
-        slave_reference, software_url, partition_parameter_kw)
+        slave_reference, software_url, partition_parameter_kw
+      )
       cls.slap.request(
         software_release=software_url,
         software_type=software_type,
@@ -207,6 +193,7 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
     return {
       'slave-pdns1': {
         'record': 'test1',
+        'applicable-zone': 'domain.com',
         'origin': 'nexedi.com',
         'default': 'test1.com.',
         'africa': 'test1africa.com.',
@@ -224,12 +211,13 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
       },
       'slave-pdns2': {
         'record': 'test2',
+        'applicable-zone': 'domain.com',
         'origin': 'nexedi.com',
         'default': 'test2.com.',
         'china-telecom': 'test2china-telecom.com.',
         'europe': 'test2europe.com.',
         'japan': 'test2japan.com.',
-      }
+      },
     }
 
   def dns_query(self, domain_name, subnet):
@@ -237,14 +225,14 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
     client_subnet_option = dns.edns.ECSOption(subnet)
     message.use_edns(options=[client_subnet_option])
     answer = dns.query.udp(message, self._ipv6_address, port=DNS_PORT)
-    return answer.find_rrset(
+    return answer.get_rrset(
             dns.message.ANSWER,
             dns.name.from_text(domain_name),
             dns.rdataclass.IN,
             dns.rdatatype.CNAME
           ).to_text().split()[-1]
 
-  def _test_dns_resolver(self, zone):
+  def _test_dns_resolver(self):
     slave_parameter_dict_dict = self.getSlaveParameterDictDict()
     subnet_dict = {
       'africa': AFRICAN_SUBNET,
@@ -277,7 +265,9 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
 
     for slave_name in slave_parameter_dict_dict:
       slave_parameter_dict = slave_parameter_dict_dict[slave_name]
-      domain_name = '%s.%s' % (slave_parameter_dict['record'], zone)
+      domain_name = '%s.%s' % (
+        slave_parameter_dict['record'], slave_parameter_dict['applicable-zone']
+      )
       for region in subnet_dict:
         self.assertEqual(
           slave_parameter_dict.pop(
@@ -287,29 +277,132 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
           self.dns_query(domain_name, subnet_dict[region])
         )
 
-  def _test(self, zone=None):
-    if zone is None:
-      zone = self.default_zone
+  def _test_slaves(self):
     self._test_parameter_dict(
-      zone=zone,
       slave_amount=len(self.getSlaveParameterDictDict())
     )
-    self._test_dns_resolver(zone)
+    self._test_dns_resolver()
 
 
 class TestSlaveRequest(PowerDNSSlaveTestCase):
 
   def test(self):
-    self._test()
+    self._test_slaves()
 
 
-class TestSlaveRequestDomain(PowerDNSSlaveTestCase):
+class TestSlaveRequestSingleDomain(TestSlaveRequest):
+  
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'slave-pdns1': {
+        'record': 'test1',
+        'applicable-zone': 'toto.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test1.com.',
+        'africa': 'test1africa.com.',
+        'china-telecom': 'test1china-telecom.com.',
+        'china-unicom': 'test1china-unicom.com.',
+        'china-mobile': 'test1china-mobile.com.',
+        'east-asia': 'test1east-asia.com.',
+        'europe': 'test1europe.com.',
+        'hong-kong': 'test1hong-kong.com.',
+        'japan': 'test1japan.com.',
+        'north-america': 'test1north-america.com.',
+        'oceania': 'test1oceania.com.',
+        'south-america': 'test1south-america.com.',
+        'west-asia': 'test1west-asia.com.',
+      },
+      'slave-pdns2': {
+        'record': 'test2',
+        'applicable-zone': 'toto.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test2.com.',
+        'china-telecom': 'test2china-telecom.com.',
+        'europe': 'test2europe.com.',
+        'japan': 'test2japan.com.',
+      },
+    }
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'zone': 'toto.example.com',
+      'supported-zone-list': 'toto.example.com',
     }
 
-  def test(self):
-    self._test(zone=self.getInstanceParameterDict()['zone'])
+
+class TestSlaveRequestDomains(TestSlaveRequest):
+  
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'slave-pdns1': {
+        'record': 'test1',
+        'applicable-zone': 'toto.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test1.com.',
+        'africa': 'test1africa.com.',
+        'china-telecom': 'test1china-telecom.com.',
+        'china-unicom': 'test1china-unicom.com.',
+        'china-mobile': 'test1china-mobile.com.',
+        'east-asia': 'test1east-asia.com.',
+        'europe': 'test1europe.com.',
+        'hong-kong': 'test1hong-kong.com.',
+        'japan': 'test1japan.com.',
+        'north-america': 'test1north-america.com.',
+        'oceania': 'test1oceania.com.',
+        'south-america': 'test1south-america.com.',
+        'west-asia': 'test1west-asia.com.',
+      },
+      'slave-pdns2': {
+        'record': 'test2',
+        'applicable-zone': 'toto.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test2.com.',
+        'china-telecom': 'test2china-telecom.com.',
+        'europe': 'test2europe.com.',
+        'japan': 'test2japan.com.',
+      },
+      'slave-pdns3': {
+        'record': 'test1',
+        'applicable-zone': 'tata.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test1.com.',
+        'china-telecom': 'test1china-telecom.com.',
+        'europe': 'test1europe.com.',
+        'japan': 'test1japan.com.',
+      },
+      'slave-pdns4': {
+        'record': 'test4',
+        'applicable-zone': 'tata.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test4".com.',
+        'africa': 'test4africa.com.',
+        'china-telecom': 'test4china-telecom.com.',
+        'china-unicom': 'test4china-unicom.com.',
+        'china-mobile': 'test4china-mobile.com.',
+        'east-asia': 'test4east-asia.com.',
+        'europe': 'test4europe.com.',
+        'hong-kong': 'test4hong-kong.com.',
+        'japan': 'test4japan.com.',
+        'north-america': 'test4north-america.com.',
+        'oceania': 'test4oceania.com.',
+        'south-america': 'test4south-america.com.',
+        'west-asia': 'test4west-asia.com.',
+      },
+      'slave-pdns5': {
+        'record': 'test5',
+        'applicable-zone': 'tata.example.com',
+        'origin': 'nexedi.com',
+        'default': 'test5.com.',
+        'china-telecom': 'test5china-telecom.com.',
+        'europe': 'test5europe.com.',
+        'japan': 'test5japan.com.',
+      },
+    }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'supported-zone-list': 'toto.example.com tata.example.com',
+    }
