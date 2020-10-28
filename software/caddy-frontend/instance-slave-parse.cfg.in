@@ -10,12 +10,14 @@ recipe = slapos.cookbook:mkdirectory
 profile-depot = ${buildout:directory}/var/profile-depot
 
 [slave-parse-base]
-recipe = caddyprofiledeps:cdnslaveparse
-output = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+recipe = slapos.recipe.template:jinja2
+template = {{ software_parameter_dict['profile_slave_one'] }}
+rendered = ${directory:profile-depot}/${:_buildout_section_name_}.cfg
+context =
+  key slave_information :slave-information
 
 [merge-slave-list]
 recipe = slapos.recipe.template:jinja2
-filename = paczynka.cfg
 rendered = ${buildout:directory}/paczynka.cfg
 context =
   key slave_profile_list :slave-profile-list
@@ -24,7 +26,7 @@ template = {{ software_parameter_dict['profile_slave_base'] }}
 {%-   set output_list = [] %}
 {%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
 {%-     set name = slave['slave_reference'] %}
-{%-     do output_list.append('${' + name + ':output}') %}
+{%-     do output_list.append('${' + name + ':rendered}') %}
 [{{ name }}]
 <= slave-parse-base
 slave-information = {{ dumps(slave) }}
