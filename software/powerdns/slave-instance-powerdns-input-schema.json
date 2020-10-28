@@ -8,6 +8,13 @@
       "description": "Record for the configuration",
       "type": "string"
     },
+    "applicable-zone": {
+      "title": "Zone",
+      "description": "Records applicable zone",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "default": "domain.com",
+      "type": "string"
+    },
     "origin": {
       "title": "Origin",
       "description": "Used to qualify RR in the configuration. i.e.: if your origin is a.example.com and the RR for Europe is 'eu' the european clients will use eu.a.example.com",

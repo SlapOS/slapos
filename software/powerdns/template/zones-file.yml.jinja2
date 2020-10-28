@@ -1,7 +1,7 @@
 # See https://doc.powerdns.com/authoritative/backends/geoip.html
 
 {%- set slave_instance_list = json_module.loads(slapparameter_dict.get('extra_slave_instance_list', '[]')) %}
-{%- set zone = slapparameter_dict.get('zone', 'example.com') %}
+{%- set supported_zone_list = slapparameter_dict.get('supported-zone-list', 'example.com').split() %}
 
 {%- macro disambiguate_domain_name(a, b) %}
 {#- See http://www.dns-sd.org/trailingdotsindomainnames.html #}
@@ -13,6 +13,8 @@
 {%- endmacro %}
 
 domains:
+{%- for zone in supported_zone_list %}
+
 - domain: {{ zone }}
   # TODO: what value for ttl?
   ttl: 300
@@ -48,6 +50,7 @@ domains:
 
     {%- for slave in slave_instance_list %}
 
+    {% if slave['applicable-zone'] == zone %}
     {%-   set origin = slave['origin'] %}
     {%-   set unique_slave_id = slave['slave_reference'] %}
     {#-   Set the RR to use for each region, as described in
@@ -77,13 +80,15 @@ domains:
       - cname: {{ disambiguate_domain_name(rr_dict[region], origin) }}
     {%-     endfor %}
     {%-   endfor %}
+    {%- endif %}
     {%- endfor %}
 
   services:
     {%- for slave in slave_instance_list %}
+    {% if slave['applicable-zone'] == zone %}
     {%-   set origin = slave['origin'] %}
     {%-   set unique_slave_id = slave['slave_reference'] %}
-    {{ disambiguate_domain_name(slave['record'], zone) }}:
+    {{ disambiguate_domain_name(slave['record'], slave['applicable-zone']) }}:
       {#- Note: Placeholders (i.e. "country." and "continent.") are used to avoid
           possible name collisions, e.g.:
           - %cc for American Samoa is 'as'
@@ -94,4 +99,6 @@ domains:
       {%- for ip_range, country_code in china %}
       {{ ip_range }}: {{ country_code }}.country.{{ unique_slave_id }}
       {%- endfor %}
+    {%- endif %}
     {%- endfor %}
+{%- endfor %}
