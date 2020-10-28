@@ -19,9 +19,14 @@ context =
 [merge-slave-list]
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/instance-merged-slave-list.cfg
+extensions = jinja2.ext.do
 context =
+  import json_module json
   key slave_profile_list :slave-profile-list
   section software_parameter_dict software-parameter-section
+  section slapparameter_dict slapparameter-section
+  section instance_parameter_dict instance-parameter-section
+
 template = {{ software_parameter_dict['profile_slave_base'] }}
 
 [switch-merged-slave-list-softwaretype]
@@ -48,6 +53,21 @@ slave-profile-list =
 [software-parameter-section]
 {%- for key, value in software_parameter_dict.iteritems() %}
 {{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+[slapparameter-section]
+{%- for key, value in slapparameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+[instance-parameter-section]
+{#- There are dangerous keys like recipe, etc #}
+{#- XXX: Some other approach would be useful #}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%-   if key not in DROP_KEY_LIST %}
+{{ key }} = {{ dumps(value) }}
+{%-   endif -%}
 {%- endfor %}
 
 {%- endif %}
