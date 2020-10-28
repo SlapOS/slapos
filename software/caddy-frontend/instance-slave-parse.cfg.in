@@ -1,5 +1,6 @@
 {#- provides information to instance-slave-base.cfg.in #}
 {%- set SLAVE_NAME = slave_information['slave_reference'] %}
+{%- set PART_NAME = 'publish-%s' % (SLAVE_NAME,) %}
 
 {#- This is THE place to take decisions and actions
 
@@ -11,13 +12,17 @@ This profile needs to extend part list correctly
 #}
 [slave-list]
 list +=
-  {{ '${' + SLAVE_NAME + ':request-information}'  }}
+  {{ '${' + PART_NAME + ':-request-information}'  }}
 
-[{{ SLAVE_NAME }}]
-{#- this is section for publishment #}
-recipe = plone.recipe.command
-command = echo OK
-{%- for k, v in slave_information.items() %}
-{{ k }} = {{ dumps(v) }}
+[{{ PART_NAME }}]
+<= publish-slave-base
+-slave-reference = {{ SLAVE_NAME }}
+{%- set log_access_url = slave_information.pop('log-access-urls', None) %}
+{%- if log_access_url %}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
+log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
+{%- endif %}
+{%- for key, value in slave_information.iteritems() %}
+{{ key }} = {{ dumps(value) }}
 {%- endfor %}
 request-information = {{ dumps(slave_information) }}
