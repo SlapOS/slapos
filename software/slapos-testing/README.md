@@ -21,26 +21,25 @@ INSTANCE_NAME=$COMP
 
 slapos supply $SR $COMP
 slapos node software
-slapos request $INSTANCE_NAME $SR
+slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
 slapos node instance
 
 # The path of a an environment script was published by slapos parameters, as
 # "environment-script"
-slapos request $INSTANCE_NAME $SR
+slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
 
 # sourcing the script in the shell configure all environment variables and
 # print a message explaining how to run tests
-. /srv/slapgrid/slappartX/etc/slapos-test-runner-nxdtest-environment.sh
+source ( environment script from step above )
 
-# To make change to the 
 # The source code is a git clone working copy on the instance
-cd ~/srv/runner/instance/slappart0/parts/slapos.core/
+cd ~/srv/runner/instance/slappartXXX/parts/slapos.core/
 
 # make some changes to the code
 vim slapos/tests/client.py
 
 # run tests
-~/srv/runner/instance/slappart0/bin/runTestSuite
+runTestSuite
 
 # when satified, commit changes
 git add -p && git commit
