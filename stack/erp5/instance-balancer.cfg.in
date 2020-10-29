@@ -7,9 +7,6 @@
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
 -#}
-# TODO: insert varnish between apache & haproxy.
-# And think of a way to specify which urls goe through varnish, which go
-# directly to haproxy. (maybe just passing literal configuration file chunk)
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set apache_ip_list = [ipv4] -%}
 {% if ipv6_set -%}
