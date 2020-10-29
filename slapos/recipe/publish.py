@@ -43,7 +43,7 @@ class Recipe(GenericSlapRecipe):
       done.add(name)
       extends += set(self.buildout[name].get('-extends', '').split()) - done
 
-  def _install(self):
+  def _publish(self):
     publish_dict = {}
     for name in self._extend_set:
       section = self.buildout[name]
@@ -55,6 +55,33 @@ class Recipe(GenericSlapRecipe):
       for k in publish:
         publish_dict[k] = section[k]
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
+    return []
+  _install = _publish
+
+  def _update(self):
+    # external section is used, as putting information about master state
+    # in publish section would result with not wanted uninstall/reinstall
+    # instead of update
+    master_state_section_key_name = '-master-state-section-key'
+    master_state_key_list_name = '-master-state-key-list'
+    if master_state_key_list_name in self.options and master_state_section_key_name in self.options:
+      # compare master state with current state
+      changed_key_list = []
+      master_state_key_list = self.options[master_state_key_list_name].split()
+      master_state_section, master_state_key = self.options[master_state_section_key_name].split(':')
+      master_state = self.buildout[master_state_section][master_state_key]
+      for key in master_state_key_list:
+        if self.options.get(key) != master_state.get(key):
+          changed_key_list.append(key)
+      if len(changed_key_list) > 0:
+        self.logger.debug('Publishing on update due to keys changed against SlapOS Master, keys: %s.' % (', '.join(changed_key_list)))
+        self._publish()
+      else:
+        self.logger.info('NOT publising on update, local state is same as SlapOS Master')
+    else:
+      # no comparision needed, force publish
+      self.logger.info('Publish on update disabled, publish forced.')
+      self._publish()
     return []
 
   def _setConnectionDict(self, publish_dict, slave_reference=None):
