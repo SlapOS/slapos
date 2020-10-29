@@ -43,7 +43,7 @@ class Recipe(GenericSlapRecipe):
       done.add(name)
       extends += set(self.buildout[name].get('-extends', '').split()) - done
 
-  def _install(self):
+  def _publish(self):
     publish_dict = {}
     for name in self._extend_set:
       section = self.buildout[name]
@@ -55,6 +55,31 @@ class Recipe(GenericSlapRecipe):
       for k in publish:
         publish_dict[k] = section[k]
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
+    return []
+  _install = _publish
+
+  def _update(self):
+    master_state_key_name = '-master-state-section-key'
+    master_state_key_list_name = '-master-state-key-list'
+    if master_state_key_list_name in self.options and master_state_key_name in self.options:
+      # compare master state with current state
+      publish = False
+      master_state_key_list = self.options[master_state_key_list_name].split()
+      master_state_section, master_state_key = self.options[master_state_key_name].split(':')
+      master_state = self.buildout[master_state_section][master_state_key]
+      for key in master_state_key_list:
+        if self.options.get(key) != master_state.get(key):
+          publish = True
+          break
+      if publish:
+        self.logger.info('publish update comparison not passed, publishing')
+        self._publish()
+      else:
+        self.logger.info('publish update comparison passed, not publishing')
+    else:
+      # no comparision needed, force publish
+      self.logger.info('publish forced')
+      self._publish()
     return []
 
   def _setConnectionDict(self, publish_dict, slave_reference=None):
