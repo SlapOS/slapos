@@ -51,8 +51,7 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
 
-  def install(self):
-
+  def _prepare(self):
     cache_key = "%s_%s" % (self.computer_id, self.computer_partition_id)
     self.computer_partition = CONNECTION_CACHE.get(cache_key, None)
 
@@ -68,16 +67,24 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.setConnectionDict = self.computer_partition.setConnectionDict
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
 
+  def install(self):
+    self._prepare()
     # call children part of install
     path_list = self._install()
-
     return path_list
 
-  update = install
+  def update(self):
+    self._prepare()
+    # call children part of update
+    path_list = self._update()
+    return path_list
 
   def _install(self):
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
+
+  # by default _update is _install
+  _update = _install
 
   def setConnectionUrl(self, *args, **kwargs):
     url = self.unparseUrl(*args, **kwargs)
