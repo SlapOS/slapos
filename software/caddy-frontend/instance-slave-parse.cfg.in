@@ -1,5 +1,6 @@
 {#- provides information to instance-slave-base.cfg.in #}
 {%- set SLAVE_NAME = slave_information['slave_reference'] %}
+{%- set PART_NAME = 'publish-%s' % (SLAVE_NAME,) %}
 
 {#- This is THE place to take decisions and actions
 
@@ -11,9 +12,9 @@ This profile needs to extend part list correctly
 #}
 [slave-list]
 list +=
-  {{ '${' + SLAVE_NAME + ':-request-information}'  }}
+  {{ '${' + PART_NAME + ':-request-information}'  }}
 
-[{{ SLAVE_NAME }}]
+[{{ PART_NAME }}]
 <= publish-slave-base
 -slave-reference = {{ SLAVE_NAME }}
 {%- set log_access_url = slave_information.pop('log-access-urls', None) %}
