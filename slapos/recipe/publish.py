@@ -59,11 +59,14 @@ class Recipe(GenericSlapRecipe):
   _install = _publish
 
   def _update(self):
-    if '-master-state-key-list' in self.options and '-master-state' in self.options:
+    master_state_key_name = '-master-state-section-key'
+    master_state_key_list_name = '-master-state-key-list'
+    if master_state_key_list_name in self.options and master_state_key_name in self.options:
       # compare master state with current state
       publish = False
-      master_state_key_list = self.options['-master-state-key-list'].split()
-      master_state = self.options['-master-state']
+      master_state_key_list = self.options[master_state_key_list_name].split()
+      master_state_section, master_state_key = self.options[master_state_key_name].split(':')
+      master_state = self.buildout[master_state_section][master_state_key]
       for key in master_state_key_list:
         if self.options.get(key) != master_state.get(key):
           publish = True
@@ -75,6 +78,7 @@ class Recipe(GenericSlapRecipe):
         self.logger.info('publish update comparison passed, not publishing')
     else:
       # no comparision needed, force publish
+      self.logger.info('publish forced')
       self._publish()
     return []
 
