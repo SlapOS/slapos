@@ -38,9 +38,17 @@ context =
 {%-   for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
 {%-     set section_name = 'generate-profile-' + slave['slave_reference'] %}
 {%-     do output_list.append('${' + section_name + ':rendered}') %}
+{#- Clean up slave from variable information, but which do not impact #}
+{%-     set SLAVE_VARY_KEY_LIST = ['timestamp', 'connection-parameter-hash'] %}
+{%-     set clean_slave = {} %}
+{%-     for k, v in slave.items() %}
+{%-       if k not in SLAVE_VARY_KEY_LIST %}
+{%-         do clean_slave.__setitem__(k, v) %}
+{%-       endif %}
+{%-     endfor %}
 [{{ section_name }}]
 <= slave-parse-base
-slave-information = {{ dumps(slave) }}
+slave-information = {{ dumps(clean_slave) }}
 
 {%-   endfor %}
 
