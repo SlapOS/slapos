@@ -586,7 +586,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         cert=(client_certificate.cert_file, client_certificate.key_file),
         verify=False,
       ).json()
-      self.assertEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+      self.assertEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
     # type: () -> None
@@ -596,7 +596,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       headers={'X-Forwarded-For': '1.2.3.4'},
       verify=False,
     ).json()
-    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaises(OpenSSL.SSL.Error):
       requests.get(
