@@ -604,7 +604,7 @@ class TestBootImageUrlList(InstanceTestCase):
     # check that the image is NOT YET available in kvm
     self.assertEqual(
       ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom,if=none,id=cdrom0'],
+       'media=cdrom'],
       getRunningImageList()
     )
 
@@ -618,12 +618,10 @@ class TestBootImageUrlList(InstanceTestCase):
     # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
-        'file=/srv/%s/image_001,media=cdrom,if=none,id=cdrom0' % (
-          self.image_directory,),
-        'file=/srv/%s/image_002,media=cdrom,if=none,id=cdrom1' % (
-          self.image_directory,),
+        'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
+        'file=/srv/%s/image_002,media=cdrom' % (self.image_directory,),
         'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom,if=none,id=cdrom2'
+        'media=cdrom'
       ],
       getRunningImageList()
     )
@@ -647,7 +645,7 @@ class TestBootImageUrlList(InstanceTestCase):
     # again only default image is available in the running process
     self.assertEqual(
       ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom,if=none,id=cdrom0'],
+       'media=cdrom'],
       getRunningImageList()
     )
 
@@ -786,7 +784,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # check that the image is NOT YET available in kvm
     self.assertEqual(
       ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom,if=none,id=cdrom0'],
+       'media=cdrom'],
       getRunningImageList()
     )
 
@@ -800,12 +798,10 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
-        'file=/srv/boot-image-url-select-repository/image_001,media=cdrom,'
-        'if=none,id=cdrom0',
-        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom,'
-        'if=none,id=cdrom1',
+        'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
+        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
         'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom,if=none,id=cdrom2'
+        'media=cdrom'
       ],
       getRunningImageList()
     )
@@ -834,7 +830,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # again only default image is available in the running process
     self.assertEqual(
       ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom,if=none,id=cdrom0'],
+       'media=cdrom'],
       getRunningImageList()
     )
 

@@ -371,7 +371,6 @@ for nbd_ip, nbd_port in nbd_list:
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
 else:
-  index = 0
   if boot_image_url_select_json_config:
     # Support boot-image-url-select
     with open(boot_image_url_select_json_config) as fh:
@@ -381,11 +380,9 @@ else:
         link = os.path.join(image_config['destination-directory'], image['link'])
         if os.path.exists(link) and os.path.islink(link):
           kvm_argument_list.extend([
-            '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (link, index),
-            '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
-            '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
+            '-drive',
+            'file=%s,media=cdrom' % (link,)
           ])
-          index += 1
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     with open(boot_image_url_list_json_config) as fh:
@@ -395,16 +392,12 @@ else:
         link = os.path.join(image_config['destination-directory'], image['link'])
         if os.path.exists(link) and os.path.islink(link):
           kvm_argument_list.extend([
-            '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (link, index),
-            '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
-            '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
+            '-drive',
+            'file=%s,media=cdrom' % (link,)
           ])
-          index += 1
   # Always add by default the default image
   kvm_argument_list.extend([
-      '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (default_cdrom_iso, index),
-      '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
-      '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
+      '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
   ])
 
 
