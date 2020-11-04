@@ -217,11 +217,11 @@ context =
 {%     endfor %}
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
-{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
+{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
 {%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
-{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
+{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
 {%   endif %}
 {% endfor %}
 {% do authorized_slave_list.sort() %}
@@ -379,16 +379,10 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {% endfor %}
 
 [rejected-slave-information]
-{% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list, sort_keys=True)) }}
-{% endfor %}
+rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
 
 [warning-slave-information]
-{% for slave_id, warning_list in warning_slave_dict.iteritems() %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-{{ slave_id }} = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
-{% endfor %}
+warning-slave-dict = {{ dumps(warning_slave_dict) }}
 
 [slave-information]
 {% for frontend_section in frontend_section_list %}
