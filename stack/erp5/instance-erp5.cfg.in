@@ -176,11 +176,16 @@ return =
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
-{% set bt5_default_list = 'erp5_full_text_mroonga_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_run_my_doc' -%}
+{% set bt5_default_list = [
+  'erp5_full_text_mroonga_catalog',
+  'erp5_configurator_standard',
+  'erp5_configurator_maxma_demo',
+  'erp5_configurator_run_my_doc',
+] -%}
 {% if has_jupyter -%}
-{%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
+{%   do bt5_default_list.append('erp5_data_notebook') -%}
 {% endif -%}
-config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
+config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
 config-caucase-url = {{ dumps(caucase_url) }}
