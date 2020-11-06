@@ -32,4 +32,20 @@ In case if section recipe has special unwanted behaviour for ``filename`` field 
 Working with ``update-hash``
 ----------------------------
 
+Updating hash automatically when editing files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 In order to update the ``buildout.hash.cfg`` one just need to call ``update-hash`` while being in the directory containing the file.
+
+To automate this one step further, a simple solution is to use a file watcher program to run ``update-hash`` every time a file is modified. For example, using `watchexec <https://github.com/watchexec/watchexec/>`_, the command to run is ``watchexec -i 'buildout.hash.cfg*' update-hash``.
+
+Another possibility is to use a git pre-commit hook, that you can install either by following the instructions present in ``update-hash`` script itself to install manually, or by running ``npm install`` from the root of slapos repository, which will install all commit hooks defined in ``package.json``.
+
+
+Solving git merge conflicts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When merging branches or rebasing commits, conflicts in ``buildout.hash.cfg`` happen when the same file managed by update hash have been modified on both sides.
+
+A companion tool is ``update-hash-mergetool``, that can be configued as a merge tool for git, then running ``git mergetool`` will automatically run ``update-hash`` to resolve conflicts within ``buildout.hash.cfg`` files.
+The installation instructions can be found in the ``update-hash-mergetool`` script.
