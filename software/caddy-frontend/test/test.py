@@ -488,12 +488,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'T-'
 
   @classmethod
-  def getInstanceSoftwareType(cls):
-    # Because of unknown problem yet, the root instance software type changes
-    # from RootSoftwareInstance to '', so always request it with given type
-    return "RootSoftwareInstance"
-
-  @classmethod
   def prepareCertificate(cls):
     cls.another_server_ca = CertificateAuthority("Another Server Root CA")
     cls.test_server_ca = CertificateAuthority("Test Server Root CA")
@@ -920,18 +914,32 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return default_instance
 
   @classmethod
-  def requestSlaves(cls):
+  def requestSlaveInstance(cls, partition_reference, partition_parameter_kw):
     software_url = cls.getSoftwareURL()
+    software_type = cls.getInstanceSoftwareType()
+    cls.logger.debug(
+      'requesting slave "%s" type: %r software:%s parameters:%s',
+      partition_reference, software_type, software_url, partition_parameter_kw)
+    return cls.slap.request(
+      software_release=software_url,
+      software_type=software_type,
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True
+    )
+
+  @classmethod
+  def requestSlaves(cls):
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
+      software_url = cls.getSoftwareURL()
+      software_type = cls.getInstanceSoftwareType()
       cls.logger.debug(
-        'requesting slave "%s" software:%s parameters:%s',
-        slave_reference, software_url, partition_parameter_kw)
-      cls.slap.request(
-        software_release=software_url,
+        'requesting slave "%s" type: %r software:%s parameters:%s',
+        slave_reference, software_type, software_url, partition_parameter_kw)
+      cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       )
 
   @classmethod
@@ -971,11 +979,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      parameter_dict_list.append(cls.slap.request(
-        software_release=cls.getSoftwareURL(),
+      parameter_dict_list.append(cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       ).getConnectionParameterDict())
     return parameter_dict_list
 
@@ -1009,14 +1015,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def updateSlaveConnectionParameterDictDict(cls):
     cls.slave_connection_parameter_dict_dict = {}
     # run partition for slaves to be setup
-    request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      slave_instance = request(
-        software_release=cls.getSoftwareURL(),
+      slave_instance = cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       )
       cls.slave_connection_parameter_dict_dict[slave_reference] = \
           slave_instance.getConnectionParameterDict()
@@ -5837,11 +5840,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       ssl_ca_crt=ca.certificate_pem,
     )
 
-    self.slap.request(
-        software_release=self.getSoftwareURL(),
+    self.requestSlaveInstance(
         partition_reference='custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
         partition_parameter_kw=slave_parameter_dict,
-        shared=True
     )
 
     self.slap.waitForInstance()
