@@ -244,6 +244,11 @@ context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
 
+[{{ section('haproxy-socat-stats')}}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+command-line = "{{ parameter_dict['socat'] }}/bin/socat" unix-connect:${haproxy-cfg-parameter-dict:stats-socket} stdio
+
 [rsyslogd-cfg-parameter-dict]
 log-socket = ${directory:run}/log.sock
 access-log-file = ${directory:log}/apache-access.log
