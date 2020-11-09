@@ -256,6 +256,15 @@ wrapper-path = ${directory:services-on-watch}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
 hash-files = ${haproxy-cfg:rendered}
 
+[{{ section('haproxy-socat-stats')}}]
+recipe = collective.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+mode = 700
+input =
+  inline:
+  #!/bin/sh
+  "{{ parameter_dict['socat'] }}/bin/socat" unix-connect:${haproxy-cfg-parameter-dict:stats-socket} stdio
+
 [rsyslogd-cfg-parameter-dict]
 log-socket = ${directory:run}/log.sock
 access-log-file = ${directory:log}/apache-access.log
