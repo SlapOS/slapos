@@ -427,12 +427,13 @@ class TestTLS(BalancerTestCase):
 
     # run caucase updater 90 days in the future, so that certificate is
     # renewed.
-    caucase_updater = os.path.join(
-        self.computer_partition_root_path,
-        'etc',
-        'service',
-        'caucase-updater',
-    )
+    caucase_updater, = glob.glob(
+        os.path.join(
+            self.computer_partition_root_path,
+            'etc',
+            'service',
+            'caucase-updater*',
+        ))
     process = pexpect.spawnu(
        "faketime +90days %s" % caucase_updater,
         env=dict(os.environ, PYTHONPATH=''),
@@ -772,7 +773,7 @@ class TestClientTLS(BalancerTestCase):
               self.computer_partition_root_path,
               'etc',
               'service',
-              'caucase-updater-*',
+              'caucase-updater-*-*',
           ))
       self.assertEqual(len(caucase_updater_list), 2)
 

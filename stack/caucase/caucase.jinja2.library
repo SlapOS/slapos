@@ -27,6 +27,8 @@ command-line = '{{ buildout_bin_directory }}/caucased'
   --service-auto-approve-count '{{ service_auto_approve_count }}'
   --user-auto-approve-count    '{{ user_auto_approve_count }}'
   --lock-auto-approve-count
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
 
 {% if promise -%}
 [{{ prefix }}-promise]
@@ -110,6 +112,8 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
   {% if key_path %}--key '{{ key_path }}' {%- endif %}
   {% if on_renew %}--on-renew '{{ on_renew }}' {%- endif %}
   {% if max_sleep %}--max-sleep '{{ max_sleep }}' {%- endif %}
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
 {% if promise -%}
 [{{ prefix }}-promise]
 <= monitor-promise-base

@@ -1,5 +1,5 @@
-T-0:aibcc-user-caucase-updater-on-watch RUNNING
-T-0:aikc-user-caucase-updater-on-watch RUNNING
+T-0:aibcc-user-caucase-updater-{hash-generic}-on-watch RUNNING
+T-0:aikc-user-caucase-updater-{hash-generic}-on-watch RUNNING
 T-0:bootstrap-monitor EXITED
 T-0:caucased-backend-client-{hash-generic}-on-watch RUNNING
 T-0:certificate_authority-{hash-generic}-on-watch RUNNING
@@ -8,7 +8,7 @@ T-0:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-0:monitor-httpd-graceful EXITED
 T-0:rejected-slave-publish-{hash-rejected-slave-publish}-on-watch RUNNING
 T-1:bootstrap-monitor EXITED
-T-1:caucase-updater-on-watch RUNNING
+T-1:caucase-updater-{hash-generic}-on-watch RUNNING
 T-1:caucased-{hash-generic}-on-watch RUNNING
 T-1:certificate_authority-{hash-generic}-on-watch RUNNING
 T-1:crond-{hash-generic}-on-watch RUNNING
@@ -19,7 +19,7 @@ T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-1:monitor-httpd-graceful EXITED
 T-2:6tunnel-11080-{hash-generic}-on-watch RUNNING
 T-2:6tunnel-11443-{hash-generic}-on-watch RUNNING
-T-2:backend-client-login-certificate-caucase-updater-on-watch RUNNING
+T-2:backend-client-login-certificate-caucase-updater-{hash-generic}-on-watch RUNNING
 T-2:backend-haproxy-{hash-generic}-on-watch RUNNING
 T-2:backend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
 T-2:backend-haproxy-safe-graceful EXITED
@@ -29,7 +29,7 @@ T-2:crond-{hash-generic}-on-watch RUNNING
 T-2:expose-csr_id-{hash-generic}-on-watch RUNNING
 T-2:frontend-caddy-safe-graceful EXITED
 T-2:frontend_caddy-{hash-caddy-T-2}-on-watch RUNNING
-T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
+T-2:kedifa-login-certificate-caucase-updater-{hash-generic}-on-watch RUNNING
 T-2:kedifa-updater-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
