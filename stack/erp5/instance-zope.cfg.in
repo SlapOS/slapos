@@ -352,6 +352,10 @@ configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
 {%- if wsgi %}
 port = {{ port }}
 {%- endif %}
+hash-files =
+  ${:configuration-file}
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
 
 [{{ section("promise-" ~ name) }}]
 <= monitor-promise-base
@@ -359,19 +363,6 @@ module = check_port_listening
 name = {{ name }}.py
 config-hostname = {{ ipv4 }}
 config-port = {{ port }}
-
-{% set extra_path_list = [] -%}
-{% set shell_escaped_extra_path_list = [] -%}
-{% for line in parameter_dict['extra-path-list'].splitlines() -%}
-{%   set line = line.strip() -%}
-{%   do extra_path_list.append(line) -%}
-{%   do shell_escaped_extra_path_list.append(line.replace("\x27", "\x27\\\x27\x27")) -%}
-{% endfor -%}
-[{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
-<= monitor-promise-base
-module = check_command_execute
-name = {{ name }}-is-running-actual-product.py
-config-command = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
