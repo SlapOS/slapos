@@ -59,6 +59,7 @@ openssl-location = {{ openssl_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
 rsyslogd = {{ rsyslogd_location }}
+socat = {{ socat_location }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
