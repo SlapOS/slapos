@@ -375,6 +375,25 @@ class TestBalancer(BalancerTestCase):
         requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
         'backend_web_server1')
 
+  def test_balancer_stats_socket(self):
+    # real time statistics can be obtained by using the stats socket and there
+    # is a wrapper which makes this a bit easier.
+    socat_process = subprocess.Popen(
+        [self.computer_partition_root_path + '/bin/haproxy-socat-stats'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    try:
+      output, _ = socat_process.communicate("show stat\n")
+    except:
+      socat_process.kill()
+      socat_process.wait()
+      raise
+    self.assertEqual(socat_process.poll(), 0)
+    # output is a csv
+    self.assertIn('family_default,FRONTEND,', output)
+
 
 class TestHTTP(BalancerTestCase):
   """Check HTTP protocol with a HTTP/1.1 backend
