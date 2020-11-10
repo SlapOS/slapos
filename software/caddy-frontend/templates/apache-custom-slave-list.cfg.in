@@ -140,9 +140,9 @@ context =
 {%-     do slave_instance.__setitem__('backend-active-check-http-path', '') %}
 {%-   endif %} {# if backend_active_check #}
 {#-   Set Up log files #}
-{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
-{%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
-{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([caddy_log_directory, '%s_backend_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_access_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([frontend_directory['slave-log'], '%s_error_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([frontend_directory['slave-log'], '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
 {%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
 {%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
@@ -203,14 +203,14 @@ command = ln -sf {{slave_parameter_dict.get('error_log')}} ${:log-directory}/err
 
 [{{slave_password_section}}]
 recipe = slapos.cookbook:generate.password
-storage-path = {{caddy_configuration_directory}}/.{{slave_reference}}.passwd
+storage-path = {{ frontend_directory['slave-configuration'] }}/.{{slave_reference}}.passwd
 bytes = 8
 
 [{{ slave_htpasswd_section }}]
 recipe = plone.recipe.command
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
-file = {{ caddy_configuration_directory }}/.{{ slave_reference }}.htpasswd
+file = {{ frontend_directory['slave-configuration'] }}/.{{ slave_reference }}.htpasswd
 {#- update-command is not needed, as if the ${:password} would change, the whole part will be recalculated #}
 password = {{ '${' + slave_password_section + ':passwd}' }}
 command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_reference.lower() }} ${:password}
@@ -219,13 +219,13 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {#-   Set Slave Certificates if needed                   #}
 {#-   Set certificate key for custom configuration       #}
 {%-   set cert_name = slave_reference.replace('-','.') + '.pem' %}
-{%-   set certificate = '%s/%s' % (autocert, cert_name) %}
+{%-   set certificate = '%s/%s' % (frontend_directory['autocert'], cert_name) %}
 {%-   do slave_parameter_dict.__setitem__('certificate', certificate )%}
 {#-   Set ssl certificates for each slave #}
 {%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
 {%-       if cert_name in slave_instance %}
 {%-         set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
-{%-         set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
+{%-         set cert_file = '/'.join([frontend_directory['custom-ssl-directory'], cert_title.replace('-','.')]) %}
 {%-         do part_list.append(cert_title) %}
 {%-         do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
 {%-         do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
