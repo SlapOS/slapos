@@ -102,7 +102,6 @@ single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
 single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
 
 [frontend-configuration]
-log-access-configuration = ${directory:etc}/log-access.conf
 ip-access-certificate = ${self-signed-ip-access:certificate}
 caddy-ipv6 = {{ instance_parameter_dict['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
@@ -583,7 +582,7 @@ template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
