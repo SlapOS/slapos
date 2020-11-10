@@ -18,36 +18,39 @@ per partition. No more (undefined result), no less (IndexError).
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
-[balancer-csr-request-config]
+[balancer-csr-template-config]
 < = jinja2-template-base
 template = inline:
-    [req]
-    prompt = no
-    req_extensions = req_ext
-    distinguished_name = dn
-    [ dn ]
-    CN = example.com
-    [ req_ext ]
-    subjectAltName = @alt_names
-    [ alt_names ]
-    IP.1 =  {{ ipv4 }}
-    {% if ipv6_set -%}
-    IP.2 =  {{ ipv6 }}
-    {% endif %}
+  [req]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = example.com
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 =  {{ ipv4 }}
+  {% if ipv6_set -%}
+  IP.2 =  {{ ipv6 }}
+  {% endif %}
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
 
-[balancer-csr-request]
+[balancer-csr-template]
 recipe = plone.recipe.command
-command = {{ parameter_dict["openssl"] }}/bin/openssl req \
-  -newkey rsa:2048 \
-  -batch \
-  -new \
-  -nodes \
-  -keyout '${apache-conf-ssl:key}' \
-  -config '${balancer-csr-request-config:rendered}' \
-  -out '${:csr}'
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ parameter_dict["openssl"] }}/bin/openssl req \
+      -newkey rsa:2048 \
+      -batch \
+      -new \
+      -nodes \
+      -keyout /dev/null \
+      -config '${balancer-csr-template-config:rendered}' \
+      -out '${:csr}'
+  fi
 stop-on-error = true
-csr = ${directory:etc}/${:_buildout_section_name_}.csr.pem
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
 
 
 {{ caucase.updater(
@@ -63,7 +66,7 @@ csr = ${directory:etc}/${:_buildout_section_name_}.csr.pem
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
      template_csr_pem=ssl_parameter_dict.get('csr'),
-     template_csr=None if ssl_parameter_dict.get('csr') else '${balancer-csr-request:csr}',
+     template_csr=None if ssl_parameter_dict.get('csr') else '${balancer-csr-template:csr}',
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 {% do section('caucase-updater') -%}
@@ -214,22 +217,6 @@ depends = ${caucase-updater-housekeeper-run:recipe}
 ca-cert-dir = ${directory:apache-ca-cert-dir}
 crl-dir = ${directory:apache-crl-dir}
 {%- endif %}
-
-[simplefile]
-< = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
-
-{% macro simplefile(section_name, file_path, content, mode='') -%}
-{%   set content_section_name = section_name ~ '-content' -%}
-[{{  content_section_name }}]
-content = {{ dumps(content) }}
-
-[{{  section(section_name) }}]
-< = simplefile
-rendered = {{ file_path }}
-context = key content {{content_section_name}}:content
-mode = {{ mode }}
-{%- endmacro %}
 
 [apache-conf-parameter-dict]
 backend-list = {{ dumps(apache_dict.values()) }}
