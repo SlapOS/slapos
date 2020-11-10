@@ -33,7 +33,6 @@ parts =
   monitor-base
   monitor-ats-cache-stats-wrapper
   monitor-traffic-summary-last-stats-wrapper
-  monitor-caddy-server-status-wrapper
   monitor-verify-re6st-connectivity
 
   frontend-haproxy-rsyslogd-configuration
@@ -107,8 +106,6 @@ single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
 
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
-caddy-ipv6 = {{ instance_parameter_dict['ipv6-random'] }}
-caddy-https-port = ${configuration:port}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
 slave-introspection-https-port = ${configuration:slave-introspection-https-port}
 slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
@@ -120,7 +117,7 @@ recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
-certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
+certificate = ${frontend-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
@@ -144,7 +141,7 @@ recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
-certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
+certificate = ${frontend-directory:master-autocert-dir}/fallback-access.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
@@ -289,13 +286,10 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 extra-context =
-    key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
     import furl_module furl
     key master_key_download_url :master_key_download_url
-    key autocert caddy-directory:autocert
-    key caddy_log_directory caddy-directory:slave-log
     key expose_csr_id_organization :organization
     key expose_csr_id_organizational_unit :organizational-unit
     key global_ipv6 slap-network-information:global-ipv6
@@ -304,7 +298,6 @@ extra-context =
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-haproxy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
-    key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
@@ -313,6 +306,7 @@ extra-context =
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 ## Configuration passed by section
+    section frontend_directory frontend-directory
     section configuration configuration
     section frontend_haproxy_configuration frontend-haproxy-configuration
     section backend_haproxy_configuration backend-haproxy-configuration
@@ -321,14 +315,14 @@ extra-context =
     section kedifa_configuration kedifa-configuration
     section software_parameter_dict software-parameter-section
 
-# Deploy Caddy Frontend with Jinja power
+# Deploy frontend with Jinja power
 [frontend-haproxy-rsyslogd-config]
 log-socket = ${directory:run}/fhlog.sck
 log-file = ${directory:log}/frontend-haproxy.log
 pid-file = ${directory:run}/frontend-haproxy-rsyslogd.pid
 spool-directory = ${directory:frontend-haproxy-rsyslogd-spool}
 graceful-command = kill -HUP $(cat ${:pid-file})
-caddy-log-directory = ${caddy-directory:slave-log}
+slave-log-directory = ${frontend-directory:slave-log}
 
 [frontend-haproxy-rsyslogd-configuration]
 <= jinja2-template-base
@@ -363,8 +357,8 @@ access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
-not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
-master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
+not-found-file = ${frontend-directory:document-root}/${not-found-html:filename}
+master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
 # slave instrspection
@@ -378,12 +372,12 @@ local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 recipe = plone.recipe.command
 update-command = ${:command}
 filename = notfound.html
-command = ln -sf  {{ software_parameter_dict['template_not_found_html'] }} ${caddy-directory:document-root}/${:filename}
+command = ln -sf  {{ software_parameter_dict['template_not_found_html'] }} ${frontend-directory:document-root}/${:filename}
 
-[caddy-directory]
+[frontend-directory]
 recipe = slapos.cookbook:mkdirectory
 document-root = ${directory:srv}/htdocs
-slave-configuration = ${directory:etc}/caddy-slave-conf.d/
+slave-configuration = ${directory:etc}/frontend-haproxy.d/
 slave-log = ${directory:log}/httpd
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
@@ -561,7 +555,7 @@ template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${frontend-haproxy-configuration:file} ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:file} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -644,28 +638,28 @@ config-verification-script = ${promise-helper-last-configuration-state:rendered}
 [promise-frontend-haproxy-v4-https]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_frontend_ipv4_https.py
+name = frontend_haproxy_ipv4_https.py
 config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-frontend-haproxy-v4-http]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_frontend_ipv4_http.py
+name = frontend_haproxy_ipv4_http.py
 config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-frontend-haproxy-v6-https]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_frontend_ipv6_https.py
+name = frontend_haproxy_ipv6_https.py
 config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-frontend-haproxy-v6-http]
 <= monitor-promise-base
 module = check_port_listening
-name = caddy_frontend_ipv6_http.py
+name = frontend_haproxy_ipv6_http.py
 config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
@@ -809,7 +803,7 @@ log-file = ${directory:log}/backend-haproxy.log
 pid-file = ${directory:run}/backend-haproxy-rsyslogd.pid
 spool-directory = ${directory:backend-haproxy-rsyslogd-spool}
 graceful-command = kill -HUP $(cat ${:pid-file})
-caddy-log-directory = ${caddy-directory:slave-log}
+caddy-log-directory = ${frontend-directory:slave-log}
 
 [backend-haproxy-rsyslogd-configuration]
 <= jinja2-template-base
@@ -858,15 +852,6 @@ mode = 0700
 command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ software_parameter_dict['trafficserver'] }}/bin/traffic_shell ${monitor-ats-cache-stats-config:rendered})</pre>"
 extra-context =
   key content monitor-ats-cache-stats-wrapper:command
-
-[monitor-caddy-server-status-wrapper]
-< = jinja2-template-base
-template = {{ software_parameter_dict['template_wrapper'] }}
-rendered = ${directory:bin}/monitor-caddy-server-status-wrapper
-mode = 0700
-command = {{ software_parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter_dict['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
-extra-context =
-  key content monitor-caddy-server-status-wrapper:command
 
 [monitor-ats-cache-stats-config]
 < = jinja2-template-base
