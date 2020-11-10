@@ -30,7 +30,7 @@ parts =
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
-## Monitor for Caddy
+## Monitor
   monitor-base
   monitor-ats-cache-stats-wrapper
   monitor-traffic-summary-last-stats-wrapper
@@ -40,10 +40,10 @@ parts =
   frontend-haproxy
   frontend-haproxy-graceful
   promise-frontend-frontend-haproxy-configuration
-  promise-caddy-frontend-v4-https
-  promise-caddy-frontend-v4-http
-  promise-caddy-frontend-v6-https
-  promise-caddy-frontend-v6-http
+  promise-frontend-haproxy-v4-https
+  promise-frontend-haproxy-v4-http
+  promise-frontend-haproxy-v6-https
+  promise-frontend-haproxy-v6-http
 
   backend-haproxy-rsyslogd-configuration
   backend-haproxy-rsyslogd
@@ -175,6 +175,7 @@ context =
 [software-release-path]
 template-empty = {{ software_parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
+template-frontend-haproxy-configuration = {{ software_parameter_dict['template_frontend_haproxy_configuration'] }}
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
 
@@ -303,19 +304,21 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
+## frontend haproxy
+    key template_frontend_haproxy_configuration software-release-path:template-frontend-haproxy-configuration
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 ## Configuration passed by section
     section configuration configuration
+    section frontend_haproxy_configuration frontend-haproxy-configuration
     section backend_haproxy_configuration backend-haproxy-configuration
     section instance_parameter_dict instance-parameter-section
     section frontend_configuration frontend-configuration
-    section caddy_configuration frontend-haproxy-config
     section kedifa_configuration kedifa-configuration
     section software_parameter_dict software-parameter-section
 
 # Deploy Caddy Frontend with Jinja power
-[frontend-haproxy-config]
+[frontend-haproxy-configuration]
 file = ${directory:etc}/frontend-haproxy.cfg
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
@@ -331,30 +334,6 @@ slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
 slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
 slave-introspection-graceful-command = ${slave-introspection-validate:rendered} && kill -HUP $(cat ${:slave-introspection-pid-file})
 local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
-
-[frontend-haproxy-configuration]
-< = jinja2-template-base
-template = {{ software_parameter_dict['template_frontend_haproxy_configuration'] }}
-rendered = ${frontend-haproxy-config:file}
-extra-context =
-    key instance_home buildout:directory
-    key slave_configuration_directory caddy-directory:slave-configuration
-    section frontend_configuration frontend-configuration
-    key http_port configuration:plain_http_port
-    key https_port configuration:port
-    key global_ipv6 slap-network-information:global-ipv6
-    key username monitor-instance-parameter:username
-    key password monitor-htpasswd:passwd
-    section configuration frontend-haproxy-config
-# BBB: SlapOS Master non-zero knowledge BEGIN
-    key apache_certificate apache-certificate:rendered
-# BBB: SlapOS Master non-zero knowledge END
-
-[frontend-haproxy]
-recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:rendered}
-wrapper-path = ${directory:service}/frontend-haproxy
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [not-found-html]
 recipe = plone.recipe.command
@@ -394,7 +373,7 @@ rendered = ${directory:bbb-ssl-dir}/frontend.crt
 [logrotate-entry-caddy]
 <= logrotate-entry-base
 name = caddy
-log = ${frontend-haproxy-config:error-log} ${frontend-haproxy-config:access-log}
+log = ${frontend-haproxy-configuration:error-log} ${frontend-haproxy-configuration:access-log}
 rotate-num = ${configuration:rotate-num}
 # Note: Slaves do not define their own reload, as this would be repeated,
 #       because sharedscripts work per entry, and each slave needs its own
@@ -556,7 +535,7 @@ template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${frontend-haproxy-configuration:rendered} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:file} ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -579,8 +558,20 @@ rendered = ${directory:etc-run}/frontend-haproxy-safe-graceful
 mode = 0700
 
 extra-context =
-    key graceful_reload_command frontend-haproxy-config:frontend-graceful-command
+    key graceful_reload_command frontend-haproxy-configuration:frontend-graceful-command
     key caddy_configuration_state frontend-haproxy-configuration-state-graceful:rendered
+
+[frontend-haproxy-validate]
+< = jinja2-template-base
+template = {{ software_parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/frontend-haproxy-validate
+mode = 0700
+last_state_file = ${directory:run}/frontend_haproxy_configuration_last_state
+validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:file} -c
+extra-context =
+    key validate_command :validate_command
+    key configuration_state_command frontend-haproxy-configuration-state-validate:rendered
+    key last_state_file :last_state_file
 
 [backend-haproxy-validate]
 <= jinja2-template-base
@@ -594,18 +585,6 @@ extra-context =
     key configuration_state_command backend-haproxy-configuration-state-validate:rendered
     key last_state_file :last_state_file
 
-[frontend-haproxy-validate]
-< = jinja2-template-base
-template = {{ software_parameter_dict['template_validate_script'] }}
-rendered = ${directory:bin}/frontend-haproxy-validate
-mode = 0700
-last_state_file = ${directory:run}/frontend_haproxy_configuration_last_state
-validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:rendered} -c
-extra-context =
-    key validate_command :validate_command
-    key configuration_state_command frontend-haproxy-configuration-state-validate:rendered
-    key last_state_file :last_state_file
-
 [frontend-haproxy-lazy-graceful]
 < = jinja2-template-base
 template = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
@@ -616,7 +595,7 @@ wait_time = 60
 extra-context =
     key pid_file :pid-file
     key wait_time :wait_time
-    key lazy_command frontend-haproxy-config:frontend-graceful-command
+    key lazy_command frontend-haproxy-configuration:frontend-graceful-command
 
 # Promises checking configuration:
 [promise-helper-last-configuration-state]
@@ -636,28 +615,28 @@ module = validate_frontend_configuration
 name = frontend-frontend-haproxy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
-[promise-caddy-frontend-v4-https]
+[promise-frontend-haproxy-v4-https]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_https.py
 config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
-[promise-caddy-frontend-v4-http]
+[promise-frontend-haproxy-v4-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_http.py
 config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
-[promise-caddy-frontend-v6-https]
+[promise-frontend-haproxy-v6-https]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_https.py
 config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
-[promise-caddy-frontend-v6-http]
+[promise-frontend-haproxy-v6-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_http.py
@@ -699,6 +678,12 @@ statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
 statistic-identification = {{ slapparameter_dict['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
+
+[frontend-haproxy]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:file}
+wrapper-path = ${directory:service}/frontend-haproxy
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
@@ -762,18 +747,6 @@ mode = 0700
 extra-context =
     key graceful_reload_command backend-haproxy-configuration:graceful-command
     key caddy_configuration_state backend-haproxy-configuration-state-graceful:rendered
-
-[backend-haproxy-validate]
-<= jinja2-template-base
-template = {{ software_parameter_dict['template_validate_script'] }}
-rendered = ${directory:bin}/backend-haproxy-validate
-mode = 0700
-last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
-validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
-extra-context =
-    key validate_command :validate_command
-    key configuration_state_command backend-haproxy-configuration-state-validate:rendered
-    key last_state_file :last_state_file
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
@@ -930,7 +903,7 @@ rendered = ${directory:etc-run}/slave-introspection-safe-graceful
 mode = 0700
 
 extra-context =
-    key graceful_reload_command frontend-haproxy-config:slave-introspection-graceful-command
+    key graceful_reload_command frontend-haproxy-configuration:slave-introspection-graceful-command
     key caddy_configuration_state slave-introspection-configuration-state-graceful:rendered
 
 [slave-introspection-validate]
@@ -972,9 +945,9 @@ config-port = ${frontend-configuration:slave-introspection-https-port}
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base
 name = slave-introspection
-log = ${frontend-haproxy-config:slave-introspection-access-log} ${frontend-haproxy-config:slave-introspection-error-log}
+log = ${frontend-haproxy-configuration:slave-introspection-access-log} ${frontend-haproxy-configuration:slave-introspection-error-log}
 rotate-num = ${configuration:rotate-num}
-post = kill -USR1 $(cat ${frontend-haproxy-config:slave-introspection-pid-file})
+post = kill -USR1 $(cat ${frontend-haproxy-configuration:slave-introspection-pid-file})
 delaycompress =
 
 [promise-logrotate-setup]
