@@ -3,7 +3,7 @@ global
   # master-worker is compatible with foreground with process management
   master-worker
 
-{#- log {{ configuration['log-socket'] }} local0 XXX TODO #}
+log {{ configuration['log-socket'] }} local0
 defaults
   log global
   mode http
