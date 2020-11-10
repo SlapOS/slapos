@@ -6,9 +6,9 @@ T-1/var/log/kedifa.log
 T-1/var/log/monitor-httpd-access.log
 T-1/var/log/monitor-httpd-error.log
 T-2/var/log/backend-haproxy.log
+T-2/var/log/expose-csr_id.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
-T-2/var/log/httpd-csr_id/expose-csr_id.log
 T-2/var/log/httpd/_backend-active-check-connect_access_log
 T-2/var/log/httpd/_backend-active-check-connect_backend_log
 T-2/var/log/httpd/_backend-active-check-connect_error_log
