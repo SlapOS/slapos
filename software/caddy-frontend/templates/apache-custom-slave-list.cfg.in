@@ -334,7 +334,6 @@ recipe = slapos.cookbook:publish
 {%-  endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
-{%- do part_list.append('caddy-log-access') %}
 {%- do part_list.append('slave-introspection') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
@@ -356,29 +355,6 @@ ipv6-port = {{ configuration['plain_http_port'] }}
 <= tunnel-6to4-base
 ipv4-port = {{ configuration['port'] }}
 ipv6-port = {{ configuration['port'] }}
-
-{#- Define log access #}
-
-[caddy-log-access-parameters]
-caddy_log_directory = {{ dumps(caddy_log_directory) }}
-caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
-local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
-global_ipv6 = {{ dumps(global_ipv6) }}
-https_port = {{ dumps(configuration['port']) }}
-http_port = {{ dumps(configuration['plain_http_port']) }}
-ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
-access_log = {{ dumps(caddy_configuration['access-log']) }}
-error_log = {{ dumps(caddy_configuration['error-log']) }}
-not_found_file = {{ dumps(caddy_configuration['not-found-file']) }}
-
-[caddy-log-access]
-< = jinja2-template-base
-template = {{ software_parameter_dict['template_log_access'] }}
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-extra-context =
-    section slave_log_directory slave-log-directory-dict
-    section slave_password slave-password
-    section parameter_dict caddy-log-access-parameters
 
 [slave-introspection-parameters]
 local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
@@ -461,13 +437,6 @@ template = inline:
 
 rendered = ${:file}
 
-[caddy-log-access-empty]
-# Caddy refuse to start if an `import`ed file is empty, so we prepend a header
-# so that the file is never empty.
-< = jinja2-template-base
-template = inline: # This file contain directives to serve directories with log files for shared instances, but no shared instances are defined yet.
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-
 ##<Backend haproxy>
 [backend-haproxy-configuration]
 < = jinja2-template-base
@@ -521,9 +490,6 @@ parts +=
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
-{%- if 'caddy-log-access' not in part_list %}
-    caddy-log-access-empty
-{%- endif %}
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
