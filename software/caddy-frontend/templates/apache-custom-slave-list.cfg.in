@@ -551,8 +551,8 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = {{ directory['caddy-csr_id'] }}/certificate.pem
-key = {{ directory['caddy-csr_id'] }}/key.pem
+certificate = {{ directory['certificate-csr_id'] }}/certificate.pem
+key = {{ directory['certificate-csr_id'] }}/key.pem
 
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
@@ -569,18 +569,44 @@ ip = ${slap-network-information:global-ipv6}
 port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory['caddy-csr_id-log'] }}/expose-csr_id.log
+error-log = {{ directory['log'] }}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
+var = {{ directory['expose-csr_id-var'] }}
+pid = {{ directory['var'] }}/nginx-expose-csr_id.pid
+rendered = {{ directory['etc'] }}/nginx-expose-csr_id.conf
 template = inline:
-  https://:${expose-csr_id-configuration:port}/ {
-    bind ${expose-csr_id-configuration:ip}
-    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
-    log ${expose-csr_id-configuration:error-log}
+  daemon off;
+  pid ${:pid};
+  error_log ${expose-csr_id-configuration:error-log};
+  events {
   }
+  http {
+    include {{ software_parameter_dict['nginx_mime'] }};
+    server {
+      server_name_in_redirect off;
+      port_in_redirect off;
+      error_log ${expose-csr_id-configuration:error-log};
+      access_log /dev/null;
+      listen [${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port} ssl;                                                          
+      ssl_certificate ${expose-csr_id-configuration:certificate};
+      ssl_certificate_key ${expose-csr_id-configuration:key};
+      default_type application/octet-stream;
+      client_body_temp_path ${:var} 1 2;
+      proxy_temp_path ${:var} 1 2;
+      fastcgi_temp_path ${:var} 1 2;
+      uwsgi_temp_path ${:var} 1 2;
+      scgi_temp_path ${:var} 1 2;
 
-rendered = {{ directory['caddy-csr_id'] }}/Caddyfile
+      location / {
+        alias {{ directory['csr_id'] }}/;
+        autoindex off;
+        sendfile on;
+        sendfile_max_chunk 1m;
+      }
+    }
+  }
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -594,13 +620,8 @@ depends =
   ${store-csr_id:command}
   ${store-backend-haproxy-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['caddy'] }}
-  -conf ${expose-csr_id-template:rendered}
-  -log ${expose-csr_id-configuration:error-log}
-  -http2=true
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-  -root {{ directory['csr_id'] }}
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${expose-csr_id-template:rendered}
 
 wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
