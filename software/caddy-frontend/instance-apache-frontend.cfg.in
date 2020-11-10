@@ -323,7 +323,7 @@ extra-context =
 
 # Deploy Caddy Frontend with Jinja power
 [frontend-haproxy-rsyslogd-config]
-log-socket = ${directory:run}/bhlog.sck
+log-socket = ${directory:run}/fhlog.sck
 log-file = ${directory:log}/frontend-haproxy.log
 pid-file = ${directory:run}/frontend-haproxy-rsyslogd.pid
 spool-directory = ${directory:frontend-haproxy-rsyslogd-spool}
@@ -358,6 +358,7 @@ delaycompress =
 
 [frontend-haproxy-configuration]
 file = ${directory:etc}/frontend-haproxy.cfg
+log-socket = ${frontend-haproxy-rsyslogd-config:log-socket}
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
