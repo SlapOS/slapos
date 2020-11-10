@@ -18,59 +18,25 @@ per partition. No more (undefined result), no less (IndexError).
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
-[balancer-csr-template-config]
-< = jinja2-template-base
-template = inline:
-  [req]
-  prompt = no
-  req_extensions = req_ext
-  distinguished_name = dn
-  [ dn ]
-  CN = example.com
-  [ req_ext ]
-  subjectAltName = @alt_names
-  [ alt_names ]
-  IP.1 =  {{ ipv4 }}
-  {% if ipv6_set -%}
-  IP.2 =  {{ ipv6 }}
-  {% endif %}
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}.txt
-
-[balancer-csr-template]
-recipe = plone.recipe.command
-command =
-  if [ ! -f '${:csr}' ] ; then
-   {{ parameter_dict["openssl"] }}/bin/openssl req \
-      -newkey rsa:2048 \
-      -batch \
-      -new \
-      -nodes \
-      -keyout /dev/null \
-      -config '${balancer-csr-template-config:rendered}' \
-      -out '${:csr}'
-  fi
-stop-on-error = true
-csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
-
-
 {{ caucase.updater(
      prefix='caucase-updater',
      buildout_bin_directory=parameter_dict['bin-directory'],
      updater_path='${directory:services-on-watch}/caucase-updater',
      url=ssl_parameter_dict['caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
-     crt_path='${apache-conf-ssl:cert}',
+     crt_path='${apache-conf-ssl:caucase-cert}',
      ca_path='${directory:srv}/caucase-updater/ca.crt',
      crl_path='${directory:srv}/caucase-updater/crl.pem',
-     key_path='${apache-conf-ssl:key}',
+     key_path='${apache-conf-ssl:caucase-key}',
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
      template_csr_pem=ssl_parameter_dict.get('csr'),
-     template_csr=None if ssl_parameter_dict.get('csr') else '${balancer-csr-template:csr}',
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
+{# XXX we don't use caucase yet.
 {% do section('caucase-updater') -%}
 {% do section('caucase-updater-promise') -%}
+#}
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
@@ -212,10 +178,43 @@ hash-files = ${haproxy-cfg:rendered}
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
 key = ${directory:apache-conf}/apache.pem
+# XXX caucase is/was buggy and this certificate does not match key for instances
+# that were updated, so don't use it yet.
+caucase-cert = ${directory:apache-conf}/apache-caucase.crt
+caucase-key = ${directory:apache-conf}/apache-caucase.pem
 {% if frontend_caucase_url_list -%}
 depends = ${caucase-updater-housekeeper-run:recipe}
 ca-cert-dir = ${directory:apache-ca-cert-dir}
 crl-dir = ${directory:apache-crl-dir}
+{%- endif %}
+
+[simplefile]
+< = jinja2-template-base
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
 {%- endif %}
 
 [apache-conf-parameter-dict]
@@ -229,8 +228,8 @@ access-log = ${directory:log}/apache-access.log
 # Apache 2.4's default value (60 seconds) can be a bit too short
 timeout = 300
 # Basic SSL server configuration
-cert = ${apache-conf-ssl:cert}
-key = ${apache-conf-ssl:key}
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 {% if frontend_caucase_url_list -%}
