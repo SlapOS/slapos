@@ -223,6 +223,68 @@
       ],
       "title": "Authenticate to backend",
       "type": "string"
+    },
+    "backend-active-check": {
+      "title": "Backend Active Check",
+      "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "type": "string"
+    },
+    "backend-active-check-http-method": {
+      "title": "Backend Active Check HTTP Metod",
+      "description": "Selects method to do the active check. CONNECT means that connection will be enough for the check, otherwise it's HTTP method.",
+      "enum": [
+        "GET",
+        "OPTIONS",
+        "POST",
+        "CONNECT"
+      ],
+      "default": "GET",
+      "type": "string"
+    },
+    "backend-active-check-http-path": {
+      "title": "Backend Active Check HTTP Path",
+      "description": "A path on which do the active check, unused in case of CONNECT.",
+      "default": "/",
+      "type": "string"
+    },
+    "backend-active-check-http-version": {
+      "title": "Backend Active Check HTTP Version",
+      "description": "A HTTP version to use to check the backend, unused in case of CONNECT.",
+      "enum": [
+        "HTTP/1.1",
+        "HTTP/1.0"
+      ],
+      "default": "HTTP/1.1",
+      "type": "string"
+    },
+    "backend-active-check-timeout": {
+      "title": "Backend Active Check Timeout (seconds)",
+      "description": "A timeout to for the request to be fulfilled, after connection happen.",
+      "default": "2",
+      "type": "integer"
+    },
+    "backend-active-check-interval": {
+      "title": "Backend Active Check Interval (seconds)",
+      "description": "An interval of backend active check.",
+      "default": "5",
+      "type": "integer"
+    },
+    "backend-active-check-rise": {
+      "title": "Backend Active Check Rise",
+      "description": "Amount of correct responses from the backend to consider it up.",
+      "default": "1",
+      "type": "integer"
+    },
+    "backend-active-check-fall": {
+      "title": "Backend Active Check Fall",
+      "description": "Amount of bad responses from the backend to consider it down.",
+      "default": "1",
+      "type": "integer"
     }
   },
   "title": "Input Parameters",
