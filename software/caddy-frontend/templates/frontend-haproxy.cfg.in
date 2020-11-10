@@ -1,0 +1,15 @@
+global
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+
+{#- log {{ configuration['log-socket'] }} local0 XXX TODO #}
+defaults
+  log global
+  mode http
+  option httplog
+{#-  timeout queue XXX TODO #}
+{#-  timeout server XXX TODO #}
+{#-  timeout client XXX TODO #}
+{#-  timeout connect XXX TODO #}
+{#-  retries XXX TODO #}
