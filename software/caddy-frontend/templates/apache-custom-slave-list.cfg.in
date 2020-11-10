@@ -494,6 +494,7 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-logrotate-setup
 {%- for part in part_list %}
