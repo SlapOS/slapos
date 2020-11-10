@@ -10,19 +10,12 @@ extends =
 parts =
   directory
   logrotate-entry-caddy
-  caddy-frontend
   switch-caddy-softwaretype
   caucase-updater
   caucase-updater-promise
   backend-client-caucase-updater
   backend-client-caucase-updater-promise
-  frontend-haproxy-graceful
   port-redirection
-  promise-frontend-caddy-configuration
-  promise-caddy-frontend-v4-https
-  promise-caddy-frontend-v4-http
-  promise-caddy-frontend-v6-https
-  promise-caddy-frontend-v6-http
   promise-logrotate-setup
 
   trafficserver-launcher
@@ -43,6 +36,14 @@ parts =
   monitor-traffic-summary-last-stats-wrapper
   monitor-caddy-server-status-wrapper
   monitor-verify-re6st-connectivity
+
+  frontend-haproxy
+  frontend-haproxy-graceful
+  promise-frontend-frontend-haproxy-configuration
+  promise-caddy-frontend-v4-https
+  promise-caddy-frontend-v4-http
+  promise-caddy-frontend-v6-https
+  promise-caddy-frontend-v6-http
 
   backend-haproxy-rsyslogd-configuration
   backend-haproxy-rsyslogd
@@ -309,62 +310,51 @@ extra-context =
     section backend_haproxy_configuration backend-haproxy-configuration
     section instance_parameter_dict instance-parameter-section
     section frontend_configuration frontend-configuration
-    section caddy_configuration caddy-configuration
+    section caddy_configuration frontend-haproxy-config
     section kedifa_configuration kedifa-configuration
     section software_parameter_dict software-parameter-section
 
 # Deploy Caddy Frontend with Jinja power
-[dynamic-caddy-frontend-template]
+[frontend-haproxy-config]
+file = ${directory:etc}/frontend-haproxy.cfg
+access-log = ${directory:log}/frontend-access.log
+error-log = ${directory:log}/frontend-error.log
+pid-file = ${directory:run}/httpd.pid
+frontend-graceful-command = ${frontend-haproxy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
+not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
+master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
+# Communication with ATS
+cache-port = ${trafficserver-variable:input-port}
+# slave instrspection
+slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
+slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
+slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
+slave-introspection-graceful-command = ${slave-introspection-validate:rendered} && kill -HUP $(cat ${:slave-introspection-pid-file})
+local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
+
+[frontend-haproxy-configuration]
 < = jinja2-template-base
-template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }}
-rendered = ${caddy-configuration:frontend-configuration}
-local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
+template = {{ software_parameter_dict['template_frontend_haproxy_configuration'] }}
+rendered = ${frontend-haproxy-config:file}
 extra-context =
     key instance_home buildout:directory
-    key master_certificate caddy-configuration:master-certificate
-    key access_log caddy-configuration:access-log
     key slave_configuration_directory caddy-directory:slave-configuration
     section frontend_configuration frontend-configuration
     key http_port configuration:plain_http_port
     key https_port configuration:port
-    key local_ipv4 :local_ipv4
     key global_ipv6 slap-network-information:global-ipv6
-    key error_log caddy-configuration:error-log
-    key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
     key password monitor-htpasswd:passwd
+    section configuration frontend-haproxy-config
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
 
-[caddy-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = inline:
-  #!/bin/sh
-  export CADDYPATH=${directory:frontend_cluster}
-  ulimit -n $(ulimit -Hn)
-  exec {{ software_parameter_dict['haproxy_executable'] }} \
-  -conf ${dynamic-caddy-frontend-template:rendered} \
-  -log ${caddy-configuration:error-log} \
-  -log-roll-mb 0 \
-{% if instance_parameter_dict['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
-  -http2=false \
-{% else %}
-  -http2=true \
-{% endif %}
-  -grace {{ instance_parameter_dict['configuration.mpm-graceful-shutdown-timeout'] }}s \
-  -disable-http-challenge \
-  -disable-tls-alpn-challenge \
-   "$@"
-rendered = ${directory:bin}/caddy-wrapper
-mode = 0755
-
-[caddy-frontend]
+[frontend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = ${caddy-wrapper:rendered} -pidfile ${caddy-configuration:pid-file}
+command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:rendered}
 wrapper-path = ${directory:service}/frontend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-hash-files = ${caddy-wrapper:rendered}
 
 [not-found-html]
 recipe = plone.recipe.command
@@ -380,22 +370,6 @@ slave-log = ${directory:log}/httpd
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
 custom-ssl-directory = ${:slave-configuration}/ssl
-
-[caddy-configuration]
-frontend-configuration = ${directory:etc}/Caddyfile
-access-log = ${directory:log}/frontend-access.log
-error-log = ${directory:log}/frontend-error.log
-pid-file = ${directory:run}/httpd.pid
-frontend-graceful-command = ${frontend-caddy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
-not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
-master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
-# Communication with ATS
-cache-port = ${trafficserver-variable:input-port}
-# slave instrspection
-slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
-slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
-slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
-slave-introspection-graceful-command = ${slave-introspection-validate:rendered} && kill -HUP $(cat ${:slave-introspection-pid-file})
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -420,7 +394,7 @@ rendered = ${directory:bbb-ssl-dir}/frontend.crt
 [logrotate-entry-caddy]
 <= logrotate-entry-base
 name = caddy
-log = ${caddy-configuration:error-log} ${caddy-configuration:access-log}
+log = ${frontend-haproxy-config:error-log} ${frontend-haproxy-config:access-log}
 rotate-num = ${configuration:rotate-num}
 # Note: Slaves do not define their own reload, as this would be repeated,
 #       because sharedscripts work per entry, and each slave needs its own
@@ -575,14 +549,14 @@ command = ${trafficserver-rotate-script:rendered}
 
 ### End of ATS sections
 
-### Caddy Graceful and promises
-[frontend-caddy-configuration-state]
+### Frontend Graceful and promises
+[frontend-haproxy-configuration-state]
 < = jinja2-template-base
 template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:rendered} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -590,12 +564,12 @@ extra-context =
     key sha256sum :sha256sum
     key signature_file :signature_file
 
-[frontend-caddy-configuration-state-graceful]
-< = frontend-caddy-configuration-state
+[frontend-haproxy-configuration-state-graceful]
+< = frontend-haproxy-configuration-state
 signature_file = ${directory:run}/graceful_configuration_state_signature
 
-[frontend-caddy-configuration-state-validate]
-< = frontend-caddy-configuration-state
+[frontend-haproxy-configuration-state-validate]
+< = frontend-haproxy-configuration-state
 signature_file = ${directory:run}/validate_configuration_state_signature
 
 [frontend-haproxy-graceful]
@@ -605,19 +579,31 @@ rendered = ${directory:etc-run}/frontend-haproxy-safe-graceful
 mode = 0700
 
 extra-context =
-    key graceful_reload_command caddy-configuration:frontend-graceful-command
-    key caddy_configuration_state frontend-caddy-configuration-state-graceful:rendered
+    key graceful_reload_command frontend-haproxy-config:frontend-graceful-command
+    key caddy_configuration_state frontend-haproxy-configuration-state-graceful:rendered
 
-[frontend-caddy-validate]
-< = jinja2-template-base
+[backend-haproxy-validate]
+<= jinja2-template-base
 template = {{ software_parameter_dict['template_validate_script'] }}
-rendered = ${directory:bin}/frontend-caddy-validate
+rendered = ${directory:bin}/backend-haproxy-validate
 mode = 0700
-last_state_file = ${directory:run}/caddy_configuration_last_state
-validate_command = ${caddy-wrapper:rendered} -validate
+last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
+validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
     key validate_command :validate_command
-    key configuration_state_command frontend-caddy-configuration-state-validate:rendered
+    key configuration_state_command backend-haproxy-configuration-state-validate:rendered
+    key last_state_file :last_state_file
+
+[frontend-haproxy-validate]
+< = jinja2-template-base
+template = {{ software_parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/frontend-haproxy-validate
+mode = 0700
+last_state_file = ${directory:run}/frontend_haproxy_configuration_last_state
+validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${frontend-haproxy-configuration:rendered} -c
+extra-context =
+    key validate_command :validate_command
+    key configuration_state_command frontend-haproxy-configuration-state-validate:rendered
     key last_state_file :last_state_file
 
 [frontend-haproxy-lazy-graceful]
@@ -630,7 +616,7 @@ wait_time = 60
 extra-context =
     key pid_file :pid-file
     key wait_time :wait_time
-    key lazy_command caddy-configuration:frontend-graceful-command
+    key lazy_command frontend-haproxy-config:frontend-graceful-command
 
 # Promises checking configuration:
 [promise-helper-last-configuration-state]
@@ -640,14 +626,14 @@ rendered = ${directory:bin}/frontend-read-last-configuration-state
 mode = 0700
 content =
   #!/bin/sh
-  exit `cat ${frontend-caddy-validate:last_state_file}`
+  exit `cat ${frontend-haproxy-validate:last_state_file}`
 context =
     key content :content
 
-[promise-frontend-caddy-configuration]
+[promise-frontend-frontend-haproxy-configuration]
 <= monitor-promise-base
 module = validate_frontend_configuration
-name = frontend-caddy-configuration-promise.py
+name = frontend-frontend-haproxy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
@@ -944,7 +930,7 @@ rendered = ${directory:etc-run}/slave-introspection-safe-graceful
 mode = 0700
 
 extra-context =
-    key graceful_reload_command caddy-configuration:slave-introspection-graceful-command
+    key graceful_reload_command frontend-haproxy-config:slave-introspection-graceful-command
     key caddy_configuration_state slave-introspection-configuration-state-graceful:rendered
 
 [slave-introspection-validate]
@@ -986,9 +972,9 @@ config-port = ${frontend-configuration:slave-introspection-https-port}
 [logrotate-entry-slave-introspection]
 <= logrotate-entry-base
 name = slave-introspection
-log = ${caddy-configuration:slave-introspection-access-log} ${caddy-configuration:slave-introspection-error-log}
+log = ${frontend-haproxy-config:slave-introspection-access-log} ${frontend-haproxy-config:slave-introspection-error-log}
 rotate-num = ${configuration:rotate-num}
-post = kill -USR1 $(cat ${caddy-configuration:slave-introspection-pid-file})
+post = kill -USR1 $(cat ${frontend-haproxy-config:slave-introspection-pid-file})
 delaycompress =
 
 [promise-logrotate-setup]
