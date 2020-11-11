@@ -145,7 +145,7 @@ class BalancerTestCase(ERP5InstanceTestCase):
         # XXX what is this ? should probably not be needed here
         'name': cls.__name__,
         'monitor-passwd': 'secret',
-        'apachedex-configuration': '--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet --logformat=\\"%h %l %u %t "%r" %>s %O "%{Referer}i" "%{User-Agent}i" %{ms}T\\"',
+        'apachedex-configuration': '--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet',
         'apachedex-promise-threshold': 100,
         'haproxy-server-check-path': '/',
         'zope-family-dict': {
