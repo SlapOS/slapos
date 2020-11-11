@@ -606,6 +606,30 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       )
 
 
+class TestServerTLSProvidedCertificate(BalancerTestCase):
+  """Check that certificate and key can be provided as instance parameters.
+  """
+  __partition_reference__ = 's'
+
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
+    server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
+    server_certificate.request(cls._ipv4_address.decode(), server_caucase)
+    parameter_dict = super(TestServerTLSProvidedCertificate, cls)._getInstanceParameterDict()
+    with open(server_certificate.cert_file) as f:
+      parameter_dict['ssl']['cert'] = f.read()
+    with open(server_certificate.key_file) as f:
+      parameter_dict['ssl']['key'] = f.read()
+    return parameter_dict
+
+  def test_certificate_validates_with_provided_ca(self):
+    # type: () -> None
+    server_certificate = self.getManagedResource("server_certificate", CaucaseCertificate)
+    requests.get(self.default_balancer_url, verify=server_certificate.ca_crt_file)
+
+
 class TestClientTLS(BalancerTestCase):
   __partition_reference__ = 'c'
 
