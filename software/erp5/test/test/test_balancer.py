@@ -443,8 +443,8 @@ class TestContentEncoding(BalancerTestCase):
     self.assertEqual(resp.text, 'OK')
 
 
-class CaucaseClientCertificate(ManagedResource):
-  """A client certificate issued by a caucase services.
+class CaucaseCertificate(ManagedResource):
+  """A certificate signed by a caucase service.
   """
 
   ca_crt_file = None # type: str
@@ -560,7 +560,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
     frontend_caucase = cls.getManagedResource('frontend_caucase', CaucaseService)
-    certificate = cls.getManagedResource('client_certificate', CaucaseClientCertificate)
+    certificate = cls.getManagedResource('client_certificate', CaucaseCertificate)
     certificate.request(u'shared frontend', frontend_caucase)
 
     parameter_dict = super(TestFrontendXForwardedFor, cls)._getInstanceParameterDict()
@@ -576,7 +576,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
 
   def test_x_forwarded_for_added_when_verified_connection(self):
     # type: () -> None
-    client_certificate = self.getManagedResource('client_certificate', CaucaseClientCertificate)
+    client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
 
     for backend in ('default', 'default-auth'):
       balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])[backend]
@@ -613,11 +613,11 @@ class TestClientTLS(BalancerTestCase):
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
     frontend_caucase1 = cls.getManagedResource('frontend_caucase1', CaucaseService)
-    certificate1 = cls.getManagedResource('client_certificate1', CaucaseClientCertificate)
+    certificate1 = cls.getManagedResource('client_certificate1', CaucaseCertificate)
     certificate1.request(u'client_certificate1', frontend_caucase1)
 
     frontend_caucase2 = cls.getManagedResource('frontend_caucase2', CaucaseService)
-    certificate2 = cls.getManagedResource('client_certificate2', CaucaseClientCertificate)
+    certificate2 = cls.getManagedResource('client_certificate2', CaucaseCertificate)
     certificate2.request(u'client_certificate2', frontend_caucase2)
 
     parameter_dict = super(TestClientTLS, cls)._getInstanceParameterDict()
@@ -646,7 +646,7 @@ class TestClientTLS(BalancerTestCase):
         ('client_certificate2', 'frontend_caucase2'),
     ):
       client_certificate = self.getManagedResource(client_certificate_name,
-                                                   CaucaseClientCertificate)
+                                                   CaucaseCertificate)
 
       # when client certificate can be authenticated, backend receive the CN of
       # the client certificate in "remote-user" header
