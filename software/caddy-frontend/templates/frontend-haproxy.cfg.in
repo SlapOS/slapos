@@ -58,3 +58,9 @@ frontend https-backend
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', True) }}
 {%- endfor %}
+
+{%- for slave_instance in frontend_slave_list %}
+{%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-   endfor %}
+{%- endfor %}
