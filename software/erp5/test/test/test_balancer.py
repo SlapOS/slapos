@@ -179,8 +179,9 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
         urlparse.urljoin(self.default_balancer_url, '/url_path'),
         verify=False,
     )
+    time.sleep(.5) # wait a bit more until access is logged
     with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-access.log')) as access_log_file:
-      access_line = access_log_file.read()
+      access_line = access_log_file.read().splitlines()[-1]
     self.assertIn('/url_path', access_line)
 
     # last \d is the request time in micro seconds, since this SlowHTTPServer
