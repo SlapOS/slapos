@@ -359,6 +359,8 @@ pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
 not-found-file = ${frontend-directory:document-root}/${not-found-html:filename}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
+http-port = ${configuration:plain_http_port}
+https-port = ${configuration:port}
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
 # slave instrspection
