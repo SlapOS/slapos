@@ -61,7 +61,8 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'pdns'
   default_zone = 'domain.com'
 
-  def getParameterDict(self, parameter_dict):
+  # focus to test connexion parameters only depending on PowerDNS
+  def getPowerDNSParameterDict(self, parameter_dict):
     new_parameter_dict = {}
     for key, value in parameter_dict.items():
       if key in [
@@ -74,8 +75,8 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
         new_parameter_dict[key] = value
     return new_parameter_dict
 
-  def getConnectionParameterDict(self):
-    return self.getParameterDict(
+  def getPowerDNSConnexionParameterDict(self):
+    return self.getPowerDNSParameterDict(
       self.requestDefaultInstance().getConnectionParameterDict()
     )
 
@@ -83,7 +84,7 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
     if zone is None:
       zone = self.default_zone
 
-    parameter_dict = self.getConnectionParameterDict()
+    parameter_dict = self.getPowerDNSConnexionParameterDict()
     expected_dict = {
       'domain': 'None',
       'ns-record': '',
