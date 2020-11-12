@@ -147,14 +147,14 @@ class BalancerTestCase(ERP5InstanceTestCase):
 
 
 class SlowHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply after 3 seconds.
+  """An HTTP Server which reply after 2 seconds.
   """
   class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       self.send_header("Content-Type", "text/plain")
-      time.sleep(3)
+      time.sleep(2)
       self.end_headers()
       self.wfile.write("OK\n")
 
@@ -184,7 +184,7 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self.assertIn('/url_path', access_line)
 
     # last \d is the request time in micro seconds, since this SlowHTTPServer
-    # sleeps for 3 seconds, it should take between 3 and 4 seconds to process
+    # sleeps for 2 seconds, it should take between 2 and 3 seconds to process
     # the request - but our test machines can be slow sometimes, so we tolerate
     # it can take up to 20 seconds.
     match = re.match(
@@ -194,7 +194,7 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self.assertTrue(match)
     assert match
     request_time = int(match.groups()[-1])
-    self.assertGreater(request_time, 3 * 1000 * 1000)
+    self.assertGreater(request_time, 2 * 1000 * 1000)
     self.assertLess(request_time, 20 * 1000 * 1000)
 
   def test_access_log_apachedex_report(self):
