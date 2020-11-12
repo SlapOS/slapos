@@ -148,7 +148,6 @@ class TestFrontendXForwardedFor(ERP5InstanceTestCase):
       stderr=subprocess.STDOUT,
     )
     result = caucase_process.communicate()
-    print(result)
     csr_id = result[0].split()[0]
 
     subprocess.check_call(

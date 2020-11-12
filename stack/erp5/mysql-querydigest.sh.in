@@ -1,6 +1,8 @@
 #!{{dash}}
 # BEWARE: This file is operated by slapgrid
 
+set -e
+
 SLOW_QUERY_PATH='{{slow_query_path}}'
 OUTPUT_FOLDER='{{output_folder}}'
 PT_QUERY_EXEC='{{pt_query_exec}}'
@@ -21,6 +23,6 @@ if [ ! -f "$SLOW_LOG" ]; then
   exit 1
 fi
 
-"$PT_QUERY_EXEC" "$SLOW_LOG" > "$OUTPUT_FILE" && \
-echo "Report generated successfully." || \
-echo "Report failed with code $?"
+"$PT_QUERY_EXEC" "$SLOW_LOG" > "$OUTPUT_FILE"
+
+{{ xz }} -9 "$OUTPUT_FILE"

@@ -66,6 +66,7 @@ from cryptography.x509.oid import NameOID
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
+from slapos.testing.utils import getPromisePluginParameterDict
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
@@ -241,44 +242,6 @@ def isHTTP2(domain, ip):
   assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
     curl_command, out, err)
   return 'Using HTTP2, server supports multi-use' in err
-
-
-def getPluginParameterDict(software_path, filepath):
-  """Load the slapos monitor plugin and returns the configuration used by this plugin.
-
-  This allow to check that monitoring plugin are using a proper config.
-  """
-  # This is implemented by creating a wrapper script that loads the plugin wrapper
-  # script and returns its `extra_config_dict`. This might have to be adjusted if
-  # internals of slapos promise plugins change.
-
-  bin_file = os.path.join(software_path, 'bin', 'test-plugin-promise')
-
-  monitor_python_with_eggs = os.path.join(software_path, 'bin', 'monitor-pythonwitheggs')
-  if not os.path.exists(monitor_python_with_eggs):
-    raise ValueError("Monitoring stack's python does not exist at %s" % monitor_python_with_eggs)
-
-  with open(bin_file, 'w') as f:
-    f.write("""#!%s
-import os
-import importlib
-import sys
-import json
-
-filepath = sys.argv[1]
-sys.path[0:0] = [os.path.dirname(filepath)]
-filename = os.path.basename(filepath)
-module = importlib.import_module(os.path.splitext(filename)[0])
-
-print json.dumps(module.extra_config_dict)
-    """ % monitor_python_with_eggs)
-
-  os.chmod(bin_file, 0o755)
-  result = subprocess_output([bin_file, filepath]).strip()
-  try:
-    return json.loads(result)
-  except ValueError, e:
-    raise ValueError("%s\nResult was: %s" % (e, result))
 
 
 class TestDataMixin(object):
@@ -711,6 +674,15 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       result.status_code,
       'While accessing %r of %r the status code was %r' % (
         url, frontend, result.status_code))
+    # check that the result is correct JSON, which allows to access
+    # information about all logs
+    self.assertEqual(
+      'application/json',
+      result.headers['Content-Type']
+    )
+    self.assertEqual(
+      sorted([q['name'] for q in result.json()]),
+      ['access.log', 'backend.log', 'error.log'])
     self.assertEqual(
       httplib.OK,
       requests.get(url + 'access.log', verify=False).status_code
@@ -721,7 +693,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
     # assert only for few tests, as backend log is not available for many of
     # them, as it's created on the fly
-    for test_name in ['test_url', 'test_auth_to_backend', 'test_compressed_result']:
+    for test_name in [
+      'test_url', 'test_auth_to_backend', 'test_compressed_result']:
       if self.id().endswith(test_name):
         self.assertEqual(
           httplib.OK,
@@ -3569,7 +3542,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'check-_monitor-ipv6-test-ipv6-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
     self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
+      getPromisePluginParameterDict(monitor_file),
       {
         'frequency': '720',
         'address': 'monitor-ipv6-test'
@@ -3606,7 +3579,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'check-_monitor-ipv4-test-ipv4-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
     self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
+      getPromisePluginParameterDict(monitor_file),
       {
         'frequency': '720',
         'ipv4': 'true',
@@ -4702,8 +4675,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
     self.assertEqual(
-      getPluginParameterDict(
-        self.software_path, re6st_connectivity_promise_file),
+      getPromisePluginParameterDict(re6st_connectivity_promise_file),
       {
         'url': 'http://[2001:67c:1254:4::1]/index.html',
       }
@@ -4757,8 +4729,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     re6st_connectivity_promise_file = re6st_connectivity_promise_list[0]
 
     self.assertEqual(
-      getPluginParameterDict(
-        self.software_path, re6st_connectivity_promise_file),
+      getPromisePluginParameterDict(re6st_connectivity_promise_file),
       {
         'url': 'some-re6st-verification-url',
       }
@@ -6462,7 +6433,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     # get promise module and check that parameters are ok
 
     self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
+      getPromisePluginParameterDict(monitor_file),
       {
         'frequency': '720',
         'ipv4': 'true',
@@ -6506,7 +6477,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
     self.assertEqual(
-      getPluginParameterDict(self.software_path, monitor_file),
+      getPromisePluginParameterDict(monitor_file),
       {
         'frequency': '720',
         'address': '${section:option}\nafternewline ipv6'

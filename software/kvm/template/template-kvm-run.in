@@ -99,7 +99,8 @@ enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lowe
 
 logfile = '{{ parameter_dict.get("log-file") }}'
 
-image_url_list_json_config = '{{ parameter_dict.get("image-url-list-json-config") }}'
+boot_image_url_list_json_config = '{{ parameter_dict.get("boot-image-url-list-json-config") }}'
+boot_image_url_select_json_config = '{{ parameter_dict.get("boot-image-url-select-json-config") }}'
 
 if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
   opener = FancyURLopener(context=ssl._create_unverified_context())
@@ -370,25 +371,41 @@ for nbd_ip, nbd_port in nbd_list:
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
 else:
-  image_url_list_used = False
-  if image_url_list_json_config:
-    # Support image-url-list
-    with open(image_url_list_json_config) as fh:
+  index = 0
+  if boot_image_url_select_json_config:
+    # Support boot-image-url-select
+    with open(boot_image_url_select_json_config) as fh:
       image_config = json.load(fh)
     if image_config['error-amount'] == 0:
       for image in sorted(image_config['image-list'], key=lambda k: k['link']):
         link = os.path.join(image_config['destination-directory'], image['link'])
         if os.path.exists(link) and os.path.islink(link):
-          image_url_list_used = True
           kvm_argument_list.extend([
-            '-drive',
-            'file=%s,media=cdrom' % (link,)
+            '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (link, index),
+            '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
+            '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
           ])
-  if not image_url_list_used:
-    # If no NBD is specified/available not downloadable image: use internal disk image
-    kvm_argument_list.extend([
-        '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
-    ])
+          index += 1
+  if boot_image_url_list_json_config:
+    # Support boot-image-url-list
+    with open(boot_image_url_list_json_config) as fh:
+      image_config = json.load(fh)
+    if image_config['error-amount'] == 0:
+      for image in sorted(image_config['image-list'], key=lambda k: k['link']):
+        link = os.path.join(image_config['destination-directory'], image['link'])
+        if os.path.exists(link) and os.path.islink(link):
+          kvm_argument_list.extend([
+            '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (link, index),
+            '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
+            '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
+          ])
+          index += 1
+  # Always add by default the default image
+  kvm_argument_list.extend([
+      '-drive', 'file=%s,media=cdrom,if=none,id=cdrom%s' % (default_cdrom_iso, index),
+      '-device', 'virtio-scsi-pci,id=scsi%s' % (index,),
+      '-device', 'scsi-cd,bus=scsi%s.0,drive=cdrom%s' % (index, index)
+  ])
 
 
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))

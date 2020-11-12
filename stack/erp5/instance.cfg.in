@@ -145,6 +145,7 @@ coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
+xz-utils-location = {{ xz_utils_location }}
 mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}

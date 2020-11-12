@@ -3,6 +3,11 @@ Changes
 
 Here are listed the most important changes, which might affect upgrades.
 
+1.0.160 (2020-08-25)
+--------------------
+
+ * haproxy updated from 2.0.15 to 2.0.17 in order to fix issue while accessing inaccessible backends
+
 1.0.159 (2020-07-30)
 --------------------
 

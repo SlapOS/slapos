@@ -27,3 +27,4 @@ typing-extensions==3.7.4.2
 wrapt==1.11.2
 yapf==0.29.0
 zc.buildout.languageserver==0.2.1
+theia-open==0.1.2
