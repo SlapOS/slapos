@@ -336,6 +336,84 @@ class TestBalancer(BalancerTestCase):
         'backend_web_server1')
 
 
+
+class TestTestRunnerEntryPoints(BalancerTestCase):
+  """Check balancer has some entries for test runner.
+  """
+  __partition_reference__ = 't'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(
+        TestTestRunnerEntryPoints,
+        cls,
+    )._getInstanceParameterDict()
+
+    parameter_dict['dummy_http_server-test-runner-address-list'] = [
+        [
+            cls.getManagedResource("backend_0", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_0", EchoHTTPServer).port,
+        ],
+        [
+            cls.getManagedResource("backend_1", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_1", EchoHTTPServer).port,
+        ],
+        [
+            cls.getManagedResource("backend_2", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_2", EchoHTTPServer).port,
+        ],
+    ]
+    return parameter_dict
+
+  def test_use_proper_backend(self):
+    # requests are directed to proper backend based on URL path
+    test_runner_url_list = self.getRootPartitionConnectionParameterDict(
+    )['default-test-runner-url-list']
+    url_0, url_1, url_2 = test_runner_url_list
+    self.assertEqual(
+        urlparse.urlparse(url_0).netloc,
+        urlparse.urlparse(url_1).netloc)
+    self.assertEqual(
+        urlparse.urlparse(url_0).netloc,
+        urlparse.urlparse(url_2).netloc)
+
+    path_0 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_0/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+    path_1 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_1/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+    path_2 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_2/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+
+    self.assertEqual(
+        {
+            requests.get(url_0 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_0})
+    self.assertEqual(
+        {
+            requests.get(url_1 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_1})
+    self.assertEqual(
+        {
+            requests.get(url_2 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_2})
+
+    # If a test runner backend is down, others can be accessed.
+    self.getManagedResource("backend_0", EchoHTTPServer).close()
+    self.assertEqual(
+        {
+            requests.get(url_0 + 'something', verify=False).status_code
+            for _ in range(5)
+        }, {503})
+    self.assertEqual(
+        {
+            requests.get(url_1 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_1})
+
+
 class TestHTTP(BalancerTestCase):
   """Check HTTP protocol
   """
