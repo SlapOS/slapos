@@ -92,11 +92,11 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
 
     ns_record = ''
     for replicate_nb in range(1, dns_quantity + 1):
-      ns_record += f'ns{replicate_nb}.{zone},'
-      expected_dict[f'ns{replicate_nb}-port'] = f'{DNS_PORT}'
-      expected_dict[f'ns{replicate_nb}-ipv6'] = self._ipv6_address
+      ns_record += 'ns%s.%s,' % (replicate_nb, zone)
+      expected_dict['ns%s-port' % replicate_nb] = str(DNS_PORT)
+      expected_dict['ns%s-ipv6' % replicate_nb] = self._ipv6_address
     expected_dict['ns-record'] = ns_record[:-1]
-    expected_dict['slave-amount'] = f'{slave_amount}'
+    expected_dict['slave-amount'] = str(slave_amount)
 
     self.assertEqual(expected_dict, parameter_dict)
 
@@ -278,12 +278,12 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
 
     for slave_name in slave_parameter_dict_dict:
       slave_parameter_dict = slave_parameter_dict_dict[slave_name]
-      domain_name = f'{slave_parameter_dict["record"]}.{zone}'
+      domain_name = '%s.%s' % (slave_parameter_dict['record'], zone)
       for region in subnet_dict:
         self.assertEqual(
           slave_parameter_dict.pop(
             region,
-            f'{default_rr_dict[region]}.{slave_parameter_dict["origin"]}.'
+            '%s.%s.' % (default_rr_dict[region], slave_parameter_dict['origin'])
           ),
           self.dns_query(domain_name, subnet_dict[region])
         )
