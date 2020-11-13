@@ -112,6 +112,14 @@ config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 
 config-monitor-username = admin
 config-monitor-password = ${monitor-htpasswd:passwd}
 
+# Promises
+[pdns-promise-listen-port]
+<= monitor-promise-base
+module = check_port_listening
+name = pdns-port-listening.py
+config-hostname = $${pdns:local-ipv4}
+config-port = $${pdns:port}
+
 [publish-information]
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
