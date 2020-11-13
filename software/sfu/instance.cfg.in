@@ -51,7 +51,7 @@ username = admin
 [ice-servers.json]
 recipe = collective.recipe.template
 input = inline:
-  [{"urls":["stun:stun.l.google.com:19302"]}]
+  [{"urls":["stun:turn.api.nexedi.net:3478"]}]
 output = $${directory:data}/ice-servers.json
 
 [groups-json]
@@ -59,8 +59,8 @@ recipe = collective.recipe.template
 input = inline:{
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
-    "presenter": [],
-    "other": [{"username": "", "password": "nexedi"}],
+    "other": [],
+    "presenter": [{"username": "", "password": "nexedi"}],
     "max-users":100
   }
 output = $${directory:groups}/public.json
