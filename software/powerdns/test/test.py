@@ -66,7 +66,6 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
     new_parameter_dict = {}
     for key, value in parameter_dict.items():
       if key in [
-        'domain',
         'ns-record',
         'ns1-port',
         'ns1-ipv6',
@@ -86,7 +85,6 @@ class PowerDNSTestCase(SlapOSInstanceTestCase):
 
     parameter_dict = self.getPowerDNSConnexionParameterDict()
     expected_dict = {
-      'domain': 'None',
       'ns-record': '',
     }
 

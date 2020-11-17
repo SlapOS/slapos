@@ -75,8 +75,8 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 <= monitor-promise-base
 module = check_port_listening
 name = pdns-port-listening.py
-{%   set local_ipv4 = '${' ~ request_section_title ~ ':connection-local-ipv4}' -%}
-config-hostname = {{local_ipv4}}
+{%   set ipv4 = '${' ~ request_section_title ~ ':connection-powerdns-ipv4}' -%}
+config-hostname = {{ipv4}}
 {%   set port = '${' ~ request_section_title ~ ':connection-powerdns-port}' -%}
 config-port = {{port}}
 
@@ -112,7 +112,7 @@ software-url = {{ slapparameter_dict.pop(dns_software_url_key) }}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{dns_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url powerdns-ipv6 powerdns-port local-ipv4
+return = slave-instance-information-list monitor-base-url powerdns-ipv6 powerdns-port powerdns-ipv4
 config-server-admin = {{ server_admin }}
 config-ns-record = {{ ns_record }}
 {% for parameter, value in slapparameter_dict.items() -%}
@@ -125,7 +125,6 @@ config-monitor-password = ${monitor-htpasswd:passwd}
 
 [publish-information]
 recipe = slapos.cookbook:publish
-domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 ns-record = {{ ns_record }}
 monitor-url = ${monitor-publish-parameters:monitor-url}
