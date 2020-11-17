@@ -364,6 +364,19 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 {% endfor %}
 {% endif %}
 
+# Generate promises for requested nodes
+{% for frontend in frontend_list %}
+{%   set part_name = 'promise-backend-haproxy-statistic-url-' + frontend %}
+{%   do part_list.append(part_name) %}
+{%   set section_part = '${request-' + frontend %}
+[{{ part_name }}]
+<= monitor-promise-base
+module = check_url_available
+name = check-backend-haproxy-statistic-url-{{ frontend }}.py
+config-url =
+  {{ section_part }}:connection-backend-haproxy-statistic-url}
+{% endfor %}
+
 #----------------------------
 #--
 #-- Publish slave information
