@@ -711,7 +711,7 @@ statistic-certificate = ${self-signed-ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
-statistic-identification = {{ slapparameter_dict['cluster-identification'] }}
+statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 
 [backend-haproxy]
