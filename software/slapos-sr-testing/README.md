@@ -31,15 +31,15 @@ slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
 # and load this script to set environment variables
 source ( environment-script from step above )
 
-# Clone a working copy somewhere
-cd ~/srv/runner/project/
-git clone https://lab.nexedi.com/nexedi/slapos.git slapos_work
+# The source code is a git clone working copy on the instance
+cd ~/srv/runner/instance/slappartXXX/parts/slapos/
 
 # change directory to the directory containing test for this software
-cd ~/srv/runner/project/slapos_work/software/helloworld/test/
+cd ./software/helloworld/test/
+# make change to test code or profile
 
-# run test (with debugging features activated)
-SLAPOS_TEST_DEBUG= 1 python_for_test setup.py test
+# run test for helloworld software release (with debugging features activated)
+SLAPOS_TEST_DEBUG=1 runTestSuite --run helloworld
 ```
 
 ## Environment variables
