@@ -227,6 +227,7 @@ template =
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
+  export TERMINFO=${ncurses:location}/lib/terminfo/
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
   exec ${theia-wrapper:rendered} $@
 ip =  $${instance-parameter:ipv4-random}
