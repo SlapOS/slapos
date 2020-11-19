@@ -31,7 +31,6 @@ import glob
 import urlparse
 import socket
 import time
-import tempfile
 
 import psutil
 import requests
@@ -44,7 +43,7 @@ setUpModule # pyflakes
 class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
   """
-  def _checkERP5IsReachable(self, url, verify):
+  def _checkERP5IsReachable(self, url):
     # What happens is that instanciation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
     # instanciated, but zope is still busy creating the site and haproxy replies
@@ -52,7 +51,7 @@ class TestPublishedURLIsReachableMixin(object):
     # erp5 site is not created, with 500 when mysql is not yet reachable, so we
     # retry in a loop until we get a succesful response.
     for i in range(1, 60):
-      r = requests.get(url, verify=verify)
+      r = requests.get(url, verify=False)  # XXX can we get CA from caucase already ?
       if r.status_code != requests.codes.ok:
         delay = i * 2
         self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
@@ -63,36 +62,19 @@ class TestPublishedURLIsReachableMixin(object):
 
     self.assertIn("ERP5", r.text)
 
-  def _getCaucaseServiceCACertificate(self):
-    ca_cert = tempfile.NamedTemporaryFile(
-        prefix="ca.crt.pem",
-        mode="w",
-        delete=False,
-    )
-    ca_cert.write(
-        requests.get(
-            urlparse.urljoin(
-                self.getRootPartitionConnectionParameterDict()['caucase-http-url'],
-                '/cas/crt/ca.crt.pem',
-            )).text)
-    self.addCleanup(os.unlink, ca_cert.name)
-    return ca_cert.name
-
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']),
-      self._getCaucaseServiceCACertificate())
+      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']))
 
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']),
-      self._getCaucaseServiceCACertificate())
+      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
 class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):

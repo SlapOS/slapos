@@ -124,6 +124,35 @@ context =
 {%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
 {%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
 {%   endif %}
+{#   Check backend-active-check-* #}
+{%   set backend_active_check = (str(slave.get('backend-active-check', False)) or 'false').lower() %}
+{%   if backend_active_check in TRUE_VALUES %}
+{%     set backend_active_check_http_method = slave.get('backend-active-check-http-method') or 'GET' %}
+{%     if backend_active_check_http_method not in ['GET', 'OPTIONS', 'CONNECT', 'POST'] %}
+{%       do slave_error_list.append('Wrong backend-active-check-http-method %s' % (backend_active_check_http_method,)) %}
+{%     endif %}
+{%     set backend_active_check_http_path = slave.get('backend-active-check-http-path') or '/' %}
+{%     set backend_active_check_http_version = slave.get('backend-active-check-http-version') or 'HTTP/1.1' %}
+{%     if backend_active_check_http_version not in ['HTTP/1.1', 'HTTP/1.0'] %}
+{%       do slave_error_list.append('Wrong backend-active-check-http-version %s' % (backend_active_check_http_version,)) %}
+{%     endif %}
+{%     set backend_active_check_timeout = (slave.get('backend-active-check-timeout') or '2') | int(False) %}
+{%     if backend_active_check_timeout in [False] or backend_active_check_timeout <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-timeout %s' % (slave.get('backend-active-check-timeout'),)) %}
+{%     endif %}
+{%     set backend_active_check_interval = (slave.get('backend-active-check-interval') or '5') | int(False) %}
+{%     if backend_active_check_interval in [False] or backend_active_check_interval <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-interval %s' % (slave.get('backend-active-check-interval'),)) %}
+{%     endif %}
+{%     set backend_active_check_rise = (slave.get('backend-active-check-rise') or '1') | int(False) %}
+{%     if backend_active_check_rise in [False] or backend_active_check_rise <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-rise %s' % (slave.get('backend-active-check-rise'),)) %}
+{%     endif %}
+{%     set backend_active_check_fall = (slave.get('backend-active-check-fall') or '1') | int(False) %}
+{%     if backend_active_check_fall in [False] or backend_active_check_fall <= 0 %}
+{%       do slave_error_list.append('Wrong backend-active-check-fall %s' % (slave.get('backend-active-check-fall'),)) %}
+{%     endif %}
+{%   endif %}
 {#   Check ciphers #}
 {%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
 {%   if slave_cipher_list %}
@@ -217,11 +246,11 @@ context =
 {%     endfor %}
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
-{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), slave_error_list) %}
-{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), slave_error_list) %}
+{%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
+{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), sorted(slave_error_list)) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
-{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), slave_warning_list) %}
+{%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
 {%   endif %}
 {% endfor %}
 {% do authorized_slave_list.sort() %}
@@ -335,6 +364,19 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 {% endfor %}
 {% endif %}
 
+# Generate promises for requested nodes
+{% for frontend in frontend_list %}
+{%   set part_name = 'promise-backend-haproxy-statistic-url-' + frontend %}
+{%   do part_list.append(part_name) %}
+{%   set section_part = '${request-' + frontend %}
+[{{ part_name }}]
+<= monitor-promise-base
+module = check_url_available
+name = check-backend-haproxy-statistic-url-{{ frontend }}.py
+config-url =
+  {{ section_part }}:connection-backend-haproxy-statistic-url}
+{% endfor %}
+
 #----------------------------
 #--
 #-- Publish slave information
@@ -379,16 +421,10 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {% endfor %}
 
 [rejected-slave-information]
-{% for slave_id, rejected_list in rejected_slave_dict.iteritems() %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-{{ slave_id }} = {{ dumps(json_module.dumps(rejected_list, sort_keys=True)) }}
-{% endfor %}
+rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
 
 [warning-slave-information]
-{% for slave_id, warning_list in warning_slave_dict.iteritems() %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-{{ slave_id }} = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
-{% endfor %}
+warning-slave-dict = {{ dumps(warning_slave_dict) }}
 
 [slave-information]
 {% for frontend_section in frontend_section_list %}

@@ -113,6 +113,33 @@ context =
 {%-     endif %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
+{#-   Setup active check #}
+{%-   do slave_instance.__setitem__('backend-active-check',  ('' ~ slave_instance.get('backend-active-check', '')).lower() in TRUE_VALUES) %}
+{%-   if slave_instance['backend-active-check']  %}
+{%-     if 'backend-active-check-http-method' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-http-method', 'GET') %}
+{%-     endif %}
+{%-     if 'backend-active-check-http-version' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-http-version', 'HTTP/1.1') %}
+{%-     endif %}
+{%-     if 'backend-active-check-interval' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-interval', '5') %}
+{%-     endif %}
+{%-     if 'backend-active-check-rise' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-rise', '1') %}
+{%-     endif %}
+{%-     if 'backend-active-check-fall' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-fall', '2') %}
+{%-     endif %}
+{%-     if 'backend-active-check-timeout' not in slave_instance %}
+{%-       do slave_instance.__setitem__('backend-active-check-timeout', '2') %}
+{%-     endif %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-path', slave_instance.get('backend-active-check-http-path') or '/') %}
+{%-   else %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-method', '') %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-version', '') %}
+{%-     do slave_instance.__setitem__('backend-active-check-http-path', '') %}
+{%-   endif %} {# if backend_active_check #}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
@@ -307,7 +334,6 @@ recipe = slapos.cookbook:publish
 {%-  endif %}
 {%- endfor %} {# Slave iteration ends for slave_instance in slave_instance_list #}
 
-{%- do part_list.append('caddy-log-access') %}
 {%- do part_list.append('slave-introspection') %}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
@@ -329,29 +355,6 @@ ipv6-port = {{ configuration['plain_http_port'] }}
 <= tunnel-6to4-base
 ipv4-port = {{ configuration['port'] }}
 ipv6-port = {{ configuration['port'] }}
-
-{#- Define log access #}
-
-[caddy-log-access-parameters]
-caddy_log_directory = {{ dumps(caddy_log_directory) }}
-caddy_configuration_directory = {{ dumps(caddy_configuration_directory) }}
-local_ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
-global_ipv6 = {{ dumps(global_ipv6) }}
-https_port = {{ dumps(configuration['port']) }}
-http_port = {{ dumps(configuration['plain_http_port']) }}
-ip_access_certificate = {{ frontend_configuration.get('ip-access-certificate') }}
-access_log = {{ dumps(caddy_configuration['access-log']) }}
-error_log = {{ dumps(caddy_configuration['error-log']) }}
-not_found_file = {{ dumps(caddy_configuration['not-found-file']) }}
-
-[caddy-log-access]
-< = jinja2-template-base
-template = {{ software_parameter_dict['template_log_access'] }}
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-extra-context =
-    section slave_log_directory slave-log-directory-dict
-    section slave_password slave-password
-    section parameter_dict caddy-log-access-parameters
 
 [slave-introspection-parameters]
 local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
@@ -434,13 +437,6 @@ template = inline:
 
 rendered = ${:file}
 
-[caddy-log-access-empty]
-# Caddy refuse to start if an `import`ed file is empty, so we prepend a header
-# so that the file is never empty.
-< = jinja2-template-base
-template = inline: # This file contain directives to serve directories with log files for shared instances, but no shared instances are defined yet.
-rendered = {{frontend_configuration.get('log-access-configuration')}}
-
 ##<Backend haproxy>
 [backend-haproxy-configuration]
 < = jinja2-template-base
@@ -494,9 +490,6 @@ parts +=
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
-{%- if 'caddy-log-access' not in part_list %}
-    caddy-log-access-empty
-{%- endif %}
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
@@ -524,8 +517,8 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = {{ directory['caddy-csr_id'] }}/certificate.pem
-key = {{ directory['caddy-csr_id'] }}/key.pem
+certificate = {{ directory['certificate-csr_id'] }}/certificate.pem
+key = {{ directory['certificate-csr_id'] }}/key.pem
 
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
@@ -542,18 +535,44 @@ ip = ${slap-network-information:global-ipv6}
 port = 17001
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
-error-log = {{ directory['caddy-csr_id-log'] }}/expose-csr_id.log
+error-log = {{ directory['log'] }}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
+var = {{ directory['expose-csr_id-var'] }}
+pid = {{ directory['var'] }}/nginx-expose-csr_id.pid
+rendered = {{ directory['etc'] }}/nginx-expose-csr_id.conf
 template = inline:
-  https://:${expose-csr_id-configuration:port}/ {
-    bind ${expose-csr_id-configuration:ip}
-    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
-    log ${expose-csr_id-configuration:error-log}
+  daemon off;
+  pid ${:pid};
+  error_log ${expose-csr_id-configuration:error-log};
+  events {
   }
+  http {
+    include {{ software_parameter_dict['nginx_mime'] }};
+    server {
+      server_name_in_redirect off;
+      port_in_redirect off;
+      error_log ${expose-csr_id-configuration:error-log};
+      access_log /dev/null;
+      listen [${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port} ssl;                                                          
+      ssl_certificate ${expose-csr_id-configuration:certificate};
+      ssl_certificate_key ${expose-csr_id-configuration:key};
+      default_type application/octet-stream;
+      client_body_temp_path ${:var} 1 2;
+      proxy_temp_path ${:var} 1 2;
+      fastcgi_temp_path ${:var} 1 2;
+      uwsgi_temp_path ${:var} 1 2;
+      scgi_temp_path ${:var} 1 2;
 
-rendered = {{ directory['caddy-csr_id'] }}/Caddyfile
+      location / {
+        alias {{ directory['csr_id'] }}/;
+        autoindex off;
+        sendfile on;
+        sendfile_max_chunk 1m;
+      }
+    }
+  }
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -567,13 +586,8 @@ depends =
   ${store-csr_id:command}
   ${store-backend-haproxy-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['caddy'] }}
-  -conf ${expose-csr_id-template:rendered}
-  -log ${expose-csr_id-configuration:error-log}
-  -http2=true
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-  -root {{ directory['csr_id'] }}
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${expose-csr_id-template:rendered}
 
 wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg

@@ -48,6 +48,7 @@ from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urlparse
 import socket
+import sys
 
 
 try:
@@ -430,6 +431,9 @@ def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
 class TestHandler(BaseHTTPRequestHandler):
   identification = None
 
+  def do_POST(self):
+    return self.do_GET()
+
   def do_GET(self):
     timeout = int(self.headers.dict.get('timeout', '0'))
     compress = int(self.headers.dict.get('compress', '0'))
@@ -486,12 +490,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   # minimise partition path
   __partition_reference__ = 'T-'
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    # Because of unknown problem yet, the root instance software type changes
-    # from RootSoftwareInstance to '', so always request it with given type
-    return "RootSoftwareInstance"
 
   @classmethod
   def prepareCertificate(cls):
@@ -920,18 +918,32 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return default_instance
 
   @classmethod
-  def requestSlaves(cls):
+  def requestSlaveInstance(cls, partition_reference, partition_parameter_kw):
     software_url = cls.getSoftwareURL()
+    software_type = cls.getInstanceSoftwareType()
+    cls.logger.debug(
+      'requesting slave "%s" type: %r software:%s parameters:%s',
+      partition_reference, software_type, software_url, partition_parameter_kw)
+    return cls.slap.request(
+      software_release=software_url,
+      software_type=software_type,
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True
+    )
+
+  @classmethod
+  def requestSlaves(cls):
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
+      software_url = cls.getSoftwareURL()
+      software_type = cls.getInstanceSoftwareType()
       cls.logger.debug(
-        'requesting slave "%s" software:%s parameters:%s',
-        slave_reference, software_url, partition_parameter_kw)
-      cls.slap.request(
-        software_release=software_url,
+        'requesting slave "%s" type: %r software:%s parameters:%s',
+        slave_reference, software_type, software_url, partition_parameter_kw)
+      cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       )
 
   @classmethod
@@ -971,11 +983,9 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      parameter_dict_list.append(cls.slap.request(
-        software_release=cls.getSoftwareURL(),
+      parameter_dict_list.append(cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       ).getConnectionParameterDict())
     return parameter_dict_list
 
@@ -1009,14 +1019,11 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def updateSlaveConnectionParameterDictDict(cls):
     cls.slave_connection_parameter_dict_dict = {}
     # run partition for slaves to be setup
-    request = cls.slap.request
     for slave_reference, partition_parameter_kw in cls\
             .getSlaveParameterDictDict().items():
-      slave_instance = request(
-        software_release=cls.getSoftwareURL(),
+      slave_instance = cls.requestSlaveInstance(
         partition_reference=slave_reference,
         partition_parameter_kw=partition_parameter_kw,
-        shared=True
       )
       cls.slave_connection_parameter_dict_dict[slave_reference] = \
           slave_instance.getConnectionParameterDict()
@@ -1717,7 +1724,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertNotIn('Sending telemetry', fh.read(), 'Telemetry enabled')
 
   def test_url(self):
-    parameter_dict = self.assertSlaveBase('Url')
+    reference = 'Url'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    hostname = reference.translate(None, '_-').lower()
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'warning-list': [
+          "slave url ' %s ' has been converted to '%s'" % (
+            self.backend_url, self.backend_url)],
+      },
+      parameter_dict
+    )
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
@@ -2022,7 +2048,27 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
   def test_compressed_result(self):
-    parameter_dict = self.assertSlaveBase('Url')
+    reference = 'Url'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    hostname = reference.translate(None, '_-').lower()
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'warning-list': [
+          "slave url ' %s ' has been converted to '%s'" % (
+            self.backend_url, self.backend_url)],
+      },
+      parameter_dict
+    )
+
     result_compressed = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
@@ -2055,7 +2101,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('Content-Encoding' in result_not_compressed.headers)
 
   def test_no_content_type_alter(self):
-    parameter_dict = self.assertSlaveBase('Url')
+    reference = 'Url'
+    parameter_dict = self.parseSlaveParameterDict(reference)
+    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, '')
+    hostname = reference.translate(None, '_-').lower()
+    self.assertEqual(
+      {
+        'domain': '%s.example.com' % (hostname,),
+        'replication_number': '1',
+        'url': 'http://%s.example.com' % (hostname, ),
+        'site_url': 'http://%s.example.com' % (hostname, ),
+        'secure_access': 'https://%s.example.com' % (hostname, ),
+        'public-ipv4': self._ipv4_address,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'warning-list': [
+          "slave url ' %s ' has been converted to '%s'" % (
+            self.backend_url, self.backend_url)],
+      },
+      parameter_dict
+    )
     result = fakeHTTPSResult(
       parameter_dict['domain'], parameter_dict['public-ipv4'],
       'test-path/deep/.././deeper',
@@ -5279,46 +5344,46 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       ],
       'warning-slave-dict': {
         u'_custom_domain_ssl_crt_ssl_key': [
-          u'ssl_key is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url'
+          u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url'
         ],
         u'_custom_domain_ssl_crt_ssl_key_ssl_ca_crt': [
-          u'ssl_key is obsolete, please use key-upload-url',
+          u'ssl_ca_crt is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
-          u'ssl_ca_crt is obsolete, please use key-upload-url'
+          u'ssl_key is obsolete, please use key-upload-url'
         ],
         u'_ssl_ca_crt_does_not_match': [
-          u'ssl_key is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
           u'ssl_ca_crt is obsolete, please use key-upload-url',
+          u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
         u'_ssl_ca_crt_garbage': [
-          u'ssl_key is obsolete, please use key-upload-url',
-          u'ssl_crt is obsolete, please use key-upload-url',
           u'ssl_ca_crt is obsolete, please use key-upload-url',
+          u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
         # u'_ssl_ca_crt_only': [
         #   u'ssl_ca_crt is obsolete, please use key-upload-url',
         # ],
         u'_ssl_from_slave': [
-          u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
         u'_ssl_from_slave_kedifa_overrides': [
-          u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
         # u'_ssl_key-ssl_crt-unsafe': [
         #   u'ssl_key is obsolete, please use key-upload-url',
         #   u'ssl_crt is obsolete, please use key-upload-url',
         # ],
         u'_type-notebook-ssl_from_slave': [
-          u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
         u'_type-notebook-ssl_from_slave_kedifa_overrides': [
-          u'ssl_key is obsolete, please use key-upload-url',
           u'ssl_crt is obsolete, please use key-upload-url',
+          u'ssl_key is obsolete, please use key-upload-url',
         ],
       }
     }
@@ -5427,8 +5492,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
          ]
       },
       parameter_dict
@@ -5460,8 +5525,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
          ]
       },
       parameter_dict
@@ -5607,8 +5672,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
          ]
       },
       parameter_dict
@@ -5640,8 +5705,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url',
          ]
       },
       parameter_dict
@@ -5734,9 +5799,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
+          'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
-          'ssl_ca_crt is obsolete, please use key-upload-url'
+          'ssl_key is obsolete, please use key-upload-url'
         ]
       },
       parameter_dict
@@ -5779,11 +5844,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       ssl_ca_crt=ca.certificate_pem,
     )
 
-    self.slap.request(
-        software_release=self.getSoftwareURL(),
+    self.requestSlaveInstance(
         partition_reference='custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
         partition_parameter_kw=slave_parameter_dict,
-        shared=True
     )
 
     self.slap.waitForInstance()
@@ -5825,9 +5888,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
+          'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
-          'ssl_ca_crt is obsolete, please use key-upload-url']
+          'ssl_key is obsolete, please use key-upload-url']
       },
       parameter_dict
     )
@@ -5857,9 +5920,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
+          'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
-          'ssl_ca_crt is obsolete, please use key-upload-url'
+          'ssl_key is obsolete, please use key-upload-url'
         ]
       },
       parameter_dict
@@ -6152,85 +6215,125 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   @classmethod
   def fillSlaveParameterDictDict(cls):
     cls.slave_parameter_dict_dict = {
-      'url': {
+      'URL': {
         'url': "https://[fd46::c2ae]:!py!u'123123'",
       },
-      'https-url': {
+      'HTTPS-URL': {
         'https-url': "https://[fd46::c2ae]:!py!u'123123'",
       },
-      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged': {
+      'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': 'damaged',
       },
-      'ssl-proxy-verify_ssl_proxy_ca_crt_empty': {
+      'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': '',
       },
-      'bad-backend': {
+      'BAD-BACKEND': {
         'url': 'http://1:2:3:4',
         'https-url': 'http://host.domain:badport',
       },
-      'empty-backend': {
+      'EMPTY-BACKEND': {
         'url': '',
         'https-url': '',
       },
-      'custom_domain-unsafe': {
+      'CUSTOM_DOMAIN-UNSAFE': {
         'custom_domain': '${section:option} afterspace\nafternewline',
       },
-      'server-alias-unsafe': {
+      'SERVER-ALIAS-UNSAFE': {
         'server-alias': '${section:option} afterspace',
       },
-      'server-alias-same': {
+      'SERVER-ALIAS-SAME': {
         'url': cls.backend_url,
         'server-alias': 'serveraliassame.example.com',
       },
-      'virtualhostroot-http-port-unsafe': {
+      'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE': {
         'type': 'zope',
         'url': cls.backend_url,
         'virtualhostroot-http-port': '${section:option}',
       },
-      'virtualhostroot-https-port-unsafe': {
+      'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE': {
         'type': 'zope',
         'url': cls.backend_url,
         'virtualhostroot-https-port': '${section:option}',
       },
-      'default-path-unsafe': {
+      'DEFAULT-PATH-UNSAFE': {
         'type': 'zope',
         'url': cls.backend_url,
         'default-path': '${section:option}\nn"\newline\n}\n}proxy\n/slashed',
       },
-      'monitor-ipv4-test-unsafe': {
+      'MONITOR-IPV4-TEST-UNSAFE': {
         'monitor-ipv4-test': '${section:option}\nafternewline ipv4',
       },
-      'monitor-ipv6-test-unsafe': {
+      'MONITOR-IPV6-TEST-UNSAFE': {
         'monitor-ipv6-test': '${section:option}\nafternewline ipv6',
       },
-      'bad-ciphers': {
+      'BAD-CIPHERS': {
         'ciphers': 'bad ECDHE-ECDSA-AES256-GCM-SHA384 again',
       },
-      'site_1': {
+      'SITE_1': {
         'custom_domain': 'duplicate.example.com',
       },
-      'site_2': {
+      'SITE_2': {
         'custom_domain': 'duplicate.example.com',
       },
-      'site_3': {
+      'SITE_3': {
         'server-alias': 'duplicate.example.com',
       },
-      'site_4': {
+      'SITE_4': {
         'custom_domain': 'duplicate.example.com',
         'server-alias': 'duplicate.example.com',
       },
-      'ssl_ca_crt_only': {
+      'SSL_CA_CRT_ONLY': {
         'url': cls.backend_url,
         'ssl_ca_crt': cls.ca.certificate_pem,
       },
-      'ssl_key-ssl_crt-unsafe': {
+      'SSL_KEY-SSL_CRT-UNSAFE': {
         'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
+      'backend-active-check-http-method': {
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'WRONG',
+      },
+      'backend-active-check-http-version': {
+        'backend-active-check': True,
+        'backend-active-check-http-version': 'WRONG/1.1',
+      },
+      'backend-active-check-timeout': {
+        'backend-active-check': True,
+        'backend-active-check-timeout': 'WRONG',
+      },
+      'backend-active-check-timeout-negative': {
+        'backend-active-check': True,
+        'backend-active-check-timeout': '-2',
+      },
+      'backend-active-check-interval': {
+        'backend-active-check': True,
+        'backend-active-check-interval': 'WRONG',
+      },
+      'backend-active-check-interval-negative': {
+        'backend-active-check': True,
+        'backend-active-check-interval': '-2',
+      },
+      'backend-active-check-rise': {
+        'backend-active-check': True,
+        'backend-active-check-rise': 'WRONG',
+      },
+      'backend-active-check-rise-negative': {
+        'backend-active-check': True,
+        'backend-active-check-rise': '-2',
+      },
+      'backend-active-check-fall': {
+        'backend-active-check': True,
+        'backend-active-check-fall': 'WRONG',
+      },
+      'backend-active-check-fall-negative': {
+        'backend-active-check': True,
+        'backend-active-check-fall': '-2',
+      }
     }
 
   def test_master_partition_state(self):
@@ -6245,49 +6348,69 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
       'accepted-slave-amount': '7',
-      'rejected-slave-amount': '14',
-      'slave-amount': '21',
+      'rejected-slave-amount': '24',
+      'slave-amount': '31',
       'rejected-slave-dict': {
-        '_https-url': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
+        '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
-        '_url': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
-        '_ssl-proxy-verify_ssl_proxy_ca_crt_damaged': [
+        '_URL': [u'slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
+        '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
           'ssl_proxy_ca_crt is invalid'
         ],
-        '_ssl-proxy-verify_ssl_proxy_ca_crt_empty': [
+        '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': [
           'ssl_proxy_ca_crt is invalid'
         ],
-        '_bad-ciphers': [
-          "Cipher 'bad' is not supported.",
-          "Cipher 'again' is not supported."
+        '_BAD-CIPHERS': [
+          "Cipher 'again' is not supported.",
+          "Cipher 'bad' is not supported."
         ],
-        '_custom_domain-unsafe': [
+        '_CUSTOM_DOMAIN-UNSAFE': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
         ],
-        '_server-alias-unsafe': [
+        '_SERVER-ALIAS-UNSAFE': [
           "server-alias '${section:option}' not valid",
           "server-alias 'afterspace' not valid"
         ],
-        '_site_2': ["custom_domain 'duplicate.example.com' clashes"],
-        '_site_3': ["server-alias 'duplicate.example.com' clashes"],
-        '_site_4': ["custom_domain 'duplicate.example.com' clashes"],
-        '_ssl_ca_crt_only': [
+        '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"],
+        '_SITE_3': ["server-alias 'duplicate.example.com' clashes"],
+        '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"],
+        '_SSL_CA_CRT_ONLY': [
           "ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
-        '_ssl_key-ssl_crt-unsafe': [
+        '_SSL_KEY-SSL_CRT-UNSAFE': [
           "slave ssl_key and ssl_crt does not match"],
-        '_bad-backend': [
-          "slave url 'http://1:2:3:4' invalid",
-          "slave https-url 'http://host.domain:badport' invalid"],
-        '_empty-backend': [
-          "slave url '' invalid",
-          "slave https-url '' invalid"],
+        '_BAD-BACKEND': [
+          "slave https-url 'http://host.domain:badport' invalid",
+          "slave url 'http://1:2:3:4' invalid"],
+        '_EMPTY-BACKEND': [
+          "slave https-url '' invalid",
+          "slave url '' invalid"],
+        '_backend-active-check-fall': [
+          'Wrong backend-active-check-fall WRONG'],
+        '_backend-active-check-fall-negative': [
+          'Wrong backend-active-check-fall -2'],
+        '_backend-active-check-http-method': [
+          'Wrong backend-active-check-http-method WRONG'],
+        '_backend-active-check-http-version': [
+          'Wrong backend-active-check-http-version WRONG/1.1'],
+        '_backend-active-check-interval': [
+          'Wrong backend-active-check-interval WRONG'],
+        '_backend-active-check-interval-negative': [
+          'Wrong backend-active-check-interval -2'],
+        '_backend-active-check-rise': [
+          'Wrong backend-active-check-rise WRONG'],
+        '_backend-active-check-rise-negative': [
+          'Wrong backend-active-check-rise -2'],
+        '_backend-active-check-timeout': [
+          'Wrong backend-active-check-timeout WRONG'],
+        '_backend-active-check-timeout-negative': [
+          'Wrong backend-active-check-timeout -2'],
       },
       'warning-slave-dict': {
-        '_ssl_ca_crt_only': [
+        '_SSL_CA_CRT_ONLY': [
           'ssl_ca_crt is obsolete, please use key-upload-url'],
-        '_ssl_key-ssl_crt-unsafe': [
-          'ssl_key is obsolete, please use key-upload-url',
-          'ssl_crt is obsolete, please use key-upload-url']}
+        '_SSL_KEY-SSL_CRT-UNSAFE': [
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url']}
     }
 
     self.assertEqual(
@@ -6296,7 +6419,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_url(self):
-    parameter_dict = self.parseSlaveParameterDict('url')
+    parameter_dict = self.parseSlaveParameterDict('URL')
     self.assertEqual(
       {
         'request-error-list': [
@@ -6306,7 +6429,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_https_url(self):
-    parameter_dict = self.parseSlaveParameterDict('https-url')
+    parameter_dict = self.parseSlaveParameterDict('HTTPS-URL')
     self.assertEqual(
       {
         'request-error-list': [
@@ -6317,7 +6440,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
     parameter_dict = self.parseSlaveParameterDict(
-      'ssl-proxy-verify_ssl_proxy_ca_crt_damaged')
+      'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED')
     self.assertEqual(
       {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
       parameter_dict
@@ -6325,14 +6448,14 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_empty(self):
     parameter_dict = self.parseSlaveParameterDict(
-      'ssl-proxy-verify_ssl_proxy_ca_crt_empty')
+      'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY')
     self.assertEqual(
       {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
       parameter_dict
     )
 
   def test_server_alias_same(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-same')
+    parameter_dict = self.parseSlaveParameterDict('SERVER-ALIAS-SAME')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6358,7 +6481,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('custom_domain-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('CUSTOM_DOMAIN-UNSAFE')
     self.assertEqual(
       {
         'request-error-list': [
@@ -6369,7 +6492,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_server_alias_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('server-alias-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('SERVER-ALIAS-UNSAFE')
     self.assertEqual(
       {
         'request-error-list': [
@@ -6380,12 +6503,12 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_bad_ciphers(self):
-    parameter_dict = self.parseSlaveParameterDict('bad-ciphers')
+    parameter_dict = self.parseSlaveParameterDict('BAD-CIPHERS')
     self.assertEqual(
       {
         'request-error-list': [
-          "Cipher 'bad' is not supported.",
-          "Cipher 'again' is not supported."
+          "Cipher 'again' is not supported.",
+          "Cipher 'bad' is not supported."
         ]
       },
       parameter_dict
@@ -6393,7 +6516,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_virtualhostroot_http_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
-      'virtualhostroot-http-port-unsafe')
+      'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6417,7 +6540,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_virtualhostroot_https_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
-      'virtualhostroot-https-port-unsafe')
+      'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6449,7 +6572,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def default_path_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('default-path-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('DEFAULT-PATH-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertEqual(
@@ -6484,7 +6607,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_monitor_ipv4_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('monitor-ipv4-test-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV4-TEST-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6516,7 +6639,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     monitor_file = glob.glob(
       os.path.join(
         self.instance_path, '*', 'etc', 'plugin',
-        'check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test.py'))[0]
+        'check-_MONITOR-IPV4-TEST-UNSAFE-ipv4-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
 
     self.assertEqual(
@@ -6529,7 +6652,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_monitor_ipv6_test_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('monitor-ipv6-test-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV6-TEST-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6561,7 +6684,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     monitor_file = glob.glob(
       os.path.join(
         self.instance_path, '*', 'etc', 'plugin',
-        'check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test.py'))[0]
+        'check-_MONITOR-IPV6-TEST-UNSAFE-ipv6-packet-list-test.py'))[0]
     # get promise module and check that parameters are ok
     self.assertEqual(
       getPromisePluginParameterDict(monitor_file),
@@ -6572,7 +6695,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_site_1(self):
-    parameter_dict = self.parseSlaveParameterDict('site_1')
+    parameter_dict = self.parseSlaveParameterDict('SITE_1')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
@@ -6589,7 +6712,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_site_2(self):
-    parameter_dict = self.parseSlaveParameterDict('site_2')
+    parameter_dict = self.parseSlaveParameterDict('SITE_2')
     self.assertEqual(
       {
         'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
@@ -6598,7 +6721,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_site_3(self):
-    parameter_dict = self.parseSlaveParameterDict('site_3')
+    parameter_dict = self.parseSlaveParameterDict('SITE_3')
     self.assertEqual(
       {
         'request-error-list': ["server-alias 'duplicate.example.com' clashes"]
@@ -6607,7 +6730,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_site_4(self):
-    parameter_dict = self.parseSlaveParameterDict('site_4')
+    parameter_dict = self.parseSlaveParameterDict('SITE_4')
     self.assertEqual(
       {
         'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
@@ -6616,7 +6739,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_ssl_ca_crt_only(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
+    parameter_dict = self.parseSlaveParameterDict('SSL_CA_CRT_ONLY')
 
     self.assertEqual(
       parameter_dict,
@@ -6630,35 +6753,35 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     )
 
   def test_ssl_key_ssl_crt_unsafe(self):
-    parameter_dict = self.parseSlaveParameterDict('ssl_key-ssl_crt-unsafe')
+    parameter_dict = self.parseSlaveParameterDict('SSL_KEY-SSL_CRT-UNSAFE')
     self.assertEqual(
       {
         'request-error-list': ["slave ssl_key and ssl_crt does not match"],
         'warning-list': [
-          'ssl_key is obsolete, please use key-upload-url',
-          'ssl_crt is obsolete, please use key-upload-url']
+          'ssl_crt is obsolete, please use key-upload-url',
+          'ssl_key is obsolete, please use key-upload-url']
       },
       parameter_dict
     )
 
   def test_bad_backend(self):
-    parameter_dict = self.parseSlaveParameterDict('bad-backend')
+    parameter_dict = self.parseSlaveParameterDict('BAD-BACKEND')
     self.assertEqual(
       {
         'request-error-list': [
-          "slave url 'http://1:2:3:4' invalid",
-          "slave https-url 'http://host.domain:badport' invalid"],
+          "slave https-url 'http://host.domain:badport' invalid",
+          "slave url 'http://1:2:3:4' invalid"],
       },
       parameter_dict
     )
 
   def test_empty_backend(self):
-    parameter_dict = self.parseSlaveParameterDict('empty-backend')
+    parameter_dict = self.parseSlaveParameterDict('EMPTY-BACKEND')
     self.assertEqual(
       {
         'request-error-list': [
-          "slave url '' invalid",
-          "slave https-url '' invalid"],
+          "slave https-url '' invalid",
+          "slave url '' invalid"]
       },
       parameter_dict
     )
@@ -7021,3 +7144,139 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       expected_partition_parameter_dict_dict,
       partition_parameter_dict_dict
     )
+
+
+class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'public-ipv4': cls._ipv4_address,
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'mpm-graceful-shutdown-timeout': 2,
+      'request-timeout': '12',
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    cls.setUpAssertionDict()
+    return {
+      'backend-active-check-disabled': {
+        'url': cls.backend_url,
+      },
+      'backend-active-check-default': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+      },
+      'backend-active-check-connect': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'CONNECT',
+      },
+      'backend-active-check-custom': {
+        'url': cls.backend_url,
+        'backend-active-check': True,
+        'backend-active-check-http-method': 'POST',
+        'backend-active-check-http-path': '/POST-path to be encoded',
+        'backend-active-check-http-version': 'HTTP/1.0',
+        'backend-active-check-timeout': '7',
+        'backend-active-check-interval': '15',
+        'backend-active-check-rise': '3',
+        'backend-active-check-fall': '7',
+      },
+    }
+
+  @classmethod
+  def setUpAssertionDict(cls):
+    backend = urlparse.urlparse(cls.backend_url).netloc
+    cls.assertion_dict = {
+      'backend-active-check-disabled': """\
+backend _backend-active-check-disabled-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-disabled-backend %s""" % (backend,),
+      'backend-active-check-connect': """\
+backend _backend-active-check-connect-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-connect-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  timeout check 2s""" % (backend,),
+      'backend-active-check-custom': """\
+backend _backend-active-check-custom-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-custom-backend %s   check inter 15s"""
+      """ rise 3 fall 7
+  option httpchk POST /POST-path%%20to%%20be%%20encoded HTTP/1.0
+  timeout check 7s""" % (backend,),
+      'backend-active-check-default': """\
+backend _backend-active-check-default-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _backend-active-check-default-backend %s   check inter 5s"""
+      """ rise 1 fall 2
+  option httpchk GET / HTTP/1.1
+  timeout check 2s""" % (backend, )
+    }
+
+  def _get_backend_haproxy_configuration(self):
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      return fh.read()
+
+  def _test(self, key):
+    parameter_dict = self.assertSlaveBase(key)
+    self.assertIn(
+      self.assertion_dict[key],
+      self._get_backend_haproxy_configuration()
+    )
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper',
+      headers={
+        'Timeout': '10',  # more than default backend-connect-timeout == 5
+        'Accept-Encoding': 'gzip',
+      }
+    )
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+  def test_backend_active_check_disabled(self):
+    self._test('backend-active-check-disabled')
+
+  def test_backend_active_check_default(self):
+    self._test('backend-active-check-default')
+
+  def test_backend_active_check_connect(self):
+    self._test('backend-active-check-connect')
+
+  def test_backend_active_check_custom(self):
+    self._test('backend-active-check-custom')
+
+
+if __name__ == '__main__':
+  class HTTP6Server(HTTPServer):
+    address_family = socket.AF_INET6
+  ip, port = sys.argv[1], int(sys.argv[2])
+  if ':' in ip:
+    klass = HTTP6Server
+    url_template = 'http://[%s]:%s/'
+  else:
+    klass = HTTPServer
+    url_template = 'http://%s:%s/'
+
+  server = klass((ip, port), TestHandler)
+  print url_template % server.server_address[:2]
+  server.serve_forever()

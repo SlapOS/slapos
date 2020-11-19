@@ -27,6 +27,7 @@ parts +=
   supervisord-wrapper
   importer-consistency-promise
   software-release-deployment-promise
+  template-slapuser-script
 
   resilient-software-release-information
 

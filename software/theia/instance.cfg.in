@@ -98,8 +98,12 @@ stop-on-error = true
 [frontend-instance-logo]
 recipe = plone.recipe.command
 filename = logo.png
+full-path = $${directory:frontend-static}/$${:filename}
 command =
-  ln -s ${logo.png:output} $${directory:frontend-static}/$${:filename}
+  if [ ! -e $${:full-path} ]
+  then
+    ln -s ${logo.png:output} $${:full-path}
+  fi
 stop-on-error = true
 
 [frontend-instance-slapos.css]
