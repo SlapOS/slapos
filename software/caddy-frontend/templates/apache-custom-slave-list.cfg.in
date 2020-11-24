@@ -315,6 +315,41 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
+{#- BEGIN: Extracted logic from templates/default-virtualhost.conf.in #}
+{%-  set host_list = slave_instance.get('server-alias', '').split() %}
+{%-  if slave_instance.get('custom_domain') not in host_list %}
+{%-    do host_list.append(slave_instance.get('custom_domain')) %}
+{%-  endif %}
+{%-  do slave_instance.__setitem__('host_list', host_list) %}
+{%-  do slave_instance.__setitem__('cipher_list', slave_instance.get('cipher_list', '').strip()) %}
+{%-  do slave_instance.__setitem__('type', slave_instance.get('type', '')) %}
+{%-  for key in ['https-only', 'websocket-transparent'] %}
+{%-    do slave_instance.__setitem__(key, slave_instance.get(key, 'true').lower() in TRUE_VALUES) %}
+{%-  endfor %}
+{%-  for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend'] %}
+{%-    do slave_instance.__setitem__(key, slave_instance.get(key, 'false').lower() in TRUE_VALUES) %}
+{%-  endfor %}
+{%-  for key in ['disabled-cookie-list'] %}
+{%-    do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
+{%-  endfor %}
+{%-  do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
+{%-  set websocket_path_list = [] %}
+{%-  for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
+{%-    set websocket_path = websocket_path.strip('/') %}
+{#- Unquote the path, so %20 and similar can be represented correctly #}
+{%-    set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
+{%-    if websocket_path %}
+{%-      do websocket_path_list.append(websocket_path) %}
+{%-    endif %}
+{%-  endfor %}
+{%-  do slave_instance.__setitem__('websocket-path-list', websocket_path_list) %}
+{%-  do slave_instance.__setitem__('enable_h2', slave_instance['global_disable_http2'].lower() not in TRUE_VALUES and slave_instance.get('enable-http2', slave_instance['enable_http2_by_default']).lower() in TRUE_VALUES) %}
+{%-  if slave_instance['type'] in ['notebook', 'websocket'] %}
+{# websocket style needs http 1.1 max #}
+{%-    do slave_instance.__setitem__('enable_h2', False) %}
+{%-  endif %}
+
+{#- END: Extracted logic from templates/default-virtualhost.conf.in #}
 {%-  do frontend_slave_list.append(slave_instance) %}
 {%-  if slave_type != 'redirect' %}
 {%-    do backend_slave_list.append(slave_instance) %}
