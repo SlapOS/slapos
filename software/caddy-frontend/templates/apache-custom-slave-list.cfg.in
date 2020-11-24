@@ -2,6 +2,7 @@
 {%- set kedifa_updater_mapping = [] %}
 {%- set cached_server_dict = {} %}
 {%- set backend_slave_list = [] %}
+{%- set frontend_slave_list = [] %}
 {%- set part_list = [] %}
 {%- set cache_port = caddy_configuration.get('cache-port') %}
 {%- set cache_access = "http://%s:%s" % (instance_parameter_dict['ipv4-random'], cache_port) %}
@@ -39,16 +40,39 @@ context =
 [slave-password]
 [slave-htpasswd]
 
-{#- Loop thought slave list to set up slaves #}
+{#- Prepare configuration parameters #}
 {%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
-{%- for slave_instance in slave_instance_list %}
-{#- prepare backend parameters #}
-{%- for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
-{%-   set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
-{%-   set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
-{%-   do slave_instance.__setitem__(prefix, info_dict) %}
+{%- for key in ['enable-http2-by-default', 'global-disable-http2'] %}
+{%-   do configuration.__setitem__(key, ('' ~ configuration[key]).lower() in TRUE_VALUES) %}
 {%- endfor %}
+{#- Loop thought slave list to set up slaves #}
+{%- for slave_instance in slave_instance_list %}
+{#-   Prepare slave parameters: #}
+{#-     * convert strings to booleans (as slapproxy and SlapOS Master differ a bit) #}
+{#-     * create real lists from string lists #}
+{#-     * setup defaults to simplify other profiles #}
+{#-     * stabilise values for backend #}
+{%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
+{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
+{%-     do slave_instance.__setitem__(prefix, info_dict) %}
+{%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
+{%-   do slave_instance.__setitem__('enable-http2', ('' ~ slave_instance.get('enable-http2', configuration['enable-http2-by-default'])).lower() in TRUE_VALUES) %}
+{%-   for key in ['https-only', 'websocket-transparent'] %}
+{%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
+{%-   endfor %}
+{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend'] %}
+{%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
+{%-   endfor %}
+{%-   for key in ['disabled-cookie-list'] %}
+{%-     do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
+{%-   endfor %}
+{%-   for key, default in [('virtualhostroot-http-port', '80'), ('virtualhostroot-https-port', '443')] %}
+{%-     do slave_instance.__setitem__(key, int(slave_instance.get(key, default))) %}
+{%-   endfor %}
+{%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
+{%-   do slave_instance.__setitem__('path', slave_instance.get('path', '').strip('/')) %}
 {#-   Manage ciphers #}
 {%-   set slave_ciphers = slave_instance.get('ciphers', '').strip().split() %}
 {%-   if slave_ciphers %}
@@ -56,10 +80,10 @@ context =
 {%-   else %}
 {%-     set slave_cipher_list = configuration['ciphers'].strip() %}
 {%-   endif %}
-{%-   do slave_instance.__setitem__('cipher_list', slave_cipher_list) %}
+{%-   do slave_instance.__setitem__('ciphers', slave_cipher_list) %}
 {#-   Manage common instance parameters #}
 {%-   set slave_type = slave_instance.get('type', '') %}
-{%-   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') %}
+{%-   set enable_cache = (slave_instance['enable_cache'] and slave_type != 'redirect') %}
 {%-   set slave_reference = slave_instance.get('slave_reference') %}
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
 {#-   Setup backend URLs for front facing Caddy #}
@@ -103,9 +127,6 @@ context =
 {%-   do part_list.extend([slave_ln_section]) %}
 {%-   do part_list.extend([slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
-{#-   Pass HTTP2 switch #}
-{%-   do slave_instance.__setitem__('enable_http2_by_default', configuration['enable-http2-by-default']) %}
-{%-   do slave_instance.__setitem__('global_disable_http2', configuration['global-disable-http2']) %}
 {#-   Pass backend timeout values #}
 {%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
 {%-     if slave_instance.get(key, '') == '' %}
@@ -168,6 +189,28 @@ context =
 {%-   do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) %}
 {%-   do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) %}
+{%-   set host_list = slave_instance.get('server-alias', '').split() %}
+{%-   if slave_instance.get('custom_domain') not in host_list %}
+{%-     do host_list.append(slave_instance.get('custom_domain')) %}
+{%-   endif %}
+{%-   do slave_instance.__setitem__('host_list', host_list) %}
+{%-   do slave_instance.__setitem__('type', slave_instance.get('type', '')) %}
+{%-   set websocket_path_list = [] %}
+{%-   for websocket_path in slave_instance.get('websocket-path-list', '').split() %}
+{%-     set websocket_path = websocket_path.strip('/') %}
+{#-   Unquote the path, so %20 and similar can be represented correctly #}
+{%-     set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
+{%-     if websocket_path %}
+{%-       do websocket_path_list.append(websocket_path) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   do slave_instance.__setitem__('websocket-path-list', websocket_path_list) %}
+{%-   do slave_instance.__setitem__('enable_h2', not configuration['global-disable-http2'] and slave_instance['enable-http2']) %}
+{%-   if slave_instance['type'] in ['notebook', 'websocket'] %}
+{#    websocket style needs http 1.1 max #}
+{%-     do slave_instance.__setitem__('enable_h2', False) %}
+{%-   endif %}
+{%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
 
 [slave-log-directory-dict]
 {{slave_reference}} = {{ slave_log_folder }}
@@ -224,12 +267,13 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {%-   do slave_parameter_dict.__setitem__('certificate', certificate )%}
 {#-   Set ssl certificates for each slave #}
 {%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
+{%-       set cert_file_key = 'path_to_' + cert_name %}
 {%-       if cert_name in slave_instance %}
 {%-         set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
 {%-         set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) %}
 {%-         do part_list.append(cert_title) %}
 {%-         do slave_parameter_dict.__setitem__(cert_name, cert_file) %}
-{%-         do slave_instance.__setitem__('path_to_' + cert_name, cert_file) %}
+{%-         do slave_instance.__setitem__(cert_file_key, cert_file) %}
 {#-         Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
@@ -241,7 +285,9 @@ extra-context =
 {#-         Store certificate in config #}
 [{{ cert_title + '-config' }}]
 value = {{ dumps(slave_instance.get(cert_name)) }}
-{%-       endif %}
+{%-       else %}
+{%-         do slave_instance.__setitem__(cert_file_key, None) %}
+{%-       endif %} {#- if cert_name in slave_instance #}
 {%-     endfor %}
 {#-   Set Up Certs #}
 {%-   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance %}
@@ -273,7 +319,7 @@ http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
-{{ key }} = {{ dumps('' ~ value) }}
+{{ key }} = {{ dumps(value) }}
 {%-     endif %}
 {%-   endfor %}
 
@@ -284,7 +330,6 @@ rendered = {{ caddy_configuration_directory }}/${:filename}
 template = {{ template_default_slave_configuration }}
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
-    import urllib_module urllib
 
 filename = {{ '%s.conf' % slave_reference }}
 {{ '\n' }}
@@ -329,6 +374,7 @@ recipe = slapos.cookbook:publish
 {%-   else %}
 {%-     do slave_instance_information_list.append(slave_publish_dict) %}
 {%-   endif %}
+{%-  do frontend_slave_list.append(slave_instance) %}
 {%-  if slave_type != 'redirect' %}
 {%-    do backend_slave_list.append(slave_instance) %}
 {%-  endif %}
