@@ -1,43 +1,13 @@
-{%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set enable_cache = slave_parameter.get('enable_cache', '').lower() in TRUE_VALUES %}
-{%- set disable_no_cache_header = slave_parameter.get('disable-no-cache-request', '').lower() in TRUE_VALUES %}
-{%- set disable_via_header = slave_parameter.get('disable-via-header', '').lower() in TRUE_VALUES %}
-{%- set prefer_gzip = slave_parameter.get('prefer-gzip-encoding-to-backend', '').lower() in TRUE_VALUES %}
 {%- set proxy_append_list = [('', 'Default proxy configuration')] %}
 {%- if prefer_gzip %}
 {%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
 {%- endif %} {#- if prefer_gzip #}
-{%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
-{%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default']).lower() in TRUE_VALUES %}
-{%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
-{%- set https_only = slave_parameter.get('https-only', 'true').lower() in TRUE_VALUES %}
-{%- set slave_type = slave_parameter.get('type', '') %}
-{%- set host_list = server_alias_list %}
-{%- set cipher_list = slave_parameter.get('cipher_list', '').strip() %}
-{%- if slave_parameter.get('custom_domain') not in host_list %}
-{%-   do host_list.append(slave_parameter.get('custom_domain')) %}
-{%- endif %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
 {%- for host in host_list %}
 {%-   do http_host_list.append('http://%s:%s' % (host, slave_parameter['http_port'] )) %}
 {%-   do https_host_list.append('https://%s:%s' % (host, slave_parameter['https_port'] )) %}
 {%- endfor %} {#- for host in host_list #}
-{%- set default_path = slave_parameter.get('default-path', '').strip('/') | urlencode %}
-{%- set websocket_path_list = [] %}
-{%- for websocket_path in slave_parameter.get('websocket-path-list', '').split() %}
-{%-   set websocket_path = websocket_path.strip('/') %}
-{#- Unquote the path, so %20 and similar can be represented correctly #}
-{%-   set websocket_path = urllib_module.unquote(websocket_path.strip()) %}
-{%-   if websocket_path %}
-{%-     do websocket_path_list.append(websocket_path) %}
-{%-   endif %}
-{%- endfor %}
-{%- set websocket_transparent = slave_parameter.get('websocket-transparent', 'true').lower() in TRUE_VALUES %}
-{%- if slave_type in ['notebook', 'websocket'] %}
-{# websocket style needs http 1.1 max #}
-{%-   set enable_h2 = False %}
-{%- endif %}
 
 {%- macro proxy_header() %}
     timeout {{ slave_parameter['request-timeout'] }}s
