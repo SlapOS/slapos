@@ -14,6 +14,7 @@
 
 domains:
 {%- for zone in supported_zone_list %}
+
 - domain: {{ zone }}
   # TODO: what value for ttl?
   ttl: 300
@@ -49,6 +50,7 @@ domains:
 
     {%- for slave in slave_instance_list %}
 
+    {% if slave['applicable-zone'] == zone %}
     {%-   set origin = slave['origin'] %}
     {%-   set unique_slave_id = slave['slave_reference'] %}
     {#-   Set the RR to use for each region, as described in
@@ -78,10 +80,12 @@ domains:
       - cname: {{ disambiguate_domain_name(rr_dict[region], origin) }}
     {%-     endfor %}
     {%-   endfor %}
+    {%- endif %}
     {%- endfor %}
 
   services:
     {%- for slave in slave_instance_list %}
+    {% if slave['applicable-zone'] == zone %}
     {%-   set origin = slave['origin'] %}
     {%-   set unique_slave_id = slave['slave_reference'] %}
     {{ disambiguate_domain_name(slave['record'], slave['applicable-zone']) }}:
@@ -95,6 +99,6 @@ domains:
       {%- for ip_range, country_code in china %}
       {{ ip_range }}: {{ country_code }}.country.{{ unique_slave_id }}
       {%- endfor %}
+    {%- endif %}
     {%- endfor %}
-
 {%- endfor %}
