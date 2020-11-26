@@ -111,11 +111,11 @@ class TestTheia(SlapOSInstanceTestCase):
     process.logfile = DebugLogFile()
 
     process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
-    process.expect_exact('Standalone SlapOS for computer `local` activated')
+    process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
 
     # try to supply and install a software to check that this slapos is usable
     process.sendline(
-        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg local'
+        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg slaprunner'
     )
     process.expect(
         'Requesting software installation of https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg...'
