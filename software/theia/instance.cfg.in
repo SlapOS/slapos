@@ -257,10 +257,29 @@ template = inline:
   import time
   args = sys.argv[1:]
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
+  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash --rcfile $${theia-bashrc:rendered}", ]
   # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
   else: time.sleep(1)
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
+
+[theia-bashrc]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}
+template =
+  inline:
+  # enable bash completion
+  . ${bash-completion:location}/etc/profile.d/bash_completion.sh
+  # source user's .bashrc
+  [ -f ~/.bashrc ] && . ~/.bashrc
+depends =
+  $${shell-setup-completion:recipe}
+
+[shell-setup-completion]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  ${buildout:bin-directory}/slapos complete > $${directory:bash-completions}/slapos
+  ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -359,3 +378,6 @@ slapos = $${:srv}/slapos
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
+
+bash-completions = $${buildout:directory}/.local/share/bash-completion/completions/
+fish-completions = $${buildout:directory}/.config/fish/completions/
