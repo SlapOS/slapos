@@ -270,7 +270,7 @@ template =
   inline:#!/bin/sh
   export PATH=${buildout:bin-directory}:$PATH
   ${slapos-standalone:script-path} \
-      $${directory:slapos} \
+      $${directory:runner} \
       $${:ipv4} \
       $${:ipv6} \
       $${:port} \
@@ -285,7 +285,7 @@ template =
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
 port = 4100
-slapos-configuration = $${directory:slapos}/etc/slapos.cfg
+slapos-configuration = $${directory:runner}/etc/slapos.cfg
 
 [promises]
 recipe =
@@ -353,8 +353,8 @@ dot-theia = $${buildout:directory}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
-project = $${:srv}/project
-slapos = $${:srv}/slapos
+runner = $${:srv}/runner
+project = $${:runner}/project
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
