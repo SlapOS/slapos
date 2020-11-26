@@ -43,6 +43,7 @@ defaults
 
 frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+# Here use Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'http', False) }}
 {%- endfor %}
@@ -52,6 +53,7 @@ frontend http-frontend
 
 frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+# Here use ssl_fc_sni and fallback to Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', False) }}
 {%- endfor %}
