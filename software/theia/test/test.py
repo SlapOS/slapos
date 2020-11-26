@@ -115,7 +115,7 @@ class TestTheia(SlapOSInstanceTestCase):
 
     # try to supply and install a software to check that this slapos is usable
     process.sendline(
-        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg local'
+        'slapos supply https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg slaprunner'
     )
     process.expect(
         'Requesting software installation of https://lab.nexedi.com/nexedi/slapos/raw/1.0.144/software/helloworld/software.cfg...'
