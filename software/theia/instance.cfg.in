@@ -242,7 +242,7 @@ hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
 ip =  $${instance-parameter:ipv4-random}
-hostname =  $${:ip}
+hostname = $${:ip}
 port = $${theia-service:port}
 base-url = $${theia-service:base-url}
 
