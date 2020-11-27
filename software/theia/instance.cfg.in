@@ -173,7 +173,7 @@ template =
         ],
         "options": {
           "env": {
-            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-config:slapos-configuration}",
             "GIT_EXEC_PATH": ""
           }
         },
@@ -197,7 +197,7 @@ template =
         ],
         "options": {
           "env": {
-            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-config:slapos-configuration}",
             "GIT_EXEC_PATH": ""
           }
         },
@@ -242,7 +242,7 @@ hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
 ip =  $${instance-parameter:ipv4-random}
-hostname =  $${:ip}
+hostname = $${:ip}
 port = $${theia-service:port}
 base-url = $${theia-service:base-url}
 
@@ -281,31 +281,49 @@ command =
   ${buildout:bin-directory}/slapos complete > $${directory:bash-completions}/slapos
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
+
+[slapos-standalone-config]
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+port = 4000
+slapos-configuration = $${directory:slapos}/etc/slapos.cfg
+
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
-# XXX maybe standalone slapos should provide an activate script like virtualenv is doing?
+template =
+  inline:#!/bin/sh
+  export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+
+[slapos-standalone]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
 template =
   inline:#!/bin/sh
   export PATH=${buildout:bin-directory}:$PATH
-  ${slapos-standalone:script-path} \
+  exec ${slapos-standalone:script-path} \
       $${directory:slapos} \
-      $${:ipv4} \
-      $${:ipv6} \
-      $${:port} \
+      $${slapos-standalone-config:ipv4} \
+      $${slapos-standalone-config:ipv6} \
+      $${slapos-standalone-config:port} \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
       --key='$${slap-connection:key-file}' \
       --cert='$${slap-connection:cert-file}'
-  export SLAPOS_CONFIGURATION=$${:slapos-configuration}
-  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
 
-ipv4 = $${instance-parameter:ipv4-random}
-ipv6 = $${instance-parameter:ipv6-random}
-port = 4000
-slapos-configuration = $${directory:slapos}/etc/slapos.cfg
+[slapos-standalone-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = $${slapos-standalone:rendered}
+hash-files =
+  $${slapos-standalone:rendered}
+  $${slapos-standalone-config:slapos-configuration}
+hostname = $${slapos-standalone-config:ipv4}
+port = $${slapos-standalone-config:port}
 
 [promises]
 recipe =
@@ -313,6 +331,7 @@ instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
   $${apache-frontend-url-available-promise:name}
+  $${slapos-standalone-listen-promise:name}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -334,6 +353,14 @@ module = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${apache-frontend:connection-secure_access}
 config-check-secure = 1
+
+[slapos-standalone-listen-promise]
+<= monitor-promise-base
+module = check_port_listening
+# XXX promise plugins can not contain "slapos" in their names
+name = standalone-listen-promise.py
+config-hostname = $${slapos-standalone-instance:hostname}
+config-port = $${slapos-standalone-instance:port}
 
 [apache-frontend]
 <= slap-connection
