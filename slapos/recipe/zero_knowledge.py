@@ -25,7 +25,7 @@
 #
 ##############################################################################
 
-import ConfigParser
+from six.moves import configparser
 import os
 import zc.buildout
 
@@ -53,7 +53,7 @@ class WriteRecipe(GenericBaseRecipe):
   def install(self):
 
     # Set up the parser, and write config file if needed
-    self.parser = ConfigParser.ConfigParser()
+    self.parser = configparser.ConfigParser()
     try:
       self.parser.read(self.path)
       #clean_options(options)
@@ -63,7 +63,7 @@ class WriteRecipe(GenericBaseRecipe):
       with open(self.path, 'w') as file:
         self.parser.write(file)
     # If the file or section do not exist
-    except (ConfigParser.NoSectionError, IOError) as e:
+    except (configparser.NoSectionError, IOError) as e:
       self.full_install()
 
   def full_install(self):
@@ -94,7 +94,7 @@ class ReadRecipe(GenericBaseRecipe):
       self.path = options['file-path'].strip()
 
     # Set up the parser, and write config file if needed
-    self.parser = ConfigParser.ConfigParser()
+    self.parser = configparser.ConfigParser()
     if os.path.exists(self.path):
       self.parser.read(self.path)
       for section in self.parser.sections():
