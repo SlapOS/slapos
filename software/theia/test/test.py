@@ -36,9 +36,13 @@ import re
 from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
+import psutil
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.grid.svcbackend import getSupervisorRPC
+from slapos.grid.svcbackend import _getSupervisordSocketPath
+
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -110,7 +114,6 @@ class TestTheia(SlapOSInstanceTestCase):
         pass
     process.logfile = DebugLogFile()
 
-    process.expect_exact('Standalone SlapOS: Formatting 20 partitions')
     process.expect_exact('Standalone SlapOS for computer `local` activated')
 
     # try to supply and install a software to check that this slapos is usable
@@ -135,12 +138,6 @@ class TestTheia(SlapOSInstanceTestCase):
     # interrupt this, we don't want to actually wait for software installation
     process.sendcontrol('c')
 
-    # shutdown this slapos
-    process.sendline(
-        'supervisorctl -c {}/srv/slapos/etc/supervisord.conf shutdown'.format(
-            self.computer_partition_root_path))
-    process.expect('Shut down')
-
     process.terminate()
     process.wait()
 
@@ -153,3 +150,37 @@ class TestTheia(SlapOSInstanceTestCase):
         'touch "{}"'.format(test_file)
     ])
     self.assertTrue(os.path.exists(test_file))
+
+
+class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
+  __partition_reference__ = 'T' # for sockets in included slapos
+
+  def test_stopping_instance_stops_embedded_slapos(self):
+    embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
+        os.path.join(
+            self.computer_partition_root_path,
+            'srv',
+            'slapos',
+            'inst',
+        ), self.logger)
+
+    # Wait a bit for this supervisor to be started.
+    for _ in range(20):
+      if os.path.exists(embedded_slapos_supervisord_socket):
+        break
+      time.sleep(1)
+
+    # get the pid of the supervisor used to manage instances
+    with getSupervisorRPC(embedded_slapos_supervisord_socket) as embedded_slapos_supervisor:
+      embedded_slapos_process = psutil.Process(embedded_slapos_supervisor.getPID())
+
+    # Stop theia's services
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      process_info, = [
+          p for p in instance_supervisor.getAllProcessInfo()
+          if p['name'].startswith('slapos-standalone-instance-')
+      ]
+      instance_supervisor.stopProcessGroup(process_info['group'])
+
+    # the supervisor controlling instances is also stopped
+    self.assertFalse(embedded_slapos_process.is_running())
