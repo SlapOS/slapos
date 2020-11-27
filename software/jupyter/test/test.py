@@ -30,7 +30,7 @@ import six.moves.http_client as httplib
 import json
 import os
 import requests
-import six.PY3
+import six
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
