@@ -265,7 +265,7 @@ template = inline:
 [theia-bashrc]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}
-mode = 0700
+mode = 0500
 template =
   inline:
   # enable bash completion
@@ -273,9 +273,9 @@ template =
   # source user's .bashrc
   [ -f ~/.bashrc ] && . ~/.bashrc
 depends =
-  $${shell-completion-setup:recipe}
+  $${shell-setup-completion:recipe}
 
-[shell-completion-setup]
+[shell-setup-completion]
 recipe = plone.recipe.command
 stop-on-error = true
 command =
