@@ -286,8 +286,8 @@ command =
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
 port = 4000
-slapos-configuration = $${directory:slapos}/etc/slapos.cfg
-computer-id = local
+slapos-configuration = $${directory:runner}/etc/slapos.cfg
+computer-id = slaprunner
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -308,7 +308,7 @@ template =
   inline:#!/bin/sh
   export PATH=${buildout:bin-directory}:$PATH
   exec ${slapos-standalone:script-path} \
-      $${directory:slapos} \
+      $${directory:runner} \
       $${slapos-standalone-config:ipv4} \
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
@@ -403,8 +403,8 @@ dot-theia = $${buildout:directory}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
+runner = $${:srv}/runner
 project = $${:srv}/project
-slapos = $${:srv}/slapos
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
