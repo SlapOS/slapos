@@ -173,7 +173,7 @@ template =
         ],
         "options": {
           "env": {
-            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-config:slapos-configuration}",
             "GIT_EXEC_PATH": ""
           }
         },
@@ -197,7 +197,7 @@ template =
         ],
         "options": {
           "env": {
-            "SLAPOS_CONFIGURATION": "$${slapos-standalone-activate:slapos-configuration}",
+            "SLAPOS_CONFIGURATION": "$${slapos-standalone-config:slapos-configuration}",
             "GIT_EXEC_PATH": ""
           }
         },
@@ -227,6 +227,7 @@ template =
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
+  export TERMINFO=${ncurses:location}/lib/terminfo/
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
   exec ${theia-wrapper:rendered} $@
 ip =  $${instance-parameter:ipv4-random}
@@ -241,7 +242,7 @@ hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
 ip =  $${instance-parameter:ipv4-random}
-hostname =  $${:ip}
+hostname = $${:ip}
 port = $${theia-service:port}
 base-url = $${theia-service:base-url}
 
@@ -256,36 +257,76 @@ template = inline:
   import time
   args = sys.argv[1:]
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash", ]
+  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash --rcfile $${theia-bashrc:rendered}", ]
   # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
   else: time.sleep(1)
   os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
+
+[theia-bashrc]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}
+template =
+  inline:
+  # enable bash completion
+  . ${bash-completion:location}/etc/profile.d/bash_completion.sh
+  # source user's .bashrc
+  [ -f ~/.bashrc ] && . ~/.bashrc
+depends =
+  $${shell-setup-completion:recipe}
+
+[shell-setup-completion]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  ${buildout:bin-directory}/slapos complete > $${directory:bash-completions}/slapos
+  ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
+
+
+[slapos-standalone-config]
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+port = 4000
+slapos-configuration = $${directory:runner}/etc/slapos.cfg
+computer-id = slaprunner
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
-# XXX maybe standalone slapos should provide an activate script like virtualenv is doing?
 template =
   inline:#!/bin/sh
   export PATH=${buildout:bin-directory}:$PATH
-  ${slapos-standalone:script-path} \
-      $${directory:slapos} \
-      $${:ipv4} \
-      $${:ipv6} \
-      $${:port} \
+  export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+  echo 'Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` activated'
+
+[slapos-standalone]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0700
+template =
+  inline:#!/bin/sh
+  export PATH=${buildout:bin-directory}:$PATH
+  exec ${slapos-standalone:script-path} \
+      $${directory:runner} \
+      $${slapos-standalone-config:ipv4} \
+      $${slapos-standalone-config:ipv6} \
+      $${slapos-standalone-config:port} \
+      $${slapos-standalone-config:computer-id} \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
       --key='$${slap-connection:key-file}' \
       --cert='$${slap-connection:cert-file}'
-  export SLAPOS_CONFIGURATION=$${:slapos-configuration}
-  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
 
-ipv4 = $${instance-parameter:ipv4-random}
-ipv6 = $${instance-parameter:ipv6-random}
-port = 4000
-slapos-configuration = $${directory:slapos}/etc/slapos.cfg
+[slapos-standalone-instance]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/$${:_buildout_section_name_}
+command-line = $${slapos-standalone:rendered}
+hash-files =
+  $${slapos-standalone:rendered}
+hostname = $${slapos-standalone-config:ipv4}
+port = $${slapos-standalone-config:port}
 
 [promises]
 recipe =
@@ -293,6 +334,7 @@ instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
   $${apache-frontend-url-available-promise:name}
+  $${slapos-standalone-listen-promise:name}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -314,6 +356,14 @@ module = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${apache-frontend:connection-secure_access}
 config-check-secure = 1
+
+[slapos-standalone-listen-promise]
+<= monitor-promise-base
+module = check_port_listening
+# XXX promise plugins can not contain "slapos" in their names
+name = standalone-listen-promise.py
+config-hostname = $${slapos-standalone-instance:hostname}
+config-port = $${slapos-standalone-instance:port}
 
 [apache-frontend]
 <= slap-connection
@@ -353,8 +403,11 @@ dot-theia = $${buildout:directory}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
+runner = $${:srv}/runner
 project = $${:srv}/project
-slapos = $${:srv}/slapos
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
+
+bash-completions = $${buildout:directory}/.local/share/bash-completion/completions/
+fish-completions = $${buildout:directory}/.config/fish/completions/

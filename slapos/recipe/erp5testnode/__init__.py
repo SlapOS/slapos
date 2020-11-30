@@ -36,7 +36,7 @@ class Recipe(GenericBaseRecipe):
     self.path_list = []
     options = self.options.copy()
     del options['recipe']
-    CONFIG = {k.replace('-', '_'): v for k, v in options.iteritems()}
+    CONFIG = {k.replace('-', '_'): v for k, v in options.items()}
     CONFIG['PATH'] = os.environ['PATH']
 
     if self.options['instance-dict']:
@@ -44,7 +44,7 @@ class Recipe(GenericBaseRecipe):
       config_instance_dict.add_section('instance_dict')
       instance_dict = json.loads(self.options['instance-dict'])
 
-      for k ,v in instance_dict.iteritems():
+      for k ,v in instance_dict.items():
         config_instance_dict.set('instance_dict', k, v)
       value = io.StringIO()
       config_instance_dict.write(value)
