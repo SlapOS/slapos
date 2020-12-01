@@ -160,8 +160,8 @@ class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
         os.path.join(
             self.computer_partition_root_path,
             'srv',
-            'slapos',
-            'inst',
+            'runner',
+            'instance',
         ), self.logger)
 
     # Wait a bit for this supervisor to be started.
