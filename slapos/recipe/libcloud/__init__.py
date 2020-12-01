@@ -4,7 +4,6 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 from slapos.slap.slap import ServerError
-from slapos.tool.cloudmgr.cloudinterface import NodeInterface
 from pprint import pformat
 class SlavePartitionError(Exception):
   pass
@@ -87,6 +86,8 @@ class Recipe(BaseSlapRecipe):
       node_uuid = connection_dict.get('node_uuid', None),
       ssh_key = connection_dict.get('ssh_key', None)
     )
+    # FIXME: this import no longer exist
+    from slapos.tool.cloudmgr.cloudinterface import NodeInterface
     node = NodeInterface(**node_kw)
     update_kw = dict(
       image = requested_dict['image'],
