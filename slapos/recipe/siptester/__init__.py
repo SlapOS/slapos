@@ -35,7 +35,9 @@ class SipTesterRecipe(BaseSlapRecipe):
     self._createRunningWrapper(d)
     return [path, wrapper_path]
 
-  update = install
+  def update(self):
+    return self.install()
+
 
 class ReceiverRecipe(SipTesterRecipe):
   config_template = "pjsua_receiver.conf.in"
