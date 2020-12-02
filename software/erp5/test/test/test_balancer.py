@@ -692,10 +692,7 @@ class TestClientTLS(BalancerTestCase):
 
       # simulate running updater service in the future, to confirm that it fetches
       # the new CRL and make sure balancer uses that new CRL.
-      process = pexpect.spawnu(
-          "faketime +1day %s" % caucase_updater,
-          env=dict(os.environ, PYTHONPATH=''),
-      )
+      process = pexpect.spawnu("faketime +1day %s" % caucase_updater)
 
       process.logfile = DebugLogFile()
       process.expect(u"Got new CRL.*Next wake-up at.*")
