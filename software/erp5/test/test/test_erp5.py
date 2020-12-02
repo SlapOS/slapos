@@ -119,6 +119,29 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'wsgi': False})}
 
+class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 Jupyter notebook
+  """
+  __partition_reference__ = 'jupyter'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'jupyter': {'enable': True}})}
+
+  def test_jupyter_notebook_is_reachable(self):
+    param_dict = self.getRootPartitionConnectionParameterDict()
+
+    self.assertEqual(
+      'https://[%s]:8888/tree' % self._ipv6_address,
+      param_dict['jupyter-url']
+    )
+
+    result = requests.get(
+      param_dict['jupyter-url'], verify=False, allow_redirects=False)
+    self.assertEqual(
+      [requests.codes.found, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
 
 class TestBalancerPorts(ERP5InstanceTestCase):
   """Instantiate with two zope families, this should create for each family:
