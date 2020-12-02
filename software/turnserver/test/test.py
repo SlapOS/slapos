@@ -188,3 +188,61 @@ verbose""" % {'instance_path': self.partition_path,
       current_config = f.read().strip()
 
     self.assertEqual(current_config.splitlines(), expected_config.splitlines())
+
+class TestInsecureServices(TurnServerTestCase):
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'insecure'
+
+  def test_process_list(self):
+    hash_list = [
+      'software_release/buildout.cfg',
+    ]
+    expected_process_names = [
+      'bootstrap-monitor',
+      'turnserver-{hash}-on-watch',
+      'certificate_authority-{hash}-on-watch',
+      'crond-{hash}-on-watch',
+      'monitor-httpd-{hash}-on-watch',
+      'monitor-httpd-graceful',
+    ]
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_name_list = [process['name']
+                     for process in supervisor.getAllProcessInfo()]
+
+    hash_file_list = [os.path.join(self.computer_partition_root_path, path)
+                      for path in hash_list]
+
+    for name in expected_process_names:
+      h = generateHashFromFiles(hash_file_list)
+      expected_process_name = name.format(hash=h)
+
+      self.assertIn(expected_process_name, process_name_list)
+
+  def test_default_deployment(self):
+    self.assertTrue(os.path.exists(self.partition_path))
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    password = connection_parameter_dict['password']
+
+
+    expected_config = """listening-port=3478
+lt-cred-mech
+realm=turn.example.com
+fingerprint
+listening-ip=%(ipv4)s
+server-name=turn.example.com
+no-stdout-log
+simple-log
+log-file=%(instance_path)s/var/log/turnserver.log
+pidfile=%(instance_path)s/var/run/turnserver.pid
+verbose
+user=nxdturn:%(password)""" % {'instance_path': self.partition_path, 'password': password, 'ipv4': self._ipv4_address}
+
+    with open(os.path.join(self.partition_path, 'etc/turnserver.conf')) as f:
+      current_config = f.read().strip()
+
+    self.assertEqual(current_config.splitlines(), expected_config.splitlines())
+
