@@ -1,6 +1,7 @@
 from ipykernel.kernelbase import Kernel
 from ipykernel.kernelapp import IPKernelApp
 from IPython.core.display import HTML
+from six.moves import range
 import requests
 import json
 import sys
@@ -75,7 +76,7 @@ class ERP5Kernel(Kernel):
     self.title = None
     # Allowed HTTP request code list for making request to erp5 from Kernel
     # This list should be to used check status_code before making requests to erp5
-    self.allowed_HTTP_request_code_list = range(500, 511)
+    self.allowed_HTTP_request_code_list = list(range(500, 511))
     # Append request code 200 in the allowed HTTP status code list
     self.allowed_HTTP_request_code_list.append(200)
 
