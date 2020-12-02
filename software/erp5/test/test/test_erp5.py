@@ -92,6 +92,15 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'wsgi': False})}
 
+class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 Jupyter notebook
+  """
+  __partition_reference__ = 'jupyter'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'jupyter': {'enabled': 'true'}}
+
 
 class TestApacheBalancerPorts(ERP5InstanceTestCase):
   """Instanciate with two zope families, this should create for each family:
