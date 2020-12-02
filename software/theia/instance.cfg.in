@@ -72,7 +72,7 @@ template = inline:
   }
 ip = $${instance-parameter:ipv6-random}
 hostname = [$${:ip}]
-port = 3001
+port = 3101
 
 [frontend-instance]
 recipe = slapos.cookbook:wrapper
@@ -234,7 +234,7 @@ template =
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
   exec ${theia-wrapper:rendered} $@
 ip =  $${instance-parameter:ipv4-random}
-port = 3000
+port = 3100
 base-url = http://$${:ip}:$${:port}/
 
 [theia-instance]
@@ -288,7 +288,7 @@ command =
 [slapos-standalone-config]
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
-port = 4000
+port = 4100
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
 
@@ -371,7 +371,7 @@ config-port = $${slapos-standalone-instance:port}
 [apache-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Theia Frontend
+name = Inner Theia Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
