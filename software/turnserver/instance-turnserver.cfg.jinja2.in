@@ -99,6 +99,7 @@ input = inline:
   no-tlsv1
   no-tlsv1_1
   no-stdout-log
+  simple-log
   log-file=${directory:log}/turnserver.log
   userdb=${directory:srv}/turndb
   pidfile=${directory:run}/turnserver.pid
