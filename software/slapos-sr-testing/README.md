@@ -18,7 +18,7 @@ changes to the code, run tests and publish changes.
 ```bash
 # install this software release and request an instance
 SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-sr-testing/software.cfg
-COMP=slaprunner # or "local" if using theia
+COMP=slaprunner
 INSTANCE_NAME=$COMP
 
 slapos supply $SR $COMP
