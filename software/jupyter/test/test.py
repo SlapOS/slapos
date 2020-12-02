@@ -26,7 +26,7 @@
 ##############################################################################
 
 
-import httplib
+import http.client
 import json
 import os
 import requests
@@ -60,7 +60,7 @@ class TestJupyter(InstanceTestCase):
     result = requests.get(
       connection_dict['url'], verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.FOUND, True, '/login?next=%2Ftree'],
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -68,7 +68,7 @@ class TestJupyter(InstanceTestCase):
       connection_dict['jupyter-classic-url'],
       verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.FOUND, True, '/login?next=%2Ftree'],
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
 
@@ -76,6 +76,6 @@ class TestJupyter(InstanceTestCase):
       connection_dict['jupyterlab-url'],
       verify=False, allow_redirects=False)
     self.assertEqual(
-      [httplib.FOUND, True, '/login?next=%2Flab'],
+      [http.client.FOUND, True, '/login?next=%2Flab'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
