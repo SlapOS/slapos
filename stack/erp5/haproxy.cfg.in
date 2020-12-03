@@ -46,6 +46,7 @@
  #       "backend-dict": {
  #          "family-secure": {
  #            ( 8000, # port int
+ #              18000, # legacy_port int
  #              'https', # proto str
  #               True, # ssl_required bool
  #               [  # backends
@@ -57,6 +58,7 @@
  #          },
  #          "family-default": {
  #            ( 8002, # port int
+ #              18002, # legacy_port int
  #              'https', # proto str
  #               False, # ssl_required bool
  #               [  # backends
@@ -88,10 +90,16 @@
  #   - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
  #  only accepting requests from clients providing a verified TLS certificate
  #  emitted by a CA from `ca-cert` and not revoked in `crl`.
+ #  For historical reasons, they will also listen on the legacy port:
+ #   - 0.0.0.0:18000 redirecting internaly to http://10.0.0.10:8001 and
+ #   - [::1]:18000 redirecting internaly to http://10.0.0.10:8001
  #  For "family-default":
  #   - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
  #   - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
  #  accepting requests from any client.
+ #  For historical reasons, they will also listen on the legacy port:
+ #   - 0.0.0.0:18002 redirecting internaly to http://10.0.0.10:8003
+ #   - [::1]:18002 redirecting internaly to http://10.0.0.10:8003
  #
  #  For both families, X-Forwarded-For header will be stripped unless
  #  client presents a certificate that can be verified with `ca-cert` and `crl`.
@@ -148,7 +156,7 @@ defaults
 
 {% set bind_ssl_crt = 'ssl crt ' ~ parameter_dict['cert'] ~  ' alpn h2,http/1.1' %}
 
-{% for name, (port, _, certificate_authentication, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
+{% for name, (port, legacy_port, _, certificate_authentication, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
 listen family_{{ name }}
 {%-  if parameter_dict.get('ca-cert') -%}
 {%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
@@ -157,6 +165,8 @@ listen family_{{ name }}
 {%-  endif %}
   bind {{ parameter_dict['ipv4'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
   bind {{ parameter_dict['ipv6'] }}:{{ port }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  bind {{ parameter_dict['ipv4'] }}:{{ legacy_port }} {{ bind_ssl_crt }} {{ ssl_auth }}
+  bind {{ parameter_dict['ipv6'] }}:{{ legacy_port }} {{ bind_ssl_crt }} {{ ssl_auth }}
   cookie SERVERID rewrite
   http-request set-header X-Balancer-Current-Cookie SERVERID
 

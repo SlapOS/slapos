@@ -166,11 +166,10 @@ update-command = ${:command}
 
 {#
  # We use to have haproxy then apache, now haproxy is playing apache's role
- # To keep port stable, we consume one port so that haproxy use the same port
- # that apache was using before.
+ # To keep port stables, we make haproxy listen on both ports (the one
+ # apache was using + the one haproxy was using).
 -#}
-{%   set _ = next_port() -%}
-
+{%   set legacy_haproxy_port = next_port() -%}
 {%   set haproxy_port = next_port() -%}
 {%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
 {%   if has_webdav -%}
@@ -178,7 +177,7 @@ update-command = ${:command}
 {%   else %}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'].get(family_name, False), zope_family_address_list)) -%}
+{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, legacy_haproxy_port, external_scheme, slapparameter_dict['ssl-authentication-dict'].get(family_name, False), zope_family_address_list)) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
