@@ -549,6 +549,7 @@ hard to guess.
 hosts-dict = {{ dumps(hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 test-runner-address-list = {{ dumps(test_runner_address_list) }}
+software-release-url = ${slap-connection:software-release-url}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
