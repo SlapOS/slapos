@@ -53,7 +53,7 @@ diff -uNr Products.DCWorkflow-2.2.4/Products/DCWorkflow/DCWorkflow.py Products.D
 +        except ObjectDeleted:
 +            # Re-raise with a different result.
 +            raise ObjectDeleted(res)
-+        except ObjectMoved, ex:
++        except ObjectMoved as ex:
 +            # Re-raise with a different result.
 +            raise ObjectMoved(ex.getNewObject(), res)
 +        return res
