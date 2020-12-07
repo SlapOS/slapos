@@ -6,6 +6,7 @@ parts =
   tasks.json
   publish-connection-parameter
   slapos-repository
+  recentworkspace.json
 
 extends = ${monitor-template:rendered}
 
@@ -238,7 +239,7 @@ base-url = http://$${:ip}:$${:port}/
 [theia-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
-command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
+command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port}
 hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
@@ -400,6 +401,30 @@ location = $${directory:project}/slapos
 branch = 1.0
 develop = true
 git-executable = ${git:location}/bin/git
+
+[initial-workspace.theia-workspace]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot-theia}/$${:_buildout_section_name_}
+template =
+  inline:
+  {
+    "folders": [
+        {
+          "path": "file://$${directory:project}"
+        },
+        {
+          "path": "file://$${directory:runner}"
+        }
+    ],
+    "settings": {}
+  }
+
+[recentworkspace.json]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot-theia}/$${:_buildout_section_name_}
+template =
+  inline:{"recentRoots":["file://$${initial-workspace.theia-workspace:rendered}"]}
+
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
