@@ -485,6 +485,7 @@ user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
 user-crl = ${directory:aikc}/user-crl.pem
 user-created = ${directory:aikc}/user-created
 csr_id = ${directory:aikc}/csr_id
+data_dir = ${directory:aikc}/caucase-updater
 
 [aikc-user-csr]
 recipe = plone.recipe.command
@@ -547,7 +548,7 @@ command =
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aikc-user-caucase-updater',
      url='${aikc-config:caucase-url}',
-     data_dir='${directory:srv}/caucase-updater',
+     data_dir='${aikc-config:data_dir}',
      crt_path='${aikc-config:key}',
      ca_path='${aikc-config:user-ca-certificate}',
      crl_path='${aikc-config:user-crl}',
@@ -620,6 +621,7 @@ user-ca-certificate = ${directory:aibcc}/user-ca-certificate.pem
 user-crl = ${directory:aibcc}/user-crl.pem
 user-created = ${directory:aibcc}/user-created
 csr_id = ${directory:aibcc}/csr_id
+data_dir = ${directory:aibcc}/caucase-updater
 
 [aibcc-user-csr]
 recipe = plone.recipe.command
@@ -684,7 +686,7 @@ command =
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aibcc-user-caucase-updater',
      url='${aibcc-config:caucase-url}',
-     data_dir='${directory:srv}/caucase-updater',
+     data_dir='${aibcc-config:data_dir}',
      crt_path='${aibcc-config:key}',
      ca_path='${aibcc-config:user-ca-certificate}',
      crl_path='${aibcc-config:user-crl}',
