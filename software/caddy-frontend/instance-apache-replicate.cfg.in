@@ -111,7 +111,6 @@ context =
 {% set authorized_slave_string_list = [] %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
-{% set rejected_slave_title_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
@@ -247,7 +246,6 @@ context =
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
-{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), sorted(slave_error_list)) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
@@ -326,7 +324,7 @@ accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
+rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
@@ -749,9 +747,9 @@ filename = rejected-slave.json
 directory = ${directory:promise-output}
 rendered = ${:directory}/${:filename}
 template = {{ software_parameter_dict['template_empty'] }}
-{% if rejected_slave_title_dict %}
+{% if rejected_slave_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2, sort_keys=True)) }}
+content = {{ dumps(json_module.dumps(rejected_slave_dict, indent=2, sort_keys=True)) }}
 {% else %}
 content =
 {% endif %}
