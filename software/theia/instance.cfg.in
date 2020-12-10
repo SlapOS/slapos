@@ -6,6 +6,7 @@ parts =
   tasks.json
   publish-connection-parameter
   slapos-repository
+  runner-link
 
 extends = ${monitor-template:rendered}
 
@@ -400,6 +401,11 @@ location = $${directory:project}/slapos
 branch = 1.0
 develop = true
 git-executable = ${git:location}/bin/git
+
+[runner-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${directory:project}
+link-binary = $${directory:runner}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
