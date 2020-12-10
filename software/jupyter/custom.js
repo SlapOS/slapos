@@ -122,10 +122,10 @@ function prependERP5Help() {
 }
 
 define([
-    'base/js/namespace',
-    'base/js/promises'
-  ], function(Jupyter, promises) {
-    promises.notebook_loaded.then(function() {
-      prependERP5Help();
-    });
+  'base/js/namespace',
+  'base/js/promises'
+], function(Jupyter, promises) {
+  promises.notebook_loaded.then(function() {
+    prependERP5Help();
   });
+});
