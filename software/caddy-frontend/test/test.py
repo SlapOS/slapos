@@ -49,6 +49,7 @@ import xml.etree.ElementTree as ET
 import urlparse
 import socket
 import sys
+import logging
 
 
 try:
@@ -100,7 +101,6 @@ def new_getaddrinfo(*args):
 
 # for development: debugging logs and install Ctrl+C handler
 if os.environ.get('SLAPOS_TEST_DEBUG'):
-  import logging
   logging.basicConfig(level=logging.DEBUG)
   import unittest
   unittest.installHandler()
@@ -109,6 +109,29 @@ if os.environ.get('SLAPOS_TEST_DEBUG'):
 def der2pem(der):
   certificate = x509.load_der_x509_certificate(der, default_backend())
   return certificate.public_bytes(serialization.Encoding.PEM)
+
+
+# comes from https://stackoverflow.com/a/21788372/9256748
+def patch_broken_pipe_error():
+    """Monkey Patch BaseServer.handle_error to not write
+    a stacktrace to stderr on broken pipe.
+    https://stackoverflow.com/a/7913160"""
+    from SocketServer import BaseServer
+
+    handle_error = BaseServer.handle_error
+
+    def my_handle_error(self, request, client_address):
+        type, err, tb = sys.exc_info()
+        # there might be better ways to detect the specific erro
+        if repr(err) == "error(32, 'Broken pipe')":
+            pass
+        else:
+            handle_error(self, request, client_address)
+
+    BaseServer.handle_error = my_handle_error
+
+
+patch_broken_pipe_error()
 
 
 def createKey():
