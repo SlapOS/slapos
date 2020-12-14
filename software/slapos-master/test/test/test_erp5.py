@@ -48,9 +48,9 @@ class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
   """
   def _checkERP5IsReachable(self, url):
-    # What happens is that instanciation just create the services, but does not
+    # What happens is that instantiation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
-    # instanciated, but zope is still busy creating the site and haproxy
+    # instantiated, but zope is still busy creating the site and haproxy
     # replies with 503 Service Unavailable when zope is not started yet, with
     # 404 when erp5 site is not created, with 500 when mysql is not yet
     # reachable, so we retry in a loop until we get a succesful response.
@@ -85,7 +85,7 @@ class TestPublishedURLIsReachableMixin(object):
 
 class TestDefaultParameters(
   ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 can be instanciated with no parameters
+  """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
 
@@ -101,7 +101,7 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
 
 
 class TestApacheBalancerPorts(ERP5InstanceTestCase):
-  """Instanciate with two zope families, this should create for each family:
+  """Instantiate with two zope families, this should create for each family:
    - a balancer entry point with corresponding haproxy
    - a balancer entry point for test runner
   """
@@ -192,7 +192,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
 
 class TestDisableTestRunner(
   ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 can be instanciated without test runner.
+  """Test ERP5 can be instantiated without test runner.
   """
   __partition_reference__ = 'distr'
   @classmethod
