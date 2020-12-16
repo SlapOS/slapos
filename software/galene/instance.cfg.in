@@ -9,7 +9,7 @@ offline = true
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-url = https://[$${sfu-wrapper:ip}]:$${sfu-wrapper:port}
+url = https://[$${galene-wrapper:ip}]:$${galene-wrapper:port}
 admin-user = $${admin-password:username}
 admin-password = $${admin-password:passwd}
 
@@ -35,7 +35,7 @@ data       = $${:srv}/data
 groups     = $${:srv}/groups
 recordings = $${:srv}/recordings
 
-[sfu-ssl]
+[galene-ssl]
 recipe = plone.recipe.command
 cert-file = $${directory:data}/cert.pem
 key-file = $${directory:data}/key.pem
@@ -69,25 +69,25 @@ output = $${directory:groups}/public.json
 recipe = plone.recipe.command
 static = $${directory:srv}/static
 command =
-  cp -ax ${sfu-repository:location}/static $${directory:srv}
+  cp -ax ${galene-repository:location}/static $${directory:srv}
   echo "$${admin-password:username}:$${admin-password:passwd}" > $${directory:data}/passwd
 update-command = $${:command}
 stop-on-error = true
 
-[sfu-wrapper]
+[galene-wrapper]
 recipe = slapos.cookbook:wrapper
 port = 8443
 ip = $${slap-configuration:ipv6-random}
 command-line = 
-  ${sfu:location}/bin/sfu
+  ${galene:location}/bin/galene
     -static $${install-static:static}
     -recordings $${directory:recordings}
     -groups $${directory:groups}
     -data $${directory:data}
     -http [$${:ip}]:$${:port}
-wrapper-path = $${directory:services}/sfu
+wrapper-path = $${directory:services}/galene
 depends =
   $${ice-servers.json:recipe}
   $${groups-json:recipe}
-  $${sfu-ssl:recipe}
+  $${galene-ssl:recipe}
 
