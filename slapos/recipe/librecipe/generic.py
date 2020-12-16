@@ -27,7 +27,6 @@
 #
 ##############################################################################
 import errno
-import io
 import logging
 import os
 import sys
@@ -43,7 +42,8 @@ from six.moves.urllib.parse import urlunparse
 
 
 import pkg_resources
-import zc.buildout
+from zc.buildout import easy_install, UserError
+from zc.recipe.egg import Egg
 
 from slapos.recipe.librecipe import shlex
 
@@ -85,8 +85,7 @@ class GenericBaseRecipe(object):
 
   def getWorkingSet(self):
     """If you want do override the default working set"""
-    egg = zc.recipe.egg.Egg(self.buildout, 'slapos.cookbook',
-                                  self.options.copy())
+    egg = Egg(self.buildout, 'slapos.cookbook', self.options.copy())
     requirements, ws = egg.working_set()
     return ws
 
@@ -124,21 +123,6 @@ class GenericBaseRecipe(object):
   def createExecutable(self, name, content, mode=0o700):
     return self.createFile(name, content, mode)
 
-  def addLineToFile(self, filepath, line, encoding='utf8'):
-    """Append a single line to a text file, if the line does not exist yet.
-
-    line must be unicode."""
-
-    if os.path.exists(filepath):
-      lines = [l.rstrip('\n') for l in io.open(filepath, 'r', encoding=encoding)]
-    else:
-      lines = []
-
-    if not line in lines:
-      lines.append(line)
-      with io.open(filepath, 'w+', encoding=encoding) as f:
-        f.write(u'\n'.join(lines))
-
   def createPythonScript(self, name, absolute_function, args=(), kw={}):
     """Create a python script using zc.buildout.easy_install.scripts
 
@@ -156,9 +140,19 @@ class GenericBaseRecipe(object):
     args = itertools.chain(map(repr, args),
                            map('%s=%r'.__mod__, six.iteritems(kw)))
 
-    return zc.buildout.easy_install.scripts(
+    return easy_install.scripts(
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=', '.join(args))[0]
+
+  def parsePrivateTmpfs(self):
+    private_tmpfs = []
+    for line in (self.options.get('private-tmpfs') or '').splitlines():
+      if line:
+        x = line.split(None, 1)
+        if len(x) != 2:
+          raise UserError("failed to split %r into size and path" % line)
+        private_tmpfs.append(tuple(x))
+    return private_tmpfs
 
   def createWrapper(self, path, args, env=None, **kw):
     """Create a wrapper script for process replacement"""

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import errno
 import sys
 import os
 import signal
@@ -50,7 +51,7 @@ def _libc():
   return mount, unshare
 
 def generic_exec(args, extra_environ=None, wait_list=None,
-                 pidfile=None, reserve_cpu=False, private_dev_shm=None,
+                 pidfile=None, reserve_cpu=False, private_tmpfs=(),
                  #shebang_workaround=False, # XXX: still needed ?
                  ):
   args = list(args)
@@ -83,7 +84,7 @@ def generic_exec(args, extra_environ=None, wait_list=None,
   if wait_list:
     _wait_files_creation(wait_list)
 
-  if private_dev_shm:
+  if private_tmpfs:
     mount, unshare = _libc()
     CLONE_NEWNS   = 0x00020000
     CLONE_NEWUSER = 0x10000000
@@ -93,7 +94,13 @@ def generic_exec(args, extra_environ=None, wait_list=None,
     with open('/proc/self/setgroups', 'wb') as f: f.write('deny')
     with open('/proc/self/uid_map',   'wb') as f: f.write('%s %s 1' % (uid, uid))
     with open('/proc/self/gid_map',   'wb') as f: f.write('%s %s 1' % (gid, gid))
-    mount('tmpfs', '/dev/shm', 'tmpfs', 0, 'size=' + private_dev_shm)
+    for size, path in private_tmpfs:
+      try:
+        os.mkdir(path)
+      except OSError as e:
+        if e.errno != errno.EEXIST:
+          raise
+      mount('tmpfs', path, 'tmpfs', 0, 'size=' + size)
 
   if extra_environ:
     env = os.environ.copy()

@@ -82,7 +82,7 @@ class PBSTest(unittest.TestCase):
             'run-directory': run_directory,
             'cron-entries': cron_directory,
             'known-hosts': 'TEST_KNOWN_HOSTS',
-            'slave-instance-list': '''[
+            'slave-instance-list': [
                 {
                  "url": "http://url.to.pull/",
                  "type": "pull",
@@ -101,7 +101,6 @@ class PBSTest(unittest.TestCase):
                  "frequency": "TEST_FREQUENCY"
                         }
                 ]
-                '''
             })
 
         recipe._install()

@@ -19,6 +19,14 @@ config-{{ name }} = {{ dumps(value) }}
 {% endif -%}
 {% endmacro -%}
 
+[slap-network-information]
+global-ipv6 = {{ ipv6 }}
+
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
 [request-common]
 recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
@@ -32,7 +40,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 # Request kvm instances
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
 {% set section = 'request-' ~ instance_name -%}
-{% set use_nat = kvm_parameter_dict.get('use-nat', 'True') -%}
+{% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
 [{{ section }}]
 <= request-common
 software-type = kvm
@@ -66,14 +74,14 @@ config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | joi
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
-config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', '51200')) }}
+config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 1024)) + 512)) }}
 config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
 config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-disk-format = {{ dumps(kvm_parameter_dict.get('disk-format', 'qcow2')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
-config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', 24)) }}
+config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', int(kvm_parameter_dict.get('cpu-count', 1)) + 1)) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
 {{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
 {{ setconfig('nbd-host', kvm_parameter_dict.get('nbd-host', '')) }}
@@ -89,7 +97,7 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
 {{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
 config-publish-nat-url = True
-config-use-nat = {{ use_nat }}
+config-use-nat = {{ dumps(use_nat) }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
 config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
 config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
@@ -119,6 +127,14 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
+{%- if 'boot-image-url-list' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-boot-image-url-list = {{ kvm_parameter_dict['boot-image-url-list'] }}
+{%- endif %}
+{%- if 'boot-image-url-select' in kvm_parameter_dict %}
+{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
+config-boot-image-url-select = {{ kvm_parameter_dict['boot-image-url-select'] }}
+{%- endif %}
 config-type = cluster
 
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
@@ -134,11 +150,11 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return = 
   url
-{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
   url-additional
 {% endif %}
   backend-url
-{% if str(use_nat).lower() == 'true' -%}
+{% if use_nat -%}
 {%   for port in nat_rules_list -%}
 {%     if ':' in port -%}
 {%       set proto, port = port.split(':') -%}
@@ -162,7 +178,7 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
-{% if frontend_dict.get('frontend-additional-instance-guid', '') %}
+{% if frontend_dict.get('frontend-additional-instance-guid') %}
 {% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
 {% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}

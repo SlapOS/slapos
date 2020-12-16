@@ -31,35 +31,39 @@ import glob
 import urlparse
 import socket
 import time
+import re
+import BaseHTTPServer
+import multiprocessing
+import subprocess
 
 import psutil
 import requests
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
-setUpModule # pyflakes
+setUpModule  # pyflakes
 
 
 class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
   """
   def _checkERP5IsReachable(self, url):
-    # What happens is that instanciation just create the services, but does not
+    # What happens is that instantiation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
-    # instanciated, but zope is still busy creating the site and haproxy replies
-    # with 503 Service Unavailable.
-    # If we can move the "create site" in slapos node instance, then this retry loop
-    # would not be necessary.
+    # instantiated, but zope is still busy creating the site and haproxy
+    # replies with 503 Service Unavailable when zope is not started yet, with
+    # 404 when erp5 site is not created, with 500 when mysql is not yet
+    # reachable, so we retry in a loop until we get a succesful response.
     for i in range(1, 60):
-      r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
-      if r.status_code in (requests.codes.service_unavailable,
-                           requests.codes.not_found):
+      # XXX can we get CA from caucase already ?
+      r = requests.get(url, verify=False)
+      if r.status_code != requests.codes.ok:
         delay = i * 2
-        self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
+        self.logger.warn(
+          "ERP5 was not available, sleeping for %ds and retrying", delay)
         time.sleep(delay)
         continue
-      if r.status_code != requests.codes.ok:
-        r.raise_for_status()
+      r.raise_for_status()
       break
 
     self.assertIn("ERP5", r.text)
@@ -79,14 +83,116 @@ class TestPublishedURLIsReachableMixin(object):
       urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
 
 
-class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 can be instanciated with no parameters
+class TestDefaultParameters(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 can be instantiated with no parameters
   """
   __partition_reference__ = 'defp'
 
 
-class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 can be instanciated without test runner.
+class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 Medusa server
+  """
+  __partition_reference__ = 'medusa'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'wsgi': False})}
+
+
+class TestApacheBalancerPorts(ERP5InstanceTestCase):
+  """Instantiate with two zope families, this should create for each family:
+   - a balancer entry point with corresponding haproxy
+   - a balancer entry point for test runner
+  """
+  __partition_reference__ = 'ap'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+            json.dumps({
+                "zope-partition-dict": {
+                    "family1": {
+                        "instance-count": 3,
+                        "family": "family1"
+                    },
+                    "family2": {
+                        "instance-count": 5,
+                        "family": "family2"
+                    },
+                },
+            })
+    }
+
+  def checkValidHTTPSURL(self, url):
+    parsed = urlparse.urlparse(url)
+    self.assertEqual(parsed.scheme, 'https')
+    self.assertTrue(parsed.hostname)
+    self.assertTrue(parsed.port)
+
+  def test_published_family_parameters(self):
+    # when we request two families, we have two published family-{family_name}
+    # URLs
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    for family_name in ('family1', 'family2'):
+      self.checkValidHTTPSURL(
+          param_dict['family-{family_name}'.format(family_name=family_name)])
+      self.checkValidHTTPSURL(
+          param_dict['family-{family_name}-v6'.format(
+            family_name=family_name)])
+
+  def test_published_test_runner_url(self):
+    # each family's also a list of test test runner URLs, by default 3 per
+    # family
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    for family_name in ('family1', 'family2'):
+      family_test_runner_url_list = param_dict[
+          '{family_name}-test-runner-url-list'.format(family_name=family_name)]
+      self.assertEqual(3, len(family_test_runner_url_list))
+      for url in family_test_runner_url_list:
+        self.checkValidHTTPSURL(url)
+
+  def test_zope_listen(self):
+    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8
+    # zope running.
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    self.assertEqual(
+        3 + 5,
+        len([p for p in all_process_info if p['name'].startswith('zope-')]))
+
+  def test_apache_listen(self):
+    # We have 2 families, apache should listen to a total of 3 ports per family
+    # normal access on ipv4 and ipv6 and test runner access on ipv4 only
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    process_info, = [p for p in all_process_info if p['name'] == 'apache']
+    apache_process = psutil.Process(process_info['pid'])
+    self.assertEqual(
+        sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
+        sorted([
+            c.family
+            for c in apache_process.connections()
+            if c.status == 'LISTEN'
+        ]))
+
+  def test_haproxy_listen(self):
+    # There is one haproxy per family
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    process_info, = [
+        p for p in all_process_info if p['name'].startswith('haproxy-')
+    ]
+    haproxy_process = psutil.Process(process_info['pid'])
+    self.assertEqual([socket.AF_INET, socket.AF_INET], [
+        c.family for c in haproxy_process.connections() if c.status == 'LISTEN'
+    ])
+
+
+class TestDisableTestRunner(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 can be instantiated without test runner.
   """
   __partition_reference__ = 'distr'
   @classmethod
@@ -98,9 +204,281 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     """
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
-    bin_programs = [os.path.basename(path) for path in
-      glob.glob("{}/../*/bin/*".format(self.computer_partition_root_path))]
+    bin_programs = map(
+      os.path.basename,
+      glob.glob(self.computer_partition_root_path + "/../*/bin/*"))
 
-    self.assertTrue(bin_programs) # just to check the glob was correct.
+    self.assertTrue(bin_programs)  # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
     self.assertNotIn('runTestSuite', bin_programs)
+
+  def test_no_apache_testrunner_port(self):
+    # Apache only listen on two ports, there is no apache ports allocated for
+    # test runner
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+    process_info, = [p for p in all_process_info if p['name'] == 'apache']
+    apache_process = psutil.Process(process_info['pid'])
+    self.assertEqual(
+        sorted([socket.AF_INET, socket.AF_INET6]),
+        sorted(
+            c.family
+            for c in apache_process.connections()
+            if c.status == 'LISTEN'
+        ))
+
+
+class TestZopeNodeParameterOverride(
+  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test override zope node parameters
+  """
+  __partition_reference__ = 'override'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    # The following example includes the most commonly used options,
+    # but not necessarily in a meaningful way.
+    return {'_': json.dumps({
+      "zodb": [{
+        "type": "zeo",
+        "server": {},
+        "cache-size-bytes": "20MB",
+        "cache-size-bytes!": [
+          ("bb-0", 1 << 20),
+          ("bb-.*", "500MB"),
+        ],
+        "pool-timeout": "10m",
+        "storage-dict": {
+          "cache-size!": [
+            ("a-.*", "50MB"),
+          ],
+        },
+      }],
+      "zope-partition-dict": {
+          "a": {
+              "instance-count": 3,
+          },
+          "bb": {
+              "instance-count": 5,
+              "port-base": 2300,
+          },
+      },
+    })}
+
+  def test_zope_conf(self):
+    zeo_addr = json.loads(
+        self.getComputerPartition('zodb').getConnectionParameter('_')
+      )["storage-dict"]["root"]["server"]
+
+    def checkParameter(line, kw):
+      k, v = line.split()
+      self.assertFalse(k.endswith('!'), k)
+      try:
+        expected = kw.pop(k)
+      except KeyError:
+        if k == 'server':
+          return
+      self.assertIsNotNone(expected)
+      self.assertEqual(str(expected), v)
+
+    def checkConf(zodb, storage):
+      zodb["mount-point"] = "/"
+      zodb["pool-size"] = 4
+      zodb["pool-timeout"] = "10m"
+      storage["storage"] = "root"
+      storage["server"] = zeo_addr
+      with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
+        conf = map(str.strip, f.readlines())
+      i = conf.index("<zodb_db root>") + 1
+      conf = iter(conf[i:conf.index("</zodb_db>", i)])
+      for line in conf:
+        if line == '<zeoclient>':
+          for line in conf:
+            if line == '</zeoclient>':
+              break
+            checkParameter(line, storage)
+          for k, v in storage.iteritems():
+            self.assertIsNone(v, k)
+          del storage
+        else:
+          checkParameter(line, zodb)
+      for k, v in zodb.iteritems():
+        self.assertIsNone(v, k)
+
+    partition = self.getComputerPartitionPath('zope-a')
+    for zope in xrange(3):
+      checkConf({
+          "cache-size-bytes": "20MB",
+        }, {
+          "cache-size": "50MB",
+        })
+    partition = self.getComputerPartitionPath('zope-bb')
+    for zope in xrange(5):
+      checkConf({
+          "cache-size-bytes": "500MB" if zope else 1 << 20,
+        }, {
+          "cache-size": None,
+        })
+
+
+def popenCommunicate(command_list, input_=None, **kwargs):
+  kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  popen = subprocess.Popen(command_list, **kwargs)
+  result = popen.communicate(input_)[0]
+  if popen.returncode is None:
+    popen.kill()
+  if popen.returncode != 0:
+    raise ValueError(
+      'Issue during calling %r, result was:\n%s' % (command_list, result))
+  return result
+
+
+class TestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+  def do_GET(self):
+    self.send_response(200)
+
+    response = {
+      'Path': self.path,
+      'Incoming Headers': self.headers.dict
+    }
+    response = json.dumps(response, indent=2)
+    self.end_headers()
+    self.wfile.write(response)
+
+
+class TestDeploymentScriptInstantiation(ERP5InstanceTestCase):
+  """This check deployment script like instantiation
+
+  Low level assertions are done here in roder to assure that
+  https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/
+  slapos-master-standalone.yml
+  works correctly
+  """
+  __partition_reference__ = 'tdsi'
+  # a bit more partition is required
+  partition_count = 20
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    # As close as possible configuration to deployment script
+    parameter_dict = {
+      "timezone": "UTC",
+      "site-id": "erp5",
+      "bt5": "erp5_full_text_myisam_catalog slapos_configurator",
+      "wsgi": False,
+      "test-runner": {"enabled": False},  # won't work anyway here
+      "zope-partition-dict": {
+        "admin": {
+          "family": "admin",
+          "thread-amount": 4,
+          "port-base": 2220,
+          "instance-count": 1
+        },
+        "activities-node": {
+          "family": "activities",
+          "thread-amount": 4,
+          "instance-count": 1,
+          "timerserver-interval": 1,
+          "port-base": 2230
+        },
+        "distribution-node": {
+          "family": "distribution",
+          "thread-amount": 1,
+          "instance-count": 1,
+          "port-base": 2210,
+          "timerserver-interval": 1
+        },
+        "web-node": {
+          "family": "web",
+          "thread-amount": 2,
+          "instance-count": 1,
+          "port-base": 2240
+        },
+        "service-slapos": {
+          "family": "service",
+          "thread-amount": 2,
+          "instance-count": 1,
+          "port-base": 2250,
+          "ssl-authentication": True,
+          "backend-path": "/%(site-id)s/portal_slap"
+        }
+      }
+    }
+
+    # put shared-certificate-authority-path in controlled location
+    cls.ca_path = os.path.join(cls.slap.instance_directory, 'ca_path')
+    parameter_dict["shared-certificate-authority-path"] = cls.ca_path
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def callSupervisorMethod(cls, method, *args, **kwargs):
+    with cls.slap.instance_supervisor_rpc as instance_supervisor:
+      return getattr(instance_supervisor, method)(*args, **kwargs)
+
+  def test_ssl_auth(self):
+    backend_apache_configuration_list = glob.glob(
+      os.path.join(
+        self.slap.instance_directory, '*', 'etc', 'apache', 'apache.conf'))
+    self.assertEqual(
+      1,
+      len(backend_apache_configuration_list)
+    )
+    backend_apache_configuration = open(
+      backend_apache_configuration_list[0]).read()
+    self.assertIn(
+      'SSLVerifyClient require',
+      backend_apache_configuration
+    )
+    self.assertIn(
+      r'RequestHeader set Remote-User %{SSL_CLIENT_S_DN_CN}s',
+      backend_apache_configuration
+    )
+
+    # stop haproxy, it's going to be hijacked
+    haproxy_name = ':'.join([
+      (q['group'], q['name'])
+      for q in self.callSupervisorMethod('getAllProcessInfo')
+      if 'haproxy' in q['name']][0])
+    self.callSupervisorMethod('stopProcess', haproxy_name)
+
+    # do similar certificate request like CertificateAuthorityTool
+    openssl_config = os.path.join(self.ca_path, 'openssl.cnf')
+    key = os.path.join(self.ca_path, 'private', 'test.key')
+    csr = os.path.join(self.ca_path, 'text.csr')
+    cert = os.path.join(self.ca_path, 'certs', 'test.crt')
+    common_name = 'TEST-SSL-AUTH'
+    popenCommunicate([
+      'openssl', 'req', '-utf8', '-nodes', '-config', openssl_config, '-new',
+      '-keyout', key, '-out', csr, '-days', '3650'], '%s\n' % (common_name,),
+      stdin=subprocess.PIPE)
+    popenCommunicate([
+      'openssl', 'ca', '-utf8', '-days', '3650', '-batch', '-config',
+      openssl_config, '-out', cert, '-infiles', csr])
+    # find IP and port on which hijacked process shall listen
+    portal_slap_line = [
+      q for q in backend_apache_configuration.splitlines()
+      if 'portal_slap' in q][0]
+    ip, port = re.search(
+      r'.*http:\/\/(.*):(\d*)\/.*', portal_slap_line).groups()
+    port = int(port)
+    server = BaseHTTPServer.HTTPServer((ip, port), TestHandler)
+    server_process = multiprocessing.Process(
+      target=server.serve_forever, name='HTTPServer')
+    server_process.start()
+    try:
+      # assert that accessing the service endpoint results with certificate
+      # authentication and proper information extraction
+      result_json = requests.get(
+        self.getRootPartitionConnectionParameterDict()['family-service'],
+        verify=False, cert=(cert, key)).json()
+      self.assertEqual(
+        common_name,
+        result_json['Incoming Headers']['remote-user']
+      )
+      self.assertEqual(
+        '/erp5/portal_slap/',
+        result_json['Path']
+      )
+    finally:
+      server_process.join(10)
+      server_process.terminate()

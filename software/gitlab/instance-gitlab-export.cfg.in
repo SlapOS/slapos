@@ -44,6 +44,7 @@ command	= ${exporter:wrapper-path}
 recipe = collective.recipe.template
 input = inline: gitlab-shell-work*
   gitlab-work*
+  var/log/**
   var/backup/**
   var/repositories*
   var/repositories/**

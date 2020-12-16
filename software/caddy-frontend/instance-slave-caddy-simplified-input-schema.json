@@ -72,7 +72,7 @@
       "type": "string"
     },
     "https-only": {
-      "default": "false",
+      "default": "true",
       "description": "If set to true, http requests will be redirected to https",
       "enum": [
         "false",

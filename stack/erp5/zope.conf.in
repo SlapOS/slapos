@@ -1,3 +1,6 @@
+{% set slapparameter_dict = {} %}{# dummy -#}
+{% import "root_common" as root_common with context -%}
+{% set node_id = parameter_dict['node-id'] -%}
 # Note: Environment is setup in running wrapper script, as zope.conf is read
 # too late for some components.
 %define INSTANCE {{ parameter_dict['instance'] }}
@@ -21,6 +24,13 @@ rest-output-encoding utf-8
 
 # XXX: isn't this entry implicit ?
 products {{ parameter_dict['instance-products'] }}
+
+# Magic parameter to use the first entry of X-Forwarded-For as the source IP address.
+# (see monkey patches in ERP5Type/patches/HTTPRequest.py and ERP5Type/patches/http_server.py)
+# * Frontend HTTP server should drop incoming X-Forwarded-For.
+# * Communication between frontend and backend should use SSL Client Authentication.
+# * Backend proxy drops incoming X-Forwarded-For without valid SSL Client Authentification.
+trusted-proxy 0.0.0.0
 
 {% if not parameter_dict['wsgi'] -%}
 {%   if parameter_dict['webdav'] -%}
@@ -65,7 +75,7 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 
 {% endif -%}
 <product-config CMFActivity>
-  node-id {{ parameter_dict['node-id'] }}
+  node-id {{ node_id }}
 </product-config>
 
 {% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
@@ -145,13 +155,15 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 <zodb_db {{ name }}>
 {%- set storage_type = type_dict[zodb_dict.pop('type')] %}
 {%- set storage_dict = zodb_dict.pop('storage-dict') %}
+{%- do root_common.apply_overrides(zodb_dict, node_id) %}
 {%- for key, value in zodb_dict.iteritems() %}
   {{ key }} {{ value }}
-{%-   endfor %}
+{%- endfor %}
   <{{ storage_type }}>
-{%-   for key, value in storage_dict.iteritems() %}
+{%- do root_common.apply_overrides(storage_dict, node_id) %}
+{%- for key, value in storage_dict.iteritems() %}
     {{ key }} {{ value }}
-{%-   endfor %}
+{%- endfor %}
   </{{ storage_type }}>
 </zodb_db>
 

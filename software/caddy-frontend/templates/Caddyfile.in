@@ -1,8 +1,6 @@
 # Main caddy configuration file
 
-import {{frontend_configuration.get('log-access-configuration')}}
 import {{ slave_configuration_directory }}/*.conf
-import {{ slave_with_cache_configuration_directory }}/*.conf
 
 :{{ https_port }} {
   tls {{ master_certificate }} {{ master_certificate }}

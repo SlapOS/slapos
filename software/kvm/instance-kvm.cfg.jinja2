@@ -1,15 +1,18 @@
-{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
-{% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
-{% set use_tap = slapparameter_dict.get('use-tap', 'True').lower() -%}
-{% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
-{% set wipe_disk = slapparameter_dict.get('wipe-disk-ondestroy', 'False').lower() -%}
-{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
+{% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') %}
+{% set enable_http = str(slapparameter_dict.get('enable-http-server', False)).lower() == 'true' -%}
+{% set use_tap = str(slapparameter_dict.get('use-tap', True)).lower() == 'true' -%}
+{% set use_nat = str(slapparameter_dict.get('use-nat', True)).lower() == 'true' -%}
+{% set wipe_disk = str(slapparameter_dict.get('wipe-disk-ondestroy', False)).lower() == 'true' -%}
+{% set nat_restrict = str(slapparameter_dict.get('nat-restrict-mode', False)).lower() == 'true' -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
-{% set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() -%}
+{% set disable_ansible_promise = str(slapparameter_dict.get('disable-ansible-promise', True)).lower() == 'true' -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
+{% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
+{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
+{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 1024)) + 512)) %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -31,6 +34,10 @@
 {% do extends_list.append(template_monitor) -%}
 {% do extends_list.append(logrotate_cfg) -%}
 
+[slap-network-information]
+local-ipv4 = {{ slap_configuration['ipv4-random'] }}
+global-ipv6 = {{ slap_configuration['ipv6-random'] }}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -48,6 +55,16 @@ public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
+{%- if boot_image_url_list_enabled %}
+boot-image-url-list-repository = ${:srv}/boot-image-url-list-repository
+boot-image-url-list-var = ${:var}/boot-image-url-list
+boot-image-url-list-expose = ${monitor-directory:private}/boot-image-url-list
+{%- endif %}
+{%- if boot_image_url_select_enabled %}
+boot-image-url-select-repository = ${:srv}/boot-image-url-select-repository
+boot-image-url-select-var = ${:var}/boot-image-url-select
+boot-image-url-select-expose = ${monitor-directory:private}/boot-image-url-select
+{%- endif %}
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -61,6 +78,215 @@ storage-path = ${directory:srv}/tap_mac
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
+
+{% if boot_image_url_select_enabled %}
+## boot-image-url-select support BEGIN
+[empty-file-state-base-select-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# It's very hard to put the username and password correctly, after schema://
+# and before the host, as it's not the way how one can use monitor provided
+# information, so just show the information in the URL
+config-url = ${monitor-base:base-url}/private/boot-image-url-select/${:filename} with username ${monitor-publish-parameters:monitor-user} and password ${monitor-publish-parameters:monitor-password}
+
+[boot-image-url-select-source-config]
+# generates configuration of the image from the user parameter
+# special "magic" is used, to properly support multiline boot-image-url-select
+# but in the same time correctly generate the configuration file
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{#- Do special trick to support boot-image-url-select being None, if key is present with value "" #}
+{%- raw %}
+  {%- set boot_image_url_select = slap_parameter.get('boot-image-url-select') or '' %}
+  {%- if boot_image_url_select == 'None' %}
+  {#- That's insane protection, is it 'None' because of type = array? #}
+  {%-   set boot_image_url_select = '' %}
+  {%- endif %}
+  {{ boot_image_url_select }}
+{% endraw -%}
+context =
+  section slap_parameter slap-parameter
+rendered = ${directory:etc}/boot-image-url-select.json
+
+[boot-image-url-select-processed-config]
+# compares if the current configuration has been used by
+# the boot-image-url-select-download, if not, exposes it as not empty file with
+# information
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${boot-image-url-select-source-config:rendered}
+state-filename = boot-image-url-select-processed-config.state
+state-file = ${directory:boot-image-url-select-expose}/${:state-filename}
+processed-md5sum = ${directory:boot-image-url-select-var}/update-image-processed.md5sum
+
+[boot-image-url-select-processed-config-promise]
+# promise to check if the configuration provided by the user has been already
+# processed by the boot-image-url-select-download script, which runs asynchronously
+<= empty-file-state-base-select-promise
+filename = ${boot-image-url-select-processed-config:state-filename}
+config-filename = ${boot-image-url-select-processed-config:state-file}
+
+[boot-image-url-select-json-config]
+# generates json configuration from user configuration
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:rendered} ${:rendered} ${directory:boot-image-url-select-repository} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:boot-image-url-select-var}/boot-image-url-select.json
+error-state-filename = boot-image-url-select-json-config-error.txt
+error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
+
+[boot-image-url-select-config-state-promise]
+# promise to check if configuration has been parsed without errors
+<= empty-file-state-base-select-promise
+filename = ${boot-image-url-select-json-config:error-state-filename}
+config-filename = ${boot-image-url-select-json-config:error-state-file}
+
+[boot-image-url-select-download-wrapper]
+# wrapper to execute boot-image-url-select-download on each run
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/boot-image-url-select-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-select-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-select-processed-config:processed-md5sum}
+md5sum-state-filename = boot-image-url-select-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:boot-image-url-select-expose}/${:md5sum-state-filename}
+error-state-filename = boot-image-url-select-download-controller-error.text
+error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[boot-image-url-select-download-md5sum-promise]
+# promise to report errors with problems with calculating md5sum of the
+# downloaded images
+<= empty-file-state-base-select-promise
+filename = ${boot-image-url-select-download-wrapper:md5sum-state-filename}
+config-filename = ${boot-image-url-select-download-wrapper:md5sum-state-file}
+
+[boot-image-url-select-download-state-promise]
+# promise to report errors during download
+<= empty-file-state-base-select-promise
+filename = ${boot-image-url-select-download-wrapper:error-state-filename}
+config-filename = ${boot-image-url-select-download-wrapper:error-state-file}
+## boot-image-url-select support END
+{% endif %} {# if boot_image_url_select_enabled #}
+
+{% if boot_image_url_list_enabled %}
+## boot-image-url-list support BEGIN
+[empty-file-state-base-list-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# It's very hard to put the username and password correctly, after schema://
+# and before the host, as it's not the way how one can use monitor provided
+# information, so just show the information in the URL
+config-url = ${monitor-base:base-url}/private/boot-image-url-list/${:filename} with username ${monitor-publish-parameters:monitor-user} and password ${monitor-publish-parameters:monitor-password}
+
+[boot-image-url-list-source-config]
+# generates configuration of the image from the user parameter
+# special "magic" is used, to properly support multiline boot-image-url-list
+# but in the same time correctly generate the configuration file
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{#- Do special trick to support boot-image-url-list being None, if key is present with value "" #}
+{%- raw %}
+  {{ slap_parameter.get('boot-image-url-list') or '' }}
+{% endraw -%}
+context =
+  section slap_parameter slap-parameter
+rendered = ${directory:etc}/boot-image-url-list.conf
+
+[boot-image-url-list-processed-config]
+# compares if the current configuration has been used by
+# the boot-image-url-list-download, if not, exposes it as not empty file with
+# information
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${boot-image-url-list-source-config:rendered}
+state-filename = boot-image-url-list-processed-config.state
+state-file = ${directory:boot-image-url-list-expose}/${:state-filename}
+processed-md5sum = ${directory:boot-image-url-list-var}/update-image-processed.md5sum
+
+[boot-image-url-list-processed-config-promise]
+# promise to check if the configuration provided by the user has been already
+# processed by the boot-image-url-list-download script, which runs asynchronously
+<= empty-file-state-base-list-promise
+filename = ${boot-image-url-list-processed-config:state-filename}
+config-filename = ${boot-image-url-list-processed-config:state-file}
+
+[boot-image-url-list-json-config]
+# generates json configuration from user configuration
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-list-source-config:rendered} ${:rendered} ${directory:boot-image-url-list-repository} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:boot-image-url-list-var}/boot-image-url-list.json
+error-state-filename = boot-image-url-list-json-config-error.txt
+error-state-file = ${directory:boot-image-url-list-expose}/${:error-state-filename}
+
+[boot-image-url-list-config-state-promise]
+# promise to check if configuration has been parsed without errors
+<= empty-file-state-base-list-promise
+filename = ${boot-image-url-list-json-config:error-state-filename}
+config-filename = ${boot-image-url-list-json-config:error-state-file}
+
+[boot-image-url-list-download-wrapper]
+# wrapper to execute boot-image-url-list-download on each run
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/boot-image-url-list-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${boot-image-url-list-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${boot-image-url-list-processed-config:processed-md5sum}
+md5sum-state-filename = boot-image-url-list-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:boot-image-url-list-expose}/${:md5sum-state-filename}
+error-state-filename = boot-image-url-list-download-controller-error.text
+error-state-file = ${directory:boot-image-url-list-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[boot-image-url-list-download-md5sum-promise]
+# promise to report errors with problems with calculating md5sum of the
+# downloaded images
+<= empty-file-state-base-list-promise
+filename = ${boot-image-url-list-download-wrapper:md5sum-state-filename}
+config-filename = ${boot-image-url-list-download-wrapper:md5sum-state-file}
+
+[boot-image-url-list-download-state-promise]
+# promise to report errors during download
+<= empty-file-state-base-list-promise
+filename = ${boot-image-url-list-download-wrapper:error-state-filename}
+config-filename = ${boot-image-url-list-download-wrapper:error-state-file}
+## boot-image-url-list support END
+{% endif %} {# if boot_image_url_list_enabled #}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
@@ -82,12 +308,23 @@ vnc-ip = ${:ipv4}
 vnc-port = 5901
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
+{% if boot_image_url_list_enabled %}
+boot-image-url-list-json-config = ${boot-image-url-list-json-config:rendered}
+{% else %}
+boot-image-url-list-json-config =
+{% endif %}
+{% if boot_image_url_select_enabled %}
+boot-image-url-select-json-config = ${boot-image-url-select-json-config:rendered}
+{% else %}
+boot-image-url-select-json-config =
+{% endif %}
 nbd-host = ${slap-parameter:nbd-host}
 nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
 nbd2-port = ${slap-parameter:nbd2-port}
 
 tap-interface = {{ slap_configuration.get('tap-name', '') }}
+tap-ipv6-addr = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
@@ -100,10 +337,10 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 
 enable-device-hotplug = ${kvm-controller-parameter-dict:enable-device-hotplug}
 smp-count = ${kvm-controller-parameter-dict:cpu-count}
-smp-max-count = ${slap-parameter:cpu-max-count}
+smp-max-count = {{ cpu_max_count }}
 
 ram-size = ${kvm-controller-parameter-dict:ram-size}
-ram-max-size = ${slap-parameter:ram-max-size}
+ram-max-size = {{ ram_max_size }}
 init-ram-size = 1024
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
@@ -111,7 +348,7 @@ tap-mac-address = ${create-tap-mac:mac-address}
 use-tap = ${slap-parameter:use-tap}
 use-nat = ${slap-parameter:use-nat}
 nat-rules = {{ nat_rule_list }}
-nat-restrict= {{ nat_restrict }}
+nat-restrict= {{ dumps(nat_restrict) }}
 enable-vhost = ${slap-parameter:enable-vhost}
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
@@ -132,7 +369,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if enable_http == 'true' -%}
+{% if enable_http -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
@@ -182,7 +419,7 @@ wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
 command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-{% if use_nat == 'true' and nat_rule_list -%}
+{% if use_nat and nat_rule_list -%}
 {%   for port in nat_rule_list.split(' ') -%}
 {%     if ':' in port -%}
 {%       set proto, port = port.split(':') -%}
@@ -248,7 +485,7 @@ module = check_command_execute
 name = kvm-disk-image-corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}
 
-{% if wipe_disk == 'true' -%}
+{% if wipe_disk -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
 {% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
 {% if storage_dict -%}
@@ -413,7 +650,7 @@ name = frontend_additional_promise.py
 config-url = ${publish-connection-information:url-additional}
 {% endif %}
 
-{% if enable_http == 'true' %}
+{% if enable_http %}
 [httpd]
 recipe = slapos.cookbook:simplehttpserver
 host = ${slap-network-information:local-ipv4}
@@ -453,51 +690,19 @@ interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://moni
 [helper]
 blank-line =
 
-[frontend-port-execute-base]
-recipe = plone.recipe.command
-command =
-  set -e
-  port=$(echo '${request-slave-frontend:connection-secure_access}' | cut -d ':' -f 3 | cut -d '/' -f 1)
-  [ -z $port ] && port=443
-  echo $port > ${:output}
-update-command = ${:command}
-stop-on-error = True
-
-[frontend-port-execute]
-<= frontend-port-execute-base
-secure_access = ${request-slave-frontend:connection-secure_access}
-output = ${directory:var}/frontend_port.txt
-
-[frontend-port]
-recipe = collective.recipe.shelloutput
-filename = ${frontend-port-execute:output}
-commands =
-  port = [ -f '${:filename}' ] && cat '${:filename}' || echo "NotReady"
-
-{% if additional_frontend %}
-[frontend-additional-port-execute]
-<= frontend-port-execute-base
-secure_access = ${request-slave-frontend-additional:connection-secure_access}
-output = ${directory:var}/frontend_additional_port.txt
-
-[frontend-additional-port]
-<= frontend-port
-filename = ${frontend-additional-port-execute:output}
-{% endif %}
-
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?host=${request-slave-frontend:connection-domain}&port=${frontend-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?host=${request-slave-frontend-additional:connection-domain}&port=${frontend-additional-port:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?auto=1&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
-{% if use_nat == 'true' -%}
+{% if use_nat -%}
 {%   set iface = 'ens4' -%}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
@@ -515,14 +720,14 @@ nat-rule-url-{{proto}}-{{port}} = [${slap-network-information:global-ipv6}]:${6t
 {%     endfor -%}
 {%   endif -%}
 {% endif -%}
-{% if use_tap == 'true' -%}
+{% if use_tap -%}
 tap-ipv4 = {{ slap_configuration.get('tap-ipv4-addr', '') }}
 tap-ipv6 = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
-{% if enable_http == 'true' %}
-{%   if use_nat == 'true' -%}
+{% if enable_http %}
+{%   if use_nat -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
@@ -530,42 +735,45 @@ key_info = Get the publick key file in your VM with the command: wget {{ kvm_htt
 {%   endif %}
 {% endif %}
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 ipv4-network-info =
-  Use this configuration in /etc/network/interfaces to configure IPv4 on interface {{ iface }} in your VM.
+  PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
   iface {{ iface }} inet static
   	address {{ slap_configuration.get('tap-ipv4-addr') }}
   	netmask {{ slap_configuration.get('tap-ipv4-netmask') }}
   	gateway {{ slap_configuration.get('tap-ipv4-gateway') }}
-{% if enable_http == 'true' %}
+{% if enable_http %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -
+  TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv4:filename} | /bin/sh -"
+  (the configuration will be gone after the next reboot)
 {% endif %}
 {% endif %}
 
 ipv6-network-info =
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr') %}
-  Use this configuration in /etc/network/interfaces to configure IPv6 on interface {{ iface }} in your VM.
+{% if use_tap and slap_configuration.get('tap-ipv6-addr') %}
+  PERMANENT SOLUTION: in your VM, add the lines below in /etc/network/interfaces and then run: "ifup {{ iface }}"
   auto {{ iface }}
   iface {{ iface }} inet6 static
   	address {{ slap_configuration.get('tap-ipv6-gateway') }}
   	netmask {{ slap_configuration.get('tap-ipv6-network').split('/')[1] }}
   	gateway {{ slap_configuration.get('tap-ipv6-addr') }}
-{% if enable_http == 'true' %}
+{% if enable_http %}
   ${helper:blank-line}
-  Or run in your VM the command: wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -
+  TEMPORARY SOLUTION: run in your VM the command: "wget -O- {{ kvm_http }}/${network-config-ipv6:filename} | /bin/sh -"
+  (the configuration will be gone after the next reboot)
 {% endif %}
 {% endif %}
 
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 [network-config-ipv4]
 recipe = plone.recipe.command
 filename = netconfig.sh
 path = ${directory:public}/${:filename}
-ipv4-add-address = ip -4 address add {{ slap_configuration.get('tap-ipv4-addr') }}/{{ slap_configuration.get('tap-ipv4-netmask') }} dev \$IFACE
-{%   if nat_restrict == 'true' -%}
+ipv4-add-address = ip -4 address add {{ slap_configuration.get('tap-ipv4-addr') }}/{{ slap_configuration.get('tap-ipv4-netmask') }} dev \$IFACE noprefixroute
+ipv4-add-gateway-route = ip route add {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
+{%   if nat_restrict -%}
 ipv4-add-default-route = ip route add default via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE
 {%   elif global_ipv4_prefix -%}
 ipv4-add-default-route = ip route add {{ global_ipv4_prefix }} via {{ slap_configuration.get('tap-ipv4-gateway') }} dev \$IFACE src {{ slap_configuration.get('tap-ipv4-addr') }}
@@ -581,13 +789,14 @@ command =
   ip a | grep eth0: && [ \$IFACE = ens3 ] && IFACE=eth0
   ip a | grep eth1: && [ \$IFACE = ens4 ] && IFACE=eth1
   ${:ipv4-add-address}
+  ${:ipv4-add-gateway-route}
   ${:ipv4-add-default-route}
   ${:ipv4-set-link-up}
   EOF
 update-command = ${:command}
 {% endif -%}
 
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv6-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv6-addr') -%}
 [network-config-ipv6]
 recipe = plone.recipe.command
 filename = ipv6_config.sh
@@ -625,7 +834,7 @@ mode = {{ mode }}
 {{   writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
 {% endif -%}
 
-{% if use_tap == 'true' and nat_restrict == 'true' -%}
+{% if use_tap and nat_restrict -%}
 # Ask to set default to tap interface in the vm
 {{ writefile('set-default-interface', '${directory:public}/delDefaultIface', iface, '600') }}
 {% do part_list.append('set-default-interface') -%}
@@ -634,7 +843,7 @@ mode = {{ mode }}
 [publish-host-config]
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
-{% if use_tap == 'true' and slap_configuration.get('tap-ipv4-addr') -%}
+{% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
 local-ipv4 = {{ slap_configuration['tap-ipv4-addr'] }}
 gateway = {{ slap_configuration.get('tap-ipv4-gateway') }}
 netmask = {{ slap_configuration.get('tap-ipv4-network') }}
@@ -702,7 +911,7 @@ context =
 
 [ansible-vm-promise]
 <= monitor-promise-base
-module = check_execute_comand
+module = check_command_execute
 name = ansible_{{ name }}.py
 config-command = ${ansible-vm-bin:rendered}
 
@@ -732,10 +941,10 @@ nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
 nbd2-host =
+boot-image-url-list =
 
 enable-device-hotplug = False
 ram-size = 1024
-ram-max-size = 51200
 ram-hotplug-slot-size = 512
 disk-size = 10
 disk-type = virtio
@@ -743,7 +952,6 @@ disk-format = qcow2
 disk-device-path =
 
 cpu-count = 1
-cpu-max-count = 24
 disk-cache = writeback
 disk-aio = native
 auto-ballooning = True
@@ -778,6 +986,19 @@ data-to-vm =
 # Change keyboard layout language (Change to en-us if you face some bad bihaviors)
 keyboard-layout-language = fr
 
+{% for k, v in slapparameter_dict.items() -%}
+{% if k == 'authorized-key' and v -%}
+{% set key_list =  v.split('\n') -%}
+{{ k }} =
+  {{ key_list | join('\n  ') }}
+{% elif k == 'boot-image-url-list' %}
+{# needs to decorate possibly multiline or maybe unsafe value #}
+{{ k }} = {{ dumps(v) }}
+{% else -%}
+{{ k }} = {{ v }}
+{% endif -%}
+{% endfor -%}
+
 #############################
 #
 # Instanciate kvm (Buildout Section)
@@ -788,12 +1009,12 @@ keyboard-layout-language = fr
 # Set Additionals parts
 {%   do part_list.append('cluster-url-path') -%}
 {% endif -%}
-{% if enable_http == 'true' %}
+{% if enable_http %}
 {%   do part_list.extend(['httpd', 'httpd-service', 'httpd-promise', 'publish-host-config']) -%}
 {% if slapparameter_dict.get('data-to-vm', '') %}
 {%   do part_list.append('vm-data-content') -%}
 {% endif -%}
-{% if disable_ansible_promise == 'false' %}
+{% if not disable_ansible_promise %}
 {%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
 {% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}
@@ -820,6 +1041,14 @@ template = inline:
 rendered = ${buildout:directory}/.slapos-disk-permission
 context =
   raw disk_device_path {{disk_device_path}}
+
+{%   do part_list.append('wipe-disk-device-wrapper') -%}
+[wipe-disk-device-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
+command-line =
+  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
+
 {% endif -%}
 
 [buildout]
@@ -839,6 +1068,20 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+{% if boot_image_url_list_enabled %}
+  boot-image-url-list-download-wrapper
+  boot-image-url-list-config-state-promise
+  boot-image-url-list-download-md5sum-promise
+  boot-image-url-list-download-state-promise
+  boot-image-url-list-processed-config-promise
+{% endif %}
+{% if boot_image_url_select_enabled %}
+  boot-image-url-select-download-wrapper
+  boot-image-url-select-config-state-promise
+  boot-image-url-select-download-md5sum-promise
+  boot-image-url-select-download-state-promise
+  boot-image-url-select-processed-config-promise
+{% endif %}
 {% if additional_frontend %}
   frontend-additional-promise
 {% endif %}

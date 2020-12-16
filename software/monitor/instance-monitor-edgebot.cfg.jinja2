@@ -1,0 +1,166 @@
+{%- if slap_software_type == software_type %}
+{%- set CONFIGURATION = {} %}
+{%- for k, v in sorted(slap_configuration.items()) %}
+{%-   if k.startswith('configuration.') %}
+{%-     do CONFIGURATION.__setitem__(k[14:], v) %}
+{%-   endif %}
+{%- endfor %}
+{%- set slave_instance_dict = {} %}
+{%- set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
+{%- if extra_slave_instance_list %}
+{#- Create slaves to process with setting up defaults #}
+{%-   for slave in json_module.loads(extra_slave_instance_list) | sort(attribute='slave_title') %}
+{%-   if 'check-status-code' not in slave %}
+{%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
+{%-   endif %}
+{%-   if 'check-http-header-dict' not in slave %}
+{%-     do slave.__setitem__('check-http-header-dict', CONFIGURATION['check-http-header-dict']) %}
+{%-   endif %}
+{%-   if 'check-certificate-expiration-days' not in slave %}
+{%-     do slave.__setitem__('check-certificate-expiration-days', CONFIGURATION['check-certificate-expiration-days']) %}
+{%-   endif %}
+{%-   if 'failure-amount' not in slave %}
+{%-     do slave.__setitem__('failure-amount', CONFIGURATION['failure-amount']) %}
+{%-   endif %}
+{%-   if 'check-maximum-elapsed-time' not in slave %}
+{%-     do slave.__setitem__('check-maximum-elapsed-time', CONFIGURATION['check-maximum-elapsed-time']) %}
+{%-   endif %}
+{%-   if 'check-frontend-ip' not in slave %}
+{%-     do slave.__setitem__('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
+{%-   endif %}
+{%-   if 'url' in slave %}
+{%-     set class = slave['check-maximum-elapsed-time'] %}
+{%-     if class not in slave_instance_dict %}
+{%-       do slave_instance_dict.__setitem__(class, []) %}
+{%-     endif %}
+{%-     do slave_instance_dict[class].append(slave) %}
+{%-   endif %}
+{%-   endfor %}
+{%- endif %}
+{%- set part_list = [] %}
+{%- for class, slave_instance_list in slave_instance_dict.items() %}
+{#- class is used to separate surykatka with different timeouts #}
+{%-   for slave in slave_instance_list | sort(attribute='slave_title') %}
+{%-     set part_id = 'http-query-' ~ slave['slave_reference'] ~ '-promise' %}
+{%-     do part_list.append(part_id) %}
+{%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
+[{{part_id}}]
+<= monitor-promise-base
+module = check_surykatka_json
+name = {{ safe_name }}.py
+config-report = http_query
+config-url = {{ slave['url'] }}
+config-status-code = {{ slave['check-status-code'] }}
+config-http-header-dict = {{ slave['check-http-header-dict'] }}
+config-certificate-expiration-days = {{ slave['check-certificate-expiration-days'] }}
+config-failure-amount = {{ slave['failure-amount'] }}
+config-maximum-elapsed-time = {{ slave['check-maximum-elapsed-time'] }}
+config-ip-list = {{ slave['check-frontend-ip'] }}
+config-json-file = ${surykatka-config-{{ class }}:json}
+{%-   endfor %}
+
+[surykatka-bot-promise-{{ class }}]
+<= monitor-promise-base
+module = check_surykatka_json
+name = surykatka-bot-promise-{{ class }}.py
+config-report = bot_status
+config-json-file = ${surykatka-config-{{ class }}:json}
+
+[surykatka-config-{{ class }}]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/surykatka-{{ class }}.db
+rendered = ${directory:etc}/surykatka-{{ class }}.ini
+template = {{ template_surykatka_ini }}
+slave_instance_list = {{ dumps(slave_instance_list) }}
+nameserver = {{ dumps(CONFIGURATION['nameserver']) }}
+json = ${directory:srv}/surykatka-{{ class }}.json
+{#- timeout is just a bit bigger than class time #}
+timeout = {{ int(class) + 2 }}
+
+context =
+  import json_module json
+  key db :db
+  key nameserver :nameserver
+  key slave_instance_list :slave_instance_list
+  key timeout :timeout
+
+[surykatka-{{ class }}]
+recipe = slapos.cookbook:wrapper
+config = ${surykatka-config-{{ class }}:rendered}
+command-line =
+  {{ surykatka_binary }} --run crawl --reload --configuration ${:config}
+wrapper-path = ${monitor-directory:service}/${:_buildout_section_name_}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[surykatka-status-json-{{ class }}]
+recipe = slapos.recipe.template:jinja2
+json = ${surykatka-config-{{ class }}:json}
+template = inline:#!/bin/sh
+  if {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json > ${:json}.tmp ; then
+    mv -f ${:json}.tmp ${:json}
+  else
+    rm -f ${:json}.tmp
+  fi
+rendered = ${monitor-directory:bin}/${:_buildout_section_name_}
+mode = 0755
+
+[cron-entry-surykatka-status-{{ class }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = surykatka-status-{{ class }}
+frequency = */2 * * * *
+command = ${surykatka-status-json-{{ class }}:rendered}
+{%- do part_list.append('surykatka-' + class) %}
+{%- do part_list.append('surykatka-bot-promise-' + class) %}
+{%- do part_list.append('cron-entry-surykatka-status-' + class) %}
+{%- endfor %}
+
+[buildout]
+extends = {{ monitor_template_output }}
+parts =
+  cron
+  monitor-base
+  publish-connection-information
+{% for part_id in sorted(part_list) %}
+  {{ part_id }}
+{% endfor %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ slapparameter_dict['monitor-httpd-port'] }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
+
+[monitor-directory]
+service = ${buildout:directory}/etc/service
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+server-log = ${:private}/server-log
+monitor-log = ${:private}/monitor-log
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-parameter]
+{%- endif %}

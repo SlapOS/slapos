@@ -16,6 +16,20 @@ sla-computer_guid = ${slap-connection:computer-id}
 {% endif -%}
 {% endmacro -%}
 
+{% macro apply_overrides(dict_, reference) -%}
+{% for key in list(dict_) -%}
+{%   if key.endswith('!') -%}
+{%     for pattern, value in dict_.pop(key, ()) -%}
+{%       set m = re.match(pattern, reference) -%}
+{%       if m and m.group() == reference %}{# PY3: fullmatch -#}
+{%         do dict_.__setitem__(key[:-1], value) -%}
+{%         break -%}
+{%       endif -%}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+{% endmacro -%}
+
 {% macro common_section() -%}
 [request-common-base]
 recipe = slapos.cookbook:request.serialised
@@ -52,19 +66,47 @@ config-ssl = {{ dumps((
 config-upstream-cluster = {{ dumps(parameter_dict.get('upstream-cluster', '')) }}
 config-upstream-masters = {{ dumps(parameter_dict.get('upstream-masters', '')) }}
 software-type = {{ software_type }}
-{% set node_list = parameter_dict.get('node-list', ({},)) -%}
+
+{% set node_list = parameter_dict.get('node-list') -%}
+{% if node_list == None -%}
+{%   set node_list = [] -%}
+{%   for i in range(parameter_dict.get('node-count', 1)) -%}
+{%     set x = parameter_dict.copy() -%}
+{%     do apply_overrides(x, prefix ~ i) -%}
+{%     do node_list.append(x.get('node', {})) -%}
+{%   endfor -%}
+{% else %}{# BBB -#}
+{%   do assert('node-count' not in parameter_dict) -%}
+{%   do assert('node' not in parameter_dict) -%}
+{%   do assert('node!' not in parameter_dict) -%}
+{% endif -%}
+{% do assert(node_list) -%}
+
 {% set storage_count = [] -%}
 {% for node in node_list -%}
 {%   do storage_count.append(node.get('storage-count', 1)) -%}
 {% endfor -%}
 config-autostart = {{ dumps(sum(storage_count)) }}
 {%- do assert(replicas < len(node_list)) %}
-{%- set admin_list = [] %}
+{%- set monitor = set() %}
+{%- for i, node in enumerate(node_list) %}
+{%-   set port = node.get('monitor') %}
+{%-   if port %}
+{%-     do monitor.add(node.get('admin') != 0 and port) %}
+{%-   endif %}
+{%- endfor %}
+{%- if False in monitor %}
+{%-   do monitor.remove(False) %}
+{%-   do assert(monitor) %}
+{%- endif %}
 {%- for i, node in enumerate(node_list) %}
 {%-   set section_id =  prefix ~ i %}
 {%-   do section_id_list.append(section_id) %}
-{%-   if admin_list %}
+{%-   if node.get('master') == 0 and not node.get('monitor') %}
 {%-     do node.setdefault('admin', 0) %}
+{%-   endif %}
+{%-   if monitor or node.get('admin') == 0 %}
+{%-     do node.setdefault('monitor', 0) %}
 {%-   endif %}
 
 [{{section_id}}]
@@ -73,14 +115,21 @@ name = {{ section_id }}
 return =
   master
   admin
-{%-   if node.get('admin') != 0 %}
+{%-   set port = node.pop('monitor', None) %}
+{%-   if port != 0 or node.get('admin') != 0 and not monitor %}
+{%-     if port != 0 %}
   monitor-base-url
-{%-     if monitor_base_url_dict != None %}
-{%-       do monitor_base_url_dict.__setitem__('neo',
-            '${' ~ section_id ~ ':connection-monitor-base-url}') %}
-{%-     endif %}
-{%-     do admin_list.append(section_id) %}
+{%-       if monitor_base_url_dict != None %}
+{%-         do monitor_base_url_dict.__setitem__('neo',
+              '${' ~ section_id ~ ':connection-monitor-base-url}') %}
+{%-       endif %}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
+{%-     endif %}
+{%-     if port %}
+config-monitor-port = {{ dumps(port) }}
+{%-     else %}
+{%-       do monitor.add(None) %}
+{%-     endif %}
 config-monitor = {{ dumps(parameter_dict.get('monitor', {})) }}
 {%-   endif %}
 {%-   for k, v in node.iteritems() %}
@@ -88,7 +137,7 @@ config-{{ k }} = {{ dumps(v) }}
 {%-   endfor %}
 {{ sla(section_id) }}
 {%- endfor %}
-{%- do assert(len(admin_list) == 1, admin_list) %}
+{%- do assert(len(monitor) == 1, monitor) %}
 
 [{{section(prefix ~ 'cluster')}}]
 recipe = slapos.cookbook:neoppod.cluster

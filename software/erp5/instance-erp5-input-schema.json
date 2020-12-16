@@ -4,9 +4,7 @@
   "additionalProperties": false,
   "definitions": {
     "tcpv4port": {
-      "minimum": 0,
-      "maximum": 65535,
-      "type": "integer"
+      "$ref": "./schemas-definitions.json#/tcpv4port"
     }
   },
   "properties": {
@@ -86,7 +84,8 @@
         "software-url": {
           "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
           "default": "",
-          "type": "string"
+          "type": "string",
+          "format": "uri"
         },
         "domain": {
           "description": "The domain name to request front-end to respond as.",
@@ -194,22 +193,41 @@
     },
     "kumofs": {
       "description": "Persistent memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2000
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "memcached": {
       "description": "Volatile memcached service",
-      "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-kumofs-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "cloudooo-url": {
       "description": "Format conversion service URL",
       "pattern": "^https?://",
-      "type": "string"
+      "type": "string",
+      "format": "uri"
     },
     "cloudooo-retry-count": {
       "description": "Define retry count for cloudooo in network error case in test",
@@ -218,16 +236,34 @@
     },
     "smtp": {
       "description": "Mail queuing and relay service",
-      "additionalProperties": {
-        "$ref": "./instance-smtp-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-smtp-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2010
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "mariadb": {
       "description": "Relational database service",
-      "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json"
-      },
+      "allOf": [
+        {
+          "$ref": "./instance-mariadb-schema.json"
+        },
+        {
+          "properties": {
+            "tcpv4-port": {
+              "default": 2099
+            }
+          }
+        }
+      ],
       "type": "object"
     },
     "zodb-zeo": {
@@ -257,7 +293,7 @@
       "type": "object"
     },
     "zodb": {
-      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/4/src/ZODB/component.xml for extra options.",
       "items": {
         "required": [
           "type"
@@ -282,8 +318,13 @@
                 "type": "boolean"
               }
             },
+            "patternProperties": {
+              ".!$": {
+                "$ref": "#/properties/zodb/items/patternProperties/.!$"
+              }
+            },
             "additionalProperties": {
-              "type": "string"
+              "$ref": "#/properties/zodb/items/additionalProperties"
             },
             "type": "object"
           },
@@ -313,13 +354,38 @@
               },
               "server": {
                 "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. Partitions references are 'neo-0', 'neo-1', ...",
-                "$ref": "../neoppod/instance-neo-input-schema.json"
+                "$ref": "../neoppod/instance-neo-input-schema.json#/definitions/neo-cluster"
               }
             }
           }
         ],
+        "patternProperties": {
+          ".!$": {
+            "description": "Override with the value of the first item whose zope id matches against the pattern.",
+            "items": {
+              "items": [
+                {
+                  "description": "Override pattern (Python regular expression).",
+                  "type": "string"
+                },
+                {
+                  "description": "Override value (parameter for maching nodes).",
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
         "additionalProperties": {
-          "type": "string"
+          "type": [
+            "integer",
+            "string"
+          ]
         },
         "type": "object"
       },
@@ -389,10 +455,21 @@
         "ssl": {
           "description": "HTTPS certificate generation parameters",
           "properties": {
+            "frontend-caucase-url-list": {
+              "title": "Frontend Caucase URL List",
+              "description": "List of URLs of caucase service of frontend groups to authenticate access from them.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              },
+              "uniqueItems": true
+            },
             "caucase-url": {
               "title": "Caucase URL",
               "description": "URL of caucase service to use. If not set, global setting will be used.",
-              "type": "string"
+              "type": "string",
+              "format": "uri"
             },
             "csr": {
               "title": "csr",

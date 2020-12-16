@@ -8,6 +8,7 @@ rendered = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
 <= jinja2-template-base
 template = {{ cluster }}
 extra-context =
+    import re re
     import urlparse urlparse
 import-list =
     rawfile root_common {{ root_common }}

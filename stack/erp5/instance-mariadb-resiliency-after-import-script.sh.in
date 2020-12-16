@@ -59,7 +59,7 @@ fi
 echo "Importing data..."
 # Use latest dump XXX can contain funny characters
 dump=$(ls -r "$mariadb_backup_directory" | head -1)
-zcat "$mariadb_backup_directory/$dump" | $mysql_executable -u root || {
+zcat "$mariadb_backup_directory/$dump" | $mysql_executable || {
   RESTORE_EXIT_CODE=$?
   echo 'Backup restoration failed.'
   exit $RESTORE_EXIT_CODE

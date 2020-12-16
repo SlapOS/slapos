@@ -22,6 +22,10 @@ parts +=
 extends =
   ${monitor2-template:rendered}
 
+[slap-network-information]
+local-ipv4 = $${slap-configuration:ipv4-random}
+global-ipv6 = $${slap-configuration:ipv6-random}
+
 #----------------
 #--
 #-- Creation of all needed directories.
@@ -58,9 +62,6 @@ cronstamps = $${rootdirectory:etc}/cronstamps
 cgi-bin = $${rootdirectory:srv}/cgi-bin
 monitor-resilient = $${monitor-directory:private}/resilient
 
-
-[slap-parameter]
-authorized-key =
 
 #----------------
 #--
@@ -127,8 +128,8 @@ rendered = $${:wrapper}
 wrapper = $${basedirectory:services}/notifier
 mode = 0700
 feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
-command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
+callbacks-directory = $${directory:notifier-callbacks}
+command = ${buildout:bin-directory}/pubsubserver --callbacks $${:callbacks-directory} --feeds $${:feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 host = $${slap-network-information:global-ipv6}
 port = $${notifier-port:port}
@@ -155,9 +156,9 @@ command = $${notifier-resilient-status-feed:wrapper-path}
 recipe = slapos.cookbook:wrapper
 # time-buffer is 24h (+1h of latitude)
 command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${notifier-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
-wrapper-path = $${basedirectory:bin}/stalled-notifier-callbacks
+wrapper-path = $${rootdirectory:bin}/stalled-notifier-callbacks
 
-[notifier-stalled-promise-bin]
+[notifier-stalled-promise]
 <= monitor-promise-base
 module = check_command_execute
 name = stalled-notifier-callbacks.py
@@ -194,7 +195,7 @@ wrapper-path = $${rootdirectory:bin}/raw_sshd
 [sshd-pbs-authorized-key]
 <= sshd-raw-server
 recipe = slapos.cookbook:dropbear.add_authorized_key
-key = $${slap-parameter:authorized-key}
+key = {{ slapparameter_dict.get('authorized-key', '') }}
 
 [sshd-server]
 recipe = collective.recipe.template
@@ -251,7 +252,7 @@ input = inline:#!${bash:location}/bin/bash
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
-output = $${basedirectory:bin}/public-key-existence
+output = $${rootdirectory:bin}/public-key-existence
 mode = 700
 
 [resilient-sshkeys-sshd-promise]
@@ -267,7 +268,7 @@ config-command = $${resilient-sshkeys-sshd-promise-bin:output}
 [notifier-feed-status-promise-bin]
 recipe = slapos.recipe.template:jinja2
 template = ${notifier-feed-promise-template:target}
-rendered = $${basedirectory:bin}/notifier-feed-check-malformed-or-failure.py
+rendered = $${rootdirectory:bin}/notifier-feed-check-malformed-or-failure.py
 mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds

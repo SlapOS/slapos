@@ -1,3 +1,0 @@
-T-2/etc/monitor-promise/check-_monitor-ipv4-test-unsafe-ipv4-packet-list-test
-T-2/etc/monitor-promise/check-_monitor-ipv6-test-unsafe-ipv6-packet-list-test
-T-2/etc/monitor-promise/check-_re6st-optimal-test-unsafe-re6st-optimal-test

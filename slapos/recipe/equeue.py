@@ -25,16 +25,21 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout import UserError
 
 class Recipe(GenericBaseRecipe):
 
-  def install(self):
+  def __init__(self, buildout, name, options):
+    if not options['lockfile'].endswith('.lock'):
+      raise UserError('lockfile parameter must end with .lock as equeue process will add .lock suffix')
+    super(Recipe, self).__init__(buildout, name, options)
 
+  def install(self):
     args = [
       self.options['equeue-binary'],
       '--database', self.options['database'],
       '--logfile', self.options['log'],
-      '--lockfile', self.options['lockfile']
+      '--lockfile', self.options['lockfile'][:-5]
     ]
 
     if 'takeover-triggered-file-path' in self.options:

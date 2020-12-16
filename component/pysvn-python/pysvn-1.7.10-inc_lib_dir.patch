@@ -1,11 +1,14 @@
 diff -ur pysvn-1.7.10.orig/setup.py pysvn-1.7.10/setup.py
 --- pysvn-1.7.10.orig/setup.py	2010-12-30 13:26:51.000000000 +0100
 +++ pysvn-1.7.10/setup.py	2015-08-14 10:29:25.562686564 +0200
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,10 @@
  import os
  import os.path
  import setuptools.command.bdist_egg
-+from ConfigParser import ConfigParser
++try:
++  from ConfigParser import ConfigParser
++except ImportError:
++  from configparser import ConfigParser
  
  pysvn_version_info = {}
  f = open( 'Builder/version.info', 'r' )

@@ -96,6 +96,23 @@ depends =
   ${nextcloud-backup-cron:recipe}
   ${nextcloud-news-updater:recipe}
   ${nextcloud-config-update:recipe}
+  ${nextcloud-install-promise:name}
+
+[nextcloud-install-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = check-nextcloud-install.py
+config-command = ${nc-install-wrapper:output}
+
+[nc-install-wrapper]
+recipe = collective.recipe.template
+input = inline:#!/bin/bash
+  if [ -f "${instance-parameter:nextcloud}/config/CAN_INSTALL" ]; then
+    echo "Nextcloud is not installed.";
+    exit 1;
+  fi
+output = ${directory:bin}/check-nc-install
+mode = 744
 
 [nextcloud-apache-httpd]
 recipe = slapos.recipe.template:jinja2

@@ -15,7 +15,9 @@ cert = ${slap-connection:cert-file}
 recipe = slapos.recipe.template:jinja2
 filename = ${:_buildout_section_name_}.cfg
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
-extensions = jinja2.ext.do
+extensions =
+    jinja2.ext.do
+    jinja2.ext.loopcontrols
 extra-context =
 context =
     key ipv4_set slap-configuration:ipv4
@@ -44,4 +46,7 @@ extra-context =
     raw mariadb_location {{ mariadb_location }}
     raw template_mysqld_wrapper {{ template_mysqld_wrapper }}
     raw template_neo_my_cnf {{ template_neo_my_cnf }}
+{%- endif %}
+{%- if pypy_location is defined %}
+    raw pypy_location {{ pypy_location }}
 {%- endif %}

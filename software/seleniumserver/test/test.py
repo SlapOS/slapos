@@ -34,8 +34,10 @@ import unittest
 import urlparse
 import base64
 import hashlib
+import logging
 import contextlib
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler
+
 from io import BytesIO
 
 import paramiko
@@ -48,79 +50,69 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort
+from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase, ManagedHTTPServer
 
 setUpModule, SeleniumServerTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
+
+class WebServer(ManagedHTTPServer):
+  class RequestHandler(BaseHTTPRequestHandler):
+    """Request handler for our test server.
+
+    The implemented server is:
+      - submit q and you'll get a page with q as title
+      - upload a file and the file content will be displayed in div.uploadedfile
+    """
+    def do_GET(self):
+      self.send_response(200)
+      self.end_headers()
+      self.wfile.write(
+          '''
+        <html>
+          <title>Test page</title>
+          <body>
+            <style> p { font-family: Arial; } </style>
+            <form action="/" method="POST" enctype="multipart/form-data">
+              <input name="q" type="text"></input>
+              <input name="f" type="file" ></input>
+              <input type="submit" value="I'm feeling lucky"></input>
+            </form>
+            <p>the quick brown fox jumps over the lazy dog</p>
+          </body>
+        </html>''')
+
+    def do_POST(self):
+      form = cgi.FieldStorage(
+          fp=self.rfile,
+          headers=self.headers,
+          environ={
+              'REQUEST_METHOD': 'POST',
+              'CONTENT_TYPE': self.headers['Content-Type'],
+          })
+      self.send_response(200)
+      self.end_headers()
+      file_data = 'no file'
+      if form.has_key('f'):
+        file_data = form['f'].file.read()
+      self.wfile.write(
+          '''
+        <html>
+          <title>%s</title>
+          <div>%s</div>
+        </html>
+      ''' % (form['q'].value, file_data))
+
+    log_message = logging.getLogger(__name__ + '.WebServer').info
+
+
 class WebServerMixin(object):
   """Mixin class which provides a simple web server reachable at self.server_url
   """
   def setUp(self):
-    """Start a minimal web server.
-    """
-    class TestHandler(BaseHTTPRequestHandler):
-      """Request handler for our test server.
-
-      The implemented server is:
-       - submit q and you'll get a page with q as title
-       - upload a file and the file content will be displayed in div.uploadedfile
-      """
-      def log_message(self, *args, **kw):
-        if SeleniumServerTestCase._debug:
-          BaseHTTPRequestHandler.log_message(self, *args, **kw)
-
-      def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(
-            '''
-          <html>
-            <title>Test page</title>
-            <body>
-              <form action="/" method="POST" enctype="multipart/form-data">
-                <input name="q" type="text"></input>
-                <input name="f" type="file" ></input>
-                <input type="submit" value="I'm feeling lucky"></input>
-              </form>
-            </body>
-          </html>''')
-
-      def do_POST(self):
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                'REQUEST_METHOD': 'POST',
-                'CONTENT_TYPE': self.headers['Content-Type'],
-            })
-        self.send_response(200)
-        self.end_headers()
-        file_data = 'no file'
-        if form.has_key('f'):
-          file_data = form['f'].file.read()
-        self.wfile.write(
-            '''
-          <html>
-            <title>%s</title>
-            <div>%s</div>
-          </html>
-        ''' % (form['q'].value, file_data))
-
-    super(WebServerMixin, self).setUp()
-    ip = os.environ.get('SLAPOS_TEST_IPV4', '127.0.1.1')
-    port = findFreeTCPPort(ip)
-    server = HTTPServer((ip, port), TestHandler)
-    self.server_process = multiprocessing.Process(target=server.serve_forever)
-    self.server_process.start()
-    self.server_url = 'http://%s:%s/' % (ip, port)
-
-  def tearDown(self):
-    self.server_process.terminate()
-    self.server_process.join()
-    super(WebServerMixin, self).tearDown()
+    self.server_url = self.getManagedResource('web_server', WebServer).url
 
 
 class BrowserCompatibilityMixin(WebServerMixin):
@@ -168,8 +160,18 @@ class BrowserCompatibilityMixin(WebServerMixin):
   def test_screenshot(self):
     self.driver.get(self.server_url)
     screenshot = Image.open(BytesIO(self.driver.get_screenshot_as_png()))
-    # just check it's not a white screen
-    self.assertGreater(len(screenshot.getcolors(maxcolors=512)), 2)
+    reference_filename = os.path.join(
+        os.path.dirname(__file__), "data",
+        self.id() + ".png")
+
+    # save the screenshot somewhere in a path that will be in snapshot folder.
+    # XXX we could use a better folder name ...
+    screenshot.save(
+        os.path.join(self.slap.instance_directory, 'etc',
+                     self.id() + ".png"))
+
+    reference = Image.open(reference_filename)
+    self.assertImagesSame(screenshot, reference)
 
   def test_window_and_screen_size(self):
     size = json.loads(
@@ -388,7 +390,11 @@ class TestSSHServer(SeleniumServerTestCase):
       self.assertIn("Welcome to SlapOS Selenium Server.", received)
 
 
-class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox52(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='52.9.0esr')
   user_agent = 'Gecko/20100101 Firefox/52.0'
   # resizing window is not supported on firefox 52 geckodriver
@@ -396,16 +402,28 @@ class TestFirefox52(BrowserCompatibilityMixin, SeleniumServerTestCase):
       BrowserCompatibilityMixin.test_resize_window)
 
 
-class TestFirefox60(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox60(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='60.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/60.0'
 
 
-class TestFirefox68(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestFirefox68(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
 
-class TestChrome69(BrowserCompatibilityMixin, SeleniumServerTestCase):
+class TestChrome69(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'

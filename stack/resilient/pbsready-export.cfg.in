@@ -39,14 +39,14 @@ name = exporter
 title = Dumping ${slap-parameter:namebase}
 executable = ${exporter:wrapper}
 wrapper = ${rootdirectory:bin}/exporter
-notify = ${slap-parameter:notify}
+notify = {{ slapparameter_dict.get('notify', '') }}
 pidfile = ${resilient-directory:pid}/${:name}.pid
 max-run = 3
 
 [logrotate-entry-notifier]
 rendered = ${rootdirectory:etc}/logrotate_notifier.conf
 
-[notifier-exporter-promise]
+[notifier-exporter-promise-bin]
 recipe = slapos.recipe.template:jinja2
 mode = 700
 template = inline:
@@ -56,7 +56,13 @@ template = inline:
   if [ -s "$EXPORTER_FEED" ]; then
     tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
   fi
-rendered = ${basedirectory:promises}/exporter-status
+rendered = ${rootdirectory:bin}/exporter-status
+
+[notifier-exporter-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = exporter-status.py
+config-command = ${notifier-exporter-promise-bin:rendered}
 
 [cron-entry-backup]
 # Schedule the periodic database dump.
@@ -79,8 +85,3 @@ recipe = slapos.cookbook:random.time
 recipe = slapos.cookbook:publish-early
 -init =
   resiliency-backup-periodicity gen-resiliency-backup-periodicity:time
-
-[slap-parameter]
-# In cron.d format (i.e things like */15 * * * * are accepted).
-resiliency-backup-periodicity =
-notify =

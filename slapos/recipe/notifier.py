@@ -27,6 +27,7 @@
 import os
 from hashlib import sha512
 from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.util import str2bytes
 
 class Recipe(GenericBaseRecipe):
 
@@ -45,20 +46,18 @@ class Recipe(GenericBaseRecipe):
 
 class Callback(GenericBaseRecipe):
 
-  def createCallback(self, notification_id, callback):
+  # Note: this function is also used in pbs recipe
+  def createCallback(self, notification_id, callback_list):
     # XXX: hashing the name here and in
     # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
     # prevent any debug.
-    callback_id = sha512(notification_id).hexdigest()
-
-    filepath = os.path.join(self.options['callbacks'], callback_id)
-    self.addLineToFile(filepath, callback)
-    return filepath
+    callback_id = sha512(str2bytes(notification_id)).hexdigest()
+    return self.createFile(os.path.join(self.options['callbacks-directory'], callback_id), callback_list)
 
   def install(self):
-    # XXX this path is returned multiple times, one for each callback that has been added.
-    return [self.createCallback(self.options['on-notification-id'],
-                                self.options['callback'])]
+    options = self.options
+    notification_id = options['on-notification-id']
+    return self.createCallback(notification_id, options['callback-list'])
 
 class Notify(GenericBaseRecipe):
 

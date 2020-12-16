@@ -27,7 +27,7 @@ psql() {
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
 tpgwait=5
 while true; do
-    pgtables="$(psql -c '\d')" && break
+    pgtables="$(psql -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
     test $tpgwait = 0 && die "pg query problem"
     echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
@@ -38,9 +38,10 @@ echo "I: PostgreSQL ready." 1>&2
 # make sure pg_trgm extension is enabled for gitlab db
 psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
 
-if echo "$pgtables" | grep -q '^No relations found' ; then
+if echo "$pgtables" | grep -q '^Did not find any relations' ; then
     $RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
 fi
+
 
 # re-build ssh keys
 # (we do not use them - just for cleannes)

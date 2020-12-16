@@ -95,34 +95,3 @@ Alias /share {{ parameters.runner_home }}
         Require valid-user
     </LimitExcept>
 </Directory>
-
-SetEnv GIT_HTTP_EXPORT_ALL
-ScriptSock {{ parameters.cgid_sock }}
-ScriptAlias /git/ {{ parameters.git_http_backend }}/
-ScriptAlias /git-public/ {{ parameters.git_http_backend }}/
-
-RewriteCond %{QUERY_STRING} service=git-receive-pack [OR]
-RewriteCond %{REQUEST_URI} /git-receive-pack$
-
-<LocationMatch "^/git/">
-        SetEnv GIT_PROJECT_ROOT {{ parameters.project_private_folder }}
-        Order Deny,Allow
-        Deny from env=AUTHREQUIRED
-
-        AuthType Basic
-        AuthName "Git Access"
-        AuthUserFile "{{ parameters.htpasswd_file }}"
-        Require valid-user
-</LocationMatch>
-
-<LocationMatch "^/git-public/">
-        SetEnv GIT_PROJECT_ROOT {{ parameters.project_public_folder }}
-        Order Deny,Allow
-        Deny from env=AUTHREQUIRED
-
-        AuthType Basic
-        AuthName "Git Access"
-        AuthUserFile "{{ parameters.htpasswd_file }}"
-        Require valid-user
-        Satisfy any
-</LocationMatch>

@@ -32,6 +32,7 @@ import re
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe.inotify import subfiles
+from slapos.util import str2bytes
 
 # This authority only works with dropbear or openssh sshkey generators
 def sshkeys_authority(request_directory, keygen_binary):
@@ -112,7 +113,7 @@ class Request(GenericBaseRecipe):
     keys_directory = options['keys-directory']
 
     self.private_key = os.path.join(keys_directory,
-      hashlib.sha256(options['name']).hexdigest())
+      hashlib.sha256(str2bytes(options['name'])).hexdigest())
     self.public_key = self.private_key + '.pub'
 
     options['public-key-value'] = ''

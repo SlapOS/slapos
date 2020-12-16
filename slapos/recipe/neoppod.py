@@ -88,7 +88,9 @@ class NeoBaseRecipe(GenericBaseRecipe):
         )
     args += self._getOptionList()
     args += shlex.split(options.get('extra-options', ''))
-    return self.createWrapper(options['wrapper'], args)
+    private_tmpfs = self.parsePrivateTmpfs()
+    kw = {'private_tmpfs': private_tmpfs} if private_tmpfs else {}
+    return self.createWrapper(options['wrapper'], args, **kw)
 
   def _getBindingAddress(self):
     options = self.options

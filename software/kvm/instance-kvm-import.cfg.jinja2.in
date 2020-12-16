@@ -12,6 +12,11 @@ parts +=
 extends = 
   {{ pbsready_import_template }}
 
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
 [resilient-publish-connection-parameter]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 monitor-url = ${monitor-publish-parameters:monitor-url}

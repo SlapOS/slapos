@@ -28,16 +28,21 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.123'
+version = '1.0.171'
 name = 'slapos.cookbook'
-long_description = open("README.rst").read() + "\n" + \
-    open("CHANGES.rst").read() + "\n"
+long_description = open("README.rst").read()
 
 for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'
 
-# extras_requires are not used because of
-#   https://bugs.launchpad.net/zc.buildout/+bug/85604
+extras_require = {
+    'test': (
+        'jsonschema',
+        'mock',
+        'testfixtures',
+    ),
+}
+
 setup(name=name,
       version=version,
       description="SlapOS recipes.",
@@ -55,7 +60,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'enum34',  # for inotify-simple
+        'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
@@ -76,11 +81,6 @@ setup(name=name,
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
-          'boinc = slapos.recipe.boinc:Recipe',
-          'boinc.app = slapos.recipe.boinc:App',
-          'boinc.client = slapos.recipe.boinc:Client',
-          'bonjourgrid = slapos.recipe.bonjourgrid:Recipe',
-          'bonjourgrid.client = slapos.recipe.bonjourgrid:Client',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'check_page_content = slapos.recipe.check_page_content:Recipe',
@@ -98,12 +98,10 @@ setup(name=name,
           'dropbear = slapos.recipe.dropbear:Recipe',
           'dropbear.add_authorized_key = slapos.recipe.dropbear:AddAuthorizedKey',
           'dropbear.client = slapos.recipe.dropbear:Client',
-          'duplicity = slapos.recipe.duplicity:Recipe',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
           'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
-          'fontconfig = slapos.recipe.fontconfig:Recipe',
           'free_port = slapos.recipe.free_port:Recipe',
           'generate.mac = slapos.recipe.random:Mac',
           'generate.password = slapos.recipe.random:Password',
@@ -118,19 +116,10 @@ setup(name=name,
           'ipv6toipv4 = slapos.recipe.6tunnel:SixToFour',
           'jsondump = slapos.recipe.jsondump:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
-          'lamp = slapos.recipe.lamp:Request',
-          'lamp.generic = slapos.recipe.lampgeneric:Recipe',
-          'lamp.request = slapos.recipe.lamp:Request',
-          'lamp.simple = slapos.recipe.lamp:Simple',
-          'lamp.static = slapos.recipe.lamp:Static',
-          'libcloud = slapos.recipe.libcloud:Recipe',
-          'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
           'logrotate.d = slapos.recipe.logrotate:Part',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
           'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
-          'mydumper = slapos.recipe.mydumper:Recipe',
-          'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'neoppod.cluster = slapos.recipe.neoppod:Cluster',
           'neoppod.admin = slapos.recipe.neoppod:Admin',
@@ -144,8 +133,6 @@ setup(name=name,
           'onetimeupload = slapos.recipe.onetimeupload:Recipe',
           'pbs = slapos.recipe.pbs:Recipe',
           'postgres = slapos.recipe.postgres:Recipe',
-          'postgres.export = slapos.recipe.postgres.backup:ExportRecipe',
-          'postgres.import = slapos.recipe.postgres.backup:ImportRecipe',
           'proactive = slapos.recipe.proactive:Recipe',
           'promise.plugin= slapos.recipe.promise_plugin:Recipe',
           'publish = slapos.recipe.publish:Recipe',
@@ -170,7 +157,6 @@ setup(name=name,
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'simplehttpserver = slapos.recipe.simplehttpserver:Recipe',
-          'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
@@ -190,7 +176,6 @@ setup(name=name,
           'userinfo = slapos.recipe.userinfo:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
           'wrapper = slapos.recipe.wrapper:Recipe',
-          'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
@@ -201,10 +186,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
+      extras_require=extras_require,
       test_suite='slapos.test',
-      tests_require=[
-        'jsonschema',
-        'mock',
-        'testfixtures',
-      ],
+      tests_require=extras_require['test'],
     )

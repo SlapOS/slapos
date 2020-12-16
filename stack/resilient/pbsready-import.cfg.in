@@ -1,5 +1,5 @@
 [buildout]
-extends = ${pbsready:output}
+extends = {{ pbsready_template_path }}
 
 parts +=
   resiliency-takeover-script
@@ -7,16 +7,12 @@ parts +=
   resilient-web-takeover-httpd-wrapper
   resilient-web-takeover-httpd-promise
 
-  check-backup-integrity-on-notification
-  import-on-notification
+  notify-callback
   backup-checksum-integrity-promise
   resilient-publish-connection-parameter
 
   backup-signature-link
 
-
-[slap-parameter]
-on-notification =
 
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
@@ -39,13 +35,19 @@ minimum = 65516
 maximum = 65525
 ip = $${notifier:host}
 
-[import-on-notification]
+[notify-callback]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received
-<= notifier
 recipe = slapos.cookbook:notifier.callback
-on-notification-id = $${slap-parameter:on-notification}
-callback = $${importer:wrapper}
+callbacks-directory = $${notifier:callbacks-directory}
+on-notification-id = {{ slapparameter_dict.get('on-notification', '') }}
+callback-list =
+# warning the order of the 2 callbacks is important for now
+# it should be fixed later
+# check backup integrity on notification
+  $${post-notification-run:output}
+# import on notification
+  $${importer:wrapper}
 
 [post-notification-run]
 recipe = collective.recipe.template
@@ -59,13 +61,7 @@ input = inline:
 output = $${rootdirectory:bin}/post-notification-run
 mode = 0700
 
-[check-backup-integrity-on-notification]
-<= notifier
-recipe = slapos.cookbook:notifier.callback
-on-notification-id = $${slap-parameter:on-notification}
-callback = $${post-notification-run:output}
-
-[backup-checksum-integrity-promise]
+[backup-checksum-integrity-promise-bin]
 recipe = slapos.recipe.template:jinja2
 template = inline:
   #!/${bash:location}/bin/bash
@@ -80,8 +76,15 @@ template = inline:
     # If file doesn't exist, promise shouldnt raise false positive
     exit 0;
   fi
-rendered = $${basedirectory:promises}/backup-checksum-integrity
+rendered = $${rootdirectory:bin}/backup-checksum-integrity
 mode = 700
+
+[backup-checksum-integrity-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = backup-checksum-integrity.py
+config-command = $${backup-checksum-integrity-promise-bin:rendered}
+
 
 ###########
 # Generate the takeover script
@@ -155,11 +158,10 @@ command-line = $${:apache-executable} -f $${resilient-web-takeover-httpd-configu
 wrapper-path = $${basedirectory:services}/resilient-web-takeover-httpd
 
 [resilient-web-takeover-httpd-promise]
-recipe = slapos.cookbook:check_url_available
-path = $${basedirectory:promises}/resilient-web-takeover-httpd
-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
-dash_path = ${dash:location}/bin/dash
-curl_path = ${curl:location}/bin/curl
+<= monitor-promise-base
+module = check_url_available
+name = resilient-web-takeover-httpd.py
+config-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
 
 ###########
 # Symlinks

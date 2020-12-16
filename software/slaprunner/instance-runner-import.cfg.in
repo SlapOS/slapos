@@ -14,16 +14,11 @@ parts +=
   slaprunner-promise
   slaprunner-supervisord-wrapper
   runner-sshd-add-authorized-key
-  runner-sshd-graceful
   runner-sshd-promise
-  runner-sshkeys-authority
-  runner-sshkeys-authority-service
-  runner-sshkeys-sshd
-  runner-sshkeys-sshd-service
+  runner-sshd-service
   runtestsuite
   shellinabox
   shellinabox-service
-  symlinks
   slapos-cfg
   cron-entry-prepare-software
   deploy-instance-parameters
@@ -32,10 +27,9 @@ parts +=
   supervisord-wrapper
   importer-consistency-promise
   software-release-deployment-promise
+  template-slapuser-script
 
   resilient-software-release-information
-# have to repeat the next one, as it's not inherited from pbsready-import
-  import-on-notification
 
   monitor-base
 
@@ -107,18 +101,19 @@ context =
   section supervisord supervisord
   raw  output_log_file ${directory:log}/${:resilient-log-basename}
   raw  shell_binary {{ bash_executable_location }}
+  raw  sqlite3_binary {{ sqlite3_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}
   raw  restore_exit_code_file ${:restore-exit-code-file}
   raw  restore_error_message_file ${:restore-error-message-file}
 
-[importer-consistency-bin]
+[importer-consistency-promise-bin]
 # Test that the importer script and "after-import" subscripts
 # are not older than 2 days (1 day + some slack), and have succeeded
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
   EXIT_CODE_FILE="${importer:restore-exit-code-file}"
   RECENT_EXIT_CODE_FILE=$(find ${directory:srv} -maxdepth 1 -name "${importer:restore-exit-code-file-basename}" -mtime -2)
-  RESILIENT_LOG_URL=${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
+  RESILIENT_LOG_URL=${monitor-publish-parameters:monitor-base-url}/share/private/log/${importer:resilient-log-basename}
   if [ ! -f "$EXIT_CODE_FILE" ]; then
     exit 0;
   else
@@ -141,7 +136,7 @@ mode = 755
 <= monitor-promise-base
 module = check_command_execute
 name = importer-consistency-promise.py
-config-command = ${importer-consistency-promise:output}
+config-command = ${importer-consistency-promise-bin:output}
 
 [software-release-deployment-bin]
 recipe = collective.recipe.template

@@ -13,6 +13,7 @@
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
 {% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+{% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
@@ -66,6 +67,9 @@ return =
   url ssh-public-key resilient-ssh-url notification-id ip {{ monitor_return | join(' ') }}
 # KVM related parameters
 # XXX: return ALL parameters (like nat rules), through jinja
+{% if additional_frontend %}
+  url-additional
+{% endif %}
   backend-url url ip
 {{ '  ' }}ipv6-network-info
 
@@ -81,6 +85,9 @@ monitor-user = ${monitor-publish-parameters:monitor-user}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${publish-early:monitor-password}
 {% endif -%}
+{% if additional_frontend %}
+url-additional = ${request-kvm:connection-url-additional}
+{% endif %}
 
 [kvm-frontend-url-bin]
 recipe = collective.recipe.template

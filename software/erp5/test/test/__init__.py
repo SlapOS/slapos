@@ -30,19 +30,35 @@ import os
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+
+_setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'software.cfg')))
+
+
+setup_module_executed = False
+def setUpModule():
+  # slapos.testing.testcase's only need to be executed once
+  global setup_module_executed
+  if not setup_module_executed:
+    _setUpModule()
+  setup_module_executed = True
 
 
 class ERP5InstanceTestCase(SlapOSInstanceTestCase):
   """ERP5 base test case
   """
-  # ERP5 instanciation needs to run several times before being ready, as
-  # the root instance request more instances.
-  instance_max_retry = 7 # XXX how many times ?
-
   def getRootPartitionConnectionParameterDict(self):
     """Return the output paramters from the root partition"""
     return json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
+
+  def getComputerPartition(self, partition_reference):
+    for computer_partition in self.slap.computer.getComputerPartitionList():
+      if partition_reference == computer_partition.getInstanceParameter(
+          'instance_title'):
+        return computer_partition
+
+  def getComputerPartitionPath(self, partition_reference):
+    partition_id = self.getComputerPartition(partition_reference).getId()
+    return os.path.join(self.slap._instance_root, partition_id)

@@ -1,0 +1,88 @@
+#!/bin/bash
+
+git fetch
+
+git checkout master
+git reset origin/master --hard
+git clean -f
+
+# Remove any local tag
+git fetch --prune origin "+refs/tags/*:refs/tags/*"
+rm -rf dist/slapos.cookbook*
+
+# for now this script is hardcoded to release on 1.0.x versions intentionally
+# update to version 2 or 1.1 would require a major reorganisation on the release
+# process
+CURRENT_VERSION=`git tag | grep "^1\+\.0\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1`
+NEXT_MINOR_VERSION=$((`echo $CURRENT_VERSION | cut -f3 -d.`+1))
+NEXT_VERSION=1.0.$NEXT_MINOR_VERSION
+
+CURRENT_EGG_VERSION=`cat setup.py | grep ^version | cut -d\' -f2`
+
+sed -i "s/$CURRENT_EGG_VERSION/$NEXT_VERSION/g" setup.py
+git commit -m "Release slapos.cookbook ($NEXT_VERSION)" setup.py
+
+if [ ! $EGG_ONLY == "Y" ];
+then
+  sed -i "s/slapos.cookbook = $CURRENT_EGG_VERSION/slapos.cookbook = $NEXT_VERSION/g" stack/slapos.cfg
+  sed -i "s/slapos.cookbook==$CURRENT_EGG_VERSION/slapos.cookbook==$NEXT_VERSION/g" stack/slapos.cfg
+  git commit -m "stack/slapos: slapos.cookbook version up ($NEXT_VERSION)" stack/slapos.cfg
+fi
+
+echo "############### Merging into 1.0 and generating the tag ################"
+git checkout 1.0
+git reset --hard origin/1.0 
+git clean -f
+git merge master -m "Update Release Candidate"
+
+# Revert changes from master
+git diff HEAD..master | git apply 
+
+# Download patch to update revisions based on tests
+wget -O update-release.sh https://nexedi.erp5.net/portal_skins/custom/TestResultModule_getReleaseCandidateRevision 
+bash update-release.sh
+git commit -m 'Update git revisions' -a  
+git tag $NEXT_VERSION -m "Release $NEXT_VERSION"
+
+echo "############### Building sdist  ################"
+python setup.py sdist
+
+
+echo "###################################################################"
+echo "You are about to release a new tag, a new version of slapos.cookbook"
+echo " and a new version of SlapOS Software Release"
+echo ""
+echo "Lastest release: $CURRENT_VERSION"
+echo "Next Release to be Tagged: $NEXT_VERSION"
+echo "Current slapos.cookbook version: $CURRENT_EGG_VERSION"
+echo "Next slapos.cookbook to be released: $NEXT_VERSION"
+echo ""
+echo "###################################################################"
+echo ""
+echo ""
+echo "########################################################################"
+echo " Please review the current local changes before continue. Ensure that"
+echo " ALL changes and commits are correct before continue."
+echo ""
+echo " To review master use :: git log master"
+echo " To review 1.0 use    :: git log 1.0"
+echo " To review $NEXT_VERSION use :: git log $NEXT_VERSION"
+echo " To review individual commits :: git show HASH"
+echo ""
+echo ""
+echo "Once everything is ok, please upload slapos.cookbook egg /!\\ BEFORE /!\\" 
+echo "push your changes into the repository. Please use twine for it."
+echo ""
+echo "To upload :: python -m twine upload dist/slapos.cookbook-$NEXT_VERSION*"
+echo "To verify if upload succeed access: https://pypi.org/project/slapos.cookbook/$NEXT_VERSION/"
+echo ""
+echo " More info on twine: https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives"
+echo ""
+echo "Once egg is updated please push your changes into main repository:"
+echo ""
+echo " git push origin master 1.0 $NEXT_VERSION"
+echo ""
+echo " !! DO NOT FORGET TO PUSH YOUR CHANGES IN THE END !!"
+echo ""
+echo "###################################################################"
+echo ""

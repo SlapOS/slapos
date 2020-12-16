@@ -1,6 +1,5 @@
 [buildout]
 extends = 
-  {{ instance_gitlab_cfg }}
   {{ instance_gitlab_export_cfg }}
 
 parts +=
@@ -58,4 +57,3 @@ command =
     touch ${:backup-done}
   fi
 update-command = ${:command}
-

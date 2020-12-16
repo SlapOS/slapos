@@ -29,14 +29,6 @@
     "public_url": {
       "description": "Url of the public folder of your runner",
       "type": "string"
-    },
-    "git_public_url": {
-      "description": "Public url of your repositories.",
-      "type": "string"
-    },
-    "git_private_url": {
-      "description": "Private url for your repositories. You can use it to push.",
-      "type": "string"
     }
   },
   "type": "object"

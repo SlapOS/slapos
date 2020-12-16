@@ -4,7 +4,7 @@ STATUS_DIR=$${directory:status}
 RSS_DIR=$${directory:www}
 
 TAIL=${coreutils-output:tail}
-PYTHON=${buildout:directory}/bin/${extra-eggs:interpreter}
+PYTHON=${buildout:bin-directory}/${rssgen-eggs:interpreter}
 STATUS2RSS=${status2rss:output}
 BASENAME=${coreutils-output:basename}
 

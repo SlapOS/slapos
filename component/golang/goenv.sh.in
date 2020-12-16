@@ -3,7 +3,7 @@
 
 # ---- 8< ---- (buildout substitution here)
 # PATH so that go & friends work out of the box
-export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:$PATH
+export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:${gcc:prefix}/bin:$PATH
 X=${gowork:directory}
 
 export PKG_CONFIG_PATH=$(echo -n "${gowork:cpkgpath}" |tr '\n' ':'):$PKG_CONFIG_PATH
@@ -12,6 +12,8 @@ export PKG_CONFIG_PATH=$(echo -n "${gowork:cpkgpath}" |tr '\n' ':'):$PKG_CONFIG_
 export GOPATH=$X:$GOPATH
 export PATH=$X/bin:$PATH
 export PS1="(`basename $X`) $PS1"
+export GOCACHE=$X/cache
+export GOENV=$X/goenv
 
 # strip trailing : from $GOPATH, $PKG_CONFIG_PATH
 GOPATH=$${GOPATH%:}

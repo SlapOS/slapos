@@ -4,7 +4,7 @@ Caddy Frontend
 
 Frontend system using Caddy, based on apache-frontend software release, allowing to rewrite and proxy URLs like myinstance.myfrontenddomainname.com to real IP/URL of myinstance.
 
-Caddy Frontend works using the master instance / slave instance design.  It means that a single main instance of Caddy will be used to act as frontend for many slaves.
+Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
 
 Software type
 =============
@@ -21,25 +21,25 @@ About frontend replication
 
 Slaves of the root instance are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the would-be published information to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
 
-These parameters are :
+These parameters are:
 
-  * ``-frontend-type`` : the type to deploy frontends with. (default to 2)
-  * ``-frontend-quantity`` : The quantity of frontends to request (default to "default")
+  * ``-frontend-type`` : the type to deploy frontends with. (default to "default")
+  * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
   * ``-frontend-i-state``: The state of frontend i
+  * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo
-  * ``-frontend-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
-for example::
+For example::
 
   <parameter id="-frontend-quantity">3</parameter>
   <parameter id="-frontend-type">custom-personal</parameter>
   <parameter id="-frontend-2-state">stopped</parameter>
   <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-  <parameter id="-frontend-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg</parameter>
+  <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg</parameter>
 
 
-will request the third frontend on COMP-1234. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped
+will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
 
 *Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
 
@@ -129,9 +129,9 @@ Example sessions is::
   curl -g -X GET --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" master-key-generate-auth-url
   > authtoken
 
-  cat certificate.pem key.pem ca-bundle.pem > master.pem
+  cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @master.pem master-key-upload-url+authtoken
+  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -157,9 +157,9 @@ Example sessions is::
   curl -g -X GET --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" key-generate-auth-url
   > authtoken
 
-  cat certificate.pem key.pem ca-bundle.pem > master.pem
+  cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @master.pem key-upload-url+authtoken
+  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -169,24 +169,6 @@ This replaces old request parameters:
 
 (*Note*: They are still supported for backward compatibility, but any value send to the ``key-upload-url`` will supersede information from SlapOS Master.)
 
-
-How to have custom configuration in frontend server - XXX - to be written
-=========================================================================
-
-In your instance directory, you, as sysadmin, can directly edit two
-configuration files that won't be overwritten by SlapOS to customize your
-instance:
-
- * ``$PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.custom.conf``
- * ``$PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.virtualhost.custom.conf``
-
-The first one is included in the end of the main apache configuration file.
-The second one is included in the virtualhost of the main apache configuration file.
-
-SlapOS will just create those two files for you, then completely forget them.
-
-*Note*: make sure that the UNIX user of the instance has read access to those
-files if you edit them.
 
 Instance Parameters
 ===================
@@ -237,14 +219,6 @@ Will append the specified path to the "VirtualHostRoot" of the zope's VirtualHos
 "path" is an optional parameter, ignored if not specified.
 Example of value: "/erp5/web_site_module/hosting/"
 
-caddy_custom_https
-~~~~~~~~~~~~~~~~~~
-Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
-
-caddy_custom_http
-~~~~~~~~~~~~~~~~~
-Raw Caddy configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
-
 url
 ~~~
 Necessary to activate cache. ``url`` of backend to use.
@@ -271,16 +245,14 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-Functionalities for Caddy configuration
----------------------------------------
+backend-active-check-*
+~~~~~~~~~~~~~~~~~~~~~~
 
-In the slave Caddy configuration you can use parameters that will be replaced during instantiation. They should be entered as python templates parameters ex: ``%(parameter)s``:
+This set of parameters is used to control the way how the backend checks will be done. Such active checks can be really useful for `stale-if-error` caching technique and especially in case if backend is very slow to reply or to connect to.
 
-  * ``cache_access`` : url of the cache. Should replace backend url in configuration to use the cache
-  * ``access_log`` : path of the slave error log in order to log in a file.
-  * ``error_log`` : path of the slave access log in order to log in a file.
-  * ``certificate`` : path to the certificate
+`backend-active-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
 
+Please be aware that the `backend-active-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `backend-active-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
 
 Examples
 ========
@@ -359,33 +331,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 
-        "caddy_custom_https":'
-  https://www.example.com:%(https_port)s, https://example.com:%(https_port)s {
-    bind %(local_ipv4)s
-    tls %(certificate)s %(certificate)s
-
-    log / %(access_log)s {combined}
-    errors %(error_log)s
-
-    proxy / https://[1:2:3:4:5:6:7:8]:1234 {
-      transparent
-      timeout 600s
-      insecure_skip_verify
-    }
-  }
-        "caddy_custom_http":'
-  http://www.example.com:%(http_port)s, http://example.com:%(http_port)s {
-    bind %(local_ipv4)s
-    log / %(access_log)s {combined}
-    errors %(error_log)s
-  
-    proxy / https://[1:2:3:4:5:6:7:8]:1234/ {
-      transparent
-      timeout 600s
-      insecure_skip_verify
-    }
-  }
-
 Simple Cache Example - XXX - to be written
 ------------------------------------------
 
@@ -401,40 +346,6 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be::
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 	"domain": "www.example.org",
 	"enable_cache": "True",
-
-        "caddy_custom_https":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLEngine on
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  RewriteRule ^/(.*) %(cache_access)s/$1 [L,P]',
-
-        "caddy_custom_http":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*) %(cache_access)s/$1 [L,P],
-    }
-  )
-
 
 Advanced example - XXX - to be written
 --------------------------------------
@@ -457,56 +368,6 @@ the proxy::
         "path":"/erp5",
         "domain":"example.org",
 
-  	"caddy_custom_https":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAdmin example.org
-  SSLEngine on
-  SSLProxyEngine on
-  SSLProtocol all -SSLv2 -SSLv3
-  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
-  SSLHonorCipherOrder on
-  # Use personal ssl certificates
-  SSLCertificateFile %(ssl_crt)s
-  SSLCertificateKeyFile %(ssl_key)s
-  SSLCACertificateFile %(ssl_ca_crt)s
-  SSLCertificateChainFile %(ssl_ca_crt)s
-  # Configure personal logs
-  ErrorLog "%(error_log)s"
-  LogLevel info
-  LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
-  CustomLog "%(access_log)s" combined
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  # Redirect / to /index.html
-  RewriteRule ^/$ /index.html [R=302,L]
-  # Use cache
-  RewriteRule ^/(.*) %(cache_access)s/VirtualHostBase/https/www.example.org:443/erp5/VirtualHostRoot/$1 [L,P]',
-
-    "caddy_custom_http":'
-  ServerName www.example.org
-  ServerAlias www.example.org
-  ServerAlias example.org
-  ServerAdmin geronimo@example.org
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-  # Configure personal logs
-  ErrorLog "%(error_log)s"
-  LogLevel info
-  LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
-  CustomLog "%(access_log)s" combined
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}',
-
     "ssl_key":"-----BEGIN RSA PRIVATE KEY-----
   XXXXXXX..........XXXXXXXXXXXXXXX
   -----END RSA PRIVATE KEY-----",
@@ -521,20 +382,6 @@ the proxy::
   -----END CERTIFICATE REQUEST-----',
     }
   )
-
-QUIC Protocol
-=============
-
-Note: QUIC support in Caddy is really experimental. It can result with silently having problems with QUIC connections or hanging Caddy process. So in case of QUIC error ``QUIC_NETWORK_IDLE_TIMEOUT`` or ``QUIC_PEER_GOING_AWAY`` it is required to restart caddy process.
-
-Note: Chrome will refuse to connect to QUIC on different port then HTTPS has been served. As Caddy binds to high ports, if QUIC is wanted, the browser need to connect to high port too.
-
-Experimental QUIC available in Caddy is not configurable. If caddy is configured to bind to HTTPS port ``${port}``, QUIC is going to be advertised on this port only. It is not possible to configure another public port in case of port rewriting.
-
-So it is required to ``DNAT`` from ``${public IP}`` of the computer to the computer partition running caddy ``${local IP}`` with configured port::
-
-  iptables -A DNAT -d ${public IP}/32 -p udp -m udp --dport ${port} -j DNAT --to-destination ${local IP}:${port}
-
 
 Promises
 ========
@@ -553,6 +400,8 @@ KeDiFa
 Additional partition with KeDiFa (Key Distribution Facility) is by default requested on the same computer as master frontend partition.
 
 By adding to the request keys like ``-sla-kedifa-<key>`` it is possible to provide SLA information for kedifa partition. Eg to put it on computer ``couscous`` it shall be ``-sla-kedifa-computer_guid: couscous``.
+
+Also ``-kedifa-software-release-url`` can be used to override the software release for kedifa partition.
 
 Notes
 =====
@@ -592,3 +441,98 @@ Then specify in the master instance parameters:
 
  * set ``port`` to ``443``
  * set ``plain_http_port`` to ``80``
+
+Authentication to the backend
+=============================
+
+The cluster generates CA served by caucase, available with ``backend-client-caucase-url`` return parameter.
+
+Then, each slave configured with ``authenticate-to-backend`` to true, will use a certificate signed by this CA while accessing https backend.
+
+This allows backends to:
+
+ * restrict access only from some frontend clusters
+ * trust values (like ``X-Forwarded-For``) sent by the frontend
+
+Technical notes
+===============
+
+Profile development guidelines
+------------------------------
+
+Keep the naming in instance profiles:
+
+ * ``software_parameter_dict`` for values coming from software
+ * ``instance_parameter_dict`` for **local** values generated by the instance, except ``configuration``
+ * ``slapparameter_dict`` for values coming from SlapOS Master
+
+Instantiated cluster structure
+------------------------------
+
+Instantiating caddy-frontend results with a cluster in various partitions:
+
+ * master (the controlling one)
+ * kedifa (contains kedifa server)
+ * caddy-frontend-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
+
+It means sites are served in ``caddy-frontend-N`` partition, and this partition is structured as:
+
+ * Caddy serving the browser [client-facing-caddy]
+ * (optional) Apache Traffic Server for caching [ats]
+ * Haproxy as a way to communicate to the backend [backend-facing-haproxy]
+ * some other additional tools (6tunnel, monitor, etc)
+
+In case of slaves without cache (``enable_cache = False``) the request will travel as follows::
+
+  client-facing-caddy --> backend-facing-haproxy --> backend
+
+In case of slaves using cache (``enable_cache = True``) the request will travel as follows::
+
+  client-facing-caddy --> ats --> backend-facing-haproxy --> backend
+
+Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from Caddy and allows future developments like client SSL certificates to the backend or even health checks.
+
+Kedifa implementation
+---------------------
+
+`Kedifa <https://lab.nexedi.com/nexedi/kedifa>`_ server runs on kedifa partition.
+
+Each `caddy-frontend-N` partition downloads certificates from the kedifa server.
+
+Caucase (exposed by ``kedifa-caucase-url`` in master partition parameters) is used to handle certificates for authentication to kedifa server.
+
+If ``automatic-internal-kedifa-caucase-csr`` is enabled (by default it is) there are scripts running on master partition to simulate human to sign certificates for each caddy-frontend-N node.
+
+Support for X-Real-Ip and X-Forwarded-For
+-----------------------------------------
+
+X-Forwarded-For and X-Real-Ip are transmitted to the backend, but only for IPv4 access to the frontend. In case of IPv6 access, the provided IP will be wrong, because of using 6tunnel.
+
+Automatic Internal Caucase CSR
+------------------------------
+
+Cluster is composed on many instances, which are landing on separate partitions, so some way is needed to bootstrap trust between the partitions.
+
+There are two ways to achieve it:
+
+ * use default, Automatic Internal Caucase CSR used to replace human to sign CSRs against internal CAUCASEs automatic bootstrap, which leads to some issues, described later
+ * switch to manual bootstrap, which requires human to create and manage user certificate (with caucase-updater) and then sign new frontend nodes appearing in the system
+
+The issues during automatic bootstrap are:
+
+ * rouge or hacked SlapOS Master can result with adding rouge frontend nodes to the cluster, which will be trusted, so it will be possible to fetch all certificates and keys from Kedifa or to login to backends
+ * when new node is added there is short window, when rouge person is able to trick automatic signing, and have it's own node added
+
+In both cases promises will fail on node which is not able to get signed, but in case of Kedifa the damage already happened (certificates and keys are compromised). So in case if cluster administrator wants to stay on the safe side, both automatic bootstraps shall be turned off.
+
+How the automatic signing works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Having in mind such structure:
+
+ * instance with caucase: ``caucase-instance``
+ * N instances which want to get their CSR signed: ``csr-instance``
+
+In ``caucase-instance`` CAUCASE user is created by automatically signing one user certificate, which allows to sign service certificates.
+
+The ``csr-instance`` creates CSR, extracts the ID of the CSR, exposes it via HTTP and ask caucase on ``caucase-instance`` to sign it. The ``caucase-instance`` checks that exposed CSR id matches the one send to caucase and by using created user to signs it.

@@ -57,7 +57,7 @@ def update():
         'nslot': 128,
         'canreboot': 1
       })
-  except Exception, e:
+  except Exception as e:
     write(str(e))
     raise
 

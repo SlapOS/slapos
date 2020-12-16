@@ -1,0 +1,400 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "slave-frontend": {
+      "title": "Web frontend",
+      "description": "Front end used to provide web access for internal services at the kvm.",
+      "properties": {
+        "slave-domain": {
+          "title": "Slave frontend domain",
+          "description": "Unique domain name for this slave frontend.",
+          "type": "string",
+          "default": ""
+        },
+        "instance-guid": {
+          "title": "Main Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "type": "string",
+          "default": ""
+        },
+        "frontend-software-type": {
+          "title": "Frontend Software Type",
+          "description": "Type of the frontend instance, like \"frontend\".",
+          "type": "string"
+        },
+        "frontend-software-url": {
+          "title": "Frontend Software URL",
+          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "type": "string",
+          "format": "uri",
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+        }
+      },
+      "type": "object"
+    },
+    "computer-memory-percent-threshold": {
+      "title": "Computer memory percent threshold.",
+      "description": "Computer memory percent threshold.",
+      "type": "integer",
+      "default": 80
+    },
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "mail-from": {
+      "title": "Mail From",
+      "description": "Mail From address",
+      "type": "string",
+      "default": ""
+    },
+    "mail-smtp-addr": {
+      "title": "Mail SMTP address",
+      "description": "Mail SMTP address. Default: localhost",
+      "type": "string",
+      "default": "localhost"
+    },
+    "mail-smtp-port": {
+      "title": "Mail SMTP port",
+      "description": "Mail SMTP port. Default: 25",
+      "type": "integer",
+      "default": "25"
+    },
+    "mail-smtp-password": {
+      "title": "Mail SMTP password",
+      "description": "Mail SMTP password",
+      "type": "string",
+      "default": ""
+    },
+    "mail-smtp-user": {
+      "title": "Mail SMTP User",
+      "description": "Mail SMTP User",
+      "type": "string",
+      "default": ""
+    },
+    "mail-to": {
+      "title": "Mail To",
+      "description": "",
+      "type": "string",
+      "default": ""
+    },
+    "tags": {
+      "title": "Provisioning db tag list",
+      "description": "Provisioning db tags. Set one tag per line.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "gtidstrict",
+        "bind",
+        "pkg",
+        "innodb",
+        "noquerycache",
+        "slow",
+        "pfs",
+        "linux",
+        "readonly",
+        "diskmonitor",
+        "sqlerror",
+        "compressbinlog",
+        "bm4ci",
+        "mroonga",
+        "utctime",
+        "readcommitted",
+        "nohandshake"
+      ]
+    },
+    "http-session-lifetime": {
+      "title": "Web Session life time in s",
+      "description": "Web interface Session life time in seconds. Default 86400",
+      "type": "integer",
+      "default": 86400
+    },
+    "http-refresh-interval": {
+      "title": "Web refresh interval in s",
+      "description": "Web interface refresh interval in s. Default 4s.",
+      "type": "integer",
+      "default": 4
+    },
+    "autorejoin": {
+      "title": "Automatic rejoin a failed master",
+      "description": "Automatic rejoin a failed master (default true)",
+      "type": "boolean",
+      "default": true
+    },
+    "autoseed": {
+      "title": "Automatic join a standalone node",
+      "description": "Automatic join a standalone node",
+      "type": "boolean",
+      "default": true
+    },
+    "repman-cluster-dict": {
+      "title": "Replication Manager clusters definition",
+      "description": "Replication Manager clusters definition",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "name": {
+              "title": "Name of the cluster",
+              "description": "Name of the cluster: Should not contains spaces or any special characters.",
+              "type": "string",
+              "default": ""
+            },
+            "database-amount": {
+              "title": "Amount of databases for cluster",
+              "description": "Database amount to deploy with this cluster. Minimal amount is 2 required to enable replication.",
+              "type": "integer",
+              "default": 2,
+              "minimum": 2
+            },
+            "-sla-0-computer_guid": {
+              "title": "Prefered Master Computer Guid",
+              "description": "Computer Guid for prefered Master database.",
+              "type": "string",
+              "default": ""
+            },
+            "-sla-1-computer_guid": {
+              "title": "Slave 1 Computer Guid",
+              "description": "Computer Guid for the first slave database.",
+              "type": "string",
+              "default": ""
+            },
+            "-sla-2-computer_guid": {
+              "title": "Slave 2 Computer Guid",
+              "description": "Computer Guid for the second slave database.",
+              "type": "string",
+              "default": ""
+            },
+            "-sla-3-computer_guid": {
+              "title": "Slave 3 Computer Guid",
+              "description": "Computer Guid for the third slave database.",
+              "type": "string",
+              "default": ""
+            },
+            "-sla-4-computer_guid": {
+              "title": "Slave 4 Computer Guid",
+              "description": "Computer Guid for the fourth slave database.",
+              "type": "string",
+              "default": ""
+            },
+            "proxysql-user": {
+              "title": "Proxysql username",
+              "description": "Proxysql external user, default is 'external'.",
+              "type": "string",
+              "default": "external"
+            },
+            "proxy-tags": {
+              "title": "Proxy tag list",
+              "description": "playbook configuration tags. Default: [\"pkg\", \"masterslave\", \"linux\", \"noreadwritesplit\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "pkg",
+                "masterslave",
+                "linux",
+                "noreadwritesplit"
+              ]
+            },
+            "logical-backup-cron": {
+              "title": "Mysqldump backup cron definition.",
+              "description": "Logical backup cron expression represents a set of times, using cron format.",
+              "type": "string",
+              "default": "0 21 * * *"
+            },
+            "physical-backup-cron": {
+              "title": "Mariabackup cron definition",
+              "description": "Physical backup cron expression represents a set of times, using cron format.",
+              "type": "string",
+              "default": "0 1 * * *"
+            },
+            "proxy-cpu-cores": {
+              "title": "Proxy Cpu cores",
+              "description": "Proxy Cpu cores. Default: 2",
+              "type": "integer",
+              "default": 2,
+              "minimum": 1
+            },
+            "proxy-memory": {
+              "title": "Proxy Memory usage in giga bytes",
+              "description": "Proxy Memory usage in giga bytes. Default: 1G",
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "db-cpu-cores": {
+              "title": "Database Cpu cores",
+              "description": "Database Cpu cores. Default: 2",
+              "type": "integer",
+              "default": 2,
+              "minimum": 1
+            },
+            "db-disk-iops": {
+              "title": "Database Rnd IO/s",
+              "description": "Rnd IO/s in seconds for micro service VM (default 300).",
+              "type": "integer",
+              "default": 300
+            },
+            "db-memory": {
+              "title": "Database memory in M",
+              "description": "Memory in M for micro service VM (default 256)",
+              "type": "integer",
+              "default": 256,
+              "minimum": 256,
+              "multipleOf": 256
+            },
+            "db-memory-shared-pct": {
+              "title": "Percent memory list shared per buffer",
+              "description": "Percent memory shared per buffer. Default: [\"threads:16\", \"innodb:60\", \"myisam:10\", \"aria:10\", \"rocksdb:1\", \"tokudb:1\", \"s3:1\", \"archive:1\", \"querycache:0\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "threads:16",
+                "innodb:60",
+                "myisam:10",
+                "aria:10",
+                "rocksdb:1",
+                "tokudb:1",
+                "s3:1",
+                "archive:1",
+                "querycache:0"
+              ]
+            },
+            "db-memory-threaded-pct": {
+              "title": "Percent memory allocted per threads",
+              "description": "Percent memory allocted per threads. Default: [\"tmp:70\", \"join:20\", \"sort:10\"]",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "tmp:70",
+                "join:20",
+                "sort:10"
+              ]
+            },
+            "innodb-file-per-table": {
+              "title": "enable Innodb file per table",
+              "description": "enable Innodb file per table. Possible value: 0=disabled, 1=enabled",
+              "type": "integer",
+              "default": 1,
+              "minimum": 0,
+              "maximum": 1
+            },
+            "use-ipv6": {
+              "title": "Mariadb server listen on IPv6",
+              "description": "Listen on IPv6 instead of IPv4.",
+              "type": "boolean",
+              "default": true
+            },
+            "failover-mode": {
+              "title": "Failover mode",
+              "description": "Failover is manual or automatic (default \"manual\").",
+              "type": "string",
+              "default": "manual",
+              "enum": [
+                "manual",
+                "automatic"
+              ]
+            },
+            "failover-limit": {
+              "title": "Failover amount limit",
+              "description": "Failover is canceld if already failover this number of time (0: unlimited) (default 5).",
+              "type": "integer",
+              "default": 5
+            },
+            "failover-falsepositive-heartbeat": {
+              "title": "Failover check slaves do not receive heartbeat",
+              "description": "Failover checks that slaves do not receive heartbeat (default true).",
+              "type": "boolean",
+              "default": true
+            },
+            "failover-falsepositive-heartbeat-timeout": {
+              "title": "Failover check slaves do not receive heartbeat timeout",
+              "description": "Failover checks that slaves do not receive heartbeat detection timeout  (default 3).",
+              "type": "integer",
+              "default": 3
+            },
+            "failover-falsepositive-ping-counter": {
+              "title": "Failover amount of ping failures",
+              "description": "Failover after this number of ping failures (interval 1s) (default 5).",
+              "type": "integer",
+              "default": 5
+            },
+            "failover-max-slave-delay": {
+              "title": "Failover election ignore slave with replication delay",
+              "description": "Election ignore slave with replication delay over this time in sec (default 30).",
+              "type": "integer",
+              "default": 30
+            },
+            "failover-readonly-state": {
+              "title": "Failover Switchover set slaves as read-only",
+              "description": "Failover Switchover set slaves as read-only (default true).",
+              "type": "boolean",
+              "default": true
+            },
+            "failover-restart-unsafe": {
+              "title": "Failover when cluster down if a slave is start first",
+              "description": "Failover when cluster down if a slave is start first.",
+              "type": "boolean",
+              "default": false
+            },
+            "failover-time-limit": {
+              "title": "Cancel failover if time in sec not passed after previous failover",
+              "description": "Failover is canceled if timer in sec is not passed with previous failover (0: do not wait).",
+              "type": "integer",
+              "default": 0
+            },
+            "switchover-at-equal-gtid": {
+              "title": "Switchover only when slaves are fully in sync",
+              "description": "Switchover only when slaves are fully in sync.",
+              "type": "boolean",
+              "default": false
+            },
+            "switchover-slave-wait-catch": {
+              "title": "Switchover wait for slave to catch with replication",
+              "description": "Switchover wait for slave to catch with replication, not needed in GTID mode but enable to detect possible issues like witing on old master (default true).",
+              "type": "boolean",
+              "default": true
+            },
+            "switchover-wait-kill": {
+              "title": "Switchover wait ms before killing threads on demoted master",
+              "description": "Switchover wait this many milliseconds before killing threads on demoted master (default 5000).",
+              "type": "integer",
+              "default": 5000
+            },
+            "switchover-wait-trx": {
+              "title": "Cancel switchover after timeout seconds if can't aquire FTWRL",
+              "description": "Switchover is cancel after this timeout in second if can't aquire FTWRL (default 10).",
+              "type": "integer",
+              "default": 10
+            },
+            "switchover-wait-write-query": {
+              "title": "Cancel switchover after timeout if a write query is running",
+              "description": "Switchover is canceled if a write query is running for this time (default 10).",
+              "type": "integer",
+              "default": 10
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

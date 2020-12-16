@@ -44,27 +44,13 @@
       "type": "string"
     },
     "https-only": {
-      "default": "false",
+      "default": "true",
       "description": "If set to true, http requests will be redirected to https",
       "enum": [
         "false",
         "true"
       ],
       "title": "HTTPS Only",
-      "type": "string"
-    },
-    "caddy_custom_http": {
-      "default": "",
-      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTP configuration",
-      "type": "string"
-    },
-    "caddy_custom_https": {
-      "default": "",
-      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
-      "textarea": true,
-      "title": "HTTPS configuration",
       "type": "string"
     },
     "default-path": {
@@ -153,12 +139,6 @@
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
-    "re6st-optimal-test": {
-      "default": "",
-      "description": "IPv6 and IPv6 Address for the frontend test if re6st is on the optimal status (use ipv6,ipv4)",
-      "title": "IPv6 and IPv4 Address to test Re6st",
-      "type": "string"
-    },
     "server-alias": {
       "default": "",
       "description": "Server Alias List separated by space",
@@ -215,10 +195,96 @@
       "title": "type:zope virtualhostroot-https-port",
       "type": "integer"
     },
+    "backend-connect-timeout": {
+      "description": "Time in seconds for establishing connection to the backend.",
+      "title": "Timeout for backend connection (seconds)",
+      "type": "integer"
+    },
+    "backend-connect-retries": {
+      "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "title": "Amount of retries to connect to the backend.",
+      "type": "integer"
+    },
+    "request-timeout": {
+      "description": "Timeout for HTTP requests.",
+      "title": "HTTP Request timeout in seconds",
+      "type": "integer"
+    },
     "ciphers": {
       "description": "List of ciphers. Empty defaults to cluster list of ciphers, which by default are Caddy list of ciphers. See https://caddyserver.com/docs/tls for more information.",
       "title": "Ordered space separated list of ciphers",
       "type": "string"
+    },
+    "authenticate-to-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
+    },
+    "backend-active-check": {
+      "title": "Backend Active Check",
+      "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "default": "false",
+      "type": "string"
+    },
+    "backend-active-check-http-method": {
+      "title": "Backend Active Check HTTP Metod",
+      "description": "Selects method to do the active check. CONNECT means that connection will be enough for the check, otherwise it's HTTP method.",
+      "enum": [
+        "GET",
+        "OPTIONS",
+        "POST",
+        "CONNECT"
+      ],
+      "default": "GET",
+      "type": "string"
+    },
+    "backend-active-check-http-path": {
+      "title": "Backend Active Check HTTP Path",
+      "description": "A path on which do the active check, unused in case of CONNECT.",
+      "default": "/",
+      "type": "string"
+    },
+    "backend-active-check-http-version": {
+      "title": "Backend Active Check HTTP Version",
+      "description": "A HTTP version to use to check the backend, unused in case of CONNECT.",
+      "enum": [
+        "HTTP/1.1",
+        "HTTP/1.0"
+      ],
+      "default": "HTTP/1.1",
+      "type": "string"
+    },
+    "backend-active-check-timeout": {
+      "title": "Backend Active Check Timeout (seconds)",
+      "description": "A timeout to for the request to be fulfilled, after connection happen.",
+      "default": "2",
+      "type": "integer"
+    },
+    "backend-active-check-interval": {
+      "title": "Backend Active Check Interval (seconds)",
+      "description": "An interval of backend active check.",
+      "default": "5",
+      "type": "integer"
+    },
+    "backend-active-check-rise": {
+      "title": "Backend Active Check Rise",
+      "description": "Amount of correct responses from the backend to consider it up.",
+      "default": "1",
+      "type": "integer"
+    },
+    "backend-active-check-fall": {
+      "title": "Backend Active Check Fall",
+      "description": "Amount of bad responses from the backend to consider it down.",
+      "default": "1",
+      "type": "integer"
     }
   },
   "title": "Input Parameters",

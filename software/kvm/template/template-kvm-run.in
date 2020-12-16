@@ -6,12 +6,16 @@ import hashlib
 import os
 import socket
 import subprocess
-import urllib
+try:
+  from urllib.request import FancyURLopener
+except ImportError:
+  from urllib import FancyURLopener
 import gzip
 import shutil
 from random import shuffle
 import glob
 import re
+import json
 
 import ssl
 
@@ -44,6 +48,7 @@ tap_interface = '{{ parameter_dict.get("tap-interface") }}'
 listen_ip = '{{ parameter_dict.get("ipv4") }}'
 mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
+tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
 numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
 ram_size = {{ parameter_dict.get("ram-size") }}
 ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
@@ -94,10 +99,13 @@ enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lowe
 
 logfile = '{{ parameter_dict.get("log-file") }}'
 
+boot_image_url_list_json_config = '{{ parameter_dict.get("boot-image-url-list-json-config") }}'
+boot_image_url_select_json_config = '{{ parameter_dict.get("boot-image-url-select-json-config") }}'
+
 if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
-  opener = urllib.FancyURLopener(context=ssl._create_unverified_context())
+  opener = FancyURLopener(context=ssl._create_unverified_context())
 else:
-  opener = urllib.FancyURLopener({})
+  opener = FancyURLopener({})
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -111,22 +119,16 @@ def md5Checksum(file_path):
 
 def getSocketStatus(host, port):
   s = None
-  for res in socket.getaddrinfo(host, port,
-      socket.AF_UNSPEC, socket.SOCK_STREAM):
-    af, socktype, proto, canonname, sa = res
+  for af, socktype, proto, canonname, sa in socket.getaddrinfo(
+      host, port, socket.AF_UNSPEC, socket.SOCK_STREAM):
     try:
       s = socket.socket(af, socktype, proto)
-    except socket.error, msg:
-      s = None
-      continue
-    try:
       s.connect(sa)
-    except socket.error, msg:
-      s.close()
-      s = None
-      continue
-    break
-  return s
+      return s
+    except socket.error:
+      if s:
+        s.close()
+        s = None
 
 def getMapStorageList(disk_storage_dict, external_disk_number):
   map_disk_file = os.path.join(etc_directory, '.data-disk-ids')
@@ -242,7 +244,8 @@ additional_disk_options = ''
 
 if disk_aio == 'native':
   additional_disk_options += ',cache.direct=on'
-
+if disk_format == "raw":
+  additional_disk_options += ',discard=on'
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
@@ -277,6 +280,8 @@ if use_nat == 'true':
                                            cluster_doc_host, cluster_doc_port)
   if set_nat_restrict == 'true':
     rules += ',restrict=on'
+  if use_tap == 'true' and tap_ipv6_addr != '':
+    rules += ',ipv6=off'
   nat_network_parameter = ['-netdev', rules,
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, mac_address)]
 if use_tap == 'true':
@@ -305,6 +310,7 @@ kvm_argument_list = [qemu_path,
   '-qmp', 'unix:%s,server,nowait' % socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
+  '-nodefaults',
 ]
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
@@ -314,7 +320,7 @@ for numa in numa_list:
 kvm_argument_list += numa_parameter
 
 if tap_network_parameter == [] and nat_network_parameter == []:
-  print 'Warning : No network interface defined.'
+  print('Warning : No network interface defined.')
 else:
   kvm_argument_list += nat_network_parameter + tap_network_parameter
 if language in language_list:
@@ -356,7 +362,7 @@ for nbd_ip, nbd_port in nbd_list:
     s = getSocketStatus(nbd_ip, nbd_port)
     if s is None:
       # NBD is not available : launch kvm without it
-      print 'Warning : Nbd is not available.'
+      print('Warning : Nbd is not available.')
     else:
       # NBD is available
       # We close the NBD socket else qemu won't be able to use it apparently
@@ -364,11 +370,38 @@ for nbd_ip, nbd_port in nbd_list:
       kvm_argument_list.extend([
           '-drive',
           'file=nbd:[%s]:%s,media=cdrom' % (nbd_ip, nbd_port)])
-# If no NBD is specified/available: use internal disk image
 else:
+  # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
+  #       Debian installation CDs, rendering it uninstallable
+  if boot_image_url_select_json_config:
+    # Support boot-image-url-select
+    with open(boot_image_url_select_json_config) as fh:
+      image_config = json.load(fh)
+    if image_config['error-amount'] == 0:
+      for image in sorted(image_config['image-list'], key=lambda k: k['link']):
+        link = os.path.join(image_config['destination-directory'], image['link'])
+        if os.path.exists(link) and os.path.islink(link):
+          kvm_argument_list.extend([
+            '-drive',
+            'file=%s,media=cdrom' % (link,)
+          ])
+  if boot_image_url_list_json_config:
+    # Support boot-image-url-list
+    with open(boot_image_url_list_json_config) as fh:
+      image_config = json.load(fh)
+    if image_config['error-amount'] == 0:
+      for image in sorted(image_config['image-list'], key=lambda k: k['link']):
+        link = os.path.join(image_config['destination-directory'], image['link'])
+        if os.path.exists(link) and os.path.islink(link):
+          kvm_argument_list.extend([
+            '-drive',
+            'file=%s,media=cdrom' % (link,)
+          ])
+  # Always add by default the default image
   kvm_argument_list.extend([
       '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
   ])
 
-print 'Starting KVM: \n %s' % ' '.join(kvm_argument_list)
+
+print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 os.execv(qemu_path, kvm_argument_list)

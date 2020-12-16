@@ -18,27 +18,6 @@
       "default": 1,
       "type": "integer"
     },
-    "ssl": {
-      "description": "Custom ssl certificate, key and optionaly client ca-cert and crl",
-      "properties": {
-        "cert": {
-          "description": "The content of the certificate file",
-          "type": "string"
-        },
-        "key": {
-          "description": "The content of the ssl key file",
-          "type": "string"
-        },
-        "ca-cert": {
-          "description": "The content of the ca-certificate file",
-          "type": "string"
-        },
-        "crl": {
-          "description": "The content of the revocation file",
-          "type": "string"
-        }
-      }
-    },
     "timeout": {
       "description": "Configure apache with this timeout",
       "type": "integer"

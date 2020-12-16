@@ -32,6 +32,29 @@ production: &base
     relative_url_root: <%= @gitlab_relative_url %>
     #}
 
+    # Content Security Policy
+    # See https://guides.rubyonrails.org/security.html#content-security-policy
+    content_security_policy:
+      enabled: true
+      report_only: false
+      directives:
+        base_uri:
+        child_src:
+        connect_src: "'self' http://localhost:* ws://localhost:* wss://localhost:*"
+        default_src: "'self'"
+        font_src:
+        form_action:
+        frame_ancestors: "'self'"
+        frame_src: "'self' https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com https://content-cloudresourcemanager.googleapis.com"
+        img_src: "* data: blob:"
+        manifest_src:
+        media_src:
+        object_src: "'none'"
+        script_src: "'self' 'unsafe-eval' http://localhost:* https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://www.gstatic.com/recaptcha/ https://apis.google.com"
+        style_src: "'self' 'unsafe-inline'"
+        worker_src: "'self' blob:"
+        report_uri:
+
     # Trusted Proxies
     # Customize if you have GitLab behind a reverse proxy which is running on a different machine.
     # Add the IP address for your reverse proxy to the list, otherwise users will appear signed in from that address.
@@ -84,7 +107,7 @@ production: &base
       merge_requests:   {{ cfg('default_projects_features.merge_requests') }}
       wiki:             {{ cfg('default_projects_features.wiki') }}
       snippets:         {{ cfg('default_projects_features.snippets') }}
-      builds: false {# builds not supported yet <%= @gitlab_default_projects_features_builds %> #}
+      builds:           {{ cfg('default_projects_features.builds') }}
       {# container_registry: <%= @gitlab_default_projects_features_container_registry %> #}
 
     ## Webhook settings
@@ -148,6 +171,7 @@ production: &base
     storage_path: <%= @lfs_storage_path %>
   #}
 
+
   {# we do not support container registry
   ## Container Registry
   registry:
@@ -191,6 +215,9 @@ production: &base
     ssl_url:   <%= single_quote(@gravatar_ssl_url) %>    # default: https://secure.gravatar.com/avatar/%{hash}?s=%{size}&d=identicon
     #}
 
+  ## Sidekiq
+  sidekiq:
+    log_format: json # (default is the original format)
 
   {# XXX cron jobs are disabled for now - we do not support CI and EE features or we are ok with defaults
   ## Auxiliary jobs
@@ -375,18 +402,17 @@ production: &base
     path: <%= @shared_path %>
   #}
 
+  # Gitaly settings
+  gitaly:
+    # Default Gitaly authentication token. Can be overriden per storage. Can
+    # be left blank when Gitaly is running locally on a Unix socket, which
+    # is the normal way to deploy Gitaly.
+    token:
+
+
   #
   # 4. Advanced settings
   # ==========================
-
-  # GitLab Satellites
-  # Important: keep the satellites.path setting until GitLab 9.0 at
-  # least. This setting is fed to 'rm -rf' in
-  # db/migrate/20151023144219_remove_satellites.rb
-  satellites:
-    # Relative paths are relative to Rails.root (default: tmp/repo_satellites/)
-    path: /dev/null
-    timeout: 0
 
   ## Repositories settings
   repositories:
@@ -395,7 +421,11 @@ production: &base
     # gitlab-shell invokes Dir.pwd inside the repository path and that results
     # real path not the symlink.
     storages: # You must have at least a `default` storage path.
-      default: {{ gitlab.repositories }}
+      default:
+        path: {{ gitlab.repositories }}
+        gitaly_address: unix:{{ gitaly.socket }} # TCP connections are supported too (e.g. tcp://host:port). TLS connections are also supported using the system certificate pool (eg: tls://host:port).
+        # gitaly_token: 'special token' # Optional: override global gitaly.token for this storage.
+
 
   ## Backup settings
   backup:
@@ -420,8 +450,8 @@ production: &base
   ## GitLab Shell settings
   gitlab_shell:
     path: {{ gitlab_shell_work.location }}
+    authorized_keys_file: {{ gitlab.var }}/sshkeys-notused
 
-    # REPOS_PATH MUST NOT BE A SYMLINK!!!
     repos_path: {{ gitlab.repositories }}
     hooks_path: {{ gitlab_shell_work.location }}/hooks/
     secret_file: {{ gitlab_shell.secret }}
@@ -429,6 +459,9 @@ production: &base
     # Git over HTTP
     upload_pack: true
     receive_pack: true
+
+    # Git import/fetch timeout, in seconds. Defaults to 3 hours.
+    # git_timeout: 10800
 
     {# Git over SSH is disabled elsewhere (so we don't care about ssh_port)
     # If you use non-standard ssh port you need to specify it
@@ -451,7 +484,6 @@ production: &base
     max_size: {{ cfg('git_max_size') }}
     # Git timeout to read a commit, in seconds
     timeout: {{ cfg('git_timeout') }}
-
 
   #
   # 5. Extra customization

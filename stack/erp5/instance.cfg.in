@@ -46,6 +46,7 @@ extra-context =
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
+    import re re
     import urlparse urlparse
 import-list =
     file root_common context:root-common
@@ -55,13 +56,17 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 <= default-dynamic-template-parameters
-apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
+rsyslogd = {{ rsyslogd_location }}
+socat = {{ socat_location }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
+# XXX: only used in software/slapos-master:
+apache = {{ apache_location }}
 template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
@@ -71,6 +76,7 @@ filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
     import itertools itertools
+    import hashlib hashlib
 import-list =
     file caucase context:caucase-jinja2-library
 
@@ -98,7 +104,10 @@ perl_dbd_mariadb_path = {{ perl_dbd_mariadb_path }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
-userhosts = {{ userhosts_location }}
+fonts = {{ dumps(zope_fonts) }}
+fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
+template-fonts-conf = {{ dumps(template_fonts_conf) }}
+userhosts = {{ userhosts_location }}/bin/userhosts
 site-zcml = {{ site_zcml }}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
@@ -111,6 +120,7 @@ template = {{ template_zope }}
 filename = instance-zope.cfg
 extra-context =
     key buildout_directory buildout:directory
+    key root_common context:root-common
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
     import hashlib hashlib
@@ -138,6 +148,7 @@ coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
+xz-utils-location = {{ xz_utils_location }}
 mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
@@ -149,6 +160,9 @@ mariadb-start-clone-from-backup = {{ mariadb_start_clone_from_backup }}
 promise-check-slow-queries-digest-result = {{ bin_directory }}/check-slow-queries-digest-result
 percona-tools-location = {{ percona_toolkit_location }}
 unixodbc-location = {{ unixodbc_location }}
+mroonga-mariadb-install-sql = {{ mroonga_mariadb_install_sql }}
+mroonga-mariadb-plugin-dir = {{ mroonga_mariadb_plugin_dir }}
+groonga-plugins-path = {{ groonga_plugin_dir }}:{{ groonga_mysql_normalizer_plugin_dir }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base

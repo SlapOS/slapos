@@ -1,4 +1,5 @@
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
+{%- set enable_cache = slave_parameter.get('enable_cache', '').lower() in TRUE_VALUES %}
 {%- set disable_no_cache_header = slave_parameter.get('disable-no-cache-request', '').lower() in TRUE_VALUES %}
 {%- set disable_via_header = slave_parameter.get('disable-via-header', '').lower() in TRUE_VALUES %}
 {%- set prefer_gzip = slave_parameter.get('prefer-gzip-encoding-to-backend', '').lower() in TRUE_VALUES %}
@@ -8,9 +9,8 @@
 {%- endif %} {#- if prefer_gzip #}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
 {%- set enable_h2 = slave_parameter['global_disable_http2'].lower() not in TRUE_VALUES and slave_parameter.get('enable-http2', slave_parameter['enable_http2_by_default']).lower() in TRUE_VALUES %}
-{%- set ssl_proxy_verify = slave_parameter.get('ssl-proxy-verify', '').lower() in TRUE_VALUES %}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
-{%- set https_only = slave_parameter.get('https-only', '').lower() in TRUE_VALUES %}
+{%- set https_only = slave_parameter.get('https-only', 'true').lower() in TRUE_VALUES %}
 {%- set slave_type = slave_parameter.get('type', '') %}
 {%- set host_list = server_alias_list %}
 {%- set cipher_list = slave_parameter.get('cipher_list', '').strip() %}
@@ -39,13 +39,19 @@
 {%-   set enable_h2 = False %}
 {%- endif %}
 
+{%- macro proxy_header() %}
+    timeout {{ slave_parameter['request-timeout'] }}s
+    # force reset of X-Forwarded-For
+    header_upstream X-Forwarded-For {remote}
+{%- endmacro %} {# proxy_header #}
+
 {%- for tls in [True, False] %}
 {%- if tls %}
-{%- set backend_url = slave_parameter.get('https-url', slave_parameter.get('url', '')).rstrip('/') %}
+{%-   set backend_url = slave_parameter.get('backend-https-url', slave_parameter.get('backend-http-url')) %}
 # SSL enabled hosts
 {{ https_host_list|join(', ') }} {
 {%- else %}
-{%- set backend_url = slave_parameter.get('url', '').rstrip('/') %}
+{%-   set backend_url = slave_parameter['backend-http-url'] %}
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
@@ -101,9 +107,8 @@
   # Zope configuration
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+  proxy "/{{ proxy_name }}" {{ backend_url }} {
+{{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -122,14 +127,6 @@
     header_upstream -Pragma
 {%-   endif %} {#-   if disable_no_cache_header #}
     transparent
-    timeout {{ slave_parameter['request_timeout'] }}s
-{%-   if ssl_proxy_verify %}
-{%-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-     endif %} {#-     if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-   else %} {#-   if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-   endif %} {#-   if ssl_proxy_verify #}
   } {# proxy #}
 {%-   endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
   {%- if default_path %}
@@ -167,61 +164,58 @@
 {%- endif %}
   } {# rewrite #}
 {%- endif %} {#- if prefer_gzip #}
-{%- elif slave_type ==  'redirect' and backend_url %} {#- if slave_type ==  'zope' and backend_url #}
+{%- elif slave_type == 'redirect' %}
+{%-   if backend_url %}
   # Redirect configuration
   redir 302 {
     /  {{ backend_url }}{rewrite_uri}
-  } {# redir #}
+  }
+{%-   endif %}
 {%- elif slave_type == 'notebook' %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+{{ proxy_header() }}
     transparent
-    insecure_skip_verify
   }
   rewrite {
     regexp "/(api/kernels/[^/]+/(channels|iopub|shell|stdin)|terminals/websocket)/?"
     to /proxy/{1}
   }
   proxy /proxy/ {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
-    header_upstream X-Real-IP {remote}
-    header_upstream Host {host}
+{{ proxy_header() }}
+    transparent
     websocket
     without /proxy/
-    insecure_skip_verify
   }
 {%- elif slave_type == 'websocket' %}
 {%-   if websocket_path_list %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+{{ proxy_header() }}
 {%-     if websocket_transparent %}
     transparent
+{%-     else %}
+    header_upstream Host {host}
 {%-     endif %}
-    insecure_skip_verify
   }
 {%-     for websocket_path in websocket_path_list %}
-  proxy /{{ websocket_path }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+  proxy "/{{ websocket_path }}" {{ backend_url }} {
+{{ proxy_header() }}
     websocket
 {%-       if websocket_transparent %}
     transparent
+{%-       else %}
+    header_upstream Host {host}
 {%-       endif %}
-    insecure_skip_verify
   }
 {%-     endfor %}
 {%-   else %}
   proxy / {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+{{ proxy_header() }}
     websocket
 {%-   if websocket_transparent %}
     transparent
+{%-   else %}
+    header_upstream Host {host}
 {%-   endif %}
-    insecure_skip_verify
   }
 {%-   endif %}
 {%- else %} {#- if slave_type ==  'zope' and backend_url #}
@@ -236,9 +230,8 @@
 
 {%-   for (proxy_name, proxy_comment) in proxy_append_list %}
   # {{ proxy_comment }}
-  proxy /{{ proxy_name }} {{ backend_url }} {
-    try_duration {{ slave_parameter['proxy_try_duration'] }}s
-    try_interval {{ slave_parameter['proxy_try_interval'] }}ms
+  proxy "/{{ proxy_name }}" {{ backend_url }} {
+{{ proxy_header() }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -257,14 +250,6 @@
     header_upstream -Pragma
 {%-     endif %} {#-     if disable_no_cache_header #}
     transparent
-    timeout {{ slave_parameter['request_timeout'] }}s
-{%-     if ssl_proxy_verify %}
-{%-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter %}
-    ca_certificates {{ slave_parameter['path_to_ssl_proxy_ca_crt'] }}
-{%-       endif %} {#-       if 'path_to_ssl_proxy_ca_crt' in slave_parameter #}
-{%-     else %} {#-     if ssl_proxy_verify #}
-    insecure_skip_verify
-{%-     endif %} {#-     if ssl_proxy_verify #}
   }  {# proxy #}
 {%-    endfor %} {#-   for (proxy_name, proxy_comment) in proxy_append_list #}
 {%-   endif %} {#-   if backend_url #}

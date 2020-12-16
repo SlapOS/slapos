@@ -10,7 +10,7 @@ import tempfile
 import json
 
 
-SLEEP_TIME = 10
+SLEEP_TIME = 15
 TRY_AMOUNT = 3600
 
 

@@ -24,7 +24,7 @@ http_settings:
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
 # Check twice that none of the components is a symlink, including "/home".
-repos_path: "{{ gitlab.repositories }}"
+# repos_path: "{{ gitlab.repositories }}"
 
 # File used as authorized_keys for gitlab user
 # NOTE not used in slapos version (all access via https only)
@@ -34,6 +34,9 @@ auth_file: "{{ gitlab.var }}/sshkeys-notused"
 # Default is .gitlab_shell_secret in the root directory.
 secret_file: "{{ gitlab_shell.secret }}"
 
+# Parent directory for global custom hook directories (pre-receive.d, update.d, post-receive.d)
+# Default is hooks in the gitlab-shell directory.
+custom_hooks_dir: "{{ gitlab_shell_work.location }}/hooks/"
 
 # Redis settings used for pushing commit notices to gitlab
 redis:
@@ -41,11 +44,6 @@ redis:
   host: {# <%= @redis_host %> #}
   port: {# <%= @redis_port %> #}
   socket: {{ service_redis.unixsocket }}
-{# we don't use password for redis
-<% if @redis_password %>
-  pass: <%= @redis_password %>
-<% end %>
-#}
   database: {# <%= @redis_database %> #}
   namespace: resque:gitlab
 

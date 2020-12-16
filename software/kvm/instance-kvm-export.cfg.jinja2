@@ -20,6 +20,11 @@ parts +=
 # monitor parts
   monitor-base
 
+[slap-parameter]
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
 # Create the exporter executable, which is a simple shell script
 [exporter]
 recipe = slapos.recipe.template:jinja2

@@ -21,7 +21,13 @@ pidfile_software =  {{slaprunner['pidfile-software']}}
 pidfile_instance =  {{slaprunner['pidfile-instance']}}
 
 [slapformat]
+input_definition_file = {{ slaprunner['slapformat-definition.cfg'] }}
 partition_amount = {{ slaprunner['partition-amount'] }}
+alter_user = false
+alter_network = false
+create_tab = false
+create_tun = false
+computer_xml = {{ slaprunner['etc_dir'] }}/slapos.xml
 
 [slaprunner]
 slapos = {{ slaprunner['slapos'] }}
@@ -58,10 +64,8 @@ host = {{ slaprunner['ipv4'] }}
 port = {{ slaprunner['proxy_port'] }}
 database_uri = {{ slaprunner['proxy_database'] }}
 
-[sshkeys_authority]
-ssh_client = {{ slaprunner['ssh_client'] }}
-public_key = {{ slaprunner['public_key'] }}
-private_key = {{ slaprunner['private_key'] }}
-
 [gitclient]
 git = {{ slaprunner['git-binary'] }}
+
+[sshkeys_authority]
+public_key = {{ slaprunner['public_key'] }}
