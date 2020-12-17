@@ -177,7 +177,8 @@ recipe = slapos.cookbook:wrapper
 environment =
   HOSTALIASES=${hostaliases:rendered}
   HOSTS=${hosts:rendered}
-command-line = '{{ parameter_dict['userhosts'] }}' ${:wrapped-command-line}
+  LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
+command-line = ${:wrapped-command-line}
 
 {# Hack to deploy SSL certs via instance parameters -#}
 {% for zodb in zodb_dict.itervalues() -%}
