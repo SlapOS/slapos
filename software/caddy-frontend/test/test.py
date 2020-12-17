@@ -4008,6 +4008,74 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertRegexpMatches(ats_log, refresh_pattern)
     # END: Check that squid.log is correctly filled in
 
+  @skip('Feature postponed')
+  def test_enable_cache_stale_if_error_respected(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+
+    source_ip = '127.0.0.1'
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600',
+      },
+      source_ip=source_ip
+    )
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
+    via = backend_headers.pop('via', None)
+    self.assertNotEqual(via, None)
+    self.assertRegexpMatches(
+      via,
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+    )
+
+    # check stale-if-error support is really respected if not present in the
+    # request
+    # wait a bit for max-age to expire
+    time.sleep(2)
+    # real check: cache access does not provide old data with stopped backend
+    try:
+      # stop the backend, to have error on while connecting to it
+      self.stopServerProcess()
+
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        'test-path/deep/.././deeper', headers={
+          'X-Reply-Header-Cache-Control': 'max-age=1',
+        },
+        source_ip=source_ip
+      )
+      self.assertEqual(result.status_code, httplib.BAD_GATEWAY)
+    finally:
+      self.startServerProcess()
+    # END: check stale-if-error support
+
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
     # check that timeout seen by ATS does not result in many queries done
