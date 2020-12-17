@@ -3921,8 +3921,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check stale-if-error support (assumes stale-while-revalidate is same)
     # wait a bit for max-age to expire
     time.sleep(2)
-    # real check: cache access provides old data, access cache directly, as
-    # caddy has to be stopped
+    # real check: cache access provides old data when backend is stopped
     try:
       # stop the backend, to have error on while connecting to it
       self.stopServerProcess()
