@@ -6,6 +6,7 @@ import configparser
 import random
 from notebook.auth import passwd
 import os
+import sys
 
 def random_password(length = 10):
   result = ""
@@ -36,3 +37,6 @@ c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
 
 with open(knowledge_0, 'w') as file:
   parser.write(file)
+
+os.environ['PATH'] = "{{ gcc_location }}/bin" + os.pathsep + os.environ['PATH']
+os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}" + os.pathsep + os.environ['PYTHONPATH']

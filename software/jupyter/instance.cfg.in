@@ -82,6 +82,8 @@ rendered = ${directory:jupyter_config_dir}/jupyter_notebook_config.py
 mode = 0744
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
+  raw gcc_location {{ gcc_location }}
+  raw cythonplus_repository {{ cythonplus_repository }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
