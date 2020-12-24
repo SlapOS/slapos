@@ -7,6 +7,7 @@ parts =
   publish-connection-parameter
   slapos-repository
   runner-link
+  settings.json
 
 extends = ${monitor-template:rendered}
 
@@ -401,6 +402,21 @@ location = $${directory:project}/slapos
 branch = 1.0
 develop = true
 git-executable = ${git:location}/bin/git
+
+[settings.json]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot-theia}/$${:_buildout_section_name_}
+template =
+  inline:
+  {
+    "files.watcherExclude": {
+      "**/.eggs/**": true,
+      "**/.env/**": true,
+      "**/.git/**": true,
+      "**/node_modules/**": true,
+      "**/runner/**":true,
+    }
+  }
 
 [runner-link]
 recipe = slapos.cookbook:symbolic.link
