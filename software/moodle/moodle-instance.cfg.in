@@ -1,0 +1,98 @@
+[moodle-directory]
+recipe  = slapos.cookbook:mkdirectory
+data      = ${directory:srv}/data
+
+[instance-parameter]
+moodle = ${:document-root}
+admin-user = admin
+admin-password = admin
+trusted-domain-list = 
+  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
+  ${slap-parameter:instance.trusted-domain-1}
+  ${slap-parameter:instance.trusted-domain-2}
+  ${slap-parameter:instance.trusted-domain-3}
+
+custom-url = ${slap-parameter:instance.custom-url}
+trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
+cli-url = ${slap-parameter:instance.cli-url}
+data-dir = ${moodle-directory:data}
+
+#php.ini parameters
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+
+#SMTP settings
+mail.from = ${slap-parameter:instance.mail-from}
+mail.domain = ${slap-parameter:instance.mail-domain}
+mail.smtpauthtype = ${slap-parameter:instance.mail-smtpauthtype}
+mail.smtpauth = ${slap-parameter:instance.mail-smtpauth}
+mail.smtpport = ${slap-parameter:instance.mail-smtpport}
+mail.smtphost = ${slap-parameter:instance.mail-smtphost}
+mail.smtpname = ${slap-parameter:instance.mail-smtpname}
+mail.smtppassword = ${slap-parameter:instance.mail-smtppassword}
+# Instance configuration
+collabora-url = ${slap-parameter:instance.collabora-url}
+stun-server = ${slap-parameter:instance.stun-server}
+turn-server = ${slap-parameter:instance.turn-server}
+turn-secret = ${slap-parameter:instance.turn-secret}
+
+[moodle-config-dist.php]
+recipe = slapos.recipe.template:jinja2
+template = {{ moodle_config_dist }}
+rendered = ${instance-parameter:document-root}/config.php
+context =
+  section parameter_dict   instance-parameter
+  key frontend_url request-frontend:connection-secure_access
+mode = 744
+depends =
+  ${moodle-apache-httpd:recipe}
+  ${moodle-cron:recipe}
+
+[moodle-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+template = {{ moodle_apache_httpd }}
+rendered = ${directory:apache.d}/moodle.conf
+context =
+  section parameter_dict apache-php-configuration
+mode = 744
+
+[moodle-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = moodle
+frequency = */5 * * * *
+command = ${php-bin:wrapper-path} -f ${instance-parameter:moodle}/admin/cli/cron.php
+
+
+[slap-parameter]
+instance.mail-from = moodle
+instance.mail-domain = moodle@example.com
+instance.mail-smtpauthtype = LOGIN
+instance.mail-smtpauth = 1
+instance.mail-smtpport = 587
+instance.mail-smtphost =
+instance.mail-smtpname =
+instance.mail-smtppassword =
+instance.collabora-url = https://moodle.host.vifib.net/
+instance.stun-server = turn.vifib.com:5349
+instance.turn-server =
+instance.turn-secret =
+
+instance.cli-url = ${apache-php-configuration:url}
+instance.trusted-domain-1 =
+instance.trusted-domain-2 =
+instance.trusted-domain-3 =
+instance.trusted-proxy-list =
+instance.custom-url =
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
