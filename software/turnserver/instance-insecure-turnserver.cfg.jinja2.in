@@ -59,13 +59,6 @@ name = turnserver-port-listening.py
 config-hostname = {{ listining_ip }}
 config-port = {{ turn_port }}
 
-[promise-check-turnserver-tls-port]
-<= monitor-promise-base
-module = check_port_listening
-name = turnserver-tls-port-listening.py
-config-hostname = {{ listining_ip }}
-config-port = {{ turn_tls_port }}
-
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
@@ -83,7 +76,6 @@ parts =
   {{ part_list | join('\n  ') }}
 # turn server
   turnserver-wrapper
-  promise-check-turnserver-tls-port
   promise-check-turnserver-port
 
 eggs-directory = {{ eggs_directory }}
