@@ -9,6 +9,7 @@ parts =
   certificate-authority
   logrotate-entry-apache
   promise
+  lamp-frontend-promise
 
   php.ini-conf
   apache-php-service
@@ -190,6 +191,27 @@ backend-url = ${apache-php-configuration:url}
 php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
 php-ini = ${php.ini-conf:rendered}
 
+#----------------
+#--
+#-- Request Frontend
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Instance Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${apache-php-configuration:url}
+config-https-only = true
+return = domain secure_access
+
+[lamp-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = lamp-http-frontend.py
+url = ${request-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
 
 #----------------
 #--
@@ -199,6 +221,7 @@ php-ini = ${php.ini-conf:rendered}
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 backend-url = ${apache-php-configuration:url}
+frontend-url = ${request-frontend:connection-secure_access}
 
 
 #----------------
