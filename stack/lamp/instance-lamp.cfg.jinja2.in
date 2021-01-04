@@ -31,10 +31,12 @@ config-{{ key }} = {{ dumps(value) }}
 config-database-list = ${request-mariadb:connection-database-list}
 return =
   backend-url
+  frontend-url
   monitor-base-url
 
 {% do part_list.append('request-apache') -%}
 {% do publish_dict.__setitem__('backend-url', '${request-apache:connection-backend-url}') -%}
+{% do publish_dict.__setitem__('url', '${request-apache:connection-frontend-url}') -%}
 {% do monitor_base_url_dict.__setitem__('apache', '${request-apache:connection-monitor-base-url}') -%}
 
 
@@ -63,28 +65,6 @@ return =
 {% do part_list.append('request-mariadb') -%}
 {% do publish_dict.__setitem__('mariadb-url-list', '${request-mariadb:connection-database-list}') -%}
 {% do monitor_base_url_dict.__setitem__('mariadb', '${request-mariadb:connection-monitor-base-url}') -%}
-
-[request-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Instance Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
-config-url = ${request-apache:connection-backend-url}
-config-https-only = true
-return = domain secure_access
-
-[lamp-frontend-promise]
-<= monitor-promise-base
-module = check_url_available
-name = lamp-http-frontend.py
-url = ${request-frontend:connection-secure_access}
-config-url = ${:url}
-config-custom-domain = {{ slapparameter_dict.get('custom-domain', '') }}
-config-check-secure = 1
-
-{% do publish_dict.__setitem__('url', '${lamp-frontend-promise:url}') -%}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
