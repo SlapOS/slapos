@@ -221,7 +221,7 @@
       "type": "string",
       "textarea": true
     },
-    "Advanced":{
+    "advanced":{
       "title": "Advanced Parameters",
       "description": "Advanced parameters for KVM",
       "properties": {
@@ -320,114 +320,133 @@
           "type": "string",
           "textarea": true
         },
-        "NBD": {
-          "nbd-host": {
-            "title": "NBD hostname",
-            "description": "hostname (or IP) of the NBD server containing the boot image.",
-            "type": "string",
-            "format": "internet-address"
+        "nbd": {
+          "title": "NBD",
+          "description": "NBD hostname and port",
+          "properties": {
+            "nbd-host": {
+              "title": "NBD hostname",
+              "description": "hostname (or IP) of the NBD server containing the boot image.",
+              "type": "string",
+              "format": "internet-address"
+            },
+            "nbd-port": {
+              "title": "NBD port",
+              "description": "Port of the NBD server containing the boot image.",
+              "type": "integer",
+              "default": 1024,
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "nbd2-host": {
+              "title": "Second NBD hostname",
+              "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
+              "type": "string",
+              "format": "internet-address"
+            },
+            "nbd2-port": {
+              "title": "Second NBD port",
+              "description": "Port of the second NBD server containing the boot image.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
           },
-          "nbd-port": {
-            "title": "NBD port",
-            "description": "Port of the NBD server containing the boot image.",
-            "type": "integer",
-            "default": 1024,
-            "minimum": 1,
-            "maximum": 65535
-          },
-          "nbd2-host": {
-            "title": "Second NBD hostname",
-            "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
-            "type": "string",
-            "format": "internet-address"
-          },
-          "nbd2-port": {
-            "title": "Second NBD port",
-            "description": "Port of the second NBD server containing the boot image.",
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 65535
-          }
+          "type": "object"
         },
-        "Virtual Hard Drive": {
-          "virtual-hard-drive-url": {
-            "title": "Existing disk image URL",
-            "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
-            "format": "uri",
-            "type": "string"
+        "virtual-hard-drive": {
+          "title": "Virtual Hard Drive",
+          "description": "Virtual hard drive parameters",
+          "properties": {
+            "virtual-hard-drive-url": {
+              "title": "Existing disk image URL",
+              "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
+              "format": "uri",
+              "type": "string"
+            },
+            "virtual-hard-drive-md5sum": {
+              "title": "Checksum of virtual hard drive",
+              "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
+              "type": "string"
+            },
+            "virtual-hard-drive-gzipped": {
+              "title": "Define if virtual hard drive to download is gzipped",
+              "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+              "type": "boolean",
+              "default": false
+            },
+            "hard-drive-url-check-certificate": {
+              "title": "Check certificate when downloading virtual hard drive from https.",
+              "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+              "type": "boolean",
+              "default": true
+            }
           },
-          "virtual-hard-drive-md5sum": {
-            "title": "Checksum of virtual hard drive",
-            "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
-            "type": "string"
-          },
-          "virtual-hard-drive-gzipped": {
-            "title": "Define if virtual hard drive to download is gzipped",
-            "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
-            "type": "boolean",
-            "default": false
-          },
-          "hard-drive-url-check-certificate": {
-            "title": "Check certificate when downloading virtual hard drive from https.",
-            "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
-            "type": "boolean",
-            "default": true
-          }
+          "type": "object"
         },
-        "Wipe Disk": {
-          "wipe-disk-ondestroy": {
-            "title": "Wipe disks when destroy the VM",
-            "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
-            "type": "boolean",
-            "default": false
+        "wipe-disk": {
+          "title": "Wipe disk",
+          "description": "Wipe disk parameters",
+          "properties": {
+            "wipe-disk-ondestroy": {
+              "title": "Wipe disks when destroy the VM",
+              "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+              "type": "boolean",
+              "default": false
+            },
+            "wipe-disk-iterations": {
+              "title": "Wipe disk iterations",
+              "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
           },
-          "wipe-disk-iterations": {
-            "title": "Wipe disk iterations",
-            "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
-            "type": "integer",
-            "default": 1,
-            "minimum": 1
-          }
+          "type": "object"
         },
-        "Frontend": {
-          "frontend-instance-guid": {
-            "title": "Frontend Instance ID",
-            "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-            "type": "string"
+        "frontend": {
+          "title": "KVM frontend (web socket)",
+          "description": "Front end used to provide VNC.",
+          "properties": {
+            "frontend-instance-guid": {
+              "title": "Frontend Instance ID",
+              "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+              "type": "string"
+            },
+            "frontend-software-type": {
+              "title": "Frontend Software Type",
+              "description": "Type of the frontend instance, like \"frontend\".",
+              "type": "string",
+              "default": "RootSoftwareInstance"
+            },
+            "frontend-software-url": {
+              "title": "Frontend Software URL",
+              "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+              "type": "string",
+              "format": "uri",
+              "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+            },
+            "frontend-additional-instance-guid": {
+              "title": "Additional Frontend Instance ID",
+              "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+              "type": "string"
+            },
+            "frontend-additional-software-type": {
+              "title": "Additional Frontend Software Type",
+              "description": "Type of the frontend instance, like \"frontend\".",
+              "type": "string",
+              "default": "RootSoftwareInstance"
+            },
+            "frontend-additional-software-url": {
+              "title": "Additional Frontend Software URL",
+              "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+              "type": "string",
+              "format": "uri",
+              "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+            }     
           },
-          "frontend-software-type": {
-            "title": "Frontend Software Type",
-            "description": "Type of the frontend instance, like \"frontend\".",
-            "type": "string",
-            "default": "RootSoftwareInstance"
-          },
-          "frontend-software-url": {
-            "title": "Frontend Software URL",
-            "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-            "type": "string",
-            "format": "uri",
-            "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-          },
-          "frontend-additional-instance-guid": {
-            "title": "Additional Frontend Instance ID",
-            "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
-            "type": "string"
-          },
-          "frontend-additional-software-type": {
-            "title": "Additional Frontend Software Type",
-            "description": "Type of the frontend instance, like \"frontend\".",
-            "type": "string",
-            "default": "RootSoftwareInstance"
-          },
-          "frontend-additional-software-url": {
-            "title": "Additional Frontend Software URL",
-            "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-            "type": "string",
-            "format": "uri",
-            "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-          }
+          "type": "object"
         }
-
       },
       "type": "object"
     }
