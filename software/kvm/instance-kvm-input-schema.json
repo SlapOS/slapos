@@ -222,207 +222,212 @@
       "textarea": true
     },
     "Advanced":{
-      "enable-device-hotplug": {
-        "title": "Enable device hotplug mode",
-        "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
-        "type": "boolean",
-        "default": false
-      },
-      "ram-hotplug-slot-size": {
-        "title": "Size of Hotpluggable RAM slot, in MB",
-        "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
-        "type": "integer",
-        "default": 512,
-        "minimum": 512,
-        "multipleOf": 512
-      },
-      "auto-ballooning": {
-        "title": "Enable qemu auto ballooning.",
-        "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
-        "type": "boolean",
-        "default": true
-      },
-      "disk-cache": {
-        "title": "Cache option to use with Disk.",
-        "description": "Disk cache controls how the host cache is used to access block data.",
-        "type": "string",
-        "default": "writeback",
-        "enum": [
-          "none",
-          "writeback",
-          "unsafe",
-          "directsync",
-          "writethrough"
-        ]
-      },
-      "disk-aio": {
-        "title": "Disk aio to use.",
-        "description": "Selects between pthread based disk I/O and native Linux AIO.",
-        "type": "string",
-        "default": "threads",
-        "enum": [
-          "threads",
-          "native"
-        ]
-      },
-      "numa": {
-        "title": "Simulate a multi node NUMA system.",
-        "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
-        "type": "string"
-      },
-      "machine-options": {
-        "title": "Machine options.",
-        "description": "Select the emulated machine by name. Ex: pc-i440fx-2.4,accel=kvm",
-        "type": "string"
-      },
-      "cpu-model": {
-        "title": "CPU model.",
-        "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
-        "type": "string",
-        "default": "host"
-      },
-      "enable-http-server": {
-        "title": "Enable local http server",
-        "description": "Set if local http server which serve files to the vm should be deployed. If set to true, get file into the vm with URL: http://10.0.2.100/FILE.",
-        "type": "boolean",
-        "default": false
-      },
-      "httpd-port": {
-        "title": "Local http server port",
-        "description": "Port of the local http server used to share files.",
-        "type": "integer",
-        "default": 8081,
-        "minimum": 1,
-        "maximum": 65535
-      },
-      "authorized-key": {
-        "title": "Public keys to get from all virtual machines.",
-        "description": "Set the public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
-        "type": "string"
-      },
-      "bootstrap-script-url": {
-        "title": "VM bootstrap script URL.",
-        "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
-        "type": "string",
-        "format": "uri"
-      },
-      "data-to-vm": {
-        "title": "Text content to send to this virtual machine.",
-        "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
-        "type": "string"
-      },
-      "boot-image-url-list": {
-        "title": "Boot image list",
-        "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. After updating the list, the instance has to be restarted to refresh it. Amount of images is limited to 4, and one image can be maximum 5G. Image will be downloaded and checked against its MD5SUM 4 times, then it will be considered as impossible to download with given MD5SUM. Each image has to be downloaded in time shorter than 4 hours, so in case of very slow images to access, it can take up to 16 hours to download all of them. Note: The instance has to be restarted in order to update the list of available images in the VM. Note: Maximum 3 ISOs are supported.",
-        "type": "string",
-        "textarea": true
-      },
-      "NBD": {
-        "nbd-host": {
-          "title": "NBD hostname",
-          "description": "hostname (or IP) of the NBD server containing the boot image.",
-          "type": "string",
-          "format": "internet-address"
-        },
-        "nbd-port": {
-          "title": "NBD port",
-          "description": "Port of the NBD server containing the boot image.",
-          "type": "integer",
-          "default": 1024,
-          "minimum": 1,
-          "maximum": 65535
-        },
-        "nbd2-host": {
-          "title": "Second NBD hostname",
-          "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
-          "type": "string",
-          "format": "internet-address"
-        },
-        "nbd2-port": {
-          "title": "Second NBD port",
-          "description": "Port of the second NBD server containing the boot image.",
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535
-        }
-      },
-      "Virtual Hard Drive": {
-        "virtual-hard-drive-url": {
-          "title": "Existing disk image URL",
-          "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
-          "format": "uri",
-          "type": "string"
-        },
-        "virtual-hard-drive-md5sum": {
-          "title": "Checksum of virtual hard drive",
-          "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
-          "type": "string"
-        },
-        "virtual-hard-drive-gzipped": {
-          "title": "Define if virtual hard drive to download is gzipped",
-          "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+      "title": "Advanced Parameters",
+      "description": "Advanced parameters for KVM",
+      "properties": {
+        "enable-device-hotplug": {
+          "title": "Enable device hotplug mode",
+          "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
           "type": "boolean",
           "default": false
         },
-        "hard-drive-url-check-certificate": {
-          "title": "Check certificate when downloading virtual hard drive from https.",
-          "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+        "ram-hotplug-slot-size": {
+          "title": "Size of Hotpluggable RAM slot, in MB",
+          "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
+          "type": "integer",
+          "default": 512,
+          "minimum": 512,
+          "multipleOf": 512
+        },
+        "auto-ballooning": {
+          "title": "Enable qemu auto ballooning.",
+          "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
           "type": "boolean",
           "default": true
-        }
-      },
-      "Wipe Disk": {
-        "wipe-disk-ondestroy": {
-          "title": "Wipe disks when destroy the VM",
-          "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+        },
+        "disk-cache": {
+          "title": "Cache option to use with Disk.",
+          "description": "Disk cache controls how the host cache is used to access block data.",
+          "type": "string",
+          "default": "writeback",
+          "enum": [
+            "none",
+            "writeback",
+            "unsafe",
+            "directsync",
+            "writethrough"
+          ]
+        },
+        "disk-aio": {
+          "title": "Disk aio to use.",
+          "description": "Selects between pthread based disk I/O and native Linux AIO.",
+          "type": "string",
+          "default": "threads",
+          "enum": [
+            "threads",
+            "native"
+          ]
+        },
+        "numa": {
+          "title": "Simulate a multi node NUMA system.",
+          "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
+          "type": "string"
+        },
+        "machine-options": {
+          "title": "Machine options.",
+          "description": "Select the emulated machine by name. Ex: pc-i440fx-2.4,accel=kvm",
+          "type": "string"
+        },
+        "cpu-model": {
+          "title": "CPU model.",
+          "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
+          "type": "string",
+          "default": "host"
+        },
+        "enable-http-server": {
+          "title": "Enable local http server",
+          "description": "Set if local http server which serve files to the vm should be deployed. If set to true, get file into the vm with URL: http://10.0.2.100/FILE.",
           "type": "boolean",
           "default": false
         },
-        "wipe-disk-iterations": {
-          "title": "Wipe disk iterations",
-          "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+        "httpd-port": {
+          "title": "Local http server port",
+          "description": "Port of the local http server used to share files.",
           "type": "integer",
-          "default": 1,
-          "minimum": 1
-        }
-      },
-      "Frontend": {
-        "frontend-instance-guid": {
-          "title": "Frontend Instance ID",
-          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "default": 8081,
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "authorized-key": {
+          "title": "Public keys to get from all virtual machines.",
+          "description": "Set the public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
           "type": "string"
         },
-        "frontend-software-type": {
-          "title": "Frontend Software Type",
-          "description": "Type of the frontend instance, like \"frontend\".",
+        "bootstrap-script-url": {
+          "title": "VM bootstrap script URL.",
+          "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "format": "uri"
         },
-        "frontend-software-url": {
-          "title": "Frontend Software URL",
-          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-          "type": "string",
-          "format": "uri",
-          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-        },
-        "frontend-additional-instance-guid": {
-          "title": "Additional Frontend Instance ID",
-          "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+        "data-to-vm": {
+          "title": "Text content to send to this virtual machine.",
+          "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
           "type": "string"
         },
-        "frontend-additional-software-type": {
-          "title": "Additional Frontend Software Type",
-          "description": "Type of the frontend instance, like \"frontend\".",
+        "boot-image-url-list": {
+          "title": "Boot image list",
+          "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. After updating the list, the instance has to be restarted to refresh it. Amount of images is limited to 4, and one image can be maximum 5G. Image will be downloaded and checked against its MD5SUM 4 times, then it will be considered as impossible to download with given MD5SUM. Each image has to be downloaded in time shorter than 4 hours, so in case of very slow images to access, it can take up to 16 hours to download all of them. Note: The instance has to be restarted in order to update the list of available images in the VM. Note: Maximum 3 ISOs are supported.",
           "type": "string",
-          "default": "RootSoftwareInstance"
+          "textarea": true
         },
-        "frontend-additional-software-url": {
-          "title": "Additional Frontend Software URL",
-          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-          "type": "string",
-          "format": "uri",
-          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+        "NBD": {
+          "nbd-host": {
+            "title": "NBD hostname",
+            "description": "hostname (or IP) of the NBD server containing the boot image.",
+            "type": "string",
+            "format": "internet-address"
+          },
+          "nbd-port": {
+            "title": "NBD port",
+            "description": "Port of the NBD server containing the boot image.",
+            "type": "integer",
+            "default": 1024,
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "nbd2-host": {
+            "title": "Second NBD hostname",
+            "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
+            "type": "string",
+            "format": "internet-address"
+          },
+          "nbd2-port": {
+            "title": "Second NBD port",
+            "description": "Port of the second NBD server containing the boot image.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          }
+        },
+        "Virtual Hard Drive": {
+          "virtual-hard-drive-url": {
+            "title": "Existing disk image URL",
+            "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
+            "format": "uri",
+            "type": "string"
+          },
+          "virtual-hard-drive-md5sum": {
+            "title": "Checksum of virtual hard drive",
+            "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
+            "type": "string"
+          },
+          "virtual-hard-drive-gzipped": {
+            "title": "Define if virtual hard drive to download is gzipped",
+            "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+            "type": "boolean",
+            "default": false
+          },
+          "hard-drive-url-check-certificate": {
+            "title": "Check certificate when downloading virtual hard drive from https.",
+            "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "Wipe Disk": {
+          "wipe-disk-ondestroy": {
+            "title": "Wipe disks when destroy the VM",
+            "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+            "type": "boolean",
+            "default": false
+          },
+          "wipe-disk-iterations": {
+            "title": "Wipe disk iterations",
+            "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+            "type": "integer",
+            "default": 1,
+            "minimum": 1
+          }
+        },
+        "Frontend": {
+          "frontend-instance-guid": {
+            "title": "Frontend Instance ID",
+            "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+            "type": "string"
+          },
+          "frontend-software-type": {
+            "title": "Frontend Software Type",
+            "description": "Type of the frontend instance, like \"frontend\".",
+            "type": "string",
+            "default": "RootSoftwareInstance"
+          },
+          "frontend-software-url": {
+            "title": "Frontend Software URL",
+            "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+            "type": "string",
+            "format": "uri",
+            "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+          },
+          "frontend-additional-instance-guid": {
+            "title": "Additional Frontend Instance ID",
+            "description": "Unique identifier of the additional frontend instance, like \"SOFTINST-11031\", if empty won't be requested.",
+            "type": "string"
+          },
+          "frontend-additional-software-type": {
+            "title": "Additional Frontend Software Type",
+            "description": "Type of the frontend instance, like \"frontend\".",
+            "type": "string",
+            "default": "RootSoftwareInstance"
+          },
+          "frontend-additional-software-url": {
+            "title": "Additional Frontend Software URL",
+            "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+            "type": "string",
+            "format": "uri",
+            "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+          }
         }
+
       }
     }
   }
