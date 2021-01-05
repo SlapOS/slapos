@@ -180,19 +180,6 @@
       "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
       "type": "string"
     },
-    "monitor-interface-url": {
-      "title": "Monitor Web Interface URL",
-      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
-      "type": "string",
-      "format": "uri",
-      "default": "https://monitor.app.officejs.com"
-    },
-    "monitor-cors-domains": {
-      "title": "Monitor CORS domains",
-      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
-      "type": "string",
-      "default": "monitor.app.officejs.com"
-    },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
       "description": "kvm instances definition",
@@ -263,12 +250,6 @@
                 }
               ]
             },
-            "enable-device-hotplug": {
-              "title": "Enable device hotplug mode",
-              "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
-              "type": "boolean",
-              "default": false
-            },
             "ram-size": {
               "title": "RAM size",
               "description": "RAM size, in MB.",
@@ -283,20 +264,6 @@
               "type": "integer",
               "minimum": 1024,
               "multipleOf": 512
-            },
-            "ram-hotplug-slot-size": {
-              "title": "Size of Hotpluggable RAM slot, in MB",
-              "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
-              "type": "integer",
-              "default": 512,
-              "minimum": 512,
-              "multipleOf": 512
-            },
-            "auto-ballooning": {
-              "title": "Enable qemu auto ballooning.",
-              "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
-              "type": "boolean",
-              "default": true
             },
             "disk-size": {
               "title": "Disk size",
@@ -334,29 +301,6 @@
                 "virtio"
               ]
             },
-            "disk-cache": {
-              "title": "Cache option to use with Disk.",
-              "description": "Disk cache controls how the host cache is used to access block data.",
-              "type": "string",
-              "default": "writeback",
-              "enum": [
-                "none",
-                "writeback",
-                "unsafe",
-                "directsync",
-                "writethrough"
-              ]
-            },
-            "disk-aio": {
-              "title": "Disk aio to use.",
-              "description": "Selects between pthread based disk I/O and native Linux AIO.",
-              "type": "string",
-              "default": "threads",
-              "enum": [
-                "threads",
-                "native"
-              ]
-            },
             "cpu-count": {
               "title": "CPU count",
               "description": "Number of CPU cores.",
@@ -368,22 +312,6 @@
               "description": "Specifies the maximum number of CPUs. Defaults to cpu-count + 1",
               "type": "integer",
               "minimum": 1
-            },
-            "numa": {
-              "title": "Simulate a multi node NUMA system.",
-              "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
-              "type": "string"
-            },
-            "machine-options": {
-              "title": "Machine options.",
-              "description": "Select the emulated machine by name. Ex: pc-i440fx-2.4,accel=kvm",
-              "type": "string"
-            },
-            "cpu-model": {
-              "title": "CPU model.",
-              "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
-              "type": "string",
-              "default": "host"
             },
             "keyboard-layout-language": {
               "title": "Use keyboard layout language",
@@ -426,56 +354,6 @@
               ],
               "default": "fr"
             },
-            "nbd-host": {
-              "title": "NBD hostname or IP",
-              "description": "hostname (or IP) of the NBD server containing the boot image.",
-              "type": "string",
-              "format": "internet-address"
-            },
-            "nbd-port": {
-              "title": "NBD port",
-              "description": "Port of the NBD server containing the boot image.",
-              "type": "integer",
-              "default": 1024,
-              "minimum": 1,
-              "maximum": 65535
-            },
-            "virtual-hard-drive-url": {
-              "title": "Existing disk image URL",
-              "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
-              "format": "uri",
-              "type": "string"
-            },
-            "virtual-hard-drive-md5sum": {
-              "title": "Checksum of virtual hard drive",
-              "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
-              "type": "string"
-            },
-            "virtual-hard-drive-gzipped": {
-              "title": "Virtual hard drive to download is gzipped",
-              "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
-              "type": "boolean",
-              "default": false
-            },
-            "hard-drive-url-check-certificate": {
-              "title": "Check certificate when downloading virtual hard drive from https.",
-              "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
-              "type": "boolean",
-              "default": true
-            },
-            "wipe-disk-ondestroy": {
-              "title": "Wipe disks when destroy the VM",
-              "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
-              "type": "boolean",
-              "default": false
-            },
-            "wipe-disk-iterations": {
-              "title": "Wipe disk iterations",
-              "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
-              "type": "integer",
-              "default": 1,
-              "minimum": 1
-            },
             "use-tap": {
               "title": "Enable QEMU TAP network interface",
               "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
@@ -506,30 +384,145 @@
               "type": "boolean",
               "default": false
             },
-            "bootstrap-script-url": {
-              "title": "VM bootstrap script URL.",
-              "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
-              "type": "string",
-              "format": "uri"
+            "advanced":{
+              "title": "Advanced Parameters",
+              "description": "Advanced parameters for KVM",
+              "properties": {
+                "enable-device-hotplug": {
+                  "title": "Enable device hotplug mode",
+                  "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "ram-hotplug-slot-size": {
+                  "title": "Size of Hotpluggable RAM slot, in MB",
+                  "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
+                  "type": "integer",
+                  "default": 512,
+                  "minimum": 512,
+                  "multipleOf": 512
+                },
+                "auto-ballooning": {
+                  "title": "Enable qemu auto ballooning.",
+                  "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
+                  "type": "boolean",
+                  "default": true
+                },
+                "disk-cache": {
+                  "title": "Cache option to use with Disk.",
+                  "description": "Disk cache controls how the host cache is used to access block data.",
+                  "type": "string",
+                  "default": "writeback",
+                  "enum": [
+                    "none",
+                    "writeback",
+                    "unsafe",
+                    "directsync",
+                    "writethrough"
+                  ]
+                },
+                "disk-aio": {
+                  "title": "Disk aio to use.",
+                  "description": "Selects between pthread based disk I/O and native Linux AIO.",
+                  "type": "string",
+                  "default": "threads",
+                  "enum": [
+                    "threads",
+                    "native"
+                  ]
+                },
+                "numa": {
+                  "title": "Simulate a multi node NUMA system.",
+                  "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
+                  "type": "string"
+                },
+                "machine-options": {
+                  "title": "Machine options.",
+                  "description": "Select the emulated machine by name. Ex: pc-i440fx-2.4,accel=kvm",
+                  "type": "string"
+                },
+                "cpu-model": {
+                  "title": "CPU model.",
+                  "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
+                  "type": "string",
+                  "default": "host"
+                },
+                "nbd-host": {
+                  "title": "NBD hostname or IP",
+                  "description": "hostname (or IP) of the NBD server containing the boot image.",
+                  "type": "string",
+                  "format": "internet-address"
+                },
+                "nbd-port": {
+                  "title": "NBD port",
+                  "description": "Port of the NBD server containing the boot image.",
+                  "type": "integer",
+                  "default": 1024,
+                  "minimum": 1,
+                  "maximum": 65535
+                },
+                "virtual-hard-drive-url": {
+                  "title": "Existing disk image URL",
+                  "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
+                  "format": "uri",
+                  "type": "string"
+                },
+                "virtual-hard-drive-md5sum": {
+                  "title": "Checksum of virtual hard drive",
+                  "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
+                  "type": "string"
+                },
+                "virtual-hard-drive-gzipped": {
+                  "title": "Virtual hard drive to download is gzipped",
+                  "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "hard-drive-url-check-certificate": {
+                  "title": "Check certificate when downloading virtual hard drive from https.",
+                  "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+                  "type": "boolean",
+                  "default": true
+                },
+                "wipe-disk-ondestroy": {
+                  "title": "Wipe disks when destroy the VM",
+                  "description": "Say if disks should be wiped by writing new data over every single bit before delete them. This option is used to securely delete VM disks",
+                  "type": "boolean",
+                  "default": false
+                },
+                "wipe-disk-iterations": {
+                  "title": "Wipe disk iterations",
+                  "description": "Number of disk overwrite iterations with random data. Default is 1. WARNING: Increase this value will slow down partition destruction and increase IO.",
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1
+                },
+                "bootstrap-script-url": {
+                  "title": "VM bootstrap script URL.",
+                  "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+                  "type": "string",
+                  "format": "uri"
+                },
+                "data-to-vm": {
+                  "title": "Text content to send to this virtual machine.",
+                  "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
+                  "type": "string"
+                },
+                "disable-ansible-promise": {
+                  "title": "Desactivate Ansible promise check",
+                  "description": "If the VM of cluster doesn't run Ansible and report status to this SlapOS instances, then this allow to disable ansible promise so your instance will not fail to check ansible promise.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "boot-image-url-list": {
+                  "title": "Boot image list",
+                  "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. After updating the list, the instance has to be restarted to refresh it. Amount of images is limited to 4, and one image can be maximum 5G. Image will be downloaded and checked against its MD5SUM 4 times, then it will be considered as impossible to download with given MD5SUM. Each image has to be downloaded in time shorter than 4 hours, so in case of very slow images to access, it can take up to 16 hours to download all of them. Note: The instance has to be restarted in order to update the list of available images in the VM. Note: Maximum 3 ISOs are supported.",
+                  "type": "string",
+                  "textarea": true
+                }
+              },
+              "type": "object"
             },
-            "data-to-vm": {
-              "title": "Text content to send to this virtual machine.",
-              "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
-              "type": "string"
-            },
-            "disable-ansible-promise": {
-              "title": "Desactivate Ansible promise check",
-              "description": "If the VM of cluster doesn't run Ansible and report status to this SlapOS instances, then this allow to disable ansible promise so your instance will not fail to check ansible promise.",
-              "type": "boolean",
-              "default": false
-            },
-            "boot-image-url-list": {
-              "title": "Boot image list",
-              "description": "The list shall be list of direct URLs to images, followed by hash (#), then by image MD5SUM. Each image shall appear on newline, like: \"https://example.com/image.iso#06226c7fac5bacfa385872a19bb99684<newline>https://example.com/another-image.iso#31b40d58b18e038498ddb46caea1361c\". They will be provided in KVM image list according to the order on the list. After updating the list, the instance has to be restarted to refresh it. Amount of images is limited to 4, and one image can be maximum 5G. Image will be downloaded and checked against its MD5SUM 4 times, then it will be considered as impossible to download with given MD5SUM. Each image has to be downloaded in time shorter than 4 hours, so in case of very slow images to access, it can take up to 16 hours to download all of them. Note: The instance has to be restarted in order to update the list of available images in the VM. Note: Maximum 3 ISOs are supported.",
-              "type": "string",
-              "textarea": true
-            }
-          },
           "type": "object"
         }
       },
