@@ -1,4 +1,4 @@
-#!{{ runTestSuite_py }}
+#!{{ runTestSuite_interpreter }}
 """
   Script to run the Cython test suite using Nexedi's test node framework.
 """
@@ -9,7 +9,7 @@ from erp5.util import taskdistribution, testsuite
 
 os.environ['TEMP'] = {{ repr(tmpdir) }}
 
-command = """. {{ cython_env_sh }}
+command = """. {{ cythonplus_env_sh }}
 make all test
 """
 
@@ -96,7 +96,7 @@ def main():
       with open(os.devnull) as stdin:
         p = subprocess.Popen(command, shell=True, stdin=stdin,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             cwd={{repr(cython_repository)}})
+                             cwd={{ repr(cythonplus_repository) }})
     except Exception:
       end = time()
       stderr = traceback.format_exc()
