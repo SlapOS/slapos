@@ -177,7 +177,6 @@ template = inline:
  Port $${sshd-port:port}
  ListenAddress $${slap-network-information:global-ipv6}
  Protocol 2
- UsePrivilegeSeparation no
  HostKey $${directory:ssh}/server_key.rsa
  AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
  PasswordAuthentication no
