@@ -208,7 +208,7 @@ mode = 700
 
 [sshd-graceful]
 recipe = slapos.cookbook:wrapper
-command-line = $${directory:bin}/killpidfromfile $${resilient-sshd-config:path_pid} SIGHUP
+command-line = $${rootdirectory:bin}/killpidfromfile $${resilient-sshd-config:path_pid} SIGHUP
 wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
