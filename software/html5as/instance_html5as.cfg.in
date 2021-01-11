@@ -9,6 +9,7 @@ parts =
     downloader
     mime_types
     launcher
+    nginx-graceful
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -71,7 +72,7 @@ nb_workers = 2
 
 # Network
 ip = ${slap-network-information:global-ipv6}
-port = 8081
+port = ${slap-parameter:port}
 access_url = http://[${:ip}]:${:port}
 
 # Paths
@@ -137,6 +138,15 @@ rendered = ${directory:srv}/index.html
 context =
   key title slap-parameter:title
 
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_html5as html5as
+
 # Publish nginx address
 [publish-connection-information]
 recipe = slapos.cookbook:publish
@@ -146,3 +156,4 @@ title = Title ${slap-parameter:title}!
 [slap-parameter]
 title =
 download_url =
+port = 8081
