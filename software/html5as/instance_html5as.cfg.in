@@ -129,3 +129,7 @@ command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 server_url = ${html5as:access_url}
+title = Title ${slap-parameter:title}!
+
+[slap-parameter]
+title =
