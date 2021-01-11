@@ -123,7 +123,14 @@ context =
 # Simple command to put content in the docroot
 [downloader]
 recipe = plone.recipe.command
-command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/index.html
+command = rm -r ${html5as:docroot}/*; cp ${default_index_html:rendered} ${html5as:docroot}/
+
+[default_index_html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${directory:srv}/index.html
+context =
+  key title slap-parameter:title
 
 # Publish nginx address
 [publish-connection-information]
