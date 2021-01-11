@@ -159,9 +159,17 @@ name = apache-httpd-port-listening.py
 config-hostname = ${html5as:ip}
 config-port = ${html5as:port}
 
+# Use a port different from the default one in order to be able to
+# use it in a SlapOS webrunner or a Theia SlapOS Runner
+[monitor-instance-parameter]
+monitor-httpd-port = 8197
+
 # Publish nginx address
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+# By extending monitor publish, all the section deploying monitoring will
+# be deployed. The parameters needed for accessing monitoring will be published
+<= monitor-publish
 server_url = ${html5as:access_url}
 title = Title ${slap-parameter:title}!
 
