@@ -94,7 +94,7 @@ curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
 tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 
 # Executables
-bin_launcher = ${basedirectory:script}/launcher
+bin_launcher = ${basedirectory:service}/launcher
 
 # Utils
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
