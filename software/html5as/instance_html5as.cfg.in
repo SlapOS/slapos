@@ -89,6 +89,8 @@ path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
 # Binaries
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
+curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
+tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 
 # Executables
 bin_launcher = ${basedirectory:script}/launcher
@@ -120,10 +122,13 @@ mode = 700
 context = 
     section param_html5as html5as
 
-# Simple command to put content in the docroot
+# Command to put content in the docroot
 [downloader]
 recipe = plone.recipe.command
-command = rm -r ${html5as:docroot}/*; cp ${default_index_html:rendered} ${html5as:docroot}/
+# If a tarball is passed as a parameter in download url
+# it's content will be served by the instance.
+# If the parameter is not provided it fallback to the default template
+command = rm -rf ${html5as:docroot}/*; URL="${slap-parameter:download_url}"; if [ -n "$URL" ]; then ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${html5as:docroot} --strip-components 1; else cp ${default_index_html:rendered} ${html5as:docroot}/; fi
 
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
@@ -140,3 +145,4 @@ title = Title ${slap-parameter:title}!
 
 [slap-parameter]
 title =
+download_url =
