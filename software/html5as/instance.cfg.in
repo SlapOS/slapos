@@ -16,6 +16,7 @@ template_mime_types = {{ template_mime_types_target }}
 template_launcher = {{ template_launcher_target }} 
 template_index_html = {{ template_index_html_target }}
 template_graceful  = {{ template_graceful_target }}
+template_monitor = {{ template_monitor }}
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2
