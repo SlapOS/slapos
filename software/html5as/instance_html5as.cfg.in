@@ -19,6 +19,9 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+# Instance profile extends monitoring stack
+extends = {{ parameter_list['template_monitor'] }}
+
 # partition tree
 # /
 # |- etc/
