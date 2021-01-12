@@ -6437,8 +6437,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '7',
-      'rejected-slave-amount': '24',
+      'accepted-slave-amount': '5',
+      'rejected-slave-amount': '26',
       'slave-amount': '31',
       'rejected-slave-dict': {
         '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
@@ -6471,6 +6471,10 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         '_BAD-BACKEND': [
           "slave https-url 'http://host.domain:badport' invalid",
           "slave url 'http://1:2:3:4' invalid"],
+        '_VIRTUALHOSTROOT-HTTP-PORT-UNSAFE': [
+          "Wrong virtualhostroot-http-port '${section:option}'"],
+        '_VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE': [
+          "Wrong virtualhostroot-https-port '${section:option}'"],
         '_EMPTY-BACKEND': [
           "slave https-url '' invalid",
           "slave url '' invalid"],
@@ -6607,58 +6611,25 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_virtualhostroot_http_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': 'virtualhostroothttpportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'request-error-list': [
+          "Wrong virtualhostroot-http-port '${section:option}'"
+        ]
       },
       parameter_dict
     )
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(httplib.FOUND, result.status_code)
 
   def test_virtualhostroot_https_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': 'virtualhostroothttpsportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpsportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'request-error-list': [
+          "Wrong virtualhostroot-https-port '${section:option}'"
+        ]
       },
       parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
-      '.example.com:0//VirtualHostRoot/test-path'
     )
 
   def default_path_unsafe(self):
