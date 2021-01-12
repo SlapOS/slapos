@@ -5,6 +5,9 @@ parts =
   frontend-reload
   tasks.json
   publish-connection-parameter
+  slapos-repository
+  runner-link
+  settings.json
 
 extends = ${monitor-template:rendered}
 
@@ -391,6 +394,36 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+
+[slapos-repository]
+recipe = slapos.recipe.build:gitclone
+repository = https://lab.nexedi.com/nexedi/slapos.git
+location = $${directory:project}/slapos
+branch = 1.0
+develop = true
+git-executable = ${git:location}/bin/git
+
+[settings.json]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:dot-theia}$${:_buildout_section_name_}
+once = $${:rendered}
+template =
+  inline:
+  {
+    "files.watcherExclude": {
+      "**/.eggs/**": true,
+      "**/.env/**": true,
+      "**/.git/**": true,
+      "**/node_modules/**": true,
+      "$${directory:runner}/**":true,
+      "$${directory:project}/runner/**":true
+    }
+  }
+
+[runner-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${directory:project}
+link-binary = $${directory:runner}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
