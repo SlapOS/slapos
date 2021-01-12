@@ -152,6 +152,13 @@ context =
 {%       do slave_error_list.append('Wrong backend-active-check-fall %s' % (slave.get('backend-active-check-fall'),)) %}
 {%     endif %}
 {%   endif %}
+{#   Check virtualhostroot-http-port and virtualhostroot-https-port #}
+{%   for key in ['virtualhostroot-http-port', 'virtualhostroot-https-port'] %}
+{%     set value = (slave.get(key) or '1') | int(False) %}
+{%     if value in [False] or value < 0 %}
+{%       do slave_error_list.append('Wrong %s %r' % (key, slave.get(key))) %}
+{%     endif %}
+{%   endfor %}
 {#   Check ciphers #}
 {%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
 {%   if slave_cipher_list %}
