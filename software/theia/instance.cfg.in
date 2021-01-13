@@ -8,6 +8,9 @@ parts =
   slapos-repository
   runner-link
   settings.json
+  cron-slapos-node-software
+  cron-slapos-node-instance
+  cron-slapos-node-report
 
 extends = ${monitor-template:rendered}
 
@@ -394,6 +397,27 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+
+[cron-slapos-node-software]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos-node-software
+frequency = * * * * *
+command = supervisorctl -c $${directory:runner}/etc/supervisord.conf start slapos-node-software
+
+[cron-slapos-node-instance]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos-node-instance
+frequency = * * * * *
+command = supervisorctl -c $${directory:runner}/etc/supervisord.conf start slapos-node-instance
+
+[cron-slapos-node-report]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos-node-report
+frequency = 0 * * * *
+command = supervisorctl -c $${directory:runner}/etc/supervisord.conf start slapos-node-report
 
 [slapos-repository]
 recipe = slapos.recipe.build:gitclone
