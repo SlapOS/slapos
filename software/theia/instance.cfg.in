@@ -8,6 +8,8 @@ parts =
   slapos-repository
   runner-link
   settings.json
+  cron-slapos-node-software
+  cron-slapos-node-instance
 
 extends = ${monitor-template:rendered}
 
@@ -394,6 +396,20 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+
+[cron-slapos-node-software]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos_node_software
+frequency = * * * * *
+command = slapos node software --cfg=$${slapos-standalone-config:slapos-configuration}
+
+[cron-slapos-node-instance]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos_node_instance
+frequency = * * * * *
+command = slapos node instance --cfg=$${slapos-standalone-config:slapos-configuration}
 
 [slapos-repository]
 recipe = slapos.recipe.build:gitclone
