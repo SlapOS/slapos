@@ -224,7 +224,6 @@ template = inline:
   Port $${sshd-address:port}
   ListenAddress $${sshd-address:ip}
   Protocol 2
-  UsePrivilegeSeparation no
   HostKey $${ssh-host-rsa-key:output}
   HostKey $${ssh-host-dsa-key:output}
   HostKey $${ssh-host-ecdsa-key:output}
