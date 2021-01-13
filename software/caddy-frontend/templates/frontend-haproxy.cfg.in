@@ -17,7 +17,7 @@ defaults
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
 {%- macro frontend_entry(slave_instance, scheme, wildcard) %}
 {#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
-{%-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] %}
+{#-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] #}
 {%-     set host_list = (slave_instance.get('server-alias') or  '').split() %}
 {%-     if slave_instance.get('custom_domain') not in host_list %}
 {%-       do host_list.append(slave_instance.get('custom_domain')) %}
@@ -38,7 +38,7 @@ defaults
 {%-     if matched['count'] > 0 %}
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
 {%-     endif %}
-{%-   endif %}
+{#-   endif #}
 {%- endmacro %}
 
 frontend http-frontend
@@ -61,8 +61,24 @@ frontend https-frontend
 {{ frontend_entry(slave_instance, 'https', True) }}
 {%- endfor %}
 
+# Backends
 {%- for slave_instance in frontend_slave_list %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
+{%-     set info_dict = slave_instance[prefix] %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-     if scheme == 'http' and slave_instance['https-only'] %}
+{#-     Support https-only if connected via http #}
+  redirect scheme https code 302
+{%-     else %}
+{%-       if info_dict['hostname'] and info_dict['port'] %}
+  server {{ slave_instance['slave_reference'] }}-backend {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+{%-         if info_dict['path'] %}
+  http-request set-path {{ info_dict['path'] }}%[path]
+{%-         endif %} {# if info_dict['path'] #}
+{%-       endif %} {# if info_dict['hostname'] and info_dict['port'] #}
+{%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
+{%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
+{%-   for k, v in slave_instance.items() %}
+{#- #  {{ k }} => {{ v }} #}
 {%-   endfor %}
 {%- endfor %}
