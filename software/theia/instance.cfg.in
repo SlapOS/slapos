@@ -8,6 +8,8 @@ parts =
   slapos-repository
   runner-link
   settings.json
+  cron-slapos-node-software
+  cron-slapos-node-instance
 
 extends = ${monitor-template:rendered}
 
@@ -395,6 +397,20 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
+[cron-slapos-node-software]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos-node-software
+frequency = * * * * *
+command = slapos node software --cfg=$${slapos-standalone-config:slapos-configuration} --verbose --logfile=$${directory:opt-slapos-log}/slapos-node-software.log > /dev/null 2>&1
+
+[cron-slapos-node-instance]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = slapos-node-instance
+frequency = * * * * *
+command = slapos node instance --cfg=$${slapos-standalone-config:slapos-configuration} --promise-timeout 20 --verbose --logfile=$${directory:opt-slapos-log}/slapos-node-instance.log > /dev/null 2>&1
+
 [slapos-repository]
 recipe = slapos.recipe.build:gitclone
 repository = https://lab.nexedi.com/nexedi/slapos.git
@@ -429,11 +445,14 @@ link-binary = $${directory:runner}
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
 var = $${buildout:directory}/var
+opt = $${buildout:directory}/opt
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
 dot-theia = $${buildout:directory}/.theia/
 pidfiles = $${:var}/run
+opt-slapos = $${:opt}/slapos
+opt-slapos-log = $${:opt-slapos}/log
 
 services = $${:etc}/service
 runner = $${:srv}/runner
