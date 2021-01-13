@@ -54,7 +54,7 @@ context =
 {#-     * stabilise values for backend #}
 {%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
 {%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
-{%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment} %}
+{%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': (parsed.path or '').rstrip('/')} %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
