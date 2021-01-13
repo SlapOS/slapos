@@ -61,8 +61,23 @@ frontend https-frontend
 {{ frontend_entry(slave_instance, 'https', True) }}
 {%- endfor %}
 
+# Backends
 {%- for slave_instance in frontend_slave_list %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     if info_dict['hostname'] and info_dict['port'] %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+{%-       if scheme == 'http' and slave_instance['https-only'] %}
+  redirect scheme https code 302
+{%-       else %}
+  server {{ slave_instance['slave_reference'] }}-backend {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+{%-         if info_dict['path'] %}
+  http-request set-path {{ info_dict['path'] }}%[path]
+{%-         endif %} {# if info_dict['path'] #}
+{%-       endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
+{%-     endif %} {# if info_dict['hostname'] and info_dict['port'] #}
+{%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
+{%-   for k, v in slave_instance.items() %}
+{#- #  {{ k }} => {{ v }} #}
 {%-   endfor %}
 {%- endfor %}
