@@ -4,9 +4,6 @@
   "title": "Input Parameters",
   "allOf": [
     {
-      "$ref": "instance-kvm-frontend-schema.json#/"
-    },
-    {
       "properties": {
     "boot-image-url-select": {
       "title": "Boot image",
@@ -377,6 +374,9 @@
       "type": "object"
     }
       }
+    },
+    {
+      "$ref": "instance-kvm-frontend-schema.json#/"
     }
   ]
 }
