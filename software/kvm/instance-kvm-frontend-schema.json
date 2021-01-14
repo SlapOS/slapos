@@ -2,7 +2,7 @@
   "type": "object",
   "$schema": "http://json-schema.org/draft-06/schema",
   "title": "Input Parameters",
-        "frontend": {
+  "properties": {
           "title": "KVM frontend (web socket)",
           "description": "Front end used to provide VNC.",
           "properties": {
@@ -44,5 +44,5 @@
             }     
           },
           "type": "object"
-        }
+  }
 }
