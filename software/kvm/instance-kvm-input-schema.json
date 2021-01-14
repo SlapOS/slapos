@@ -417,7 +417,7 @@
   },
   "allOf": [
     {
-    "$ref": "instance-kvm-input-schema.json#/"
+    "$ref": "instance-kvm-frontend-schema.json#/"
     }
   ]
 }
