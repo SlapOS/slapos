@@ -414,5 +414,10 @@
       },
       "type": "object"
     }
-  }
+  },
+  "allOf": [
+    {
+    "$ref": "instance-kvm-input-schema.json#/"
+    }
+  ]
 }
