@@ -1,8 +1,13 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-06/schema",
+  "$schema": "http://json-schema.org/draft-04/schema",
   "title": "Input Parameters",
-  "properties": {
+  "allOf": [
+    {
+      "$ref": "instance-kvm-frontend-schema.json#/"
+    },
+    {
+      "properties": {
     "boot-image-url-select": {
       "title": "Boot image",
       "type": "array",
@@ -367,19 +372,11 @@
             }
           },
           "type": "object"
-        },
-        "frontend": {
-          "title": "KVM frontend (web socket)",
-          "description": "Front end used to provide VNC.",
-          "allof": [
-            {
-            "$ref": "instance-kvm-frontend-schema.json#/"
-            }
-          ],
-          "type": "object"
         }
       },
       "type": "object"
     }
-  }
+      }
+    }
+  ]
 }
