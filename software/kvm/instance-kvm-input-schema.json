@@ -375,7 +375,8 @@
             {
             "$ref": "instance-kvm-frontend-schema.json#/"
             }
-          ]
+          ],
+          "type": "object"
         }
       },
       "type": "object"
