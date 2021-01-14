@@ -413,11 +413,13 @@
         }
       },
       "type": "object"
+    },
+    "frontend": {
+      "allof": [
+        {
+        "$ref": "instance-kvm-frontend-schema.json#/"
+        }
+      ]
     }
-  },
-  "allOf": [
-    {
-    "$ref": "instance-kvm-frontend-schema.json#/"
-    }
-  ]
+  }
 }
