@@ -1,7 +1,7 @@
 # -------------------------------------------------------------------------
 
 # Configure ip/port binding
-local-address={{ pdns.get('local-ipv4') }}
+local-address={{ pdns.get('ipv4') }}
 local-ipv6={{ pdns.get('ipv6') }}
 local-port={{ pdns.get('port') }}
 
@@ -10,7 +10,7 @@ socket-dir={{ pdns.get('socket-directory') }}
 
 # Monitoring
 webserver=yes
-webserver-address={{ pdns.get('local-ipv4') }}
+webserver-address={{ pdns.get('ipv4') }}
 webserver-port={{ pdns.get('webserver-port') }}
 
 # These totally disable query+packet caching for all zones.  This is necessary

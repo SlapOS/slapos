@@ -25,8 +25,45 @@
 #
 ##############################################################################
 
-import os, subprocess, sys
-import six
+
+from zc.buildout.buildout import Buildout
+
+
+class SubBuildout(Buildout):
+  """Run buildout in buildout, partially copied from infrae.buildout
+  """
+  def __init__(self, main_buildout, config, options, **kwargs):
+    # Use same logger
+    self._logger = main_buildout._logger
+    self._log_level = main_buildout._log_level
+
+    # Use same options
+    for opt in (
+        'offline',
+        'verbosity',
+        'newest',
+        'directory',
+        'eggs-directory',
+        'develop-eggs-directory',
+    ):
+      if opt in main_buildout['buildout']:
+        options.append((
+            'buildout',
+            opt,
+            main_buildout['buildout'][opt],
+        ))
+    # Use same slap connection
+    for k, v in main_buildout["slap-connection"].items():
+      options.append(('slap-connection', k, v))
+
+    Buildout.__init__(self, config, options, **kwargs)
+
+  def _setup_logging(self):
+    """We don't want to setup any logging, since it's already done
+    by the main buildout.
+    """
+    pass
+
 
 class Recipe:
 
@@ -39,26 +76,23 @@ class Recipe:
     self.base = self.buildout[section][key]
 
   def install(self):
-    # XXX-Antoine: We gotta find a better way to do this. I tried to check
-    # out how slapgrid-cp was running buildout. But it is worse than that.
-    args = sys.argv[:]
-    for x in six.iteritems(self.buildout["slap-connection"]):
-      args.append("slap-connection:%s=%s" % x)
-    for x in "directory", "eggs-directory", "develop-eggs-directory":
-      args.append("buildout:%s=%s" % (x, self.buildout["buildout"][x]))
-    args.append("buildout:installed=.installed-%s.cfg" % self.name)
-    # Options.get (from zc.buildout) should deserialize.
+    options = [("buildout", "installed", ".installed-%s.cfg" % self.name)]
+    profile = self.base
     try:
-      override = self.options["override"][self.software_type]
+      # XXX this assume using slapos.buildout, which serializes arbitrary python objects for options
+      extended_profile = self.options["override"][self.software_type]
     except (KeyError, TypeError):
-      buildout = self.base
+      pass
     else:
-      # unfortunately, buildout:extends does not work when given at command line
-      buildout = os.path.join(self.buildout["buildout"]["parts-directory"],
-                              self.name + ".cfg")
-      with open(override) as src, open(buildout, "w", 0) as dst:
-        dst.write("[buildout]\nextends = %s\n\n" % self.base + src.read())
-    subprocess.check_call(args + ["-oc", buildout])
-    return []
+      options.append(["buildout", "extends", profile])
+      profile = extended_profile
+
+    sub_buildout = SubBuildout(
+        self.buildout,
+        profile,
+        options,
+    )
+
+    sub_buildout.install([])
 
   update = install

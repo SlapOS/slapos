@@ -1,11 +1,11 @@
-{%- if slap_software_type == software_type -%}
+{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
 extends =
-  {{ parameter_dict['common_profile'] }}
-  {{ parameter_dict['monitor_template'] }}
-  {{ parameter_dict['logrotate_base_instance'] }}
+  {{ software_parameter_dict['profile_common'] }}
+  {{ software_parameter_dict['profile_monitor'] }}
+  {{ software_parameter_dict['profile_logrotate_base'] }}
 
 parts =
   directory
@@ -23,6 +23,7 @@ parts =
   promise-caddy-frontend-v4-http
   promise-caddy-frontend-v6-https
   promise-caddy-frontend-v6-http
+  promise-logrotate-setup
 
   trafficserver-launcher
   trafficserver-reload
@@ -32,7 +33,7 @@ parts =
   trafficserver-plugin-config
   trafficserver-storage-config
   trafficserver-ip-allow-config
-  trafficserver-logging-config
+  trafficserver-logging-yaml
   trafficserver-promise-listen-port
   trafficserver-promise-cache-availability
   cron-entry-logrotate-trafficserver
@@ -51,6 +52,15 @@ parts =
   promise-backend-haproxy-http
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
+
+  slave-introspection-frontend
+  slave-introspection-graceful
+  promise-slave-introspection-https
+  promise-slave-introspection-configuration
+  logrotate-entry-slave-introspection
+
+[caddyprofiledeps]
+recipe = caddyprofiledeps
 
 # Create all needed directories
 [directory]
@@ -80,42 +90,47 @@ frontend_cluster = ${:var}/frontend_cluster
 
 # csr_id publication
 csr_id = ${:srv}/csr_id
-caddy-csr_id = ${:etc}/caddy-csr_id
-caddy-csr_id-log = ${:log}/httpd-csr_id
+certificate-csr_id = ${:etc}/certificate-csr_id
+expose-csr_id-var = ${:var}/expose-csr_id
+
+# slave introspection
+slave-introspection-var = ${:var}/slave-introspection
 
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:softwaretype
-single-default = ${dynamic-custom-personal-template-slave-list:rendered}
-single-custom-personal = ${dynamic-custom-personal-template-slave-list:rendered}
+single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
+single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
 
 [frontend-configuration]
-template-log-access = {{ parameter_dict['template_log_access'] }}
-log-access-configuration = ${directory:etc}/log-access.conf
 ip-access-certificate = ${self-signed-ip-access:certificate}
-caddy-directory = {{ parameter_dict['caddy_location'] }}
-caddy-ipv6 = {{ instance_parameter['ipv6-random'] }}
+caddy-ipv6 = {{ instance_parameter_dict['ipv6-random'] }}
 caddy-https-port = ${configuration:port}
+slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
+slave-introspection-https-port = ${configuration:slave-introspection-https-port}
+slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
+slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 
 [self-signed-ip-access]
 # Self Signed certificate for HTTPS IP accesses to the frontend
 recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
-ipv4 = {{instance_parameter['ipv4-random']}}
+ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
   [ -f ${:certificate} ] && exit 0
   rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ parameter_dict['openssl'] }} req \
+  {{ software_parameter_dict['openssl'] }} req \
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
      -subj "/CN=Self Signed IP Access" \
      -reqexts SAN \
      -extensions SAN \
-     -config <(cat {{ parameter_dict['openssl_cnf'] }} \
+     -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
      -out ${:certificate}'
 
@@ -124,18 +139,19 @@ command =
 recipe = plone.recipe.command
 update-command = ${:command}
 ipv6 = ${slap-network-information:global-ipv6}
-ipv4 = {{instance_parameter['ipv4-random']}}
+ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
   [ -f ${:certificate} ] && exit 0
   rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ parameter_dict['openssl'] }} req \
+  {{ software_parameter_dict['openssl'] }} req \
      -new -newkey rsa:2048 -sha256 \
      -nodes -x509 -days 36500 \
      -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ instance_parameter['configuration.frontend-name'] }}" \
+     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
      -out ${:certificate}'
 
 [jinja2-template-base]
@@ -143,24 +159,23 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
-slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
+slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
-    raw common_profile {{ parameter_dict['common_profile'] }}
-    raw logrotate_base_instance {{ parameter_dict['logrotate_base_instance'] }}
-    raw monitor_template {{ parameter_dict['monitor_template'] }}
+    raw profile_common {{ software_parameter_dict['profile_common'] }}
+    raw profile_logrotate_base {{ software_parameter_dict['profile_logrotate_base'] }}
+    raw profile_monitor {{ software_parameter_dict['profile_monitor'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory
     ${:extra-context}
 
 [software-release-path]
-template-empty = {{ parameter_dict['template_empty'] }}
-template-default-slave-virtualhost = {{ parameter_dict['template_default_slave_virtualhost'] }}
-template-backend-haproxy-configuration = {{ parameter_dict['template_backend_haproxy_configuration'] }}
-template-backend-haproxy-rsyslogd-conf = {{ parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
-caddy-location = {{ parameter_dict['caddy_location'] }}
+template-empty = {{ software_parameter_dict['template_empty'] }}
+template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
+template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
+template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
 
 [kedifa-login-config]
 d = ${directory:ca-dir}
@@ -174,11 +189,11 @@ crl = ${:d}/kedifa-login-crl.pem
 [kedifa-login-csr]
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['kedifa-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} req -new -sha256 \
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:template-csr}
@@ -188,11 +203,12 @@ command =
 update-command = ${:command}
 template-csr = ${kedifa-login-config:template-csr}
 key = ${kedifa-login-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
      prefix='caucase-updater',
-     buildout_bin_directory=parameter_dict['bin_directory'],
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/kedifa-login-certificate-caucase-updater',
      url=slapparameter_dict['kedifa-caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
@@ -210,7 +226,6 @@ certificate = ${kedifa-login-config:certificate}
 cas-ca-certificate = ${kedifa-login-config:cas-ca-certificate}
 csr = ${caucase-updater-csr:csr}
 crl = ${kedifa-login-config:crl}
-kedifa-updater = {{ parameter_dict['kedifa-updater'] }}
 kedifa-updater-mapping-file = ${directory:etc}/kedifa_updater_mapping.txt
 kedifa-updater-state-file = ${directory:srv}/kedifa_updater_state.json
 slave_kedifa_information = {{ dumps(slapparameter_dict['slave-kedifa-information']) }}
@@ -227,11 +242,11 @@ crl = ${:d}/crl.pem
 [backend-client-login-csr]
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational_unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 command =
 {% if slapparameter_dict['backend-client-caucase-url'] %}
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
-    {{ parameter_dict['openssl'] }} req -new -sha256 \
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -out ${:template-csr}
@@ -241,11 +256,12 @@ command =
 update-command = ${:command}
 template-csr = ${backend-client-login-config:template-csr}
 key = ${backend-client-login-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
      prefix='backend-client-caucase-updater',
-     buildout_bin_directory=parameter_dict['bin_directory'],
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/backend-client-login-certificate-caucase-updater',
      url=slapparameter_dict['backend-client-caucase-url'],
      data_dir='${directory:srv}/backend-client-caucase-updater',
@@ -256,77 +272,54 @@ stop-on-error = True
      template_csr='${backend-client-login-csr:template-csr}'
 )}}
 
-[dynamic-custom-personal-template-slave-list]
+[dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
-template = {{ parameter_dict['template_slave_list'] }}
+depends = ${caddyprofiledeps:recipe}
+template = {{ software_parameter_dict['profile_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
-slave_instance_list = {{ dumps(instance_parameter['slave-instance-list']) }}
-extra_slave_instance_list = {{ dumps(instance_parameter.get('configuration.extra_slave_instance_list')) }}
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
-local_ipv4 = {{ dumps(instance_parameter['ipv4-random']) }}
-local_ipv6 = {{ dumps(instance_parameter['ipv6-random']) }}
 software_type = single-custom-personal
-bin_directory = {{ parameter_dict['bin_directory'] }}
-caddy_executable = {{ parameter_dict['caddy'] }}
-sixtunnel_executable = {{ parameter_dict['sixtunnel'] }}/bin/6tunnel
 organization = {{ slapparameter_dict['cluster-identification'] }}
-organizational-unit = {{ instance_parameter['configuration.frontend-name'] }}
+organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
     import urlparse_module urlparse
-    key caddy_executable :caddy_executable
-    key http_port configuration:plain_http_port
-    key https_port configuration:port
-    key public_ipv4 configuration:public-ipv4
-    key slave_instance_list :slave_instance_list
-    key extra_slave_instance_list :extra_slave_instance_list
+    import furl_module furl
     key master_key_download_url :master_key_download_url
     key autocert caddy-directory:autocert
-    key master_certificate caddy-configuration:master-certificate
     key caddy_log_directory caddy-directory:slave-log
     key expose_csr_id_organization :organization
     key expose_csr_id_organizational_unit :organizational-unit
-    key local_ipv4 :local_ipv4
-    key local_ipv6 :local_ipv6
     key global_ipv6 slap-network-information:global-ipv6
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
-    key frontend_graceful_reload caddy-configuration:frontend-graceful-command
-    section frontend_configuration frontend-configuration
-    section caddy_configuration caddy-configuration
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
-    key bin_directory :bin_directory
-    key enable_http2_by_default configuration:enable-http2-by-default
-    key global_disable_http2 configuration:global-disable-http2
-    key ciphers configuration:ciphers
-    key access_log caddy-configuration:access-log
-    key error_log caddy-configuration:error-log
-    key sixtunnel_executable :sixtunnel_executable
-    key not_found_file caddy-configuration:not-found-file
     key custom_ssl_directory caddy-directory:custom-ssl-directory
-    section kedifa_configuration kedifa-configuration
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
 # BBB: SlapOS Master non-zero knowledge END
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
-    section backend_haproxy_configuration backend-haproxy-configuration
-## full configuration
+## Configuration passed by section
     section configuration configuration
+    section backend_haproxy_configuration backend-haproxy-configuration
+    section instance_parameter_dict instance-parameter-section
+    section frontend_configuration frontend-configuration
+    section caddy_configuration caddy-configuration
+    section kedifa_configuration kedifa-configuration
+    section software_parameter_dict software-parameter-section
 
 # Deploy Caddy Frontend with Jinja power
 [dynamic-caddy-frontend-template]
 < = jinja2-template-base
-template = {{ parameter_dict['template_caddy_frontend_configuration'] }}
+template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }}
 rendered = ${caddy-configuration:frontend-configuration}
-local_ipv4 =  {{ dumps(instance_parameter['ipv4-random']) }}
+local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
 extra-context =
-    key httpd_home software-release-path:caddy-location
-    key httpd_mod_ssl_cache_directory caddy-directory:mod-ssl
     key instance_home buildout:directory
     key master_certificate caddy-configuration:master-certificate
     key access_log caddy-configuration:access-log
@@ -350,16 +343,16 @@ template = inline:
   #!/bin/sh
   export CADDYPATH=${directory:frontend_cluster}
   ulimit -n $(ulimit -Hn)
-  exec {{ parameter_dict['caddy'] }} \
+  exec {{ software_parameter_dict['caddy'] }} \
   -conf ${dynamic-caddy-frontend-template:rendered} \
   -log ${caddy-configuration:error-log} \
   -log-roll-mb 0 \
-{% if instance_parameter['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
+{% if instance_parameter_dict['configuration.global-disable-http2'].lower() in TRUE_VALUES %}
   -http2=false \
 {% else %}
   -http2=true \
 {% endif %}
-  -grace {{ instance_parameter['configuration.mpm-graceful-shutdown-timeout'] }}s \
+  -grace {{ instance_parameter_dict['configuration.mpm-graceful-shutdown-timeout'] }}s \
   -disable-http-challenge \
   -disable-tls-alpn-challenge \
    "$@"
@@ -377,14 +370,12 @@ hash-files = ${caddy-wrapper:rendered}
 recipe = plone.recipe.command
 update-command = ${:command}
 filename = notfound.html
-command = ln -sf  {{ parameter_dict['template_not_found_html'] }} ${caddy-directory:document-root}/${:filename}
+command = ln -sf  {{ software_parameter_dict['template_not_found_html'] }} ${caddy-directory:document-root}/${:filename}
 
 [caddy-directory]
 recipe = slapos.cookbook:mkdirectory
 document-root = ${directory:srv}/htdocs
 slave-configuration = ${directory:etc}/caddy-slave-conf.d/
-cache = ${directory:var}/cache
-mod-ssl = ${:cache}/httpd_mod_ssl
 slave-log = ${directory:log}/httpd
 autocert = ${directory:srv}/autocert
 master-autocert-dir = ${:autocert}/master-autocert
@@ -400,6 +391,11 @@ not-found-file = ${caddy-directory:document-root}/${not-found-html:filename}
 master-certificate = ${caddy-directory:master-autocert-dir}/master.pem
 # Communication with ATS
 cache-port = ${trafficserver-variable:input-port}
+# slave instrspection
+slave-introspection-access-log = ${directory:log}/slave-introspection-access.log
+slave-introspection-error-log = ${directory:log}/slave-introspection-error.log
+slave-introspection-pid-file = ${directory:run}/slave-introspection.pid
+slave-introspection-graceful-command = ${slave-introspection-validate:rendered} && kill -HUP $(cat ${:slave-introspection-pid-file})
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -432,6 +428,7 @@ rotate-num = ${configuration:rotate-num}
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${frontend-caddy-lazy-graceful:rendered} &
+delaycompress =
 
 #################
 # Trafficserver
@@ -440,7 +437,7 @@ post = ${frontend-caddy-lazy-graceful:rendered} &
 recipe = slapos.cookbook:mkdirectory
 configuration = ${directory:etc}/trafficserver
 local-state = ${directory:var}/trafficserver
-bin_path = {{ parameter_dict['trafficserver'] }}/bin
+bin_path = {{ software_parameter_dict['trafficserver'] }}/bin
 log = ${directory:log}/trafficserver
 cache-path = ${directory:srv}/ats_cache
 logrotate-backup = ${logrotate-directory:logrotate-backup}/trafficserver
@@ -448,34 +445,32 @@ logrotate-backup = ${logrotate-directory:logrotate-backup}/trafficserver
 [trafficserver-variable]
 wrapper-path = ${directory:service}/trafficserver
 reload-path = ${directory:etc-run}/trafficserver-reload
-local-ip = {{ instance_parameter['ipv4-random'] }}
+local-ip = {{ instance_parameter_dict['ipv4-random'] }}
 input-port = 23432
 hostname = ${configuration:frontend-name}
 plugin-config =
 ip-allow-config = src_ip=0.0.0.0-255.255.255.255 action=ip_allow
 cache-path = ${trafficserver-directory:cache-path}
 disk-cache-size = ${configuration:disk-cache-size}
-synthetic-port = ${configuration:trafficserver-synthetic-port}
-mgmt-port = ${configuration:trafficserver-mgmt-port}
 ram-cache-size = ${configuration:ram-cache-size}
-templates-dir = {{ parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
+templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
-command = cp -rn {{ parameter_dict['trafficserver'] }}/etc/trafficserver/* ${:target}
+command = cp -rn {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/* ${:target}
 target = ${trafficserver-directory:configuration}
 
 [trafficserver-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_cop
+command-line = {{ software_parameter_dict['trafficserver'] }}/bin/traffic_manager
 wrapper-path = ${trafficserver-variable:wrapper-path}
 environment = TS_ROOT=${buildout:directory}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [trafficserver-reload]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_ctl config reload
+command-line = {{ software_parameter_dict['trafficserver'] }}/bin/traffic_ctl config reload
 wrapper-path = ${trafficserver-variable:reload-path}
 environment = TS_ROOT=${buildout:directory}
 
@@ -492,20 +487,20 @@ context =
 
 [trafficserver-records-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_records_config'] }}
+template = {{ software_parameter_dict['template_trafficserver_records_config'] }}
 filename = records.config
 extra-context =
     import os_module os
 
 [trafficserver-storage-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_storage_config'] }}
+template = {{ software_parameter_dict['template_trafficserver_storage_config'] }}
 filename = storage.config
 
-[trafficserver-logging-config]
+[trafficserver-logging-yaml]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_trafficserver_logging_config'] }}
-filename = logging.config
+template = {{ software_parameter_dict['template_trafficserver_logging_yaml'] }}
+filename = logging.yaml
 
 [trafficserver-remap-config]
 <= trafficserver-jinja2-template-base
@@ -515,7 +510,7 @@ template = inline:
   map / http://{{ ipv4 }}:{{ http_port }}
 {%- endraw %}
 extra-context =
-  raw ipv4 {{ instance_parameter['ipv4-random'] }}
+  raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
   key https_port backend-haproxy-configuration:https-port
   key http_port backend-haproxy-configuration:http-port
 
@@ -523,14 +518,14 @@ filename = remap.config
 
 [trafficserver-plugin-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 filename = plugin.config
 context =
     key content trafficserver-variable:plugin-config
 
 [trafficserver-ip-allow-config]
 < = trafficserver-jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 filename = ip_allow.config
 context =
     key content trafficserver-variable:ip-allow-config
@@ -544,7 +539,7 @@ config-port = ${trafficserver-variable:input-port}
 
 [trafficserver-ctl]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['trafficserver'] }}/bin/traffic_ctl
+command-line = {{ software_parameter_dict['trafficserver'] }}/bin/traffic_ctl
 wrapper-path = ${directory:bin}/traffic_ctl
 environment = TS_ROOT=${buildout:directory}
 
@@ -556,10 +551,10 @@ config-wrapper-path = ${trafficserver-ctl:wrapper-path}
 
 [trafficserver-rotate-script]
 < = jinja2-template-base
-template = {{ parameter_dict['template_rotate_script'] }}
+template = {{ software_parameter_dict['template_rotate_script'] }}
 rendered = ${directory:bin}/trafficserver-rotate
 mode = 0700
-xz_binary = {{ parameter_dict['xz_location'] ~ '/bin/xz' }}
+xz_binary = {{ software_parameter_dict['xz_location'] ~ '/bin/xz' }}
 pattern = *.old
 # days to keep log files
 keep_days = 365
@@ -583,12 +578,12 @@ command = ${trafficserver-rotate-script:rendered}
 ### Caddy Graceful and promises
 [frontend-caddy-configuration-state]
 < = jinja2-template-base
-template = {{ parameter_dict['template_configuration_state_script'] }}
+template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${caddy-configuration:frontend-configuration} ${frontend-configuration:log-access-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
-sha256sum = {{ parameter_dict['sha256sum'] }}
+path_list = ${caddy-configuration:frontend-configuration} ${caddy-directory:slave-configuration}/*.conf ${caddy-directory:master-autocert-dir}/*.key ${caddy-directory:master-autocert-dir}/*.crt ${caddy-directory:master-autocert-dir}/*.pem ${caddy-directory:autocert}/*.pem ${caddy-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
     key path_list :path_list
@@ -605,7 +600,7 @@ signature_file = ${directory:run}/validate_configuration_state_signature
 
 [frontend-caddy-graceful]
 < = jinja2-template-base
-template = {{ parameter_dict['template_graceful_script'] }}
+template = {{ software_parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/frontend-caddy-safe-graceful
 mode = 0700
 
@@ -615,7 +610,7 @@ extra-context =
 
 [frontend-caddy-validate]
 < = jinja2-template-base
-template = {{ parameter_dict['template_validate_script'] }}
+template = {{ software_parameter_dict['template_validate_script'] }}
 rendered = ${directory:bin}/frontend-caddy-validate
 mode = 0700
 last_state_file = ${directory:run}/caddy_configuration_last_state
@@ -627,7 +622,7 @@ extra-context =
 
 [frontend-caddy-lazy-graceful]
 < = jinja2-template-base
-template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
+template = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
 rendered = ${directory:bin}/frontend-caddy-lazy-graceful
 mode = 0700
 pid-file = ${directory:run}/lazy-graceful.pid
@@ -640,7 +635,7 @@ extra-context =
 # Promises checking configuration:
 [promise-helper-last-configuration-state]
 < = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 rendered = ${directory:bin}/frontend-read-last-configuration-state
 mode = 0700
 content =
@@ -659,42 +654,42 @@ config-verification-script = ${promise-helper-last-configuration-state:rendered}
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_https.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv4_http.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_https.py
-config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
 <= monitor-promise-base
 module = check_port_listening
 name = caddy_frontend_ipv6_http.py
-config-hostname = {{ instance_parameter['ipv6-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
 module = check_port_listening
 name = backend_haproxy_http.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
 module = check_port_listening
 name = backend_haproxy_https.py
-config-hostname = {{ instance_parameter['ipv4-random'] }}
+config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
 
 [backend-haproxy-configuration]
@@ -711,16 +706,23 @@ certificate = ${backend-client-login-config:certificate}
 cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
 csr = ${backend-client-caucase-updater-csr:csr}
 crl = ${backend-client-login-config:crl}
+# the statistic page
+statistic-certificate = ${self-signed-ip-access:certificate}
+statistic-port = ${configuration:backend-haproxy-statistic-port}
+statistic-username = ${monitor-instance-parameter:username}
+statistic-password = ${monitor-htpasswd:passwd}
+statistic-identification = {{ instance_parameter_dict['configuration.frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
+statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 
 [backend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file}
+command-line = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file}
 wrapper-path = ${directory:service}/backend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [backend-haproxy-rsyslogd-lazy-graceful]
 < = jinja2-template-base
-template = {{ parameter_dict['template_caddy_lazy_script_call'] }}
+template = {{ software_parameter_dict['template_caddy_lazy_script_call'] }}
 rendered = ${directory:bin}/backend-haproxy-rsyslogd-lazy-graceful
 mode = 0700
 pid-file = ${directory:run}/backend-haproxy-rsyslogd-lazy-graceful.pid
@@ -741,15 +743,16 @@ rotate-num = ${configuration:rotate-num}
 #       Here we trust that there will be something to be rotated with error
 #       or access log, and that this will trigger postrotate script.
 post = ${backend-haproxy-rsyslogd-lazy-graceful:rendered} &
+delaycompress =
 
 [backend-haproxy-configuration-state]
 <= jinja2-template-base
-template = {{ parameter_dict['template_configuration_state_script'] }}
+template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
 path_list = ${backend-haproxy-configuration:file} ${backend-client-login-config:certificate}
-sha256sum = {{ parameter_dict['sha256sum'] }}
+sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
     key path_list :path_list
@@ -766,7 +769,7 @@ signature_file = ${directory:run}/backend_haproxy_validate_configuration_state_s
 
 [backend-haproxy-graceful]
 < = jinja2-template-base
-template = {{ parameter_dict['template_graceful_script'] }}
+template = {{ software_parameter_dict['template_graceful_script'] }}
 rendered = ${directory:etc-run}/backend-haproxy-safe-graceful
 mode = 0700
 
@@ -776,11 +779,11 @@ extra-context =
 
 [backend-haproxy-validate]
 <= jinja2-template-base
-template = {{ parameter_dict['template_validate_script'] }}
+template = {{ software_parameter_dict['template_validate_script'] }}
 rendered = ${directory:bin}/backend-haproxy-validate
 mode = 0700
 last_state_file = ${directory:run}/backend_haproxy_configuration_last_state
-validate_command = {{ parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
+validate_command = {{ software_parameter_dict['haproxy_executable'] }} -f ${backend-haproxy-configuration:file} -c
 extra-context =
     key validate_command :validate_command
     key configuration_state_command backend-haproxy-configuration-state-validate:rendered
@@ -794,7 +797,7 @@ config-verification-script = ${promise-backend-haproxy-configuration-helper:rend
 
 [promise-backend-haproxy-configuration-helper]
 < = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 rendered = ${directory:bin}/backend-haproxy-read-last-configuration-state
 mode = 0700
 content =
@@ -820,7 +823,7 @@ extra-context =
 
 [backend-haproxy-rsyslogd]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-config:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:rendered}
+command-line = {{ software_parameter_dict['rsyslogd_executable'] }} -i ${backend-haproxy-rsyslogd-config:pid-file} -n -f ${backend-haproxy-rsyslogd-configuration:rendered}
 wrapper-path = ${directory:service}/backend-haproxy-rsyslogd
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
@@ -832,8 +835,8 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [monitor-conf-parameters]
 private-path-list += 
@@ -842,35 +845,35 @@ private-path-list +=
 
 [monitor-traffic-summary-last-stats-wrapper]
 < = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
+template = {{ software_parameter_dict['template_wrapper'] }}
 rendered = ${directory:bin}/traffic-summary-last-stats_every_1_hour
 mode = 0700
-command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ parameter_dict['trafficserver'] }}/bin/traffic_logstats -f ${trafficserver-directory:log}/squid.blog)</pre>"
+command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ software_parameter_dict['trafficserver'] }}/bin/traffic_logstats -f ${trafficserver-directory:log}/squid.blog)</pre>"
 extra-context =
   key content monitor-traffic-summary-last-stats-wrapper:command
 
 # Produce ATS Cache stats
 [monitor-ats-cache-stats-wrapper]
 < = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
+template = {{ software_parameter_dict['template_wrapper'] }}
 rendered = ${directory:bin}/ats-cache-stats_every_1_hour
 mode = 0700
-command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ parameter_dict['trafficserver'] }}/bin/traffic_shell ${monitor-ats-cache-stats-config:rendered})</pre>"
+command = export TS_ROOT=${buildout:directory} && echo "<pre>$({{ software_parameter_dict['trafficserver'] }}/bin/traffic_shell ${monitor-ats-cache-stats-config:rendered})</pre>"
 extra-context =
   key content monitor-ats-cache-stats-wrapper:command
 
 [monitor-caddy-server-status-wrapper]
 < = jinja2-template-base
-template = {{ parameter_dict['template_wrapper'] }}
+template = {{ software_parameter_dict['template_wrapper'] }}
 rendered = ${directory:bin}/monitor-caddy-server-status-wrapper
 mode = 0700
-command = {{ parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
+command = {{ software_parameter_dict['curl'] }}/bin/curl -s http://{{ instance_parameter_dict['ipv4-random'] }}:${configuration:plain_http_port}/server-status -u ${monitor-instance-parameter:username}:${monitor-htpasswd:passwd} 2>&1
 extra-context =
   key content monitor-caddy-server-status-wrapper:command
 
 [monitor-ats-cache-stats-config]
 < = jinja2-template-base
-template = {{ parameter_dict['template_empty'] }}
+template = {{ software_parameter_dict['template_empty'] }}
 rendered = ${trafficserver-configuration-directory:target}/cache-config.stats
 mode = 644
 context =
@@ -892,10 +895,129 @@ extra-context =
     key http_port configuration:plain_http_port
     key https_port configuration:port
 
+[slave-introspection-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-https-only = true
+return = domain secure_access
+
+[backend-haproxy-statistic-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-https-only = true
+return = domain secure_access
+
+[slave-introspection-configuration-state]
+<= jinja2-template-base
+template = {{ software_parameter_dict['template_configuration_state_script'] }}
+rendered = ${directory:bin}/${:_buildout_section_name_}
+mode = 0700
+
+path_list = ${frontend-configuration:slave-introspection-configuration} ${frontend-configuration:ip-access-certificate}
+sha256sum = {{ software_parameter_dict['sha256sum'] }}
+
+extra-context =
+    key path_list :path_list
+    key sha256sum :sha256sum
+    key signature_file :signature_file
+
+[slave-introspection-configuration-state-graceful]
+<= slave-introspection-configuration-state
+signature_file = ${directory:run}/slave_introspection_graceful_configuration_state_signature
+
+[slave-introspection-configuration-state-validate]
+<= slave-introspection-configuration-state
+signature_file = ${directory:run}/slave_introspection_validate_configuration_state_signature
+
+[slave-introspection-graceful]
+< = jinja2-template-base
+template = {{ software_parameter_dict['template_graceful_script'] }}
+rendered = ${directory:etc-run}/slave-introspection-safe-graceful
+mode = 0700
+
+extra-context =
+    key graceful_reload_command caddy-configuration:slave-introspection-graceful-command
+    key caddy_configuration_state slave-introspection-configuration-state-graceful:rendered
+
+[slave-introspection-validate]
+<= jinja2-template-base
+template = {{ software_parameter_dict['template_validate_script'] }}
+rendered = ${directory:bin}/slave-introspection-validate
+mode = 0700
+last_state_file = ${directory:run}/slave_introspection_configuration_last_state
+validate_command = {{ software_parameter_dict['nginx'] }} -c ${frontend-configuration:slave-introspection-configuration} -t
+extra-context =
+    key validate_command :validate_command
+    key configuration_state_command slave-introspection-configuration-state-validate:rendered
+    key last_state_file :last_state_file
+
+[promise-slave-introspection-configuration]
+<= monitor-promise-base
+module = validate_frontend_configuration
+name = slave-introspection-configuration.py
+config-verification-script = ${promise-slave-introspection-configuration-helper:rendered}
+
+[promise-slave-introspection-configuration-helper]
+< = jinja2-template-base
+template = {{ software_parameter_dict['template_empty'] }}
+rendered = ${directory:bin}/slave-introspection-read-last-configuration-state
+mode = 0700
+content =
+  #!/bin/sh
+  exit `cat ${slave-introspection-validate:last_state_file}`
+context =
+    key content :content
+
+[promise-slave-introspection-https]
+<= monitor-promise-base
+module = check_port_listening
+name = slave_introspection_https.py
+config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
+config-port = ${frontend-configuration:slave-introspection-https-port}
+
+[logrotate-entry-slave-introspection]
+<= logrotate-entry-base
+name = slave-introspection
+log = ${caddy-configuration:slave-introspection-access-log} ${caddy-configuration:slave-introspection-error-log}
+rotate-num = ${configuration:rotate-num}
+post = kill -USR1 $(cat ${caddy-configuration:slave-introspection-pid-file})
+delaycompress =
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
+  ${logrotate:wrapper-path} -d
+
 [configuration]
-{%- for key, value in instance_parameter.iteritems() -%}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
 {%-   if key.startswith('configuration.') %}
 {{ key.replace('configuration.', '') }} = {{ dumps(value) }}
 {%-   endif -%}
-{%- endfor -%}
-{%- endif -%} {# if slap_software_type == software_type #}
+{%- endfor %}
+
+[instance-parameter-section]
+{#- There are dangerous keys like recipe, etc #}
+{#- XXX: Some other approach would be useful #}
+{%- set DROP_KEY_LIST = ['recipe', '__buildout_signature__', 'computer', 'partition', 'url', 'key', 'cert'] %}
+{%- for key, value in instance_parameter_dict.iteritems() -%}
+{%-   if not key.startswith('configuration.') and key not in DROP_KEY_LIST %}
+{{ key }} = {{ dumps(value) }}
+{%-   endif -%}
+{%- endfor %}
+
+[software-parameter-section]
+{%- for key, value in software_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{%- endfor %}
+
+{%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}

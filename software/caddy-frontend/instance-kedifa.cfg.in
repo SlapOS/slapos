@@ -1,11 +1,11 @@
-{%- if slap_software_type == software_type -%}
+{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 # KeDiFa instance profile
 [buildout]
 extends =
-  {{ parameter_dict['common_profile'] }}
-  {{ parameter_dict['monitor_template'] }}
-  {{ parameter_dict['logrotate_base_instance'] }}
+  {{ software_parameter_dict['profile_common'] }}
+  {{ software_parameter_dict['profile_monitor'] }}
+  {{ software_parameter_dict['profile_logrotate_base'] }}
 
 parts =
   monitor-base
@@ -19,23 +19,24 @@ parts =
   caucase-updater
   expose-csr_id
   promise-expose-csr_id-ip-port
+  promise-logrotate-setup
 
 [monitor-instance-parameter]
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
+password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-{%  set caucase_host = '[' ~ instance_parameter['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter['configuration.caucase_port'] -%}
+{%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
+{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
-      buildout_bin_directory=parameter_dict['bin_directory'],
+      buildout_bin_directory=software_parameter_dict['bin_directory'],
       caucased_path='${directory:service}/caucased',
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
@@ -74,7 +75,8 @@ reservation = ${:srv}/reservation
 
 # csr_id publication
 csr_id = ${:srv}/csr_id
-caddy-csr_id = ${:etc}/caddy-csr_id
+certificate-csr_id = ${:var}/certificate-csr_id
+expose-csr_id-var = ${:var}/expose-csr_id
 
 [kedifa-csr]
 recipe = plone.recipe.command
@@ -82,22 +84,23 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational_unit = Kedifa Partition
 command =
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
-    /bin/bash -c '{{ parameter_dict['openssl'] }} req -new -sha256 \
+    /bin/bash -c '{{ software_parameter_dict['openssl'] }} req -new -sha256 \
       -newkey rsa:2048 -nodes -keyout ${:key} \
       -subj "/O=${:organization}/OU=${:organizational_unit}" \
       -reqexts SAN \
-      -config <(cat {{ parameter_dict['openssl_cnf'] }} \
+      -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
       <(printf "\n[SAN]\nsubjectAltName=IP:${kedifa-config:ip}")) \
       -out ${:template-csr}'
   fi
 update-command = ${:command}
 template-csr = ${kedifa-config:template-csr}
 key = ${kedifa-config:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 
 {{ caucase.updater(
      prefix='caucase-updater',
-     buildout_bin_directory=parameter_dict['bin_directory'],
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/caucase-updater',
      url=caucase_url,
      data_dir='${directory:srv}/caucase-updater',
@@ -105,7 +108,7 @@ stop-on-error = True
      ca_path='${kedifa-config:ca-certificate}',
      crl_path='${kedifa-config:crl}',
      key_path='${kedifa-csr:key}',
-     on_renew='${kedifa-reloader:wrapper-path}',
+     on_renew='${kedifa-reloader:rendered}',
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
@@ -118,7 +121,7 @@ csr_work_path = ${directory:tmp}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
-  {{ parameter_dict['bin_directory'] }}/caucase \
+  {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ caucase_url }} \
     --ca-crt ${kedifa-config:ca-certificate} \
     --crl ${kedifa-config:crl} \
@@ -130,20 +133,21 @@ command =
 
 [certificate-csr_id]
 recipe = plone.recipe.command
-certificate = ${directory:caddy-csr_id}/certificate.pem
-key = ${directory:caddy-csr_id}/key.pem
+certificate = ${directory:certificate-csr_id}/certificate.pem
+key = ${directory:certificate-csr_id}/key.pem
 
+{#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 update-command = ${:command}
 command =
   if ! [ -f ${:key} ] && ! [ -f ${:certificate} ] ; then
-    {{ parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
-      "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter['ipv6-random'] }}" \
+    {{ software_parameter_dict['openssl'] }} req -new -newkey rsa:2048 -sha256 -subj \
+      "/O=${kedifa-csr:organization}/OU=${kedifa-csr:organizational_unit}/CN={{ instance_parameter_dict['ipv6-random'] }}" \
       -days 5 -nodes -x509 -keyout ${:key} -out ${:certificate}
   fi
 
 [expose-csr_id-configuration]
-ip = {{ instance_parameter['ipv6-random'] }}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
 port = 17000
 key = ${certificate-csr_id:key}
 certificate = ${certificate-csr_id:certificate}
@@ -151,14 +155,40 @@ error-log = ${directory:log}/expose-csr_id.log
 
 [expose-csr_id-template]
 recipe = slapos.recipe.template:jinja2
+var = ${directory:expose-csr_id-var}
+pid = ${directory:var}/nginx-expose-csr_id.pid
+rendered = ${directory:etc}/nginx-expose-csr_id.conf
 template = inline:
-  https://:${expose-csr_id-configuration:port}/ {
-    bind ${expose-csr_id-configuration:ip}
-    tls ${expose-csr_id-configuration:certificate} ${expose-csr_id-configuration:key}
-    log ${expose-csr_id-configuration:error-log}
+  daemon off;
+  pid ${:pid};
+  error_log ${expose-csr_id-configuration:error-log};
+  events {
   }
+  http {
+    include {{ software_parameter_dict['nginx_mime'] }};
+    server {
+      server_name_in_redirect off;
+      port_in_redirect off;
+      error_log ${expose-csr_id-configuration:error-log};
+      access_log /dev/null;
+      listen [${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port} ssl;
+      ssl_certificate ${expose-csr_id-configuration:certificate};
+      ssl_certificate_key ${expose-csr_id-configuration:key};
+      default_type application/octet-stream;
+      client_body_temp_path ${:var} 1 2;
+      proxy_temp_path ${:var} 1 2;
+      fastcgi_temp_path ${:var} 1 2;
+      uwsgi_temp_path ${:var} 1 2;
+      scgi_temp_path ${:var} 1 2;
 
-rendered = ${directory:caddy-csr_id}/Caddyfile
+      location / {
+        alias ${directory:csr_id}/;
+        autoindex off;
+        sendfile on;
+        sendfile_max_chunk 1m;
+      }
+    }
+  }
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
@@ -170,13 +200,8 @@ config-port = ${expose-csr_id-configuration:port}
 [expose-csr_id]
 depends = ${store-csr_id:command}
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['caddy'] }}
-  -conf ${expose-csr_id-template:rendered}
-  -log ${expose-csr_id-configuration:error-log}
-  -http2=true
-  -disable-http-challenge
-  -disable-tls-alpn-challenge
-  -root ${directory:csr_id}
+command-line = {{ software_parameter_dict['nginx'] }}
+  -c ${expose-csr_id-template:rendered}
 
 wrapper-path = ${directory:service}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
@@ -190,19 +215,19 @@ commands =
 recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:directory}/${:filename}
 extra-context =
-slapparameter_dict = {{ dumps(instance_parameter['configuration']) }}
-slap_software_type = {{ dumps(instance_parameter['slap-software-type']) }}
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
+slap_software_type = {{ dumps(instance_parameter_dict['slap-software-type']) }}
 context =
     import json_module json
-    raw common_profile {{ parameter_dict['common_profile'] }}
+    raw profile_common {{ software_parameter_dict['profile_common'] }}
     key slap_software_type :slap_software_type
     key slapparameter_dict :slapparameter_dict
     section directory directory
     ${:extra-context}
 
 [kedifa-config]
-ip = {{ instance_parameter['ipv6-random'] }}
-port = {{ instance_parameter['configuration.kedifa_port'] }}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -213,9 +238,14 @@ pidfile = ${directory:run}/kedifa.pid
 logfile = ${directory:log}/kedifa.log
 
 [kedifa-reloader]
-recipe = slapos.cookbook:wrapper
-command-line = kill -SIGHUP `cat ${kedifa-config:pidfile}`
-wrapper-path = ${directory:etc-run}/kedifa-reloader
+<= jinja2-template-base
+template = {{ software_parameter_dict['template_wrapper'] }}
+rendered = ${directory:etc-run}/kedifa-reloader
+command =
+  kill -HUP `cat ${kedifa-config:pidfile}`
+mode = 0700
+extra-context =
+  key content :command
 
 [promise-kedifa-http-reply]
 <= monitor-promise-base
@@ -230,11 +260,12 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 <= logrotate-entry-base
 name = kedifa
 log = ${kedifa-config:logfile}
-rotate-num = {{ instance_parameter['configuration.rotate-num'] | int }}
+rotate-num = {{ instance_parameter_dict['configuration.rotate-num'] | int }}
+delaycompress =
 
 [kedifa]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_dict['kedifa'] }}
+command-line = {{ software_parameter_dict['kedifa'] }}
   --ip ${kedifa-config:ip}
   --port ${kedifa-config:port}
   --db ${kedifa-config:db}
@@ -261,7 +292,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = plone.recipe.command
 file = ${directory:reservation}/${:_buildout_section_name_}
 command =
-  [ ! -f ${:file} ] && {{ parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
+  [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
 
 [{{ slave_reference }}-auth-random]
@@ -276,7 +307,7 @@ commands =
 recipe = plone.recipe.command
 file = ${directory:reservation}/${:_buildout_section_name_}
 command =
-  [ ! -f ${:file} ] && {{ parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
+  [ ! -f ${:file} ] && {{ software_parameter_dict['curl'] }}/bin/curl -s -g -X POST https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id --cert ${kedifa-config:certificate} --cacert ${kedifa-config:ca-certificate} > ${:file}.tmp && mv ${:file}.tmp ${:file}
 update-command = ${:command}
 
 [master-auth-random]
@@ -296,4 +327,12 @@ master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${
 csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
-{%- endif -%} {# if slap_software_type in software_type #}
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command =
+  ${logrotate:wrapper-path} -d
+
+{%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}

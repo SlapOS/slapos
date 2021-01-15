@@ -2,15 +2,11 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
-{% set frontend_caucase_url_list = ssl_parameter_dict.get('frontend_caucase_url_list', []) -%}
 {% set shared_ca_path = slapparameter_dict.get('shared-certificate-authority-path') -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
 -#}
-# TODO: insert varnish between apache & haproxy.
-# And think of a way to specify which urls goe through varnish, which go
-# directly to haproxy. (maybe just passing literal configuration file chunk)
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set apache_ip_list = [ipv4] -%}
 {% if ipv6_set -%}
@@ -29,8 +25,8 @@ mode = 644
      url=ssl_parameter_dict['caucase-url'],
      data_dir='${directory:srv}/caucase-updater',
      crt_path='${apache-conf-ssl:caucase-cert}',
-     ca_path='${directory:srv}/caucase-updater/ca.crt',
-     crl_path='${directory:srv}/caucase-updater/crl.pem',
+     ca_path='${apache-conf-ssl:ca-cert}',
+     crl_path='${apache-conf-ssl:crl}',
      key_path='${apache-conf-ssl:caucase-key}',
      on_renew='${apache-graceful:output}',
      max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
@@ -38,69 +34,6 @@ mode = 644
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 {% do section('caucase-updater') -%}
-{% do section('caucase-updater-promise') -%}
-
-{% set frontend_caucase_url_hash_list = [] -%}
-{% for frontend_caucase_url in frontend_caucase_url_list -%}
-{%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
-{%   do frontend_caucase_url_hash_list.append(hash) -%}
-{%   set data_dir = '${directory:srv}/client-cert-ca/%s' % hash -%}
-{{   caucase.updater(
-       prefix='caucase-updater-%s' % hash,
-       buildout_bin_directory=parameter_dict['bin-directory'],
-       updater_path='${directory:services-on-watch}/caucase-updater-%s' % hash,
-       url=frontend_caucase_url,
-       data_dir=data_dir,
-       ca_path='%s/ca.crt' % data_dir,
-       crl_path='%s/crl.pem' % data_dir,
-       on_renew='${caucase-updater-housekeeper:output}; ${apache-graceful:output}',
-       max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
-       openssl=parameter_dict['openssl'] ~ '/bin/openssl',
-     )}}
-{%   do section('caucase-updater-%s' % hash) -%}
-{% endfor -%}
-
-{% if frontend_caucase_url_hash_list -%}
-[caucase-updater-housekeeper]
-recipe = collective.recipe.template
-output = ${directory:bin}/caucase-updater-housekeeper
-mode = 700
-input =
-  inline:
-  #!${buildout:executable}
-  import glob
-  import os
-  import subprocess
-  hash_list = {{ repr(frontend_caucase_url_hash_list) }}
-  crt_list = ['%s.crt' % e for e in hash_list]
-  crl_list = ['%s.crl' % e for e in hash_list]
-{% if shared_ca_path -%}
-  crt_list.append('{{ shared_ca_path }}/cacert.pem')
-  crl_list.append('{{ shared_ca_path }}/crl')
-{% endif -%}
-  for path in glob.glob('${apache-conf-ssl:ca-cert-dir}/*.crt'):
-    if os.path.basename(path) not in crt_list:
-      os.unlink(path)
-  for path in glob.glob('${apache-conf-ssl:crl-dir}/*.crl'):
-    if os.path.basename(path) not in crl_list:
-      os.unlink(path)
-  for hash in hash_list:
-    crt = '${directory:srv}/client-cert-ca/%s/ca.crt' % hash
-    crt_link = '${apache-conf-ssl:ca-cert-dir}/%s.crt' % hash
-    crl = '${directory:srv}/client-cert-ca/%s/crl.pem' % hash
-    crl_link = '${apache-conf-ssl:crl-dir}/%s.crl' % hash
-    if os.path.isfile(crt) and not os.path.islink(crt_link):
-      os.symlink(crt, crt_link)
-    if os.path.isfile(crl) and not os.path.islink(crl_link):
-      os.symlink(crl, crl_link)
-  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:ca-cert-dir}'])
-  subprocess.check_call(['{{ parameter_dict["openssl"] }}/bin/c_rehash', '${apache-conf-ssl:crl-dir}'])
-
-[caucase-updater-housekeeper-run]
-recipe = plone.recipe.command
-command = ${caucase-updater-housekeeper:output}
-update-command = ${:command}
-{% endif -%}
 
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
@@ -187,27 +120,8 @@ key = ${directory:apache-conf}/apache.pem
 # XXX caucase certificate is not supported by caddy for now
 caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
-{% if frontend_caucase_url_list -%}
-depends = ${caucase-updater-housekeeper-run:recipe}
-ca-cert-dir = ${directory:apache-ca-cert-dir}
-crl-dir = ${directory:apache-crl-dir}
-{%- endif %}
-
-[simplefile]
-< = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
-
-{% macro simplefile(section_name, file_path, content, mode='') -%}
-{%   set content_section_name = section_name ~ '-content' -%}
-[{{  content_section_name }}]
-content = {{ dumps(content) }}
-
-[{{  section(section_name) }}]
-< = simplefile
-rendered = {{ file_path }}
-context = key content {{content_section_name}}:content
-mode = {{ mode }}
-{%- endmacro %}
+ca-cert =  ${directory:apache-conf}/ca.crt
+crl = ${directory:apache-conf}/crl.pem
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}
@@ -237,10 +151,13 @@ cert = ${apache-ssl:cert}
 key = ${apache-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
-{% if frontend_caucase_url_list -%}
 # Client x509 auth
-ca-cert-dir = ${apache-conf-ssl:ca-cert-dir}
-crl-dir = ${apache-conf-ssl:crl-dir}
+ca-cert = ${apache-conf-ssl:ca-cert}
+crl = ${apache-conf-ssl:crl}
+
+{% if shared_ca_path -%}
+shared-ca-cert = {{ shared_ca_path }}/cacert.pem
+shared-crl = {{ shared_ca_path }}/crl 
 {%- endif %}
 
 [apache-conf]
@@ -266,8 +183,8 @@ input = inline:
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
 
 [{{ section('apache-promise') }}]
-<= monitor-promise-base
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+<= monitor-promise-base
 module = check_port_listening
 name = apache.py
 config-hostname = {{ ipv4 }}
@@ -308,10 +225,6 @@ post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bi
 [directory]
 recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
-{% if frontend_caucase_url_list -%}
-apache-ca-cert-dir = ${:apache-conf}/ssl.crt
-apache-crl-dir = ${:apache-conf}/ssl.crl
-{% endif -%}
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run

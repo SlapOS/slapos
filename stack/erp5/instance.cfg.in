@@ -56,13 +56,17 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 <= default-dynamic-template-parameters
-apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
+rsyslogd = {{ rsyslogd_location }}
+socat = {{ socat_location }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
+# XXX: only used in software/slapos-master:
+apache = {{ apache_location }}
 template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
@@ -103,7 +107,7 @@ link-binary = {{ dumps(zope_link_binary) }}
 fonts = {{ dumps(zope_fonts) }}
 fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
 template-fonts-conf = {{ dumps(template_fonts_conf) }}
-userhosts = {{ userhosts_location }}/bin/userhosts
+userhosts = {{ userhosts_location }}/lib/userhosts.so
 site-zcml = {{ site_zcml }}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
@@ -145,6 +149,7 @@ coreutils-location = {{ coreutils_location }}
 dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
+xz-utils-location = {{ xz_utils_location }}
 mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}

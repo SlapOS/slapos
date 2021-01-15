@@ -321,9 +321,11 @@ class TestWeb(SlaprunnerTestCase):
 class TestSSH(SlaprunnerTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    cls.ssh_key = paramiko.RSAKey.generate(1024)
+    cls.ssh_key_list = [paramiko.RSAKey.generate(1024) for i in range(2)]
     return {
-        'user-authorized-key': 'ssh-rsa {}'.format(cls.ssh_key.get_base64())
+        'user-authorized-key': 'ssh-rsa {}\nssh-rsa {}'.format(
+          *[key.get_base64() for key in cls.ssh_key_list]
+          )
     }
 
   def test_connect(self):
@@ -355,43 +357,44 @@ class TestSSH(SlaprunnerTestCase):
     key_policy = KeyPolicy()
     client.set_missing_host_key_policy(key_policy)
 
-    with contextlib.closing(client):
-      client.connect(
-          username=username,
-          hostname=parsed.hostname,
-          port=parsed.port,
-          pkey=self.ssh_key,
-      )
-      # Check fingerprint from server matches the published one.
-      # Paramiko does not allow to get the fingerprint as SHA256 easily yet
-      # https://github.com/paramiko/paramiko/pull/1103
-      self.assertEqual(
-          fingerprint_from_url,
-          quote(
-              # base64 encoded fingerprint adds an extra = at the end
-              base64.b64encode(
-                  hashlib.sha256(key_policy.key.asbytes()).digest())[:-1],
-              # also encode /
-              safe=''))
+    for ssh_key in self.ssh_key_list:
+      with contextlib.closing(client):
+        client.connect(
+            username=username,
+            hostname=parsed.hostname,
+            port=parsed.port,
+            pkey=ssh_key,
+        )
+        # Check fingerprint from server matches the published one.
+        # Paramiko does not allow to get the fingerprint as SHA256 easily yet
+        # https://github.com/paramiko/paramiko/pull/1103
+        self.assertEqual(
+            fingerprint_from_url,
+            quote(
+                # base64 encoded fingerprint adds an extra = at the end
+                base64.b64encode(
+                    hashlib.sha256(key_policy.key.asbytes()).digest())[:-1],
+                # also encode /
+                safe=''))
 
-      # Check shell is usable
-      channel = client.invoke_shell()
-      channel.settimeout(30)
-      received = ''
-      while True:
-        r = bytes2str(channel.recv(1024))
-        self.logger.debug("received >%s<", r)
-        if not r:
-          break
-        received += r
-        if 'slaprunner shell' in received:
-          break
-      self.assertIn("Welcome to SlapOS slaprunner shell", received)
+        # Check shell is usable
+        channel = client.invoke_shell()
+        channel.settimeout(30)
+        received = ''
+        while True:
+          r = bytes2str(channel.recv(1024))
+          self.logger.debug("received >%s<", r)
+          if not r:
+            break
+          received += r
+          if 'slaprunner shell' in received:
+            break
+        self.assertIn("Welcome to SlapOS slaprunner shell", received)
 
-      # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
-      self.assertEqual(
-          self.computer_partition_root_path,
-          bytes2str(client.exec_command("pwd")[1].read(1000)).strip())
+        # simple commands can also be executed ( this would be like `ssh bash -c 'pwd'` )
+        self.assertEqual(
+            self.computer_partition_root_path,
+            bytes2str(client.exec_command("pwd")[1].read(1000)).strip())
 
 
 class TestSlapOS(SlaprunnerTestCase):

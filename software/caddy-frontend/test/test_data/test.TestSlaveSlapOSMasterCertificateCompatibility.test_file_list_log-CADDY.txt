@@ -6,9 +6,9 @@ T-1/var/log/kedifa.log
 T-1/var/log/monitor-httpd-access.log
 T-1/var/log/monitor-httpd-error.log
 T-2/var/log/backend-haproxy.log
+T-2/var/log/expose-csr_id.log
 T-2/var/log/frontend-access.log
 T-2/var/log/frontend-error.log
-T-2/var/log/httpd-csr_id/expose-csr_id.log
 T-2/var/log/httpd/_custom_domain_ssl_crt_ssl_key_access_log
 T-2/var/log/httpd/_custom_domain_ssl_crt_ssl_key_backend_log
 T-2/var/log/httpd/_custom_domain_ssl_crt_ssl_key_error_log
@@ -47,5 +47,6 @@ T-2/var/log/httpd/_type-notebook-ssl_from_slave_kedifa_overrides_backend_log
 T-2/var/log/httpd/_type-notebook-ssl_from_slave_kedifa_overrides_error_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
+T-2/var/log/slave-introspection-access.log
+T-2/var/log/slave-introspection-error.log
 T-2/var/log/trafficserver/manager.log
-T-2/var/log/trafficserver/traffic.out

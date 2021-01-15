@@ -41,7 +41,7 @@ Server
 
 .. topic:: caucased(prefix, caucased_path, data_dir, netloc, service_auto_approve_count=0, key_len=None, promise=None)
   
-  This macro produces the following sections which you will want to reference sothey get instanciated:
+  This macro produces the following sections which you will want to reference so they get instantiated:
   
   - `<prefix>`: Creates `<caucased>` executable file to start `caucased`,
     and `<data_dir>` directory for its data storage needs.

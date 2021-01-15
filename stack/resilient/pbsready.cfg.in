@@ -177,7 +177,6 @@ template = inline:
  Port $${sshd-port:port}
  ListenAddress $${slap-network-information:global-ipv6}
  Protocol 2
- UsePrivilegeSeparation no
  HostKey $${directory:ssh}/server_key.rsa
  AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
  PasswordAuthentication no
@@ -208,7 +207,7 @@ mode = 700
 
 [sshd-graceful]
 recipe = slapos.cookbook:wrapper
-command-line = $${directory:bin}/killpidfromfile $${resilient-sshd-config:path_pid} SIGHUP
+command-line = $${rootdirectory:bin}/killpidfromfile $${resilient-sshd-config:path_pid} SIGHUP
 wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
