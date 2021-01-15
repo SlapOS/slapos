@@ -453,15 +453,79 @@ def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
 
 class TestHandler(BaseHTTPRequestHandler):
   identification = None
+  configuration = {}
+
+  def do_DELETE(self):
+    config = self.configuration.pop(self.path, None)
+    if config is None:
+      self.send_response(204)
+      self.end_headers()
+    else:
+      self.send_response(200)
+      self.send_header("Content-Type", "application/json")
+      self.end_headers()
+      self.wfile.write(json.dumps({self.path: config}, indent=2))
+
+  def do_PUT(self):
+    config = {
+      'status_code': self.headers.dict.get('status-code', '200')
+    }
+    prefix = 'x-reply-header-'
+    length = len(prefix)
+    for key, value in self.headers.dict.items():
+      if key.startswith(prefix):
+        header = '-'.join([q.capitalize() for q in key[length:].split('-')])
+        config[header] = value.strip()
+
+    if 'x-reply-body' in self.headers.dict:
+      config['Body'] = base64.b64decode(self.headers.dict['x-reply-body'])
+
+    self.configuration[self.path] = config
+
+    self.send_response(201)
+    self.send_header("Content-Type", "application/json")
+    self.end_headers()
+    self.wfile.write(json.dumps({self.path: config}, indent=2))
 
   def do_POST(self):
     return self.do_GET()
 
   def do_GET(self):
-    timeout = int(self.headers.dict.get('timeout', '0'))
-    compress = int(self.headers.dict.get('compress', '0'))
+    config = self.configuration.get(self.path, None)
+    if config is not None:
+      config = config.copy()
+      response = config.pop('Body', None)
+      status_code = int(config.pop('status_code'))
+      timeout = int(config.pop('Timeout', '0'))
+      compress = int(config.pop('Compress', '0'))
+      header_dict = config
+    else:
+      response = None
+      status_code = 200
+      timeout = int(self.headers.dict.get('timeout', '0'))
+      compress = int(self.headers.dict.get('compress', '0'))
+      header_dict = {}
+      prefix = 'x-reply-header-'
+      length = len(prefix)
+      for key, value in self.headers.dict.items():
+        if key.startswith(prefix):
+          header = '-'.join([q.capitalize() for q in key[length:].split('-')])
+          header_dict[header] = value.strip()
+    if response is None:
+      if 'x-reply-body' not in self.headers.dict:
+        response = {
+          'Path': self.path,
+          'Incoming Headers': self.headers.dict
+        }
+        response = json.dumps(response, indent=2)
+      else:
+        response = base64.b64decode(self.headers.dict['x-reply-body'])
+
     time.sleep(timeout)
-    self.send_response(200)
+    self.send_response(status_code)
+
+    for key, value in header_dict.items():
+      self.send_header(key, value)
 
     if self.identification is not None:
       self.send_header('X-Backend-Identification', self.identification)
@@ -469,29 +533,12 @@ class TestHandler(BaseHTTPRequestHandler):
     drop_header_list = []
     for header in self.headers.dict.get('x-drop-header', '').split():
       drop_header_list.append(header)
-    prefix = 'x-reply-header-'
-    length = len(prefix)
-    for key, value in self.headers.dict.items():
-      if key.startswith(prefix):
-        self.send_header(
-          '-'.join([q.capitalize() for q in key[length:].split('-')]),
-          value.strip()
-        )
-
     if 'Content-Type' not in drop_header_list:
       self.send_header("Content-Type", "application/json")
     if 'Set-Cookie' not in drop_header_list:
       self.send_header('Set-Cookie', 'secured=value;secure')
       self.send_header('Set-Cookie', 'nonsecured=value')
 
-    if 'x-reply-body' not in self.headers.dict:
-      response = {
-        'Path': self.path,
-        'Incoming Headers': self.headers.dict
-      }
-      response = json.dumps(response, indent=2)
-    else:
-      response = base64.b64decode(self.headers.dict['x-reply-body'])
     if compress:
       self.send_header('Content-Encoding', 'gzip')
       out = StringIO.StringIO()
