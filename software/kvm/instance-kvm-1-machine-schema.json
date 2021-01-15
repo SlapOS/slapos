@@ -51,69 +51,6 @@
         }
       ]
     },
-    "ram-size": {
-      "title": "RAM size",
-      "description": "RAM size, in MB.",
-      "type": "integer",
-      "default": 1024,
-      "minimum": 1024,
-      "multipleOf": 512
-    },
-    "ram-max-size": {
-      "title": "Maximum RAM size, in MB",
-      "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
-      "type": "integer",
-      "minimum": 1024,
-      "multipleOf": 512
-    },
-    "disk-size": {
-      "title": "Disk size",
-      "description": "Disk size, in GB.",
-      "type": "integer",
-      "default": 10,
-      "minimum": 1
-    },
-    "disk-type": {
-      "title": "Disk type",
-      "description": "Type of QEMU disk drive.",
-      "type": "string",
-      "default": "virtio",
-      "enum": [
-        "ide",
-        "scsi",
-        "sd",
-        "mtd",
-        "floppy",
-        "pflash",
-        "virtio"
-      ]
-    },
-    "disk-format": {
-      "title": "Type of disk drive to create by QEMU.",
-      "description": "Type of QEMU disk drive, to create.",
-      "type": "string",
-      "default": "qcow2",
-      "enum": [
-        "qcow2",
-        "raw",
-        "vdi",
-        "vmdk",
-        "cloop",
-        "qed"
-      ]
-    },
-    "cpu-count": {
-      "title": "CPU count",
-      "description": "Number of CPU cores.",
-      "type": "integer",
-      "minimum": 1
-    },
-    "cpu-max-count": {
-      "title": "Maximum CPU amount",
-      "description": "Specifies the maximum number of CPUs. Defaults to cpu-count + 1",
-      "type": "integer",
-      "minimum": 1
-    },
     "keyboard-layout-language": {
       "title": "Use keyboard layout language",
       "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
@@ -155,6 +92,80 @@
       ],
       "default": "fr"
     },
+        "basic": {
+          "title": "RAM/Disk/CPU/",
+          "description": "RAM, disk, cpu parameters",
+          "properties": {
+    "ram-size": {
+      "title": "RAM size",
+      "description": "RAM size, in MB.",
+      "type": "integer",
+      "default": 1024,
+      "minimum": 1024,
+      "multipleOf": 512
+    },
+    "ram-max-size": {
+      "title": "Maximum RAM size, in MB",
+      "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
+      "type": "integer",
+      "minimum": 1024,
+      "multipleOf": 512
+    },
+    "disk-size": {
+      "title": "Disk size",
+      "description": "Disk size, in GB.",
+      "type": "integer",
+      "default": 10,
+      "minimum": 1
+    },
+    "disk-type": {
+      "title": "Disk type",
+      "description": "Type of QEMU disk drive.",
+      "type": "string",
+      "default": "virtio",
+      "enum": [
+        "ide",
+        "scsi",
+        "sd",
+        "mtd",
+        "floppy",
+        "pflash",
+        "virtio"
+      ]
+    },
+    "disk-format": {
+      "title": "Disk format",
+      "description": "Format of QEMU disk drive, to create.",
+      "type": "string",
+      "default": "qcow2",
+      "enum": [
+        "qcow2",
+        "raw",
+        "vdi",
+        "vmdk",
+        "cloop",
+        "qed"
+      ]
+    },
+    "cpu-count": {
+      "title": "CPU amount",
+      "description": "Number of CPU cores.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "cpu-max-count": {
+      "title": "Maximum CPU amount",
+      "description": "Specifies the maximum number of CPUs. Defaults to cpu-count + 1",
+      "type": "integer",
+      "minimum": 1
+    }
+          },
+          "type": "object"
+        },
+        "nbd": {
+          "title": "NBD",
+          "description": "NBD hostname and port",
+          "properties": {
     "use-tap": {
       "title": "Use QEMU TAP network interface",
       "description": "Use QEMU TAP network interface, requires taps creation on SlapOS Node.",
@@ -162,8 +173,8 @@
       "default": true
     },
     "use-nat": {
-      "title": "Use QEMU USER Mode interface (NAT)",
-      "description": "Use QEMU user-mode network stack (NAT).",
+      "title": "Enable QEMU TAP network interface",
+      "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
       "type": "boolean",
       "default": true
     },
@@ -178,13 +189,13 @@
       "description": "If this option is enabled, the NAT interface will be isolated, i.e. it will not be able to contact the host and no guest IP packets will be routed over the host to the outside. This option does not affect any explicitly set nat rules.",
       "type": "boolean",
       "default": false
-    },
-    "enable-vhost": {
-      "title": "Use vhost-net to improve network performance of tap interface",
-      "description": "The vhost-net provides much improved network performance for your VM. Only work if the vhost-net kernel module is loaded and available on host machine, please keep this option off if you're not shure.",
-      "type": "boolean",
-      "default": false
-    },
+    }
+          },
+          "type": "object"
+        },
+
+
+
     "advanced":{
       "title": "Advanced Parameters",
       "description": "Advanced parameters for KVM",
@@ -222,6 +233,12 @@
             "writethrough"
           ]
         },
+            "disable-ansible-promise": {
+                "default": false,
+                "description": "If the VM of cluster doesn't run Ansible and report status to this SlapOS instances, then this allow to disable ansible promise so your instance will not fail to check ansible promise.",
+                "title": "Desactivate Ansible promise check",
+                "type": "boolean"
+            },
         "disk-aio": {
           "title": "Disk aio to use.",
           "description": "Selects between pthread based disk I/O and native Linux AIO.",
@@ -254,6 +271,12 @@
           "type": "boolean",
           "default": false
         },
+    "enable-vhost": {
+      "title": "Use vhost-net to improve network performance of tap interface",
+      "description": "The vhost-net provides much improved network performance for your VM. Only work if the vhost-net kernel module is loaded and available on host machine, please keep this option off if you're not shure.",
+      "type": "boolean",
+      "default": false
+    },
         "httpd-port": {
           "title": "Local http server port",
           "description": "Port of the local http server used to share files.",
