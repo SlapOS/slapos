@@ -25,7 +25,7 @@ CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
 # Support stale-if-error by returning cached content on backend 5xx or unavailability
 CONFIG proxy.config.http.negative_revalidating_enabled INT 1
-CONFIG proxy.config.http.negative_revalidating_lifetime INT 86400
+CONFIG proxy.config.http.negative_revalidating_lifetime INT 604800
 
 ##############################################################################
 # Thread configurations. Docs:
