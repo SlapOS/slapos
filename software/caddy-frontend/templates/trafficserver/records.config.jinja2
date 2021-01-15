@@ -23,9 +23,19 @@ CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
-# Support stale-if-error by returning cached content on backend 5xx or unavailability
+# Simulate stale-if-error (not supported by TrafficServer), by using internal
+# mechanism
+# This results with replying last know non-5xx response until max_stale_age is reached
+# ignoring max-age returned by the server 
 CONFIG proxy.config.http.negative_revalidating_enabled INT 1
-CONFIG proxy.config.http.negative_revalidating_lifetime INT 604800
+# max_stale_age set here means that for 1 week since last correct response
+# the response will be sent by the system
+CONFIG proxy.config.http.cache.max_stale_age INT 604800
+# negative_revalidating_lifetime just adds Expires header calculated as
+#          Expires = Date + negative_revalidating_lifetime
+# for case when backend replies 5xx, and Age > max-age and Age < max_stale_age
+# and that's not needed, so drop this behaviour
+CONFIG proxy.config.http.negative_revalidating_lifetime INT 0
 
 ##############################################################################
 # Thread configurations. Docs:

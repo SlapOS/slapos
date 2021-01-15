@@ -3918,59 +3918,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
-    # check stale-if-error support (assumes stale-while-revalidate is same)
-    # wait a bit for max-age to expire
-    time.sleep(2)
-    # real check: cache access provides old data when backend is stopped
-    try:
-      # stop the backend, to have error on while connecting to it
-      self.stopServerProcess()
-
-      result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'],
-        'test-path/deep/.././deeper', headers={
-          'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-          'revalidate=3600, stale-if-error=3600',
-        },
-        source_ip=source_ip
-      )
-      self.assertEqual(result.status_code, httplib.OK)
-      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
-      headers = result.headers.copy()
-      self.assertKeyWithPop('Server', headers)
-      self.assertKeyWithPop('Date', headers)
-      self.assertKeyWithPop('Age', headers)
-      self.assertKeyWithPop('Expires', headers)
-      # drop keys appearing randomly in headers
-      headers.pop('Transfer-Encoding', None)
-      headers.pop('Content-Length', None)
-      headers.pop('Connection', None)
-      headers.pop('Keep-Alive', None)
-
-      self.assertEqual(
-        {
-          'Content-type': 'application/json',
-          # ATS does not cache the cookied text content, see:
-          # https://docs.trafficserver.apache.org/en/7.1.x/admin-guide/\
-          # configuration/cache-basics.en.html#caching-cookied-objects
-          # 'Set-Cookie': 'secured=value;secure, nonsecured=value',
-          'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
-                           'stale-if-error=3600',
-        },
-        headers
-      )
-
-      backend_headers = result.json()['Incoming Headers']
-      self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-      via = backend_headers.pop('via', None)
-      self.assertNotEqual(via, None)
-      self.assertRegexpMatches(
-        via,
-        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
-      )
-    finally:
-      self.startServerProcess()
-    # END: check stale-if-error support
     # BEGIN: Check that squid.log is correctly filled in
     ats_log_file_list = glob.glob(
       os.path.join(
@@ -3981,32 +3928,142 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     direct_pattern = re.compile(
       r'.*TCP_MISS/200 .*test-path/deeper.*enablecache.example.com'
       '.* - DIRECT*')
-    refresh_pattern = re.compile(
-      r'.*TCP_REFRESH_MISS/200 .*test-path/deeper.*enablecache.example.com'
-      '.* - DIRECT*')
     # ATS needs some time to flush logs
     timeout = 5
     b = time.time()
     while True:
       direct_pattern_match = 0
-      refresh_pattern_match = 0
       if (time.time() - b) > timeout:
         break
       with open(ats_log_file) as fh:
         for line in fh.readlines():
           if direct_pattern.match(line):
             direct_pattern_match += 1
-          if refresh_pattern.match(line):
-            refresh_pattern_match += 1
-      if direct_pattern_match > 0 and refresh_pattern_match:
+      if direct_pattern_match > 0:
         break
       time.sleep(0.1)
 
     with open(ats_log_file) as fh:
       ats_log = fh.read()
     self.assertRegexpMatches(ats_log, direct_pattern)
-    self.assertRegexpMatches(ats_log, refresh_pattern)
     # END: Check that squid.log is correctly filled in
+
+  def _hack_ats(self, max_stale_age):
+    records_config = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'etc', 'trafficserver', 'records.config'
+      ))
+    self.assertEqual(1, len(records_config))
+    self._hack_ats_records_config_path = records_config[0]
+    original_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT 604800\n'
+    new_max_stale_age = \
+        'CONFIG proxy.config.http.cache.max_stale_age INT %s\n' % (
+          max_stale_age,)
+    with open(self._hack_ats_records_config_path) as fh:
+      self._hack_ats_original_records_config = fh.readlines()
+    # sanity check - are we really do it?
+    self.assertIn(
+      original_max_stale_age,
+      self._hack_ats_original_records_config)
+    new_records_config = []
+    max_stale_age_changed = False
+    for line in self._hack_ats_original_records_config:
+      if line == original_max_stale_age:
+        line = new_max_stale_age
+        max_stale_age_changed = True
+      new_records_config.append(line)
+    self.assertTrue(max_stale_age_changed)
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(new_records_config))
+    self._hack_ats_restart()
+
+  def _unhack_ats(self):
+    with open(self._hack_ats_records_config_path, 'w') as fh:
+      fh.write(''.join(self._hack_ats_original_records_config))
+    self._hack_ats_restart()
+
+  def _hack_ats_restart(self):
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.callSupervisorMethod(
+          'stopProcess', '%(group)s:%(name)s' % process_info)
+        self.callSupervisorMethod(
+          'startProcess', '%(group)s:%(name)s' % process_info)
+    # give short time for the ATS to start back
+    time.sleep(5)
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if process_info['name'].startswith(
+        'trafficserver') and process_info['name'].endswith('-on-watch'):
+        self.assertEqual(process_info['statename'], 'RUNNING')
+
+  def test_enable_cache_negative_revalidate(self):
+    parameter_dict = self.assertSlaveBase('enable_cache')
+
+    source_ip = '127.0.0.1'
+    # have unique path for this test
+    path = self.id()
+
+    max_stale_age = 30
+    max_age = int(max_stale_age / 2.)
+    body_200 = b'Body 200'
+    body_502 = b'Body 502'
+    body_502_new = b'Body 502 new'
+    body_200_new = b'Body 200 new'
+
+    self.addCleanup(self._unhack_ats)
+    self._hack_ats(max_stale_age)
+
+    def configureResult(status_code, body):
+      backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
+      result = requests.put(backend_url + path, headers={
+          'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
+          'Status-Code': status_code,
+          'X-Reply-Body': base64.b64encode(body),
+        })
+      self.assertEqual(result.status_code, httplib.CREATED)
+
+    def checkResult(status_code, body):
+      result = fakeHTTPSResult(
+        parameter_dict['domain'], parameter_dict['public-ipv4'], path,
+        source_ip=source_ip
+      )
+      self.assertEqual(result.status_code, status_code)
+      self.assertEqual(result.text, body)
+      self.assertNotIn('Expires', result.headers)
+
+    # backend returns something correctly
+    configureResult('200', body_200)
+    checkResult(httplib.OK, body_200)
+
+    configureResult('502', body_502)
+    time.sleep(1)
+    # even if backend returns 502, ATS gives cached result
+    checkResult(httplib.OK, body_200)
+
+    time.sleep(max_stale_age + 2)
+
+    # max_stale_age passed, time to return 502 from the backend
+    checkResult(httplib.BAD_GATEWAY, body_502)
+
+    configureResult('502', body_502_new)
+    time.sleep(1)
+    # even if there is new negative response on the backend, the old one is
+    # served from the cache
+    checkResult(httplib.BAD_GATEWAY, body_502)
+
+    time.sleep(max_age + 2)
+    # now as max-age of negative response passed, the new one is served
+    checkResult(httplib.BAD_GATEWAY, body_502_new)
+
+    configureResult('200', body_200_new)
+    time.sleep(1)
+    checkResult(httplib.BAD_GATEWAY, body_502_new)
+    time.sleep(max_age + 2)
+    # backend is back to normal, as soon as negative response max-age passed
+    # the new response is served
+    checkResult(httplib.OK, body_200_new)
 
   @skip('Feature postponed')
   def test_enable_cache_stale_if_error_respected(self):
