@@ -3811,7 +3811,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
   def test_enable_cache_server_alias(self):
@@ -3853,7 +3853,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
     result = fakeHTTPResult(
@@ -3915,7 +3915,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
     # check stale-if-error support (assumes stale-while-revalidate is same)
@@ -3966,7 +3966,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.assertNotEqual(via, None)
       self.assertRegexpMatches(
         via,
-        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+        r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
       )
     finally:
       self.startServerProcess()
@@ -4052,7 +4052,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
     # check stale-if-error support is really respected if not present in the
@@ -4195,7 +4195,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
     try:
@@ -4242,7 +4242,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.0\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
     )
 
   def test_enable_http2_false(self):
