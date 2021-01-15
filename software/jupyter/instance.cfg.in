@@ -34,8 +34,6 @@ context =
   raw python_executable ${jupyter:python_executable}
   raw jupyter_config_location ${jupyter-notebook-config:location}
   raw jupyter_config_filename ${jupyter-notebook-config:filename}
-  raw jupyter_set_password_location ${jupyter-set-password:location}
-  raw jupyter_set_password_filename ${jupyter-set-password:filename}
   raw erp5_kernel_location ${erp5-kernel:location}
   raw erp5_kernel_filename ${erp5-kernel:filename}
   raw kernel_json_location ${kernel-json:location}
