@@ -5,52 +5,61 @@
   "allOf": [
     {
       "properties": {
-        "fw-restricted-access": {
-          "title": "Restrict all access to VM with firewall.",
-          "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
-          "type": "string",
-          "enum": [
-            "on",
-            "off"
-          ],
-          "default": "off"
-        },
-        "fw-authorized-sources": {
-          "title": "List of IP/Network address authorized to cluster.",
-          "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
-          "type": "array",
-          "optional": true
-        },
-        "fw-reject-sources": {
-          "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
-          "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
-          "type": "array",
-          "optional": true
-        },
-        "authorized-keys": {
-          "title": "Public keys for virtual machines.",
-          "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
-          "type": "array"
-        },
-        "bootstrap-script-url": {
-          "title": "Virtual Machines bootstrap script URL.",
-          "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
-          "type": "string",
-          "format": "uri"
-        },
-        "cluster-data": {
-          "title": "Text content to share with virtual machines.",
-          "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
-          "type": "string"
-        },
+        "cluster": {
+          "title": "Resilient Parameters",
+          "description": "Resilient parameters for KVM",
+          "properties": {
+            "fw-restricted-access": {
+              "title": "Restrict all access to VM with firewall.",
+              "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
+              "type": "string",
+              "enum": [
+                "on",
+                "off"
+              ],
+              "default": "off"
+            },
+            "fw-authorized-sources": {
+              "title": "List of IP/Network address authorized to cluster.",
+              "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
+              "type": "array",
+              "optional": true
+            },
+            "fw-reject-sources": {
+              "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
+              "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
+              "type": "array",
+              "optional": true
+            },
+            "authorized-keys": {
+              "title": "Public keys for virtual machines.",
+              "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
+              "type": "array"
+            },
+            "bootstrap-script-url": {
+              "title": "Virtual Machines bootstrap script URL.",
+              "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+              "type": "string",
+              "format": "uri"
+            },
+            "cluster-data": {
+              "title": "Text content to share with virtual machines.",
+              "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    {
+      "properties": {
         "kvm-partition-dict": {
           "title": "kvm instances definition",
           "description": "kvm instances definition",
           "patternProperties": {
             ".*": {
-              "allOf":[
-                {
-                                "properties": {
+              "properties": {
                 "computer-guid": {
                   "title": "ID of the computer where to deploy this VM.",
                   "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
@@ -68,13 +77,10 @@
                   ]
                 }
               },
-                  {
-      "$ref": "instance-kvm-1-machine-schema.json#/"
-    }
-                }
-              ],
-
               "type": "object"
+            },
+            ".!$": {
+              "$ref": "instance-kvm-1-machine-schema.json#/"
             }
           },
           "type": "object"
