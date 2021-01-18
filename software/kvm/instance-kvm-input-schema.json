@@ -4,7 +4,7 @@
   "title": "Input Parameters",
   "allOf": [
     {
-      "$ref": "instance-kvm-1-kvm-schema.json#/"
+      "$ref": "instance-kvm-1-machine-schema.json#/"
     },
     {
       "$ref": "instance-kvm-frontend-schema.json#/"
