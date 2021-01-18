@@ -42,33 +42,6 @@
           "title": "Text content to share with virtual machines.",
           "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
           "type": "string"
-        },
-        "kvm-partition-dict": {
-          "title": "kvm instances definition",
-          "description": "kvm instances definition",
-          "patternProperties": {
-            ".*": {
-              "properties": {
-                "computer-guid": {
-                  "title": "ID of the computer where to deploy this VM.",
-                  "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
-                  "type": "string",
-                  "default": ""
-                },
-                "state": {
-                  "title": "State of this Virtual Machine",
-                  "description": "Define if SlapOS should start or stop this VM.",
-                  "type": "string",
-                  "default": "started",
-                  "enum": [
-                    "started",
-                    "stopped"
-                  ]
-                }
-              }
-            }
-          },
-          "type": "object"
         }
       }
     },
