@@ -75,12 +75,12 @@
                     "started",
                     "stopped"
                   ]
+                },
+                "single-machine": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/"
                 }
               },
               "type": "object"
-            },
-            "addtional": {
-              "$ref": "instance-kvm-1-machine-schema.json#/"
             }
           },
           "type": "object"
