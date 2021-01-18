@@ -76,8 +76,15 @@
                     "stopped"
                   ]
                 },
-                "additionalProperties": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/"
+                "single-machine": {
+                  "allOf": [
+                    {
+                      "$ref": "instance-kvm-1-machine-schema.json#/"
+                    },
+                    {
+                      "description": "single machine parameters"
+                    }
+                  ]
                 }
               },
               "type": "object"
