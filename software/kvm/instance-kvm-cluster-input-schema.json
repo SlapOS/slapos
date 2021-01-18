@@ -48,7 +48,9 @@
           "description": "kvm instances definition",
           "patternProperties": {
             ".*": {
-              "properties": {
+              "allOf":[
+                {
+                                "properties": {
                 "computer-guid": {
                   "title": "ID of the computer where to deploy this VM.",
                   "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
@@ -66,15 +68,18 @@
                   ]
                 }
               },
+                  {
+      "$ref": "instance-kvm-1-machine-schema.json#/"
+    }
+                }
+              ],
+
               "type": "object"
             }
           },
           "type": "object"
         }
       }
-    },
-    {
-      "$ref": "instance-kvm-1-machine-schema.json#/"
     },
     {
       "$ref": "instance-kvm-frontend-schema.json#/"
