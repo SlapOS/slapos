@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-06/schema",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Input Parameters",
   "allOf": [
     {
@@ -76,15 +76,8 @@
                     "stopped"
                   ]
                 },
-                "single-machine": {
-                  "allOf": [
-                    {
-                      "$ref": "instance-kvm-1-machine-schema.json#/"
-                    },
-                    {
-                      "description": "single machine parameters"
-                    }
-                  ]
+                "additionalProperties": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/"
                 }
               },
               "type": "object"
