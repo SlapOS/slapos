@@ -77,9 +77,11 @@
                   ]
                 },
                 "single-machine": {
-                  ".!$":{
-                    "$ref": "instance-kvm-1-machine-schema.json#/"
-                  }
+                  "allOf": [
+                    {
+                      "$ref": "instance-kvm-1-machine-schema.json#/"
+                    }
+                  ]
                 }
               },
               "type": "object"
