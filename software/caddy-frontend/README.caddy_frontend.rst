@@ -60,14 +60,12 @@ This is to deploy an entire frontend server with a public IPv4.  If you want to 
 First, you will need to request a "master" instance of Caddy Frontend with:
 
   * A ``domain`` parameter where the frontend will be available
-  * A ``public-ipv4`` parameter to state which public IPv4 will be used
 
 like::
 
   <?xml version='1.0' encoding='utf-8'?>
   <instance>
    <parameter id="domain">moulefrite.org</parameter>
-   <parameter id="public-ipv4">xxx.xxx.xxx.xxx</parameter>
   </instance>
 
 Then, it is possible to request many slave instances (currently only from slapconsole, UI doesn't work yet) of Caddy Frontend, like::
@@ -188,10 +186,6 @@ Name of the domain to be used (example: mydomain.com). Sub domains of this domai
   *.mydomain.com. IN A 123.123.123.123
 
 Using the IP given by the Master Instance.  "domain" is a mandatory Parameter.
-
-public-ipv4
-~~~~~~~~~~~
-Public ipv4 of the frontend (the one Caddy will be indirectly listening to)
 
 port
 ~~~~
