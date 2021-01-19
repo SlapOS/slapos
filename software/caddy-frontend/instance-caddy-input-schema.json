@@ -50,11 +50,6 @@
       "title": "Duration of the graceful shutdown period. Warning: Changing the parameter will result in restarting Caddy process.",
       "type": "integer"
     },
-    "public-ipv4": {
-      "description": "Public ipv4 of the frontend (the one Caddy will be indirectly listening to).",
-      "title": "Public IPv4",
-      "type": "string"
-    },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
