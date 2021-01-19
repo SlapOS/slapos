@@ -178,7 +178,6 @@ context =
 {%-   set slave_log_access_url = urlparse_module.unquote(furled.tostr()) %}
 {%-   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
 {%-   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
-{%-   do slave_publish_dict.__setitem__('public-ipv4', configuration['public-ipv4']) %}
 {%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
@@ -435,7 +434,6 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {#- Publish information for the instance #}
 [publish-caddy-information]
 recipe = slapos.cookbook:publish.serialised
-public-ipv4 = {{ configuration['public-ipv4'] }}
 private-ipv4 = {{ instance_parameter_dict['ipv4-random'] }}
 {%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
