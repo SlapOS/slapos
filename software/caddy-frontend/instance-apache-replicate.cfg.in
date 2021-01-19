@@ -15,7 +15,6 @@
         'enable-http2-by-default',
         'global-disable-http2',
         'mpm-graceful-shutdown-timeout',
-        'public-ipv4',
         're6st-verification-url',
         'backend-connect-timeout',
         'backend-connect-retries',
@@ -271,7 +270,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
+return = private-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
