@@ -434,7 +434,6 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {#- Publish information for the instance #}
 [publish-caddy-information]
 recipe = slapos.cookbook:publish.serialised
-private-ipv4 = {{ instance_parameter_dict['ipv4-random'] }}
 {%- if configuration['extra_slave_instance_list'] %}
 {#-   sort_keys are important in order to avoid shuffling parameters on each run #}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
