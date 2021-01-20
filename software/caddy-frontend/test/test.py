@@ -887,12 +887,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return parsed_parameter_dict
 
   def getMasterPartitionPath(self):
-    return '/' + os.path.join(
-      *glob.glob(
-        os.path.join(
-          self.instance_path, '*', 'etc', 'Caddyfile-rejected-slave'
-        )
-      )[0].split('/')[:-2])
+    # partition w/o etc/trafficserver, but with buildout.cfg
+    return [
+      q for q in glob.glob(os.path.join(self.instance_path, '*',))
+      if not os.path.exists(
+        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
+          os.path.join(q, 'buildout.cfg'))][0]
 
   def parseConnectionParameterDict(self):
     return self.parseParameterDict(
@@ -1582,14 +1582,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       expected_status_code_list,
       got_status_code_list
     )
-
-  def getMasterPartitionPath(self):
-    # partition w/o etc/trafficserver, but with buildout.cfg
-    return [
-      q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(
-        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
-          os.path.join(q, 'buildout.cfg'))][0]
 
   def getSlavePartitionPath(self):
     # partition w/ etc/trafficserver
@@ -4678,20 +4670,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   retries 5""" in content)
 
 
-@skip('Impossible to instantiate cluster with stopped partition')
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
+  instance_parameter_dict = {
       'domain': 'example.com',
-      '-frontend-quantity': 2,
-      '-sla-2-computer_guid': cls.slap._computer_id,
-      '-frontend-2-state': 'stopped',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -4703,6 +4693,29 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     }
 
   def test(self):
+    # now instantiate 2nd partition in started state
+    # and due to port collision, stop the first one...
+    self.instance_parameter_dict.update({
+      '-frontend-quantity': 2,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-frontend-1-state': 'stopped',
+      '-frontend-2-state': 'started',
+    })
+    self.requestDefaultInstance()
+    self.requestSlaves()
+    self.slap.waitForInstance(self.instance_max_retry)
+    # ...and be nice, put back the first one online
+    self.instance_parameter_dict.update({
+      '-frontend-1-state': 'started',
+      '-frontend-2-state': 'stopped',
+    })
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    self.updateSlaveConnectionParameterDictDict()
+    # the real assertions follow...
     parameter_dict = self.parseSlaveParameterDict('replicate')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
@@ -4729,7 +4742,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/test-path')
+    self.assertEqual(httplib.FOUND, result_http.status_code)
 
     # prove 2nd frontend by inspection of the instance
     slave_configuration_name = '_replicate.conf'
@@ -4744,20 +4757,18 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       2, len(slave_configuration_file_list), slave_configuration_file_list)
 
 
-@skip('Impossible to instantiate cluster with destroyed partition')
 class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
+  instance_parameter_dict = {
       'domain': 'example.com',
-      '-frontend-quantity': 2,
-      '-sla-2-computer_guid': cls.slap._computer_id,
-      '-frontend-2-state': 'destroyed',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -4769,6 +4780,28 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     }
 
   def test_extra_slave_instance_list_not_present_destroyed_request(self):
+    # now instantiate 2nd partition in started state
+    # and due to port collision, stop the first one
+    self.instance_parameter_dict.update({
+      '-frontend-quantity': 2,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-frontend-1-state': 'stopped',
+      '-frontend-2-state': 'started',
+
+    })
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    # now start back first instance, and destroy 2nd one
+    self.instance_parameter_dict.update({
+      '-frontend-1-state': 'started',
+      '-frontend-2-state': 'destroyed',
+    })
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.slap.waitForInstance(self.instance_max_retry)
+
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
     with open(buildout_file) as fh:
@@ -5021,18 +5054,19 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     )
 
 
-@skip('New test system cannot be used with failing promises')
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
                                     TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
+  instance_parameter_dict = {
       'port': HTTPS_PORT,
+      'domain': 'example.com',
       'plain_http_port': HTTP_PORT,
-      're6st-verification-url': 'some-re6st-verification-url',
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
     }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -5044,16 +5078,28 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     }
 
   def test_default(self):
+    self.instance_parameter_dict[
+      're6st-verification-url'] = 'some-re6st-verification-url'
+    # re-request instance with updated parameters
+    self.requestDefaultInstance()
+
+    # run once instance, it's only needed for later checks
+    try:
+      self.slap.waitForInstance()
+    except Exception:
+      pass
+
     parameter_dict = self.parseSlaveParameterDict('default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': 'default.None',
+        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'domain': 'default.example.com',
         'replication_number': '1',
-        'url': 'http://default.None',
-        'site_url': 'http://default.None',
-        'secure_access': 'https://default.None',
+        'url': 'http://default.example.com',
+        'site_url': 'http://default.example.com',
+        'secure_access': 'https://default.example.com',
       },
       parameter_dict
     )
