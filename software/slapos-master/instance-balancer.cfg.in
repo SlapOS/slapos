@@ -259,14 +259,24 @@ command = ${monitor-generate-apachedex-report-wrapper:wrapper-path}
 [monitor-generate-apachedex-report-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:command}
-command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration "${apachedex-parameters:configuration}"
+command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --configuration ${apachedex-parameters:configuration}
 command = generate-apachedex-report
+
+[monitor-apachedex-report-config]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/${:_buildout_section_name_}
+template = inline:
+  {% for line in slapparameter_dict['apachedex-configuration'] %}
+    {# apachedex config files use shlex.split, so we need to quote the arguments. #}
+    {# BBB: in python 3 we can use shlex.quote instead. #}
+    {{ repr(line.encode('utf-8')) }}
+  {% endfor %}
 
 [apachedex-parameters]
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = ${apache-conf-parameter-dict:access-log}
-configuration = {{ slapparameter_dict['apachedex-configuration'] }}
+configuration = ${monitor-apachedex-report-config:rendered}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
