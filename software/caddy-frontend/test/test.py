@@ -5044,59 +5044,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     )
 
 
-@skip('Impossible to instantiate cluster with stopped partition')
-class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      '-frontend-1-state': 'stopped',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def runKedifaUpdater(cls):
-    return
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'test': {
-        'url': cls.backend_url,
-      },
-      'testcached': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  def test(self):
-    parameter_dict = self.parseSlaveParameterDict('test')
-    self.assertKeyWithPop('log-access-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'test.None', 'replication_number': '1',
-        'url': 'http://test.None', 'site_url': 'http://test.None',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'secure_access': 'https://test.None'},
-      parameter_dict
-    )
-    master_monitor_conf = open(os.path.join(
-      self.instance_path, 'T-0', 'etc',
-      'monitor-httpd.conf')).read()
-    slave_monitor_conf = open(os.path.join(
-      self.instance_path, 'T-2', 'etc',
-      'monitor-httpd.conf')).read()
-
-    self.assertTrue(
-      'Listen [%s]:8196' % (self._ipv6_address,) in master_monitor_conf)
-    self.assertTrue(
-      'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
-
-
 class TestSlaveGlobalDisableHttp2(TestSlave):
   @classmethod
   def getInstanceParameterDict(cls):
