@@ -94,7 +94,7 @@
           "$ref": "instance-kvm-1-machine-schema.json#properties/boot-image-url-list"
         },
         "nbd-host": {
-          "$ref": "instance-kvm-1-machine-schema.json#properties/bd-host"
+          "$ref": "instance-kvm-1-machine-schema.json#properties/nbd-host"
         },
         "nbd-port": {
           "$ref": "instance-kvm-1-machine-schema.json#properties/nbd-port"
