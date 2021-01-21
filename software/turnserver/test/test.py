@@ -118,6 +118,7 @@ mobility
 no-tlsv1
 no-tlsv1_1
 no-stdout-log
+simple-log
 log-file=%(instance_path)s/var/log/turnserver.log
 userdb=%(instance_path)s/srv/turndb
 pidfile=%(instance_path)s/var/run/turnserver.pid
@@ -173,6 +174,7 @@ mobility
 no-tlsv1
 no-tlsv1_1
 no-stdout-log
+simple-log
 log-file=%(instance_path)s/var/log/turnserver.log
 userdb=%(instance_path)s/srv/turndb
 pidfile=%(instance_path)s/var/run/turnserver.pid
@@ -239,7 +241,7 @@ simple-log
 log-file=%(instance_path)s/var/log/turnserver.log
 pidfile=%(instance_path)s/var/run/turnserver.pid
 verbose
-user=nxdturn:%(password)""" % {'instance_path': self.partition_path, 'password': password, 'ipv4': self._ipv4_address}
+user=nxdturn:%(password)s""" % {'instance_path': self.partition_path, 'password': password, 'ipv4': self._ipv4_address}
 
     with open(os.path.join(self.partition_path, 'etc/turnserver.conf')) as f:
       current_config = f.read().strip()

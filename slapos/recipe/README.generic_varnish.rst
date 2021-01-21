@@ -7,7 +7,7 @@ set up.
 How to Use generic_varnish ?
 ============================
 
-On slap console, you can instanciate varnish like this::
+On slap console, you can instantiate varnish like this::
   
   instance = request(
     software_type='varnish',

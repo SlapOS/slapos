@@ -23,9 +23,19 @@ CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
-# Support stale-if-error by returning cached content on backend 5xx or unavailability
+# Simulate stale-if-error (not supported by TrafficServer), by using internal
+# mechanism
+# This results with replying last know non-5xx response until max_stale_age is reached
+# ignoring max-age returned by the server 
 CONFIG proxy.config.http.negative_revalidating_enabled INT 1
-CONFIG proxy.config.http.negative_revalidating_lifetime INT 86400
+# max_stale_age set here means that for 1 week since last correct response
+# the response will be sent by the system
+CONFIG proxy.config.http.cache.max_stale_age INT 604800
+# negative_revalidating_lifetime just adds Expires header calculated as
+#          Expires = Date + negative_revalidating_lifetime
+# for case when backend replies 5xx, and Age > max-age and Age < max_stale_age
+# and that's not needed, so drop this behaviour
+CONFIG proxy.config.http.negative_revalidating_lifetime INT 0
 
 ##############################################################################
 # Thread configurations. Docs:
@@ -80,10 +90,9 @@ CONFIG proxy.config.net.default_inactivity_timeout INT 86400
 # Origin server connect attempts. Docs:
 #    https://docs.trafficserver.apache.org/records.config#origin-server-connect-attempts
 ##############################################################################
-# Try only once to connect (do not retry)
-CONFIG proxy.config.http.connect_attempts_max_retries INT 0
-# Try only once with server marked dead (do not retry)
-CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 0
+# workaround for lost connection to haproxy by reconnecting
+CONFIG proxy.config.http.connect_attempts_max_retries INT 3
+CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
 CONFIG proxy.config.http.connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
 CONFIG proxy.config.http.post_connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}

@@ -50,7 +50,31 @@ class EchoHTTPServer(ManagedHTTPServer):
       self.end_headers()
       self.wfile.write(response)
 
-    log_message = logging.getLogger(__name__ + '.HeaderEchoHandler').info
+    log_message = logging.getLogger(__name__ + '.EchoHTTPServer').info
+
+
+class EchoHTTP11Server(ManagedHTTPServer):
+  """An HTTP/1.1 Server responding with the request path and incoming headers,
+  encoded in json.
+  """
+  class RequestHandler(BaseHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
+    def do_GET(self):
+      # type: () -> None
+      self.send_response(200)
+      self.send_header("Content-Type", "application/json")
+      response = json.dumps(
+          {
+              'Path': self.path,
+              'Incoming Headers': self.headers.dict
+          },
+          indent=2,
+      )
+      self.send_header("Content-Length", len(response))
+      self.end_headers()
+      self.wfile.write(response)
+
+    log_message = logging.getLogger(__name__ + '.EchoHTTP11Server').info
 
 
 class CaucaseService(ManagedResource):
@@ -105,6 +129,7 @@ class CaucaseService(ManagedResource):
     shutil.rmtree(self.directory)
 
 
+
 class BalancerTestCase(ERP5InstanceTestCase):
 
   @classmethod
@@ -147,14 +172,14 @@ class BalancerTestCase(ERP5InstanceTestCase):
 
 
 class SlowHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply after 3 seconds.
+  """An HTTP Server which reply after 2 seconds.
   """
   class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       self.send_header("Content-Type", "text/plain")
-      time.sleep(3)
+      time.sleep(2)
       self.end_headers()
       self.wfile.write("OK\n")
 
@@ -179,12 +204,13 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
         urlparse.urljoin(self.default_balancer_url, '/url_path'),
         verify=False,
     )
+    time.sleep(.5) # wait a bit more until access is logged
     with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-access.log')) as access_log_file:
-      access_line = access_log_file.read()
+      access_line = access_log_file.read().splitlines()[-1]
     self.assertIn('/url_path', access_line)
 
-    # last \d is the request time in micro seconds, since this SlowHTTPServer
-    # sleeps for 3 seconds, it should take between 3 and 4 seconds to process
+    # last \d is the request time in milli seconds, since this SlowHTTPServer
+    # sleeps for 2 seconds, it should take between 2 and 3 seconds to process
     # the request - but our test machines can be slow sometimes, so we tolerate
     # it can take up to 20 seconds.
     match = re.match(
@@ -194,8 +220,8 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self.assertTrue(match)
     assert match
     request_time = int(match.groups()[-1])
-    self.assertGreater(request_time, 3 * 1000 * 1000)
-    self.assertLess(request_time, 20 * 1000 * 1000)
+    self.assertGreater(request_time, 2 * 1000)
+    self.assertLess(request_time, 20 * 1000)
 
   def test_access_log_apachedex_report(self):
     # type: () -> None
@@ -334,17 +360,132 @@ class TestBalancer(BalancerTestCase):
         requests.get(self.default_balancer_url, verify=False, cookies=cookies).text,
         'backend_web_server1')
 
+  def test_balancer_stats_socket(self):
+    # real time statistics can be obtained by using the stats socket and there
+    # is a wrapper which makes this a bit easier.
+    socat_process = subprocess.Popen(
+        [self.computer_partition_root_path + '/bin/haproxy-socat-stats'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    try:
+      output, _ = socat_process.communicate("show stat\n")
+    except:
+      socat_process.kill()
+      socat_process.wait()
+      raise
+    self.assertEqual(socat_process.poll(), 0)
+    # output is a csv
+    self.assertIn('family_default,FRONTEND,', output)
+
+
+class TestTestRunnerEntryPoints(BalancerTestCase):
+  """Check balancer has some entries for test runner.
+  """
+  __partition_reference__ = 't'
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(
+        TestTestRunnerEntryPoints,
+        cls,
+    )._getInstanceParameterDict()
+
+    parameter_dict['dummy_http_server-test-runner-address-list'] = [
+        [
+            cls.getManagedResource("backend_0", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_0", EchoHTTPServer).port,
+        ],
+        [
+            cls.getManagedResource("backend_1", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_1", EchoHTTPServer).port,
+        ],
+        [
+            cls.getManagedResource("backend_2", EchoHTTPServer).hostname,
+            cls.getManagedResource("backend_2", EchoHTTPServer).port,
+        ],
+    ]
+    return parameter_dict
+
+  def test_use_proper_backend(self):
+    # requests are directed to proper backend based on URL path
+    test_runner_url_list = self.getRootPartitionConnectionParameterDict(
+    )['default-test-runner-url-list']
+    url_0, url_1, url_2 = test_runner_url_list
+    self.assertEqual(
+        urlparse.urlparse(url_0).netloc,
+        urlparse.urlparse(url_1).netloc)
+    self.assertEqual(
+        urlparse.urlparse(url_0).netloc,
+        urlparse.urlparse(url_2).netloc)
+
+    path_0 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_0/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+    path_1 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_1/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+    path_2 = '/VirtualHostBase/https/{netloc}/VirtualHostRoot/_vh_unit_test_2/something'.format(
+        netloc=urlparse.urlparse(url_0).netloc)
+
+    self.assertEqual(
+        {
+            requests.get(url_0 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_0})
+    self.assertEqual(
+        {
+            requests.get(url_1 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_1})
+    self.assertEqual(
+        {
+            requests.get(url_2 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_2})
+
+    # If a test runner backend is down, others can be accessed.
+    self.getManagedResource("backend_0", EchoHTTPServer).close()
+    self.assertEqual(
+        {
+            requests.get(url_0 + 'something', verify=False).status_code
+            for _ in range(5)
+        }, {503})
+    self.assertEqual(
+        {
+            requests.get(url_1 + 'something', verify=False).json()['Path']
+            for _ in range(10)
+        }, {path_1})
+
 
 class TestHTTP(BalancerTestCase):
-  """Check HTTP protocol
+  """Check HTTP protocol with a HTTP/1.1 backend
   """
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(TestHTTP, cls)._getInstanceParameterDict()
+    # use a HTTP/1.1 server instead
+    parameter_dict['dummy_http_server'] = [[cls.getManagedResource("HTTP/1.1 Server", EchoHTTP11Server).netloc, 1, False]]
+    return parameter_dict
+
   __partition_reference__ = 'h'
 
   def test_http_version(self):
     # type: () -> None
-    # https://stackoverflow.com/questions/37012486/python-3-x-how-to-get-http-version-using-requests-library/37012810
     self.assertEqual(
-        requests.get(self.default_balancer_url, verify=False).raw.version, 11)
+        subprocess.check_output([
+            'curl',
+            '--silent',
+            '--show-error',
+            '--output',
+            '/dev/null',
+            '--insecure',
+            '--write-out',
+            '%{http_version}',
+            self.default_balancer_url,
+        ]),
+        '2',
+    )
 
   def test_keep_alive(self):
     # type: () -> None
@@ -372,24 +513,27 @@ class TestHTTP(BalancerTestCase):
 
 
 class ContentTypeHTTPServer(ManagedHTTPServer):
-  """An HTTP Server which reply with content type from path.
+  """An HTTP/1.1 Server which reply with content type from path.
 
   For example when requested http://host/text/plain it will reply
   with Content-Type: text/plain header.
 
   The body is always "OK"
   """
-
   class RequestHandler(BaseHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
     def do_GET(self):
       # type: () -> None
       self.send_response(200)
       if self.path == '/':
+        self.send_header("Content-Length", 0)
         return self.end_headers()
       content_type = self.path[1:]
+      body = "OK"
       self.send_header("Content-Type", content_type)
+      self.send_header("Content-Length", len(body))
       self.end_headers()
-      self.wfile.write("OK")
+      self.wfile.write(body)
 
     log_message = logging.getLogger(__name__ + '.ContentTypeHTTPServer').info
 
@@ -431,9 +575,9 @@ class TestContentEncoding(BalancerTestCase):
       resp = requests.get(urlparse.urljoin(self.default_balancer_url, content_type), verify=False)
       self.assertEqual(resp.headers['Content-Type'], content_type)
       self.assertEqual(
-          resp.headers['Content-Encoding'],
+          resp.headers.get('Content-Encoding'),
           'gzip',
-          '%s uses wrong encoding: %s' % (content_type, resp.headers['Content-Encoding']))
+          '%s uses wrong encoding: %s' % (content_type, resp.headers.get('Content-Encoding')))
       self.assertEqual(resp.text, 'OK')
 
   def test_no_gzip_encoding(self):
@@ -443,8 +587,8 @@ class TestContentEncoding(BalancerTestCase):
     self.assertEqual(resp.text, 'OK')
 
 
-class CaucaseClientCertificate(ManagedResource):
-  """A client certificate issued by a caucase services.
+class CaucaseCertificate(ManagedResource):
+  """A certificate signed by a caucase service.
   """
 
   ca_crt_file = None # type: str
@@ -560,7 +704,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
     frontend_caucase = cls.getManagedResource('frontend_caucase', CaucaseService)
-    certificate = cls.getManagedResource('client_certificate', CaucaseClientCertificate)
+    certificate = cls.getManagedResource('client_certificate', CaucaseCertificate)
     certificate.request(u'shared frontend', frontend_caucase)
 
     parameter_dict = super(TestFrontendXForwardedFor, cls)._getInstanceParameterDict()
@@ -576,7 +720,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
 
   def test_x_forwarded_for_added_when_verified_connection(self):
     # type: () -> None
-    client_certificate = self.getManagedResource('client_certificate', CaucaseClientCertificate)
+    client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
 
     for backend in ('default', 'default-auth'):
       balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])[backend]
@@ -586,7 +730,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         cert=(client_certificate.cert_file, client_certificate.key_file),
         verify=False,
       ).json()
-      self.assertEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+      self.assertEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
 
   def test_x_forwarded_for_stripped_when_not_verified_connection(self):
     # type: () -> None
@@ -596,7 +740,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       headers={'X-Forwarded-For': '1.2.3.4'},
       verify=False,
     ).json()
-    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for').split(', ')[0], '1.2.3.4')
+    self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaises(OpenSSL.SSL.Error):
       requests.get(
@@ -606,6 +750,30 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       )
 
 
+class TestServerTLSProvidedCertificate(BalancerTestCase):
+  """Check that certificate and key can be provided as instance parameters.
+  """
+  __partition_reference__ = 's'
+
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    server_caucase = cls.getManagedResource('server_caucase', CaucaseService)
+    server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
+    server_certificate.request(cls._ipv4_address.decode(), server_caucase)
+    parameter_dict = super(TestServerTLSProvidedCertificate, cls)._getInstanceParameterDict()
+    with open(server_certificate.cert_file) as f:
+      parameter_dict['ssl']['cert'] = f.read()
+    with open(server_certificate.key_file) as f:
+      parameter_dict['ssl']['key'] = f.read()
+    return parameter_dict
+
+  def test_certificate_validates_with_provided_ca(self):
+    # type: () -> None
+    server_certificate = self.getManagedResource("server_certificate", CaucaseCertificate)
+    requests.get(self.default_balancer_url, verify=server_certificate.ca_crt_file)
+
+
 class TestClientTLS(BalancerTestCase):
   __partition_reference__ = 'c'
 
@@ -613,11 +781,11 @@ class TestClientTLS(BalancerTestCase):
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
     frontend_caucase1 = cls.getManagedResource('frontend_caucase1', CaucaseService)
-    certificate1 = cls.getManagedResource('client_certificate1', CaucaseClientCertificate)
+    certificate1 = cls.getManagedResource('client_certificate1', CaucaseCertificate)
     certificate1.request(u'client_certificate1', frontend_caucase1)
 
     frontend_caucase2 = cls.getManagedResource('frontend_caucase2', CaucaseService)
-    certificate2 = cls.getManagedResource('client_certificate2', CaucaseClientCertificate)
+    certificate2 = cls.getManagedResource('client_certificate2', CaucaseCertificate)
     certificate2.request(u'client_certificate2', frontend_caucase2)
 
     parameter_dict = super(TestClientTLS, cls)._getInstanceParameterDict()
@@ -646,7 +814,7 @@ class TestClientTLS(BalancerTestCase):
         ('client_certificate2', 'frontend_caucase2'),
     ):
       client_certificate = self.getManagedResource(client_certificate_name,
-                                                   CaucaseClientCertificate)
+                                                   CaucaseCertificate)
 
       # when client certificate can be authenticated, backend receive the CN of
       # the client certificate in "remote-user" header
@@ -692,10 +860,7 @@ class TestClientTLS(BalancerTestCase):
 
       # simulate running updater service in the future, to confirm that it fetches
       # the new CRL and make sure balancer uses that new CRL.
-      process = pexpect.spawnu(
-          "faketime +1day %s" % caucase_updater,
-          env=dict(os.environ, PYTHONPATH=''),
-      )
+      process = pexpect.spawnu("faketime +1day %s" % caucase_updater)
 
       process.logfile = DebugLogFile()
       process.expect(u"Got new CRL.*Next wake-up at.*")

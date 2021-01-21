@@ -111,7 +111,6 @@ context =
 {% set authorized_slave_string_list = [] %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
-{% set rejected_slave_title_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
@@ -247,7 +246,6 @@ context =
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
-{%     do rejected_slave_title_dict.__setitem__(slave.get('slave_title'), sorted(slave_error_list)) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
@@ -326,7 +324,7 @@ accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_title_dict, sort_keys=True)) }}
+rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-promise-url = ${rejected-slave-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
@@ -485,6 +483,7 @@ user-ca-certificate = ${directory:aikc}/user-ca-certificate.pem
 user-crl = ${directory:aikc}/user-crl.pem
 user-created = ${directory:aikc}/user-created
 csr_id = ${directory:aikc}/csr_id
+data_dir = ${directory:aikc}/caucase-updater
 
 [aikc-user-csr]
 recipe = plone.recipe.command
@@ -547,7 +546,7 @@ command =
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aikc-user-caucase-updater',
      url='${aikc-config:caucase-url}',
-     data_dir='${directory:srv}/caucase-updater',
+     data_dir='${aikc-config:data_dir}',
      crt_path='${aikc-config:key}',
      ca_path='${aikc-config:user-ca-certificate}',
      crl_path='${aikc-config:user-crl}',
@@ -620,6 +619,7 @@ user-ca-certificate = ${directory:aibcc}/user-ca-certificate.pem
 user-crl = ${directory:aibcc}/user-crl.pem
 user-created = ${directory:aibcc}/user-created
 csr_id = ${directory:aibcc}/csr_id
+data_dir = ${directory:aibcc}/caucase-updater
 
 [aibcc-user-csr]
 recipe = plone.recipe.command
@@ -684,7 +684,7 @@ command =
      buildout_bin_directory=software_parameter_dict['bin_directory'],
      updater_path='${directory:service}/aibcc-user-caucase-updater',
      url='${aibcc-config:caucase-url}',
-     data_dir='${directory:srv}/caucase-updater',
+     data_dir='${aibcc-config:data_dir}',
      crt_path='${aibcc-config:key}',
      ca_path='${aibcc-config:user-ca-certificate}',
      crl_path='${aibcc-config:user-crl}',
@@ -747,9 +747,9 @@ filename = rejected-slave.json
 directory = ${directory:promise-output}
 rendered = ${:directory}/${:filename}
 template = {{ software_parameter_dict['template_empty'] }}
-{% if rejected_slave_title_dict %}
+{% if rejected_slave_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-content = {{ dumps(json_module.dumps(rejected_slave_title_dict, indent=2, sort_keys=True)) }}
+content = {{ dumps(json_module.dumps(rejected_slave_dict, indent=2, sort_keys=True)) }}
 {% else %}
 content =
 {% endif %}

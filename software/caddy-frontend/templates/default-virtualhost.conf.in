@@ -43,6 +43,9 @@
     timeout {{ slave_parameter['request-timeout'] }}s
     # force reset of X-Forwarded-For
     header_upstream X-Forwarded-For {remote}
+    # workaround for lost connection to haproxy by reconnecting
+    try_duration 3s
+    try_interval 250ms
 {%- endmacro %} {# proxy_header #}
 
 {%- for tls in [True, False] %}
