@@ -204,6 +204,6 @@ frontend frontend_{{ group_name }}
 backend backend_{{ group_name }}_{{ name }}
   http-request replace-path ^/{{ name }}(.*) /VirtualHostBase/https/{{ ip }}:{{ port }}/VirtualHostRoot/_vh_{{ name }}\1
   timeout server 8h
-  server {{ name }} {{ urlparse.urlparse(url).netloc }}
+  server {{ name }} {{ urllib_parse.urlparse(url).netloc }}
 {%-  endfor %}
 {% endfor %}

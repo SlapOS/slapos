@@ -38,7 +38,7 @@ mode = 644
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
-{%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
+{%   set hash = hashlib.md5(six.ensure_binary(frontend_caucase_url)).hexdigest() -%}
 {%   do frontend_caucase_url_hash_list.append(hash) -%}
 {%   set data_dir = '${directory:client-cert-ca}/%s' % hash -%}
 {{   caucase.updater(
@@ -120,9 +120,9 @@ update-command = ${:command}
 {% set haproxy_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
 {% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
-{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
+{% set port = itertools.count(slapparameter_dict['tcpv4-port']) -%}
 {% for family_name, parameter_id_list in sorted(
-  slapparameter_dict['zope-family-dict'].iteritems()) -%}
+  slapparameter_dict['zope-family-dict'].items()) -%}
 {%   set zope_family_address_list = [] -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
@@ -141,7 +141,7 @@ update-command = ${:command}
 {%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
 {%       set test_runner_balancer_url_list = [] %}
-{%       set test_runner_external_port = next_port() %}
+{%       set test_runner_external_port = next(port) %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
@@ -169,9 +169,9 @@ update-command = ${:command}
  # To keep port stable, we consume one port so that haproxy use the same port
  # that apache was using before.
 -#}
-{%   set _ = next_port() -%}
+{%   set _ = next(port) -%}
 
-{%   set haproxy_port = next_port() -%}
+{%   set haproxy_port = next(port) -%}
 {%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
 {%   if has_webdav -%}
 {%     set external_scheme = 'webdavs' -%}
@@ -203,7 +203,7 @@ template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
 context =
   section parameter_dict haproxy-cfg-parameter-dict
-  import urlparse urlparse
+  import urllib_parse
 extensions = jinja2.ext.do
 
 [haproxy-reload]
@@ -304,7 +304,7 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 module = check_port_listening
 name = haproxy.py
 config-hostname = {{ ipv4 }}
-config-port = {{ haproxy_dict.values()[0][0] }}
+config-port = {{ list(haproxy_dict.values())[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -382,7 +382,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port() }}
+monitor-httpd-port = {{ next(port) }}
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
