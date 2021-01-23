@@ -7,7 +7,7 @@
       "type": "object",
       "properties": {
         "boot-image-url-select": {
-          "$ref": "instance-kvm-1-machine-schema.json#properties/boot-image-url-select"
+          "$ref": "./instance-kvm-1-machine-schema.json#properties/boot-image-url-select"
         },
         "keyboard-layout-language": {
           "$ref": "instance-kvm-1-machine-schema.json#properties/keyboard-layout-language"
