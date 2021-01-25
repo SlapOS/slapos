@@ -70,122 +70,8 @@
                     "stopped"
                   ]
                 },
-                "boot-image-url-select": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/boot-image-url-select"
-                },
-                "keyboard-layout-language": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/keyboard-layout-language"
-                },
                 "ram-size": {
                   "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-size"
-                },
-                "ram-max-size": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-max-size"
-                },
-                "disk-size": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-size"
-                },
-                "disk-type": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-type"
-                },
-                "disk-format": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-format"
-                },
-                "cpu-count": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-count"
-                },
-                "cpu-max-count": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-max-count"
-                },
-                "use-tap": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/use-tap"
-                },
-                "use-nat": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/use-nat"
-                },
-                "nat-rules": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nat-rules"
-                },
-                "nat-restrict-mode": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nat-restrict-mode"
-                },
-                "enable-device-hotplug": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-device-hotplug"
-                },
-                "ram-hotplug-slot-size": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-hotplug-slot-size"
-                },
-                "auto-ballooning": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/auto-ballooning"
-                },
-                "disk-cache": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-cache"
-                },
-                "disable-ansible-promise": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disable-ansible-promise"
-                },
-                "disk-aio": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-aio"
-                },
-                "numa": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/numa"
-                },
-                "machine-options": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/machine-options"
-                },
-                "cpu-model": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-model"
-                },
-                "enable-http-server": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-http-server"
-                },
-                "enable-vhost": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-vhost"
-                },
-                "httpd-port": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/httpd-port"
-                },
-                "authorized-key": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/authorized-key"
-                },
-                "bootstrap-script-url": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/bootstrap-script-url"
-                },
-                "data-to-vm": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/data-to-vm"
-                },
-                "boot-image-url-list": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/boot-image-url-list"
-                },
-                "nbd-host": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd-host"
-                },
-                "nbd-port": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd-port"
-                },
-                "nbd2-host": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd2-host"
-                },
-                "nbd2-port": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd2-port"
-                },
-                "virtual-hard-drive-url": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-url"
-                },
-                "virtual-hard-drive-md5sum": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-md5sum"
-                },
-                "virtual-hard-drive-gzipped": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-gzipped"
-                },
-                "hard-drive-url-check-certificate": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/hard-drive-url-check-certificate"
-                },
-                "wipe-disk-ondestroy": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/wipe-disk-ondestroy"
-                },
-                "wipe-disk-iterations": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/properties/wipe-disk-iterations"
                 }
               },
               "type": "object"
@@ -196,14 +82,14 @@
       }
     },
     {
-  "properties": {
-    "frontend": {
-      "title": "KVM frontend (web socket)",
-      "description": "Front end used to provide VNC.",
-      "type":"object",
-      "$ref": "instance-kvm-frontend-schema.json#"
+      "properties": {
+        "frontend": {
+          "title": "KVM frontend (web socket)",
+          "description": "Front end used to provide VNC.",
+          "type": "object",
+          "$ref": "instance-kvm-frontend-schema.json#"
+        }
       }
     }
-  }
   ]
 }
