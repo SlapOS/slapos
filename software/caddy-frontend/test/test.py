@@ -6983,6 +6983,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'ciphers': 'ciphers',
       'request-timeout': 100,
       'authenticate-to-backend': True,
+      'strict-transport-security': 200,
       # specific parameters
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
@@ -7179,7 +7180,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'request-timeout': '100',
         'root_instance_title': 'testing partition 0',
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_instance_list': []
+        'slave_instance_list': [],
+        'strict-transport-security': '200'
       }
     }
     self.assertEqual(
