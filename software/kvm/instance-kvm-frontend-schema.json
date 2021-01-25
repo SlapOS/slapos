@@ -1,5 +1,5 @@
 {
-  "type": "object", 
+  "type": "object",
   "properties": {
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
@@ -39,4 +39,3 @@
     }
   }
 }
-
