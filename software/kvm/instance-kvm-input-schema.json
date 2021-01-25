@@ -14,7 +14,7 @@
         },
         "ram-size": {
           "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-size"
-        }, 
+        },
         "ram-max-size": {
           "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-max-size"
         },
@@ -126,7 +126,7 @@
       }
     },
     {
-      "$ref": "instance-kvm-frontend-schema.json#"
+      "$ref": "instance-kvm-frontend-schema.json#/properties#/"
     }
   ]
 }
