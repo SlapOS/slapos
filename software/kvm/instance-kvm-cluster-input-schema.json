@@ -197,13 +197,10 @@
     },
     {
       "properties": {
-        "frontend": {
-          "title": "KVM frontend (web socket)",
-          "description": "Front end used to provide VNC.",
-          "properties": {
+        "frontend": 
+          {
             "$ref": "instance-kvm-frontend-schema.json#"
           }
-        }
       }
     }
   ]
