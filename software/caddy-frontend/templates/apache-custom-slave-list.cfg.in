@@ -62,7 +62,7 @@ context =
 {%-   for key in ['https-only', 'websocket-transparent'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
-{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend'] %}
+{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
 {%-   for key in ['disabled-cookie-list'] %}
@@ -128,11 +128,12 @@ context =
 {%-   do part_list.extend([slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {#-   Pass backend timeout values #}
-{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
+{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend', 'strict-transport-security'] %}
 {%-     if slave_instance.get(key, '') == '' %}
 {%-       do slave_instance.__setitem__(key, configuration[key]) %}
 {%-     endif %}
 {%-   endfor %}
+{%-   do slave_instance.__setitem__('strict-transport-security', int(slave_instance['strict-transport-security'])) %}
 {%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Setup active check #}
 {%-   do slave_instance.__setitem__('backend-active-check',  ('' ~ slave_instance.get('backend-active-check', '')).lower() in TRUE_VALUES) %}

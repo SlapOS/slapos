@@ -18,6 +18,21 @@
     try_interval 250ms
 {%- endmacro %} {# proxy_header #}
 
+{%- macro hsts_header(tls) %}
+{%-   if tls %}
+{%-     if slave_parameter['strict-transport-security'] > 0 %}
+{%-       set strict_transport_security = ['max-age=%i' % (slave_parameter['strict-transport-security'],)] %}
+{%-       if slave_parameter['strict-transport-security-sub-domains'] %}
+{%-         do strict_transport_security.append('; includeSubDomains') %}
+{%-       endif %}
+{%-       if slave_parameter['strict-transport-security-preload'] %}
+{%-         do strict_transport_security.append('; preload') %}
+{%-       endif %}
+    header_downstream Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
+{%-     endif %}
+{%-   endif %}
+{%- endmacro %} {# hsts_header #}
+
 {%- for tls in [True, False] %}
 {%- if tls %}
 {%-   set backend_url = slave_parameter.get('backend-https-url', slave_parameter['backend-http-url']) %}
@@ -82,6 +97,7 @@
   # {{ proxy_comment }}
   proxy "/{{ proxy_name }}" {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
@@ -147,6 +163,7 @@
 {%- elif slave_parameter['type'] == 'notebook' %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
     transparent
   }
   rewrite {
@@ -155,6 +172,7 @@
   }
   proxy /proxy/ {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
     transparent
     websocket
     without /proxy/
@@ -163,6 +181,7 @@
 {%-   if slave_parameter['websocket-path-list'] %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
 {%-     if slave_parameter['websocket-transparent'] %}
     transparent
 {%-     else %}
@@ -172,6 +191,7 @@
 {%-     for websocket_path in slave_parameter['websocket-path-list'] %}
   proxy "/{{ websocket_path }}" {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
     websocket
 {%-       if slave_parameter['websocket-transparent'] %}
     transparent
@@ -183,6 +203,7 @@
 {%-   else %}
   proxy / {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
     websocket
 {%-   if slave_parameter['websocket-transparent'] %}
     transparent
@@ -205,6 +226,7 @@
   # {{ proxy_comment }}
   proxy "/{{ proxy_name }}" {{ backend_url }} {
 {{ proxy_header() }}
+{{ hsts_header(tls) }}
 {%-     if proxy_name == 'prefer-gzip' %}
     without /prefer-gzip
     header_upstream Accept-Encoding gzip
