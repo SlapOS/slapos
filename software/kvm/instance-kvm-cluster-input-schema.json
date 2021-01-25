@@ -5,52 +5,46 @@
   "allOf": [
     {
       "properties": {
-        "cluster": {
-          "title": "Resilient Parameters",
-          "description": "Resilient parameters for KVM",
-          "properties": {
-            "fw-restricted-access": {
-              "title": "Restrict all access to VM with firewall.",
-              "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
-              "type": "string",
-              "enum": [
-                "on",
-                "off"
-              ],
-              "default": "off"
-            },
-            "fw-authorized-sources": {
-              "title": "List of IP/Network address authorized to cluster.",
-              "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
-              "type": "array",
-              "optional": true
-            },
-            "fw-reject-sources": {
-              "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
-              "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
-              "type": "array",
-              "optional": true
-            },
-            "authorized-keys": {
-              "title": "Public keys for virtual machines.",
-              "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
-              "type": "array"
-            },
-            "bootstrap-script-url": {
-              "title": "Virtual Machines bootstrap script URL.",
-              "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
-              "type": "string",
-              "format": "uri"
-            },
-            "cluster-data": {
-              "title": "Text content to share with virtual machines.",
-              "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "fw-restricted-access": {
+          "title": "Restrict all access to VM with firewall.",
+          "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ],
+          "default": "off"
+        },
+        "fw-authorized-sources": {
+          "title": "List of IP/Network address authorized to cluster.",
+          "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
+          "type": "array",
+          "optional": true
+        },
+        "fw-reject-sources": {
+          "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
+          "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
+          "type": "array",
+          "optional": true
+        },
+        "authorized-keys": {
+          "title": "Public keys for virtual machines.",
+          "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
+          "type": "array"
+        },
+        "bootstrap-script-url": {
+          "title": "Virtual Machines bootstrap script URL.",
+          "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+          "type": "string",
+          "format": "uri"
+        },
+        "cluster-data": {
+          "title": "Text content to share with virtual machines.",
+          "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
+          "type": "string"
         }
-      }
+      },
+      "type": "object"
     },
     {
       "properties": {
@@ -75,12 +69,126 @@
                     "started",
                     "stopped"
                   ]
+                },
+                "boot-image-url-select": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/boot-image-url-select"
+                },
+                "keyboard-layout-language": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/keyboard-layout-language"
+                },
+                "ram-size": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-size"
+                },
+                "ram-max-size": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-max-size"
+                },
+                "disk-size": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-size"
+                },
+                "disk-type": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-type"
+                },
+                "disk-format": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-format"
+                },
+                "cpu-count": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-count"
+                },
+                "cpu-max-count": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-max-count"
+                },
+                "use-tap": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/use-tap"
+                },
+                "use-nat": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/use-nat"
+                },
+                "nat-rules": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nat-rules"
+                },
+                "nat-restrict-mode": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nat-restrict-mode"
+                },
+                "enable-device-hotplug": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-device-hotplug"
+                },
+                "ram-hotplug-slot-size": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/ram-hotplug-slot-size"
+                },
+                "auto-ballooning": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/auto-ballooning"
+                },
+                "disk-cache": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-cache"
+                },
+                "disable-ansible-promise": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disable-ansible-promise"
+                },
+                "disk-aio": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/disk-aio"
+                },
+                "numa": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/numa"
+                },
+                "machine-options": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/machine-options"
+                },
+                "cpu-model": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/cpu-model"
+                },
+                "enable-http-server": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-http-server"
+                },
+                "enable-vhost": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/enable-vhost"
+                },
+                "httpd-port": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/httpd-port"
+                },
+                "authorized-key": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/authorized-key"
+                },
+                "bootstrap-script-url": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/bootstrap-script-url"
+                },
+                "data-to-vm": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/data-to-vm"
+                },
+                "boot-image-url-list": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/boot-image-url-list"
+                },
+                "nbd-host": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd-host"
+                },
+                "nbd-port": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd-port"
+                },
+                "nbd2-host": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd2-host"
+                },
+                "nbd2-port": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/nbd2-port"
+                },
+                "virtual-hard-drive-url": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-url"
+                },
+                "virtual-hard-drive-md5sum": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-md5sum"
+                },
+                "virtual-hard-drive-gzipped": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/virtual-hard-drive-gzipped"
+                },
+                "hard-drive-url-check-certificate": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/hard-drive-url-check-certificate"
+                },
+                "wipe-disk-ondestroy": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/wipe-disk-ondestroy"
+                },
+                "wipe-disk-iterations": {
+                  "$ref": "instance-kvm-1-machine-schema.json#/properties/wipe-disk-iterations"
                 }
               },
-              "type": "object",
-              "additionalProperties": {
-                  "$ref": "instance-kvm-1-machine-schema.json#/"
-                }
+              "type": "object"
             }
           },
           "type": "object"
@@ -88,7 +196,7 @@
       }
     },
     {
-      "$ref": "instance-kvm-frontend-schema.json#/"
+      "$ref": "instance-kvm-frontend-schema.json#"
     }
   ]
 }
