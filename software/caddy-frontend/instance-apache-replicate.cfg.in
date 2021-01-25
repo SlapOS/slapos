@@ -21,6 +21,7 @@
         'ciphers',
         'request-timeout',
         'authenticate-to-backend',
+        'strict-transport-security',
     ]
 %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
@@ -167,6 +168,11 @@ context =
 {%       endif %}
 {%     endfor %}
 {%   endif %}
+{#   Check strict-transport-security #}
+{%     set strict_transport_security = (slave.get('strict-transport-security') or '0') | int(false)) %}
+{%     if strict_transport_security is false or strict_transport_security < 0 %}
+{%       do slave_error_list.append('Wrong strict-transport-security %s' % (slave.get('strict-transport-security'),)) %}
+{%     endif %}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
 {%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
