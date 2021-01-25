@@ -124,6 +124,9 @@
           "$ref": "instance-kvm-1-machine-schema.json#/properties/wipe-disk-iterations"
         }
       }
+    },
+    {
+      "$ref": "instance-kvm-frontend-schema.json#"
     }
   ]
 }
