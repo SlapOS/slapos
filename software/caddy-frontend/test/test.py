@@ -1247,18 +1247,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'backend-connect-timeout': 10,
         'backend-connect-retries': 5,
         'request-timeout': 15,
+        'strict-transport-security': '200',
+        'strict-transport-security-sub-domains': True,
+        'strict-transport-security-preload': True,
       },
       'server-alias': {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
+        'strict-transport-security': '200',
       },
       'server-alias-empty': {
         'url': cls.backend_url,
         'server-alias': '',
+        'strict-transport-security': '200',
+        'strict-transport-security-sub-domains': True,
       },
       'server-alias-wildcard': {
         'url': cls.backend_url,
         'server-alias': '*.alias1.example.com',
+        'strict-transport-security': '200',
+        'strict-transport-security-preload': True,
       },
       'server-alias-duplicated': {
         'url': cls.backend_url,
@@ -1828,6 +1836,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertNotIn('Strict-Transport-Security', result.headers)
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
@@ -2294,6 +2303,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
@@ -2304,12 +2315,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
       'alias2.example.com',
       'test-path/deep/.././deeper')
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
@@ -2330,6 +2345,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; includeSubDomains',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
@@ -2369,6 +2387,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; preload',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result = fakeHTTPSResult(
@@ -2378,6 +2399,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; preload',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_duplicated(self):
@@ -4621,6 +4645,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; includeSubDomains; preload',
+      result.headers['Strict-Transport-Security'])
+
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
 
     result_http = fakeHTTPResult(
@@ -4631,6 +4659,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       httplib.FOUND,
       result_http.status_code
     )
+
+    self.assertNotIn('Strict-Transport-Security', result_http.headers)
 
     self.assertEqual(
       'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
@@ -6983,6 +7013,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'ciphers': 'ciphers',
       'request-timeout': 100,
       'authenticate-to-backend': True,
+      'strict-transport-security': 200,
       # specific parameters
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
@@ -7080,7 +7111,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'ram-cache-size': u'512K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
@@ -7107,7 +7139,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'ram-cache-size': u'256K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
@@ -7133,7 +7166,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'port': u'11443',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
@@ -7179,7 +7213,8 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'request-timeout': '100',
         'root_instance_title': 'testing partition 0',
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_instance_list': []
+        'slave_instance_list': [],
+        'strict-transport-security': '200'
       }
     }
     self.assertEqual(
