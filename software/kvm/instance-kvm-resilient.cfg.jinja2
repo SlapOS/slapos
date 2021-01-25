@@ -9,10 +9,8 @@
 
 {% if slapparameter_dict.get('enable-monitor', True) == True -%}
 {% set monitor_return = ['monitor-base-url'] -%}
-{% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
-{% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {% set additional_frontend = (slapparameter_dict.get('frontend-additional-instance-guid', '').strip() != '') %}
 
 [buildout]
@@ -47,7 +45,6 @@ recipe = slapos.cookbook:publish-early
 [monitor-instance-parameter]
 monitor-httpd-port = 8160
 password = ${publish-early:monitor-password}
-cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
 
 {%  do monitor_parameter.__setitem__('monitor-username', slapparameter_dict.get('monitor-username', 'admin'))%}
 {%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${publish-early:monitor-password}'))%}

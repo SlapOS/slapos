@@ -72,12 +72,6 @@ KVM instance parameters:
 - hard-drive-url-check-certificate (default: True)
     if virtual-hard-drive-url use self-signed https, then specify if https certificate should be verified or not
 
-- external-disk-number (default: 0)
-    Number of additional disk to attach to this VM. Need slapformat to be configured for this feature.
-- external-disk-size (default: 20)
-- external-disk-format (default: qcow2)
-  additional disk format. should be in this list: ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed']
-
 - enable-http-server (default: False)
     Configure server that will help to get some files into the vm from http
     require use-nat = True

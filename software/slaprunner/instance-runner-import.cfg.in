@@ -182,7 +182,6 @@ monitor-password = ${monitor-publish-parameters:monitor-password}
 [monitor-instance-parameter]
 monitor-httpd-port = 8360
 monitor-title = {{ slapparameter_dict.get('name', 'Webrunner import') }}
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 {% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
 {% endif -%}

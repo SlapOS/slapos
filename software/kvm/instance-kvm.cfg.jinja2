@@ -365,9 +365,6 @@ disk-storage-list =
 {% for key, path in storage_dict.items() -%}
 {{ '  ' ~ key ~ ' ' ~ path }}
 {% endfor -%}
-external-disk-number = ${slap-parameter:external-disk-number}
-external-disk-size = ${slap-parameter:external-disk-size}
-external-disk-format = ${slap-parameter:external-disk-format}
 
 {% if enable_http -%}
 httpd-port = ${slap-parameter:httpd-port}
@@ -677,14 +674,12 @@ config-port = ${httpd:port}
 [monitor-instance-parameter]
 monitor-httpd-port = 8026
 monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 {% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
 {% endif -%}
 {% if slapparameter_dict.get('monitor-password', '') -%}
 password = {{ slapparameter_dict['monitor-password'] }}
 {% endif -%}
-interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') }}
 
 # this helper just gives a blank line to insert in multiline values
 [helper]
@@ -969,10 +964,6 @@ virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
 # if virtual-hard-drive-url use https, then specify if https certificate should be checked or not
 hard-drive-url-check-certificate = True
-
-external-disk-number = 0
-external-disk-size = 20
-external-disk-format = qcow2
 
 # Help to get some configuration files into the vm from http
 enable-http-server = False

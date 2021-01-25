@@ -99,9 +99,6 @@ bootstrap_machine_param_dict = {
     "use-nat": True,
     "nat-restrict-mode": True,
     "enable-vhost": True,
-    "external-disk-number": 1,
-    "external-disk-size": 100,
-    "external-disk-format": "qcow2",
     "enable-monitor": True,
     "keyboard-layout-language": "fr"
 }

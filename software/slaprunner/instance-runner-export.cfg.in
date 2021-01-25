@@ -62,7 +62,6 @@ monitor-httpd-port = ${monitor-httpd-free-port:port}
 {% if slapparameter_dict.get('name', '') -%}
 monitor-title = {{ slapparameter_dict['name'] }}
 {% endif -%}
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 {% if slapparameter_dict.get('monitor-username', '') -%}
 username = {{ slapparameter_dict['monitor-username'] }}
 {% endif -%}
