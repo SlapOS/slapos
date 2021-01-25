@@ -126,7 +126,7 @@
       }
     },
     {
-      "$ref": "instance-kvm-frontend-schema.json#/properties"
+      "$ref": "instance-kvm-frontend-schema.json#"
     }
   ]
 }
