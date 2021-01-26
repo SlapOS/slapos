@@ -350,8 +350,18 @@ config-name = ${:name}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
-config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configuration',
-'--erp5-base +erp5 .*/VirtualHostRoot/erp5(/|\\?|$) --base +other / --skip-user-agent Zabbix --error-detail --js-embed --quiet')) }}
+config-apachedex-configuration = {{
+  dumps(
+    monitor_dict.get(
+      'apachedex-configuration',
+      [
+        '--logformat', '%h %l %u %t "%r" %>s %O "%{Referer}i" "%{User-Agent}i" %{ms}T',
+        '--erp5-base', '+erp5', '.*/VirtualHostRoot/erp5(/|\\?|$)',
+        '--base', '+other', '/',
+        '--skip-user-agent', 'Zabbix',
+        '--error-detail',
+        '--js-embed',
+        '--quiet'])) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
