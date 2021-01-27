@@ -1,0 +1,26 @@
+#!/bin/bash
+
+URLS="{{ url_list }}"
+
+OUTPUT_DIR="{{ public_folder }}"
+
+trap "rm -f -- '{{ pid_file}}'" EXIT
+
+if [ -s "{{ pid_file}}" ]; then
+  echo "Crawler process already running with pid `cat {{ pid_file}}`"
+  exit 1
+fi
+
+echo $$ > "{{ pid_file}}"
+
+for url in `echo $URLS`
+do
+  DOMAIN=$(echo "$url" | cut -d'/' -f3)
+  OUTPUT="$OUTPUT_DIR/$DOMAIN.xml"
+  echo "Checking $DOMAIN..."
+  if [ -s "$OUTPUT" ]; then
+    echo "Already crawled... SKIPPED"
+  else
+    {{ jscrawler_wrapper }} -f $OUTPUT --link $url
+  fi
+done

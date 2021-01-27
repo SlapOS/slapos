@@ -1,0 +1,17 @@
+{
+  "name": "Output Parameters",
+  "properties": {
+    "backend-url": {
+      "title": "Backend nginx URL",
+      "description": "Backend nginx URL",
+      "type": "string",
+      "format": "uri"
+    },
+    "url": {
+      "title": "Frontend nginx URL",
+      "description": "Frontend nginx URL",
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

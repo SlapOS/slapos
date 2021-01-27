@@ -1,0 +1,20 @@
+{% set part_list = [] -%}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+backend-url = http://[${nginx-configuration:ip}]:${nginx-configuration:port}
+
+[buildout]
+extends = {{ template_jscrawler }}
+
+parts =
+  publish-connection-information
+  gen-certificate
+# nginx and crawler cron
+  cron-entry-build-sitemap
+  nginx-wrapper
+  nginx-listen-promise
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

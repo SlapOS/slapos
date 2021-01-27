@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "urls": {
+      "title": "List of website URL to crawl (space, newline or comma separated).",
+      "description": "List of website URL to crawl (space, newline or comma separated).",
+      "type": "string",
+      "default": ""
+    }
+  }
+}
