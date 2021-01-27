@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Theia instanciation",
+  "properties": {
+    "url": {
+      "description": "Theia Frontend URL",
+      "type": "string"
+    },
+    "username": {
+      "description": "Theia username",
+      "type": "string"
+    },
+    "password": {
+      "description": "Theia password",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
