@@ -84,6 +84,9 @@ KEDIFA_PORT = '15080'
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
 
+# IP on which test run, in order to mimic HTTP[s] access
+TEST_IP = os.environ['SLAPOS_TEST_IPV4']
+
 # "--resolve" inspired from https://stackoverflow.com/a/44378047/9256748
 DNS_CACHE = {}
 
@@ -254,11 +257,11 @@ def subprocess_output(*args, **kwargs):
   return subprocess_status_output(*args, **kwargs)[1]
 
 
-def isHTTP2(domain, ip):
+def isHTTP2(domain):
   curl_command = 'curl --http2 -v -k -H "Host: %(domain)s" ' \
     'https://%(domain)s:%(https_port)s/ '\
     '--resolve %(domain)s:%(https_port)s:%(ip)s' % dict(
-      ip=ip, domain=domain, https_port=HTTPS_PORT)
+      ip=TEST_IP, domain=domain, https_port=HTTPS_PORT)
   prc = subprocess.Popen(
     curl_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
   )
@@ -395,7 +398,7 @@ class TestDataMixin(object):
     self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
 
 
-def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
+def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
                     headers=None, cookies=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
@@ -414,7 +417,7 @@ def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
     session.mount('https://', new_source)
   socket_getaddrinfo = socket.getaddrinfo
   try:
-    add_custom_dns(domain, port, real_ip)
+    add_custom_dns(domain, port, TEST_IP)
     socket.getaddrinfo = new_getaddrinfo
     return session.get(
       'https://%s:%s/%s' % (domain, port, path),
@@ -427,7 +430,7 @@ def fakeHTTPSResult(domain, real_ip, path, port=HTTPS_PORT,
     socket.getaddrinfo = socket_getaddrinfo
 
 
-def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
+def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP):
   if headers is None:
     headers = {}
@@ -445,7 +448,7 @@ def fakeHTTPResult(domain, real_ip, path, port=HTTP_PORT,
     session.mount('http://', new_source)
     session.mount('https://', new_source)
   return session.get(
-    'http://%s:%s/%s' % (real_ip, port, path),
+    'http://%s:%s/%s' % (TEST_IP, port, path),
     headers=headers,
     allow_redirects=False,
   )
@@ -921,7 +924,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def waitForCaddy(cls):
     def method():
       fakeHTTPSResult(
-        cls._ipv4_address, cls._ipv4_address,
+        cls._ipv4_address,
         '/',
       )
     cls.waitForMethod('waitForCaddy', method)
@@ -1038,10 +1041,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   def waitForSlave(cls):
     def method():
       for parameter_dict in cls.getSlaveConnectionParameterDictList():
-        if 'domain' in parameter_dict and 'public-ipv4' in parameter_dict:
+        if 'domain' in parameter_dict:
           try:
             fakeHTTPSResult(
-              parameter_dict['domain'], parameter_dict['public-ipv4'], '/')
+              parameter_dict['domain'], '/')
           except requests.exceptions.InvalidURL:
             # ignore slaves to which connection is impossible by default
             continue
@@ -1117,7 +1120,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -1192,7 +1194,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -1246,18 +1247,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'backend-connect-timeout': 10,
         'backend-connect-retries': 5,
         'request-timeout': 15,
+        'strict-transport-security': '200',
+        'strict-transport-security-sub-domains': True,
+        'strict-transport-security-preload': True,
       },
       'server-alias': {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
+        'strict-transport-security': '200',
       },
       'server-alias-empty': {
         'url': cls.backend_url,
         'server-alias': '',
+        'strict-transport-security': '200',
+        'strict-transport-security-sub-domains': True,
       },
       'server-alias-wildcard': {
         'url': cls.backend_url,
         'server-alias': '*.alias1.example.com',
+        'strict-transport-security': '200',
+        'strict-transport-security-preload': True,
       },
       'server-alias-duplicated': {
         'url': cls.backend_url,
@@ -1701,7 +1710,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_empty(self):
     parameter_dict = self.assertSlaveBase('empty')
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
@@ -1709,7 +1718,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(
       httplib.FOUND,
       result_http.status_code
@@ -1722,7 +1731,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     # check that 404 is as configured
     result_missing = fakeHTTPSResult(
-      'forsuredoesnotexists.example.com', parameter_dict['public-ipv4'], '')
+      'forsuredoesnotexists.example.com', '')
     self.assertEqual(httplib.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
       """<html>
@@ -1806,7 +1815,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s ' has been converted to '%s'" % (
@@ -1816,7 +1824,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -1828,6 +1836,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertNotIn('Strict-Transport-Security', result.headers)
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
@@ -1878,7 +1887,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       log_regexp)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -1956,7 +1965,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       # 4. check that you can access this backend via frontend
       #    (so it means that auth to backend worked)
       result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        parameter_dict['domain'],
         'test-path/deep/.././deeper',
         headers={
           'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -2045,7 +2054,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       # 4. check that you can access this backend via frontend
       #    (so it means that auth to backend worked)
       result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        parameter_dict['domain'],
         'test-path/deep/.././deeper',
         headers={
           'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -2074,7 +2083,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('auth-to-backend-backend-ignore')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -2103,7 +2112,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2130,7 +2139,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s ' has been converted to '%s'" % (
@@ -2140,7 +2148,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_compressed = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Accept-Encoding': 'gzip',
@@ -2162,7 +2170,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_not_compressed = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Accept-Encoding': 'gzip',
@@ -2183,7 +2191,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           "slave url ' %s ' has been converted to '%s'" % (
@@ -2192,7 +2199,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       parameter_dict
     )
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Accept-Encoding': 'gzip',
@@ -2224,7 +2231,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://url.example.com',
         'site_url': 'http://url.example.com',
         'secure_access': 'https://url.example.com',
-        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
@@ -2248,7 +2254,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('type-zope-path')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2268,7 +2274,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('type-zope-default-path')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
+      parameter_dict['domain'], '')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2290,29 +2296,35 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('server-alias')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
-      'alias1.example.com', parameter_dict['public-ipv4'],
+      'alias1.example.com',
       'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
-      'alias2.example.com', parameter_dict['public-ipv4'],
+      'alias2.example.com',
       'test-path/deep/.././deeper')
 
+    self.assertEqual(
+      'max-age=200', result.headers['Strict-Transport-Security'])
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
@@ -2321,7 +2333,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('server-alias-empty')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -2333,6 +2345,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; includeSubDomains',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     try:
@@ -2360,28 +2375,33 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://serveraliaswildcard.example.com',
         'site_url': 'http://serveraliaswildcard.example.com',
         'secure_access': 'https://serveraliaswildcard.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; preload',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result = fakeHTTPSResult(
-      'wild.alias1.example.com', parameter_dict['public-ipv4'], 'test-path')
+      'wild.alias1.example.com', 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; preload',
+      result.headers['Strict-Transport-Security'])
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_server_alias_duplicated(self):
@@ -2395,14 +2415,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://serveraliasduplicated.example.com',
         'site_url': 'http://serveraliasduplicated.example.com',
         'secure_access': 'https://serveraliasduplicated.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2411,7 +2430,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result = fakeHTTPSResult(
-      'alias3.example.com', parameter_dict['public-ipv4'], 'test-path')
+      'alias3.example.com', 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2431,14 +2450,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://alias4.example.com',
         'site_url': 'http://alias4.example.com',
         'secure_access': 'https://alias4.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2464,7 +2482,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -2488,7 +2505,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
@@ -2516,7 +2533,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://sslcacrtonly.example.com',
         'secure_access':
         'https://sslcacrtonly.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -2549,7 +2565,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://sslcacrtgarbage.example.com',
         'secure_access':
         'https://sslcacrtgarbage.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -2575,7 +2590,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+        parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       ca_certificate_pem,
@@ -2604,7 +2619,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'site_url': 'http://sslcacrtdoesnotmatch.example.com',
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -2626,7 +2640,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2646,7 +2660,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('https-only')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2656,7 +2670,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result_http, 'Path', '/test-path/deeper')
@@ -2674,14 +2688,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2702,14 +2715,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -2718,7 +2730,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result = fakeHTTPSResult(
-      'mycustomdomainserveralias1.example.com', parameter_dict['public-ipv4'],
+      'mycustomdomainserveralias1.example.com',
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2738,14 +2750,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://*.customdomain.example.com',
         'site_url': 'http://*.customdomain.example.com',
         'secure_access': 'https://*.customdomain.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      'wild.customdomain.example.com', parameter_dict['public-ipv4'],
+      'wild.customdomain.example.com',
       'test-path')
 
     self.assertEqual(
@@ -2768,7 +2779,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -2789,7 +2799,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.customdomain_certificate_pem,
@@ -2801,7 +2811,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('type-zope')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2822,7 +2832,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2841,7 +2851,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-prefer-gzip-encoding-to-backend-https-only')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2863,7 +2873,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(
@@ -2875,7 +2885,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -2900,7 +2910,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -2919,7 +2929,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-prefer-gzip-encoding-to-backend')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2941,7 +2951,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -2956,7 +2966,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -2981,7 +2991,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -3001,7 +3011,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-virtualhostroot-http-port')
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqualResultJson(
       result,
@@ -3015,7 +3025,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-virtualhostroot-https-port')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3041,14 +3051,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path',
       HTTPS_PORT)
 
@@ -3059,7 +3068,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test/terminals/websocket/test',
       HTTPS_PORT)
 
@@ -3069,14 +3078,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/terminals/websocket')
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_type_websocket(self):
     parameter_dict = self.assertSlaveBase(
       'type-websocket')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqual(
@@ -3099,14 +3108,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_type_websocket_websocket_transparent_false(self):
     parameter_dict = self.assertSlaveBase(
       'type-websocket-websocket-transparent-false')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqual(
@@ -3132,14 +3141,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_type_websocket_websocket_path_list(self):
     parameter_dict = self.assertSlaveBase(
       'type-websocket-websocket-path-list')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqual(
@@ -3152,7 +3161,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3161,7 +3170,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      parameter_dict['domain'], 'ws/test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqualResultJson(
@@ -3170,7 +3179,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/ws/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3183,7 +3192,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertTrue('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'with%20space/test-path', headers={'Connection': 'Upgrade'})
 
     self.assertEqualResultJson(
@@ -3192,7 +3201,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/with%20space/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3210,7 +3219,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-websocket-websocket-path-list-websocket-transparent-false')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqual(
@@ -3223,7 +3232,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3235,7 +3244,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'ws/test-path',
+      parameter_dict['domain'], 'ws/test-path',
       headers={'Connection': 'Upgrade'})
 
     self.assertEqualResultJson(
@@ -3244,7 +3253,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/ws/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3259,7 +3268,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'with%20space/test-path', headers={'Connection': 'Upgrade'})
 
     self.assertEqualResultJson(
@@ -3268,7 +3277,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '/with%20space/test-path'
     )
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
     try:
       j = result.json()
     except Exception:
@@ -3298,14 +3307,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://typeeventsource.nginx.example.com',
         'site_url': 'http://typeeventsource.nginx.example.com',
         'secure_access': 'https://typeeventsource.nginx.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'pub',
+      parameter_dict['domain'], 'pub',
       #  NGINX_HTTPS_PORT
     )
 
@@ -3335,7 +3343,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('type-redirect')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -3365,14 +3373,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -3404,14 +3411,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'http://sslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://sslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3423,7 +3429,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       httplib.FOUND,
@@ -3440,7 +3446,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('ssl-proxy-verify_ssl_proxy_ca_crt')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3462,7 +3468,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       httplib.FOUND,
@@ -3479,7 +3485,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('ssl-proxy-verify-unverified')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3507,14 +3513,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'http://enablecachesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://enablecachesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -3527,7 +3532,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deeper')
 
     self.assertEqual(
@@ -3546,7 +3551,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'enable_cache-ssl-proxy-verify_ssl_proxy_ca_crt')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -3580,7 +3585,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'enable_cache-ssl-proxy-verify-unverified')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3607,14 +3612,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'http://typezopesslproxyverifysslproxycacrtunverified.example.com',
         'secure_access':
         'https://typezopesslproxyverifysslproxycacrtunverified.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3626,7 +3630,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       httplib.FOUND,
@@ -3644,7 +3648,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-ssl-proxy-verify_ssl_proxy_ca_crt')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3665,7 +3669,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       httplib.FOUND,
@@ -3683,7 +3687,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'type-zope-ssl-proxy-verify-unverified')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3698,7 +3702,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('monitor-ipv6-test')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3707,7 +3711,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(
       httplib.FOUND,
       result_http.status_code
@@ -3735,7 +3739,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('monitor-ipv4-test')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3744,7 +3748,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(
       httplib.FOUND,
       result_http.status_code
@@ -3773,7 +3777,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('ciphers')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -3782,7 +3786,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       httplib.FOUND,
@@ -3816,14 +3820,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
@@ -3865,7 +3868,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
@@ -3904,7 +3907,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      'enablecacheserveralias1.example.com', parameter_dict['public-ipv4'],
+      'enablecacheserveralias1.example.com',
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
@@ -3924,7 +3927,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600',
@@ -4073,7 +4076,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     def checkResult(status_code, body):
       result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], path,
+        parameter_dict['domain'], path,
         source_ip=source_ip
       )
       self.assertEqual(result.status_code, status_code)
@@ -4118,7 +4121,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     source_ip = '127.0.0.1'
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600',
@@ -4169,7 +4172,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.stopServerProcess()
 
       result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'],
+        parameter_dict['domain'],
         'test-path/deep/.././deeper', headers={
           'X-Reply-Header-Cache-Control': 'max-age=1',
         },
@@ -4185,7 +4188,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that timeout seen by ATS does not result in many queries done
     # to the backend and that next request works like a charm
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test_enable_cache_ats_timeout', headers={
         'Timeout': '15',
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
@@ -4252,7 +4255,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     # the result is available immediately after
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper', headers={
         'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600'})
@@ -4264,7 +4267,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'enable_cache-disable-no-cache-request')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       headers={'Pragma': 'no-cache', 'Cache-Control': 'something'})
 
     self.assertEqual(
@@ -4312,7 +4315,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('enable_cache-disable-via-header')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -4353,7 +4356,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -4381,13 +4384,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_default(self):
     parameter_dict = self.assertSlaveBase('enable-http2-default')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -4415,14 +4418,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     self.assertTrue(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_prefer_gzip_encoding_to_backend_https_only(self):
     parameter_dict = self.assertSlaveBase(
       'prefer-gzip-encoding-to-backend-https-only')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -4438,7 +4441,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'deflate'})
 
@@ -4450,7 +4453,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -4460,13 +4463,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -4479,7 +4482,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'deflate'})
 
@@ -4492,13 +4495,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
@@ -4508,7 +4511,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'prefer-gzip-encoding-to-backend')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -4524,7 +4527,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'deflate'})
 
@@ -4536,7 +4539,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -4546,13 +4549,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
 
@@ -4567,7 +4570,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'deflate'})
 
@@ -4582,7 +4585,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -4596,7 +4599,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -4613,7 +4616,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('disabled-cookie-list')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       cookies=dict(
           Chocolate='absent',
           Vanilia='absent',
@@ -4635,23 +4638,29 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('url_https-url')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
       self.certificate_pem,
       der2pem(result.peercert))
 
+    self.assertEqual(
+      'max-age=200; includeSubDomains; preload',
+      result.headers['Strict-Transport-Security'])
+
     self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
       httplib.FOUND,
       result_http.status_code
     )
+
+    self.assertNotIn('Strict-Transport-Security', result_http.headers)
 
     self.assertEqual(
       'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
@@ -4675,7 +4684,6 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': cls.slap._computer_id,
       '-frontend-2-state': 'stopped',
@@ -4705,14 +4713,13 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -4721,7 +4728,7 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqualResultJson(result_http, 'Path', '/test-path')
 
     # prove 2nd frontend by inspection of the instance
@@ -4743,7 +4750,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       '-frontend-quantity': 2,
       '-sla-2-computer_guid': cls.slap._computer_id,
       '-frontend-2-state': 'destroyed',
@@ -4783,7 +4789,6 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'enable-http2-by-default': 'false',
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
@@ -4820,14 +4825,13 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_false(self):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
@@ -4841,14 +4845,13 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_true(self):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
@@ -4862,14 +4865,13 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertTrue(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
 
 class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
@@ -4878,7 +4880,6 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -4914,14 +4915,13 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertTrue(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_false(self):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
@@ -4935,14 +4935,13 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2false.example.com',
         'secure_access':
         'https://enablehttp2false.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_true(self):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
@@ -4957,13 +4956,12 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': self._ipv4_address,
       },
       parameter_dict
     )
 
     self.assertTrue(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
 
 class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
@@ -5002,7 +5000,6 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': 'None',
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -5057,7 +5054,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'http://default.None',
         'site_url': 'http://default.None',
         'secure_access': 'https://default.None',
-        'public-ipv4': 'None',
       },
       parameter_dict
     )
@@ -5076,59 +5072,6 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
         'url': 'some-re6st-verification-url',
       }
     )
-
-
-@skip('Impossible to instantiate cluster with stopped partition')
-class TestDefaultMonitorHttpdPort(SlaveHttpFrontendTestCase, TestDataMixin):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      '-frontend-1-state': 'stopped',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-    }
-
-  @classmethod
-  def runKedifaUpdater(cls):
-    return
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'test': {
-        'url': cls.backend_url,
-      },
-      'testcached': {
-        'url': cls.backend_url,
-        'enable_cache': True,
-      },
-    }
-
-  def test(self):
-    parameter_dict = self.parseSlaveParameterDict('test')
-    self.assertKeyWithPop('log-access-url', parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'test.None', 'replication_number': '1',
-        'url': 'http://test.None', 'site_url': 'http://test.None',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-        'secure_access': 'https://test.None', 'public-ipv4': 'None'},
-      parameter_dict
-    )
-    master_monitor_conf = open(os.path.join(
-      self.instance_path, 'T-0', 'etc',
-      'monitor-httpd.conf')).read()
-    slave_monitor_conf = open(os.path.join(
-      self.instance_path, 'T-2', 'etc',
-      'monitor-httpd.conf')).read()
-
-    self.assertTrue(
-      'Listen [%s]:8196' % (self._ipv6_address,) in master_monitor_conf)
-    self.assertTrue(
-      'Listen [%s]:8072' % (self._ipv6_address,) in slave_monitor_conf)
 
 
 class TestSlaveGlobalDisableHttp2(TestSlave):
@@ -5151,14 +5094,13 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -5186,7 +5128,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
 
 class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
@@ -5211,14 +5153,13 @@ class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
 
 class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
@@ -5243,14 +5184,13 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2true.example.com',
         'secure_access':
         'https://enablehttp2true.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
   def test_enable_http2_default(self):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
@@ -5264,14 +5204,13 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
         'site_url': 'http://enablehttp2default.example.com',
         'secure_access':
         'https://enablehttp2default.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     self.assertFalse(
-      isHTTP2(parameter_dict['domain'], parameter_dict['public-ipv4']))
+      isHTTP2(parameter_dict['domain']))
 
 
 class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
@@ -5294,7 +5233,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -5326,14 +5264,13 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -5356,7 +5293,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       certificate_pem,
@@ -5433,7 +5370,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'apache-certificate': cls.certificate_pem,
       'apache-key': cls.key_pem,
       'port': HTTPS_PORT,
@@ -5599,14 +5535,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -5627,14 +5562,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -5661,7 +5595,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       certificate_pem,
@@ -5683,7 +5617,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5694,7 +5627,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.ssl_from_slave_certificate_pem,
@@ -5716,7 +5649,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5727,7 +5659,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.ssl_from_slave_kedifa_overrides_certificate_pem,
@@ -5755,7 +5687,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       certificate_pem,
@@ -5776,14 +5708,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5805,14 +5736,13 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5841,7 +5771,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5863,7 +5793,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5874,7 +5803,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5896,7 +5825,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_crt is obsolete, please use key-upload-url',
@@ -5907,7 +5835,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5936,7 +5864,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path',
+      parameter_dict['domain'], 'test-path',
       HTTPS_PORT)
 
     self.assertEqual(
@@ -5960,7 +5888,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': ['ssl_key is obsolete, please use key-upload-url',
                          'ssl_crt is obsolete, please use key-upload-url']
@@ -5969,7 +5896,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.customdomain_certificate_pem,
@@ -5990,7 +5917,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://customdomainsslcrtsslkeysslcacrt.example.com',
         'secure_access':
         'https://customdomainsslcrtsslkeysslcacrt.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
@@ -6002,7 +5928,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.customdomain_ca_certificate_pem,
@@ -6046,7 +5972,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.slap.waitForInstance()
     self.runKedifaUpdater()
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       customdomain_ca_certificate_pem,
@@ -6079,7 +6005,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://sslcacrtgarbage.example.com',
         'secure_access':
         'https://sslcacrtgarbage.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
@@ -6090,7 +6015,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-        parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+        parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.sslcacrtgarbage_ca_certificate_pem,
@@ -6111,7 +6036,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'site_url': 'http://sslcacrtdoesnotmatch.example.com',
         'secure_access':
         'https://sslcacrtdoesnotmatch.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
@@ -6123,7 +6047,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6175,7 +6099,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'apache-certificate': cls.certificate_pem,
         'apache-key': cls.key_pem,
       })
-    cls.instance_parameter_dict['public-ipv4'] = cls._ipv4_address
     return cls.instance_parameter_dict
 
   @classmethod
@@ -6225,14 +6148,13 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6257,7 +6179,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       certificate_pem,
@@ -6271,7 +6193,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -6320,7 +6241,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('default_ciphers')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6329,7 +6250,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.OK, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(httplib.FOUND, result_http.status_code)
 
     configuration_file = glob.glob(
@@ -6346,7 +6267,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.assertSlaveBase('own_ciphers')
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6355,7 +6276,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.OK, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(httplib.FOUND, result_http.status_code)
 
     configuration_file = glob.glob(
@@ -6379,7 +6300,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -6541,8 +6461,8 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '7',
-      'rejected-slave-amount': '24',
+      'accepted-slave-amount': '5',
+      'rejected-slave-amount': '26',
       'slave-amount': '31',
       'rejected-slave-dict': {
         '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
@@ -6575,6 +6495,10 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         '_BAD-BACKEND': [
           "slave https-url 'http://host.domain:badport' invalid",
           "slave url 'http://1:2:3:4' invalid"],
+        '_VIRTUALHOSTROOT-HTTP-PORT-UNSAFE': [
+          "Wrong virtualhostroot-http-port '${section:option}'"],
+        '_VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE': [
+          "Wrong virtualhostroot-https-port '${section:option}'"],
         '_EMPTY-BACKEND': [
           "slave https-url '' invalid",
           "slave url '' invalid"],
@@ -6659,14 +6583,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://serveraliassame.example.com',
         'site_url': 'http://serveraliassame.example.com',
         'secure_access': 'https://serveraliassame.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6711,58 +6634,25 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_virtualhostroot_http_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': 'virtualhostroothttpportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'request-error-list': [
+          "Wrong virtualhostroot-http-port '${section:option}'"
+        ]
       },
       parameter_dict
     )
-
-    result = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(httplib.FOUND, result.status_code)
 
   def test_virtualhostroot_https_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertKedifaKeysWithPop(parameter_dict)
     self.assertEqual(
       {
-        'domain': 'virtualhostroothttpsportunsafe.example.com',
-        'replication_number': '1',
-        'url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'site_url': 'http://virtualhostroothttpsportunsafe.example.com',
-        'secure_access':
-        'https://virtualhostroothttpsportunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
+        'request-error-list': [
+          "Wrong virtualhostroot-https-port '${section:option}'"
+        ]
       },
       parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqualResultJson(
-      result,
-      'Path',
-      '/VirtualHostBase/https//virtualhostroothttpsportunsafe'
-      '.example.com:0//VirtualHostRoot/test-path'
     )
 
   def default_path_unsafe(self):
@@ -6776,14 +6666,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], '')
+      parameter_dict['domain'], '')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6811,14 +6700,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://monitoripv4testunsafe.example.com',
         'site_url': 'http://monitoripv4testunsafe.example.com',
         'secure_access': 'https://monitoripv4testunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6827,7 +6715,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(httplib.FOUND, result_http.status_code)
 
     monitor_file = glob.glob(
@@ -6856,14 +6744,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://monitoripv6testunsafe.example.com',
         'site_url': 'http://monitoripv6testunsafe.example.com',
         'secure_access': 'https://monitoripv6testunsafe.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
     )
 
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
 
     self.assertEqual(
       self.certificate_pem,
@@ -6872,7 +6759,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(httplib.SERVICE_UNAVAILABLE, result.status_code)
 
     result_http = fakeHTTPResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'], 'test-path')
+      parameter_dict['domain'], 'test-path')
     self.assertEqual(httplib.FOUND, result_http.status_code)
 
     monitor_file = glob.glob(
@@ -6899,7 +6786,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'url': 'http://duplicate.example.com',
         'site_url': 'http://duplicate.example.com',
         'secure_access': 'https://duplicate.example.com',
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict
@@ -6986,7 +6872,6 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -7025,7 +6910,6 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict_wildcard
@@ -7041,14 +6925,13 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
         'url': 'http://%s.example.com' % (hostname, ),
         'site_url': 'http://%s.example.com' % (hostname, ),
         'secure_access': 'https://%s.example.com' % (hostname, ),
-        'public-ipv4': self._ipv4_address,
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       },
       parameter_dict_specific
     )
 
     result_wildcard = fakeHTTPSResult(
-      'other.alias1.example.com', parameter_dict_wildcard['public-ipv4'],
+      'other.alias1.example.com',
       'test-path',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -7059,7 +6942,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(result_wildcard, 'Path', '/wildcard/test-path')
 
     result_specific = fakeHTTPSResult(
-      'zspecific.alias1.example.com', parameter_dict_specific['public-ipv4'],
+      'zspecific.alias1.example.com',
       'test-path',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5
@@ -7124,13 +7007,13 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'enable-http2-by-default': True,
       'global-disable-http2': True,
       'mpm-graceful-shutdown-timeout': 2,
-      'public-ipv4': '255.255.255.255',
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
       'backend-connect-retries': 1,
       'ciphers': 'ciphers',
       'request-timeout': 100,
       'authenticate-to-backend': True,
+      'strict-transport-security': 200,
       # specific parameters
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
@@ -7225,11 +7108,11 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'mpm-graceful-shutdown-timeout': u'2',
         u'plain_http_port': '11080',
         u'port': '11443',
-        u'public-ipv4': u'255.255.255.255',
         u'ram-cache-size': u'512K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
@@ -7253,11 +7136,11 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'mpm-graceful-shutdown-timeout': u'2',
         u'plain_http_port': u'11080',
         u'port': u'11443',
-        u'public-ipv4': u'255.255.255.255',
         u'ram-cache-size': u'256K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
@@ -7281,10 +7164,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'mpm-graceful-shutdown-timeout': u'2',
         u'plain_http_port': u'11080',
         u'port': u'11443',
-        u'public-ipv4': u'255.255.255.255',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}'
+        u'slave-kedifa-information': u'{}',
+        u'strict-transport-security': u'200'
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
@@ -7326,12 +7209,12 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'mpm-graceful-shutdown-timeout': '2',
         'plain_http_port': '11080',
         'port': '11443',
-        'public-ipv4': '255.255.255.255',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': '100',
         'root_instance_title': 'testing partition 0',
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_instance_list': []
+        'slave_instance_list': [],
+        'strict-transport-security': '200'
       }
     }
     self.assertEqual(
@@ -7345,7 +7228,6 @@ class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
   def getInstanceParameterDict(cls):
     return {
       'domain': 'example.com',
-      'public-ipv4': cls._ipv4_address,
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
@@ -7434,7 +7316,7 @@ backend _backend-active-check-default-http
       self._get_backend_haproxy_configuration()
     )
     result = fakeHTTPSResult(
-      parameter_dict['domain'], parameter_dict['public-ipv4'],
+      parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={
         'Timeout': '10',  # more than default backend-connect-timeout == 5

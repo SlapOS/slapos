@@ -18,12 +18,8 @@ defaults
 {%- macro frontend_entry(slave_instance, scheme, wildcard) %}
 {#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
 {%-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] %}
-{%-     set host_list = (slave_instance.get('server-alias') or  '').split() %}
-{%-     if slave_instance.get('custom_domain') not in host_list %}
-{%-       do host_list.append(slave_instance.get('custom_domain')) %}
-{%-     endif %}
 {%-     set matched = {'count': 0} %}
-{%-     for host in host_list %}
+{%-     for host in slave_instance['host_list'] %}
 {#-       Match up to the end or optional port (starting with ':') #}
 {#-       Please note that this matching is quite sensitive to changes and hard to test, so avoid needless changes #}
 {%-       if wildcard and host.startswith('*.') %}
@@ -80,10 +76,9 @@ frontend https-backend
 {%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
 {%-         endif %}
 {%-         do ssl_list.append('ssl verify') %}
-{%-         set path_to_ssl_proxy_ca_crt = slave_instance.get('path_to_ssl_proxy_ca_crt') %}
 {%-         if slave_instance['ssl_proxy_verify'] %}
-{%-           if path_to_ssl_proxy_ca_crt %}
-{%-             do ssl_list.append('required ca-file %s' % (path_to_ssl_proxy_ca_crt,)) %}
+{%-           if slave_instance['path_to_ssl_proxy_ca_crt']  %}
+{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
 {%-           else %}
 {#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
 {#-           Simply dropping hostname from the dict will result with ignoring it... #}

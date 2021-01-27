@@ -285,6 +285,32 @@
       "description": "Amount of bad responses from the backend to consider it down.",
       "default": "1",
       "type": "integer"
+    },
+    "strict-transport-security": {
+      "title": "Strict Transport Security",
+      "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
+      "default": "0",
+      "type": "integer"
+    },
+    "strict-transport-security-sub-domains": {
+      "title": "Strict Transport Security Sub Domains",
+      "description": "Configures Strict Transport Security for sub domains.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string",
+      "default": "false"
+    },
+    "strict-transport-security-preload": {
+      "title": "Strict Transport Security Preload",
+      "description": "Configures Strict Transport Security preload mechanism.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "type": "string",
+      "default": "false"
     }
   },
   "title": "Input Parameters",
