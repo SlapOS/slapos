@@ -1,0 +1,14 @@
+{
+  "name": "JSCrawler",
+  "description": "JSCrawler",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "JSCrawler",
+      "request": "instance-jscrawler-input-schema.json",
+      "response": "instance-jscrawler-output-schema.json",
+      "index": 0
+    }
+  }
+}
