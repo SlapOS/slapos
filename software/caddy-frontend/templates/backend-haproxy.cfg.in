@@ -32,7 +32,13 @@ defaults
 {%-       endif %}
 {%-     endfor %}
 {%-     if matched['count'] > 0 %}
+{%-       if slave_instance['failover-url'] %}
+  acl is_failover nbsrv({{ slave_instance['slave_reference'] }}-{{ scheme }}) eq 0
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }} ! is_failover
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover if is_{{ slave_instance['slave_reference'] }} is_failover
+{%-       else %}
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+{%-       endif %}
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}
@@ -110,6 +116,44 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
 {%-         endif %}
   server {{ slave_instance['slave_reference'] }}-backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-         for active_check_option in active_check_option_list %}
+  {{ active_check_option }}
+{%-         endfor %}
+{%-         if path %}
+  http-request set-path {{ path }}%[path]
+{%-         endif %}
+{%-       endif %}
+{%-     endif %}
+
+{%-     if info_dict['failover-hostname'] and info_dict['failover-port'] %}
+{%-       set ssl_list = [] %}
+{%-       if info_dict['failover-scheme'] == 'https' %}
+{%-         if slave_instance['authenticate-to-failover-backend'] %}
+{%-           do ssl_list.append('crt %s' % (configuration['failover-certificate'],)) %}
+{%-         endif %}
+{%-         do ssl_list.append('ssl verify') %}
+{%-         if slave_instance['failover-ssl-proxy-verify'] %}
+{%-           if slave_instance['path_to_failover-ssl-proxy-ca-crt']  %}
+{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_failover-ssl-proxy-ca-crt'],)) %}
+{%-           else %}
+{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
+{#-           Simply dropping hostname from the dict will result with ignoring it... #}
+{%-           do info_dict.__setitem__('hostname', '') %}
+{%-           endif %}
+{%-         else %}
+{%-           do ssl_list.append('none') %}
+{%-         endif %}
+{%-       endif %}
+
+backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
+{%-       set hostname = info_dict['failover-hostname'] %}
+{%-       set port = info_dict['failover-port'] %}
+{%-       set path = info_dict['failover-path'].rstrip('/') %}
+{%-       if hostname and port %}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+  server {{ slave_instance['slave_reference'] }}-backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
 {%-         for active_check_option in active_check_option_list %}
   {{ active_check_option }}
 {%-         endfor %}
