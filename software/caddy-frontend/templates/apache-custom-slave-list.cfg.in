@@ -58,6 +58,18 @@ context =
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
+{%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
+{%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     do info_dict.__setitem__('health-check-failover-scheme', parsed.scheme) %}
+{%-     do info_dict.__setitem__('health-check-failover-hostname', parsed.hostname) %}
+{%-     do info_dict.__setitem__('health-check-failover-port', parsed.port or DEFAULT_PORT[parsed.scheme]) %}
+{%-     do info_dict.__setitem__('health-check-failover-path', parsed.path) %}
+{%-     do info_dict.__setitem__('health-check-failover-query', parsed.query) %}
+{%-     do info_dict.__setitem__('health-check-failover-fragment', parsed.fragment) %}
+{%-     do slave_instance.__setitem__(prefix, info_dict) %}
+{%-   endfor %}
+{%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   do slave_instance.__setitem__('enable-http2', ('' ~ slave_instance.get('enable-http2', configuration['enable-http2-by-default'])).lower() in TRUE_VALUES) %}
 {%-   for key in ['https-only', 'websocket-transparent'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
@@ -135,6 +147,7 @@ context =
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('strict-transport-security', int(slave_instance['strict-transport-security'])) %}
 {%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
+{%-   do slave_instance.__setitem__('health-check-authenticate-to-failover-backend', ('' ~ slave_instance.get('health-check-authenticate-to-failover-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Setup active check #}
 {%-   do slave_instance.__setitem__('health-check',  ('' ~ slave_instance.get('health-check', '')).lower() in TRUE_VALUES) %}
 {%-   if slave_instance['health-check']  %}
@@ -266,7 +279,7 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {%-   set certificate = '%s/%s' % (autocert, cert_name) %}
 {%-   do slave_parameter_dict.__setitem__('certificate', certificate )%}
 {#-   Set ssl certificates for each slave #}
-{%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt')%}
+{%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt')%}
 {%-       set cert_file_key = 'path_to_' + cert_name %}
 {%-       if cert_name in slave_instance %}
 {%-         set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) %}
