@@ -1,0 +1,17 @@
+{
+  "name": "Output Parameters",
+  "properties": {
+    "backend-url": {
+      "title": "Backend http server URL in IPv6",
+      "description": "Backend http server URL in IPv6 for sitemap download.",
+      "type": "string",
+      "format": "uri"
+    },
+    "url": {
+      "title": "Frontend http server URL",
+      "description": "Frontend http server URL for sitemap download.",
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}
