@@ -338,6 +338,7 @@ instance-promises =
   $${frontend-listen-promise:name}
   $${apache-frontend-url-available-promise:name}
   $${slapos-standalone-listen-promise:name}
+  $${slapos-autorun-promise:name}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -368,6 +369,14 @@ name = standalone-listen-promise.py
 config-hostname = $${slapos-standalone-instance:hostname}
 config-port = $${slapos-standalone-instance:port}
 
+[slapos-autorun-promise]
+<= monitor-promise-base
+module = check_service_state
+# XXX promise plugins can not contain "slapos" in their names
+name = autorun-state-promise.py
+config-service = $${slapos-autorun:service-name}
+config-expect = $${slapos-autorun:autorun}
+
 [apache-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -394,6 +403,19 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+configuration.autorun = running
+
+[slapos-autorun]
+recipe = plone.recipe.command
+command =
+  case $${:autorun} in
+    ( running ) supervisorctl -c $${:supervisor-conf} start $${:service-name};;
+    ( stopped ) supervisorctl -c $${:supervisor-conf} stop $${:service-name};;
+  esac
+update-command = $${:command}
+service-name = slapos-node-auto
+supervisor-conf = $${directory:runner}/etc/supervisord.conf
+autorun = $${instance-parameter:configuration.autorun}
 
 [slapos-repository]
 recipe = slapos.recipe.build:gitclone
