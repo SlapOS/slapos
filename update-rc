@@ -1,7 +1,15 @@
 #!/bin/bash
 
+set -e
+
+# Go to master
+git checkout master
+
+# Clean up 1.0
+git branch -D 1.0 || echo
+
 # Checkout 1.0
-git checkout 1.0
+git checkout origin/1.0 -b 1.0
 
 # Reset and Clean
 git reset --hard origin/1.0 
