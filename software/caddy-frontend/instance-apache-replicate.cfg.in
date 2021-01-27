@@ -201,7 +201,7 @@ context =
 {%     endfor %}
 {%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
-{%   for url_key in ['url', 'https-url'] %}
+{%   for url_key in ['url', 'https-url', 'health-check-failover-url', 'health-check-failover-https-url'] %}
 {%     if url_key in slave %}
 {%       set url = (slave[url_key] or '').strip() %}
 {%       if not validators.url(url) %}

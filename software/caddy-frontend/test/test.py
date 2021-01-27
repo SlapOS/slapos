@@ -7048,6 +7048,67 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
         'health-check-rise': '3',
         'health-check-fall': '7',
       },
+      'health-check-failover-url': {
+        'https-only': False,  # http and https access to check
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'url': cls.backend_url + 'url',
+        'https-url': cls.backend_url + 'https-url',
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url',
+        'health-check-failover-url': cls.backend_url + 'failover-url?a=b&c=',
+        'health-check-failover-https-url':
+        cls.backend_url + 'failover-https-url?a=b&c=',
+      },
+      'health-check-failover-url-auth-to-backend': {
+        'https-only': False,  # http and https access to check
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'url': cls.backend_url + 'url',
+        'https-url': cls.backend_url + 'https-url',
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url-auth-to-backend',
+        'health-check-authenticate-to-failover-backend': True,
+        'health-check-failover-url': 'https://%s:%s/failover-url?a=b&c=' % (
+          cls._ipv4_address, cls._server_https_auth_port),
+        'health-check-failover-https-url':
+        'https://%s:%s/failover-https-url?a=b&c=' % (
+          cls._ipv4_address, cls._server_https_auth_port),
+      },
+      'health-check-failover-url-ssl-proxy-verified': {
+        'url': cls.backend_url,
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url-ssl-proxy'
+        '-verified',
+        'health-check-failover-url': cls.backend_https_url,
+        'health-check-failover-ssl-proxy-verify': True,
+        'health-check-failover-ssl-proxy-ca-crt':
+        cls.test_server_ca.certificate_pem,
+      },
+      'health-check-failover-url-ssl-proxy-verify-unverified': {
+        'url': cls.backend_url,
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url-ssl-proxy-verify'
+        '-unverified',
+        'health-check-failover-url': cls.backend_https_url,
+        'health-check-failover-ssl-proxy-verify': True,
+        'health-check-failover-ssl-proxy-ca-crt':
+        cls.another_server_ca.certificate_pem,
+      },
+      'health-check-failover-url-ssl-proxy-verify-missing': {
+        'url': cls.backend_url,
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url-ssl-proxy-verify'
+        '-missing',
+        'health-check-failover-url': cls.backend_https_url,
+        'health-check-failover-ssl-proxy-verify': True,
+      },
     }
 
   @classmethod
@@ -7125,6 +7186,173 @@ backend _health-check-default-http
 
   def test_health_check_custom(self):
     self._test('health-check-custom')
+
+  def test_health_check_failover_url(self):
+    parameter_dict = self.assertSlaveBase('health-check-failover-url')
+
+    # check normal access
+    result = fakeHTTPResult(parameter_dict['domain'], '/path')
+    self.assertEqualResultJson(result, 'Path', '/url/path')
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(result, 'Path', '/https-url/path')
+
+    # start replying with bad status code
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url']
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+
+    result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(
+      result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
+
+    result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
+    self.assertEqualResultJson(
+      result, 'Path', '/failover-url?a=b&c=/failoverpath')
+
+  def test_health_check_failover_url_auth_to_backend(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-auth-to-backend')
+
+    self.startAuthenticatedServerProcess()
+    self.addCleanup(self.stopAuthenticatedServerProcess)
+    # assert that you can't fetch nothing without key
+    try:
+      requests.get(self.backend_https_auth_url, verify=False)
+    except Exception:
+      pass
+    else:
+      self.fail(
+        'Access to %r shall be not possible without certificate' % (
+          self.backend_https_auth_url,))
+    # check normal access
+    result = fakeHTTPResult(parameter_dict['domain'], '/path')
+    self.assertEqualResultJson(result, 'Path', '/url/path')
+    self.assertNotIn('X-Backend-Identification', result.headers)
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(result, 'Path', '/https-url/path')
+    self.assertNotIn('X-Backend-Identification', result.headers)
+
+    # start replying with bad status code
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url']
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+
+    result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(
+      result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
+    self.assertEqual(
+      'Auth Backend', result.headers['X-Backend-Identification'])
+
+    result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
+    self.assertEqualResultJson(
+      result, 'Path', '/failover-url?a=b&c=/failoverpath')
+    self.assertEqual(
+      'Auth Backend', result.headers['X-Backend-Identification'])
+
+  def test_health_check_failover_url_ssl_proxy_verified(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-ssl-proxy-verified')
+
+    # check normal access
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(result, 'Path', '/path')
+
+    # start replying with bad status code
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url']
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], '/test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqualResultJson(result, 'Path', '/test-path')
+
+  def test_health_check_failover_url_ssl_proxy_unverified(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-ssl-proxy-verify-unverified')
+
+    # check normal access
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(result, 'Path', '/path')
+
+    # start replying with bad status code
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url']
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], '/test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    # as ssl proxy verification failed, service is unavailable
+    self.assertEqual(result.status_code, httplib.SERVICE_UNAVAILABLE)
+
+  def test_health_check_failover_url_ssl_proxy_missing(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-ssl-proxy-verify-missing')
+
+    # check normal access
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(self.certificate_pem, der2pem(result.peercert))
+    self.assertEqualResultJson(result, 'Path', '/path')
+
+    # start replying with bad status code
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url']
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], '/test-path')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    # as ssl proxy verification failed, service is unavailable
+    self.assertEqual(result.status_code, httplib.SERVICE_UNAVAILABLE)
 
 
 if __name__ == '__main__':
