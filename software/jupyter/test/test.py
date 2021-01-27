@@ -48,10 +48,14 @@ class TestJupyter(InstanceTestCase):
     except Exception as e:
       self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
 
+    self.assertTrue('password' in connection_dict)
+    password = connection_dict['password']
+
     self.assertEqual(
       {
         'jupyter-classic-url': 'https://[%s]:8888/tree' % (self._ipv6_address, ),
         'jupyterlab-url': 'https://[%s]:8888/lab' % (self._ipv6_address, ),
+        'password': '%s' % (password, ),
         'url': 'https://[%s]:8888/tree' % (self._ipv6_address, )
       },
       connection_dict
@@ -74,6 +78,92 @@ class TestJupyter(InstanceTestCase):
 
     result = requests.get(
       connection_dict['jupyterlab-url'],
+      verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Flab'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+
+class TestJupyterPassword(InstanceTestCase):
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertTrue('_' in parameter_dict)
+    try:
+      connection_dict = json.loads(parameter_dict['_'])
+    except Exception as e:
+      self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
+
+    url = connection_dict['url']
+    with requests.Session() as s:
+      resp = s.get(url, verify=False)
+      result = s.post(
+        resp.url,
+        verify = False,
+        data={"_xsrf": s.cookies["_xsrf"], "password": connection_dict['password']}
+      )
+      self.assertEqual(
+        [http.client.OK, url],
+        [result.status_code, result.url]
+      )
+
+
+class TestJupyterAdditional(InstanceTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
+
+  def test(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertTrue('_' in parameter_dict)
+    try:
+      connection_dict = json.loads(parameter_dict['_'])
+    except Exception as e:
+      self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
+
+    result = requests.get(
+      connection_dict['url'], verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+    result = requests.get(
+      connection_dict['jupyter-classic-url'],
+      verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+    result = requests.get(
+      connection_dict['jupyterlab-url'],
+      verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Flab'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+    result = requests.get(
+      connection_dict['url-additional'], verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+    result = requests.get(
+      connection_dict['jupyter-classic-url-additional'],
+      verify=False, allow_redirects=False)
+    self.assertEqual(
+      [http.client.FOUND, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
+
+    result = requests.get(
+      connection_dict['jupyterlab-url-additional'],
       verify=False, allow_redirects=False)
     self.assertEqual(
       [http.client.FOUND, True, '/login?next=%2Flab'],

@@ -15,13 +15,13 @@
         'enable-http2-by-default',
         'global-disable-http2',
         'mpm-graceful-shutdown-timeout',
-        'public-ipv4',
         're6st-verification-url',
         'backend-connect-timeout',
         'backend-connect-retries',
         'ciphers',
         'request-timeout',
         'authenticate-to-backend',
+        'strict-transport-security',
     ]
 %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
@@ -135,23 +135,30 @@ context =
 {%     if backend_active_check_http_version not in ['HTTP/1.1', 'HTTP/1.0'] %}
 {%       do slave_error_list.append('Wrong backend-active-check-http-version %s' % (backend_active_check_http_version,)) %}
 {%     endif %}
-{%     set backend_active_check_timeout = (slave.get('backend-active-check-timeout') or '2') | int(False) %}
-{%     if backend_active_check_timeout in [False] or backend_active_check_timeout <= 0 %}
+{%     set backend_active_check_timeout = (slave.get('backend-active-check-timeout') or '2') | int(false) %}
+{%     if backend_active_check_timeout is false or backend_active_check_timeout <= 0 %}
 {%       do slave_error_list.append('Wrong backend-active-check-timeout %s' % (slave.get('backend-active-check-timeout'),)) %}
 {%     endif %}
-{%     set backend_active_check_interval = (slave.get('backend-active-check-interval') or '5') | int(False) %}
-{%     if backend_active_check_interval in [False] or backend_active_check_interval <= 0 %}
+{%     set backend_active_check_interval = (slave.get('backend-active-check-interval') or '5') | int(false) %}
+{%     if backend_active_check_interval is false or backend_active_check_interval <= 0 %}
 {%       do slave_error_list.append('Wrong backend-active-check-interval %s' % (slave.get('backend-active-check-interval'),)) %}
 {%     endif %}
-{%     set backend_active_check_rise = (slave.get('backend-active-check-rise') or '1') | int(False) %}
-{%     if backend_active_check_rise in [False] or backend_active_check_rise <= 0 %}
+{%     set backend_active_check_rise = (slave.get('backend-active-check-rise') or '1') | int(false) %}
+{%     if backend_active_check_rise is false or backend_active_check_rise <= 0 %}
 {%       do slave_error_list.append('Wrong backend-active-check-rise %s' % (slave.get('backend-active-check-rise'),)) %}
 {%     endif %}
-{%     set backend_active_check_fall = (slave.get('backend-active-check-fall') or '1') | int(False) %}
-{%     if backend_active_check_fall in [False] or backend_active_check_fall <= 0 %}
+{%     set backend_active_check_fall = (slave.get('backend-active-check-fall') or '1') | int(false) %}
+{%     if backend_active_check_fall is false or backend_active_check_fall <= 0 %}
 {%       do slave_error_list.append('Wrong backend-active-check-fall %s' % (slave.get('backend-active-check-fall'),)) %}
 {%     endif %}
 {%   endif %}
+{#   Check virtualhostroot-http-port and virtualhostroot-https-port #}
+{%   for key in ['virtualhostroot-http-port', 'virtualhostroot-https-port'] %}
+{%     set value = (slave.get(key) or '1') | int(false) %}
+{%     if value is false or value < 0 %}
+{%       do slave_error_list.append('Wrong %s %r' % (key, slave.get(key))) %}
+{%     endif %}
+{%   endfor %}
 {#   Check ciphers #}
 {%   set slave_cipher_list = slave.get('ciphers', '').strip().split() %}
 {%   if slave_cipher_list %}
@@ -161,6 +168,11 @@ context =
 {%       endif %}
 {%     endfor %}
 {%   endif %}
+{#   Check strict-transport-security #}
+{%     set strict_transport_security = (slave.get('strict-transport-security') or '0') | int(false) %}
+{%     if strict_transport_security is false or strict_transport_security < 0 %}
+{%       do slave_error_list.append('Wrong strict-transport-security %s' % (slave.get('strict-transport-security'),)) %}
+{%     endif %}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
 {%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
@@ -264,7 +276,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
+return = slave-instance-information-list monitor-base-url backend-client-csr_id-url csr_id-url csr_id-certificate backend-haproxy-statistic-url
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}

@@ -3,39 +3,19 @@
   things. It is run by IPython hence why it can use functions like get_config().
 '''
 import configparser
-import random
 from notebook.auth import passwd
 import os
 
-def random_password(length = 10):
-  result = ""
-  for i in range(0, length):
-    result = result + chr(random.randint(0, 25) + ord('a'))
-  return result
-
-knowledge_0 = '{{ config_cfg }}'
-
-if not os.path.exists(knowledge_0):
-  print("Your software does <b>not</b> embed 0-knowledge. \
-  This interface is useless in this case</body></html>")
-  exit(0)
-
 c = get_config()
 
-parser = configparser.ConfigParser()
-parser.read(knowledge_0)
+c.NotebookApp.password = passwd("{{ password }}")
 
-if not parser.has_section("jupyter_notebook"):
-  parser.add_section("jupyter_notebook")
+try:
+  os.environ['PATH'] = "{{ gcc_location }}/bin" + os.pathsep + os.environ['PATH']
+except KeyError:
+  os.environ['PATH'] = "{{ gcc_location }}/bin"
 
-if not parser.has_option("jupyter_notebook", "password") or \
-  parser.get("jupyter_notebook", "password") == "":
-  parser.set("jupyter_notebook", "password", random_password())
-
-c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
-
-with open(knowledge_0, 'w') as file:
-  parser.write(file)
-
-os.environ['PATH'] = "{{ gcc_location }}/bin" + os.pathsep + os.environ['PATH']
-os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}" + os.pathsep + os.environ['PYTHONPATH']
+try:
+  os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}" + os.pathsep + os.environ['PYTHONPATH']
+except KeyError:
+  os.environ['PYTHONPATH'] = "{{ cythonplus_repository }}"
