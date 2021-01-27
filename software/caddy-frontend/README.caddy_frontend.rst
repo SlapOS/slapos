@@ -236,6 +236,8 @@ This set of parameters is used to control the way how the backend checks will be
 
 Please be aware that the `health-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `health-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
 
+Thanks to using health-check it's possible to configure failover system. By providing `health-check-failover-url` or `health-check-failover-https-url` some special backend can be used to reply in case if original backend replies with error (codes like `5xx`). As a note one can setup this failover URL like `https://failover.example.com/?p=` so that the path from the incoming request will be passed as parameter. Additionally authentication to failover URL is supported with `health-check-authenticate-to-failover-backend` and SSL Proxy verification with `health-check-failover-ssl-proxy-verify` and `health-check-failover-ssl-proxy-ca-crt`.
+
 Examples
 ========
 

@@ -200,7 +200,7 @@ context =
 {%     endfor %}
 {%     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%   endif %}
-{%   for url_key in ['url', 'https-url'] %}
+{%   for url_key in ['url', 'https-url', 'health-check-failover-url', 'health-check-failover-https-url'] %}
 {%     if url_key in slave %}
 {%       set url = (slave[url_key] or '').strip() %}
 {%       if not validators.url(url) %}
@@ -210,14 +210,16 @@ context =
 {%       endif %}
 {%     endif %}
 {%   endfor %}
-{%   if 'ssl_proxy_ca_crt' in slave %}
-{%     set ssl_proxy_ca_crt = slave.get('ssl_proxy_ca_crt', '') %}
-{%     set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
-{%     do check_popen.communicate(ssl_proxy_ca_crt) %}
-{%     if check_popen.returncode != 0 %}
-{%       do slave_error_list.append('ssl_proxy_ca_crt is invalid') %}
+{%   for k in ['ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt'] %}
+{%     if k in slave %}
+{%       set crt = slave.get(k, '') %}
+{%       set check_popen = popen([software_parameter_dict['openssl'], 'x509', '-noout']) %}
+{%       do check_popen.communicate(crt) %}
+{%       if check_popen.returncode != 0 %}
+{%         do slave_error_list.append('%s is invalid' % (k,)) %}
+{%       endif %}
 {%     endif %}
-{%   endif %}
+{%   endfor %}
 {# BBB: SlapOS Master non-zero knowledge BEGIN #}
 {%   for key in ['ssl_key', 'ssl_crt', 'ssl_ca_crt'] %}
 {%     if key in slave %}

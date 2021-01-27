@@ -21,6 +21,7 @@ Here are listed the most important changes, which might affect upgrades.
  * fix: use kedifa with with for file with multiple CAs
  * feature: support query string (the characters after ? in the url) in url and https-url
  * fix: by having unique acl names fix rare bug of directing traffic to https-url instead of url or otherwise
+ * feature: failover backend
 
 1.0.164 (2020-09-24)
 --------------------

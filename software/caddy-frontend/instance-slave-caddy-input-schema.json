@@ -286,6 +286,44 @@
       "default": "1",
       "type": "integer"
     },
+    "health-check-failover-url": {
+      "description": "URL of the failover backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Failover Backend URL",
+      "type": "string"
+    },
+    "health-check-failover-https-url": {
+      "description": "HTTPS URL of the failover backend if it is different from health-check-failover-url parameter. Note: It requires https-url to be configured, as otherwise the differentiation does not make sense..",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Failover HTTPS Backend URL",
+      "type": "string"
+    },
+    "health-check-authenticate-to-failover-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-verify": {
+      "default": "false",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Verify Backend Certificates",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-ca-crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate Authority file of the failover backend (to be used with health-check-failover-ssl-proxy-verify)",
+      "textarea": true,
+      "title": "SSL Backend Authority's Certificate",
+      "type": "string"
+    },
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
