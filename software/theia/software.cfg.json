@@ -1,0 +1,15 @@
+{
+  "name": "Theia",
+  "description": "Theia",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-ouput-schema.json",
+      "index": 1
+    }
+  }
+}
