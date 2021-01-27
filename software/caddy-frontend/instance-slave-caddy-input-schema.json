@@ -286,6 +286,44 @@
       "default": "1",
       "type": "integer"
     },
+    "health-check-failover-url": {
+      "description": "Url of the failover backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Failover Backend URL",
+      "type": "string"
+    },
+    "health-check-failover-https-url": {
+      "description": "HTTPS Url of the failover backend if it is diferent from failover-url parameter",
+      "pattern": "^(http|https|ftp)://",
+      "title": "HTTPS Backend URL",
+      "type": "string"
+    },
+    "health-check-authenticate-to-failover-backend": {
+      "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Authenticate to backend",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-verify": {
+      "default": "false",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
+      "enum": [
+        "false",
+        "true"
+      ],
+      "title": "Verify Backend Certificates",
+      "type": "string"
+    },
+    "health-check-failover-ssl-proxy-ca-crt": {
+      "default": "",
+      "description": "Content of the SSL Certificate Authority file of the failover backend (to be used with failover-ssl-proxy-verify)",
+      "textarea": true,
+      "title": "SSL Backend Authority's Certificate",
+      "type": "string"
+    },
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
