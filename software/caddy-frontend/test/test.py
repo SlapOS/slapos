@@ -6454,45 +6454,45 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'ssl_key': '${section:option}ssl_keyunsafe\nunsafe',
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
-      'backend-active-check-http-method': {
-        'backend-active-check': True,
-        'backend-active-check-http-method': 'WRONG',
+      'health-check-http-method': {
+        'health-check': True,
+        'health-check-http-method': 'WRONG',
       },
-      'backend-active-check-http-version': {
-        'backend-active-check': True,
-        'backend-active-check-http-version': 'WRONG/1.1',
+      'health-check-http-version': {
+        'health-check': True,
+        'health-check-http-version': 'WRONG/1.1',
       },
-      'backend-active-check-timeout': {
-        'backend-active-check': True,
-        'backend-active-check-timeout': 'WRONG',
+      'health-check-timeout': {
+        'health-check': True,
+        'health-check-timeout': 'WRONG',
       },
-      'backend-active-check-timeout-negative': {
-        'backend-active-check': True,
-        'backend-active-check-timeout': '-2',
+      'health-check-timeout-negative': {
+        'health-check': True,
+        'health-check-timeout': '-2',
       },
-      'backend-active-check-interval': {
-        'backend-active-check': True,
-        'backend-active-check-interval': 'WRONG',
+      'health-check-interval': {
+        'health-check': True,
+        'health-check-interval': 'WRONG',
       },
-      'backend-active-check-interval-negative': {
-        'backend-active-check': True,
-        'backend-active-check-interval': '-2',
+      'health-check-interval-negative': {
+        'health-check': True,
+        'health-check-interval': '-2',
       },
-      'backend-active-check-rise': {
-        'backend-active-check': True,
-        'backend-active-check-rise': 'WRONG',
+      'health-check-rise': {
+        'health-check': True,
+        'health-check-rise': 'WRONG',
       },
-      'backend-active-check-rise-negative': {
-        'backend-active-check': True,
-        'backend-active-check-rise': '-2',
+      'health-check-rise-negative': {
+        'health-check': True,
+        'health-check-rise': '-2',
       },
-      'backend-active-check-fall': {
-        'backend-active-check': True,
-        'backend-active-check-fall': 'WRONG',
+      'health-check-fall': {
+        'health-check': True,
+        'health-check-fall': 'WRONG',
       },
-      'backend-active-check-fall-negative': {
-        'backend-active-check': True,
-        'backend-active-check-fall': '-2',
+      'health-check-fall-negative': {
+        'health-check': True,
+        'health-check-fall': '-2',
       }
     }
 
@@ -6548,26 +6548,26 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         '_EMPTY-BACKEND': [
           "slave https-url '' invalid",
           "slave url '' invalid"],
-        '_backend-active-check-fall': [
-          'Wrong backend-active-check-fall WRONG'],
-        '_backend-active-check-fall-negative': [
-          'Wrong backend-active-check-fall -2'],
-        '_backend-active-check-http-method': [
-          'Wrong backend-active-check-http-method WRONG'],
-        '_backend-active-check-http-version': [
-          'Wrong backend-active-check-http-version WRONG/1.1'],
-        '_backend-active-check-interval': [
-          'Wrong backend-active-check-interval WRONG'],
-        '_backend-active-check-interval-negative': [
-          'Wrong backend-active-check-interval -2'],
-        '_backend-active-check-rise': [
-          'Wrong backend-active-check-rise WRONG'],
-        '_backend-active-check-rise-negative': [
-          'Wrong backend-active-check-rise -2'],
-        '_backend-active-check-timeout': [
-          'Wrong backend-active-check-timeout WRONG'],
-        '_backend-active-check-timeout-negative': [
-          'Wrong backend-active-check-timeout -2'],
+        '_health-check-fall': [
+          'Wrong health-check-fall WRONG'],
+        '_health-check-fall-negative': [
+          'Wrong health-check-fall -2'],
+        '_health-check-http-method': [
+          'Wrong health-check-http-method WRONG'],
+        '_health-check-http-version': [
+          'Wrong health-check-http-version WRONG/1.1'],
+        '_health-check-interval': [
+          'Wrong health-check-interval WRONG'],
+        '_health-check-interval-negative': [
+          'Wrong health-check-interval -2'],
+        '_health-check-rise': [
+          'Wrong health-check-rise WRONG'],
+        '_health-check-rise-negative': [
+          'Wrong health-check-rise -2'],
+        '_health-check-timeout': [
+          'Wrong health-check-timeout WRONG'],
+        '_health-check-timeout-negative': [
+          'Wrong health-check-timeout -2'],
       },
       'warning-slave-dict': {
         '_SSL_CA_CRT_ONLY': [
@@ -7269,7 +7269,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     )
 
 
-class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
+class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -7286,28 +7286,28 @@ class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
   def getSlaveParameterDictDict(cls):
     cls.setUpAssertionDict()
     return {
-      'backend-active-check-disabled': {
+      'health-check-disabled': {
         'url': cls.backend_url,
       },
-      'backend-active-check-default': {
+      'health-check-default': {
         'url': cls.backend_url,
-        'backend-active-check': True,
+        'health-check': True,
       },
-      'backend-active-check-connect': {
+      'health-check-connect': {
         'url': cls.backend_url,
-        'backend-active-check': True,
-        'backend-active-check-http-method': 'CONNECT',
+        'health-check': True,
+        'health-check-http-method': 'CONNECT',
       },
-      'backend-active-check-custom': {
+      'health-check-custom': {
         'url': cls.backend_url,
-        'backend-active-check': True,
-        'backend-active-check-http-method': 'POST',
-        'backend-active-check-http-path': '/POST-path to be encoded',
-        'backend-active-check-http-version': 'HTTP/1.0',
-        'backend-active-check-timeout': '7',
-        'backend-active-check-interval': '15',
-        'backend-active-check-rise': '3',
-        'backend-active-check-fall': '7',
+        'health-check': True,
+        'health-check-http-method': 'POST',
+        'health-check-http-path': '/POST-path to be encoded',
+        'health-check-http-version': 'HTTP/1.0',
+        'health-check-timeout': '7',
+        'health-check-interval': '15',
+        'health-check-rise': '3',
+        'health-check-fall': '7',
       },
     }
 
@@ -7315,35 +7315,35 @@ class TestSlaveBackendActiveCheck(SlaveHttpFrontendTestCase, TestDataMixin):
   def setUpAssertionDict(cls):
     backend = urlparse.urlparse(cls.backend_url).netloc
     cls.assertion_dict = {
-      'backend-active-check-disabled': """\
-backend _backend-active-check-disabled-http
+      'health-check-disabled': """\
+backend _health-check-disabled-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _backend-active-check-disabled-backend %s""" % (backend,),
-      'backend-active-check-connect': """\
-backend _backend-active-check-connect-http
+  server _health-check-disabled-backend %s""" % (backend,),
+      'health-check-connect': """\
+backend _health-check-connect-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _backend-active-check-connect-backend %s   check inter 5s"""
+  server _health-check-connect-backend %s   check inter 5s"""
       """ rise 1 fall 2
   timeout check 2s""" % (backend,),
-      'backend-active-check-custom': """\
-backend _backend-active-check-custom-http
+      'health-check-custom': """\
+backend _health-check-custom-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _backend-active-check-custom-backend %s   check inter 15s"""
+  server _health-check-custom-backend %s   check inter 15s"""
       """ rise 3 fall 7
   option httpchk POST /POST-path%%20to%%20be%%20encoded HTTP/1.0
   timeout check 7s""" % (backend,),
-      'backend-active-check-default': """\
-backend _backend-active-check-default-http
+      'health-check-default': """\
+backend _health-check-default-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _backend-active-check-default-backend %s   check inter 5s"""
+  server _health-check-default-backend %s   check inter 5s"""
       """ rise 1 fall 2
   option httpchk GET / HTTP/1.1
   timeout check 2s""" % (backend, )
@@ -7375,17 +7375,17 @@ backend _backend-active-check-default-http
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-  def test_backend_active_check_disabled(self):
-    self._test('backend-active-check-disabled')
+  def test_health_check_disabled(self):
+    self._test('health-check-disabled')
 
-  def test_backend_active_check_default(self):
-    self._test('backend-active-check-default')
+  def test_health_check_default(self):
+    self._test('health-check-default')
 
-  def test_backend_active_check_connect(self):
-    self._test('backend-active-check-connect')
+  def test_health_check_connect(self):
+    self._test('health-check-connect')
 
-  def test_backend_active_check_custom(self):
-    self._test('backend-active-check-custom')
+  def test_health_check_custom(self):
+    self._test('health-check-custom')
 
 
 if __name__ == '__main__':
