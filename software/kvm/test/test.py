@@ -993,3 +993,9 @@ class TestNatRulesKvmCluster(InstanceTestCase):
     self.assertIn(
       'hostfwd=tcp:%s:10300-:300' % (self._ipv4_address,),
       host_fwd_entry)
+
+
+@skipUnlessKvm
+class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
+  __partition_reference__ = 'nrkcc'
+  nat_rules = ["100", "200 300"]
