@@ -136,32 +136,32 @@ context =
 {%-   do slave_instance.__setitem__('strict-transport-security', int(slave_instance['strict-transport-security'])) %}
 {%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Setup active check #}
-{%-   do slave_instance.__setitem__('backend-active-check',  ('' ~ slave_instance.get('backend-active-check', '')).lower() in TRUE_VALUES) %}
-{%-   if slave_instance['backend-active-check']  %}
-{%-     if 'backend-active-check-http-method' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-http-method', 'GET') %}
+{%-   do slave_instance.__setitem__('health-check',  ('' ~ slave_instance.get('health-check', '')).lower() in TRUE_VALUES) %}
+{%-   if slave_instance['health-check']  %}
+{%-     if 'health-check-http-method' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-http-method', 'GET') %}
 {%-     endif %}
-{%-     if 'backend-active-check-http-version' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-http-version', 'HTTP/1.1') %}
+{%-     if 'health-check-http-version' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-http-version', 'HTTP/1.1') %}
 {%-     endif %}
-{%-     if 'backend-active-check-interval' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-interval', '5') %}
+{%-     if 'health-check-interval' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-interval', '5') %}
 {%-     endif %}
-{%-     if 'backend-active-check-rise' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-rise', '1') %}
+{%-     if 'health-check-rise' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-rise', '1') %}
 {%-     endif %}
-{%-     if 'backend-active-check-fall' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-fall', '2') %}
+{%-     if 'health-check-fall' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-fall', '2') %}
 {%-     endif %}
-{%-     if 'backend-active-check-timeout' not in slave_instance %}
-{%-       do slave_instance.__setitem__('backend-active-check-timeout', '2') %}
+{%-     if 'health-check-timeout' not in slave_instance %}
+{%-       do slave_instance.__setitem__('health-check-timeout', '2') %}
 {%-     endif %}
-{%-     do slave_instance.__setitem__('backend-active-check-http-path', slave_instance.get('backend-active-check-http-path') or '/') %}
+{%-     do slave_instance.__setitem__('health-check-http-path', slave_instance.get('health-check-http-path') or '/') %}
 {%-   else %}
-{%-     do slave_instance.__setitem__('backend-active-check-http-method', '') %}
-{%-     do slave_instance.__setitem__('backend-active-check-http-version', '') %}
-{%-     do slave_instance.__setitem__('backend-active-check-http-path', '') %}
-{%-   endif %} {# if backend_active_check #}
+{%-     do slave_instance.__setitem__('health-check-http-method', '') %}
+{%-     do slave_instance.__setitem__('health-check-http-version', '') %}
+{%-     do slave_instance.__setitem__('health-check-http-path', '') %}
+{%-   endif %} {# if slave_instance['health-check'] #}
 {#-   Set Up log files #}
 {%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([caddy_log_directory, '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([caddy_log_directory, '%s_error_log' % slave_reference])) %}
