@@ -924,3 +924,72 @@ class TestCpuMemMaxDynamic(InstanceTestCase):
     self.assertIn('smp_max_count = 3', kvm_raw)
     self.assertIn('ram_size = 2048', kvm_raw)
     self.assertIn("ram_max_size = '2560'", kvm_raw)
+
+
+@skipUnlessKvm
+class TestNatRules(InstanceTestCase):
+  __partition_reference__ = 'nr'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'nat-rules': '100 200',
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+
+    self.assertIn('nat-rule-port-tcp-100', connection_parameter_dict)
+    self.assertIn('nat-rule-port-tcp-200', connection_parameter_dict)
+
+    self.assertEqual(
+      '%s : 10100' % (self._ipv6_address,),
+      connection_parameter_dict['nat-rule-port-tcp-100']
+    )
+    self.assertEqual(
+      '%s : 10200' % (self._ipv6_address,),
+      connection_parameter_dict['nat-rule-port-tcp-200']
+    )
+
+
+@skipUnlessKvm
+class TestNatRulesKvmCluster(InstanceTestCase):
+  __partition_reference__ = 'nrkc'
+
+  nat_rules = ["100", "200", "300"]
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "nat-rules": cls.nat_rules,
+            "disable-ansible-promise": True,
+        }
+      }
+    })}
+
+  def getRunningHostFwd(self):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      for entry in kvm_process.cmdline():
+        if 'hostfwd' in entry:
+          return entry
+
+  def test(self):
+    host_fwd_entry = self.getRunningHostFwd()
+    self.assertIn(
+      'hostfwd=tcp:%s:10100-:100' % (self._ipv4_address,),
+      host_fwd_entry)
+    self.assertIn(
+      'hostfwd=tcp:%s:10200-:200' % (self._ipv4_address,),
+      host_fwd_entry)
+    self.assertIn(
+      'hostfwd=tcp:%s:10300-:300' % (self._ipv4_address,),
+      host_fwd_entry)
