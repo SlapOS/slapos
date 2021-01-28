@@ -239,14 +239,14 @@ Necessary to activate cache.
 
 ``enable_cache`` is an optional parameter.
 
-backend-active-check-*
+health-check-*
 ~~~~~~~~~~~~~~~~~~~~~~
 
 This set of parameters is used to control the way how the backend checks will be done. Such active checks can be really useful for `stale-if-error` caching technique and especially in case if backend is very slow to reply or to connect to.
 
-`backend-active-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
+`health-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
 
-Please be aware that the `backend-active-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `backend-active-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
+Please be aware that the `health-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `health-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
 
 Examples
 ========
