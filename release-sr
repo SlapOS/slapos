@@ -1,8 +1,18 @@
 #!/bin/bash
 
-git fetch
+set -e
 
-git checkout 1.0
+git fetch --all
+
+# Go to master
+git checkout master
+
+# Clean up 1.0
+git branch -D 1.0 || echo
+
+# Checkout 1.0
+git checkout origin/1.0 -b 1.0
+
 git reset origin/1.0 --hard
 
 # for now this script is hardcoded to release on 1.0.x versions intentionally
