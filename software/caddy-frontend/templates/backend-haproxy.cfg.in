@@ -32,7 +32,7 @@ defaults
 {%-       endif %}
 {%-     endfor %}
 {%-     if matched['count'] > 0 %}
-{%-       if slave_instance['health-check-failover-url'] %}
+{%-       if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['health-check-failover-hostname'] %}
   acl is_failover nbsrv({{ slave_instance['slave_reference'] }}-{{ scheme }}) eq 0
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }} ! is_failover
   use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover if is_{{ slave_instance['slave_reference'] }} is_failover
