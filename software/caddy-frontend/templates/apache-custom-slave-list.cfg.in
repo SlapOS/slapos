@@ -60,7 +60,12 @@ context =
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
 {%-     set parsed = urlparse_module.urlparse(slave_instance.get(key, '').strip()) %}
-{%-     set info_dict = {'health-check-failover-scheme': parsed.scheme, 'health-check-failover-hostname': parsed.hostname, 'health-check-failover-port': parsed.port or DEFAULT_PORT[parsed.scheme], 'health-check-failover-path': parsed.path, 'health-check-failover-fragment': parsed.fragment} %}
+{%-     set info_dict = slave_instance[prefix] %}
+{%-     do info_dict.__setitem__('health-check-failover-scheme', parsed.scheme) %}
+{%-     do info_dict.__setitem__('health-check-failover-hostname', parsed.hostname) %}
+{%-     do info_dict.__setitem__('health-check-failover-port', parsed.port or DEFAULT_PORT[parsed.scheme]) %}
+{%-     do info_dict.__setitem__('health-check-failover-path', parsed.path) %}
+{%-     do info_dict.__setitem__('health-check-failover-fragment', parsed.fragment) %}
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
