@@ -419,13 +419,21 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   try:
     add_custom_dns(domain, port, TEST_IP)
     socket.getaddrinfo = new_getaddrinfo
-    return session.get(
-      'https://%s:%s/%s' % (domain, port, path),
-      verify=False,
-      allow_redirects=False,
-      headers=headers,
-      cookies=cookies
+    # Use a prepared request, to disable path normalization.
+    # We need this because some test checks requests with paths like
+    # /test-path/deep/.././deeper but we don't want the client to send
+    # /test-path/deeper
+    # See also https://github.com/psf/requests/issues/5289
+    url = 'https://%s:%s/%s' % (domain, port, path)
+    req = requests.Request(
+        method='GET',
+        url=url,
+        headers=headers,
+        cookies=cookies,
     )
+    prepped = req.prepare()
+    prepped.url = url
+    return session.send(prepped, verify=False, allow_redirects=False)
   finally:
     socket.getaddrinfo = socket_getaddrinfo
 
@@ -447,11 +455,13 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     new_source = source.SourceAddressAdapter(source_ip)
     session.mount('http://', new_source)
     session.mount('https://', new_source)
-  return session.get(
-    'http://%s:%s/%s' % (TEST_IP, port, path),
-    headers=headers,
-    allow_redirects=False,
-  )
+
+  # Use a prepared request, to disable path normalization.
+  url = 'http://%s:%s/%s' % (TEST_IP, port, path)
+  req = requests.Request(method='GET', url=url, headers=headers)
+  prepped = req.prepare()
+  prepped.url = url
+  return session.send(prepped, allow_redirects=False)
 
 
 class TestHandler(BaseHTTPRequestHandler):
