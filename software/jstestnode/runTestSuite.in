@@ -97,8 +97,8 @@ def main():
             executable_path='${geckodriver:location}')
       else:
         assert target == 'selenium-server', "Unsupported target {}".format(test_runner['target'])
-        # use a remote connection which verifies TLS certificate
-        # workaround for https://github.com/SeleniumHQ/selenium/issues/6534
+        # use a remote connection which optionally verifies TLS certificate
+        # and optionally against a user provided CA.
         executor = RemoteConnection(test_runner['server-url'], keep_alive=True)
         cert_reqs = 'CERT_REQUIRED'
         ca_certs = certifi.where()
