@@ -43,12 +43,7 @@ setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class TestJupyter(InstanceTestCase):
 
   def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    self.assertTrue('_' in parameter_dict)
-    try:
-      connection_dict = json.loads(parameter_dict['_'])
-    except Exception as e:
-      self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
+    connection_dict = self.computer_partition.getConnectionParameterDict()
 
     self.assertTrue('password' in connection_dict)
     password = connection_dict['password']
@@ -92,15 +87,11 @@ class TestJupyterAdditional(InstanceTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'frontend-additional-instance-guid': 'SOMETHING'    }
+      'frontend-additional-instance-guid': 'SOMETHING'
+    }
 
   def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    self.assertTrue('_' in parameter_dict)
-    try:
-      connection_dict = json.loads(parameter_dict['_'])
-    except Exception as e:
-      self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
+    connection_dict = self.computer_partition.getConnectionParameterDict()
 
     result = requests.get(
       connection_dict['url'], verify=False, allow_redirects=False)
@@ -151,12 +142,7 @@ class TestJupyterAdditional(InstanceTestCase):
 
 class TestJupyterPassword(InstanceTestCase):
   def test(self):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    self.assertTrue('_' in parameter_dict)
-    try:
-      connection_dict = json.loads(parameter_dict['_'])
-    except Exception as e:
-      self.fail("Can't parse json in %s, error %s" % (parameter_dict['_'], e))
+    connection_dict = self.computer_partition.getConnectionParameterDict()
 
     url = connection_dict['url']
     with requests.Session() as s:
