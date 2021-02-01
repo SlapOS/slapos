@@ -1,5 +1,5 @@
 #!/bin/sh
-# BEWARE: This file is operated by slapgrid
+# BEWARE: This file is operated by slapos
 # BEWARE: It will be overwritten automatically
 exec %(nosqltester_manager_binary)s %(plugin_name)s -a %(address)s \
   -r %(report_path)s -s %(max_server)s -t %(max_tester)s \
