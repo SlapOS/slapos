@@ -750,7 +750,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     ).json()
     self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
-    with self.assertRaises(OpenSSL.SSL.Error):
+    with self.assertRaisesRegexp(Exception, "certificate required"):
       requests.get(
         balancer_url,
         headers={'X-Forwarded-For': '1.2.3.4'},
