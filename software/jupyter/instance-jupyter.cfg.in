@@ -175,7 +175,7 @@ instance-configuration =
   raw jupyter-password ${jupyter-password:passwd}
 
 [publish-connection-parameter]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 jupyter-classic-url = ${request-slave-frontend:connection-secure_access}/tree
 url = ${:jupyter-classic-url}
 jupyterlab-url = ${request-slave-frontend:connection-secure_access}/lab
