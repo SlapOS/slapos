@@ -154,9 +154,6 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
   server {{ slave_instance['slave_reference'] }}-backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
-{%-         for active_check_option in active_check_option_list %}
-  {{ active_check_option }}
-{%-         endfor %}
 {%-         if path %}
   http-request set-path {{ path }}%[path]
 {%-         endif %}
