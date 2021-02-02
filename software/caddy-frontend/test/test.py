@@ -1268,7 +1268,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
         # correctly handled
-        'url': ' ' + cls.backend_url + ' ',
+        'url': ' ' + cls.backend_url + '/?a=b&c=' + ' ',
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
@@ -1673,8 +1673,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       },
       'warning-slave-dict': {
         '_Url': [
-          "slave url ' %(backend)s ' has been converted to '%(backend)s'" % {
-            'backend': self.backend_url}]}
+          "slave url ' %(backend)s/?a=b&c= ' has been converted to "
+          "'%(backend)s/?a=b&c='" % {'backend': self.backend_url}]}
     }
 
     self.assertEqual(
@@ -1823,7 +1823,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'secure_access': 'https://%s.example.com' % (hostname, ),
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
         'warning-list': [
-          "slave url ' %s ' has been converted to '%s'" % (
+          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
       },
       parameter_dict
