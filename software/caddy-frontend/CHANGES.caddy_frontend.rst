@@ -19,6 +19,7 @@ Here are listed the most important changes, which might affect upgrades.
  * feature: dropped not used parameters
  * feature: Strict-Transport-Security aka HSTS
  * fix: use kedifa with with for file with multiple CAs
+ * feature: support query string (the characters after ? in the url) in url and https-url
 
 1.0.164 (2020-09-24)
 --------------------
