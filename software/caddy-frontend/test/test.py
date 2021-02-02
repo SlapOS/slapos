@@ -1224,6 +1224,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
+      'health-check-failover-url': {
+        'url': cls.backend_url + '/normal',
+        'health-check-failover-url': cls.backend_url + '/failover-url',
+        'health-check-failover-https-url': cls.backend_url + \
+        '/failover-https-url',
+      },
       'auth-to-backend': {
         # in here use reserved port for the backend, which is going to be
         # started later
@@ -1652,9 +1658,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '56',
+      'accepted-slave-amount': '57',
       'rejected-slave-amount': '0',
-      'slave-amount': '56',
+      'slave-amount': '57',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -4625,6 +4631,55 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
       'Coffee=present', result.json()['Incoming Headers']['cookie'])
+
+  def test_health_check_failover_url(self):
+#      'health-check-failover-url': {
+#        'url': cls.backend_url + '/normal',
+#        'health-check-failover-url': cls.backend_url + '/failover-url',
+#        'health-check-failover-https-url': cls.backend_url + '/failover-https-url',
+#      },
+    parameter_dict = self.assertSlaveBase('health-check-failover-url')
+    import ipdb ; ipdb.set_trace()
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      der2pem(result.peercert))
+
+    self.assertEqual(
+      'max-age=200; includeSubDomains; preload',
+      result.headers['Strict-Transport-Security'])
+
+    self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
+
+    result_http = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      httplib.FOUND,
+      result_http.status_code
+    )
+
+    self.assertNotIn('Strict-Transport-Security', result_http.headers)
+
+    self.assertEqual(
+      'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    # check that timeouts are correctly set in the haproxy configuration
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      content = fh.read()
+      self.assertTrue("""backend _url_https-url-http
+  timeout server 15s
+  timeout connect 10s
+  retries 5""" in content)
 
   def test_https_url(self):
     parameter_dict = self.assertSlaveBase('url_https-url')
