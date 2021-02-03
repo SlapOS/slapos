@@ -458,6 +458,12 @@ class TestHandler(BaseHTTPRequestHandler):
   identification = None
   configuration = {}
 
+  def log_message(self, *args):
+    if os.environ.get('SLAPOS_TEST_DEBUG'):
+      return BaseHTTPRequestHandler.log_message(self, *args)
+    else:
+      return
+
   def do_DELETE(self):
     config = self.configuration.pop(self.path, None)
     if config is None:
