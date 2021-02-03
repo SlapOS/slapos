@@ -626,6 +626,48 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
           cls.logger.warning(
             'Process %s still alive' % (process, ))
 
+  def startAuthenticatedServerProcess(self):
+    master_parameter_dict = self.parseConnectionParameterDict()
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
+    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
+    assert ca_certificate.status_code == httplib.OK
+    ca_certificate_file = os.path.join(
+      self.working_directory, 'ca-backend-client.crt.pem')
+    with open(ca_certificate_file, 'w') as fh:
+      fh.write(ca_certificate.text)
+
+    class OwnTestHandler(TestHandler):
+      identification = 'Auth Backend'
+
+    server_https_auth = HTTPServer(
+      (self._ipv4_address, self._server_https_auth_port),
+      OwnTestHandler)
+
+    server_https_auth.socket = ssl.wrap_socket(
+      server_https_auth.socket,
+      certfile=self.test_server_certificate_file.name,
+      cert_reqs=ssl.CERT_REQUIRED,
+      ca_certs=ca_certificate_file,
+      server_side=True)
+
+    self.backend_https_auth_url = 'https://%s:%s/' \
+        % server_https_auth.server_address
+
+    self.server_https_auth_process = multiprocessing.Process(
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
+    self.server_https_auth_process.start()
+    self.logger.debug('Started process %s' % (self.server_https_auth_process,))
+
+  def stopAuthenticatedServerProcess(self):
+    self.logger.debug('Stopping process %s' % (
+      self.server_https_auth_process,))
+    self.server_https_auth_process.join(10)
+    self.server_https_auth_process.terminate()
+    time.sleep(0.1)
+    if self.server_https_auth_process.is_alive():
+      self.logger.warning(
+        'Process %s still alive' % (self.server_https_auth_process, ))
+
   @classmethod
   def setUpMaster(cls):
     # run partition until AIKC finishes
@@ -1912,50 +1954,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
-    # 1. fetch certificate from backend-client-caucase-url
-    master_parameter_dict = self.parseConnectionParameterDict()
-    caucase_url = master_parameter_dict['backend-client-caucase-url']
-    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    ca_certificate_file = os.path.join(
-      self.working_directory, 'ca-backend-client.crt.pem')
-    with open(ca_certificate_file, 'w') as fh:
-      fh.write(ca_certificate.text)
 
-    # 2. start backend with this certificate
-    class OwnTestHandler(TestHandler):
-      identification = 'Auth Backend'
-
-    server_https_auth = HTTPServer(
-      (self._ipv4_address, self._server_https_auth_port),
-      OwnTestHandler)
-
-    server_https_auth.socket = ssl.wrap_socket(
-      server_https_auth.socket,
-      certfile=self.test_server_certificate_file.name,
-      cert_reqs=ssl.CERT_REQUIRED,
-      ca_certs=ca_certificate_file,
-      server_side=True)
-
-    backend_https_auth_url = 'https://%s:%s/' \
-        % server_https_auth.server_address
-
-    server_https_auth_process = multiprocessing.Process(
-      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
-    server_https_auth_process.start()
-    self.logger.debug('Started process %s' % (server_https_auth_process,))
+    self.startAuthenticatedServerProcess()
     try:
-      # 3. assert that you can't fetch nothing without key
+      # assert that you can't fetch nothing without key
       try:
-        requests.get(backend_https_auth_url, verify=False)
+        requests.get(self.backend_https_auth_url, verify=False)
       except Exception:
         pass
       else:
         self.fail(
           'Access to %r shall be not possible without certificate' % (
-            backend_https_auth_url,))
-      # 4. check that you can access this backend via frontend
-      #    (so it means that auth to backend worked)
+            self.backend_https_auth_url,))
+      # check that you can access this backend via frontend
+      # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
         'test-path/deep/.././deeper',
@@ -1991,60 +2003,23 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         result.headers['X-Backend-Identification']
       )
     finally:
-      self.logger.debug('Stopping process %s' % (server_https_auth_process,))
-      server_https_auth_process.join(10)
-      server_https_auth_process.terminate()
-      time.sleep(0.1)
-      if server_https_auth_process.is_alive():
-        self.logger.warning(
-          'Process %s still alive' % (server_https_auth_process, ))
+      self.stopAuthenticatedServerProcess()
 
   def test_auth_to_backend_not_configured(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend-not-configured')
-    # 1. fetch certificate from backend-client-caucase-url
-    master_parameter_dict = self.parseConnectionParameterDict()
-    caucase_url = master_parameter_dict['backend-client-caucase-url']
-    ca_certificate = requests.get(caucase_url + '/cas/crt/ca.crt.pem')
-    assert ca_certificate.status_code == httplib.OK
-    ca_certificate_file = os.path.join(
-      self.working_directory, 'ca-backend-client.crt.pem')
-    with open(ca_certificate_file, 'w') as fh:
-      fh.write(ca_certificate.text)
-
-    # 2. start backend with this certificate
-    class OwnTestHandler(TestHandler):
-      identification = 'Auth Backend'
-
-    server_https_auth = HTTPServer(
-      (self._ipv4_address, self._server_https_auth_port),
-      OwnTestHandler)
-
-    server_https_auth.socket = ssl.wrap_socket(
-      server_https_auth.socket,
-      certfile=self.test_server_certificate_file.name,
-      cert_reqs=ssl.CERT_REQUIRED,
-      ca_certs=ca_certificate_file,
-      server_side=True)
-
-    backend_https_auth_url = 'https://%s:%s/' \
-        % server_https_auth.server_address
-
-    server_https_auth_process = multiprocessing.Process(
-      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
-    server_https_auth_process.start()
-    self.logger.debug('Started process %s' % (server_https_auth_process,))
+    self.startAuthenticatedServerProcess()
     try:
-      # 3. assert that you can't fetch nothing without key
+      # assert that you can't fetch nothing without key
       try:
-        requests.get(backend_https_auth_url, verify=False)
+        requests.get(self.backend_https_auth_url, verify=False)
       except Exception:
         pass
       else:
         self.fail(
           'Access to %r shall be not possible without certificate' % (
-            backend_https_auth_url,))
-      # 4. check that you can access this backend via frontend
-      #    (so it means that auth to backend worked)
+            self.backend_https_auth_url,))
+      # check that you can access this backend via frontend
+      # (so it means that auth to backend worked)
       result = fakeHTTPSResult(
         parameter_dict['domain'],
         'test-path/deep/.././deeper',
@@ -2063,13 +2038,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         httplib.BAD_GATEWAY
       )
     finally:
-      self.logger.debug('Stopping process %s' % (server_https_auth_process,))
-      server_https_auth_process.join(10)
-      server_https_auth_process.terminate()
-      time.sleep(0.1)
-      if server_https_auth_process.is_alive():
-        self.logger.warning(
-          'Process %s still alive' % (server_https_auth_process, ))
+      self.stopAuthenticatedServerProcess()
 
   def test_auth_to_backend_backend_ignore(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend-backend-ignore')
