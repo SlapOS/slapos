@@ -487,7 +487,7 @@ class TestHandler(BaseHTTPRequestHandler):
 
   def do_PUT(self):
     config = {
-      'status_code': self.headers.dict.get('status-code', '200')
+      'status_code': self.headers.dict.get('x-reply-status-code', '200')
     }
     prefix = 'x-reply-header-'
     length = len(prefix)
@@ -3811,7 +3811,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
       result = requests.put(backend_url + path, headers={
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
-          'Status-Code': status_code,
+          'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body),
         })
       self.assertEqual(result.status_code, httplib.CREATED)
