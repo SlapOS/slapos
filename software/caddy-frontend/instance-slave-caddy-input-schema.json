@@ -8,14 +8,14 @@
       "type": "string"
     },
     "url": {
-      "description": "Url of the backend",
+      "description": "URL of the backend",
       "pattern": "^(http|https|ftp)://",
       "title": "Backend URL",
       "type": "string"
     },
     "type": {
       "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
+      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
       "enum": [
         "",
         "zope",
@@ -96,7 +96,7 @@
       "type": "string"
     },
     "https-url": {
-      "description": "HTTPS Url of the backend if it is diferent from url parameter",
+      "description": "HTTPS URL of the backend if it is different from url parameter",
       "pattern": "^(http|https|ftp)://",
       "title": "HTTPS Backend URL",
       "type": "string"
