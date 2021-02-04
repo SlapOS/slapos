@@ -25,14 +25,14 @@ defaults
 {%-       if wildcard and host.startswith('*.') %}
 {%-         do matched.__setitem__('count', matched['count'] + 1) %}
 # match wildcard {{ host }}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
 {%-       elif not wildcard and not host.startswith('*.') %}
 {%-         do matched.__setitem__('count', matched['count'] + 1) %}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i ^{{ host }}($|:.*)
 {%-       endif %}
 {%-     endfor %}
 {%-     if matched['count'] > 0 %}
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }}
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}
