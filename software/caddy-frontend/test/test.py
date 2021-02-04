@@ -1882,7 +1882,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
                  r'http-backend _Url-http\/_Url-backend ' \
                  r'\d+/\d+\/\d+\/\d+\/\d+ ' \
                  r'200 \d+ - - ---- ' \
-                 r'\d\/\d\/\d\/\d\/\d \d\/\d ' \
+                 r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ ' \
                  r'"GET /test-path/deeper HTTP/1.1"'
 
     self.assertRegexpMatches(
