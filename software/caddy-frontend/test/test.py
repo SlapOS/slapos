@@ -37,6 +37,7 @@ from unittest import skip
 import ssl
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
+from SocketServer import ThreadingMixIn
 import time
 import tempfile
 import ipaddress
@@ -196,6 +197,10 @@ def createCSR(common_name, ip=None):
   csr = csr.sign(key, hashes.SHA256(), default_backend())
   csr_pem = csr.public_bytes(serialization.Encoding.PEM)
   return key, key_pem, csr, csr_pem
+
+
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+  pass
 
 
 class CertificateAuthority(object):
@@ -589,11 +594,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def startServerProcess(cls):
-    server = HTTPServer(
+    server = ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_http_port),
       TestHandler)
 
-    server_https = HTTPServer(
+    server_https = ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_https_port),
       TestHandler)
 
@@ -645,7 +650,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     class OwnTestHandler(TestHandler):
       identification = 'Auth Backend'
 
-    server_https_auth = HTTPServer(
+    server_https_auth = ThreadedHTTPServer(
       (self._ipv4_address, self._server_https_auth_port),
       OwnTestHandler)
 
@@ -7394,14 +7399,14 @@ backend _health-check-default-http
 
 
 if __name__ == '__main__':
-  class HTTP6Server(HTTPServer):
+  class HTTP6Server(ThreadedHTTPServer):
     address_family = socket.AF_INET6
   ip, port = sys.argv[1], int(sys.argv[2])
   if ':' in ip:
     klass = HTTP6Server
     url_template = 'http://[%s]:%s/'
   else:
-    klass = HTTPServer
+    klass = ThreadedHTTPServer
     url_template = 'http://%s:%s/'
 
   server = klass((ip, port), TestHandler)
