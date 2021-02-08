@@ -1,0 +1,83 @@
+{
+  "description": "Rapid.Space CDN",
+  "name": "Rapid.CDN",
+  "serialisation": "xml",
+  "software-type": {
+    "rapid-cdn-simple-frontend": {
+      "description": "Rapid.CDN simple frontend with Rapid.CDN.",
+      "index": 2,
+      "shared": true,
+      "request": "schema-rapid-cdn-simple-frontend.input.json",
+      "response": "schema-rapid-cdn-simple-frontend.output.json",
+      "title": "Rapid.CDN Simple Frontend",
+      "shared": true,
+      "software-type": "rapid-cdn-simple-frontend"
+    },
+    "rapid-cdn-advanced-frontend": {
+      "description": "Advanced Frontend with all possible options for advanced use.",
+      "index": 100,
+      "request": "schema-rapid-cdn-advanced-frontend.input.json",
+      "response": "schema-rapid-cdn-advanced-frontend.output.json",
+      "shared": true,
+      "software-type": "rapid-cdn-advanced-frontend",
+      "title": "Rapid.CDN Advanced Frontend"
+    },
+    "cluster": {
+      "description": "Cluster deployment which can hold many slaves.",
+      "index": 1000,
+      "request": "schema-rapid-cdn-cluster.input.json",
+      "response": "schema-rapid-cdn-cluster.output.json",
+      "software-type": "rapid-cdn-cluster",
+      "title": "Rapid.CDN Cluster"
+    },
+    "simple-frontend": {
+      "index": 10000,
+      "request": "schema-rapid-cdn-simple-frontend.input.json",
+      "response": "schema-rapid-cdn-simple-frontend.output.json",
+      "software-type": "rapid-cdn-simple-frontend",
+      "description": "[INTERNAL] [TECHNICAL] Special node to catch simple frontends"
+    },
+    "advanced-frontend": {
+      "index": 10001,
+      "request": "schema-rapid-cdn-advanced-frontend.input.json",
+      "response": "schema-rapid-cdn-advanced-frontend.output.json",
+      "software-type": "rapid-cdn-simple-frontend",
+      "description": "[INTERNAL] [TECHNICAL] Special node to catch advanced frontends"
+    },
+    "node": {
+      "index": 10002,
+      "request": "schema-rapid-cdn-node.input.json",
+      "response": "schema-rapid-cdn-node.output.json",
+      "software-type": "rapid-cdn-node",
+      "description": "[INTERNAL] [TECHNICAL] Access exposed node"
+    },
+    "kedifa": {
+      "index": 10003,
+      "request": "schema-rapid-cdn-kedifa.input.json",
+      "response": "schema-rapid-cdn-kedifa.output.json",
+      "software-type": "rapid-cdn-kedifa",
+      "description": "[INTERNAL] [TECHNICAL] Kedifa server"
+    },
+    "human": {
+      "index": 10004,
+      "request": "schema-rapid-cdn-human.input.json",
+      "response": "schema-rapid-cdn-human.output.json",
+      "software-type": "rapid-cdn-human",
+      "description": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing)"
+    },
+    "log-aggregator": {
+      "index": 10005,
+      "request": "schema-rapid-cdn-log-aggregator.input.json",
+      "response": "schema-rapid-cdn-log-aggregator.output.json",
+      "software-type": "rapid-cdn-log-aggregator",
+      "description": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs"
+    },
+    "custom-personal": {
+      "index": 10100,
+      "request": "schema-rapid-cdn-custom-personl.input.json",
+      "response": "schema-rapid-cdn-custom-personal.output.json",
+      "software-type": "custom-personal",
+      "description": "[INTERNAL] [TECHNICAL] Special node to catch backward compatibility frontends"
+    }
+  }
+}
