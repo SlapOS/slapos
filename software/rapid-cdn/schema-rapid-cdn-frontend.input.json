@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "frontend-status": {
+      "title": "Status of frontends",
+      "description": "Contains information about each frontend handled by the node.",
+      "type": "object"
+    }
+  },
+  "title": "Input Parameters",
+  "type": "object"
+}
