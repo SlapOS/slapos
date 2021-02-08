@@ -1,0 +1,34 @@
+{
+  "description": "Rapid.Space CDN",
+  "name": "Rapid.CDN",
+  "serialisation": "xml",
+  "software-type": {
+    "simple-frontend": {
+      "description": "Simple Frontend with the least possible options for basic use.",
+      "index": 1,
+      "shared": true,
+      "request": "schema-rapid-cdn-simple-frontend-input.json",
+      "response": "schema-rapid-cdn-simple-frontend-output.json",
+      "title": "Simple Frontend",
+      "shared": true,
+      "software-type": "frontend"
+    },
+    "advanced-frontend": {
+      "description": "Advanced Frontend with all possible options for advanced use.",
+      "index": 2,
+      "request": "schema-rapid-cdn-advanced-frontend-input.json",
+      "response": "schema-rapid-cdn-advanced-frontend-output.json",
+      "shared": true,
+      "software-type": "frontend",
+      "title": "Advanced Frontend"
+    },
+    "cluster": {
+      "description": "Cluster deployment which can hold many slaves.",
+      "index": 3,
+      "request": "schema-rapid-cdn-cluster-input.json",
+      "response": "schema-rapid-cdn-cluster-output.json",
+      "software-type": "cluster",
+      "title": "Cluster"
+    }
+  }
+}
