@@ -1,0 +1,44 @@
+{
+  "description": "Rapid.Space CDN",
+  "name": "Rapid.CDN",
+  "serialisation": "xml",
+  "software-type": {
+    "rapid-cdn-simple-frontend-provided-domain": {
+      "description": "Rapid.CDN frontend with Rapid.CDN provided domain. Requires no additionall configuration to function.",
+      "index": 1,
+      "shared": true,
+      "request": "schema-rapid-cdn-simple-frontend-provided-domain.input.json",
+      "response": "schema-rapid-cdn-simple-frontend-provided-domain.output.json",
+      "title": "Rapid.CDN Simple Frontend with Rapid.CDN Provided Domain",
+      "shared": true,
+      "software-type": "rapid-cdn-simple-frontend-provided-domain"
+    },
+    "rapid-cdn-simple-frontend-own-domain": {
+      "description": "Rapid.CDN frontend with Rapid.CDN own domain. Requires domain validation before use.",
+      "index": 2,
+      "shared": true,
+      "request": "schema-rapid-cdn-simple-frontend-provided-domain.input.json",
+      "response": "schema-rapid-cdn-simple-frontend-provided-domain.output.json",
+      "title": "Rapid.CDN Simple Frontend with own Domain",
+      "shared": true,
+      "software-type": "rapid-cdn-simple-frontend-own-domain"
+    },
+    "rapid-cdn-advanced-frontend": {
+      "description": "Advanced Frontend with all possible options for advanced use.",
+      "index": 100,
+      "request": "schema-rapid-cdn-advanced-frontend-input.json",
+      "response": "schema-rapid-cdn-advanced-frontend-output.json",
+      "shared": true,
+      "software-type": "rapid-cdn-advanced-frontend",
+      "title": "Rapid.CDN Advanced Frontend"
+    },
+    "cluster": {
+      "description": "Cluster deployment which can hold many slaves.",
+      "index": 1000,
+      "request": "schema-rapid-cdn-cluster-input.json",
+      "response": "schema-rapid-cdn-cluster-output.json",
+      "software-type": "rapid-cdn-cluster",
+      "title": "Rapid.CDN Cluster"
+    }
+  }
+}

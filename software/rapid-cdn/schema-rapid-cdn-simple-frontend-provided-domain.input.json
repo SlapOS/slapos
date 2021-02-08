@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "url": {
+      "description": "URL of the backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Backend URL",
+      "type": "string"
+    }
+  },
+  "required": ["url"],
+  "title": "Input Parameters",
+  "type": "object"
+}
