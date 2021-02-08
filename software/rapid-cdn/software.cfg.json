@@ -1,0 +1,58 @@
+{
+  "description": "Rapid.Space CDN",
+  "name": "Rapid.CDN",
+  "serialisation": "xml",
+  "software-type": {
+    "rapid-cdn-frontend": {
+      "title": "Rapid.CDN Frontend",
+      "serialisation": "json-in-xml",
+      "index": 1,
+      "shared": true,
+      "request": "schema-rapid-cdn-frontend-shared.input.json",
+      "response": "schema-rapid-cdn-frontend-shared.output.json",
+      "shared": true,
+      "software-type": "rapid-cdn-frontend"
+    },
+    "rapid-cdn-frontend-cluster": {
+      "title": "Rapid.CDN Frontend Cluster (resilient)",
+      "description": "Cluster deployment which can hold many slaves.",
+      "serialisation": "json-in-xml",
+      "index": 100,
+      "request": "schema-rapid-cdn-frontend.input.json",
+      "response": "schema-rapid-cdn-frontend.output.json",
+      "software-type": "rapid-cdn-frontend"
+    },
+    "access": {
+      "title": "[INTERNAL] [TECHNICAL] Access point (PoP) of the cluster",
+      "index": 1002,
+      "serialisation": "json-in-xml",
+      "request": "schema-rapid-cdn-access.input.json",
+      "response": "schema-rapid-cdn-access.output.json",
+      "software-type": "rapid-cdn-access"
+    },
+    "kedifa": {
+      "title": "[INTERNAL] [TECHNICAL] Kedifa server (resilient)",
+      "index": 1003,
+      "serialisation": "json-in-xml",
+      "request": "schema-rapid-cdn-kedifa.input.json",
+      "response": "schema-rapid-cdn-kedifa.output.json",
+      "software-type": "rapid-cdn-kedifa"
+    },
+    "human": {
+      "title": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing) (resilient)",
+      "index": 1004,
+      "serialisation": "json-in-xml",
+      "request": "schema-rapid-cdn-human.input.json",
+      "response": "schema-rapid-cdn-human.output.json",
+      "software-type": "rapid-cdn-human"
+    },
+    "log-aggregator": {
+      "title": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs (resilient)",
+      "index": 1005,
+      "serialisation": "json-in-xml",
+      "request": "schema-rapid-cdn-log-aggregator.input.json",
+      "response": "schema-rapid-cdn-log-aggregator.output.json",
+      "software-type": "rapid-cdn-log-aggregator"
+    }
+  }
+}
