@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "url": {
+      "description": "URL of the backend",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Backend URL",
+      "type": "string"
+    },
+    "domain": {
+      "description": "Custom Domain to use for the website.",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "title": "Custom Domain",
+      "type": "string"
+    }
+  },
+  "required": ["url", "domain"],
+  "title": "Input Parameters",
+  "type": "object"
+}
