@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "properties": {
+    "url": {
+      "title": "The url to access the frontend",
+      "type": "string"
+    }
+  },
+  "title": "Output Parameters",
+  "type": "object"
+}
