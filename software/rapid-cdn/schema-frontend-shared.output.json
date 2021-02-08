@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "properties": {
+    "rapid-url": {
+      "title": "The Rapid.CDN URL to access the frontend, automatically generated",
+      "type": "string"
+    },
+    "url": {
+      "title": "The URL to access the frontend, available in case of using own domain.",
+      "type": "string"
+    }
+  },
+  "title": "Output Parameters",
+  "type": "object"
+}
