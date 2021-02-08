@@ -32,7 +32,7 @@ name = 'slapos.test.caucase'
 setup(
     name=name,
     version=version,
-    description="Test for SlapOS' Replication Manager",
+    description="Test for SlapOS' Caucase",
     maintainer="Nexedi",
     maintainer_email="info@nexedi.com",
     url="https://lab.nexedi.com/nexedi/slapos",
