@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "properties": {
+    "url": {
+      "title": "Backend URL",
+      "description": "URL of the backend",
+      "pattern": "^(http|https|ftp)://",
+      "type": "string"
+    },
+    "domain": {
+      "title": "Custom Domain [optional] (requires validation)",
+      "description": "Custom Domain to use for the website. If provided, additional validation will be required for before the domain will be used, until the validation, automatically generated domain will be available to access the service.",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
+      "type": "string"
+    },
+    "domain-icp-validation": {
+      "title": "ICP Validation [optional] (requires validation)",
+      "description": "Sets the domain to be validated by ICP in order to be present in China.",
+      "type": "string",
+      "default": "no",
+      "enum": [
+        "no",
+        "yes"
+      ]
+    }
+  },
+  "required": ["url"],
+  "title": "Input Parameters",
+  "type": "object"
+}
