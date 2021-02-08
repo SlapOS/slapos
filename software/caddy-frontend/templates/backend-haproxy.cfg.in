@@ -25,14 +25,14 @@ defaults
 {%-       if wildcard and host.startswith('*.') %}
 {%-         do matched.__setitem__('count', matched['count'] + 1) %}
 # match wildcard {{ host }}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i {{ host[2:] }}($|:.*)
 {%-       elif not wildcard and not host.startswith('*.') %}
 {%-         do matched.__setitem__('count', matched['count'] + 1) %}
-  acl is_{{ slave_instance['slave_reference'] }} hdr_reg(host) -i ^{{ host }}($|:.*)
+  acl is_{{ slave_instance['slave_reference'] }}_{{ scheme }} hdr_reg(host) -i ^{{ host }}($|:.*)
 {%-       endif %}
 {%-     endfor %}
 {%-     if matched['count'] > 0 %}
-  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}
+  use_backend {{ slave_instance['slave_reference'] }}-{{ scheme }} if is_{{ slave_instance['slave_reference'] }}_{{ scheme }}
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}
@@ -92,22 +92,27 @@ frontend https-backend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       set hostname = info_dict['hostname'] %}
 {%-       set port = info_dict['port'] %}
-{%-       set path = info_dict['path'].rstrip('/') %}
+{%-       set path_list = [info_dict['path'].rstrip('/')] %}
+{%-       set query = info_dict['query'] %}
+{%-       if query %}
+{%-         do path_list.append(query) %}
+{%-       endif %}
+{%-       set path = '?'.join(path_list) %}
 {%-       if hostname and port %}
   timeout server {{ slave_instance['request-timeout'] }}s
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
 {%-         set active_check_list = [] %}
 {%-         set active_check_option_list = [] %}
-{%-         if slave_instance['backend-active-check'] %}
+{%-         if slave_instance['health-check'] %}
 {%-           do active_check_list.append('check') %}
-{%-           do active_check_list.append('inter %ss' % (slave_instance['backend-active-check-interval'])) %}
-{%-           do active_check_list.append('rise %s' % (slave_instance['backend-active-check-rise'])) %}
-{%-           do active_check_list.append('fall %s' % (slave_instance['backend-active-check-fall'])) %}
-{%-           if slave_instance['backend-active-check-http-method'] != 'CONNECT' %}
-{%-             do active_check_option_list.append('option httpchk %s %s %s' % (slave_instance['backend-active-check-http-method'], slave_instance['backend-active-check-http-path'] | urlencode, slave_instance['backend-active-check-http-version'])) %}
+{%-           do active_check_list.append('inter %ss' % (slave_instance['health-check-interval'])) %}
+{%-           do active_check_list.append('rise %s' % (slave_instance['health-check-rise'])) %}
+{%-           do active_check_list.append('fall %s' % (slave_instance['health-check-fall'])) %}
+{%-           if slave_instance['health-check-http-method'] != 'CONNECT' %}
+{%-             do active_check_option_list.append('option httpchk %s %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode, slave_instance['health-check-http-version'])) %}
 {%-           endif %}
-{%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['backend-active-check-timeout'])) %}
+{%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
 {%-         endif %}
   server {{ slave_instance['slave_reference'] }}-backend {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
 {%-         for active_check_option in active_check_option_list %}
