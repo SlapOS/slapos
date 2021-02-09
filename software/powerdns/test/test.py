@@ -196,11 +196,11 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
     message.use_edns(options=[client_subnet_option])
     answer = dns.query.udp(message, self._ipv6_address, port=DNS_PORT)
     return answer.get_rrset(
-            dns.message.ANSWER,
-            dns.name.from_text(domain_name),
-            dns.rdataclass.IN,
-            dns.rdatatype.CNAME
-          ).to_text().split()[-1]
+      dns.message.ANSWER,
+      dns.name.from_text(domain_name),
+      dns.rdataclass.IN,
+      dns.rdatatype.CNAME
+    ).to_text().split()[-1]
 
   def _test_dns_resolver(self):
     slave_parameter_dict_dict = self.getSlaveParameterDictDict()
@@ -242,7 +242,8 @@ class PowerDNSSlaveTestCase(PowerDNSTestCase):
         self.assertEqual(
           slave_parameter_dict.get(
             region,
-            '%s.%s.' % (default_rr_dict[region], slave_parameter_dict['origin'])
+            '%s.%s.' % (
+              default_rr_dict[region], slave_parameter_dict['origin'])
           ),
           self.dns_query(domain_name, subnet_dict[region])
         )
