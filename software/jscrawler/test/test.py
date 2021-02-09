@@ -40,11 +40,10 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestJSCrawler(SlapOSInstanceTestCase):
-  __partition_reference__ = 'J'  # solve path too long for postgresql and unicorn
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return 'test'
+    return 'default'
 
   def setUp(self):
     self.backend_url = self.computer_partition.getConnectionParameterDict(
