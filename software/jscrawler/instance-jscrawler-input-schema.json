@@ -8,6 +8,29 @@
       "description": "List of website URL to crawl (space, newline or comma separated).",
       "type": "string",
       "default": ""
+    },
+    "crawl-periodicity": {
+      "title": "Number of days periodicity before re-crawl a site.",
+      "description": "Number of days before next crawl of URL will start and regenerate the sitemap. Set 0 to disable re-crawl.",
+      "type": "integer",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        15,
+        20,
+        30,
+        60
+      ]
     }
   }
 }

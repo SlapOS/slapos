@@ -3,6 +3,8 @@
 URLS="{{ url_list }}"
 
 OUTPUT_DIR="{{ public_folder }}"
+TMP_DIR="{{ tmp_folder }}"
+PERIOD="{{ period }}"
 
 trap "rm -f -- '{{ pid_file}}'" EXIT
 
@@ -13,14 +15,42 @@ fi
 
 echo $$ > "{{ pid_file}}"
 
+crawl() {
+  {{ jscrawler_wrapper }} -f $TMP_OUTPUT --link $1
+  if [ -s "$2" ]; then
+    mv $2 $3
+  fi
+}
+
+check_crawl() {
+  if [ -z "$PERIOD" ] || [ "$PERIOD" -eq 0 ] ; then
+    echo "Already crawled $1... SKIPPED"
+    return 0;
+  fi
+  sitemap=$3
+  tmp=$2
+  url=$1
+  NOW=$(date +"%s")
+  T=$(stat -c %Y $sitemap)
+  I=$((T+86400*PERIOD))
+  diff=$((NOW-I))
+  if [ "$diff" -gt 0 ]; then
+    crawl $url $tmp $sitemap
+  else
+    echo "Already crawled $url... SKIPPED"
+  fi
+}
+
 for url in `echo $URLS`
 do
   DOMAIN=$(echo "$url" | cut -d'/' -f3)
-  OUTPUT="$OUTPUT_DIR/$DOMAIN.xml"
   echo "Checking $DOMAIN..."
+  OUTPUT="$OUTPUT_DIR/$DOMAIN.xml"
+  TMP_OUTPUT="$TMP_DIR/$DOMAIN.xml"
+
   if [ -s "$OUTPUT" ]; then
-    echo "Already crawled... SKIPPED"
+    check_crawl $url $TMP_OUTPUT $OUTPUT
   else
-    {{ jscrawler_wrapper }} -f $OUTPUT --link $url
+    crawl $url $TMP_OUTPUT $OUTPUT
   fi
 done

@@ -10,7 +10,6 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default  = $${dynamic-template-jscrawler:rendered}
-test = $${dynamic-template-jscrawler-test:rendered}
 RootSoftwareInstance = $${:default}
 
 [slap-configuration]
@@ -46,9 +45,6 @@ context =
 openssl = ${openssl:location}/bin/openssl
 jscrawler-location = ${jscrawler:location}/crawler.js
 nodejs-location = ${nodejs:location}/bin/node
-nginx-location = ${nginx:location}/sbin/nginx
-nginx-mime = ${nginx-output:mime}
-template-nginx = ${template-nginx-configuration:target}
 template-jscrawler = ${template-jscrawler-builder:target}
 
 [dynamic-template-jscrawler]
@@ -57,10 +53,3 @@ template = ${template-jscrawler:target}
 filename = instance-jscrawler.cfg
 extra-context =
   section parameter_dict dynamic-template-jscrawler-parameters
-
-[dynamic-template-jscrawler-test]
-<= jinja2-template-base
-template = ${template-jscrawler-test:target}
-filename = instance-jscrawler-test.cfg
-extra-context =
-  key template_jscrawler dynamic-template-jscrawler:rendered
