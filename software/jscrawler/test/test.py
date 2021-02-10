@@ -30,8 +30,10 @@ import logging
 from six.moves.urllib.parse import urlparse
 
 import requests
+import time
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import ManagedHTTPServer
 
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -41,6 +43,23 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestJSCrawler(SlapOSInstanceTestCase):
 
+  @classmethod
+  def getInstanceParameterDict(cls):
+    class TestServer(ManagedHTTPServer):
+      def do_GET(self):
+        # type: () -> None
+        self.send_response(200)
+        self.send_header("Content-Type", "application/html")
+        self.end_headers()
+        self.wfile.write('<title>Hello {}</title>'.format(self._name))
+
+    return {
+      'urls': '\n'.join([
+          cls.getManagedResource('website1', TestServer).url,
+          cls.getManagedResource('website2', TestServer).url,
+      ])
+    }
+
   def setUp(self):
     self.backend_url = self.computer_partition.getConnectionParameterDict(
     )['backend-url']
@@ -49,3 +68,14 @@ class TestJSCrawler(SlapOSInstanceTestCase):
     resp = requests.get(self.backend_url, verify=False)
     self.assertTrue(
       resp.status_code in [requests.codes.ok, requests.codes.found])
+
+  def test_crawled_sitemap(self):
+    url_list = self.computer_partition.getInstanceParameterDict()['urls'].split('\n')
+    time.sleep(70) # wait until cron runs
+    website1 = urlparse(url_list[0]).netloc
+    sitemap1 = requests.get(self.backend_url + '/%s.xml' % website1, verify=False)
+    self.assertEqual(sitemap1.status_code, requests.codes.ok)
+
+    website2 = urlparse(url_list[1]).netloc
+    sitemap2 = requests.get(self.backend_url + '/%s.xml' % website2, verify=False)
+    self.assertEqual(sitemap2.status_code, requests.codes.ok)
