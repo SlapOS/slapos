@@ -4,9 +4,10 @@
   "title": "Input Parameters",
   "properties": {
     "urls": {
-      "title": "List of website URL to crawl (space, newline or comma separated).",
-      "description": "List of website URL to crawl (space, newline or comma separated).",
+      "title": "List of website URL to crawl (newline separated).",
+      "description": "List of website URL to crawl (newline separated).",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "crawl-periodicity": {
