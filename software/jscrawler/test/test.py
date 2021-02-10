@@ -41,10 +41,6 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 class TestJSCrawler(SlapOSInstanceTestCase):
 
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'default'
-
   def setUp(self):
     self.backend_url = self.computer_partition.getConnectionParameterDict(
     )['backend-url']
