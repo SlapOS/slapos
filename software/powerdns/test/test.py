@@ -32,6 +32,7 @@ import http.client
 import os
 import requests
 import unittest
+import urllib
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -130,11 +131,19 @@ class TestMonitorAccess(PowerDNSTestCase):
   def test(self):
     connection_parameter_dict = self.requestDefaultInstance()\
       .getConnectionParameterDict()
-    monitor_base_url = connection_parameter_dict.get('monitor-url')
+    # special parsing of monitor-setup-url as the URLs there are not really
+    # still, this test does not really check the real monitor-setup-url
+    # but this seems good enough
+    monitor_setup_url = connection_parameter_dict['monitor-setup-url']
+    monitor_base_url = connection_parameter_dict['monitor-base-url']
+    monitor_url_with_auth = 'https' + monitor_setup_url.split('https')[2]
+    parsed_monitor_url = urllib.parse.urlparse(monitor_url_with_auth)
+    auth = urllib.parse.parse_qs(parsed_monitor_url.path)
+
     result = requests.get(
       monitor_base_url, verify=False, auth=(
-        connection_parameter_dict.get('monitor-user'),
-        connection_parameter_dict.get('monitor-password')
+        auth['username'][0],
+        auth['password'][0]
       )
     )
 
