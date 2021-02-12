@@ -56,7 +56,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
     self.wfile.write(b"Content written to %s" % str2bytes(name))
 
   def writeFile(self, filename, content, method='a'):
-    file_path = os.path.join(self.document_path, filename)
+    file_path = os.path.abspath(os.path.join(self.document_path, filename))
+    if not file_path.startswith(self.document_path):
+      raise RuntimeError("Attempt to write outside of document path")
 
     try:
       os.makedirs(os.path.dirname(file_path))
