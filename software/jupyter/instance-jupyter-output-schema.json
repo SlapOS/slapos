@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Connection parameters for the Jupyter Notebook",
+  "properties": {
+    "url": {
+      "description": "Frontend URL",
+      "type": "string"
+    },
+    "password": {
+      "description": "Password",
+      "type": "string"
+    }
+  }
+}
