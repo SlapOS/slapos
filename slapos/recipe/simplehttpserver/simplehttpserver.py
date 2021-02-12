@@ -57,6 +57,9 @@ class ServerHandler(SimpleHTTPRequestHandler):
 
   def writeFile(self, filename, content, method='ab'):
     file_path = os.path.abspath(os.path.join(self.document_path, filename))
+    if not file_path.startswith(self.document_path):
+      self.respond(403, 'text/plain')
+      self.wfile.write(b"Forbidden")
 
     try:
       os.makedirs(os.path.dirname(file_path))
