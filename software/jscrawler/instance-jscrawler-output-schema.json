@@ -1,0 +1,11 @@
+{
+  "name": "Output Parameters",
+  "properties": {
+    "url": {
+      "title": "Frontend http server URL",
+      "description": "Frontend http server URL for sitemap download.",
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}
