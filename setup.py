@@ -40,6 +40,7 @@ extras_require = {
         'jsonschema',
         'mock',
         'testfixtures',
+        'requests',
     ),
 }
 
