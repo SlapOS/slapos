@@ -84,3 +84,14 @@ class SimpleHTTPServerTest(unittest.TestCase):
     self.assertIn('hello.txt', requests.get(server_base_url).text)
     self.assertEqual(
         requests.get(server_base_url + '/hello.txt').text, 'hello')
+
+    # incorrect paths are refused
+    for path in '/hello.txt', '../hello.txt':
+      resp = requests.post(
+          server_base_url,
+          files={
+              'path': path,
+              'content': b'hello',
+          },
+      )
+      self.assertEqual(resp.status_code, requests.codes.forbidden)
