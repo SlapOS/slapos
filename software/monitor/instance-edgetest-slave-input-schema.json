@@ -41,6 +41,12 @@
       "title": "Amount of failures to consider URL as in bad state",
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: comes from master partition).",
       "type": "string"
+    },
+    "applicable-region-list": {
+      "title": "Applicable region list",
+      "description": "List of region names on which slave shall be present, empty will result with slave being present everywhere.",
+      "default": [],
+      "type": "array"
     }
   }
 }

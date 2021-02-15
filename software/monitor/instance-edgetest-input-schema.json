@@ -42,6 +42,34 @@
       "title": "Default amount of failures to consider URL as in bad state",
       "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: 1).",
       "type": "string"
+    },
+    "region-dict": {
+      "title": "Regions",
+      "description": "Defines regions of the cluster",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "state": {
+              "title": "State of this region",
+              "type": "string",
+              "default": "started",
+              "enum": [
+                "started",
+                "stopped",
+                "destroyed"
+              ]
+            },
+            "computer_guid": {
+              "title": "GUID of the computer on which this region shall be deployed",
+              "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+              "type": "string",
+              "default": ""
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
     }
   }
 }
