@@ -98,7 +98,7 @@ command = ${jscrawler-build-wrapper:rendered}
 
 [publish-connection-information]
 <= monitor-publish
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 url = ${request-jscrawler-frontend:connection-secure_access}
 
 [buildout]
