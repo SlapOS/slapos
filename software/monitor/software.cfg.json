@@ -15,6 +15,7 @@
       "description": "Cluster of bots to perform a distributed monitoring ",
       "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
+      "serialisation": "json-in-xml",
       "index": 1
     },
     "edgetest-slave": {
