@@ -42,6 +42,24 @@
       "title": "Default amount of failures to consider URL as in bad state",
       "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: 1).",
       "type": "string"
+    },
+    "region-list": {
+      "default": "",
+      "title": "Region list",
+      "description": "Space separated list of region names. If not set won't be used and only one bot will be requested..",
+      "type": "string"
+    },
+    "-region-n-state": {
+      "title": "Requested state of node for region n",
+      "description": "State of the node for region n. The n is from region-list.",
+      "default": "started",
+      "type": "string"
+    },
+    "-region-n-computer_guid": {
+      "title": "computer_guid of region n",
+      "description": "Specific computer_guid of the node on which region n shall be requested. The n is from region-list",
+      "default": "",
+      "type": "string"
     }
   }
 }
