@@ -13,6 +13,16 @@
         "disabled"
       ],
       "default": "running"
+    },
+    "embedded-sr": {
+      "title": "Embedded Software URL",
+      "description": "Optional URL of a software to be embedded",
+      "type": "string"
+    },
+    "embedded-sr-type": {
+      "title": "Embedded Software Type",
+      "description": "Type of the optional embedded software",
+      "type": "string"
     }
   }
 }
