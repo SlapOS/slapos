@@ -6,6 +6,8 @@ Frontend system using Caddy, based on apache-frontend software release, allowing
 
 Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
 
+This documentation covers only specific scenarios. Most of the parameters are described in `software.cfg.json <software.cfg.json>`_.
+
 Software type
 =============
 
@@ -215,29 +217,15 @@ Example of value: "/erp5/web_site_module/hosting/"
 
 url
 ~~~
-Necessary to activate cache. ``url`` of backend to use.
-
-``url`` is an optional parameter.
+URL of the backend to use, optional but will result with non functioning slave.
 
 Example: http://mybackend.com/myresource
-
-domain
-~~~~~~
-
-Necessary to activate cache.
-
-The frontend will be accessible from this domain.
-
-``domain`` is an optional parameter.
-
-Example: www.mycustomdomain.com
 
 enable_cache
 ~~~~~~~~~~~~
 
-Necessary to activate cache.
+Enables HTTP cache, optional.
 
-``enable_cache`` is an optional parameter.
 
 health-check-*
 ~~~~~~~~~~~~~~
