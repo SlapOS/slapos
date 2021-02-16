@@ -21,7 +21,6 @@
         'ciphers',
         'request-timeout',
         'authenticate-to-backend',
-        'strict-transport-security',
     ]
 %}
 {% set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
