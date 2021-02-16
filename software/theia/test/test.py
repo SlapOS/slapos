@@ -38,6 +38,7 @@ from six.moves.urllib.parse import urlparse, urljoin
 import pexpect
 import psutil
 import requests
+import sqlite3
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.grid.svcbackend import getSupervisorRPC
@@ -184,3 +185,65 @@ class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
 
     # the supervisor controlling instances is also stopped
     self.assertFalse(embedded_slapos_process.is_running())
+
+
+class SelectMixin(object):
+  def sqlite3_connect(self):
+    sqlitedb_file = os.path.join(
+      os.path.abspath(
+        os.path.join(
+          self.computer_partition_root_path, os.pardir
+        )
+      ), 'var', 'proxy.db'
+    )
+    return sqlite3.connect(sqlitedb_file)
+
+  def select(self, fields, table, where={}):
+    connection = self.sqlite3_connect()
+
+    def dict_factory(cursor, row):
+      d = {}
+      for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+      return d
+    connection.row_factory = dict_factory
+    cursor = connection.cursor()
+
+    condition = " AND ".join("%s='%s'" % (k, v) for k, v in where.items())
+    cursor.execute(
+      "SELECT %s FROM %s%s"
+      % (
+        ", ".join(fields),
+        table,
+        " WHERE %s" % condition if where else "",
+      )
+    )
+    return cursor.fetchall()
+
+
+class TestTheiaWithSR(SelectMixin, SlapOSInstanceTestCase):
+  __partition_reference__ = 'T' # for sockets in included slapos
+
+  srurl = 'bogus/software.cfg'
+  srtype = 'bogus'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'embedded-sr': cls.srurl,
+      'embedded-sr-type': cls.srtype,
+    }
+
+  def test(self):
+    supplied = self.select(
+      fields=["*"],
+      table = "software14",
+      where={'url': self.srurl}
+    )
+    self.assertEqual(len(supplied), 1)
+    requested = self.select(
+      fields=["*"],
+      table = "partition14",
+      where={'software_release': self.srurl, 'software_type': self.srtype}
+    )
+    self.assertEqual(len(requested), 1)

@@ -316,6 +316,8 @@ template =
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
       $${slapos-standalone-config:computer-id} \
+      --sr='$${instance-parameter:configuration.embedded-sr}' \
+      --srtype='$${instance-parameter:configuration.embedded-sr-type}' \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
@@ -404,6 +406,8 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 configuration.autorun = running
+configuration.embedded-sr =
+configuration.embedded-sr-type =
 
 [slapos-autorun]
 recipe = plone.recipe.command
