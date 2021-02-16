@@ -39,7 +39,9 @@ from slapos.testing.testcase import installSoftwareUrlList
 from slapos.testing.testcase import SlapOSNodeCommandError
 from slapos.grid.utils import md5digest
 
-old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.167/software/erp5/software.cfg'
+old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.167.1/software/erp5/software.cfg'
+# XXX check before tag
+old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/ac9f26c6e/software/erp5/software.cfg'
 new_software_release_url = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
