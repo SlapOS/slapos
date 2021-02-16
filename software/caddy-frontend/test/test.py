@@ -6814,7 +6814,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'ciphers': 'ciphers',
       'request-timeout': 100,
       'authenticate-to-backend': True,
-      'strict-transport-security': 200,
       # specific parameters
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
@@ -6912,8 +6911,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'ram-cache-size': u'512K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}',
-        u'strict-transport-security': u'200'
+        u'slave-kedifa-information': u'{}'
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
@@ -6940,8 +6938,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'ram-cache-size': u'256K',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}',
-        u'strict-transport-security': u'200'
+        u'slave-kedifa-information': u'{}'
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
@@ -6967,8 +6964,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         u'port': u'11443',
         u're6st-verification-url': u're6st-verification-url',
         u'request-timeout': u'100',
-        u'slave-kedifa-information': u'{}',
-        u'strict-transport-security': u'200'
+        u'slave-kedifa-information': u'{}'
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
@@ -7014,8 +7010,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'request-timeout': '100',
         'root_instance_title': 'testing partition 0',
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_instance_list': [],
-        'strict-transport-security': '200'
+        'slave_instance_list': []
       }
     }
     self.assertEqual(
