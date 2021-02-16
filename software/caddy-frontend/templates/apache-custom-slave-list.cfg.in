@@ -68,7 +68,7 @@ context =
 {%-   for key in ['disabled-cookie-list'] %}
 {%-     do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
 {%-   endfor %}
-{%-   for key, default in [('virtualhostroot-http-port', '80'), ('virtualhostroot-https-port', '443')] %}
+{%-   for key, default in [('virtualhostroot-http-port', '80'), ('virtualhostroot-https-port', '443'), ('strict-transport-security', '0')] %}
 {%-     do slave_instance.__setitem__(key, int(slave_instance.get(key, default))) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('default-path', slave_instance.get('default-path', '').strip('/') | urlencode) %}
@@ -128,7 +128,7 @@ context =
 {%-   do part_list.extend([slave_section_title]) %}
 {%-   set slave_log_folder = '${logrotate-directory:logrotate-backup}/' + slave_reference + "-logs" %}
 {#-   Pass backend timeout values #}
-{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend', 'strict-transport-security'] %}
+{%-   for key in ['backend-connect-timeout', 'backend-connect-retries', 'request-timeout', 'authenticate-to-backend'] %}
 {%-     if slave_instance.get(key, '') == '' %}
 {%-       do slave_instance.__setitem__(key, configuration[key]) %}
 {%-     endif %}

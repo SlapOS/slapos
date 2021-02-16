@@ -107,12 +107,6 @@
       ],
       "title": "Authenticate to backend",
       "type": "string"
-    },
-    "strict-transport-security": {
-      "title": "Strict Transport Security",
-      "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
-      "default": "0",
-      "type": "integer"
     }
   },
   "title": "Input Parameters",
