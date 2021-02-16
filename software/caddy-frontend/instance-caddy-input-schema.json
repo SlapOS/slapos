@@ -19,7 +19,7 @@
       "type": "string"
     },
     "domain": {
-      "description": "Base Domain for create subdomains (ie.: example.com).",
+      "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
       "title": "Domain",
       "type": "string"
