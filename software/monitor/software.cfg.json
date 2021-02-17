@@ -20,6 +20,7 @@
     },
     "edgetest-slave": {
       "title": "Edge Test Slave",
+      "shared": true,
       "software-type": "edgetest",
       "description": "Cluster of bots to perform a distributed monitoring ",
       "request": "instance-edgetest-slave-input-schema.json",
