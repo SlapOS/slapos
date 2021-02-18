@@ -67,18 +67,21 @@ input = inline:{
 output = $${directory:groups}/public.json
 
 [galene-wrapper]
-recipe = slapos.cookbook:wrapper
+recipe = slapos.recipe.template:jinja2
 port = 8443
 ip = $${slap-configuration:ipv6-random}
-command-line = 
-  ${galene:location}/bin/galene
-    -static ${galene-repository:location}/static
-    -recordings $${directory:recordings}
-    -groups $${directory:groups}
-    -data $${directory:data}
-    -http [$${:ip}]:$${:port}
+template =
+  inline:#!/bin/sh
+  
+  ulimit -n $(ulimit -Hn)
+  exec ${galene:location}/bin/galene \
+    -static ${galene-repository:location}/static \
+    -recordings $${directory:recordings} \
+    -groups $${directory:groups} \
+    -data $${directory:data} \
+    -http [$${:ip}]:$${:port} \
     -turn ""
-wrapper-path = $${directory:services}/galene
+rendered = $${directory:services}/galene
 depends =
   $${ice-servers.json:recipe}
   $${groups-json:recipe}
