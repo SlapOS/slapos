@@ -71,6 +71,7 @@ recipe = slapos.cookbook:wrapper
 port = 8443
 ip = $${slap-configuration:ipv6-random}
 command-line = 
+  ulimit -n $(ulimit -Hn)
   ${galene:location}/bin/galene
     -static ${galene-repository:location}/static
     -recordings $${directory:recordings}
