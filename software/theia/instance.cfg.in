@@ -393,6 +393,7 @@ config-websocket-path-list = /services /file-upload
 return = domain secure_access
 
 [publish-connection-parameter]
+<= monitor-publish
 recipe = slapos.cookbook:publish
 url = $${apache-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
