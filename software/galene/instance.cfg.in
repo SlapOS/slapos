@@ -78,7 +78,8 @@ input = inline:
     -recordings $${directory:recordings} \
     -groups $${directory:groups} \
     -data $${directory:data} \
-    -http [$${:ip}]:$${:port}
+    -http [$${:ip}]:$${:port} \
+    -turn ""
 output = $${directory:services}/galene
 mode = 0755
 depends =
