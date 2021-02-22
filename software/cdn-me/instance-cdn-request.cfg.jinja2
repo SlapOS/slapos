@@ -1,7 +1,7 @@
 [buildout]
 parts =
   request-monitor-test-distributor-slave 
-  publish-connection-informations
+  publish-connection-information
   connection-parameter-http-checker
   connection-parameter-checker
 
@@ -135,7 +135,7 @@ slave = true
 config-url = $${request-monitor-test-distributor-slave:connection-site_url}
 return = site_url domain
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 url-https =  https://$${request-frontend-token-slave:connection-domain}
 url = http://$${request-frontend-token-slave:connection-domain}
@@ -156,6 +156,6 @@ expected-value =
 [connection-parameter-http-checker]
 recipe = slapos.cookbook:check_parameter
 path = $${directory:promise}/check_re6stnet_http
-value = $${publish-connection-informations:url}
+value = $${publish-connection-information:url}
 expected-not-value = http://
 expected-value =

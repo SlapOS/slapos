@@ -59,7 +59,16 @@ def createSoftwareCfgValidatorTest(path, software_cfg_schema):
   # which is defined in schema.json in this directory
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
-      jsonschema.validate(json.load(json_file), software_cfg_schema)
+      schema = json.load(json_file)
+      jsonschema.validate(schema, software_cfg_schema)
+
+      # also make sure request and response schemas can be resolved
+      schema.setdefault('$id', 'file://' + path)
+      resolver = jsonschema.RefResolver.from_schema(schema)
+      for software_type_definition in schema['software-type'].itervalues():
+        resolver.resolve(software_type_definition['request'])
+        resolver.resolve(software_type_definition['response'])
+
   return run
 
 
