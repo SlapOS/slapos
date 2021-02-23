@@ -9,6 +9,9 @@ parts =
     downloader
     mime_types
     launcher
+    nginx-graceful
+    port-listening-promise
+    logrotate-entry-nginx
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -17,6 +20,9 @@ parts =
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
+
+# Instance profile extends monitoring stack
+extends = {{ parameter_list['template_monitor'] }}
 
 # partition tree
 # /
@@ -71,7 +77,7 @@ nb_workers = 2
 
 # Network
 ip = ${slap-network-information:global-ipv6}
-port = 8081
+port = ${slap-parameter:port}
 access_url = http://[${:ip}]:${:port}
 
 # Paths
@@ -89,9 +95,11 @@ path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
 # Binaries
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
+curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
+tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 
 # Executables
-bin_launcher = ${basedirectory:script}/launcher
+bin_launcher = ${basedirectory:service}/launcher
 
 # Utils
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
@@ -120,12 +128,71 @@ mode = 700
 context = 
     section param_html5as html5as
 
-# Simple command to put content in the docroot
+# Command to put content in the docroot
 [downloader]
 recipe = plone.recipe.command
-command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/index.html
+# This section will fail if the command fails.
+stop-on-error = true
+# If a tarball is passed as a parameter in download url
+# it's content will be served by the instance.
+# If the parameter is not provided it fallback to the default template
+command = 
+  rm -rf ${html5as:docroot}/*; 
+  URL="${slap-parameter:download_url}"; 
+  if [ -n "$URL" ];
+  then
+    ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${html5as:docroot} --strip-components 1;
+  else
+    cp ${default_index_html:rendered} ${html5as:docroot}/;
+  fi
+
+[default_index_html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${directory:srv}/index.html
+context =
+  key title slap-parameter:title
+
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_html5as html5as
+
+# Port Listening checking promise
+[port-listening-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = nginx-port-listening.py
+config-hostname = ${html5as:ip}
+config-port = ${html5as:port}
+
+# Use a port different from the default one in order to be able to
+# use it in a SlapOS webrunner or a Theia SlapOS Runner
+[monitor-instance-parameter]
+monitor-httpd-port = 8197
+
+# Monitor Stack also provides logrotate stack. We only need to extend
+# the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
+# More parameters can be added following the logrotate-entry-base section  
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${html5as:path_access_log} ${html5as:path_error_log}
 
 # Publish nginx address
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+# By extending monitor publish, all the section deploying monitoring will
+# be deployed. The parameters needed for accessing monitoring will be published
+<= monitor-publish
 server_url = ${html5as:access_url}
+title = Title ${slap-parameter:title}!
+
+[slap-parameter]
+title =
+download_url =
+port = 8081

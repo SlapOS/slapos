@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate Theia",
+  "additionalProperties": false,
+  "properties": {
+    "autorun": {
+      "title": "autorun",
+      "description": "State of the autorun service",
+      "type": "string",
+      "enum": [
+        "running",
+        "stopped",
+        "disabled"
+      ],
+      "default": "running"
+    },
+    "embedded-sr": {
+      "title": "Embedded Software URL",
+      "description": "Optional URL of a software to be embedded",
+      "type": "string"
+    },
+    "embedded-sr-type": {
+      "title": "Embedded Software Type",
+      "description": "Type of the optional embedded software",
+      "type": "string"
+    }
+  }
+}

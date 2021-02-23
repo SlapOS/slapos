@@ -51,6 +51,10 @@ frontend-additional-software-url = http://git.erp5.org/gitweb/slapos.git/blob_pl
 frontend-additional-instance-guid =
 frontend-additional-instance-name = Jupyter Frontend Additional
 
+{% for k, v in slapparameter_dict.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
+
 [dynamic-jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 mode = 0644
@@ -171,7 +175,7 @@ instance-configuration =
   raw jupyter-password ${jupyter-password:passwd}
 
 [publish-connection-parameter]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 jupyter-classic-url = ${request-slave-frontend:connection-secure_access}/tree
 url = ${:jupyter-classic-url}
 jupyterlab-url = ${request-slave-frontend:connection-secure_access}/lab
