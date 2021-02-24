@@ -20,7 +20,7 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
-configuration.ice-servers.json = [{"urls":["stun:turn.api.nexedi.net:3478"]}]
+configuration.ice-servers.json = [{"urls":["stun:turn-paris-rapidspace.api.nexedi.net:443"]}]
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
