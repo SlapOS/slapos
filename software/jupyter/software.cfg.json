@@ -8,7 +8,7 @@
       "software-type": "default",
       "description": "Default",
       "request": "instance-jupyter-input-schema.json",
-      "response": "instance-jupyter-ouput-schema.json",
+      "response": "instance-jupyter-output-schema.json",
       "index": 1
     }
   }
