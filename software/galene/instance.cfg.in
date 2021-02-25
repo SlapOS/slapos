@@ -50,21 +50,21 @@ storage-path = $${directory:data}/.passwd
 username = admin
 
 [ice-servers.json]
-recipe = collective.recipe.template
-input = inline:
+recipe = slapos.recipe.template:jinja2
+template = inline:
   $${slap-configuration:configuration.ice-servers.json}
-output = $${directory:data}/ice-servers.json
+rendered = $${directory:data}/ice-servers.json
 
 [groups-json]
-recipe = collective.recipe.template
-input = inline:{
+recipe = slapos.recipe.template:jinja2
+template = inline:{
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
     "other": [],
     "presenter": [{"username": "", "password": "nexedi"}],
     "max-users":100
   }
-output = $${directory:groups}/public.json
+rendered = $${directory:groups}/public.json
 
 [galene-wrapper]
 recipe = slapos.recipe.template:jinja2
