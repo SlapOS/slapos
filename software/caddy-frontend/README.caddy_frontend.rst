@@ -131,7 +131,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem master-key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -159,7 +159,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" key-upload-url+authtoken
 
 This replaces old request parameters:
 
