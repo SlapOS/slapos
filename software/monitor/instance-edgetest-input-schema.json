@@ -2,10 +2,10 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "properties": {
     "check-status-code": {
-      "default": "200",
-      "title": "Default Check HTTP Code",
+      "default": 200,
+      "title": "Default HTTP Code to check for",
       "description": "Default HTTP code to check against (default: 200).",
-      "type": "string"
+      "type": "number"
     },
     "check-http-header-dict": {
       "default": "{}",
@@ -14,22 +14,22 @@
       "type": "object"
     },
     "check-certificate-expiration-days": {
-      "default": "15",
+      "default": 15,
       "title": "Default certificate expiration days check",
-      "description": "Default amount of days to consider certificate as being to-be-expired (default: 15).",
-      "type": "string"
+      "description": "Default amount of days to consider certificate as being to-be-expired.",
+      "type": "number"
     },
     "check-maximum-elapsed-time": {
-      "default": "2",
+      "default": 2,
       "title": "Default maximum elapsed time for a site to reply (seconds)",
-      "description": "Default maximum elapsed time for a site to reply to be considered good (default: 2s).",
-      "type": "string"
+      "description": "Default maximum elapsed time for a site to reply to be considered good.",
+      "type": "number"
     },
     "failure-amount": {
-      "default": "1",
+      "default": 1,
       "title": "Default amount of failures to consider URL as in bad state",
-      "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: 1).",
-      "type": "string"
+      "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages.",
+      "type": "number"
     },
     "region-dict": {
       "title": "Regions",
