@@ -31,22 +31,10 @@
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Empty will use Cluster default.",
       "type": "number"
     },
-    "region-dict": {
-      "title": "Applicable Regions",
-      "description": "Defines Regions presence. Special region \"*\" can be used for slave to present on all regions.",
-      "patternProperties": {
-        ".*": {
-          "properties": {
-            "check-frontend-ip-list": {
-              "title": "Check Frontend IPs",
-              "description": "List of default frontend IPs to check against. Empty will use Region default.",
-              "type": "array"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "type": "object"
+    "region": {
+      "title": "Applicable Region",
+      "description": "Defines presence of the check in given region.",
+      "type": "string"
     }
   }
 }
