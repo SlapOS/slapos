@@ -42,10 +42,6 @@
       "description": "Defines regions of the cluster",
       "patternProperties": {
         ".*": {
-          "required": [
-            "state",
-            "computer_guid"
-          ],
           "properties": {
             "state": {
               "title": "State",
