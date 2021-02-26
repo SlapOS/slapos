@@ -15,7 +15,7 @@
     "paczynka": {
       "type": "object",
       "allOf": [
-        "$ref": "./check-definition-schema.json"
+        {"$ref": "./check-definition-schema.json" }
       ]
     },
     "check-frontend-ip-list": {
