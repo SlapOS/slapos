@@ -4,7 +4,7 @@
   "properties": {
     "url": {
       "title": "URL to check",
-      "description": "URL to check, like https://example.com",
+      "description": "URL to check, like https://example.com/",
       "type": "string"
     },
     "region": {
