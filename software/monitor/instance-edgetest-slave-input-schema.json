@@ -13,6 +13,7 @@
       "type": "string"
     },
     "paczynka": {
+      "type": "object",
       "allOf": [
         "$ref": "./check-definition-schema.json#/properties"
       ]
