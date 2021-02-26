@@ -2,37 +2,35 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "check-definition": {
     "type": "object",
-    "properties": {
-      "check-status-code": {
-        "title": "HTTP Code to check for",
-        "description": "HTTP code to check against. Cluster default.",
-        "type": "number",
-        "minimum": 100,
-        "maximum": 599
-      },
-      "check-http-header-dict": {
-        "title": "HTTP header dict to check",
-        "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}. Cluster default.",
-        "type": "object"
-      },
-      "check-certificate-expiration-days": {
-        "title": "Certificate expiration days check",
-        "description": "Amount of days to consider certificate as being to-be-expired. Cluster default.",
-        "type": "number",
-        "minimum": 1
-      },
-      "check-maximum-elapsed-time": {
-        "title": "Maximum elapsed time for a site to reply (seconds)",
-        "description": "Maximum elapsed time for a site to reply to be considered good. Cluster detault.",
-        "type": "number",
-        "minimum": 1
-      },
-      "failure-amount": {
-        "title": "Amount of failures to consider URL as in bad state",
-        "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Cluster default.",
-        "type": "number",
-        "minimum": 1
-      }
+    "check-status-code": {
+      "title": "HTTP Code to check for",
+      "description": "HTTP code to check against. Cluster default.",
+      "type": "number",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "check-http-header-dict": {
+      "title": "HTTP header dict to check",
+      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}. Cluster default.",
+      "type": "object"
+    },
+    "check-certificate-expiration-days": {
+      "title": "Certificate expiration days check",
+      "description": "Amount of days to consider certificate as being to-be-expired. Cluster default.",
+      "type": "number",
+      "minimum": 1
+    },
+    "check-maximum-elapsed-time": {
+      "title": "Maximum elapsed time for a site to reply (seconds)",
+      "description": "Maximum elapsed time for a site to reply to be considered good. Cluster detault.",
+      "type": "number",
+      "minimum": 1
+    },
+    "failure-amount": {
+      "title": "Amount of failures to consider URL as in bad state",
+      "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Cluster default.",
+      "type": "number",
+      "minimum": 1
     }
   }
 }
