@@ -356,10 +356,13 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'nameserver': '127.0.1.1 127.0.1.2',
-      'check-frontend-ip': '127.0.0.1 127.0.0.2',
-    }
+    return {'_': json.dumps({
+      "region-dict": {
+        "Default": {
+          'nameserver-list': [ '127.0.1.1', '127.0.1.2'],
+          'check-frontend-ip-list': ['127.0.0.1 127.0.0.2'],
+        }
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -406,9 +409,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-status-code': '500',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -483,10 +485,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-http-header-dict':
-        '{"B": "BBB"}',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -568,9 +568,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-certificate-expiration-days': '10',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -658,9 +657,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-maximum-elapsed-time': '5',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -766,9 +764,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'failure-amount': '5'
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
