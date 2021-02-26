@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "check-definition": {
-    "type": "object",
+  "type": "object",
+  "properties": {
     "check-status-code": {
       "title": "HTTP Code to check for",
       "description": "HTTP code to check against. Cluster default.",
