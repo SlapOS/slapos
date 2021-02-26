@@ -12,7 +12,7 @@
     },
     "edgetest": {
       "title": "Edge Test",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "description": "Cluster of bots to perform a distributed monitoring.",
       "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
@@ -22,7 +22,7 @@
       "title": "Edge Test Slave",
       "shared": true,
       "software-type": "edgetest",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "description": "Definition of an edge test.",
       "request": "instance-edgetest-slave-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
