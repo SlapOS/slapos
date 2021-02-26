@@ -9,7 +9,9 @@
     "check-status-code": {
       "title": "HTTP Code to check for",
       "description": "HTTP code to check against. Empty will use Cluster default.",
-      "type": "number"
+      "type": "number",
+      "minimum": 100,
+      "maximum": 599
     },
     "check-http-header-dict": {
       "title": "HTTP header dict to check",
@@ -19,17 +21,20 @@
     "check-certificate-expiration-days": {
       "title": "Certificate expiration days check",
       "description": "Amount of days to consider certificate as being to-be-expired. Empty wil use Cluster default.",
-      "type": "number"
+      "type": "number",
+      "minimum": 1
     },
     "check-maximum-elapsed-time": {
       "title": "Maximum elapsed time for a site to reply (seconds)",
       "description": "Maximum elapsed time for a site to reply to be considered good. Empty will use Cluster detault.",
-      "type": "number"
+      "type": "number",
+      "minimum": 1
     },
     "failure-amount": {
       "title": "Amount of failures to consider URL as in bad state",
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Empty will use Cluster default.",
-      "type": "number"
+      "type": "number",
+      "minimum": 1
     },
     "region": {
       "title": "Applicable Region",
