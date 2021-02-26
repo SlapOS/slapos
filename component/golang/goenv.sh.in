@@ -10,10 +10,13 @@ export PKG_CONFIG_PATH=$(echo -n "${gowork:cpkgpath}" |tr '\n' ':'):$PKG_CONFIG_
 # ---- 8< ----
 
 export GOPATH=$X:$GOPATH
-export PATH=$X/bin:$PATH
-export PS1="(`basename $X`) $PS1"
+export GOBIN=$X/bin
 export GOCACHE=$X/cache
+export GOMODCACHE=$X/pkg/mod
 export GOENV=$X/goenv
+
+export PATH=$GOBIN:$PATH
+export PS1="(`basename $X`) $PS1"
 
 # by default make go run in module-aware mode only if go.mod is present, and in GOPATH-mode otherwise.
 # (we still have some GOPATH uses; TODO -> default to "on" after GOPATH-mode usage is gone)
