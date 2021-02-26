@@ -12,11 +12,40 @@
       "description": "Defines presence of the check in given region. Empty region will result with presence on all regions.",
       "type": "string"
     },
-    "paczynka": {
+    "check-status-code": {
+      "title": "HTTP Code to check for",
+      "description": "HTTP code to check against.",
+      "type": "number",
+      "default": 200,
+      "minimum": 100,
+      "maximum": 599
+    },
+    "check-certificate-expiration-days": {
+      "title": "Certificate expiration days check",
+      "description": "Amount of days to consider certificate as being to-be-expired.",
+      "type": "number",
+      "default": 15,
+      "minimum": 1
+    },
+    "check-maximum-elapsed-time": {
+      "title": "Maximum elapsed time for a site to reply (seconds)",
+      "description": "Maximum elapsed time for a site to reply to be considered good.",
+      "type": "number",
+      "default": 2,
+      "minimum": 1
+    },
+    "failure-amount": {
+      "title": "Amount of failures to consider URL as in bad state",
+      "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages.",
+      "type": "number",
+      "default": 1,
+      "minimum": 1
+    },
+    "check-http-header-dict": {
+      "title": "HTTP header dict to check",
+      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}.",
       "type": "object",
-      "allOf": [
-        {"$ref": "./check-definition-schema.json" }
-      ]
+      "default": "{}"
     },
     "check-frontend-ip-list": {
       "title": "Check Frontend IPs",
