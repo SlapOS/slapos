@@ -1,12 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "properties": {
-    "nameserver": {
-      "default": "",
-      "title": "Nameserver",
-      "description": "Space separated list of name servers to use.",
-      "type": "string"
-    },
     "check-status-code": {
       "default": "200",
       "title": "Default Check HTTP Code",
@@ -18,12 +12,6 @@
       "title": "HTTP header dict to check",
       "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
       "type": "object"
-    },
-    "check-frontend-ip": {
-      "default": "",
-      "title": "Default space separated list of Frontend IPs to check",
-      "description": "Default list of Frontend IPs to check, if empty no constraint is used.",
-      "type": "string"
     },
     "check-certificate-expiration-days": {
       "default": "15",
@@ -64,6 +52,18 @@
               "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
               "type": "string",
               "default": ""
+            },
+            "nameserver": {
+              "default": "",
+              "title": "Nameserver",
+              "description": "Space separated list of name servers to use.",
+              "type": "string"
+            },
+            "check-frontend-ip": {
+              "default": "",
+              "title": "Default space separated list of Frontend IPs to check",
+              "description": "Default list of Frontend IPs to check, if empty no constraint is used.",
+              "type": "string"
             }
           },
           "type": "object"
