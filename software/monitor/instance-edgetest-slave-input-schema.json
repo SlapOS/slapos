@@ -12,7 +12,7 @@
       "description": "Defines presence of the check in given region. Empty region will result with presence on all regions.",
       "type": "string"
     },
-    "paczynka": {"$ref": "./check-definition-schema.json#properties"},
+    "paczynka": {"$ref": "./check-definition-schema.json#/properties"},
     "check-frontend-ip-list": {
       "title": "Check Frontend IPs",
       "description": "List of frontend IPs to check against. Empty will use Region default.",
