@@ -1,46 +1,56 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "properties": {
     "url": {
       "title": "URL to check",
-      "description": "URL to check, like https://example.com",
+      "description": "URL to check, like https://example.com/",
+      "type": "string"
+    },
+    "region": {
+      "title": "Applicable Region",
+      "description": "Puts the check on one of regions defined by the cluster.Empty region will result with presence on all regions.",
       "type": "string"
     },
     "check-status-code": {
-      "default": "Master default",
-      "title": "Default Check HTTP Code.",
-      "description": "HTTP code to check against (default: comes from master partition).",
-      "type": "string"
-    },
-    "check-http-header-dict": {
-      "default": "Master default",
-      "title": "HTTP header dict to check",
-      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
-      "type": "object"
-    },
-    "check-frontend-ip": {
-      "default": "Master default",
-      "title": "Space separated list of Frontend IPs to check",
-      "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
-      "type": "string"
+      "title": "HTTP Code Check",
+      "description": "Expected response HTTP Code.",
+      "type": "number",
+      "default": 200,
+      "minimum": 100,
+      "maximum": 599
     },
     "check-certificate-expiration-days": {
-      "default": "Master default",
-      "title": "Certificate expiration days check",
-      "description": "Amount of days to consider certificate as being to-be-expired (default: comes from master partition).",
-      "type": "string"
+      "title": "Certificate Expiration Check (days)",
+      "description": "Amount of days to consider certificate as being to-be-expired.",
+      "type": "number",
+      "default": 15,
+      "minimum": 1
     },
     "check-maximum-elapsed-time": {
-      "default": "Master default",
-      "title": "Maximum elapsed time for a site to reply (seconds)",
-      "description": "Maximum elapsed time for a site to reply to be considered good.(default: comes from master partition).",
-      "type": "string"
+      "title": "Maximum Elapsed Check (seconds)",
+      "description": "Maximum elapsed time for a site to reply to be considered good.",
+      "type": "number",
+      "default": 2,
+      "minimum": 1
+    },
+    "check-http-header-dict": {
+      "title": "HTTP Header Check (dict)",
+      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}.",
+      "type": "object",
+      "default": "{}"
+    },
+    "check-frontend-ip-list": {
+      "title": "Frontend IP Check (list)",
+      "description": "List of frontend IPs to check against. Empty will use Region default.",
+      "type": "array"
     },
     "failure-amount": {
-      "default": "Master default",
-      "title": "Amount of failures to consider URL as in bad state",
-      "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: comes from master partition).",
-      "type": "string"
+      "title": "Failure Amount",
+      "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages.",
+      "type": "number",
+      "default": 1,
+      "minimum": 1
     }
   }
 }
