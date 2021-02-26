@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "properties": {
     "check-status-code": {
       "default": 200,
@@ -41,6 +42,10 @@
       "description": "Defines regions of the cluster",
       "patternProperties": {
         ".*": {
+          "required": [
+            "state",
+            "computer_guid"
+          ],
           "properties": {
             "state": {
               "title": "State",
