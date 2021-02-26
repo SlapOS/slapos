@@ -15,6 +15,10 @@ export PS1="(`basename $X`) $PS1"
 export GOCACHE=$X/cache
 export GOENV=$X/goenv
 
+# by default make go run in module-aware mode only if go.mod is present, and in GOPATH-mode otherwise.
+# (we still have some GOPATH uses; TODO -> default to "on" after GOPATH-mode usage is gone)
+export GO111MODULE=auto
+
 # strip trailing : from $GOPATH, $PKG_CONFIG_PATH
 GOPATH=$${GOPATH%:}
 PKG_CONFIG_PATH=$${PKG_CONFIG_PATH%:}
