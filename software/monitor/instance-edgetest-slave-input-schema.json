@@ -16,11 +16,6 @@
       "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}. Empty will use Cluster default.",
       "type": "object"
     },
-    "check-frontend-ip-list": {
-      "title": "Check Frontend IPs",
-      "description": "List of default frontend IPs to check against. Empty will use Region default.",
-      "type": "array"
-    },
     "check-certificate-expiration-days": {
       "title": "Certificate expiration days check",
       "description": "Amount of days to consider certificate as being to-be-expired. Empty wil use Cluster default.",
@@ -36,11 +31,19 @@
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Empty will use Cluster default.",
       "type": "number"
     },
-    "applicable-region-list": {
-      "title": "Applicable regions",
-      "description": "List of region names on which slave shall be present, empty will result with slave being present everywhere.",
-      "default": [],
-      "type": "array"
+    "region-dict": {
+      "title": "Applicable Regions",
+      "description": "Defines Regions presence. Special region \"*\" can be used for slave to present on all regions.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "check-frontend-ip-list": {
+              "title": "Check Frontend IPs",
+              "description": "List of default frontend IPs to check against. Empty will use Region default.",
+              "type": "array"
+            }
+          }
+        }
     }
   }
 }
