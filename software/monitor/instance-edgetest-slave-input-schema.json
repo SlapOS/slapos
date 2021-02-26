@@ -18,11 +18,10 @@
       "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
       "type": "object"
     },
-    "check-frontend-ip": {
-      "default": "Region default",
-      "title": "Space separated list of Frontend IPs to check",
-      "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
-      "type": "string"
+    "check-frontend-ip-list": {
+      "title": "Check Frontend IPs",
+      "description": "List of default frontend IPs to check against. If not set comes from Region configuration.",
+      "type": "array"
     },
     "check-certificate-expiration-days": {
       "default": "Master default",

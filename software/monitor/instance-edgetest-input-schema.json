@@ -53,17 +53,17 @@
               "type": "string",
               "default": ""
             },
-            "nameserver": {
-              "default": "",
-              "title": "Nameserver",
-              "description": "Space separated list of name servers to use.",
-              "type": "string"
+            "nameserver-list": {
+              "default": [],
+              "title": "Nameservers",
+              "description": "List of nameservers to use.",
+              "type": "array"
             },
-            "check-frontend-ip": {
-              "default": "",
-              "title": "Default space separated list of Frontend IPs to check",
-              "description": "Default list of Frontend IPs to check, if empty no constraint is used.",
-              "type": "string"
+            "check-frontend-ip-list": {
+              "default": [],
+              "title": "Check Frontend IPs",
+              "description": "List of default frontend IPs to check against.",
+              "type": "array"
             }
           },
           "type": "object"
