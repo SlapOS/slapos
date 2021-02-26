@@ -147,7 +147,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
       software_release=software_url,
       software_type='edgetest',
       partition_reference=partition_reference,
-      partition_parameter_kw=partition_parameter_kw,
+      partition_parameter_kw={'_': json.dumps(partition_parameter_kw)},
       shared=True
     )
 
@@ -356,10 +356,14 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'nameserver': '127.0.1.1 127.0.1.2',
-      'check-frontend-ip': '127.0.0.1 127.0.0.2',
-    }
+    return {'_': json.dumps({
+      "region-dict": {
+        "Default": {
+          'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+          'check-frontend-ip-list': ['127.0.0.1', '127.0.0.2'],
+        }
+      }
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -406,9 +410,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-status-code': '500',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -483,10 +486,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-http-header-dict':
-        '{"B": "BBB"}',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -568,9 +569,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-certificate-expiration-days': '10',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -658,9 +658,8 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-maximum-elapsed-time': '5',
-    }
+    return {'_': json.dumps({
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -766,9 +765,83 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'failure-amount': '5'
-    }
+    return {'_': json.dumps({
+    })}
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'failure-amount': '5'"
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'failure-amount': '10'"
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-10',
+      {'url': 'https://www.erp5.org/', 'failure-amount': '10'},
+    )
+
+
+class TestEdgeRegion(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.com/
+  https://www.erp5.org/"""}
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'failure-amount': '5',
+      "region-dict": {
+        "Europe": {
+          "state": "started",
+          "computer_guid": "ANOTHER_COMP"
+         },
+        "North America": {
+          "computer_guid": "ZONE51_COMP"
+        }
+      }
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
