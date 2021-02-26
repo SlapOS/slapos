@@ -26,9 +26,28 @@ extra-context =
 {%- set request_dict = {} %}
 {%- set namebase = "edgebot" %}
 {%- set authorized_slave_list = [] %}
-{%- set monitor_base_url_dict = {} -%}
-{%- for slave in slave_instance_list | sort(attribute='slave_title') %}
-{%-   do authorized_slave_list.append(slave) %}
+{% set monitor_base_url_dict = {} -%}
+{#- Parse all slaves and setup them correctly with eventual default #}
+{%- for slave_instance in slave_instance_list | sort(attribute='slave_title') %}
+{%-   if '_' in slave_instance %}
+{%-     set loaded_slave = json_module.loads(slave_instance['_']) %} {#- XXX super dangerous - one slave can damage the whole cluster #}
+{%-     if 'url' in loaded_slave %}
+{#-       Setup slave defaults as in instance-edgetest-slave-input-schema.json #}
+{%-       do loaded_slave.setdefault('check-status-code', 200) %}
+{%-       do loaded_slave.setdefault('check-http-header-dict', {}) %}
+{%-       do loaded_slave.setdefault('check-certificate-expiration-days', 15) %}
+{%-       do loaded_slave.setdefault('failure-amount', 2) %}
+{%-       do loaded_slave.setdefault('check-maximum-elapsed-time', 2) %}
+{#-       Put more information in slave information itself #}
+{%-       do loaded_slave.__setitem__('_title', slave_instance['slave_title']) %}
+{%-       do loaded_slave.__setitem__('_reference', slave_instance['slave_reference']) %} 
+{%-       do authorized_slave_list.append(loaded_slave) %}
+{%-     else %}
+{#-       XXX rejected slave, reason: no url #}
+{%-     endif %}
+{%-   else %}
+{#-      XXX rejected slave, reason: it's no json-in-xml #}
+{%-   endif %}
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
 {%- for i in range(1, edgebot_quantity + 1) %}
@@ -67,7 +86,13 @@ state = {{ edgebot_request.get('state') }}
 {%-   do slave_configuration_dict.update(edgebot_request.get('config')) %}
 {%-   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%-   for config_key, config_value in slave_configuration_dict.items() %}
+{%-     if config_key in ['check-frontend-ip-list', 'nameserver-list'] %}
+{#-     XXX-Hack: pass thorught parmeters to be loaded with json by edgetest #}
+{#-               The hack is needed, as it seems that there is no recipe to request nicely with json-in-xml #}
+config-{{ config_key }} = {{ json_module.dumps(config_value) }}
+{%-     else %}
 config-{{ config_key }} = {{ dumps(config_value) }}
+{%-     endif %}
 {%   endfor -%}
 {%-   if edgebot_request.get('sla') %}
 {%-     for parameter, value in edgebot_request.get('sla').items() %}
