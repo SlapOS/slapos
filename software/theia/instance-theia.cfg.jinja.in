@@ -39,23 +39,26 @@ password = $${frontend-instance-password:passwd}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-dot-theia = $${buildout:directory}/.theia/
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+srv = $${:home}/srv
+bin = $${:home}/bin
+tmp = $${:home}/tmp
+dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
 runner = $${:srv}/runner
+backup = $${:srv}/backup/theia
 project = $${:srv}/project
+
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
 
-bash-completions = $${buildout:directory}/.local/share/bash-completion/completions/
-fish-completions = $${buildout:directory}/.config/fish/completions/
+bash-completions = $${:home}/.local/share/bash-completion/completions/
+fish-completions = $${:home}/.config/fish/completions/
 
 
 # Promises
@@ -294,7 +297,7 @@ template =
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
   export THEIA_SHELL=$${theia-shell:rendered}
-  export HOME=$${buildout:directory}
+  export HOME=$${directory:home}
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
