@@ -877,3 +877,93 @@ class TestClientTLS(BalancerTestCase):
 
       with self.assertRaisesRegexp(Exception, 'certificate revoked'):
         _make_request()
+
+class TestPathBasedRouting(BalancerTestCase):
+  """Check path-based routing rewrites URLs as expected.
+  """
+  __partition_reference__ = 'pbr'
+
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(
+      TestTestRunnerEntryPoints,
+      cls,
+    )_getInstanceParameterDict()
+    parameter_dict['zope-family-dict'][
+      'second'
+    ] = parameter_dict['zope-family-dict'][
+      'third'
+    ] = parameter_dict['zope-family-dict'][
+      'default'
+    ]
+    # Routing rules outermost slashes mean nothing. They are internally
+    # stripped and rebuilt in order to correctly represent the request's URL.
+    parameter_dict['family-path-routing-dict'] = {
+      'default': [
+        ['foo/bar', 'erp5/boo/far/faz'], # no outermost slashes
+        ['/foo', '/erp5/somewhere'],
+        ['/foo/shadowed', '/foo_shadowed'], # unreachable
+      ],
+      'third': [
+        ['/next', '/erp5/web_site_module/another_next_website'],
+        ['', ''],
+      ]
+    }
+    parameter_dict['path-routing-list'] = [
+      ['/next', '/erp5/web_site_module/the_next_website'],
+      ['/next2', '/erp5/web_site_module/the_next2_website'],
+      ['//', '//erp5/web_site_module/123//'], # extraneous slashes
+    ]
+    return parameter_dict
+
+  def test_routing(self):
+    # type: () -> None
+    published_dict = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
+    def assertRoutingEqual(family, path, expected_path):
+      # sanity check: unlike the rules, this test is sensitive to outermost
+      # slashes, and paths must be absolute-ish for code simplicity.
+      assert path.startswith('/')
+      assert expected_path.startswith('/')
+      # Frontend is supposed to provide URLs with the following structure.
+      # Someday, frontends will instead propagate scheme and netloc via other
+      # means (likely: HTTP headers), in which case this test and the SR will
+      # need to be amended to reconstruct Virtual Host urls itself.
+      prefix = '/VirtualHostBase/scheme//netloc%3A8080'
+      # Presence of trailing /VirtualHostRoot makes no difference
+      self.assertEqual(
+        requests.get(
+          urlparse.urljoin(published_dict[family], prefix + '/VirtualHostRoot' + path),
+        ).text,
+        prefix + expected_path,
+      )
+      self.assertEqual(
+        requests.get(
+          urlparse.urljoin(published_dict[family], prefix + path),
+        ).text,
+        prefix + expected_path,
+      )
+    # Trailing slash presence is preserved.
+    assertRoutingEqual('default', '/foo/bar',       '/erp5/boo/far/faz')
+    assertRoutingEqual('default', '/foo/bar/',      '/erp5/boo/far/faz/')
+    # Subpaths are preserved.
+    assertRoutingEqual('default', '/foo/bar/hey',   '/erp5/boo/far/faz/hey')
+    # Rule precedence: later less-specific rules are applied.
+    assertRoutingEqual('default', '/foo',           '/erp5/somewhere')
+    assertRoutingEqual('default', '/foo/',          '/erp5/somewhere/')
+    assertRoutingEqual('default', '/foo/baz',       '/erp5/somewhere/baz')
+    # Rule precedence: later more-specific rules are meaningless.
+    assertRoutingEqual('default', '/foo/shadowed',  '/erp5/somewhere/shadowed')
+    # Fallback on general rules when no family-specific rule matches
+    # Note: the root is special in that there is aways a trailing slash in the
+    # produced URL.
+    assertRoutingEqual('default', '/',              '/erp5/web_site_module/123/')
+    # Rules match whole-elements, so the rule order does not matter to
+    # elements which share a common prefix.
+    assertRoutingEqual('default', '/next',          '/erp5/web_site_module/the_next_website')
+    assertRoutingEqual('default', '/next2',         '/erp5/web_site_module/the_next2_website')
+    # Rule-less family reach general rules.
+    assertRoutingEqual('second',  '/foo/bar',       '/erp5/web_site_module/123/foo/bar')
+    # The empty-source rule prevents reaching general rules.
+    assertRoutingEqual('third',   '/next',          '/erp5/web_site_module/another_next_website')
+    assertRoutingEqual('third',   '/next2',         '/next2')
