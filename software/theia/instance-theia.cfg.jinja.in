@@ -24,15 +24,9 @@ offline = true
 
 
 [instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-configuration.autorun = running
-configuration.embedded-sr =
-configuration.embedded-sr-type =
+{% for k, v in slapconfiguration_section.items() -%}
+{{ k }} = {{ v }}
+{% endfor -%}
 
 
 [publish-connection-parameter]
@@ -292,9 +286,11 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template =
   inline:#!/bin/sh
+  {{ "{% raw %}" }}
   {% raw %}
   export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
   {% endraw %}
+  {{ "{% endraw %}" }}
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
   export THEIA_SHELL=$${theia-shell:rendered}
