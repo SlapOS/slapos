@@ -41,23 +41,26 @@ backend-url = $${frontend-instance:url}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-dot-theia = $${buildout:directory}/.theia/
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+srv = $${:home}/srv
+bin = $${:home}/bin
+tmp = $${:home}/tmp
+dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
 runner = $${:srv}/runner
+backup = $${:srv}/backup/theia
 project = $${:srv}/project
+
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
 
-bash-completions = $${buildout:directory}/.local/share/bash-completion/completions/
-fish-completions = $${buildout:directory}/.config/fish/completions/
+bash-completions = $${:home}/.local/share/bash-completion/completions/
+fish-completions = $${:home}/.config/fish/completions/
 
 
 # Promises
