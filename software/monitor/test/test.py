@@ -359,9 +359,10 @@ URL =
     return {'_': json.dumps({
       "region-dict": {
         "Default": {
-          'nameserver-list': [ '127.0.1.1', '127.0.1.2'],
-          'check-frontend-ip-list': ['127.0.0.1 127.0.0.2'],
+          'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+          'check-frontend-ip-list': ['127.0.0.1', '127.0.0.2'],
         }
+      }
     })}
 
   def assertSurykatkaPromises(self):
@@ -814,6 +815,7 @@ URL =
       {'url': 'https://www.erp5.org/', 'failure-amount': '10'},
     )
 
+
 class TestEdgeRegion(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
@@ -834,7 +836,7 @@ URL =
         "Europe": {
           "state": "started",
           "computer_guid": "ANOTHER_COMP"
-       },
+         },
         "North America": {
           "computer_guid": "ZONE51_COMP"
         }

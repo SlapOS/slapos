@@ -5,6 +5,7 @@
 {%-     do CONFIGURATION.__setitem__(k[14:], v) %}
 {%-   endif %}
 {%- endfor %}
+# PACZYNEK CONFIGURATION = {{ CONFIGURATION }}
 {%- set slave_instance_dict = {} %}
 {%- set extra_slave_instance_list = slapparameter_dict.get('extra_slave_instance_list') %}
 {%- if extra_slave_instance_list %}
