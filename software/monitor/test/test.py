@@ -813,3 +813,77 @@ URL =
       'backend-10',
       {'url': 'https://www.erp5.org/', 'failure-amount': '10'},
     )
+
+class TestEdgeRegion(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.com/
+  https://www.erp5.org/"""}
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'failure-amount': '5',
+      "region-dict": {
+        "Europe": {
+          "state": "started",
+          "computer_guid": "ANOTHER_COMP"
+       },
+        "North America": {
+          "computer_guid": "ZONE51_COMP"
+        }
+      }
+    })}
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'url': 'https://www.erp5.com/'")
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-promise.py',
+      "'failure-amount': '5'"
+    )
+
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-10-promise.py',
+      "'failure-amount': '10'"
+    )
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'backend',
+      {'url': 'https://www.erp5.com/'},
+    )
+    self.requestEdgetestSlave(
+      'backend-10',
+      {'url': 'https://www.erp5.org/', 'failure-amount': '10'},
+    )
