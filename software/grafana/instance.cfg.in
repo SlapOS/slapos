@@ -132,7 +132,7 @@ command-line =
   bash -c "{{ influx_bin }} \
      -username ${influxdb:auth-username} \
      -password ${influxdb:auth-password} \
-     -host ${influxdb:host} \
+     -host [${influxdb:host}] \
      -port ${influxdb:http-port} \
      -unsafeSsl \
      -ssl \
