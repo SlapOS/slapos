@@ -344,6 +344,31 @@ config-{{ name }}-test-runner-address-list = {{ ' ${' ~ zope_section_id ~ ':conn
 {% endfor -%}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
+{% set routing_path_template_field_dict = {"site-id": site_id} -%}
+{% macro expandRoutingPath(output, input) -%}
+{%   for outer_prefix, inner_prefix in input -%}
+{%     do output.append((outer_prefix, inner_prefix % routing_path_template_field_dict)) -%}
+{%   endfor -%}
+{% endmacro -%}
+{% set path_routing_list = [] -%}
+{% do expandRoutingPath(
+  path_routing_list,
+  balancer_dict.get(
+    'path-routing-list',
+    (('/', '/'), ),
+  ),
+) -%}
+config-path-routing-list = {{ dumps(path_routing_list) }}
+{% set family_path_routing_dict = {} -%}
+{% for name, family_path_routing_list in balancer_dict.get(
+  'family-path-routing-dict',
+  {},
+).items() -%}
+{%    set path_routing_list = [] -%}
+{%    do expandRoutingPath(path_routing_list, family_path_routing_list) -%}
+{%    do family_path_routing_dict.__setitem__(name, path_routing_list) -%}
+{% endfor -%}
+config-family-path-routing-dict = {{ dumps(family_path_routing_dict) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-ssl = {{ dumps(balancer_dict['ssl']) }}
 config-name = ${:name}
