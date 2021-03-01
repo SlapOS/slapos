@@ -1,7 +1,10 @@
 auth_enabled: false
 
 server:
+  http_listen_address: {{ loki['ip'] }}
   http_listen_port: {{ loki['port'] }}
+  grpc_listen_address: {{ loki['ip'] }}
+  grpc_listen_port: {{ loki['grpc-port'] }}
 
 ingester:
   lifecycler:
