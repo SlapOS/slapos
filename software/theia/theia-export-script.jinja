@@ -1,0 +1,230 @@
+#!{{ python }}
+import errno
+import glob
+import hashlib
+import itertools
+import os
+import re
+import subprocess
+import time
+
+import six
+
+import zc.buildout.configparser
+
+
+os.environ['LC_ALL'] = 'C'
+os.umask(0o77)
+
+
+rsync_bin = "{{ rsync }}"
+rsync_flags = ('-rlptgov', '--safe-links', '--ignore-missing-args', '--delete', '--delete-excluded')
+rsync_regex = '^(file has vanished: |rsync warning: some files vanished before they could be transferred)'
+
+
+exclude_patterns = ('*.sock', '*.socket', '*.pid', '.installed*.cfg')
+
+
+sqlite3_bin = "{{ sqlite3 }}"
+
+
+home_path = '{{ home_path }}'
+backup_path = '{{ backup_path }}'
+instance_path = '{{ instance_path }}'
+partitions = glob.glob(os.path.join(instance_path, 'slappart*'))
+
+
+proxy_path = '{{ proxy_path }}'
+project_path = '{{ project_path }}'
+public_path = '{{ public_path }}'
+
+
+def makedirs(path):
+  try:
+    os.makedirs(path if os.path.isdir(path) else os.path.dirname(path))
+  except OSError as e:
+    if e.errno != errno.EEXIST:
+      raise
+
+
+def getSlappartSignatureMethodDict():
+  for partition in partitions:
+    if os.path.isdir(partition):
+      script_path = os.path.join(partition, 'srv', '.backup_identity_script')
+      if os.path.exists(script_path):
+        slappart_signature_method_dict[partition] = script_path
+  return slappart_signature_method_dict
+
+
+def read_file_by_chunk(path, chunk_size=1024 * 1024):
+  with open(path, 'rb') as f:
+    chunk = f.read(chunk_size)
+    while chunk:
+      yield chunk
+      chunk = f.read(chunk_size)
+
+
+def getSha256Sum(file_path_list):
+  result_list = []
+
+  for file_path in file_path_list:
+    hash_sum = sha256()
+    for chunk in read_file_by_chunk(file_path):
+      hash_sum.update(chunk)
+    result_list.append("%s  %s" % (hash_sum.hexdigest(), file_path))
+
+  return result_list
+
+
+def writeSignatureFile(slappart_signature_method_dict, runner_working_path, signature_file_path='backup.signature'):
+  special_slappart_list = slappart_signature_method_dict.keys()
+  signature_list = []
+
+  for dirpath, dirname_list, filename_list in os.walk('.'):
+    if dirpath == '.' or not filename_list:
+      continue
+
+    # Find if special signature function should be applied
+    signature_process = None
+    for special_slappart in special_slappart_list:
+      backup_identity_script_path = os.path.join(
+        runner_working_path,
+        slappart_signature_method_dict[special_slappart]
+      )
+
+      if dirpath.startswith('./' + os.path.relpath(os.path.join('./runner', special_slappart))):
+        signature_process = subprocess.Popen(
+          backup_identity_script_path,
+          stdin=subprocess.PIPE,
+          stdout=subprocess.PIPE,
+        )
+        break
+
+    # construct list of file path and remove broken symlink
+    filepath_list = filter(os.path.isfile, [os.path.join(dirpath, filename) for filename in filename_list])
+
+    if signature_process:
+      (output, error_output) = signature_process.communicate(
+        str2bytes('\0'.join(filepath_list))
+      )
+
+      if signature_process.returncode != 0:
+        print(
+          "An issue occured when calculating the custom signature"
+          " with %s :\n%s\n%s" % (
+            backup_identity_script_path, output, error_output
+          )
+        )
+        sys.exit(1)
+
+      # We have to rstrip as most programs return an empty line
+      # at the end of their output
+      signature_list.extend(bytes2str(output).strip('\n').split('\n'))
+    else:
+      signature_list.extend(
+        getSha256Sum(filepath_list)
+      )
+
+  # Write the signatures in file
+  with open(signature_file_path, 'w+') as signature_file:
+    signature_file.write("\n".join(sorted(signature_list)))
+
+
+
+def rsync(source, exclude=[], extrargs=[]):
+
+  # Ensure there is a trailing slash in the source directory
+  # to avoid creating an additional directory level at the destination
+  source = os.path.join(source, '')
+
+  # Compute absolute path of destination
+  destination = os.path.abspath(os.path.join(backup_path, os.path.relpath(source, start=home_path)))
+
+  # Create destination dir if it doesn't exist
+  makedirs(destination)
+
+  command = [rsync_bin]
+  command.extend(rsync_flags)
+
+  # Exclude destination file from sources
+  command.append('--filter=-/ {}'.format(destination))
+
+  command.extend(('--exclude={}'.format(x) for x in sorted(exclude_patterns)))
+  command.extend(('--filter=-/ {}'.format(x) for x in sorted(exclude)))
+  command.extend(extrargs)
+  command.append(source)
+  command.append(destination)
+  try:
+    return subprocess.check_output(command)
+  except subprocess.CalledProcessError as e:
+    # Not all rsync errors are to be considered as errors
+    if e.returncode != 24 or re.search(rsync_regex, e.output, re.M) is None:
+      raise
+    return e.output
+
+
+def parse_installed(partition):
+  paths = []
+  for cfg in glob.glob(os.path.join(partition, '.installed*.cfg')):
+    try:
+      with open(cfg) as f:
+        installed_cfg = zc.buildout.configparser.parse(f, cfg)
+    except IOError as e:
+      if e.errno != errno.ENOENT:
+        raise
+    else:
+      for section in six.itervalues(installed_cfg):
+        for p in section.get('__buildout_installed__', '').splitlines():
+          p = p.strip()
+          if p:
+            paths.append(p)
+  return paths
+
+
+def modified_backups(partition, export_start_date, exclude):
+  # Find all backup files that were modified during export
+  export_time = time.time() - export_start_date
+  modified_files = subprocess.check_output(
+    ('find', 'instance', '-cmin',  str(export_time / 60), '-type', 'f', '-path', '*/srv/backup/*')
+  )
+  return modified_files
+
+
+def export():
+  # Note the time
+  export_start_date = int(time.time())
+
+  # Create a timestamp and export the hidden files in ~/etc
+  # XXX: is this actually needed ?
+  etc_path = os.path.join(home_path, 'etc')
+  with open(os.path.join(etc_path, '.resilient_timestamp'), 'w') as f:
+    f.write(str(export_start_date))
+  rsync(etc_path, extrargs=('--filter=- */', '--filter=-! .*'))
+
+  # Export the project folder and the public folder
+  rsync(project_path)
+  rsync(public_path)
+
+  # Export the proxy database using an atomic dump
+  proxy_dump = "%s.dump" % os.path.join(backup_path, os.path.relpath(proxy_path, start=home_path))
+  makedirs(proxy_dump)
+  with open(proxy_dump, 'w') as dump:
+    subprocess.Popen((sqlite3_bin, proxy_path, '.dump'), stdout=dump)
+
+  # Export instance/etc and instance/var
+  # XXX: is this actually needed ?
+  rsync(os.path.join(instance_path, 'etc'))
+  rsync(os.path.join(instance_path, 'var'))
+
+  # Export the partitions
+  for partition in partitions:
+    installed = parse_installed(partition)
+    rules = os.path.join(partition, 'srv', 'exporter.exclude')
+    if os.path.exists(rules):
+      rsync(partition, exclude=installed, extrargs=('--filter=.-/ %s' % rules,))
+    else:
+      rsync(partition, exclude=installed)
+
+
+if __name__ == '__main__':
+  export()

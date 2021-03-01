@@ -29,9 +29,25 @@ name = Theia Export Frontend
 # All it expects is that a script be available in exporter:wrapper.
 [exporter]
 recipe = slapos.cookbook:wrapper
-command-line = echo "Export Not Implemented Yet"
+command-line = $${theia-export-script:rendered}
 wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
 wrapper = $${:wrapper-path}
+
+[theia-export-script]
+recipe = slapos.recipe.template:jinja2
+template = ${software-info:theia-export-script}
+rendered = $${directory:bin}/theia-export-script
+mode = 0700
+context =
+  raw python ${software-info:python-with-eggs}
+  raw rsync ${software-info:rsync}
+  raw sqlite3 ${software-info:sqlite3}
+  raw home_path $${buildout:directory}
+  raw backup_path $${directory:backup}
+  raw instance_path $${directory:runner}/instance
+  raw proxy_path $${directory:runner}/var/proxy.db
+  raw project_path $${directory:project}
+  raw public_path $${directory:frontend-static-public}
 
 # Extends publish section with resilient parameters
 [publish-connection-parameter]
