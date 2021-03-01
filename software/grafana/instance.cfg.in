@@ -219,6 +219,7 @@ storage-boltdb-dir = ${directory:loki-storage-boltdb-dir}
 storage-filesystem-dir = ${directory:loki-storage-filesystem-dir}
 ip = ${instance-parameter:ipv4-random}
 port = 3100
+grpc-port = 9095
 url = http://${:ip}:${:port}
 
 
@@ -238,9 +239,10 @@ command-line =
 wrapper-path = ${directory:service}/promtail
 
 dir = ${directory:promtail-dir}
-http_port = 19080
+http-port = 19080
+grpc-port = 19095
 ip = ${instance-parameter:ipv4-random}
-url = http://${:ip}:${:http_port}
+url = http://${:ip}:${:http-port}
 
 [promtail-config-file]
 <= config-file
@@ -252,7 +254,7 @@ context =
 [promtail-listen-promise]
 <= check-port-listening-promise
 hostname= ${promtail:ip}
-port = ${promtail:http_port}
+port = ${promtail:http-port}
 
 
 
