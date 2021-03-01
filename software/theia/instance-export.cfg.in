@@ -2,15 +2,13 @@
 extends = ${theia:rendered}
           ${template-pbsready-export:rendered}
 
-# The resilient stack makes the 'resilient' instance
-# request the 'export' instance with a 'namebase' parameter.
-# The export template then expects to receive it in
-# slap-parameter:namebase
+
 parts +=
   monitor-base
   $${:theia-parts}
   $${:theia-environment-parts}
   publish-connection-parameter
+
 
 # The resilient stack makes the 'resilient' instance
 # request the 'export' instance with a 'namebase' parameter.
@@ -19,19 +17,91 @@ parts +=
 [slap-parameter]
 namebase = ${slap-configuration:configuration.namebase}
 
+
 # Change frontend name to help disambiguation
 [apache-frontend]
 name = Theia Export Frontend
+
 
 # The resilient export stack periodically calls exporter:wrapper
 # and then notifies the pull-backup instance that data is ready
 # to be pulled from the export instance.
 # All it expects is that a script be available in exporter:wrapper.
 [exporter]
-recipe = slapos.cookbook:wrapper
-command-line = echo "Export Not Implemented Yet"
-wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
-wrapper = $${:wrapper-path}
+wrapper = $${theia-export-script:rendered}
+
+[theia-export-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/theia-export-script
+mode = 0700
+exitcode-file = $${directory:srv}/export-exitcode-file
+error-file = $${directory:srv}/export-errormessage-file
+context =
+  raw python ${software-info:python-with-eggs}
+  raw theia_export ${software-info:theia-export}
+  raw bash ${software-info:bash}
+  raw rsync ${software-info:rsync}
+  raw sqlite3 ${software-info:sqlite3}
+  raw root_path $${buildout:directory}
+  raw backup_path $${directory:backup}
+  raw slapos_cfg $${directory:runner}/etc/slapos.cfg
+  raw project_path $${directory:project}
+  raw public_path $${directory:frontend-static-public}
+  raw exitfile $${:exitcode-file}
+  raw errorfile $${:error-file}
+template =
+  inline:#!{{ bash }}
+  {{ python }} {{ theia_export }} \
+  --rsync {{ rsync }} \
+  --sqlite3 {{ sqlite3 }} \
+  --root {{ root_path }} \
+  --backup {{ backup_path }} \
+  --cfg {{ slapos_cfg }} \
+  --dirs {{ project_path }} {{ public_path }} \
+  --exitfile {{ exitfile }} \
+  --errorfile {{ errorfile }}
+
+
+# Add a promise to check that the export script has run
+# successfully and recently (at most 2 days ago).
+[promises]
+instance-promises +=
+  $${export-promise:name}
+
+[export-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = resiliency-export-promise.py
+config-command = $${export-promise-script:rendered}
+
+[initial-export-exitcode-file]
+recipe = slapos.recipe.template:jinja2
+rendered = $${theia-export-script:exitcode-file}
+template = inline:0
+
+[export-promise-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/export-promise-script
+exitcode-file = $${initial-export-exitcode-file:rendered}
+context =
+  key exitcodefile :exitcode-file
+  key errorfile theia-export-script:error-file
+template =
+  inline:#!/bin/sh
+  if [ -z $(find {{ repr(exitcodefile) }} -mtime -2) ]
+  then
+    echo "ERROR export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 1
+  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  then
+    echo "ERROR export script failed on " $(date -r {{ repr(exitcodefile) }})
+    cat {{ repr(errorfile) }}
+    exit 1
+  else
+    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  fi
+
 
 # Extends publish section with resilient parameters
 [publish-connection-parameter]
