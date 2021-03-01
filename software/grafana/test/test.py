@@ -25,12 +25,13 @@
 #
 ##############################################################################
 
-import os
-import textwrap
 import logging
+import os
 import tempfile
+import textwrap
 import time
 
+import psutil
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -251,3 +252,68 @@ class TestLoki(GrafanaTestCase):
         verify=False).json()
     self.assertIn('level', resp['values'])
     self.assertIn('name', resp['values'])
+
+
+class TestListenInPartition(GrafanaTestCase):
+  def setUp(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+
+    self.process_dict = {
+        p['name'].replace('-on-watch', ''): psutil.Process(p['pid'])
+        for p in all_process_info if p['name'] != 'watchdog'
+    }
+
+  def test_grafana_listen(self):
+    self.assertEqual(
+        [
+            c.laddr for c in self.process_dict['grafana'].connections()
+            if c.status == 'LISTEN'
+        ],
+        [(self._ipv6_address, 8180)],
+    )
+
+  def test_influxdb_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['influxdb'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 8088),
+            (self._ipv6_address, 8086),
+        ],
+    )
+
+  def test_telegraph_listen(self):
+    self.assertEqual(
+        [
+            c.laddr for c in self.process_dict['telegraf'].connections()
+            if c.status == 'LISTEN'
+        ],
+        [],
+    )
+
+  def test_loki_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['loki'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 3100),
+            (self._ipv4_address, 9095),
+        ],
+    )
+
+  def test_promtail_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['promtail'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 19080),
+            (self._ipv4_address, 19095),
+        ],
+    )
