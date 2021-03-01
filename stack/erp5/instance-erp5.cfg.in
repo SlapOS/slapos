@@ -194,7 +194,6 @@ config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-selenium-server-configuration-dict = {{ dumps(slapparameter_dict.get('selenium-server-configuration-dict', {})) }}
-config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}
@@ -263,6 +262,9 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+{%   set hosts_dict = slapparameter_dict.get('hosts-dict', {}) -%}
+{%   do hosts_dict.update(zope_parameter_dict.get('hosts-dict', {})) -%}
+config-hosts-dict = {{ dumps(hosts_dict) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 

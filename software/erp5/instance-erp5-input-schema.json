@@ -196,6 +196,16 @@
               "default": "10MB",
               "type": "string"
             },
+            "hosts-dict": {
+              "description": "Host entries to be used in addition to and/or overriding global ones (see top-level hosts-dict definition)",
+              "patternProperties": {
+                ".*": {
+                  "description": "An IP or domain name to which current entry will resolve",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
             "port-base": {
               "allOf": [
                 {
