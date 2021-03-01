@@ -181,6 +181,8 @@ return =
   'erp5_configurator_standard',
   'erp5_configurator_maxma_demo',
   'erp5_configurator_run_my_doc',
+  'erp5_oauth2_authorisation',
+  'erp5_oauth2_resource',
 ] -%}
 {% if has_jupyter -%}
 {%   do bt5_default_list.append('erp5_data_notebook') -%}
