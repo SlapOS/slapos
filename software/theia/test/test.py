@@ -241,3 +241,31 @@ class TestTheiaWithSR(SlapOSInstanceTestCase):
       where={'software_release': self.srurl, 'software_type': self.srtype}
     )
     self.assertEqual(len(requested), 1)
+
+
+class TestTheiaResilient(TestTheia):
+  instance_max_retry = 30
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilient, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
+
+
+class TestTheiaResilientWithSR(TestTheiaWithSR):
+  instance_max_retry = 30
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientWithSR, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
