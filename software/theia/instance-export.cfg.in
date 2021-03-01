@@ -1,0 +1,38 @@
+[buildout]
+extends = ${theia:rendered}
+          ${template-pbsready-export:rendered}
+
+# The resilient stack makes the 'resilient' instance
+# request the 'export' instance with a 'namebase' parameter.
+# The export template then expects to receive it in
+# slap-parameter:namebase
+parts +=
+  monitor-base
+  $${:theia-parts}
+  $${:theia-environment-parts}
+  publish-connection-parameter
+
+# The resilient stack makes the 'resilient' instance
+# request the 'export' instance with a 'namebase' parameter.
+# The export template then expects to receive it in
+# slap-parameter:namebase
+[slap-parameter]
+namebase = ${slap-configuration:configuration.namebase}
+
+# Change frontend name to help disambiguation
+[apache-frontend]
+name = Theia Export Frontend
+
+# The resilient export stack periodically calls exporter:wrapper
+# and then notifies the pull-backup instance that data is ready
+# to be pulled from the export instance.
+# All it expects is that a script be available in exporter:wrapper.
+[exporter]
+recipe = slapos.cookbook:wrapper
+command-line = echo "Export Not Implemented Yet"
+wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
+wrapper = $${:wrapper-path}
+
+# Extends publish section with resilient parameters
+[publish-connection-parameter]
+<= resilient-publish-connection-parameter
