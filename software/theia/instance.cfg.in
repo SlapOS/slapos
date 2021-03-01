@@ -8,6 +8,13 @@ extends =
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 
+[software-info]
+python-with-eggs = ${buildout:bin-directory}/${python-with-eggs:interpreter}
+python = ${python:location}/bin/python
+rsync = ${rsync:location}/bin/rsync
+sqlite3 = ${sqlite3:location}/bin/sqlite3
+theia-export-script = ${theia-export-script:output}
+
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
