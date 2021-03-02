@@ -1,0 +1,23 @@
+[buildout]
+parts =
+    launcher
+
+eggs-directory = ${buildout:eggs_directory}
+develop-eggs-directory = ${buildout:develop_eggs_directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+run = $${:etc}/run
+log = $${:var}/log
+
+[launcher]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!${bash:location}/bin/bash
+  ${quickjs:location}/bin/qjs $${buildout:parts-directory}/${main-js:filename} 2> ${directory:log}/mavsdk-drone-js.errors.log > ${directory:log}/mavsdk-drone-js.output.log
+rendered = ${directory:run}/launcher
+mode = 700
