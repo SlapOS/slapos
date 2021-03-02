@@ -999,3 +999,19 @@ class TestNatRulesKvmCluster(InstanceTestCase):
 class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
   __partition_reference__ = 'nrkcc'
   nat_rules = ["100", "200 300"]
+
+
+@skipUnlessKvm
+class TestDiskDevicePath(InstanceTestCase):
+  __partition_reference__ = 'ddp'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'disk-device-path': '/dev/null'
+    }
+
+  def test(self):
+    connection_parameter_dict = self.computer_partition\
+      .getConnectionParameterDict()
+    self.fail('TODO')

@@ -83,12 +83,23 @@ disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
 
 # If a device (ie.: /dev/sdb) is provided, use it instead 
 # the disk_path with disk_format
-disk_device_path = '{{ parameter_dict.get("disk-device-path", "") }}'
-if disk_device_path.startswith("/dev/"):
-  disk_path = disk_device_path 
-  disk_format = "raw" 
-  disk_aio = "native"
-  disk_cache = "none"
+disk_info_list = []
+for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split():
+  if disk_device_path.startswith("/dev/"):
+    disk_info_list.append({
+      'path': disk_device_path,
+      'format': "raw",
+      'io': "native",
+      'cache': "none"
+    })
+
+if len(disk_info_list) == 0:
+  disk_info_list.append({
+    'path': disk_path,
+    'format': disk_format,
+    'io': disk_aio,
+    'cache': disk_cache,
+  })
 
 smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
@@ -167,12 +178,12 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
   return id_list, external_disk_number
 
 # Download existing hard drive if needed at first boot
-if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
+if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url != '':
   print('Downloading virtual hard drive...')
   try:
-    downloaded_disk = disk_path
+    downloaded_disk = disk_info_list[0]['path']
     if virtual_hard_drive_gzipped == 'true':
-      downloaded_disk = '%s.gz' % disk_path
+      downloaded_disk = '%s.gz' % disk_info_list[0]['path']
     opener.retrieve(virtual_hard_drive_url, downloaded_disk)
   except:
     if os.path.exists(downloaded_disk):
@@ -191,21 +202,21 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
     print('Warning: not checksum specified.')
   if downloaded_disk.endswith('.gz'):
     try:
-      with open(disk_path, 'w') as disk:
+      with open(disk_info_list[0]['path'], 'w') as disk:
         with gzip.open(downloaded_disk, 'rb') as disk_gz:
           shutil.copyfileobj(disk_gz, disk)
     except Exception:
-      if os.path.exists(disk_path):
-        os.remove(disk_path)
+      if os.path.exists(disk_info_list[0]['path']):
+        os.remove(disk_info_list[0]['path'])
       raise
     os.remove(downloaded_disk)
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
-if not disk_device_path.startswith("/dev/") and not os.path.exists(disk_path):
+if len(disk_info_list) == 0 and not disk_info_list[0]['path'].startswith("/dev/") and not os.path.exists(disk_info_list[0]['path']):
   print('Creating virtual hard drive...')
-  subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_format,
-      disk_path, '%sG' % disk_size])
+  subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_info_list[0]['format'],
+      disk_info_list[0]['path'], '%sG' % disk_size])
   print('Done.')
 
 # Check and create external disk
@@ -239,13 +250,6 @@ if disk_storage_dict:
       else:
         print('Data folder %s was not used to create external disk %r' % (index +1))
       index += 1
-
-additional_disk_options = ''
-
-if disk_aio == 'native':
-  additional_disk_options += ',cache.direct=on'
-if disk_format == "raw":
-  additional_disk_options += ',discard=on'
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
@@ -303,8 +307,6 @@ else:
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-drive', 'file=%s,if=%s,cache=%s,aio=%s%s' % (disk_path, disk_type, disk_cache,
-                                                 disk_aio, additional_disk_options),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % socket_path,
@@ -312,6 +314,18 @@ kvm_argument_list = [qemu_path,
   '-D', logfile,
   '-nodefaults',
 ]
+for disk_info in disk_info_list:
+  additional_disk_options = ''
+
+  if disk_info['io'] == 'native':
+    additional_disk_options += ',cache.direct=on'
+  if disk_info['format'] == "raw":
+    additional_disk_options += ',discard=on'
+
+  kvm_argument_list.extend([
+    '-drive',
+    'file=%s,if=%s,cache=%s,aio=%s%s' % ( disk_info['path'], disk_type, disk_info['cache'], disk_info['io'], additional_disk_options)
+  ])
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
