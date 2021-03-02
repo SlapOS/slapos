@@ -1,0 +1,23 @@
+/*jslint indent2 */
+
+import { publish } from "{{ qjs_wrapper }}"; //jslint-quiet
+import { Worker } from "os";
+
+const PORT = "4840";
+const IPV6 = "{{ ipv6 }}";
+
+var parent = Worker.parent;
+
+function handle_msg(e) {
+  switch(e.data.action) {
+    case "publish":
+      publish(IPV6, PORT);
+      parent.postMessage({ publishing: false});
+      parent.onmessage = null;
+      break;
+    default:
+      console.log("Undefined action from parent: ", e.data.action);
+  }
+}
+
+parent.onmessage = handle_msg;
