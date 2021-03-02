@@ -2,6 +2,15 @@
 # Usage: env.sh [/path/to/env.sh]
 
 # ---- 8< ---- (buildout substitution here)
+# extend environment
+while read x ; do
+  k=$(echo $x | cut -d '=' -f 1  | sed -e 's/[[:space:]]*$//' )
+  v=$(echo $x | cut -d '=' -f 2- | sed -e 's/^[[:space:]]*//' )
+  export $k="$v"
+done <<-EOF
+  ${gowork:environment}
+EOF
+
 # PATH so that go & friends work out of the box
 export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:${gcc:prefix}/bin:$PATH
 X=${gowork:directory}
