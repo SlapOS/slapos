@@ -1,9 +1,9 @@
+{% from "instance_zodb_base" import zodb_dict  with context %}
 {% set wsgi = slapparameter_dict['wsgi'] -%}
 {% set webdav = slapparameter_dict['webdav'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
-{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
 {% set selenium_server_configuration_dict = slapparameter_dict.get('selenium-server-configuration-dict', None) -%}
@@ -63,6 +63,12 @@ environment +=
   FONTCONFIG_FILE=${fontconfig-conf:rendered}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
+  WENDELIN_CORE_WCFS_AUTOSTART=no
+{% if slapparameter_dict['wcfs_enable'] %}
+  WENDELIN_CORE_VIRTMEM=r:wcfs+w:uvmm
+{% else %}
+  WENDELIN_CORE_VIRTMEM=rw:uvmm
 {% endif %}
   ${:environment-extra}
 
@@ -257,24 +263,6 @@ cloudooo-url = {{ (cloudooo if cloudooo.port == None else
   cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
 
 {% endif -%}
-{% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
-{% for name, zodb in zodb_dict.iteritems() -%}
-{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
-{%   if zodb['type'] == 'zeo' -%}
-{%     do storage_dict.update(zeo_dict.get(name, ())) -%}
-{%   else -%}
-{%     if name == slapparameter_dict.get('neo-name') -%}
-{%       do storage_dict.update(master_nodes=slapparameter_dict['neo-masters'],
-                                name=slapparameter_dict['neo-cluster']) -%}
-{%     endif -%}
-{{     assert(storage_dict['master_nodes'], name) }}
-{%     if storage_dict.pop('ssl', 1) -%}
-{%       do storage_dict.update(ca='~/etc/ca.crt',
-                                cert='~/etc/neo.crt',
-                                key='~/etc/neo.key') -%}
-{%     endif -%}
-{%   endif -%}
-{% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
 activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
