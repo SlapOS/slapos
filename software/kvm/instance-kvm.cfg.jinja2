@@ -1036,11 +1036,11 @@ keyboard-layout-language = fr
 recipe = slapos.recipe.template:jinja2
 template = inline:
 {%- raw %}
-  [{"disk": "{{disk_device_path}}"}]
+  [{"disk": {{disk_device_path}}}]
 {% endraw -%}
 rendered = ${buildout:directory}/.slapos-disk-permission
 context =
-  raw disk_device_path {{disk_device_path}}
+  raw disk_device_path {{disk_device_path.split()}}
 
 {%   do part_list.append('wipe-disk-device-wrapper') -%}
 [wipe-disk-device-wrapper]
