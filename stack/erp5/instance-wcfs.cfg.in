@@ -1,0 +1,61 @@
+{# instance that runs WCFS service associated with ZODB storage  #}
+{% from "instance_zodb_base" import zodb_dict  with context %}
+
+
+{# build zurl to connect to configured ZODB #}
+{% if len(zodb_dict) != 1 -%}
+{%   do assert(False, ("WCFS supports only single ZODB storage", zodb_dict)) -%}
+{% endif -%}
+
+{% set db_name, zodb = zodb_dict.popitem() -%}
+{% set z = zodb['storage-dict'] -%}
+{% if zodb['type'] == 'zeo' -%}
+{%   set zurl = ('zeo://%s?storage=%s' % (z['server'], z['storage'])) -%}
+{% elif zodb['type'] == 'neo' -%}
+{%   set zurl = ('neo://%s@%s' % (z.pop('name'), z.pop('master_nodes'))) -%}
+{%   set argv = [] -%}
+{%   set i = 0 -%}
+{%   for k,v in z|dictsort -%}
+{%     do argv.append('%s=%s' % (k,v)) -%}
+{%   endfor -%}
+{%   if len(argv) > 0 -%}
+{%     set zurl = zurl + '&' + '?'.join(argv) -%}
+{%   endif -%}
+{% else -%}
+{%   do assert(False, ("unsupported ZODB type", zodb)) -%}
+{% endif -%}
+
+
+[buildout]
+extends = {{ template_monitor }}
+parts +=
+  wcfs
+  wcfs-promise
+  publish
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+log = ${:var}/log
+run = ${:var}/run
+services = ${:etc}/run
+service-on-watch = ${:etc}/service
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+
+[wcfs]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/wcfs serve -log_dir=${directory:log} {{ zurl }}
+wrapper-path = ${directory:service-on-watch}/wcfs
+
+[wcfs-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = {{ bin_directory }}/wcfs status {{ zurl }}
+
+[publish]
+recipe = slapos.cookbook:publish
+serving-zurl = {{ zurl }}
