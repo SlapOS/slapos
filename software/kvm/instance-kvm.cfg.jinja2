@@ -9,6 +9,7 @@
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set whitelist_firewall = slapparameter_dict.get('whitelist-firewall', '') -%}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
@@ -1050,6 +1051,41 @@ command-line =
   dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
 
 {% endif -%}
+
+{%   do part_list.append('whitelist-firewall') -%}
+[whitelist-firewall]
+### XXX Switch to slapos.recipe:async_dns_list
+### input: list of domains and ips, as files
+### input-XXX: refresh the downloadble list from time to time
+### output: json list of ips in .slapos-whitelist-firewall
+### shall reload firewalld configuration on changes, maybe kind of promise??
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  {%- set whitelist_firewall = default_whitelist_firewall.split() %}
+  {%- do whitelist_firewall.extend(request_whitelist_firewall.split()) %}
+  {#- do whitelist_firewall.extend(open_function(downloaded_whitelist_firewall_file).read().split()) #}
+  {{ json_module.dumps(whitelist_firewall) }}
+{% endraw -%}
+rendered = ${buildout:directory}/.slapos-whitelist-firewall
+default-whitelist-firewall =
+  debian.org
+  ubuntu.org
+request-whitelist-firewall = {{ whitelist_firewall }}
+extensions = jinja2.ext.do
+context =
+  import json_module json
+  key default_whitelist_firewall :default-whitelist-firewall
+  key request_whitelist_firewall :request-whitelist-firewall
+  key downloaded_whitelist_firewall_file whitelist-firewall-download:output
+
+[whitelist-firewall-download]
+recipe = plone.recipe.command
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/whitelist-firewall-download.txt
+update-command = ${:command}
+command =
+  mkdir -p ${buildout:parts-directory}/${:_buildout_section_name_}
+  wget -O ${:output} https://stream.nxdcdn.com/rapidspace-whitelist-domains
 
 [buildout]
 parts =
