@@ -34,7 +34,8 @@
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-memory-percent-threshold', 80)) }}
-{% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
+{% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
+{% set caucase_url = caucase_dict.get('url', '') -%}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
@@ -69,8 +70,6 @@ service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
 backup-caucased = ${:srv}/backup/caucased
 
-{% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
-{% set caucase_url = caucase_dict.get('url') -%}
 {% if not caucase_url -%}
 {%   if use_ipv6 -%}
 {%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
