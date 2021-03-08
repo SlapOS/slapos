@@ -95,8 +95,35 @@ backup-caucased = ${:srv}/backup/caucased
 {% do root_common.section('caucased-promise') -%}
 {% endif -%}
 {% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
-{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
+{% set balancer_dict = slapparameter_dict.setdefault('balancer', {}) -%}
 {% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+{% do balancer_dict.setdefault('tcpv4-port', 2150) -%}
+{% do balancer_dict.__setitem__('haproxy-server-check-path', balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) -%}
+{% set routing_path_template_field_dict = {"site-id": site_id} -%}
+{% macro expandRoutingPath(output, input) -%}
+{%   for outer_prefix, inner_prefix in input -%}
+{%     do output.append((outer_prefix, inner_prefix % routing_path_template_field_dict)) -%}
+{%   endfor -%}
+{% endmacro -%}
+{% set path_routing_list = [] -%}
+{% do expandRoutingPath(
+  path_routing_list,
+  balancer_dict.get(
+    'path-routing-list',
+    (('/', '/'), ),
+  ),
+) -%}
+{% do balancer_dict.__setitem__('path-routing-list', path_routing_list) -%}
+{% set family_path_routing_dict = {} -%}
+{% for name, family_path_routing_list in balancer_dict.get(
+  'family-path-routing-dict',
+  {},
+).items() -%}
+{%    set path_routing_list = [] -%}
+{%    do expandRoutingPath(path_routing_list, family_path_routing_list) -%}
+{%    do family_path_routing_dict.__setitem__(name, path_routing_list) -%}
+{% endfor -%}
+{% do balancer_dict.__setitem__('family-path-routing-dict', family_path_routing_dict) -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
@@ -325,65 +352,39 @@ config-url = ${request-jupyter:connection-url}
 {%   endif -%}
 {%- endif %}
 
-[request-balancer]
-<= request-common
-name = balancer
-software-type = balancer
-{{ root_common.sla('balancer') }}
-return =
-  monitor-base-url
-{%- for family in zope_family_dict %}
-  {{ family }}
-  {{ family }}-v6
-  {% if test_runner_enabled %}
-  {{ family }}-test-runner-url-list
-  {% endif %}
-{% endfor -%}
-{% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
-config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
-config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
-{% for zope_section_id, name in zope_address_list_id_dict.items() -%}
-config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
+{% set balancer_ret_dict = {'monitor-base-url': False} -%}
+{% for family in zope_family_dict -%}
+{%   do balancer_ret_dict.__setitem__(family, False) -%}
+{%   do balancer_ret_dict.__setitem__(family + '-v6', False) -%}
 {%   if test_runner_enabled -%}
-config-{{ name }}-test-runner-address-list = {{ ' ${' ~ zope_section_id ~ ':connection-test-runner-address-list}' }}
+{%     do balancer_ret_dict.__setitem__(family + '-test-runner-url-list', False) -%}
 {%   endif -%}
 {% endfor -%}
-# XXX: should those really be same for all families ?
-config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
-{% set routing_path_template_field_dict = {"site-id": site_id} -%}
-{% macro expandRoutingPath(output, input) -%}
-{%   for outer_prefix, inner_prefix in input -%}
-{%     do output.append((outer_prefix, inner_prefix % routing_path_template_field_dict)) -%}
-{%   endfor -%}
-{% endmacro -%}
-{% set path_routing_list = [] -%}
-{% do expandRoutingPath(
-  path_routing_list,
-  balancer_dict.get(
-    'path-routing-list',
-    (('/', '/'), ),
-  ),
+{% set balancer_key_config_dict = {
+  'monitor-passwd': 'monitor-htpasswd:passwd',
+} -%}
+{% for zope_section_id, name in zope_address_list_id_dict.items() -%}
+{%   do balancer_key_config_dict.__setitem__(
+       name,
+       zope_section_id + ':connection-zope-address-list',
 ) -%}
-config-path-routing-list = {{ dumps(path_routing_list) }}
-{% set family_path_routing_dict = {} -%}
-{% for name, family_path_routing_list in balancer_dict.get(
-  'family-path-routing-dict',
-  {},
-).items() -%}
-{%    set path_routing_list = [] -%}
-{%    do expandRoutingPath(path_routing_list, family_path_routing_list) -%}
-{%    do family_path_routing_dict.__setitem__(name, path_routing_list) -%}
+{%   if test_runner_enabled -%}
+{%   do balancer_key_config_dict.__setitem__(
+       name + '-test-runner-address-list',
+       zope_section_id + ':connection-test-runner-address-list',
+) -%}
+{%   endif -%}
 {% endfor -%}
-config-family-path-routing-dict = {{ dumps(family_path_routing_dict) }}
-config-monitor-passwd = ${monitor-htpasswd:passwd}
-config-ssl = {{ dumps(balancer_dict['ssl']) }}
-config-name = ${:name}
-config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
-config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
-config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
-config-apachedex-configuration = {{
-  dumps(
-    monitor_dict.get(
+{{ request(
+  name='balancer',
+  software_type='balancer',
+  config_key='balancer',
+  config={
+    'zope-family-dict': zope_family_parameter_dict,
+    'backend-path-dict': zope_backend_path_dict,
+    'ssl-authentication-dict': ssl_authentication_dict,
+    'apachedex-promise-threshold': monitor_dict.get('apachedex-promise-threshold', 70),
+    'apachedex-configuration': monitor_dict.get(
       'apachedex-configuration',
       [
         '--logformat', '%h %l %u %t "%r" %>s %O "%{Referer}i" "%{User-Agent}i" %{ms}T',
@@ -392,7 +393,13 @@ config-apachedex-configuration = {{
         '--skip-user-agent', 'Zabbix',
         '--error-detail',
         '--js-embed',
-        '--quiet'])) }}
+        '--quiet',
+      ],
+    ),
+  },
+  ret=balancer_ret_dict,
+  key_config=balancer_key_config_dict,
+) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
@@ -438,7 +445,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% endfor -%}
 {% if test_runner_enabled -%}
 {%   for zope_family_name in zope_family_name_list -%}
-{{ zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
+{{     zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
 {%   endfor -%}
 {% endif -%}
 
