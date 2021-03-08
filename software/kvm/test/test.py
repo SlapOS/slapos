@@ -491,6 +491,8 @@ ir2:resilient_sshkeys_authority-on-watch RUNNING
 ir2:sshd-graceful EXITED
 ir2:sshd-on-watch RUNNING
 ir2:websockify-{hash}-on-watch RUNNING
+ir2:whitelist-domains-download-{hash} RUNNING
+ir2:whitelist-firewall-{hash} RUNNING
 ir3:bootstrap-monitor EXITED
 ir3:certificate_authority-{hash}-on-watch RUNNING
 ir3:crond-{hash}-on-watch RUNNING
@@ -1165,3 +1167,107 @@ class TestNatRulesKvmCluster(InstanceTestCase):
 class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
   __partition_reference__ = 'nrkcc'
   nat_rules = ["100", "200 300"]
+
+
+@skipUnlessKvm
+class TestWhitelistFirewall(InstanceTestCase):
+  __partition_reference__ = 'wf'
+  kvm_instance_partition_reference = 'wf0'
+
+  def test(self):
+    slapos_whitelist_firewall = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      '.slapos-whitelist-firewall')
+    self.assertTrue(os.path.exists(slapos_whitelist_firewall))
+    with open(slapos_whitelist_firewall, 'rb') as fh:
+      content = fh.read().encode('utf-8')
+    try:
+      self.content_json = json.loads(content)
+    except ValueError:
+      self.fail('Failed to parse json of %s' % (content,))
+    self.assertTrue(isinstance(self.content_json, list))
+    # check /etc/resolv.conf
+    with open('/etc/resolv.conf', 'rb') as fh:
+      resolv_conf_ip_list = []
+      for line in fh.readlines():
+        line = line.encode('utf-8')
+        if line.startswith('nameserver'):
+          resolv_conf_ip_list.append(line.split()[1])
+    resolv_conf_ip_list = list(set(resolv_conf_ip_list))
+    self.assertFalse(len(resolv_conf_ip_list) == 0)
+    self.assertTrue(all([q in self.content_json for q in resolv_conf_ip_list]))
+    # there is something more
+    self.assertGreater(len(self.content_json), len(resolv_conf_ip_list))
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequest(TestWhitelistFirewall):
+  whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'whitelist-domains': cls.whitelist_domains,
+    }
+
+  def test(self):
+    super(TestWhitelistFirewallRequest, self).test()
+    self.assertIn('2.2.2.2', self.content_json)
+    self.assertIn('3.3.3.3', self.content_json)
+    self.assertIn('4.4.4.4', self.content_json)
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallResilient(TestWhitelistFirewall):
+  kvm_instance_partition_reference = 'wf2'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
+  kvm_instance_partition_reference = 'wf2'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallCluster(TestWhitelistFirewall):
+  kvm_instance_partition_reference = 'wf1'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True
+        }
+      }
+    })}
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestCluster(TestWhitelistFirewallRequest):
+  kvm_instance_partition_reference = 'wf1'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "whitelist-domains": cls.whitelist_domains,
+            "disable-ansible-promise": True
+        }
+      }
+    })}

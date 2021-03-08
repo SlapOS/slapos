@@ -16,6 +16,7 @@
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
@@ -972,7 +973,7 @@ keyboard-layout-language = fr
 {% set key_list =  v.split('\n') -%}
 {{ k }} =
   {{ key_list | join('\n  ') }}
-{% elif k in ['boot-image-url-list', 'boot-image-url-select'] %}
+{% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains'] %}
 {# needs to decorate possibly multiline or maybe unsafe value #}
 {{ k }} = {{ dumps(v) }}
 {% else -%}
@@ -1038,8 +1039,62 @@ command-line =
 
 {% endif -%}
 
+{%   do part_list.append('whitelist-firewall') -%}
+[whitelist-firewall]
+recipe = slapos.cookbook:wrapper
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+wrapper-path = ${directory:scripts}/${:_buildout_section_name_}
+command-line =
+  {{ dnsresolver_executable }}
+  --style list
+  --output ${:output}
+  ${:source}
+
+source =
+  ${whitelist-domains-request:rendered}
+  {{ whitelist_domains_default }}
+  ${whitelist-domains-resolv.conf:output}
+  ${whitelist-domains-download:output}
+output = ${buildout:directory}/.slapos-whitelist-firewall
+
+[whitelist-firewall-directory]
+recipe = plone.recipe.command
+location = ${buildout:parts-directory}/whitelist-firewall
+command = mkdir -p ${:location}
+update-command = ${:command}
+
+[whitelist-domains-request]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  {%- for domain in whitelist_domains.split() %}
+  {{ domain }}
+  {%- endfor %}
+{% endraw -%}
+rendered = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
+whitelist-domains = {{ dumps(whitelist_domains) }}
+extensions = jinja2.ext.do
+context =
+  key whitelist_domains :whitelist-domains
+
+[whitelist-domains-resolv.conf]
+recipe = plone.recipe.command
+output = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
+update-command = ${:command}
+command =
+  egrep ^nameserver /etc/resolv.conf  | cut -d ' ' -f 2 > ${:output}
+
+[whitelist-domains-download]
+recipe = slapos.cookbook:wrapper
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+wrapper-path = ${directory:scripts}/${:_buildout_section_name_}
+output = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
+interval = 3600
+command-line = {{ python_executable }} {{ whitelist_firewall_download_controller }} {{ curl_executable_location }} 3600 ${:output} ${:url}
+
+url = https://stream.nxdcdn.com/rapidspace-whitelist-domains
+
 [instance-kvm-parts]
-# Expose parts for easy addition in profiles which extend this one like resilient
 parts =
   certificate-authority
   certificate-authority-service
