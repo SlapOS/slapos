@@ -22,10 +22,37 @@ name = Theia Import Frontend
 # is notified that the backup files have just been pushed to it.
 # All it expects is that a script be available in importer:wrapper.
 [importer]
-recipe = slapos.cookbook:wrapper
-command-line = echo "Import Not Implemented Yet"
-wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
-wrapper = $${:wrapper-path}
+wrapper = $${theia-import-script:rendered}
+
+[theia-import-script]
+recipe = slapos.recipe.template:jinja2
+template = ${software-info:theia-import-script}
+rendered = $${directory:bin}/theia-import-script
+mode = 700
+restore-exit-code-file = $${directory:srv}/$${:restore-exit-code-file-basename}
+restore-exit-code-file-basename = importer-exit-code-file
+restore-error-message-file = $${directory:srv}/$${:restore-error-message-file-basename}
+restore-error-message-file-basename = importer-error-message-file
+resilient-log-basename = resilient.log
+context =
+  import sys sys
+  import easy_install zc.buildout.easy_install
+  key ipv4 slapos-standalone-config:ipv4
+  key ipv6 slapos-standalone-config:ipv6
+  key proxy_port slapos-standalone-config:port
+  raw instance_folder $${directory:runner}/instance
+  section directory directory
+  raw slapos ${software-info:slapos}
+  raw slapos_cfg $${directory:runner}/etc/slapos.cfg
+  raw slapos_node_software_log $${directory:runner}/var/log/slapos-node-software.log
+  raw slapos_node_instance_log $${directory:runner}/var/log/slapos-node-instance.log
+  raw  output_log_file $${directory:var}/log/$${:resilient-log-basename}
+  raw  shell_binary ${software-info:bash}
+  raw  sqlite3_binary ${software-info:sqlite3}
+  raw  rsync_binary ${software-info:rsync}
+  raw  restore_exit_code_file $${:restore-exit-code-file}
+  raw  restore_error_message_file $${:restore-error-message-file}
+
 
 # Resilient connection parameters of import instance are published
 # through the resilient stack.
