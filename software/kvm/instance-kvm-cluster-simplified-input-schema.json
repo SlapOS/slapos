@@ -107,6 +107,12 @@
                   "title": "FreeBSD 12.1 RELEASE bootonly x86_64"
                 }
               ]
+            },
+            "whitelist-domains": {
+              "title": "Whitelist domains",
+              "description": "List of whitelisted domain names to be accessed from the VM. They will be resolved to IPs depending on where the VM end up. IPs can be used too.",
+              "type": "string",
+              "textarea": true
             }
           },
           "type": "object"
