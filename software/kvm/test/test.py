@@ -999,3 +999,47 @@ class TestNatRulesKvmCluster(InstanceTestCase):
 class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
   __partition_reference__ = 'nrkcc'
   nat_rules = ["100", "200 300"]
+
+
+@skipUnlessKvm
+class TestWhitelistFirewall(InstanceTestCase):
+  __partition_reference__ = 'wf'
+
+  def test(self):
+    slapos_whitelist_firewall = os.path.join(
+      self.computer_partition_root_path, '.slapos-whitelist-firewall')
+    self.assertTrue(os.path.exists(slapos_whitelist_firewall))
+    with open(slapos_whitelist_firewall, 'rb') as fh:
+      content = fh.read().encode('utf-8')
+    try:
+      self.content_json = json.loads(content)
+    except ValueError:
+      self.fail('Failed to parse json of %s' % (content,))
+    self.assertTrue(isinstance(self.content_json, list))
+    # check /etc/resolv.conf
+    with open('/etc/resolv.conf', 'rb') as fh:
+      resolv_conf_ip_list = []
+      for line in fh.readlines():
+        line = line.encode('utf-8')
+        if line.startswith('nameserver'):
+          resolv_conf_ip_list.append(line.split()[1])
+    resolv_conf_ip_list = list(set(resolv_conf_ip_list))
+    self.assertFalse(len(resolv_conf_ip_list) == 0)
+    self.assertTrue(all([q in self.content_json for q in resolv_conf_ip_list]))
+    # there is something more
+    self.assertGreater(len(self.content_json), len(resolv_conf_ip_list))
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequest(TestWhitelistFirewall):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'whitelist-domains': '2.2.2.2 3.3.3.3\n4.4.4.4',
+    }
+
+  def test(self):
+    super(TestWhitelistFirewallRequest, self).test()
+    self.assertIn('2.2.2.2', self.content_json)
+    self.assertIn('3.3.3.3', self.content_json)
+    self.assertIn('4.4.4.4', self.content_json)
