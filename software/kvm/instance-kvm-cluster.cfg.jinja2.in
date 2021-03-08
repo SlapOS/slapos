@@ -135,7 +135,7 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
-{%- for k in ['boot-image-url-list', 'boot-image-url-select'] %}
+{%- for k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains'] %}
 {#-   play nice - use parameter only if present #}
 {%-   if k in kvm_parameter_dict %}
 {#-     play safe - dumps value #}
