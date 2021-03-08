@@ -220,6 +220,7 @@ config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-selenium-server-configuration-dict = {{ dumps(slapparameter_dict.get('selenium-server-configuration-dict', {})) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
+config-computer-hosts-dict = {{ dumps(slapparameter_dict.get('computer-hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}

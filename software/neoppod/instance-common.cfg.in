@@ -23,6 +23,7 @@ context =
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
     key slapparameter_dict slap-configuration:configuration
+    key computer slap-configuration:computer
     raw logrotate_cfg {{ template_logrotate_base }}
     raw template_monitor {{ template_monitor }}
     raw bin_directory {{ bin_directory }}
