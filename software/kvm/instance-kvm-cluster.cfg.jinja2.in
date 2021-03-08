@@ -96,7 +96,6 @@ config-monitor-password = ${publish-early:monitor-password}
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
-config-type = cluster
 
 {% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
 {% set rejected_source_list = slapparameter_dict.get('fw-reject-sources', []) -%}
