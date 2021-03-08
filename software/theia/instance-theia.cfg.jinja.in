@@ -313,7 +313,7 @@ template =
   . ${gowork:env.sh}
   # reset PS1 from gowork
   export PS1='$ '
-  export HOME=$${buildout:directory}
+  export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
 
 
@@ -421,6 +421,7 @@ ip = {{ ipv4_random }}
 ipv4 = {{ ipv4_random }}
 ipv6 = {{ ipv6_random }}
 port = $${slapos-standalone-port:port}
+local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
 
@@ -449,6 +450,7 @@ template =
       $${slapos-standalone-config:ipv4} \
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
+      $${slapos-standalone-config:local-software-release-root} \
       $${slapos-standalone-config:computer-id} \
       {% if parameter_dict.get('embedded-sr') %} \
       --sr='{{ parameter_dict['embedded-sr'] }}' \
