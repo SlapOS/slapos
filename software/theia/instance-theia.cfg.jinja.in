@@ -291,7 +291,7 @@ template =
   . ${gowork:env.sh}
   # reset PS1 from gowork
   export PS1='$ '
-  export HOME=$${buildout:directory}
+  export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
 
 
@@ -399,6 +399,7 @@ ip = $${instance-parameter:ipv4-random}
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
 port = $${slapos-standalone-port:port}
+local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
 
@@ -427,6 +428,7 @@ template =
       $${slapos-standalone-config:ipv4} \
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
+      $${slapos-standalone-config:local-software-release-root} \
       $${slapos-standalone-config:computer-id} \
       --sr='$${instance-parameter:configuration.embedded-sr}' \
       --srtype='$${instance-parameter:configuration.embedded-sr-type}' \
