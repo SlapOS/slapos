@@ -98,6 +98,11 @@
         ".*": {
           "default": {},
           "properties": {
+            "webdav": {
+              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled)",
+              "default": false,
+              "type": "boolean"
+            },
             "activity-deadline": {
               "description": "Override global activity deadline",
               "type": ["number", "null"]
@@ -206,11 +211,6 @@
               "description": "If set to true, will set SSL Client verification to required on apache VirtualHost which allow to access this zope instance.",
               "type": "boolean",
               "default": false
-            },
-            "webdav": {
-              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled). Mixing webdav and non-webdav nodes in a single family will give unspecified results.",
-              "default": false,
-              "type": "boolean"
             },
             "longrequest-logger-interval": {
               "description": "Period, in seconds, with which LongRequestLogger polls worker thread stack traces, or -1 to disable",
