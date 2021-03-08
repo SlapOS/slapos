@@ -1053,47 +1053,65 @@ command-line =
 {% endif -%}
 
 {%   do part_list.append('whitelist-firewall') -%}
-[whitelist-firewall]
-### XXX Switch to slapos.recipe:async_dns_list
-### input: list of domains and ips, as files
-### input-XXX: refresh the downloadble list from time to time
-### output: json list of ips in .slapos-whitelist-firewall
-### shall reload firewalld configuration on changes, maybe kind of promise??
+[whitelist-firewall-simple-resolver]
 recipe = slapos.recipe.template:jinja2
-template = inline:
-{%- raw %}
-  {%- set whitelist_firewall = default_whitelist_firewall.split() %}
-  {%- do whitelist_firewall.extend(request_whitelist_firewall.split()) %}
-  {#- do whitelist_firewall.extend(open_function(downloaded_whitelist_firewall_file).read().split()) #}
-  {{ json_module.dumps(whitelist_firewall) }}
-{% endraw -%}
-rendered = ${buildout:directory}/.slapos-whitelist-firewall
-default-whitelist-firewall =
-  debian.org
-  ubuntu.org
-request-whitelist-firewall = {{ whitelist_firewall }}
-extensions = jinja2.ext.do
+template = {{ whitelist_firewall_simple_resolver }}
+rendered = ${directory:bin}/whitelist-firewall-simple-resolver.sh
+mode = 700
+dig = {{ bind_location }}/bin/dig
+sort = {{ coreutils_location }}/bin/sort
 context =
-  import json_module json
-  key default_whitelist_firewall :default-whitelist-firewall
-  key request_whitelist_firewall :request-whitelist-firewall
-  key downloaded_whitelist_firewall_file whitelist-firewall-download:output
+  raw dash {{ dash_executable_location }}
+  key dig :dig
+  key sort :sort
 
-[whitelist-firewall-download-directory]
+[whitelist-firewall]
+recipe = slapos.cookbook:wrapper
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+wrapper-path = ${directory:scripts}/${:_buildout_section_name_}
+command-line = ${whitelist-firewall-simple-resolver:rendered} ${:output} ${:source}
+source =
+  ${whitelist-firewall-request:rendered}
+  ${whitelist-firewall-default:rendered}
+  ${whitelist-firewall-download:output}
+output = ${buildout:directory}/.slapos-whitelist-firewall
+
+[whitelist-firewall-directory]
 recipe = plone.recipe.command
-location = ${buildout:parts-directory}/whitelist-firewall-download
+location = ${buildout:parts-directory}/whitelist-firewall
 command = mkdir -p ${:location}
 update-command = ${:command}
 
+[whitelist-firewall-request]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  {%- for domain in whitelist_firewall.split() %}
+  {{ domain }}
+  {%- endfor %}
+{% endraw -%}
+rendered = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
+whitelist-firewall = {{ whitelist_firewall }}
+extensions = jinja2.ext.do
+context =
+  key whitelist_firewall :whitelist-firewall
+  key request_whitelist_firewall :whitelist-firewall
+
+[whitelist-firewall-default]
+<= whitelist-firewall-request
+whitelist-firewall =
+  debian.org
+  ubuntu.org
+
 [whitelist-firewall-download]
-# wrapper to execute  on each run
 recipe = slapos.cookbook:wrapper
-url = https://stream.nxdcdn.com/rapidspace-whitelist-domains
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 wrapper-path = ${directory:scripts}/${:_buildout_section_name_}
-output = ${whitelist-firewall-download-directory:location}/whitelist-firewall-download.txt
+output = ${whitelist-firewall-directory:location}/${:_buildout_section_name_}.txt
 interval = 3600
 command-line = {{ python_executable }} {{ whitelist_firewall_download_controller }} {{ curl_executable_location }} 3600 ${:output} ${:url}
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+url = https://stream.nxdcdn.com/rapidspace-whitelist-domains
 
 [buildout]
 parts =
