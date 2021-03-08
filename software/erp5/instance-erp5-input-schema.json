@@ -81,6 +81,37 @@
       "uniqueItems": true,
       "type": "array"
     },
+    "activity-deadline": {
+      "description": "How long a CMFActivity-initiated transaction may last, in seconds",
+      "default": null,
+      "type": ["number", "null"]
+    },
+    "publication-deadline": {
+      "description": "How long a publisher-initiated transaction may last, in seconds",
+      "default": null,
+      "type": ["number", "null"]
+    },
+    "family-override": {
+      "description": "Family-wide options, possibly overriding global options",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "default": {},
+          "properties": {
+            "activity-deadline": {
+              "description": "Override global activity deadline",
+              "type": ["number", "null"]
+            },
+            "publication-deadline": {
+              "description": "Override global publication deadline",
+              "type": ["number", "null"]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "hostalias-dict": {
       "description": "Hostname-to-domain-name mapping",
       "default": {},

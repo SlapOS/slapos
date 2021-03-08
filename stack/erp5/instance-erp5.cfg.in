@@ -24,6 +24,7 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
 {% for zope_parameter_dict in zope_partition_dict.values() -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
@@ -225,6 +226,8 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 {% endfor -%}
 software-type = zope
 
+{% set global_publication_deadline = slapparameter_dict.get('publication-deadline') -%}
+{% set global_activity_deadline = slapparameter_dict.get('activity-deadline') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
@@ -245,6 +248,7 @@ software-type = zope
 {%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
 {%   do zope_backend_path_dict.__setitem__(zope_family, backend_path) -%}
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
+{%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
@@ -260,6 +264,8 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+config-publication-deadline = {{ dumps(current_zope_family_override_dict.get('publication-deadline', global_publication_deadline)) }}
+config-activity-deadline = {{ dumps(current_zope_family_override_dict.get('activity-deadline', global_activity_deadline)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
