@@ -1,0 +1,13 @@
+# shcache.nxdcdn.com is default source for a lot of operations
+shacache.nxdcdn.com
+# stream.nxdcdn.com is needed by partition itself
+stream.nxdcdn.com
+# partition has to access default SlapOS Master
+slap.vifib.com
+slapos.vifib.com
+# hnode.cdn.vifib.com hosts monitoring, and partition need access to this
+hnode.cdn.vifib.com
+# XXX - Open Source sources
+deb.debian.org
+debian.org
+ubuntu.org
