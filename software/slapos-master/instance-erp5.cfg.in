@@ -249,8 +249,8 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 {% endfor -%}
 software-type = zope
 
-{% set global_publication_deadline = slapparameter_dict.get('publication-deadline') -%}
-{% set global_activity_deadline = slapparameter_dict.get('activity-deadline') -%}
+{% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
+{% set global_activity_timeout = slapparameter_dict.get('activity-timeout') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
@@ -288,8 +288,8 @@ config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-thres
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 {# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
 config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
-config-publication-deadline = {{ dumps(current_zope_family_override_dict.get('publication-deadline', global_publication_deadline)) }}
-config-activity-deadline = {{ dumps(current_zope_family_override_dict.get('activity-deadline', global_activity_deadline)) }}
+config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
+config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
