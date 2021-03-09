@@ -276,8 +276,8 @@ cloudooo-url = {{ (cloudooo if cloudooo.port == None else
 {%   endif -%}
 {% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
-publication-deadline = {{ dumps(slapparameter_dict['publication-deadline']) }}
-activity-deadline = {{ dumps(slapparameter_dict['activity-deadline']) }}
+publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
+activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
 instance = ${directory:instance}
 instance-products = ${directory:instance-products}
 deadlock-path = /manage_debug_threads

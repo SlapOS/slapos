@@ -81,12 +81,12 @@
       "uniqueItems": true,
       "type": "array"
     },
-    "activity-deadline": {
+    "activity-timeout": {
       "description": "How long a CMFActivity-initiated transaction may last, in seconds",
       "default": null,
       "type": ["number", "null"]
     },
-    "publication-deadline": {
+    "publisher-timeout": {
       "description": "How long a publisher-initiated transaction may last, in seconds",
       "default": null,
       "type": ["number", "null"]
@@ -103,12 +103,12 @@
               "default": false,
               "type": "boolean"
             },
-            "activity-deadline": {
-              "description": "Override global activity deadline",
+            "activity-timeout": {
+              "description": "Override global activity timeout",
               "type": ["number", "null"]
             },
-            "publication-deadline": {
-              "description": "Override global publication deadline",
+            "publisher-timeout": {
+              "description": "Override global publisher timeout",
               "type": ["number", "null"]
             }
           },

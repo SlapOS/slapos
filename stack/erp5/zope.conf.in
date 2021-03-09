@@ -140,14 +140,14 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 </zodb_db>
 
 {% set developer_list = parameter_dict['developer-list'] -%}
-{% set publication_deadline = parameter_dict['publication-deadline'] -%}
-{% set activity_deadline = parameter_dict['activity-deadline'] -%}
-{% if developer_list or publication_deadline or activity_deadline -%}
+{% set publisher_timeout = parameter_dict['publisher-timeout'] -%}
+{% set activity_timeout = parameter_dict['activity-timeout'] -%}
+{% if developer_list or publisher_timeout or activity_timeout -%}
 %import Products.ERP5Type
 <ERP5Type erp5>
   {% if developer_list %}developers {{ developer_list | join(' ') }}{% endif %}
-  {% if publication_deadline %}publisher-timeout {{ publication_deadline }}{% endif %}
-  {% if activity_deadline %}activity-timeout {{ activity_deadline }}{% endif %}
+  {% if publisher_timeout %}publisher-timeout {{ publisher_timeout }}{% endif %}
+  {% if activity_timeout %}activity-timeout {{ activity_timeout }}{% endif %}
 </ERP5Type>
 
 {% endif -%}
