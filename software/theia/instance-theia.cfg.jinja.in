@@ -109,6 +109,7 @@ module = check_service_state
 name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
+config-run-directory = $${directory:runner}/var/run
 
 
 # Remote Apache Frontend
