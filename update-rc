@@ -5,6 +5,9 @@ set -e
 # Go to master
 git checkout master
 
+# Update from origin
+git fetch origin
+
 # Clean up 1.0
 git branch -D 1.0 || echo
 
