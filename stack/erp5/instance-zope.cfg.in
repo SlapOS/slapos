@@ -22,7 +22,7 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
-{% set hosts_dict = {} -%}
+{% set publishable_hosts_dict = {} -%}
 {% set port_dict = {} -%}
 {% for alias, url in (
     ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
@@ -32,15 +32,17 @@ partition. No more (undefined result), no less (IndexError).
   ) -%}
 {%   set parsed_url = urlparse.urlparse(url) -%}
 {%   do port_dict.__setitem__(alias, parsed_url.port)  -%}
-{%   do hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
+{%   do publishable_hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
 {%- endfor %}
 {% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
-{%   do hosts_dict.__setitem__(
+{%   do publishable_hosts_dict.__setitem__(
        'erp5-catalog-' ~ i,
        urlparse.urlparse(url).hostname,
      ) -%}
 {%- endfor %}
-{% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+{% do publishable_hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+{% set hosts_dict = publishable_hosts_dict.copy() -%}
+{% do hosts_dict.update(slapparameter_dict['computer-hosts-dict'].get(computer, {})) -%}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -274,6 +276,8 @@ cloudooo-url = {{ (cloudooo if cloudooo.port == None else
 {%   endif -%}
 {% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
+publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
+activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
 instance = ${directory:instance}
 instance-products = ${directory:instance-products}
 deadlock-path = /manage_debug_threads
@@ -553,7 +557,7 @@ This has the downside of making each zope partition publish the (hopefuly) same
 dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
-hosts-dict = {{ dumps(hosts_dict) }}
+hosts-dict = {{ dumps(publishable_hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 test-runner-address-list = {{ dumps(test_runner_address_list) }}
 software-release-url = ${slap-connection:software-release-url}

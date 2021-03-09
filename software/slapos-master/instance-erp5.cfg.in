@@ -177,9 +177,9 @@ return =
 {% endif %}
 {% set bt5_default_list = 'erp5_full_text_mroonga_catalog slapos_configurator' -%}
 {% if has_jupyter -%}
-{%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
+{%   do bt5_default_list.append('erp5_data_notebook') -%}
 {% endif -%}
-config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
+config-bt5 = {{ dumps(slapparameter_dict.get('bt5', ' '.join(bt5_default_list))) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cloudooo_url)) }}
 config-caucase-url = {{ dumps(caucase_url) }}
@@ -187,6 +187,7 @@ config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-saucelabs-dict = {{ dumps(slapparameter_dict.get('saucelabs-dict', {})) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
+config-computer-hosts-dict = {{ dumps(slapparameter_dict.get('computer-hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-id-store-interval = {{ dumps(slapparameter_dict.get('id-store-interval')) }}
 config-zope-longrequest-logger-error-threshold = {{ dumps(monitor_dict.get('zope-longrequest-logger-error-threshold', 20)) }}
@@ -430,7 +431,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% endfor -%}
 {% if test_runner_enabled -%}
 {%   for zope_family_name in zope_family_name_list -%}
-{{ zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
+{{     zope_family_name }}-test-runner-url-list = ${request-balancer:connection-{{ zope_family_name }}-test-runner-url-list}
 {%   endfor -%}
 {% endif -%}
 

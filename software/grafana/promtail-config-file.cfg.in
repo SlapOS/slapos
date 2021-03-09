@@ -1,10 +1,10 @@
-# https://github.com/grafana/loki/blob/master/docs/logentry/processing-log-lines.md
 
 server:
-  http_listen_port: {{ promtail['http_port'] }}
-  # XXX this external_url does not work ... promtail still listen on all IPs
+  http_listen_address: {{ promtail['ip'] }}
+  http_listen_port: {{ promtail['http-port'] }}
+  grpc_listen_address: {{ promtail['ip'] }}
+  grpc_listen_port: {{ promtail['grpc-port'] }}
   external_url: {{ promtail['url'] }}
-  grpc_listen_port: 0
 
 positions:
   filename: {{ promtail['dir'] }}/positions.yaml

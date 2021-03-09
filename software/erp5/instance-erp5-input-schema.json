@@ -3,6 +3,28 @@
   "description": "Parameters to instantiate ERP5",
   "additionalProperties": false,
   "definitions": {
+    "routing-rule-list": {
+      "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given. This requires the path received from the outside world (typically: frontend) to have its root correspond to Zope's root (for frontend: 'path' parameter must be empty), with the customary VirtualHostMonster construct (for frontend: 'type' must be 'zope').",
+      "type": "array",
+      "default": [["/", "/"]],
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": [
+          {
+            "title": "External path",
+            "description": "Path as received from the outside world, based on VirtualHostRoot element.",
+            "type": "string"
+          },
+          {
+            "title": "Internal path",
+            "description": "Zope path, based on Zope root object, the external path should correspond to. '%(site-id)s' is replaced by the site-id value, and '%%' replaced by '%'.",
+            "type": "string"
+          }
+        ]
+      }
+    },
     "tcpv4port": {
       "$ref": "./schemas-definitions.json#/tcpv4port"
     }
@@ -58,6 +80,42 @@
       },
       "uniqueItems": true,
       "type": "array"
+    },
+    "activity-timeout": {
+      "description": "How long a CMFActivity-initiated transaction may last, in seconds",
+      "default": null,
+      "type": ["number", "null"]
+    },
+    "publisher-timeout": {
+      "description": "How long a publisher-initiated transaction may last, in seconds",
+      "default": null,
+      "type": ["number", "null"]
+    },
+    "family-override": {
+      "description": "Family-wide options, possibly overriding global options",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "default": {},
+          "properties": {
+            "webdav": {
+              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled)",
+              "default": false,
+              "type": "boolean"
+            },
+            "activity-timeout": {
+              "description": "Override global activity timeout",
+              "type": ["number", "null"]
+            },
+            "publisher-timeout": {
+              "description": "Override global publisher timeout",
+              "type": ["number", "null"]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
     },
     "hostalias-dict": {
       "description": "Hostname-to-domain-name mapping",
@@ -153,11 +211,6 @@
               "description": "If set to true, will set SSL Client verification to required on apache VirtualHost which allow to access this zope instance.",
               "type": "boolean",
               "default": false
-            },
-            "webdav": {
-              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled). Mixing webdav and non-webdav nodes in a single family will give unspecified results.",
-              "default": false,
-              "type": "boolean"
             },
             "longrequest-logger-interval": {
               "description": "Period, in seconds, with which LongRequestLogger polls worker thread stack traces, or -1 to disable",
@@ -452,6 +505,20 @@
     "balancer": {
       "description": "HTTP(S) load balancer proxy parameters",
       "properties": {
+        "path-routing-list": {
+          "$ref": "#/definitions/routing-rule-list",
+          "title": "Global path routing rules"
+        },
+        "family-path-routing-dict": {
+          "type": "object",
+          "title": "Family-specific path routing rules",
+          "description": "Applied, only for the eponymous family, before global path routing rules.",
+          "patternProperties": {
+            ".+": {
+              "$ref": "#/definitions/routing-rule-list"
+            }
+          }
+        },
         "ssl": {
           "description": "HTTPS certificate generation parameters",
           "properties": {
