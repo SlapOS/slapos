@@ -24,6 +24,7 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
 {% for zope_parameter_dict in zope_partition_dict.values() -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
@@ -34,7 +35,8 @@
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-memory-percent-threshold', 80)) }}
-{% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
+{% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
+{% set caucase_url = caucase_dict.get('url', '') -%}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
@@ -64,13 +66,11 @@ config-name = {{ name }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-service-on-watch = ${:etc}/service
+bin = ${buildout:directory}/bin
+service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
 backup-caucased = ${:srv}/backup/caucased
 
-{% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
-{% set caucase_url = caucase_dict.get('url') -%}
 {% if not caucase_url -%}
 {%   if use_ipv6 -%}
 {%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
@@ -95,8 +95,35 @@ backup-caucased = ${:srv}/backup/caucased
 {% do root_common.section('caucased-promise') -%}
 {% endif -%}
 {% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
-{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
+{% set balancer_dict = slapparameter_dict.setdefault('balancer', {}) -%}
 {% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+{% do balancer_dict.setdefault('tcpv4-port', 2150) -%}
+{% do balancer_dict.__setitem__('haproxy-server-check-path', balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) -%}
+{% set routing_path_template_field_dict = {"site-id": site_id} -%}
+{% macro expandRoutingPath(output, input) -%}
+{%   for outer_prefix, inner_prefix in input -%}
+{%     do output.append((outer_prefix, inner_prefix % routing_path_template_field_dict)) -%}
+{%   endfor -%}
+{% endmacro -%}
+{% set path_routing_list = [] -%}
+{% do expandRoutingPath(
+  path_routing_list,
+  balancer_dict.get(
+    'path-routing-list',
+    (('/', '/'), ),
+  ),
+) -%}
+{% do balancer_dict.__setitem__('path-routing-list', path_routing_list) -%}
+{% set family_path_routing_dict = {} -%}
+{% for name, family_path_routing_list in balancer_dict.get(
+  'family-path-routing-dict',
+  {},
+).items() -%}
+{%    set path_routing_list = [] -%}
+{%    do expandRoutingPath(path_routing_list, family_path_routing_list) -%}
+{%    do family_path_routing_dict.__setitem__(name, path_routing_list) -%}
+{% endfor -%}
+{% do balancer_dict.__setitem__('family-path-routing-dict', family_path_routing_dict) -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
@@ -172,6 +199,7 @@ return =
   zope-address-list
   hosts-dict
   monitor-base-url
+  software-release-url
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
@@ -185,7 +213,7 @@ config-cloudooo-url = {{ dumps(slapparameter_dict.get('cloudooo-url', default_cl
 config-caucase-url = {{ dumps(caucase_url) }}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
-config-saucelabs-dict = {{ dumps(slapparameter_dict.get('saucelabs-dict', {})) }}
+config-selenium-server-configuration-dict = {{ dumps(slapparameter_dict.get('selenium-server-configuration-dict', {})) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-computer-hosts-dict = {{ dumps(slapparameter_dict.get('computer-hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
@@ -204,7 +232,7 @@ config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-cloudooo-retry-count = {{ slapparameter_dict.get('cloudooo-retry-count', 2) }}
 config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
-config-ca-path = ${directory:ca-dir}
+config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
@@ -221,6 +249,8 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 {% endfor -%}
 software-type = zope
 
+{% set global_publication_deadline = slapparameter_dict.get('publication-deadline') -%}
+{% set global_activity_deadline = slapparameter_dict.get('activity-deadline') -%}
 {% set zope_family_dict = {} -%}
 {% set zope_family_name_list = [] -%}
 {% set zope_backend_path_dict = {} -%}
@@ -229,6 +259,7 @@ software-type = zope
 {% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
+{%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
 {%   do zope_family_name_list.append(zope_family) %}
 {%   set backend_path = zope_parameter_dict.get('backend-path', '') % {'site-id': site_id} %}
@@ -240,6 +271,7 @@ software-type = zope
 {%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
 {%   do zope_backend_path_dict.__setitem__(zope_family, backend_path) -%}
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
+{%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
@@ -254,10 +286,24 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-large-file-threshold = {{ dumps(zope_parameter_dict.get('large-file-threshold', "10MB")) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
-config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
-config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
+{# BBB: zope_parameter_dict used to contain 'webdav', so fallback to it -#}
+config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_parameter_dict.get('webdav', False))) }}
+config-publication-deadline = {{ dumps(current_zope_family_override_dict.get('publication-deadline', global_publication_deadline)) }}
+config-activity-deadline = {{ dumps(current_zope_family_override_dict.get('activity-deadline', global_activity_deadline)) }}
 {%   if test_runner_enabled -%}
 config-test-runner-apache-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
+
+[{{ promise_software_url_section_name }}]
+# Promise to wait for zope partition to use the expected software URL,
+# used on upgrades.
+recipe = slapos.cookbook:check_parameter
+value = {{ '${' ~ section_name ~ ':connection-software-release-url}' }}
+expected-not-value =
+expected-value = ${slap-connection:software-release-url}
+path = ${directory:bin}/${:_buildout_section_name_}
+
+{% do root_common.section(promise_software_url_section_name) -%}
+
 {%   endif -%}
 {% endfor -%}
 
