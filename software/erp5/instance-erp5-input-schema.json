@@ -6,7 +6,12 @@
     "routing-rule-list": {
       "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given. This requires the path received from the outside world (typically: frontend) to have its root correspond to Zope's root (for frontend: 'path' parameter must be empty), with the customary VirtualHostMonster construct (for frontend: 'type' must be 'zope').",
       "type": "array",
-      "default": [["/", "/"]],
+      "default": [
+        [
+          "/",
+          "/"
+        ]
+      ],
       "items": {
         "type": "array",
         "minItems": 2,
@@ -84,12 +89,18 @@
     "activity-timeout": {
       "description": "How long a CMFActivity-initiated transaction may last, in seconds",
       "default": null,
-      "type": ["number", "null"]
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "publisher-timeout": {
       "description": "How long a publisher-initiated transaction may last, in seconds",
       "default": null,
-      "type": ["number", "null"]
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
@@ -105,11 +116,17 @@
             },
             "activity-timeout": {
               "description": "Override global activity timeout",
-              "type": ["number", "null"]
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "publisher-timeout": {
               "description": "Override global publisher timeout",
-              "type": ["number", "null"]
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "type": "object"
