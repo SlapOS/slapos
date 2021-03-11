@@ -1,0 +1,57 @@
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated with context %}
+
+{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 1)|int %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+extends =
+  {{ monitor_template }}
+
+parts +=
+# Generate the parts to request theia-export, pull-backup and theia-import
+# See stack/resilient/template-parts.cfg.in and stack/resilient/template-replicated.cfg.in
+# See below for the generation of the sections corresponding to the parts generated here
+  {{ parts.replicate("theia", number_of_instances + 1) }}
+# Also publish some connection parameters
+  publish-connection-parameter
+
+[ArgLeader]
+
+[ArgBackup]
+
+# Generate sections to request theia-export, pull-backup and theia-import
+# See stack/resilient/template-replicated.cfg.in
+# In particular:
+#
+# [request-theia]
+# <= ArgLeader
+# software-type = export
+# ...
+#
+# [request-theia-pseudo-replicating-1]
+# <= ArgBackup
+# software-type = import
+# ...
+#
+# [request-pbs-theia-1]
+# software-type = pull-backup
+# ...
+#
+{{ replicated.replicate("theia", number_of_instances + 1,
+                        "export", "import",
+                        "ArgLeader", "ArgBackup",
+                        slapparameter_dict=slapparameter_dict) }}
+
+# Extend the list of return parameters for the export request
+[request-theia]
+return += url username password
+
+# Publish some parameters from the export instance
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${request-theia:connection-url}
+username = ${request-theia:connection-username}
+password = ${request-theia:connection-password}
