@@ -134,7 +134,7 @@ HOME='{{ directory["home"] }}'
 # XXX Hardcoded
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export MAKEFLAGS=-j4
-SLAPOS='{{ directory["bin"] }}'/slapos
+SLAPOS='{{ slapos }}'
 DATABASE="$HOME/srv/runner/var/proxy.db"
 db_query () {
   # Try opening locked tables for 5 seconds to prevent "database is locked" error

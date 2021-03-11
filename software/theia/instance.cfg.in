@@ -9,6 +9,7 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 
 [software-info]
+slapos = ${buildout:bin-directory}/slapos
 python-with-eggs = ${buildout:bin-directory}/${python-with-eggs:interpreter}
 python = ${python:location}/bin/python
 rsync = ${rsync:location}/bin/rsync

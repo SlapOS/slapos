@@ -42,6 +42,7 @@ context =
   key proxy_port slapos-standalone-config:port
   raw instance_folder $${directory:runner}/instance
   section directory directory
+  raw slapos ${software-info:slapos}
   raw slapos_cfg $${directory:runner}/etc/slapos.cfg
   raw slapos_node_software_log $${directory:runner}/var/log/slapos-node-software.log
   raw slapos_node_instance_log $${directory:runner}/var/log/slapos-node-instance.log
