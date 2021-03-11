@@ -2,7 +2,7 @@ import * as mavsdk from "mavsdk";
 import * as os from "os";
 
 function fly_drone() {
-	if(mavsdk.start("udp://:14540") != 0) {
+	if(mavsdk.start("udp://192.168.99.23:7909") != 0) {
 		return;
 	}
 
