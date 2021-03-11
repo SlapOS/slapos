@@ -55,3 +55,7 @@ recipe = slapos.cookbook:publish
 url = ${request-theia:connection-url}
 username = ${request-theia:connection-username}
 password = ${request-theia:connection-password}
+
+# Publish resiliency parameters fetched by the resilient stack
+[publish-connection-parameter]
+<= publish-connection-information
