@@ -1,0 +1,34 @@
+{%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
+
+[buildout]
+extends = {{ theia_instance_cfg }}
+          {{ pbsready_export_cfg }}
+
+parts +=
+  monitor-base
+  $${:theia-parts}
+  $${:theia-environment-parts}
+  resilient-publish-connection-parameter
+
+
+# The resilient stack makes the 'resilient' instance
+# request the 'export' instance with a 'namebase' parameter.
+# The export template then expects to receive it in
+# slap-parameter:namebase
+[slap-parameter]
+namebase = {{ parameter_dict['namebase'] }}
+
+
+# The resilient export stack periodically calls exporter:wrapper
+# and then notifies the pull-backup instance that data is ready
+# to be pulled from the export instance.
+# All it expects is that a script be available in exporter:wrapper.
+[exporter]
+recipe = slapos.cookbook:wrapper
+command-line = echo "Export Not Implemented Yet"
+wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
+wrapper = $${:wrapper-path}
+
+# Extend resilient parameters with normal theia connection parameters
+[resilient-publish-connection-parameter]
+<= publish-connection-parameter
