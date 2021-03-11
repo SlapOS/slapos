@@ -280,13 +280,14 @@ wait-for-files = $${frontend-instance:pidfile}
 [favicon.ico]
 # generate a pseudo random favicon, different for each instance name.
 recipe = slapos.recipe.build
+seed = {{ root_title }}
 install =
   import hashlib, shutil
   buildout_offline = self.buildout['buildout']['offline']
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      b'''{{ root_title }}'''
+      b'''$${:seed}'''
     ).hexdigest() + "?s=256&d=retro"
     shutil.copy(self.download(gravatar_url), '''$${:location}''')
   except Exception:
