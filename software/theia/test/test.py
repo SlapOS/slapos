@@ -57,6 +57,22 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     # Theia uses unix sockets, so it needs short paths.
   __partition_reference__ = 'T'
 
+  @classmethod
+  def getPartitionIdWhere(cls, software_url, software_type):
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
+      _software = computer_partition.getSoftwareRelease()._software_release
+      _type = computer_partition.getType()
+      if _software == software_url and _type == software_type:
+        return computer_partition.getId()
+    return None
+
+  @classmethod
+  def getPartitionPathWhere(cls, software_url, software_type):
+    Id = cls.getPartitionIdWhere(software_url, software_type)
+    if Id:
+      return os.path.join(cls.slap._instance_root, Id)
+    return None
+
 
 # Utils
 # -----
@@ -263,7 +279,8 @@ class TestTheiaResilientInterface(TestTheiaInterface):
   def setUpClass(cls):
     super(TestTheiaResilientInterface, cls).setUpClass()
     # Patch the computer root path to that of the export theia instance
-    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
+    path = cls.getPartitionPathWhere(cls.getSoftwareURL(), 'export')
+    cls.computer_partition_root_path = path
 
 
 class TestTheiaResilientWithSR(TestTheiaWithSR):
@@ -277,4 +294,5 @@ class TestTheiaResilientWithSR(TestTheiaWithSR):
   def setUpClass(cls):
     super(TestTheiaResilientWithSR, cls).setUpClass()
     # Patch the computer root path to that of the export theia instance
-    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
+    path = cls.getPartitionPathWhere(cls.getSoftwareURL(), 'export')
+    cls.computer_partition_root_path = path
