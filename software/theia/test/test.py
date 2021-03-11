@@ -45,13 +45,53 @@ from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
+# Base classes
+# ------------
+
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestTheia(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
+class TheiaTestCase(SlapOSInstanceTestCase):
+    # Theia uses unix sockets, so it needs short paths.
+  __partition_reference__ = 'T'
+
+
+# Utils
+# -----
+
+class SQLiteDB(object):
+  def __init__(self, sqlitedb_file):
+    self.sqlitedb_file = sqlitedb_file
+
+  def select(self, fields, table, where={}):
+    connection = sqlite3.connect(self.sqlitedb_file)
+
+    def dict_factory(cursor, row):
+      d = {}
+      for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+      return d
+    connection.row_factory = dict_factory
+    cursor = connection.cursor()
+
+    condition = " AND ".join("%s='%s'" % (k, v) for k, v in where.items())
+    cursor.execute(
+      "SELECT %s FROM %s%s"
+      % (
+        ", ".join(fields),
+        table,
+        " WHERE %s" % condition if where else "",
+      )
+    )
+    return cursor.fetchall()
+
+
+# Tests
+# -----
+
+class TestTheiaInterface(TheiaTestCase):
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
@@ -153,9 +193,7 @@ class TestTheia(SlapOSInstanceTestCase):
     self.assertTrue(os.path.exists(test_file))
 
 
-class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
-
+class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
     embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
         os.path.join(
@@ -187,36 +225,7 @@ class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
     self.assertFalse(embedded_slapos_process.is_running())
 
 
-class SQLiteDB(object):
-  def __init__(self, sqlitedb_file):
-    self.sqlitedb_file = sqlitedb_file
-
-  def select(self, fields, table, where={}):
-    connection = sqlite3.connect(self.sqlitedb_file)
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    condition = " AND ".join("%s='%s'" % (k, v) for k, v in where.items())
-    cursor.execute(
-      "SELECT %s FROM %s%s"
-      % (
-        ", ".join(fields),
-        table,
-        " WHERE %s" % condition if where else "",
-      )
-    )
-    return cursor.fetchall()
-
-
-class TestTheiaWithSR(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
-
+class TestTheiaWithSR(TheiaTestCase):
   srurl = 'bogus/software.cfg'
   srtype = 'bogus'
 
@@ -241,3 +250,31 @@ class TestTheiaWithSR(SlapOSInstanceTestCase):
       where={'software_release': self.srurl, 'software_type': self.srtype}
     )
     self.assertEqual(len(requested), 1)
+
+
+class TestTheiaResilientInterface(TestTheiaInterface):
+  instance_max_retry = 30
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientInterface, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
+
+
+class TestTheiaResilientWithSR(TestTheiaWithSR):
+  instance_max_retry = 30
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientWithSR, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = os.path.join(cls.slap._instance_root, "T2")
