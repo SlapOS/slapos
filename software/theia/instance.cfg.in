@@ -2,6 +2,9 @@
 parts =
   switch-softwaretype
 
+extends =
+  ${template-resilient-templates:output}
+
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 
@@ -18,6 +21,11 @@ recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:default}
 default = $${:theia}
 theia = theia:rendered
+export = export:output
+import = import:output
+resilient = resilient:rendered
+frozen = instance-frozen:rendered
+pull-backup = template-pull-backup:rendered
 
 [theia]
 recipe = slapos.recipe.template:jinja2
@@ -45,3 +53,32 @@ default-parameters =
     "additional-frontend-guid": null
   }
 frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+
+[import]
+recipe = slapos.recipe.template
+url = ${instance-import:output}
+output = $${buildout:directory}/instance-import.cfg
+mode = 0644
+
+[export]
+recipe = slapos.recipe.template
+url = ${instance-export:output}
+output = $${buildout:directory}/instance-export.cfg
+mode = 0644
+
+[resilient]
+recipe = slapos.recipe.template:jinja2
+template = ${instance-resilient:output}
+rendered = $${buildout:directory}/instance-resilient.cfg
+mode = 0644
+extensions = jinja2.ext.do
+context =
+  key buildout buildout:bin-directory
+  key develop_eggs_directory buildout:develop-eggs-directory
+  key eggs_directory buildout:eggs-directory
+  key slapparameter_dict slap-configuration:configuration
+  raw monitor_template ${monitor-template:rendered}
+template-parts-destination = ${template-parts:target}
+template-replicated-destination = ${template-replicated:target}
+import-list = file parts :template-parts-destination
+              file replicated :template-replicated-destination
