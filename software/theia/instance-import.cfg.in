@@ -1,0 +1,34 @@
+[buildout]
+extends = ${theia:rendered}
+          ${template-pbsready-import:rendered}
+
+parts +=
+  monitor-base
+  $${:theia-parts}
+  $${:theia-environment-parts}
+
+# The resilient stack makes the 'resilient' instance
+# request the 'import' instance with a 'namebase' parameter.
+# The import template then expects to receive it in
+# slap-parameter:namebase
+[slap-parameter]
+namebase = ${slap-configuration:configuration.namebase}
+
+# Change frontend name to help disambiguation
+[apache-frontend]
+name = Theia Import Frontend
+
+# The resilient stack calls importer:wrapper when the import instance
+# is notified that the backup files have just been pushed to it.
+# All it expects is that a script be available in importer:wrapper.
+[importer]
+recipe = slapos.cookbook:wrapper
+command-line = echo "Import Not Implemented Yet"
+wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-exporter
+wrapper = $${:wrapper-path}
+
+# Resilient connection parameters of import instance are published
+# through the resilient stack.
+# Extend resilient parameters with normal theia connection parameters
+[resilient-publish-connection-parameter]
+<= publish-connection-parameter
