@@ -33,6 +33,7 @@ import subprocess
 import tempfile
 import time
 import re
+import shutil
 from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
@@ -72,6 +73,63 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     if Id:
       return os.path.join(cls.slap._instance_root, Id)
     return None
+
+
+class TheiaResiliencyTestCase(TheiaTestCase):
+
+  @classmethod
+  def _getLocalPath(cls, relative_path):
+    partition_root = cls.getPartitionPathWhere(cls.getSoftwareURL(), 'export')
+    absolute_path = os.path.join(partition_root, relative_path)
+    return absolute_path
+
+  @classmethod
+  def _doSlaposCommand(cls, command):
+    partition_root = cls.getPartitionPathWhere(cls.getSoftwareURL(), 'export')
+    slapos_bin = os.path.join(partition_root, 'srv', 'runner', 'bin', 'slapos')
+    output = subprocess.check_output((slapos_bin, ) + command)
+    return output
+
+  def _supplySoftwareRelease(self, software_url):
+    self._doSlaposCommand(('supply', software_url, 'slaprunner'))
+
+  def _waitForSoftwareBuild(self):
+    self._doSlaposCommand(('node', 'software'))
+
+  def _requestInstance(self, instance_name, software_url):
+    self._doSlaposCommand(('request', instance_name, software_url))
+
+  def _waitForInstanceDeploy(self):
+    self._doSlaposCommand(('node', 'instance'))
+
+  def _getTakeoverUrlAndPassword(self, scope="theia-1"):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    takeover_url = parameter_dict["takeover-%s-url" % scope]
+    takeover_password = parameter_dict["takeover-%s-password" % scope]
+    return takeover_url, takeover_password
+
+  def _getTakeoverState(self, takeover_url):
+    def getTakeoverPageContent():
+      resp = requests.get(takeover_url, verify=True)
+      self.assertEqual(requests.codes.ok, resp.status_code)
+      return resp.text
+
+    takeover_page_content = getTakeoverPageContent()
+    if "<b>Last valid backup:</b> No backup downloaded yet, takeover should not happen now." in takeover_page_content:
+      return "nothing"
+    elif "<b>Importer script(s) of backup in progress:</b> True" in takeover_page_content:
+      return "ongoing"
+    return "ready"
+
+  def _doTakeover(self, takeover_url, takeover_password):
+    resp = requests.get(
+      "%s?password=%s" % (takeover_url, takeover_password),
+      verify=True
+    )
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertNotIn("Error", resp.text, "An Error occured: %s" % resp.text)
+    self.assertIn("Success", resp.text, "'Success' not in '%s'" % resp.text)
+    return resp.text
 
 
 # Utils
@@ -296,3 +354,89 @@ class TestTheiaResilientWithSR(TestTheiaWithSR):
     # Patch the computer root path to that of the export theia instance
     path = cls.getPartitionPathWhere(cls.getSoftwareURL(), 'export')
     cls.computer_partition_root_path = path
+
+
+class TestTheiaBasicResilience(TheiaResiliencyTestCase):
+  instance_max_retry = 30
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  def test_basic_dummy_resilience(self):
+    export_partition_id = self.getPartitionIdWhere(self.getSoftwareURL(), 'export')
+    import_partition_id = self.getPartitionIdWhere(self.getSoftwareURL(), 'import')
+
+    # Copy ./dummy SR in export theia ~/srv/project/dummy
+    dummy_target_path = self._getLocalPath('srv/project/dummy')
+    shutil.copytree('dummy', dummy_target_path)
+
+    dummy_software_url = os.path.join(dummy_target_path, 'software.cfg')
+
+    # Deploy dummy instance
+    self._supplySoftwareRelease(dummy_software_url)
+    self._waitForSoftwareBuild()
+    self._requestInstance("dummy_instance", dummy_software_url)
+    self._waitForInstanceDeploy()
+
+    # Check that dummy instance was properly deployed
+    relative_dummy_log_path = 'srv/runner/instance/slappart0/log.log'
+    with open(self._getLocalPath(relative_dummy_log_path), 'r') as f:
+      content = f.read()
+    self.assertTrue(content.startswith("Hello"), content)
+
+    # Call exporter script instead of waiting for cron job
+    # XXX Accelerate cron frequency instead ?
+    exporter_script = self._getLocalPath('bin/exporter')
+    transaction_id = str(int(time.time()))
+    subprocess.check_output((exporter_script, '--transaction-id', transaction_id))
+
+    # Get equeue.log file in import instance
+    import_partition_root = self.getPartitionPathWhere(self.getSoftwareURL(), 'import')
+    importer_log = os.path.join(import_partition_root, 'var', 'log', 'equeue.log')
+
+    def getFileContent(file_path):
+      with open(file_path) as f:
+        return f.read()
+
+    # Wait for importer to start
+    time.sleep(60)
+    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
+
+    for _ in range(100):
+      takeover_state = self._getTakeoverState(takeover_url)
+      if takeover_state == "ready":
+        break
+      elif takeover_state == "nothing":
+          importer_log_content = getFileContent(importer_log)
+          self.fail("Backup is not even started: %s" % importer_log_content)
+      else:
+        self.logger.info("Backup is ongoing, waiting some more")
+      time.sleep(20)
+
+    # Takeover
+    self._doTakeover(takeover_url, takeover_password)
+
+    # Wait for import instance to become export instance and new import to be allocated
+    self.slap.waitForInstance(1)
+
+    previous_computer_partition = self.computer_partition
+    self.computer_partition = self.requestDefaultInstance()
+
+    # Check that the import instance became the export instance
+    new_export_partition_id = self.getPartitionIdWhere(self.getSoftwareURL(), 'export')
+    self.assertNotEqual(export_partition_id, import_partition_id)
+    self.assertEqual(import_partition_id, new_export_partition_id)
+
+    # Check that there is a new import instance
+    new_import_partition_id = self.getPartitionIdWhere(self.getSoftwareURL(), 'import')
+    self.assertNotEqual(export_partition_id, new_import_partition_id)
+    self.assertNotEqual(new_export_partition_id, new_import_partition_id)
+
+    # Check that the data was transfered over
+    with open(self._getLocalPath(relative_dummy_log_path), 'r') as f:
+      content_after = f.read()
+
+    self.assertTrue(content.startswith("Hello"), content)
+    self.assertTrue(content_after.startswith("Hello"), content_after)
+    self.assertIn(content, content_after, "%s not in %s" % (content, content_after))
