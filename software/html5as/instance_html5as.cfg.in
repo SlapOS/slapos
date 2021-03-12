@@ -182,6 +182,7 @@ monitor-httpd-port = 8197
 <= logrotate-entry-base
 name = nginx
 log = ${html5as:path_access_log} ${html5as:path_error_log}
+post = kill -USR1 $(cat ${html5as:path_pid})
 
 # Publish nginx address
 [publish-connection-information]
