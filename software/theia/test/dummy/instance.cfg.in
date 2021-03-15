@@ -1,0 +1,21 @@
+[buildout]
+parts =
+  log-writer
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = plone.recipe.command
+home = $${buildout:directory}
+etc = $${:home}/etc
+run = $${:etc}/run
+command = mkdir -p $${:run}
+
+[log-writer]
+recipe = slapos.recipe.template:jinja2
+template = inline:#!/bin/sh
+  echo "Hello : $(date)" >> $${directory:home}/log.log
+rendered = $${directory:run}/log-writer
+mode = 700
