@@ -50,8 +50,20 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestTheia(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
+class TheiaTestCase(SlapOSInstanceTestCase):
+    # Theia uses unix sockets, so it needs short paths.
+  __partition_reference__ = 'T'
+
+  instance_max_retry = 1
+
+  @classmethod
+  def _getSlapos(cls):
+    partition_root = cls.computer_partition_root_path
+    slapos = os.path.join(partition_root, 'srv', 'runner', 'bin', 'slapos')
+    return slapos
+
+
+class TestTheia(TheiaTestCase):
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
@@ -153,9 +165,7 @@ class TestTheia(SlapOSInstanceTestCase):
     self.assertTrue(os.path.exists(test_file))
 
 
-class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
-
+class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
     embedded_slapos_supervisord_socket = _getSupervisordSocketPath(
         os.path.join(
@@ -187,57 +197,21 @@ class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
     self.assertFalse(embedded_slapos_process.is_running())
 
 
-class SQLiteDB(object):
-  def __init__(self, sqlitedb_file):
-    self.sqlitedb_file = sqlitedb_file
-
-  def select(self, fields, table, where={}):
-    connection = sqlite3.connect(self.sqlitedb_file)
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    condition = " AND ".join("%s='%s'" % (k, v) for k, v in where.items())
-    cursor.execute(
-      "SELECT %s FROM %s%s"
-      % (
-        ", ".join(fields),
-        table,
-        " WHERE %s" % condition if where else "",
-      )
-    )
-    return cursor.fetchall()
-
-
-class TestTheiaWithSR(SlapOSInstanceTestCase):
-  __partition_reference__ = 'T' # for sockets in included slapos
-
-  srurl = 'bogus/software.cfg'
-  srtype = 'bogus'
+class TestTheiaWithSR(TheiaTestCase):
+  sr_url = 'bogus/software.cfg'
+  sr_type = 'bogus_type'
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'embedded-sr': cls.srurl,
-      'embedded-sr-type': cls.srtype,
+      'embedded-sr': cls.sr_url,
+      'embedded-sr-type': cls.sr_type,
     }
 
   def test(self):
-    db = SQLiteDB(os.path.join(self.computer_partition_root_path, 'srv', 'runner', 'var', 'proxy.db'))
-    supplied = db.select(
-      fields=["*"],
-      table = "software14",
-      where={'url': self.srurl}
-    )
-    self.assertEqual(len(supplied), 1)
-    requested = db.select(
-      fields=["*"],
-      table = "partition14",
-      where={'software_release': self.srurl, 'software_type': self.srtype}
-    )
-    self.assertEqual(len(requested), 1)
+    slapos = self._getSlapos()
+    info = subprocess.check_output((slapos, 'proxy', 'show'))
+    instance_name = "Embedded Instance"
+
+    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
+    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
