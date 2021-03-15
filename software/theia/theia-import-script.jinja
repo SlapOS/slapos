@@ -227,8 +227,10 @@ rm -f "$srv_directory"/runner/instance/slappart*/.timestamp
 
 # Invoke defined scripts for each partition inside of slaprunner
 log_message "Stop all services before invoking custom import scripts for each instance"
-"$SLAPOS" node stop all
-"$SLAPOS" node start watchdog
+for partition in "$srv_directory"/runner/instance/slappart*
+do
+  "$SLAPOS" node stop $(basename $partition): || true
+done
 
 log_message "Invoke custom import scripts defined by each instances..."
 for partition in "$srv_directory"/runner/instance/slappart*/
