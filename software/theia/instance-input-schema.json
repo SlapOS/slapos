@@ -4,8 +4,8 @@
   "additionalProperties": false,
   "properties": {
     "autorun": {
-      "title": "autorun",
-      "description": "State of the autorun service",
+      "title": "Automatically Run Sofware/Instance",
+      "description": "Option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'disabled', the user can manage it directly in the local supervisord. ",
       "type": "string",
       "enum": [
         "running",
