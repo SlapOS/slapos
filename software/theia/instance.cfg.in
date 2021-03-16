@@ -390,7 +390,14 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template =
   inline:#!/bin/sh
+  {# Ensure the environment is the same as in the theia shell #}
+  . ${gowork:env.sh}
+  export HOME=$${buildout:directory}
+  export PATH=${python-language-server:location}/bin/:${java-jdk:location}/bin/:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+  export PATH=${nodejs:location}/bin/:$PATH
   export PATH=${buildout:bin-directory}:$PATH
+  export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
   exec ${slapos-standalone:script-path} \
       $${directory:runner} \
       $${slapos-standalone-config:ipv4} \
