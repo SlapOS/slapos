@@ -214,3 +214,44 @@ class TestTheiaWithSR(TheiaTestCase):
 
     self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+
+
+class TestTheiaEnv(TheiaTestCase):
+  def test_theia_env(self):
+    # Get the pid of the test's theia process by parsing the output of
+    # ps x | grep yarn | grep <path-to-project-folder>
+    project_path = os.path.join(self.computer_partition_root_path, 'srv', 'project')
+    ps_x = subprocess.Popen(('ps', 'x'), stdout=subprocess.PIPE)
+    grep_yarn = subprocess.Popen(('grep', 'yarn'), stdin=ps_x.stdout, stdout=subprocess.PIPE)
+    grep_output = subprocess.check_output(('grep', project_path), stdin=grep_yarn.stdout)
+    theia_pid = int(grep_output.strip().split(' ')[0])
+
+    # Get the environment of the theia process
+    theia_env = psutil.Process(theia_pid).environ()
+
+    # Start a theia shell that inherits the environment of the theia process
+    # This simulates the environment of a shell launched from the browser application
+    theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.computer_partition_root_path), env=theia_env)
+    theia_shell_process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
+
+    # Get the environment of the theia shell
+    theia_shell_env = psutil.Process(theia_shell_process.pid).environ()
+
+    # Get the pid of the supervisord process from its pid file.
+    supervisord_pid_file = os.path.join(self.computer_partition_root_path, 'srv', 'runner', 'var', 'run', 'supervisord.pid')
+    with open(supervisord_pid_file, 'r') as f:
+      supervisord_pid = int(f.read())
+
+    # Get the environment of the supervisord process
+    supervisord_env = psutil.Process(supervisord_pid).environ()
+
+    # Check that select environment variables are the same in both environments
+    self.maxDiff = None
+    self.assertEqual(theia_shell_env['PATH'].split(':'), supervisord_env['PATH'].split(':'))
+    self.assertEqual(theia_shell_env['SLAPOS_CONFIGURATION'], supervisord_env['SLAPOS_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['SLAPOS_CLIENT_CONFIGURATION'], supervisord_env['SLAPOS_CLIENT_CONFIGURATION'])
+    self.assertEqual(theia_shell_env['TMPDIR'], supervisord_env['TMPDIR'])
+
+    # Cleanup the theia shell process
+    theia_shell_process.terminate()
+    theia_shell_process.wait()
