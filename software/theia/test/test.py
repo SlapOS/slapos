@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 
 import os
 import textwrap
+import difflib
 import logging
 import subprocess
 import tempfile
@@ -215,3 +216,99 @@ class TestTheiaWithSR(TheiaTestCase):
 
     self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+
+
+class TestTheiaEnv(TheiaTestCase):
+  def test_theia_env(self):
+    script = os.path.join(self.computer_partition_root_path, 'print_env.sh')
+    shell_env = os.path.join(self.computer_partition_root_path, 'shell_env.log')
+    supervisord_env = os.path.join(self.computer_partition_root_path, 'supervisord_env.log')
+    supervisord_conf = os.path.join(self.computer_partition_root_path, 'srv', 'runner', 'etc', 'supervisord.conf')
+
+    # Write a script to print the information we want to inspect
+    with open(script, 'w') as f:
+      f.write(
+        textwrap.dedent(
+          """
+          function printpath() {
+            echo "$1: $(readlink -f $(which $1) 2> /dev/null)"
+          }
+          printpath slapos
+          printpath gcc
+          echo "HOME: $HOME"
+          echo "SLAPOS_CONFIGURATION: $SLAPOS_CONFIGURATION"
+          echo "SLAPOS_CLIENT_CONFIGURATION: $SLAPOS_CLIENT_CONFIGURATION"
+          echo "PATH:"
+          echo $PATH | tr ':' '\n'
+          """
+        )
+      )
+
+    # Append a program to the supervisord configuration to call the script from supervisord
+    with open(supervisord_conf, 'a') as f:
+      f.write(
+        textwrap.dedent(
+          """
+          [program:supervisord-env]
+          command = bash %s
+          autostart = true
+          autorestart = false
+          startretries = 0
+          startsecs = 0
+          redirect_stderr = true
+          stdout_logfile = %s
+          stdout_logfile_maxbytes = 5MB
+          stdout_logfile_backups = 0
+          """
+        ) % (script, supervisord_env)
+      )
+
+    # Get the environment of the running theia process
+    theia_project = os.path.join(self.computer_partition_root_path, 'srv', 'project')
+    ps_x = subprocess.Popen(('ps', 'x'), stdout=subprocess.PIPE)
+    grep_yarn = subprocess.Popen(('grep', 'yarn'), stdin=ps_x.stdout, stdout=subprocess.PIPE)
+    grep_output = subprocess.check_output(('grep', theia_project), stdin=grep_yarn.stdout)
+    pid = int(grep_output.strip().split(' ')[0])
+    theia_env = psutil.Process(pid).environ()
+
+    # Start a theia shell process within the environment of the running theia process
+    # This should give us a shell with an environment be very close to that of the browser shell
+    process = pexpect.spawnu('{}/bin/theia-shell'.format(self.computer_partition_root_path), env=theia_env)
+
+    # Get the environment when called from the shell
+    process.sendline("bash %s > %s" % (script, shell_env))
+
+    # Reload supervisord, this will start the new program and get the environment from supervisord
+    process.sendline("supervisorctl -c %s reload" % supervisord_conf)
+
+    # Wait for supervisord to reload and the program to run
+    time.sleep(10)
+
+    process.terminate()
+    process.wait()
+
+    # Compare the collected data
+    with open(os.path.join(shell_env), 'r') as f:
+      shell_env_log = f.readlines()
+
+    with open(os.path.join(supervisord_env), 'r') as f:
+      supervisord_env_log = f.readlines()
+
+    if shell_env_log != supervisord_env_log:
+      diff = difflib.ndiff(shell_env_log, supervisord_env_log)
+      self.fail(
+        textwrap.dedent(
+          """
+          The theia shell and supervisord have different environments
+
+          shell:
+          %s
+
+          supervisord:
+          %s
+
+          diff:
+          %s
+          """
+        ) % (''.join(shell_env_log), ''.join(supervisord_env_log), ''.join(diff))
+      )
