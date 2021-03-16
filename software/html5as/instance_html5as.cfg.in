@@ -192,6 +192,34 @@ recipe = slapos.cookbook:publish
 <= monitor-publish
 server_url = ${html5as:access_url}
 title = Title ${slap-parameter:title}!
+# Add dependency to the promise so that frontend sections are processed
+# and there is no need to declare the new part in buildout:parts
+server-cdn-url = ${html5as-frontend-promise:url}
+
+# Request a CDN entry to master
+[html5as-frontend]
+# Extend slap-connnection to get the credentials for the request
+<= slap-connection
+# Recipe used to make requests
+recipe = slapos.cookbook:requestoptional
+name = HTM5AS frontend
+# Specify the software url of the frontend software release
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# It is not a dedicated instance but an instance allocated on a shared instance
+slave = true
+config-url = ${html5as:access_url}
+config-https-only = true
+# The parameter expected to be received from the request are listed here.
+return = domain secure_access
+
+# Add a promise to make sure the cdn is properly configured
+[html5as-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = html5as-http-frontend.py
+url = ${html5as-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
 
 [slap-parameter]
 title =
