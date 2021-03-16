@@ -13,6 +13,10 @@
     "password": {
       "description": "Theia password",
       "type": "string"
+    },
+    "backend-url": {
+      "description": "Theia Backend URL",
+      "type": "string"
     }
   },
   "type": "object"
