@@ -279,6 +279,23 @@ location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
 
 
+# Common Environment
+# ------------------
+
+[common-environment]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:bin-directory}/${:_buildout_section_name_}
+mode = 0777
+template =
+  inline:
+  #!/bin/sh
+  . ${gowork:env.sh}
+  # reset PS1 from gowork
+  export PS1='$ '
+  export HOME=$${buildout:directory}
+  export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+
+
 # Theia Backend
 # -------------
 
@@ -300,12 +317,13 @@ template =
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
   export THEIA_SHELL=$${theia-shell:rendered}
-  export HOME=$${buildout:directory}
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
   export TERMINFO=${ncurses:location}/lib/terminfo/
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
+  export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
+  . $${common-environment:rendered}
   exec ${theia-wrapper:rendered} $@
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
@@ -392,7 +410,9 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template =
   inline:#!/bin/sh
-  export PATH=${buildout:bin-directory}:$PATH
+  . $${common-environment:rendered}
+  export PATH=${nodejs:location}/bin/:$PATH
+  . $${slapos-standalone-activate:rendered}
   exec ${slapos-standalone:script-path} \
       $${directory:runner} \
       $${slapos-standalone-config:ipv4} \
