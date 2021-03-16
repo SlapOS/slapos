@@ -4,8 +4,8 @@
   "additionalProperties": false,
   "properties": {
     "autorun": {
-      "title": "autorun",
-      "description": "State of the autorun service",
+      "title": "Automatically Run Sofware/Instance",
+      "description": "Autorun is enabled by default to compile the software and instantiate the instance automatically at the backend.",
       "type": "string",
       "enum": [
         "running",
