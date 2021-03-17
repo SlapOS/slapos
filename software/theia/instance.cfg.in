@@ -7,6 +7,7 @@ theia-environment-parts =
   slapos-repository
   runner-link
   settings.json
+  request-script
 
 theia-parts =
   frontend-reload
@@ -525,3 +526,14 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
+
+[request-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/$${:_buildout_section_name_}.sh
+mode = 0700
+template =
+  inline:#!/bin/sh
+  software_name=helloworld
+  software_release_uri=~/srv/project/slapos/software/$software_name/software.cfg
+  slapos supply $software_release_uri slaprunner
+  slapos request $software_name'_1' $software_release_uri
