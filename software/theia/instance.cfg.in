@@ -41,6 +41,7 @@ recipe = slapos.cookbook:publish
 url = $${apache-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
+backend-url = $${frontend-instance:url}
 
 
 [directory]
