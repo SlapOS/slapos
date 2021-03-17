@@ -137,7 +137,7 @@ return = domain secure_access
 
 [frontend-instance-password]
 recipe = slapos.cookbook:generate.password
-username = node
+username = admin
 bytes = 12
 
 [frontend-instance-port]
