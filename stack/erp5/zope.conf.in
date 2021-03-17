@@ -5,7 +5,7 @@
 # too late for some components.
 %define INSTANCE {{ parameter_dict['instance'] }}
 instancehome $INSTANCE
-zserver-threads {{ parameter_dict['thread-amount'] }}
+# zserver-threads {{ parameter_dict['thread-amount'] }}
 # When ownership checking is enabled, the roles a script runs as are the
 # intersection between user's roles and script owner's roles. This means
 # that revoking a code author's access to the system prevent all scripts
@@ -15,15 +15,15 @@ zserver-threads {{ parameter_dict['thread-amount'] }}
 # revoked when their account is terminated.
 skip-ownership-checking true
 
-lock-filename {{ parameter_dict['lock-file'] }}
+# lock-filename {{ parameter_dict['lock-file'] }}
 pid-filename {{ parameter_dict['pid-file'] }}
 
 default-zpublisher-encoding utf-8
-rest-input-encoding utf-8
-rest-output-encoding utf-8
+# rest-input-encoding utf-8
+# rest-output-encoding utf-8
 
 # XXX: isn't this entry implicit ?
-products {{ parameter_dict['instance-products'] }}
+# products {{ parameter_dict['instance-products'] }}
 
 # Magic parameter to use the first entry of X-Forwarded-For as the source IP address.
 # (see monkey patches in ERP5Type/patches/HTTPRequest.py and ERP5Type/patches/http_server.py)
@@ -45,9 +45,6 @@ trusted-proxy 0.0.0.0
 {%   endif %}
 {%- endif %}
 
-<zoperunner>
-    program $INSTANCE/bin/runzope
-</zoperunner>
 
 <product-config DeadlockDebugger>
   dump_url {{ parameter_dict['deadlock-path'] }}
@@ -63,10 +60,6 @@ trusted-proxy 0.0.0.0
 
 {% endif -%}
 
-{% if 'large-file-threshold' in parameter_dict -%}
-large-file-threshold {{ parameter_dict['large-file-threshold'] }}
-
-{% endif -%}
 {% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
   backend-ip {{ parameter_dict['tidstorage-ip'] }}
@@ -78,18 +71,6 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
   node-id {{ node_id }}
 </product-config>
 
-{% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
-{% if timerserver_interval -%}
-{%   if parameter_dict['wsgi'] -%}
-%import Products.TimerService.timerserver
-{%   else %}
-%import timerserver
-{%   endif -%}
-<timer-server>
-  interval {{ timerserver_interval }}
-</timer-server>
-
-{% endif -%}
 {% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
 {% if sql_connection_string -%}
 {%   set bt5_repository_url = [] -%}
@@ -114,22 +95,6 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
 </product-config>
 
 {% endif -%}
-<eventlog>
-  level info
-  <logfile>
-    dateformat
-    path {{ parameter_dict['event-log'] }}
-  </logfile>
-</eventlog>
-
-<logger access>
-  level WARN
-  <logfile>
-    dateformat
-    format %(message)s
-    path {{ parameter_dict['z2-log'] }}
-  </logfile>
-</logger>
 
 <zodb_db temporary>
   <temporarystorage>
