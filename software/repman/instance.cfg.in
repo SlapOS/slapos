@@ -46,7 +46,7 @@ context =
 
 # program binaries
     raw bash_bin                {{ bash_location }}/bin/bash
-    raw jq_bin                  {{ jq_location }}/jq
+    raw jq_bin                  {{ jq_location }}/bin/jq
     raw curl_bin                {{ curl_location }}/bin/curl
 
     ${:extra-context}
