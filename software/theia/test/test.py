@@ -168,6 +168,15 @@ class TestTheia(SlapOSInstanceTestCase):
     ])
     self.assertTrue(os.path.exists(test_file))
 
+  def test_theia_request_script(self):
+    script_path = os.path.join(
+      self.computer_partition_root_path,
+      'srv',
+      'project',
+      'request-script.sh',
+    )
+    self.assertTrue(os.path.exists(script_path))
+
 
 class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
   __partition_reference__ = 'T' # for sockets in included slapos
