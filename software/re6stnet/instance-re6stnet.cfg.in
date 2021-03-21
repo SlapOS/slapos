@@ -14,11 +14,10 @@ log = ${:var}/log
 services = ${:etc}/service
 script = ${:etc}/run
 run = ${:var}/run
-re6st = ${:srv}/res6stnet
 
 [re6stnet-dirs]
 recipe = slapos.cookbook:mkdirectory
-registry = ${directory:re6st}/registry
+data = ${directory:srv}/re6stnet
 log = ${directory:log}/re6stnet
 conf = ${directory:etc}/re6stnet
 ssl = ${:conf}/ssl
@@ -68,7 +67,7 @@ post = test ! -s ${apache-conf:pid-file} || {{ bin_directory }}/slapos-kill --pi
 port = 9201
 ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
-db = ${re6stnet-dirs:registry}/registry.db
+db = ${re6stnet-dirs:data}/registry.db
 ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
 dh = ${re6stnet-dirs:ssl}/dh.pem
