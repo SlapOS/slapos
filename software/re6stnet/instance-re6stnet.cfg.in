@@ -118,7 +118,7 @@ key-file = ${re6st-registry-conf-dict:key}
 cert-file = ${re6st-registry-conf-dict:ca}
 dh-file = ${re6st-registry-conf-dict:dh}
 
-slave-instance-list = ${slap-parameter:slave_instance_list}
+slave-instance-list = {{ slapparameter_dict.get('slave_instance_list', '{}') }}
 
 environment =
   PATH={{ openssl_bin }}
@@ -194,10 +194,3 @@ parts =
   re6st-registry-promise
   apache-registry-promise
   monitor-base
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
-[slap-parameter]
-slave_instance_list = {}
