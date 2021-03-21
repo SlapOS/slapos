@@ -1,7 +1,5 @@
-
+{% set bin_directory = parameter_dict['bin-directory'] -%}
 {% set python_bin = parameter_dict['python-executable'] -%}
-{% set re6st_registry = parameter_dict['re6st-registry'] -%}
-{% set re6stnet = parameter_dict['re6stnet'] -%}
 {% set publish_dict = {} -%}
 {% set part_list = [] -%}
 {% set ipv6 = (ipv6_set | list)[0] -%}
@@ -96,18 +94,19 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [apache-httpd-graceful]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-wrapper'] }}
 rendered = ${directory:script}/httpd-graceful
-mode = 0700
-context =
-  raw content {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${apache-conf:pid-file}); fi
-  raw dash {{ dash_binary }}
+template = inline:{{'{{content}}'}}
+context = key content :script
+script =
+  #!/bin/sh -e
+  {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}
+  {{ bin_directory }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
 
 [logrotate-apache]
 < = logrotate-entry-base
 name = apache
 log = ${apache-conf:error-log} ${apache-conf:access-log}
-post = test ! -s ${apache-conf:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
+post = test ! -s ${apache-conf:pid-file} || {{ bin_directory }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
 
 [re6st-registry-conf-dict]
 port = 9201
@@ -139,14 +138,10 @@ rendered = ${directory:etc}/re6st-registry.conf
 context = section parameter_dict re6st-registry-conf-dict
 
 [re6st-registry-wrapper]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-registry-run'] }}
-rendered = ${directory:services}/re6st-registry
-pid-file = ${directory:run}/registry.pid
-context =
-  key pid_file :pid-file
-  raw re6st_command {{ re6st_registry }}
-  key re6st_conf re6st-registry-conf:rendered
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/re6st-registry
+pidfile = ${directory:run}/registry.pid
+command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:rendered}
 
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
@@ -181,14 +176,14 @@ command-line = "{{ python_bin }}" ${re6st-registry:manager-wrapper}
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = re6stnet-check-token
-frequency = */5 * * * *
+time = *:0/5
 command = {{ python_bin }} ${re6st-registry:manager-wrapper}
 
 [logrotate-entry-re6stnet]
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
-post = test ! -s ${re6st-registry-wrapper:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry-wrapper:pid-file} -s USR1
+post = [ ! -s ${re6st-registry-wrapper:pidfile} ] || {{ bin_directory }}/slapos-kill --pidfile ${re6st-registry-wrapper:pidfile} -s USR1
 
 [port-redirection]
 recipe = slapos.recipe.template:jinja2
