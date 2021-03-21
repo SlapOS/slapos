@@ -112,6 +112,13 @@ wrapper-path = ${directory:services}/re6st-registry
 pidfile = ${directory:run}/registry.pid
 command-line = {{ bin_directory }}/re6st-registry @${re6st-registry-conf:rendered}
 
+[cron-entry-re6st-backup]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = re6stnet-backup
+time = hourly
+command = {{ parameter_dict['re6stnet-backup'] }} ${logrotate-directory:backup}/re6stnet ${re6st-registry-conf-dict:db} {{ slapparameter_dict.get('backup-repository', '') }}
+
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
 manager-wrapper = ${directory:bin}/re6stManageToken
@@ -199,6 +206,7 @@ parts =
   re6stnet-manage
   cron-entry-logrotate
   cron-entry-re6st-manage
+  cron-entry-re6st-backup
   apache-httpd
   apache-httpd-graceful
   publish
