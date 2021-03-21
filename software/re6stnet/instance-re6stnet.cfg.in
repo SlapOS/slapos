@@ -105,6 +105,24 @@ name = re6stnet-backup
 time = hourly
 command = {{ parameter_dict['re6stnet-backup'] }} ${logrotate-directory:backup}/re6stnet ${re6st-registry-conf-dict:db}
 
+[resiliency-exclude-file]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:srv}/exporter.exclude
+template = inline:
+  ${directory:log}/**
+  ${re6st-registry-conf-dict:db}
+
+[resiliency-after-import-script]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:srv}/runner-import-restore
+template = inline:{{'{{content}}'}}
+context = key content :script
+script =
+  #!/bin/sh -e
+  cd ${logrotate-directory:backup}/re6stnet
+  {{ parameter_dict['git-location'] }}/bin/git cat-file -p @:registry.sql |
+  {{ parameter_dict['sqlite3-location'] }}/bin/sqlite3 ${re6st-registry-conf-dict:db}
+
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
 manager-wrapper = ${directory:bin}/re6stManageToken
@@ -201,3 +219,6 @@ parts =
   re6st-registry-promise
   apache-registry-promise
   monitor-base
+
+  resiliency-exclude-file
+  resiliency-after-import-script
