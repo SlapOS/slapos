@@ -16,8 +16,6 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
-    key develop_eggs_directory buildout:develop-eggs-directory
-    key eggs_directory buildout:eggs-directory
     key ipv6_set slap-configuration:ipv6
     key ipv4_set slap-configuration:ipv4
     key slapparameter_dict slap-configuration:configuration
@@ -43,7 +41,9 @@ extra-context =
     raw monitor2_template_rendered {{ monitor2_template_rendered }}
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
+recipe = slapos.cookbook:switch-softwaretype
 
-default = ${dynamic-template-re6stnet:rendered}
+default = dynamic-template-re6stnet:rendered
 registry = ${:default}
+# BBB
+RootSoftwareInstance = ${:default}
