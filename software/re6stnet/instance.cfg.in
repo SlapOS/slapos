@@ -29,6 +29,7 @@ bin-directory = {{ bin_directory }}
 python-executable  = {{ python_with_eggs }}
 template-apache-conf = {{ template_apache_conf }}
 apache-location = {{ apache_location }}
+re6stnet-backup = {{ re6stnet_backup }}
 template-re6st-registry-conf = {{ template_re6st_registry_conf }}
 
 [dynamic-template-re6stnet]
