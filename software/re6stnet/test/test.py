@@ -29,7 +29,6 @@ import os
 import requests
 import json
 
-from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, Re6stnetTestCase = makeModuleSetUpAndTestCaseClass(
@@ -57,35 +56,3 @@ class TestPortRedirection(Re6stnetTestCase):
             'srcPort': 9201,
             'destPort': 9201,
         }, portredir_config[0])
-
-
-
-class ServicesTestCase(Re6stnetTestCase):
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'uri-scheme': 'https'}
-
-  def test_hashes(self):
-    hash_files = [
-        'software_release/buildout.cfg',
-    ]
-    expected_process_names = [
-        'httpd-{hash}-on-watch',
-    ]
-
-    with self.slap.instance_supervisor_rpc as supervisor:
-      process_names = [
-          process['name'] for process in supervisor.getAllProcessInfo()
-      ]
-
-    hash_files = [
-        os.path.join(self.computer_partition_root_path, path)
-        for path in hash_files
-    ]
-
-    for name in expected_process_names:
-      h = generateHashFromFiles(hash_files)
-      expected_process_name = name.format(hash=h)
-
-      self.assertIn(expected_process_name, process_names)
