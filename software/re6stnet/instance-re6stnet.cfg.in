@@ -1,11 +1,8 @@
 {% set bin_directory = parameter_dict['bin-directory'] -%}
 {% set python_bin = parameter_dict['python-executable'] -%}
 {% set publish_dict = {} -%}
-{% set part_list = [] -%}
 {% set ipv6 = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
-{% set uri_scheme = slapparameter_dict.get('uri-scheme', 'http') -%}
-{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -17,12 +14,6 @@ log = ${:var}/log
 services = ${:etc}/service
 script = ${:etc}/run
 run = ${:var}/run
-ca-dir = ${:etc}/ssl
-requests = ${:ca-dir}/requests
-private = ${:ca-dir}/private
-certs = ${:ca-dir}/certs
-newcerts = ${:ca-dir}/newcerts
-crl = ${:ca-dir}/crl
 re6st = ${:srv}/res6stnet
 
 [re6stnet-dirs]
@@ -33,18 +24,6 @@ conf = ${directory:etc}/re6stnet
 ssl = ${:conf}/ssl
 token = ${:conf}/token
 run = ${directory:run}/re6stnet
-
-[certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ openssl_bin }}/openssl
-ca-dir = ${directory:ca-dir}
-requests-directory = ${directory:requests}
-wrapper = ${directory:services}/certificate_authority
-ca-private = ${directory:private}
-ca-certs = ${directory:certs}
-ca-newcerts = ${directory:newcerts}
-ca-crl = ${directory:crl}
-
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
@@ -62,35 +41,12 @@ context =
   key access_log :access-log
   key error_log :error-log
   key pid_file :pid-file
-  raw certificate ${directory:certs}/apache.crt
-  raw key ${directory:private}/apache.key
   raw ipv6 {{ ipv6 }}
-  raw uri_scheme {{ uri_scheme }}
 
-{% set apache_wrapper = '${directory:services}/httpd' -%}
-{% if uri_scheme == 'https' -%}
-{% set apache_wrapper = '${directory:bin}/httpd_raw' -%}
-{% endif -%}
 [apache-httpd]
 recipe = slapos.cookbook:wrapper
-wrapper-path = {{ apache_wrapper }}
-command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
-
-{% if uri_scheme == 'https' %}
-[apache-ca]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-executable = ${apache-httpd:wrapper-path}
-wrapper = ${directory:bin}/httpd
-key-file = ${certificate-authority:ca-private}/apache.key
-cert-file = ${certificate-authority:ca-certs}/apache.crt
-
-[{{ section('apache-ca-service') }}]
-recipe = slapos.cookbook:wrapper
-command-line = ${apache-ca:wrapper}
 wrapper-path = ${directory:services}/httpd
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-{% endif %}
+command-line = "{{ parameter_dict['apache-location'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
 [apache-httpd-graceful]
 recipe = slapos.recipe.template:jinja2
@@ -209,7 +165,7 @@ name = apache-re6st-registry.py
 config-hostname = ${apache-conf:ipv6}
 config-port = ${apache-conf:port}
 
-{% do publish_dict.__setitem__('re6stry-url', uri_scheme ~ '://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
+{% do publish_dict.__setitem__('re6stry-url', 'http://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
 {% do publish_dict.__setitem__('re6stry-local-url',  'http://${re6st-registry:ipv4}:${re6st-registry:port}/') -%}
 {% do publish_dict.__setitem__('slave-amount',  '${re6st-registry:slave-amount}') -%}
 [publish]
@@ -225,7 +181,6 @@ extends =
   {{ logrotate_cfg }}
 
 parts =
-  certificate-authority
   logrotate-apache
   logrotate-entry-re6stnet
   re6stnet-manage
@@ -239,8 +194,6 @@ parts =
   re6st-registry-promise
   apache-registry-promise
   monitor-base
-# Complete parts with sections
-  {{ part_list | join('\n  ') }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
