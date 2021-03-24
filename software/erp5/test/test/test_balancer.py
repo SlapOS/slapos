@@ -197,14 +197,14 @@ class SlowHTTPServer(ManagedHTTPServer):
     log_message = logging.getLogger(__name__ + '.SlowHandler').info
 
 
-class TestAccessLog(BalancerTestCase, CrontabMixin):
-  """Check access logs emitted by balancer
+class TestLog(BalancerTestCase, CrontabMixin):
+  """Check logs emitted by balancer
   """
   __partition_reference__ = 'l'
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestAccessLog, cls)._getInstanceParameterDict()
+    parameter_dict = super(TestLog, cls)._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
@@ -283,6 +283,22 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self._executeCrontabAtDate('logrotate', '2050-01-02')
     self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
     self.assertFalse(os.path.exists(rotated_log_file))
+
+  def test_error_log(self):
+    # stop backend server
+    backend_server = self.getManagedResource("slow_web_server", SlowHTTPServer)
+    self.addCleanup(backend_server.open)
+    backend_server.close()
+    # after a while, balancer should detect and log this event in error log
+    time.sleep(5)
+    self.assertEqual(
+        requests.get(self.default_balancer_url, verify=False).status_code,
+        requests.codes.service_unavailable)
+    with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-error.log')) as error_log_file:
+      error_line = error_log_file.read().splitlines()[-1]
+    self.assertIn('proxy family_default has no server available!', error_line)
+    # this log also include a timestamp
+    self.assertRegexpMatches(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
 class BalancerCookieHTTPServer(ManagedHTTPServer):
