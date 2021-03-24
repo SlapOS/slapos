@@ -55,6 +55,22 @@ class TestTheia(SlapOSInstanceTestCase):
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
+  def test_backend_http_get(self):
+    resp = requests.get(self.connection_parameters['backend-url'], verify=False)
+    self.assertEqual(requests.codes.unauthorized, resp.status_code)
+
+    # with login/password, this is allowed
+    parsed_url = urlparse(self.connection_parameters['backend-url'])
+    authenticated_url = parsed_url._replace(
+        netloc='{}:{}@[{}]:{}'.format(
+            self.connection_parameters['username'],
+            self.connection_parameters['password'],
+            parsed_url.hostname,
+            parsed_url.port,
+        )).geturl()
+    resp = requests.get(authenticated_url, verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+
   def test_http_get(self):
     resp = requests.get(self.connection_parameters['url'], verify=False)
     self.assertEqual(requests.codes.unauthorized, resp.status_code)
@@ -151,6 +167,15 @@ class TestTheia(SlapOSInstanceTestCase):
         'touch "{}"'.format(test_file)
     ])
     self.assertTrue(os.path.exists(test_file))
+
+  def test_theia_request_script(self):
+    script_path = os.path.join(
+      self.computer_partition_root_path,
+      'srv',
+      'project',
+      'request-script.sh',
+    )
+    self.assertTrue(os.path.exists(script_path))
 
 
 class TestTheiaEmbeddedSlapOSShutdown(SlapOSInstanceTestCase):
