@@ -402,23 +402,101 @@ class TestInstanceResilient(InstanceTestCase):
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
 
+  def getProcessInfo(self):
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
+    with self.slap.instance_supervisor_rpc as supervisor:
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    return running_process_info.replace(hash_value, '{hash}')
+
   def test(self):
-    # just check that keys returned on requested partition are for resilient
-    self.assertSetEqual(
-      set(self.computer_partition.getConnectionParameterDict().keys()),
-      set([
-        'backend-url',
-        'feed-url-kvm-1-pull',
-        'feed-url-kvm-1-push',
-        'ipv6',
-        'ipv6-network-info',
-        'monitor-base-url',
-        'monitor-password',
-        'monitor-setup-url',
-        'monitor-user',
-        'takeover-kvm-1-password',
-        'takeover-kvm-1-url',
-        'url']))
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    present_key_list = []
+    assert_key_list = [
+     'monitor-password', 'takeover-kvm-1-password', 'backend-url', 'url',
+     'monitor-setup-url', 'ipv6-network-info']
+    for k in assert_key_list:
+      if k in connection_parameter_dict:
+        present_key_list.append(k)
+        connection_parameter_dict.pop(k)
+    self.assertEqual(
+      connection_parameter_dict,
+      {
+        'feed-url-kvm-1-pull': 'http://[%s]:8088/get/local-ir0-kvm-1-pull' % (
+          self._ipv6_address,),
+        'feed-url-kvm-1-push': 'http://[%s]:8088/get/local-ir0-kvm-1-push' % (
+          self._ipv6_address,),
+        'ipv6': self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8160' % (self._ipv6_address,),
+        'monitor-user': 'admin',
+        'takeover-kvm-1-url': 'http://[%s]:9263/' % (self._ipv6_address,),
+      }
+    )
+    self.assertEqual(set(present_key_list), set(assert_key_list))
+
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
+    with self.slap.instance_supervisor_rpc as supervisor:
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    running_process_info = running_process_info.replace(hash_value, '{hash}')
+    self.assertEqual(
+      """ir0:bootstrap-monitor EXITED
+ir0:certificate_authority-{hash}-on-watch RUNNING
+ir0:crond-{hash}-on-watch RUNNING
+ir0:monitor-httpd-{hash}-on-watch RUNNING
+ir0:monitor-httpd-graceful EXITED
+ir1:bootstrap-monitor EXITED
+ir1:certificate_authority-{hash}-on-watch RUNNING
+ir1:crond-{hash}-on-watch RUNNING
+ir1:equeue-on-watch RUNNING
+ir1:monitor-httpd-{hash}-on-watch RUNNING
+ir1:monitor-httpd-graceful EXITED
+ir1:notifier-on-watch RUNNING
+ir1:pbs_sshkeys_authority-on-watch RUNNING
+ir2:6tunnel-10022-{hash}-on-watch RUNNING
+ir2:6tunnel-10080-{hash}-on-watch RUNNING
+ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:bootstrap-monitor EXITED
+ir2:certificate_authority-{hash}-on-watch RUNNING
+ir2:crond-{hash}-on-watch RUNNING
+ir2:equeue-on-watch RUNNING
+ir2:kvm-{hash}-on-watch RUNNING
+ir2:kvm_controller EXITED
+ir2:monitor-httpd-{hash}-on-watch RUNNING
+ir2:monitor-httpd-graceful EXITED
+ir2:notifier-on-watch RUNNING
+ir2:resilient_sshkeys_authority-on-watch RUNNING
+ir2:sshd-graceful EXITED
+ir2:sshd-on-watch RUNNING
+ir2:websockify-{hash}-on-watch RUNNING
+ir3:bootstrap-monitor EXITED
+ir3:certificate_authority-{hash}-on-watch RUNNING
+ir3:crond-{hash}-on-watch RUNNING
+ir3:equeue-on-watch RUNNING
+ir3:monitor-httpd-{hash}-on-watch RUNNING
+ir3:monitor-httpd-graceful EXITED
+ir3:notifier-on-watch RUNNING
+ir3:resilient-web-takeover-httpd-on-watch RUNNING
+ir3:resilient_sshkeys_authority-on-watch RUNNING
+ir3:sshd-graceful EXITED
+ir3:sshd-on-watch RUNNING""",
+      self.getProcessInfo()
+    )
 
 
 @skipIfPython3
