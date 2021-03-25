@@ -1057,7 +1057,8 @@ command-line =
 
 {% endif -%}
 
-[buildout]
+[instance-kvm-parts]
+# Expose parts for easy addition in profiles which extend this one like resilient
 parts =
   certificate-authority
   certificate-authority-service
@@ -1095,6 +1096,9 @@ parts =
   monitor-base
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
+
+[buildout]
+parts = ${instance-kvm-parts:parts}
 
 extends =
 #  Add extends list
