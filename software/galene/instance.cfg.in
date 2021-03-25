@@ -61,8 +61,7 @@ template = inline:{
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
     "other": [],
-    "presenter": [{"username": "", "password": "nexedi"}],
-    "max-users":100
+    "presenter": [{"username": "", "password": "nexedi"}]
   }
 rendered = $${directory:groups}/public.json
 
