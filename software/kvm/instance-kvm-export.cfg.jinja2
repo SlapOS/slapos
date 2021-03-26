@@ -9,7 +9,7 @@ parts +=
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
-{{ k }} = {{ v }}
+{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 
 # Create the exporter executable, which is a simple shell script
