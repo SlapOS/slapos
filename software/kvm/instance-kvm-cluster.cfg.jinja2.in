@@ -24,7 +24,7 @@ global-ipv6 = {{ ipv6 }}
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
-{{ k }} = {{ v }}
+{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 
 [request-common]
