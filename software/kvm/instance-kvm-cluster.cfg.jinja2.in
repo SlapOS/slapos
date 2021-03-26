@@ -24,7 +24,7 @@ global-ipv6 = {{ ipv6 }}
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
-{{ k }} = {{ v }}
+{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 
 [request-common]
@@ -135,14 +135,13 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
-{%- if 'boot-image-url-list' in kvm_parameter_dict %}
-{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
-config-boot-image-url-list = {{ kvm_parameter_dict['boot-image-url-list'] }}
-{%- endif %}
-{%- if 'boot-image-url-select' in kvm_parameter_dict %}
-{#- play nice: if parameter was not constructed by the original request, do not send it at all #}
-config-boot-image-url-select = {{ kvm_parameter_dict['boot-image-url-select'] }}
-{%- endif %}
+{%- for k in ['boot-image-url-list', 'boot-image-url-select'] %}
+{#-   play nice - use parameter only if present #}
+{%-   if k in kvm_parameter_dict %}
+{#-     play safe - dumps value #}
+config-{{ k }} = {{ dumps(kvm_parameter_dict[k]) }}
+{%-   endif %}
+{%- endfor %}
 config-type = cluster
 
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
