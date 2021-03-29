@@ -402,6 +402,20 @@ class TestInstanceResilient(InstanceTestCase):
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
 
+  def getProcessInfo(self):
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
+    with self.slap.instance_supervisor_rpc as supervisor:
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    return running_process_info.replace(hash_value, '{hash}')
+
   def test(self):
     # just check that keys returned on requested partition are for resilient
     self.assertSetEqual(
@@ -419,6 +433,62 @@ class TestInstanceResilient(InstanceTestCase):
         'takeover-kvm-1-password',
         'takeover-kvm-1-url',
         'url']))
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
+    with self.slap.instance_supervisor_rpc as supervisor:
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    running_process_info = running_process_info.replace(hash_value, '{hash}')
+    self.assertEqual(
+      """ir0:bootstrap-monitor EXITED
+ir0:certificate_authority-{hash}-on-watch RUNNING
+ir0:crond-{hash}-on-watch RUNNING
+ir0:monitor-httpd-{hash}-on-watch RUNNING
+ir0:monitor-httpd-graceful EXITED
+ir1:bootstrap-monitor EXITED
+ir1:certificate_authority-{hash}-on-watch RUNNING
+ir1:crond-{hash}-on-watch RUNNING
+ir1:equeue-on-watch RUNNING
+ir1:monitor-httpd-{hash}-on-watch RUNNING
+ir1:monitor-httpd-graceful EXITED
+ir1:notifier-on-watch RUNNING
+ir1:pbs_sshkeys_authority-on-watch RUNNING
+ir2:6tunnel-10022-{hash}-on-watch RUNNING
+ir2:6tunnel-10080-{hash}-on-watch RUNNING
+ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:bootstrap-monitor EXITED
+ir2:certificate_authority-{hash}-on-watch RUNNING
+ir2:crond-{hash}-on-watch RUNNING
+ir2:equeue-on-watch RUNNING
+ir2:kvm-{hash}-on-watch RUNNING
+ir2:kvm_controller EXITED
+ir2:monitor-httpd-{hash}-on-watch RUNNING
+ir2:monitor-httpd-graceful EXITED
+ir2:notifier-on-watch RUNNING
+ir2:resilient_sshkeys_authority-on-watch RUNNING
+ir2:sshd-graceful EXITED
+ir2:sshd-on-watch RUNNING
+ir2:websockify-{hash}-on-watch RUNNING
+ir3:bootstrap-monitor EXITED
+ir3:certificate_authority-{hash}-on-watch RUNNING
+ir3:crond-{hash}-on-watch RUNNING
+ir3:equeue-on-watch RUNNING
+ir3:monitor-httpd-{hash}-on-watch RUNNING
+ir3:monitor-httpd-graceful EXITED
+ir3:notifier-on-watch RUNNING
+ir3:resilient-web-takeover-httpd-on-watch RUNNING
+ir3:resilient_sshkeys_authority-on-watch RUNNING
+ir3:sshd-graceful EXITED
+ir3:sshd-on-watch RUNNING""",
+      self.getProcessInfo()
+    )
+    self.fail("XXX - this is not enough --> just check that keys returned on requested partition are for resilient")
 
 
 @skipIfPython3
