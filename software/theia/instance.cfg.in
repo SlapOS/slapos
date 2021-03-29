@@ -324,7 +324,7 @@ template =
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
   export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
   . $${common-environment:rendered}
-  exec ${theia-wrapper:rendered} $@
+  exec ${theia-wrapper:rendered} "$@"
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
 base-url = http://$${:ip}:$${:port}/
@@ -346,16 +346,22 @@ recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template = inline:
-  #!${python:location}/bin/python
-  import os
-  import sys
-  import time
-  args = sys.argv[1:]
+  #!{{ bash }}
+  SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash --rcfile $${theia-bashrc:rendered}", ]
+  if [ $# = 0 ]; then
+    . {{ activate }}
+    unset GIT_EXEC_PATH
+    set -- --rcfile {{ bashrc }}
   # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
-  else: time.sleep(1)
-  os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
+  else
+    sleep 1
+  fi
+  exec "$SHELL" "$@"
+context =
+  raw bash ${bash:location}/bin/bash
+  key activate slapos-standalone-activate:rendered
+  key bashrc theia-bashrc:rendered
 
 [theia-bashrc]
 recipe = slapos.recipe.template:jinja2
@@ -396,9 +402,8 @@ computer-id = slaprunner
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 template =
-  inline:#!/bin/sh
+  inline:
   export PATH=${buildout:bin-directory}:$PATH
   export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
@@ -411,6 +416,7 @@ mode = 0700
 template =
   inline:#!/bin/sh
   . $${common-environment:rendered}
+  #XXX find out where the extra nodejs in theia's PATH comes from
   export PATH=${nodejs:location}/bin/:$PATH
   . $${slapos-standalone-activate:rendered}
   exec ${slapos-standalone:script-path} \
