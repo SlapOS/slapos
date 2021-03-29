@@ -176,7 +176,7 @@ listen family_{{ name }}
 
 {%   for outer_prefix, inner_prefix in family_path_routing_dict.get(name, []) + path_routing_list %}
   {%   set outer_prefix = outer_prefix.strip('/') -%}
-  http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+({% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}.*{% endif %}) \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{% endif %}\2
+  http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+{% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}(.*){% endif %} \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{{ outer_prefix.replace('/', '/_vh_') }}{% endif %}\2
 {%  endfor %}
 
 {%   set has_webdav = [] -%}

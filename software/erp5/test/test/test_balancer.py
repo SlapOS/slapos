@@ -949,10 +949,10 @@ class TestPathBasedRouting(BalancerTestCase):
         expected_path,
       )
     # Trailing slash presence is preserved.
-    assertRoutingEqual('default', '/foo/bar',       prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/bar')
-    assertRoutingEqual('default', '/foo/bar/',      prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/bar/')
+    assertRoutingEqual('default', '/foo/bar',       prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar')
+    assertRoutingEqual('default', '/foo/bar/',      prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar/')
     # Subpaths are preserved.
-    assertRoutingEqual('default', '/foo/bar/hey',   prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/bar/hey')
+    assertRoutingEqual('default', '/foo/bar/hey',   prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar/hey')
     # Rule precedence: later less-specific rules are applied.
     assertRoutingEqual('default', '/foo',           prefix + '/erp5/somewhere' + vhr + '/_vh_foo')
     assertRoutingEqual('default', '/foo/',          prefix + '/erp5/somewhere' + vhr + '/_vh_foo/')

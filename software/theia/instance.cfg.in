@@ -7,6 +7,7 @@ theia-environment-parts =
   slapos-repository
   runner-link
   settings.json
+  request-script
 
 theia-parts =
   frontend-reload
@@ -41,6 +42,7 @@ recipe = slapos.cookbook:publish
 url = $${apache-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
+backend-url = $${frontend-instance:url}
 
 
 [directory]
@@ -136,7 +138,7 @@ return = domain secure_access
 
 [frontend-instance-password]
 recipe = slapos.cookbook:generate.password
-username = node
+username = admin
 bytes = 12
 
 [frontend-instance-port]
@@ -277,6 +279,23 @@ location = $${directory:frontend-static}/$${:filename}
 filename = $${:_buildout_section_name_}
 
 
+# Common Environment
+# ------------------
+
+[common-environment]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:bin-directory}/${:_buildout_section_name_}
+mode = 0777
+template =
+  inline:
+  #!/bin/sh
+  . ${gowork:env.sh}
+  # reset PS1 from gowork
+  export PS1='$ '
+  export HOME=$${buildout:directory}
+  export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
+
+
 # Theia Backend
 # -------------
 
@@ -298,13 +317,14 @@ template =
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
   export THEIA_URL=$${:base-url}
   export THEIA_SHELL=$${theia-shell:rendered}
-  export HOME=$${buildout:directory}
   export TMP=$${directory:tmp}
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
   export TERMINFO=${ncurses:location}/lib/terminfo/
   export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
-  exec ${theia-wrapper:rendered} $@
+  export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
+  . $${common-environment:rendered}
+  exec ${theia-wrapper:rendered} "$@"
 ip =  $${theia-service-port:ip}
 port = $${theia-service-port:port}
 base-url = http://$${:ip}:$${:port}/
@@ -326,16 +346,22 @@ recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template = inline:
-  #!${python:location}/bin/python
-  import os
-  import sys
-  import time
-  args = sys.argv[1:]
+  #!{{ bash }}
+  SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
-  if not args: args = ["-c", ". $${slapos-standalone-activate:rendered} && exec env GIT_EXEC_PATH= ${bash:location}/bin/bash --rcfile $${theia-bashrc:rendered}", ]
+  if [ $# = 0 ]; then
+    . {{ activate }}
+    unset GIT_EXEC_PATH
+    set -- --rcfile {{ bashrc }}
   # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
-  else: time.sleep(1)
-  os.execv('${bash:location}/bin/bash', ['${bash:location}/bin/bash']  + args)
+  else
+    sleep 1
+  fi
+  exec "$SHELL" "$@"
+context =
+  raw bash ${bash:location}/bin/bash
+  key activate slapos-standalone-activate:rendered
+  key bashrc theia-bashrc:rendered
 
 [theia-bashrc]
 recipe = slapos.recipe.template:jinja2
@@ -376,9 +402,8 @@ computer-id = slaprunner
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0700
 template =
-  inline:#!/bin/sh
+  inline:
   export PATH=${buildout:bin-directory}:$PATH
   export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
@@ -390,7 +415,10 @@ rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
 template =
   inline:#!/bin/sh
-  export PATH=${buildout:bin-directory}:$PATH
+  . $${common-environment:rendered}
+  #XXX find out where the extra nodejs in theia's PATH comes from
+  export PATH=${nodejs:location}/bin/:$PATH
+  . $${slapos-standalone-activate:rendered}
   exec ${slapos-standalone:script-path} \
       $${directory:runner} \
       $${slapos-standalone-config:ipv4} \
@@ -524,3 +552,18 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
+
+[request-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/$${:_buildout_section_name_}.sh
+mode = 0700
+template =
+  inline:#!/bin/sh
+  software_name=html5as-base #replace the software name
+  software_release_uri=~/srv/project/slapos/software/$software_name/software.cfg
+  # slapos supply is used to add the software to the software list to be supplied to a node.
+  slapos supply $software_release_uri slaprunner
+  # slapos request the allocation of an instance to the master. 
+  # slapos request also gets status and parameters of the instance if it has any 
+  # (slapos request is meant to be run multiple time until you get the status).
+  slapos request $software_name'_1' $software_release_uri
