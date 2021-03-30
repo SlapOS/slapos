@@ -285,7 +285,7 @@ filename = $${:_buildout_section_name_}
 
 [common-environment]
 recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:bin-directory}/${:_buildout_section_name_}
+rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0777
 template =
   inline:
