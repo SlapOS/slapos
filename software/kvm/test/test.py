@@ -1004,11 +1004,11 @@ class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
 @skipUnlessKvm
 class TestWhitelistFirewall(InstanceTestCase):
   __partition_reference__ = 'wf'
-  kvm_instance_partition = 'wf0'
+  kvm_instance_partition_reference = 'wf0'
 
   def test(self):
     slapos_whitelist_firewall = os.path.join(
-      self.slap.instance_directory, self.kvm_instance_partition,
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
       '.slapos-whitelist-firewall')
     self.assertTrue(os.path.exists(slapos_whitelist_firewall))
     with open(slapos_whitelist_firewall, 'rb') as fh:
@@ -1050,7 +1050,7 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
 
 @skipUnlessKvm
 class TestWhitelistFirewallResilient(TestWhitelistFirewall):
-  kvm_instance_partition = 'wf2'
+  kvm_instance_partition_reference = 'wf2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -1059,7 +1059,7 @@ class TestWhitelistFirewallResilient(TestWhitelistFirewall):
 
 @skipUnlessKvm
 class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
-  kvm_instance_partition = 'wf2'
+  kvm_instance_partition_reference = 'wf2'
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -1068,7 +1068,7 @@ class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
 
 @skipUnlessKvm
 class TestWhitelistFirewallCluster(TestWhitelistFirewall):
-  kvm_instance_partition = 'wf1'
+  kvm_instance_partition_reference = 'wf1'
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -1087,7 +1087,7 @@ class TestWhitelistFirewallCluster(TestWhitelistFirewall):
 
 @skipUnlessKvm
 class TestWhitelistFirewallRequestCluster(TestWhitelistFirewallRequest):
-  kvm_instance_partition = 'wf1'
+  kvm_instance_partition_reference = 'wf1'
 
   @classmethod
   def getInstanceSoftwareType(cls):
