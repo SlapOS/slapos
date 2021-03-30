@@ -168,7 +168,8 @@ location =
 [frontend-instance-config]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:etc}/$${:_buildout_section_name_}
-template = inline:
+template =
+  inline:
   :$${:port} {
     bind $${:ip}
     tls $${frontend-instance-certificate:cert-file} $${frontend-instance-certificate:key-file}
@@ -345,8 +346,8 @@ base-url = $${theia-service:base-url}
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
 mode = 0700
-template = inline:
-  #!{{ bash }}
+template =
+  inline:#!{{ bash }}
   SHELL=$BASH
   # when running interactively, activate slapos configuration and reset GIT_EXEC_PATH to workaround https://github.com/eclipse-theia/theia/issues/7555
   if [ $# = 0 ]; then
