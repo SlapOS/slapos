@@ -566,6 +566,7 @@ class TestInstanceNbdServer(InstanceTestCase):
 @skipUnlessKvm
 class TestBootImageUrlList(InstanceTestCase):
   __partition_reference__ = 'biul'
+  kvm_instance_partition_reference = 'biul0'
 
   # variations
   key = 'boot-image-url-list'
@@ -642,8 +643,10 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     image_repository = os.path.join(
-      self.computer_partition_root_path, 'srv', self.image_directory)
+      kvm_instance_partition, 'srv', self.image_directory)
     image = os.path.join(image_repository, self.fake_image_md5sum)
     image_link = os.path.join(image_repository, 'image_001')
     self.assertTrue(os.path.exists(image))
@@ -675,7 +678,7 @@ class TestBootImageUrlList(InstanceTestCase):
           if entry.startswith('file') and 'media=cdrom' in entry:
             # do cleanups
             entry = entry.replace(software_root, '')
-            entry = entry.replace(self.computer_partition_root_path, '')
+            entry = entry.replace(kvm_instance_partition, '')
             running_image_list.append(entry)
       return running_image_list
 
@@ -691,7 +694,7 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)  # giving chance to settle
 
     # now the image is available in the kvm, and its above default image
     self.assertEqual(
@@ -706,7 +709,8 @@ class TestBootImageUrlList(InstanceTestCase):
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    self.rerequestInstance({self.key: ''})
+    partition_parameter_kw[self.key] = ''
+    self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
@@ -718,7 +722,7 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -786,9 +790,19 @@ class TestBootImageUrlList(InstanceTestCase):
     self.assertPromiseFails(self.config_state_promise)
 
 
+@skipIfPython3
+@skipUnlessKvm
+class TestBootImageUrlListResilient(TestBootImageUrlList):
+  kvm_instance_partition_reference = 'biul2'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
 @skipUnlessKvm
 class TestBootImageUrlSelect(TestBootImageUrlList):
   __partition_reference__ = 'bius'
+  kvm_instance_partition_reference = 'bius0'
 
   # variations
   key = 'boot-image-url-select'
@@ -911,6 +925,15 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
        'media=cdrom'],
       getRunningImageList()
     )
+
+
+@skipIfPython3
+@skipUnlessKvm
+class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
+  kvm_instance_partition_reference = 'bius2'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
 
 
 @skipUnlessKvm
