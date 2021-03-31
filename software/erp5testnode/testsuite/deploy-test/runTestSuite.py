@@ -155,6 +155,7 @@ def main():
   suite = testsuite.EggTestSuite(
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
       python_interpreter=args.python_interpreter,
+      shared_part_list=[],
       egg_test_path_dict={
           os.path.basename(os.path.normpath(path)): path
           for path in args.test_location.split(',')},
