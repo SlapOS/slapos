@@ -151,10 +151,10 @@ class Recipe(GenericBaseRecipe):
                     max_connections = 100
                     datestyle = 'iso, mdy'
 
-                    lc_messages = 'en_US.UTF-8'
-                    lc_monetary = 'en_US.UTF-8'
-                    lc_numeric = 'en_US.UTF-8'
-                    lc_time = 'en_US.UTF-8'
+                    lc_messages = 'C.UTF-8'
+                    lc_monetary = 'C.UTF-8'
+                    lc_numeric = 'C.UTF-8'
+                    lc_time = 'C.UTF-8'
                     default_text_search_config = 'pg_catalog.english'
 
                     unix_socket_directories = '%s'
