@@ -1,3 +1,25 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..67f2f47
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,16 @@
++*.o
++*.so
++*.a
++*.out
++.obj/
++hello.c
++qjs
++qjsc
++qjscalc
++qjscalc.c
++test_fib.c
++repl.c
++run-test*
++examples/hello
++examples/hello_module
++examples/test_fib
 diff --git a/Makefile b/Makefile
 index e6ae827..f7e0f01 100644
 --- a/Makefile
@@ -54,6 +76,70 @@ index e6ae827..f7e0f01 100644
  endif # CONFIG_LTO
  
  repl.c: $(QJSC) repl.js
+diff --git a/env.sh b/env.sh
+new file mode 100644
+index 0000000..554b990
+--- /dev/null
++++ b/env.sh
+@@ -0,0 +1,3 @@
++export MAVSDK_INC=/home/nexedi/c-astral/mavsdk_wrapper/include/
++export MAVSDK_LIB=/home/nexedi/c-astral/mavsdk_wrapper/lib/libmavsdk_wrapper.a
++export QUICKJS_DIR=/home/nexedi/c-astral/quickjs
+diff --git a/examples/fly_drone.js b/examples/fly_drone.js
+new file mode 100644
+index 0000000..aa74b7f
+--- /dev/null
++++ b/examples/fly_drone.js
+@@ -0,0 +1,49 @@
++import * as mavsdk from "mavsdk";
++import * as os from "os";
++
++
++function fly_drone() {
++	if(mavsdk.start("udp://169.0.1.2:7909") != 0) {
++		return;
++	}
++	os.sleep(1000);
++
++	if(mavsdk.arm() != 0) {
++		return;
++	}
++	os.sleep(1000);
++
++	if(mavsdk.takeOff() != 0) {
++		return;
++	}
++	os.sleep(80000);
++
++        console.log("setTargetAltitude(100)");
++	if(mavsdk.setTargetAltitude(100) != 0) {
++		return;
++	}
++
++	os.sleep(80000);
++        console.log("setTargetAltitude(30)");
++	if(mavsdk.setTargetAltitude(30) != 0) {
++		return;
++	}
++	os.sleep(80000);
++        console.log("setTargetAltitude(80)");
++	if(mavsdk.setTargetAltitude(80) != 0) {
++		return;
++	}
++
++	// Fly in circles for 5 minutes
++	os.sleep(300000);
++
++	if(mavsdk.land() != 0) {
++		return;
++	}
++
++	mavsdk.stop();
++
++	return;
++}
++
++fly_drone();
 diff --git a/qjs.c b/qjs.c
 index 4dd11f8..9b6eae2 100644
 --- a/qjs.c
@@ -106,7 +192,7 @@ index f5bda57..0a68457 100644
          c = getopt(argc, argv, "ho:cN:f:mxevM:p:S:D:");
          if (c == -1)
 diff --git a/quickjs-libc.c b/quickjs-libc.c
-index e8b81e9..2b04dae 100644
+index e8b81e9..ef092a2 100644
 --- a/quickjs-libc.c
 +++ b/quickjs-libc.c
 @@ -70,6 +70,7 @@ typedef sig_t sighandler_t;
@@ -134,7 +220,7 @@ index e8b81e9..2b04dae 100644
  }
  
  static JSValue js_worker_set_onmessage(JSContext *ctx, JSValueConst this_val,
-@@ -3667,6 +3665,70 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name)
+@@ -3667,6 +3665,102 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name)
      return m;
  }
  
@@ -165,6 +251,36 @@ index e8b81e9..2b04dae 100644
 +    return JS_NewInt32(ctx, arm());
 +}
 +
++static JSValue js_mavsdk_setTargetCoordinates(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    double la_arg_double;
++    double lo_arg_double;
++    double a_arg_double;
++    double y_arg_double;
++
++    if (JS_ToFloat64(ctx, &la_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &lo_arg_double, argv[1]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &a_arg_double, argv[2]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &y_arg_double, argv[3]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, setTargetCoordinates(la_arg_double, lo_arg_double, a_arg_double, y_arg_double));
++}
++
++static JSValue js_mavsdk_setTargetAltitude(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    double a_arg_double;
++
++    if (JS_ToFloat64(ctx, &a_arg_double, argv[0]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, setTargetAltitude(a_arg_double));
++}
 +
 +static JSValue js_mavsdk_takeOff(JSContext *ctx, JSValueConst this_val,
 +                                          int argc, JSValueConst *argv)
@@ -182,6 +298,8 @@ index e8b81e9..2b04dae 100644
 +    JS_CFUNC_DEF("start", 0, js_mavsdk_start ),
 +    JS_CFUNC_DEF("stop", 0, js_mavsdk_stop ),
 +    JS_CFUNC_DEF("arm", 0, js_mavsdk_arm ),
++    JS_CFUNC_DEF("setTargetCoordinates", 4, js_mavsdk_setTargetCoordinates ),
++    JS_CFUNC_DEF("setTargetAltitude", 1, js_mavsdk_setTargetAltitude ),
 +    JS_CFUNC_DEF("takeOff", 0, js_mavsdk_takeOff ),
 +    JS_CFUNC_DEF("land", 0, js_mavsdk_land ),
 +};
