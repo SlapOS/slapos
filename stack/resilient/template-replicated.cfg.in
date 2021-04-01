@@ -42,11 +42,7 @@ config-name = {{namebase}}0
 # Bubble up all the instance parameters to the requested export instance.
 {% if slapparameter_dict is defined %}
 {% for parameter_name, parameter_value in six.iteritems(slapparameter_dict) %}
-{% if parameter_value is string %}
-config-{{parameter_name}} = {{ parameter_value.split('\n') | join('\n  ') }}
-{% else %}
-config-{{parameter_name}} = {{ parameter_value }}
-{% endif %}
+config-{{ parameter_name }} = {{ dumps(parameter_value) }}
 {% endfor %}
 {% endif %}
 {% for key, value in six.iteritems(monitor_dict) -%}
