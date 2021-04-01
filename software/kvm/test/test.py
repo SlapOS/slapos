@@ -37,10 +37,17 @@ import sqlite3
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
+import tempfile
+import SocketServer
+import SimpleHTTPServer
+import multiprocessing
+import time
+import shutil
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
+from slapos.testing.utils import findFreeTCPPort
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
@@ -563,8 +570,62 @@ class TestInstanceNbdServer(InstanceTestCase):
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
 
 
+class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+  def log_message(self, *args):
+    if os.environ.get('SLAPOS_TEST_DEBUG'):
+      return SimpleHTTPServer.SimpleHTTPRequestHandler.log_message(self, *args)
+    else:
+      return
+
+
+class FakeImageServerMixin(object):
+  def startImageHttpServer(self):
+    self.image_source_directory = tempfile.mkdtemp()
+    server = SocketServer.TCPServer(
+      (self._ipv4_address, findFreeTCPPort(self._ipv4_address)),
+      FakeImageHandler)
+
+    fake_image_content = 'fake_image_content'
+    self.fake_image_md5sum = hashlib.md5(fake_image_content).hexdigest()
+    with open(os.path.join(
+      self.image_source_directory, self.fake_image_md5sum), 'wb') as fh:
+      fh.write(fake_image_content)
+
+    fake_image2_content = 'fake_image2_content'
+    self.fake_image2_md5sum = hashlib.md5(fake_image2_content).hexdigest()
+    with open(os.path.join(
+      self.image_source_directory, self.fake_image2_md5sum), 'wb') as fh:
+      fh.write(fake_image2_content)
+
+    self.fake_image_wrong_md5sum = self.fake_image2_md5sum
+
+    url = 'http://%s:%s' % server.server_address
+    self.fake_image = '/'.join([url, self.fake_image_md5sum])
+    self.fake_image2 = '/'.join([url, self.fake_image2_md5sum])
+
+    old_dir = os.path.realpath(os.curdir)
+    os.chdir(self.image_source_directory)
+    try:
+      self.server_process = multiprocessing.Process(
+        target=server.serve_forever, name='FakeImageHttpServer')
+      self.server_process.start()
+    finally:
+      os.chdir(old_dir)
+
+  def stopImageHttpServer(self):
+    self.logger.debug('Stopping process %s' % (self.server_process,))
+    self.server_process.join(10)
+    self.server_process.terminate()
+    time.sleep(0.1)
+    if self.server_process.is_alive():
+      self.logger.warning(
+        'Process %s still alive' % (self.server_process, ))
+
+    shutil.rmtree(self.image_source_directory)
+
+
 @skipUnlessKvm
-class TestBootImageUrlList(InstanceTestCase):
+class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biul'
   kvm_instance_partition_reference = 'biul0'
 
@@ -599,6 +660,10 @@ class TestBootImageUrlList(InstanceTestCase):
     # start with empty, but working configuration
     return {}
 
+  def setUp(self):
+    super(InstanceTestCase, self).setUp()
+    self.startImageHttpServer()
+
   def tearDown(self):
     # clean up the instance for other tests
     # 1st remove all images...
@@ -607,6 +672,8 @@ class TestBootImageUrlList(InstanceTestCase):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
+    self.stopImageHttpServer()
+    super(InstanceTestCase, self).tearDown()
 
   def rerequestInstance(self, parameter_dict, state='started'):
     software_url = self.getSoftwareURL()
@@ -617,18 +684,6 @@ class TestBootImageUrlList(InstanceTestCase):
         partition_reference=self.default_partition_reference,
         partition_parameter_kw=parameter_dict,
         state=state)
-
-  fake_image, = (
-      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
-      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
-      "e5b2721ca4556a0734cb13e65",)
-  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
-  fake_image2, = (
-      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
-      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
-      "2a74b7675a8d8ca20476dba6e",)
-  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
-  fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
@@ -682,21 +737,6 @@ class TestBootImageUrlList(InstanceTestCase):
             running_image_list.append(entry)
       return running_image_list
 
-    # check that the image is NOT YET available in kvm
-    self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
-    )
-
-    # mimic the requirement: restart the instance by requesting it stopped and
-    # then started started, like user have to do it
-    self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
-    self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)  # giving chance to settle
-
-    # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
         'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
@@ -873,13 +913,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
             running_image_list.append(entry)
       return running_image_list
 
-    # check that the image is NOT YET available in kvm
-    self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
-    )
-
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
@@ -887,7 +920,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     self.rerequestInstance(partition_parameter_kw, state='started')
     self.slap.waitForInstance(max_retry=1)
 
-    # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
         'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
@@ -911,6 +943,17 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
         os.listdir(image_repository),
         []
       )
+
+    # cleanup of images works, also asserts that configuration changes are
+    # reflected
+    partition_parameter_kw[self.key] = ''
+    partition_parameter_kw['boot-image-url-list'] = ''
+    self.rerequestInstance(partition_parameter_kw)
+    self.slap.waitForInstance(max_retry=2)
+    self.assertEqual(
+      os.listdir(image_repository),
+      []
+    )
 
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
@@ -943,17 +986,6 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
-
-  fake_image, = (
-      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
-      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
-      "e5b2721ca4556a0734cb13e65",)
-  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
-  fake_image2, = (
-      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
-      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
-      "2a74b7675a8d8ca20476dba6e",)
-  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
 
   input_value = "%s#%s"
   key = 'boot-image-url-list'
