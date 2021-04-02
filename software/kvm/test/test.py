@@ -948,6 +948,15 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     )
 
 
+@skipIfPython3
+@skipUnlessKvm
+class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
+  kvm_instance_partition_reference = 'bius2'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
 @skipUnlessKvm
 class TestBootImageUrlListKvmCluster(InstanceTestCase):
   __partition_reference__ = 'biulkc'
