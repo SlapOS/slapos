@@ -772,12 +772,15 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     )
 
   def assertPromiseFails(self, promise):
+    partition_directory = os.path.join(
+      self.slap.instance_directory,
+      self.kvm_instance_partition_reference)
     monitor_run_promise = os.path.join(
-      self.computer_partition_root_path, 'software_release', 'bin',
+      partition_directory, 'software_release', 'bin',
       'monitor.runpromise'
     )
     monitor_configuration = os.path.join(
-      self.computer_partition_root_path, 'etc', 'monitor.conf')
+      partition_directory, 'etc', 'monitor.conf')
 
     self.assertNotEqual(
       0,
@@ -886,7 +889,8 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
       image_repository = os.path.join(
-        self.computer_partition_root_path, 'srv', image_directory)
+        self.slap.instance_directory, self.kvm_instance_partition_reference,
+        'srv', image_directory)
       image = os.path.join(image_repository, self.fake_image_md5sum)
       image_link = os.path.join(image_repository, 'image_001')
       self.assertTrue(os.path.exists(image))
