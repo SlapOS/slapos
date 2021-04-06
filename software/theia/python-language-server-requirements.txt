@@ -28,7 +28,6 @@ requests==2.25.1
 rope==0.11.0
 six==1.12.0
 snowballstemmer==1.2.1
-theia-open==0.3.0
 toml==0.10.2
 typed-ast==1.4.1
 typeguard==2.12.0
