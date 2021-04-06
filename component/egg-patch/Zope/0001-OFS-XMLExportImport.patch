@@ -1,6 +1,6 @@
-diff -Naur Zope-4.5.3/OFS/XMLExportImport.py Zope-4.5.3-Nexedi/OFS/XMLExportImport.py
---- Zope-4.5.3/OFS/XMLExportImport.py	1970-01-01 01:00:00.000000000 +0100
-+++ Zope-4.5.3-Nexedi/OFS/XMLExportImport.py	2021-03-09 16:11:55.000000000 +0100
+diff -Naur Zope-4.5.3/src/OFS/XMLExportImport.py Zope-4.5.3-Nexedi/OFS/XMLExportImport.py
+--- Zope-4.5.3/src/OFS/XMLExportImport.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/OFS/XMLExportImport.py	2021-03-09 16:11:55.000000000 +0100
 @@ -0,0 +1,124 @@
 +##############################################################################
 +#
@@ -126,9 +126,9 @@ diff -Naur Zope-4.5.3/OFS/XMLExportImport.py Zope-4.5.3-Nexedi/OFS/XMLExportImpo
 +    r=p.Parse(data)
 +    outfile.seek(0)
 +    return jar.importFile(outfile,clue)
-diff -Naur Zope-4.5.3/Shared/DC/xml/__init__.py Zope-4.5.3-Nexedi/Shared/DC/xml/__init__.py
---- Zope-4.5.3/Shared/DC/xml/__init__.py	1970-01-01 01:00:00.000000000 +0100
-+++ Zope-4.5.3-Nexedi/Shared/DC/xml/__init__.py	2021-03-09 16:13:49.000000000 +0100
+diff -Naur Zope-4.5.3/src/Shared/DC/xml/__init__.py Zope-4.5.3-Nexedi/Shared/DC/xml/__init__.py
+--- Zope-4.5.3/src/Shared/DC/xml/__init__.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/Shared/DC/xml/__init__.py	2021-03-09 16:13:49.000000000 +0100
 @@ -0,0 +1,12 @@
 +##############################################################################
 +#
@@ -142,9 +142,9 @@ diff -Naur Zope-4.5.3/Shared/DC/xml/__init__.py Zope-4.5.3-Nexedi/Shared/DC/xml/
 +# FOR A PARTICULAR PURPOSE
 +#
 +##############################################################################
-diff -Naur Zope-4.5.3/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/ppml.py
---- Zope-4.5.3/Shared/DC/xml/ppml.py	1970-01-01 01:00:00.000000000 +0100
-+++ Zope-4.5.3-Nexedi/Shared/DC/xml/ppml.py	2021-03-09 16:13:49.000000000 +0100
+diff -Naur Zope-4.5.3/src/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/ppml.py
+--- Zope-4.5.3/src/Shared/DC/xml/ppml.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/Shared/DC/xml/ppml.py	2021-03-09 16:13:49.000000000 +0100
 @@ -0,0 +1,597 @@
 +##############################################################################
 +#
@@ -743,9 +743,9 @@ diff -Naur Zope-4.5.3/Shared/DC/xml/ppml.py Zope-4.5.3-Nexedi/Shared/DC/xml/ppml
 +        'persistent': save_persis,
 +        'unicode': save_unicode,
 +        }
-diff -Naur Zope-4.5.3/Shared/DC/xml/xyap.py Zope-4.5.3-Nexedi/Shared/DC/xml/xyap.py
---- Zope-4.5.3/Shared/DC/xml/xyap.py	1970-01-01 01:00:00.000000000 +0100
-+++ Zope-4.5.3-Nexedi/Shared/DC/xml/xyap.py	2021-03-09 16:13:49.000000000 +0100
+diff -Naur Zope-4.5.3/src/Shared/DC/xml/xyap.py Zope-4.5.3-Nexedi/Shared/DC/xml/xyap.py
+--- Zope-4.5.3/src/Shared/DC/xml/xyap.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/Shared/DC/xml/xyap.py	2021-03-09 16:13:49.000000000 +0100
 @@ -0,0 +1,117 @@
 +"""Yet another XML parser
 +
