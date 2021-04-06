@@ -1,0 +1,320 @@
+diff --git a/Makefile b/Makefile
+index e6ae827..f7e0f01 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,7 +41,7 @@ CONFIG_DEFAULT_AR=y
+ endif
+ 
+ # installation directory
+-prefix=/usr/local
++prefix=$(QUICKJS_DIR)
+ 
+ # use the gprof profiler
+ #CONFIG_PROFILE=y
+@@ -107,7 +107,7 @@ ifdef CONFIG_WIN32
+ DEFINES+=-D__USE_MINGW_ANSI_STDIO # for standard snprintf behavior
+ endif
+ 
+-CFLAGS+=$(DEFINES)
++CFLAGS+=$(DEFINES) -I$(MAVSDK_INC)
+ CFLAGS_DEBUG=$(CFLAGS) -O0
+ CFLAGS_SMALL=$(CFLAGS) -Os
+ CFLAGS_OPT=$(CFLAGS) -O2
+@@ -177,7 +177,7 @@ endif
+ HOST_LIBS=-lm -ldl -lpthread
+ LIBS=-lm
+ ifndef CONFIG_WIN32
+-LIBS+=-ldl -lpthread
++LIBS=$(MAVSDK_LIB) -lm -ldl -lstdc++ -lpthread
+ endif
+ 
+ $(OBJDIR):
+@@ -200,7 +200,7 @@ $(QJSC): $(OBJDIR)/qjsc.host.o \
+ 
+ endif #CROSS_PREFIX
+ 
+-QJSC_DEFINES:=-DCONFIG_CC=\"$(QJSC_CC)\" -DCONFIG_PREFIX=\"$(prefix)\"
++QJSC_DEFINES:=-DCONFIG_CC=\"$(SLAPOS_GCC)\" -DCONFIG_PREFIX=\"$(prefix)\"
+ ifdef CONFIG_LTO
+ QJSC_DEFINES+=-DCONFIG_LTO
+ endif
+@@ -226,11 +226,13 @@ LTOEXT=
+ endif
+ 
+ libquickjs$(LTOEXT).a: $(QJS_LIB_OBJS)
+-	$(AR) rcs $@ $^
++	$(AR) rcs $@ $^ $(MAVSDK_OBJS)
+ 
+ ifdef CONFIG_LTO
++MAVSDK_OBJS = $(shell $(AR) t $(MAVSDK_LIB))
+ libquickjs.a: $(patsubst %.o, %.nolto.o, $(QJS_LIB_OBJS))
+-	$(AR) rcs $@ $^
++	$(AR) x $(MAVSDK_LIB)
++	$(AR) rcs $@ $^ $(MAVSDK_OBJS)
+ endif # CONFIG_LTO
+ 
+ repl.c: $(QJSC) repl.js
+diff --git a/qjs.c b/qjs.c
+index 4dd11f8..9b6eae2 100644
+--- a/qjs.c
++++ b/qjs.c
+@@ -120,6 +120,7 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
+     /* system modules */
+     js_init_module_std(ctx, "std");
+     js_init_module_os(ctx, "os");
++    js_init_module_mavsdk(ctx, "mavsdk");
+     return ctx;
+ }
+ 
+@@ -489,12 +490,14 @@ int main(int argc, char **argv)
+ #endif
+         js_std_add_helpers(ctx, argc - optind, argv + optind);
+ 
+-        /* make 'std' and 'os' visible to non module code */
++        /* make 'std' and 'os' and 'mavsdk' visible to non module code */
+         if (load_std) {
+             const char *str = "import * as std from 'std';\n"
+                 "import * as os from 'os';\n"
++                "import * as mavsdk from 'mavsdk';\n"
+                 "globalThis.std = std;\n"
+-                "globalThis.os = os;\n";
++                "globalThis.os = os;\n"
++                "globalThis.mavsdk = mavsdk;\n";
+             eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+         }
+ 
+diff --git a/qjsc.c b/qjsc.c
+index f5bda57..0a68457 100644
+--- a/qjsc.c
++++ b/qjsc.c
+@@ -452,6 +452,7 @@ static int output_executable(const char *out_filename, const char *cfilename,
+     *arg++ = "-lm";
+     *arg++ = "-ldl";
+     *arg++ = "-lpthread";
++    *arg++ = "-lstdc++";
+     *arg = NULL;
+     
+     if (verbose) {
+@@ -513,6 +514,9 @@ int main(int argc, char **argv)
+     namelist_add(&cmodule_list, "std", "std", 0);
+     namelist_add(&cmodule_list, "os", "os", 0);
+ 
++    // mavsdk module
++    namelist_add(&cmodule_list, "mavsdk", "mavsdk", 0);
++
+     for(;;) {
+         c = getopt(argc, argv, "ho:cN:f:mxevM:p:S:D:");
+         if (c == -1)
+diff --git a/quickjs-libc.c b/quickjs-libc.c
+index e8b81e9..6884601 100644
+--- a/quickjs-libc.c
++++ b/quickjs-libc.c
+@@ -70,6 +70,7 @@ typedef sig_t sighandler_t;
+ #include "cutils.h"
+ #include "list.h"
+ #include "quickjs-libc.h"
++#include "mavsdk_wrapper.h"
+ 
+ /* TODO:
+    - add socket calls
+@@ -2177,8 +2178,6 @@ static int handle_posted_message(JSRuntime *rt, JSContext *ctx,
+             goto fail;
+         obj = JS_NewObject(ctx);
+         if (JS_IsException(obj)) {
+-            JS_FreeValue(ctx, data_obj);
+-            goto fail;
+         }
+         JS_DefinePropertyValueStr(ctx, obj, "data", data_obj, JS_PROP_C_W_E);
+ 
+@@ -3454,7 +3453,6 @@ static JSValue js_worker_postMessage(JSContext *ctx, JSValueConst this_val,
+     js_free(ctx, data);
+     js_free(ctx, sab_tab);
+     return JS_EXCEPTION;
+-    
+ }
+ 
+ static JSValue js_worker_set_onmessage(JSContext *ctx, JSValueConst this_val,
+@@ -3667,6 +3665,171 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name)
+     return m;
+ }
+ 
++/**********************************************************/
++/* 'mavsdk' object */
++
++static JSValue js_mavsdk_start(JSContext *ctx, JSValueConst this_val,
++                              int argc, JSValueConst *argv)
++{
++    const char *cmd;
++    int res;
++    cmd = JS_ToCString(ctx, argv[0]);
++    res = start(cmd);
++    JS_FreeCString(ctx, cmd);
++
++    return JS_NewInt32(ctx, res);
++}
++
++static JSValue js_mavsdk_stop(JSContext *ctx, JSValueConst this_val,
++                            int argc, JSValueConst *argv)
++{
++    return JS_UNDEFINED;
++}
++
++static JSValue js_mavsdk_arm(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    return JS_NewInt32(ctx, arm());
++}
++
++static JSValue js_mavsdk_setTargetCoordinates(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    double la_arg_double;
++    double lo_arg_double;
++    double a_arg_double;
++    double y_arg_double;
++
++    if (JS_ToFloat64(ctx, &la_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &lo_arg_double, argv[1]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &a_arg_double, argv[2]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &y_arg_double, argv[3]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, setTargetCoordinates(la_arg_double, lo_arg_double, a_arg_double, y_arg_double));
++}
++
++static JSValue js_mavsdk_setTargetCoordinatesXYZ(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    double x_arg_double;
++    double y_arg_double;
++    double z_arg_double;
++
++    if (JS_ToFloat64(ctx, &x_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &y_arg_double, argv[1]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &z_arg_double, argv[2]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, setTargetCoordinatesXYZ(x_arg_double, y_arg_double, z_arg_double));
++}
++
++static JSValue js_mavsdk_missionPush(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++
++    double la_arg_double;
++    double lo_arg_double;
++    double a_arg_double;
++    double s_arg_double;
++    int ft_arg_int;
++    double p_arg_double;
++    double y_arg_double;
++
++    if (JS_ToFloat64(ctx, &la_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &lo_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &a_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &s_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToInt32(ctx, &ft_arg_int, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &p_arg_double, argv[0]))
++        return JS_EXCEPTION;
++    if (JS_ToFloat64(ctx, &y_arg_double, argv[0]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, missionPush(la_arg_double,
++                                          lo_arg_double,
++                                          a_arg_double,
++                                          s_arg_double,
++                                          ft_arg_int,
++                                          p_arg_double,
++                                          y_arg_double));
++}
++
++static JSValue js_mavsdk_uploadMission(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    return JS_NewInt32(ctx, uploadMission());
++}
++
++static JSValue js_mavsdk_startMission(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    return JS_NewInt32(ctx, startMission());
++}
++
++static JSValue js_mavsdk_setTargetAltitude(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    double a_arg_double;
++
++    if (JS_ToFloat64(ctx, &a_arg_double, argv[0]))
++        return JS_EXCEPTION;
++
++    return JS_NewInt32(ctx, setTargetAltitude(a_arg_double));
++}
++
++static JSValue js_mavsdk_takeOff(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    return JS_NewInt32(ctx, takeOff());
++}
++
++static JSValue js_mavsdk_land(JSContext *ctx, JSValueConst this_val,
++                                          int argc, JSValueConst *argv)
++{
++    return JS_NewInt32(ctx, land());
++}
++
++static const JSCFunctionListEntry js_mavsdk_funcs[] = {
++    JS_CFUNC_DEF("start", 0, js_mavsdk_start ),
++    JS_CFUNC_DEF("stop", 0, js_mavsdk_stop ),
++    JS_CFUNC_DEF("arm", 0, js_mavsdk_arm ),
++    JS_CFUNC_DEF("missionPush", 0, js_mavsdk_missionPush ),
++    JS_CFUNC_DEF("uploadMission", 7, js_mavsdk_uploadMission ),
++    JS_CFUNC_DEF("startMission", 0, js_mavsdk_startMission ),
++    JS_CFUNC_DEF("setTargetCoordinates", 4, js_mavsdk_setTargetCoordinates ),
++    JS_CFUNC_DEF("setTargetCoordinatesXYZ", 3, js_mavsdk_setTargetCoordinatesXYZ ),
++    JS_CFUNC_DEF("setTargetAltitude", 1, js_mavsdk_setTargetAltitude ),
++    JS_CFUNC_DEF("takeOff", 0, js_mavsdk_takeOff ),
++    JS_CFUNC_DEF("land", 0, js_mavsdk_land ),
++};
++
++static int js_mavsdk_init(JSContext *ctx, JSModuleDef *m)
++{
++    return JS_SetModuleExportList(ctx, m, js_mavsdk_funcs,
++                                  countof(js_mavsdk_funcs));
++}
++
++JSModuleDef *js_init_module_mavsdk(JSContext *ctx, const char *module_name)
++{
++    JSModuleDef *m;
++    m = JS_NewCModule(ctx, module_name, js_mavsdk_init);
++    if (!m)
++        return NULL;
++    JS_AddModuleExportList(ctx, m, js_mavsdk_funcs, countof(js_mavsdk_funcs));
++    return m;
++}
++
+ /**********************************************************/
+ 
+ static JSValue js_print(JSContext *ctx, JSValueConst this_val,
+diff --git a/quickjs-libc.h b/quickjs-libc.h
+index fbbe5b0..63480ad 100644
+--- a/quickjs-libc.h
++++ b/quickjs-libc.h
+@@ -35,6 +35,7 @@ extern "C" {
+ 
+ JSModuleDef *js_init_module_std(JSContext *ctx, const char *module_name);
+ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name);
++JSModuleDef *js_init_module_mavsdk(JSContext *ctx, const char *module_name);
+ void js_std_add_helpers(JSContext *ctx, int argc, char **argv);
+ void js_std_loop(JSContext *ctx);
+ void js_std_init_handlers(JSRuntime *rt);
