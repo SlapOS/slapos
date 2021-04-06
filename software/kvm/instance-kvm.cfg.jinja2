@@ -972,7 +972,7 @@ keyboard-layout-language = fr
 {% set key_list =  v.split('\n') -%}
 {{ k }} =
   {{ key_list | join('\n  ') }}
-{% elif k == 'boot-image-url-list' %}
+{% elif k in ['boot-image-url-list', 'boot-image-url-select'] %}
 {# needs to decorate possibly multiline or maybe unsafe value #}
 {{ k }} = {{ dumps(v) }}
 {% else -%}
