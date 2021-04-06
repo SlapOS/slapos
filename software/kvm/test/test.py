@@ -579,6 +579,16 @@ class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
 class FakeImageServerMixin(object):
+  def rerequestInstance(self, parameter_dict, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=parameter_dict,
+        state=state)
+
   def startImageHttpServer(self):
     self.image_source_directory = tempfile.mkdtemp()
     server = SocketServer.TCPServer(
@@ -674,16 +684,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.slap.waitForInstance(max_retry=10)
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
-
-  def rerequestInstance(self, parameter_dict, state='started'):
-    software_url = self.getSoftwareURL()
-    software_type = self.getInstanceSoftwareType()
-    return self.slap.request(
-        software_release=software_url,
-        software_type=software_type,
-        partition_reference=self.default_partition_reference,
-        partition_parameter_kw=parameter_dict,
-        state=state)
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
@@ -909,6 +909,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
+
     def getRunningImageList():
       running_image_list = []
       with self.slap.instance_supervisor_rpc as instance_supervisor:
@@ -993,7 +994,7 @@ class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
 
 
 @skipUnlessKvm
-class TestBootImageUrlListKvmCluster(InstanceTestCase):
+class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biulkc'
 
   @classmethod
@@ -1004,19 +1005,23 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
   key = 'boot-image-url-list'
   config_file_name = 'boot-image-url-list.conf'
 
+  def setUp(self):
+    super(InstanceTestCase, self).setUp()
+    self.startImageHttpServer()
+
+  def tearDown(self):
+    self.stopImageHttpServer()
+    super(InstanceTestCase, self).tearDown()
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
       "kvm-partition-dict": {
         "KVM0": {
             "disable-ansible-promise": True,
-            cls.key: cls.input_value % (
-              cls.fake_image, cls.fake_image_md5sum)
         },
         "KVM1": {
             "disable-ansible-promise": True,
-            cls.key: cls.input_value % (
-              cls.fake_image2, cls.fake_image2_md5sum)
         }
       }
     })}
@@ -1024,6 +1029,21 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
   def test(self):
     # Note: As there is no way to introspect nicely where partition landed
     #       we assume ordering of the cluster requests
+    self.rerequestInstance({'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            self.key: self.input_value % (
+              self.fake_image, self.fake_image_md5sum)
+        },
+        "KVM1": {
+            "disable-ansible-promise": True,
+            self.key: self.input_value % (
+              self.fake_image2, self.fake_image2_md5sum)
+        }
+      }
+    })})
+    self.slap.waitForInstance(max_retry=10)
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
