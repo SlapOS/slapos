@@ -104,7 +104,7 @@ template = inline:
 {%- raw %}
   {{ boot_image_url_select }}
 {% endraw -%}
-boot-image-url-select = {{ slapparameter_dict['boot-image-url-select'] }}
+boot-image-url-select = {{ dumps(slapparameter_dict['boot-image-url-select']) }}
 context =
   key boot_image_url_select :boot-image-url-select
 rendered = ${directory:etc}/boot-image-url-select.json
