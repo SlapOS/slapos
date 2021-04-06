@@ -112,34 +112,66 @@ bootstrap_machine_param_dict = {
     "enable-monitor": True,
     "keyboard-layout-language": "fr"
 }
-@skipUnlessKvm
-class ServicesTestCase(InstanceTestCase):
-  def test_hashes(self):
-    hash_files = [
-      'software_release/buildout.cfg',
-    ]
-    expected_process_names = [
-      '6tunnel-10022-{hash}-on-watch',
-      '6tunnel-10080-{hash}-on-watch',
-      '6tunnel-10443-{hash}-on-watch',
-      'certificate_authority-{hash}-on-watch',
-      'crond-{hash}-on-watch',
-      'kvm-{hash}-on-watch',
-      'websockify-{hash}-on-watch',
-    ]
 
+
+class KvmMixin(object):
+  def getProcessInfo(self):
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
     with self.slap.instance_supervisor_rpc as supervisor:
-      process_names = [process['name']
-                       for process in supervisor.getAllProcessInfo()]
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    return running_process_info.replace(hash_value, '{hash}')
 
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
 
-    for name in expected_process_names:
-      h = generateHashFromFiles(hash_files)
-      expected_process_name = name.format(hash=h)
+@skipUnlessKvm
+class TestInstance(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'i'
 
-      self.assertIn(expected_process_name, process_names)
+  def test(self):
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    present_key_list = []
+    assert_key_list = [
+     'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
+     'tap-ipv6']
+    for k in assert_key_list:
+      if k in connection_parameter_dict:
+        present_key_list.append(k)
+        connection_parameter_dict.pop(k)
+    self.assertEqual(
+      connection_parameter_dict,
+      {
+        'ipv6': self._ipv6_address,
+        'maximum-extra-disk-amount': '0',
+        'monitor-base-url': 'https://[%s]:8026' % (self._ipv6_address,),
+        'nat-rule-port-tcp-22': '%s : 10022' % (self._ipv6_address,),
+        'nat-rule-port-tcp-443': '%s : 10443' % (self._ipv6_address,),
+        'nat-rule-port-tcp-80': '%s : 10080' % (self._ipv6_address,),
+        'tap-ipv4': 'None',
+      }
+    )
+    self.assertEqual(set(present_key_list), set(assert_key_list))
+    self.assertEqual(
+      """i0:6tunnel-10022-{hash}-on-watch RUNNING
+i0:6tunnel-10080-{hash}-on-watch RUNNING
+i0:6tunnel-10443-{hash}-on-watch RUNNING
+i0:bootstrap-monitor EXITED
+i0:certificate_authority-{hash}-on-watch RUNNING
+i0:crond-{hash}-on-watch RUNNING
+i0:kvm-{hash}-on-watch RUNNING
+i0:kvm_controller EXITED
+i0:monitor-httpd-{hash}-on-watch RUNNING
+i0:monitor-httpd-graceful EXITED
+i0:websockify-{hash}-on-watch RUNNING""",
+      self.getProcessInfo()
+    )
 
 
 class MonitorAccessMixin(object):
@@ -401,27 +433,13 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
 
 @skipIfPython3
 @skipUnlessKvm
-class TestInstanceResilient(InstanceTestCase):
+class TestInstanceResilient(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'ir'
   instance_max_retry = 20
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
-
-  def getProcessInfo(self):
-    hash_value = generateHashFromFiles([
-      os.path.join(self.computer_partition_root_path, hash_file)
-      for hash_file in [
-        'software_release/buildout.cfg',
-      ]
-    ])
-    with self.slap.instance_supervisor_rpc as supervisor:
-      running_process_info = '\n'.join(sorted([
-        '%(group)s:%(name)s %(statename)s' % q for q
-        in supervisor.getAllProcessInfo()
-        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
-    return running_process_info.replace(hash_value, '{hash}')
 
   def test(self):
     connection_parameter_dict = self\
@@ -449,18 +467,6 @@ class TestInstanceResilient(InstanceTestCase):
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
 
-    hash_value = generateHashFromFiles([
-      os.path.join(self.computer_partition_root_path, hash_file)
-      for hash_file in [
-        'software_release/buildout.cfg',
-      ]
-    ])
-    with self.slap.instance_supervisor_rpc as supervisor:
-      running_process_info = '\n'.join(sorted([
-        '%(group)s:%(name)s %(statename)s' % q for q
-        in supervisor.getAllProcessInfo()
-        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
-    running_process_info = running_process_info.replace(hash_value, '{hash}')
     self.assertEqual(
       """ir0:bootstrap-monitor EXITED
 ir0:certificate_authority-{hash}-on-watch RUNNING
