@@ -971,17 +971,9 @@ data-to-vm =
 # Change keyboard layout language (Change to en-us if you face some bad bihaviors)
 keyboard-layout-language = fr
 
-{% for k, v in slapparameter_dict.items() -%}
-{% if k == 'authorized-key' and v -%}
-{% set key_list =  v.split('\n') -%}
-{{ k }} =
-  {{ key_list | join('\n  ') }}
-{% elif k == 'boot-image-url-list' %}
-{# needs to decorate possibly multiline or maybe unsafe value #}
-{{ k }} = {{ dumps(v) }}
-{% else -%}
-{{ k }} = {{ v }}
-{% endif -%}
+{% for key, value in slapparameter_dict.items() -%}
+{#- dumps value to make it representation buldout safe #}
+{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
 #############################
