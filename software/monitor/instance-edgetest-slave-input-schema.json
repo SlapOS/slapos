@@ -9,7 +9,7 @@
     },
     "region": {
       "title": "Applicable Region",
-      "description": "Puts the check on one of regions defined by the cluster.Empty region will result with presence on all regions.",
+      "description": "Puts the check on one of regions defined by the cluster. Empty region will result with presence on all regions.",
       "type": "string"
     },
     "check-status-code": {
