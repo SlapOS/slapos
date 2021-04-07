@@ -88,7 +88,7 @@ same-country = {{ slapparameter_dict.get('same-country', '') }}
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['template-re6st-registry-conf'] }}
-rendered = ${directory:etc}/re6st-registry.conf
+rendered = ${re6stnet-dirs:conf}/registry.conf
 context = section parameter_dict re6st-registry-conf-dict
 
 depends = ${re6st-compat:recipe}
