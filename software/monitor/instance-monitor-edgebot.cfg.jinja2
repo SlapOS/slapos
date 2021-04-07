@@ -19,7 +19,7 @@
 {%-     do loaded_slave.setdefault('check-maximum-elapsed-time', 2) %}
 {%-     do loaded_slave.__setitem__('_title', slave['slave_title']) %}
 {%-     do loaded_slave.__setitem__('_reference', slave['slave_reference']) %}
-{%-     do loaded_slave.setdefault('check-frontend-ip-list', json_module.loads(CONFIGURATION['check-frontend-ip-list'])) %}
+{%-     do loaded_slave.setdefault('check-frontend-ip-list', json_module.loads(CONFIGURATION.get('check-frontend-ip-list', '[]'))) %}
 {%-     if 'url' in loaded_slave %}
 {%-       set class = loaded_slave['check-maximum-elapsed-time'] %}
 {%-       if class not in slave_instance_dict %}
@@ -64,7 +64,7 @@ db = ${directory:srv}/surykatka-{{ class }}.db
 rendered = ${directory:etc}/surykatka-{{ class }}.ini
 template = {{ template_surykatka_ini }}
 slave_instance_list = {{ dumps(slave_instance_list) }}
-nameserver = {{ dumps(json_module.loads(CONFIGURATION['nameserver-list'])) }}
+nameserver_list = {{ dumps(json_module.loads(CONFIGURATION.get('nameserver-list', '[]'))) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ class + 2 }}
@@ -72,7 +72,7 @@ timeout = {{ class + 2 }}
 context =
   import json_module json
   key db :db
-  key nameserver :nameserver
+  key nameserver_list :nameserver_list
   key slave_instance_list :slave_instance_list
   key timeout :timeout
 

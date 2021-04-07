@@ -2,7 +2,6 @@
 INTERVAL = 120
 TIMEOUT = {{ timeout }}
 SQLITE = {{ db }}
-{%- set nameserver_list = nameserver.split() %}
 {%- if len(nameserver_list) > 0 %}
 NAMESERVER =
 {%-   for nameserver_entry in sorted(nameserver_list) %}
