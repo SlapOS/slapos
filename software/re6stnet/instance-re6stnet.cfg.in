@@ -66,7 +66,6 @@ post = test ! -s ${apache-conf:pid-file} || {{ bin_directory }}/slapos-kill --pi
 [re6st-registry-conf-dict]
 port = 9201
 ipv4 = {{ ipv4 }}
-ipv6 = {{ ipv6 }}
 db = ${re6stnet-dirs:data}/registry.db
 ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
