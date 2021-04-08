@@ -485,7 +485,7 @@ URL =
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
       'check-http-header-dict':
-        '{"B": "BBB"}',
+        {"B": "BBB"},
     })}
 
   def assertSurykatkaPromises(self):
@@ -550,7 +550,7 @@ URL =
     )
     self.requestEdgetestSlave(
       'backend-http-header',
-      {'url': 'https://www.erp5.org/', 'check-http-header-dict': '{"A": "AAA"}'},
+      {'url': 'https://www.erp5.org/', 'check-http-header-dict': {"A": "AAA"}},
     )
 
 
