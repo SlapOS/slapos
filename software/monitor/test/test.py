@@ -270,38 +270,66 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
 class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
+    1: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 3
+SQLITE = %(db_file)s
+URL =
+  https://www.checkmaximumelapsedtime1.org/"""},
     2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
 URL =
-  https://www.erp5.com/
-  https://www.erp5.org/"""}
+  https://www.checkcertificateexpirationdays.org/
+  https://www.checkhttpheaderdict.org/
+  https://www.checkstatuscode.org/
+  https://www.default.org/
+  https://www.failureamount.org/"""},
+    20: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 22
+SQLITE = %(db_file)s
+URL =
+  https://www.checkmaximumelapsedtime20.org/"""},
   }
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'ip-list': ''")
+      'http-query-default-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.default.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+    self.fail('rest like above')
     self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'status-code': '300'")
-    self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+      'http-query-default-promise.py',
+      "'failure-amount': '2'"
     )
     self.assertPromiseContent(
-      'http-query-backend-300-promise.py',
-      "'failure-amount': '2'"
+      'http-query-default-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      "'url': 'https://www.default.org/'")
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
     )
 
     self.assertPromiseContent(
@@ -327,15 +355,88 @@ URL =
       'http-query-backend-promise.py',
       "'failure-amount': '2'"
     )
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'http-header-dict': '{\"A\": \"AAA\"}'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'certificate-expiration-days': '15'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-http-header-promise.py',
+      "'failure-amount': '2'"
+    )
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'ip-list': ''")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'report': 'http_query'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'status-code': '200'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'certificate-expiration-days': '20'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'url': 'https://www.erp5.org/'")
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+    )
+    self.assertPromiseContent(
+      'http-query-backend-20-promise.py',
+      "'failure-amount': '2'"
+    )
 
   def requestEdgetestSlaves(self):
     self.requestEdgetestSlave(
-      'backend',
-      {'url': 'https://www.erp5.com/'},
+      'default',
+      {'url': 'https://www.default.org/'},
     )
     self.requestEdgetestSlave(
-      'backend-300',
-      {'url': 'https://www.erp5.org/', 'check-status-code': 300},
+      'checkstatuscode',
+      {'url': 'https://www.checkstatuscode.org/', 'check-status-code': 300},
+    )
+    self.requestEdgetestSlave(
+      'checkhttpheaderdict',
+      {'url': 'https://www.checkhttpheaderdict.org/',
+       'check-http-header-dict': {"A": "AAA"}},
+    )
+    self.requestEdgetestSlave(
+      'checkcertificateexpirationdays',
+      {'url': 'https://www.checkcertificateexpirationdays.org/',
+       'check-certificate-expiration-days': '20'},
+    )
+    self.requestEdgetestSlave(
+      'checkmaximumelapsedtime20',
+      {'url': 'https://www.checkmaximumelapsedtime20.org/',
+       'check-maximum-elapsed-time': 20},
+    )
+    self.requestEdgetestSlave(
+      'checkmaximumelapsedtime1',
+      {'url': 'https://www.checkmaximumelapsedtime1.org/',
+       'check-maximum-elapsed-time': 1},
+    )
+    self.requestEdgetestSlave(
+      'failureamount',
+      {'url': 'https://www.failureamount.org/', 'failure-amount': '10'},
     )
 
 
@@ -390,428 +491,4 @@ URL =
     self.requestEdgetestSlave(
       'backend',
       {'url': 'https://www.erp5.com/'},
-    )
-
-
-class TestEdgeCheckStatusCode(EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 4
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.com/
-  https://www.erp5.org/"""}
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'check-status-code': 500,
-    })}
-
-  def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'status-code': '501'")
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-501-promise.py',
-      "'failure-amount': '2'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'status-code': '500'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'failure-amount': '2'"
-    )
-
-  def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'backend',
-      {'url': 'https://www.erp5.com/'},
-    )
-    self.requestEdgetestSlave(
-      'backend-501',
-      {'url': 'https://www.erp5.org/', 'check-status-code': 501},
-    )
-
-
-class TestEdgeCheckHTTPHeaderDict(EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 4
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.com/
-  https://www.erp5.org/"""}
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'check-http-header-dict': {"B": "BBB"},
-    })}
-
-  def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'http-header-dict': '{\"A\": \"AAA\"}'")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-http-header-promise.py',
-      "'failure-amount': '2'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'http-header-dict': '{\"B\": \"BBB\"}'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'failure-amount': '2'"
-    )
-
-  def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'backend',
-      {'url': 'https://www.erp5.com/'},
-    )
-    self.requestEdgetestSlave(
-      'backend-http-header',
-      {'url': 'https://www.erp5.org/', 'check-http-header-dict': {"A": "AAA"}},
-    )
-
-
-class TestEdgeCheckCertificateExpirationDays(
-  EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 4
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.com/
-  https://www.erp5.org/"""}
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'check-certificate-expiration-days': 10,
-    })}
-
-  def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'certificate-expiration-days': '20'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'failure-amount': '2'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'certificate-expiration-days': '10'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'failure-amount': '2'"
-    )
-
-  def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'backend',
-      {'url': 'https://www.erp5.com/'},
-    )
-    self.requestEdgetestSlave(
-      'backend-20',
-      {'url': 'https://www.erp5.org/',
-       'check-certificate-expiration-days': '20'},
-    )
-
-
-class TestEdgeCheckMaximumElapsedTime(
-  EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_dict = {
-    5: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 7
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.com/"""},
-    20: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 22
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.org/"""},
-    1: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 3
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.net/"""}
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'check-maximum-elapsed-time': 5,
-    })}
-
-  def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'maximum-elapsed-time': '20'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[20]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-20-promise.py',
-      "'failure-amount': '2'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'maximum-elapsed-time': '5'")
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[5]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-default-promise.py',
-      "'failure-amount': '2'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'ip-list': ''")
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'maximum-elapsed-time': '1'")
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'url': 'https://www.erp5.net/'")
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[1]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-1-promise.py',
-      "'failure-amount': '2'"
-    )
-
-  def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'backend-default',
-      {'url': 'https://www.erp5.com/'},
-    )
-    self.requestEdgetestSlave(
-      'backend-20',
-      {'url': 'https://www.erp5.org/',
-       'check-maximum-elapsed-time': 20},
-    )
-    self.requestEdgetestSlave(
-      'backend-1',
-      {'url': 'https://www.erp5.net/',
-       'check-maximum-elapsed-time': 1},
-    )
-
-
-class TestEdgeFailureAmount(
-  EdgeSlaveMixin, SlapOSInstanceTestCase):
-  surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
-INTERVAL = 120
-TIMEOUT = 4
-SQLITE = %(db_file)s
-URL =
-  https://www.erp5.com/
-  https://www.erp5.org/"""}
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'failure-amount': 5
-    })}
-
-  def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-promise.py',
-      "'failure-amount': '5'"
-    )
-
-    self.assertPromiseContent(
-      'http-query-backend-10-promise.py',
-      "'report': 'http_query'")
-    self.assertPromiseContent(
-      'http-query-backend-10-promise.py',
-      "'status-code': '200'")
-    self.assertPromiseContent(
-      'http-query-backend-10-promise.py',
-      "'url': 'https://www.erp5.org/'")
-    self.assertPromiseContent(
-      'http-query-backend-10-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
-    )
-    self.assertPromiseContent(
-      'http-query-backend-10-promise.py',
-      "'failure-amount': '10'"
-    )
-
-  def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'backend',
-      {'url': 'https://www.erp5.com/'},
-    )
-    self.requestEdgetestSlave(
-      'backend-10',
-      {'url': 'https://www.erp5.org/', 'failure-amount': '10'},
     )
