@@ -15,7 +15,7 @@
       "type": "number"
     },
     "check-http-header-dict": {
-      "default": "{}",
+      "default": {},
       "title": "HTTP header dict to check",
       "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
       "type": "object"
