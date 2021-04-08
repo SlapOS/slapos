@@ -864,3 +864,344 @@ diff -Naur Zope-4.5.3/src/Shared/DC/xml/xyap.py Zope-4.5.3-Nexedi/Shared/DC/xml/
 +        'array': lambda self, tag, data: data[2],
 +        'data': lambda self, tag, data: data[2:],
 +        }
+diff -Naur ./Zope-4.5.3/src/reStructuredText/__init__.py ./Zope-4.5.3-Nexedi/src/reStructuredText/__init__.py
+--- Zope-4.5.3/src/reStructuredText/__init__.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/reStructuredText/__init__.py	2021-04-08 15:36:03.556981565 +0200
+@@ -0,0 +1,163 @@
++##############################################################################
++#
++# Copyright (c) 2002 Zope Foundation and Contributors.
++#
++# This software is subject to the provisions of the Zope Public License,
++# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
++# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
++# FOR A PARTICULAR PURPOSE
++#
++##############################################################################
++"""Wrapper to integrate reStructuredText into Zope
++"""
++
++# Disable inclusion of files for security reasons.  We do this by
++# changing the default value of the ``file_insertion_enabled``
++# parameter to False.
++import docutils.parsers.rst
++for title, options, conf in docutils.parsers.rst.Parser.settings_spec[2]:
++    if options == ['--file-insertion-enabled']:
++        conf['default'] = 0
++        break
++
++import sys
++from App.config import getConfiguration
++from docutils.core import publish_parts
++
++# get encoding
++default_enc = sys.getdefaultencoding()
++#default_output_encoding = getConfiguration().rest_output_encoding or default_enc
++#default_input_encoding = getConfiguration().rest_input_encoding or default_enc
++default_output_encoding = default_enc
++default_input_encoding = default_enc
++
++# starting level for <H> elements (default behaviour inside Zope is <H3>)
++default_level = 3
++#initial_header_level = getConfiguration().rest_header_level or default_level
++initial_header_level = default_level
++
++# default language used for internal translations and language mappings for DTD
++# elements
++default_lang = 'en'
++#default_language_code = getConfiguration().rest_language_code or default_lang
++default_language_code = default_lang
++
++
++class Warnings:
++
++    def __init__(self):
++        self.messages = []
++
++    def write(self, message):
++        self.messages.append(message)
++
++def render(src,
++           writer='html4css1',
++           report_level=1,
++           stylesheet=None,
++           input_encoding=default_input_encoding,
++           output_encoding=default_output_encoding,
++           language_code=default_language_code,
++           initial_header_level = initial_header_level,
++           settings = {}):
++    """get the rendered parts of the document the and warning object
++    """
++    # Docutils settings:
++    settings = settings.copy()
++    settings['input_encoding'] = input_encoding
++    settings['output_encoding'] = output_encoding
++    settings['stylesheet'] = stylesheet
++    settings['stylesheet_path'] = None
++    settings['file_insertion_enabled'] = 0
++    settings['raw_enabled'] = 0
++    if language_code:
++        settings['language_code'] = language_code
++    settings['language_code'] = language_code
++    # starting level for <H> elements:
++    settings['initial_header_level'] = initial_header_level + 1
++    # set the reporting level to something sane:
++    settings['report_level'] = report_level
++    # don't break if we get errors:
++    settings['halt_level'] = 6
++    # remember warnings:
++    settings['warning_stream'] = warning_stream = Warnings()
++
++    parts = publish_parts(source=src, writer_name=writer,
++                          settings_overrides=settings,
++                          config_section='zope application')
++
++    return parts, warning_stream
++
++def HTML(src,
++         writer='html4css1',
++         report_level=1,
++         stylesheet=None,
++         input_encoding=default_input_encoding,
++         output_encoding=default_output_encoding,
++         language_code=default_language_code,
++         initial_header_level = initial_header_level,
++         warnings = None,
++         settings = {}):
++    """ render HTML from a reStructuredText string
++
++        - 'src'  -- string containing a valid reST document
++
++        - 'writer' -- docutils writer
++
++        - 'report_level' - verbosity of reST parser
++
++        - 'stylesheet' - Stylesheet to be used
++
++        - 'input_encoding' - encoding of the reST input string
++
++        - 'output_encoding' - encoding of the rendered HTML output
++
++        - 'report_level' - verbosity of reST parser
++
++        - 'language_code' - docutils language
++
++        - 'initial_header_level' - level of the first header tag
++
++        - 'warnings' - will be overwritten with a string containing the warnings
++
++        - 'settings' - dict of settings to pass in to Docutils, with priority
++
++    """
++    parts, warning_stream = render(src,
++                                   writer = writer,
++                                   report_level = report_level,
++                                   stylesheet = stylesheet,
++                                   input_encoding = input_encoding,
++                                   output_encoding = output_encoding,
++                                   language_code=language_code,
++                                   initial_header_level = initial_header_level,
++                                   settings = settings)
++
++    header = '<h%(level)s class="title">%(title)s</h%(level)s>\n' % {
++                  'level': initial_header_level,
++                  'title': parts['title'],
++             }
++
++    subheader = '<h%(level)s class="subtitle">%(subtitle)s</h%(level)s>\n' % {
++                  'level': initial_header_level+1,
++                  'subtitle': parts['subtitle'],
++             }
++
++    body = '%(docinfo)s%(body)s' % {
++                  'docinfo': parts['docinfo'],
++                  'body': parts['body'],
++             }
++
++    output = ''
++    if parts['title']:
++        output = output + header
++    if parts['subtitle']:
++        output = output + subheader
++    output = output + body
++
++    warnings = ''.join(warning_stream.messages)
++
++    if output_encoding != 'unicode':
++        return output.encode(output_encoding)
++    else:
++        return output
++
++__all__ = ("HTML", 'render')
+diff -Naur ./Zope-4.5.3/src/reStructuredText/tests/__init__.py ./Zope-4.5.3-Nexedi/src/reStructuredText/tests/__init__.py
+--- Zope-4.5.3/src/reStructuredText/tests/__init__.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/reStructuredText/tests/__init__.py	2021-04-08 15:36:03.560981604 +0200
+@@ -0,0 +1 @@
++"""reST tests package."""
+diff -Naur ./Zope-4.5.3/src/reStructuredText/tests/testReST.py ./Zope-4.5.3-Nexedi/src/reStructuredText/tests/testReST.py
+--- Zope-4.5.3/src/reStructuredText/tests/testReST.py	1970-01-01 01:00:00.000000000 +0100
++++ Zope-4.5.3-Nexedi/src/reStructuredText/tests/testReST.py	2021-04-08 15:36:03.564981643 +0200
+@@ -0,0 +1,161 @@
++# -*- coding: iso-8859-15 -*-
++
++import unittest
++import cgi
++from docutils.core import publish_parts
++from reStructuredText import HTML, Warnings
++
++
++txt = """Hello World
++============
++
++text text
++
++Von V geln und  fen
++===================
++
++- some
++- more
++- text
++
++"""
++
++
++docutils_include_warning = '''\
++<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">&lt;string&gt;</tt>, line 2)</p>
++<p>&quot;include&quot; directive disabled.</p>'''
++
++docutils_raw_warning = '''\
++<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">&lt;string&gt;</tt>, line 1)</p>
++<p>&quot;raw&quot; directive disabled.</p>'''
++
++
++class TestReST(unittest.TestCase):
++
++    def testRoman(self):
++        # Make sure we can import the rst parser
++        from docutils.parsers import rst
++
++    def testEncodings(self):
++
++        def _test(txt, in_enc, out_enc):
++            return HTML(txt,
++                        input_encoding=in_enc,
++                        output_encoding=out_enc)
++
++        encoding = 'iso-8859-15'
++        html = _test(txt, encoding, encoding)
++        self.assertEqual('V gel' in html, True)
++        self.assertEqual(' fen' in html, True)
++
++        html = _test(txt, encoding, 'unicode')
++        self.assertEqual(unicode('V gel', encoding) in html, True)
++        self.assertEqual(unicode(' fen', encoding) in html, True)
++
++        html = _test(unicode(txt, encoding), 'unicode', encoding)
++        self.assertEqual('V gel' in html, True)
++        self.assertEqual(' fen' in html, True)
++
++        html = _test(unicode(txt, encoding), 'unicode', 'unicode')
++        self.assertEqual(unicode('V gel', encoding) in html, True)
++        self.assertEqual(unicode(' fen', encoding) in html, True)
++
++    def testHeaderLevel(self):
++
++        encoding = 'iso-8859-15'
++        for level in range(0, 5):
++            html = HTML(txt, input_encoding=encoding, 
++                             output_encoding=encoding, 
++                             initial_header_level=level)
++
++            expected = '<h%d>Hello World</h%d>' % (level+1, level+1)
++            self.assertEqual(expected in html, True)
++
++            expected = '<h%d>Von V geln und  fen</h%d>' % (level+1, level+1)
++            self.assertEqual(expected in html, True)
++
++    def testWithSingleSubtitle(self):
++        input = '''
++title
++-----
++subtitle
++++++++++
++text
++'''
++        expected='''<h3 class="title">title</h3>
++<h4 class="subtitle">subtitle</h4>
++<p>text</p>
++'''
++        output = HTML(input)
++        self.assertEquals(output, expected) 
++
++    def test_file_insertion_off_by_default(self):
++        directive = '.. include:: /etc/passwd'
++        source = 'hello world\n %s' % directive
++        parts = publish_parts(source=source, writer_name='html4css1',
++                              settings_overrides={'warning_stream': Warnings()})
++
++        # The include: directive hasn't been rendered, it remains
++        # verbatimly in the rendered output.  Instead a warning
++        # message is presented:
++        self.assert_(directive in parts['body'])
++        self.assert_(docutils_include_warning in parts['body'])
++
++    def test_include_directive_raises(self):
++        directive = '.. include:: /etc/passwd'
++        source = 'hello world\n %s' % directive
++        result = HTML(source)
++
++        # The include: directive hasn't been rendered, it remains
++        # verbatimly in the rendered output.  Instead a warning
++        # message is presented:
++        self.assert_(directive in result)
++        self.assert_(docutils_include_warning in result)
++
++    def test_raw_directive_disabled(self):
++        EXPECTED = '<h1>HELLO WORLD</h1>'
++        source = '.. raw:: html\n\n  %s\n' % EXPECTED
++        result = HTML(source)       # don't raise, but don't work either
++
++        # The raw: directive hasn't been rendered, it remains
++        # verbatimly in the rendered output.  Instead a warning
++        # message is presented:
++        self.assert_(EXPECTED not in result)
++        self.assert_(cgi.escape(EXPECTED) in result)
++        self.assert_(docutils_raw_warning in result)
++
++    def test_raw_directive_file_option_raises(self):
++        source = '.. raw:: html\n  :file: inclusion.txt'
++        result = HTML(source)
++
++        # The raw: directive hasn't been rendered, it remains
++        # verbatimly in the rendered output.  Instead a warning
++        # message is presented:
++        self.assert_(source in result)
++        self.assert_(docutils_raw_warning in result)
++
++    def test_raw_directive_url_option_raises(self):
++        source = '.. raw:: html\n  :url: http://www.zope.org'
++        result = HTML(source)
++
++        # The raw: directive hasn't been rendered, it remains
++        # verbatimly in the rendered output.  Instead a warning
++        # message is presented:
++        self.assert_(source in result)
++        self.assert_(docutils_raw_warning in result)
++
++    def test_csv_table_file_option_raise(self):
++        source = '.. csv-table:: \n  :file: inclusion.txt'
++        result = HTML(source)
++        self.assertTrue('File and URL access deactivated' in result)
++
++    def test_csv_table_url_option_raise(self):
++        source = '.. csv-table:: \n  :url: http://www.evil.org'
++        result = HTML(source)
++        self.assertTrue('File and URL access deactivated' in result)
++
++
++def test_suite():
++    from unittest import TestSuite, makeSuite
++    return TestSuite((makeSuite(TestReST),))
++
