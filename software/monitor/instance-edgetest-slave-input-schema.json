@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "properties": {
     "url": {
       "title": "URL to check",
@@ -10,7 +11,7 @@
       "default": "Master default",
       "title": "Default Check HTTP Code.",
       "description": "HTTP code to check against (default: comes from master partition).",
-      "type": "string"
+      "type": "number"
     },
     "check-http-header-dict": {
       "default": "Master default",
@@ -20,27 +21,27 @@
     },
     "check-frontend-ip": {
       "default": "Master default",
-      "title": "Space separated list of Frontend IPs to check",
+      "title": "List of Frontend IPs to check",
       "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
-      "type": "string"
+      "type": "array"
     },
     "check-certificate-expiration-days": {
       "default": "Master default",
       "title": "Certificate expiration days check",
       "description": "Amount of days to consider certificate as being to-be-expired (default: comes from master partition).",
-      "type": "string"
+      "type": "number"
     },
     "check-maximum-elapsed-time": {
       "default": "Master default",
       "title": "Maximum elapsed time for a site to reply (seconds)",
       "description": "Maximum elapsed time for a site to reply to be considered good.(default: comes from master partition).",
-      "type": "string"
+      "type": "number"
     },
     "failure-amount": {
       "default": "Master default",
       "title": "Amount of failures to consider URL as in bad state",
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages (default: comes from master partition).",
-      "type": "string"
+      "type": "number"
     }
   }
 }
