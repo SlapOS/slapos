@@ -10,6 +10,8 @@
 {%- if extra_slave_instance_list %}
 {#- Create slaves to process with setting up defaults #}
 {%-   for slave in json_module.loads(extra_slave_instance_list) | sort(attribute='slave_title') %}
+{%-   if '_' in slave %}
+{%-   do slave.update(json_module.loads(slave.pop('_'))) %}
 {%-   if 'check-status-code' not in slave %}
 {%-     do slave.__setitem__('check-status-code', CONFIGURATION['check-status-code']) %}
 {%-   endif %}
@@ -34,6 +36,7 @@
 {%-       do slave_instance_dict.__setitem__(class, []) %}
 {%-     endif %}
 {%-     do slave_instance_dict[class].append(slave) %}
+{%-   endif %}
 {%-   endif %}
 {%-   endfor %}
 {%- endif %}
@@ -72,7 +75,7 @@ db = ${directory:srv}/surykatka-{{ class }}.db
 rendered = ${directory:etc}/surykatka-{{ class }}.ini
 template = {{ template_surykatka_ini }}
 slave_instance_list = {{ dumps(slave_instance_list) }}
-nameserver = {{ dumps(CONFIGURATION['nameserver']) }}
+nameserver_list = {{ dumps(CONFIGURATION['nameserver']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ int(class) + 2 }}
@@ -80,7 +83,7 @@ timeout = {{ int(class) + 2 }}
 context =
   import json_module json
   key db :db
-  key nameserver :nameserver
+  key nameserver_list :nameserver_list
   key slave_instance_list :slave_instance_list
   key timeout :timeout
 
