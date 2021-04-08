@@ -8,7 +8,6 @@ LoadModule version_module modules/mod_version.so
 LoadModule proxy_module modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
 LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
-LoadModule ssl_module modules/mod_ssl.so
 LoadModule mime_module modules/mod_mime.so
 #LoadModule dav_module modules/mod_dav.so
 #LoadModule dav_fs_module modules/mod_dav_fs.so
@@ -31,17 +30,6 @@ ErrorLog "{{ error_log }}"
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 CustomLog "{{ access_log }}" combined
 
-{% if uri_scheme == 'https'  -%}
-# SSL Configuration
-SSLCertificateFile {{ certificate }}
-SSLCertificateKeyFile {{ key }}
-SSLRandomSeed startup builtin
-SSLRandomSeed connect builtin
-SSLProtocol all -SSLv2 -SSLv3
-SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
-SSLHonorCipherOrder on
-{% endif -%}
-
 <Directory />
   Options FollowSymLinks
   AllowOverride None
@@ -50,10 +38,5 @@ SSLHonorCipherOrder on
 
 Listen {{ ipv6 }}:{{ apache_port }}
 <VirtualHost *:{{ apache_port }}>
-{% if uri_scheme == 'https'  -%}
-  SSLEngine On
-  SSLProxyEngine On
-{% endif -%}
-
   ProxyPass / http://{{ re6st_ipv4 }}:{{ re6st_port }}/
 </VirtualHost>
