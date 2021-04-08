@@ -1,5 +1,5 @@
 #!{{dash}}
-# BEWARE: This file is operated by slapgrid
+# BEWARE: This file is operated by slapos node
 
 set -e
 

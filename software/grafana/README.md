@@ -8,10 +8,10 @@ This is an experimental integration, mainly to evaluate these solutions.
 See https://github.com/influxdata/telegraf to learn about plugins.
 
 Useful plugins in this context are probably
-[exec](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/exec),
-[logparser](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/logparser)
+[exec](https://github.com/influxdata/telegraf/tree/v1.17.3/plugins/inputs/exec),
+[logparser](https://github.com/influxdata/telegraf/tree/v1.17.3/plugins/inputs/logparser)
 or
-[http](https://github.com/influxdata/telegraf/tree/1.11.1/plugins/inputs/http).
+[http](https://github.com/influxdata/telegraf/tree/v1.17.3/plugins/inputs/http).
 
 Telegraf will save in the `telegraf` database from the embedded influxdb server.
 

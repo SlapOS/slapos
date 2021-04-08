@@ -24,16 +24,10 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import unicode_literals
 
 import os
-import textwrap
-import logging
-import tempfile
-import time
-from six.moves.urllib.parse import urlparse, urljoin
+from six.moves.urllib.parse import urljoin
 
-import pexpect
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -44,17 +38,46 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestRepman(SlapOSInstanceTestCase):
-  __partition_reference__ = 'R'  # solve path too long for postgresql and unicorn
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'default'
+  __partition_reference__ = 'R'
 
   def setUp(self):
-    self.backend_url = self.computer_partition.getConnectionParameterDict(
-    )['backend-url']
+    self.url = self.computer_partition.getConnectionParameterDict()['url']
 
   def test_http_get(self):
-    resp = requests.get(self.backend_url, verify=False)
-    self.assertTrue(
-      resp.status_code in [requests.codes.ok, requests.codes.found])
+    connection_parameter_dict = \
+        self.computer_partition.getConnectionParameterDict()
+    resp = requests.get(self.url, verify=False)
+    self.assertEqual(resp.status_code, requests.codes.ok)
+
+    resp = requests.post(
+        urljoin(self.url, '/api/login'),
+        json={
+            'username': connection_parameter_dict['username'],
+            'password': connection_parameter_dict['repman-password'],
+        },
+        verify=False,
+    )
+    self.assertEqual(resp.status_code, requests.codes.ok)
+
+    token = resp.json()['token']
+    headers = {"authorization": "Bearer " + token}
+    resp = requests.get(
+        urljoin(self.url, '/api/monitor'),
+        headers=headers,
+        verify=False,
+    )
+    self.assertEqual(resp.status_code, requests.codes.ok)
+
+    resp = requests.get(
+        urljoin(self.url, '/api/clusters'),
+        params={
+            'query': '{"method":"GET","isArray":false}',
+        },
+        headers=headers,
+        verify=False,
+    )
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    cluster, = resp.json()
+    self.assertTrue(cluster['isProvision'])
+    self.assertTrue(cluster['isFailable'])
+    self.assertFalse(cluster['isDown'])

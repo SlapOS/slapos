@@ -93,7 +93,7 @@ if __name__ == "__main__":
         '--location',  # follow redirects
         '--no-progress-meter',  # do not tell too much
         '--max-time', '14400',  # maximum time for download is 4 hours
-        '--max-filesize', '5368709120',  # maximum 5G for an image
+        '--max-filesize', '10737418240',  # maximum 10G for an image
         '--output', destination_tmp, image['url']],
         stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:

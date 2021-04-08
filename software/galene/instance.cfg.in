@@ -20,7 +20,7 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
-configuration.ice-servers.json = [{"urls":["stun:turn.api.nexedi.net:3478"]}]
+configuration.ice-servers.json = [{"urls":["stun:turn-paris-rapidspace.api.nexedi.net:443"]}]
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -50,34 +50,37 @@ storage-path = $${directory:data}/.passwd
 username = admin
 
 [ice-servers.json]
-recipe = collective.recipe.template
-input = inline:
+recipe = slapos.recipe.template:jinja2
+template = inline:
   $${slap-configuration:configuration.ice-servers.json}
-output = $${directory:data}/ice-servers.json
+rendered = $${directory:data}/ice-servers.json
 
 [groups-json]
-recipe = collective.recipe.template
-input = inline:{
+recipe = slapos.recipe.template:jinja2
+template = inline:{
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
     "other": [],
-    "presenter": [{"username": "", "password": "nexedi"}],
-    "max-users":100
+    "presenter": [{"username": "", "password": "nexedi"}]
   }
-output = $${directory:groups}/public.json
+rendered = $${directory:groups}/public.json
 
 [galene-wrapper]
-recipe = slapos.cookbook:wrapper
+recipe = slapos.recipe.template:jinja2
 port = 8443
 ip = $${slap-configuration:ipv6-random}
-command-line = 
-  ${galene:location}/bin/galene
-    -static ${galene-repository:location}/static
-    -recordings $${directory:recordings}
-    -groups $${directory:groups}
-    -data $${directory:data}
-    -http [$${:ip}]:$${:port}
-wrapper-path = $${directory:services}/galene
+template =
+  inline:#!/bin/sh
+  
+  ulimit -n $(ulimit -Hn)
+  exec ${gowork:bin}/galene \
+    -static ${galene:location}/static \
+    -recordings $${directory:recordings} \
+    -groups $${directory:groups} \
+    -data $${directory:data} \
+    -http [$${:ip}]:$${:port} \
+    -turn ""
+rendered = $${directory:services}/galene
 depends =
   $${ice-servers.json:recipe}
   $${groups-json:recipe}

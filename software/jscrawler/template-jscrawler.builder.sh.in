@@ -1,0 +1,59 @@
+#!/bin/bash
+
+URLS="{{ url_list }}"
+
+OUTPUT_DIR="{{ public_folder }}"
+TMP_DIR="{{ tmp_folder }}"
+PERIOD="{{ period }}"
+
+if [ -s "{{ pid_file}}" ]; then
+  echo "Crawler process already running with pid `cat {{ pid_file}}`"
+  exit 1
+fi
+
+trap "rm -f -- '{{ pid_file}}'" EXIT
+
+echo $$ > "{{ pid_file}}"
+
+crawl() {
+  {{ jscrawler_wrapper }} -f $TMP_OUTPUT --link $1
+  if [ -s "$2" ]; then
+    mv $2 $3
+  fi
+}
+
+check_crawl() {
+  if [ -z "$PERIOD" ] || [ "$PERIOD" -eq 0 ] ; then
+    echo "Already crawled $1... SKIPPED"
+    return 0;
+  fi
+  sitemap=$3
+  tmp=$2
+  url=$1
+  NOW=$(date +"%s")
+  T=$(stat -c %Y $sitemap)
+  I=$((T+86400*PERIOD))
+  diff=$((NOW-I))
+  if [ "$diff" -gt 0 ]; then
+    crawl $url $tmp $sitemap
+  else
+    echo "Already crawled $url... SKIPPED"
+  fi
+}
+
+for url in `echo $URLS`
+do
+  # Name is the URL domain
+  NAME=$(echo "$url" | cut -d'/' -f3)
+  # Add path is it exists in URL
+  NAME="$NAME$(echo $url | grep -Po '\w\K/\w+[^?]+' | sed -r 's/\/+/_/g')"
+  echo "Checking $NAME..."
+  OUTPUT="$OUTPUT_DIR/$NAME.xml"
+  TMP_OUTPUT="$TMP_DIR/$NAME.xml"
+
+  if [ -s "$OUTPUT" ]; then
+    check_crawl $url $TMP_OUTPUT $OUTPUT
+  else
+    crawl $url $TMP_OUTPUT $OUTPUT
+  fi
+done

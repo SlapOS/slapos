@@ -20,10 +20,12 @@ instance-caucased = {{ dumps(instance_caucased) }}
 recipe = slapos.recipe.template:jinja2
 template = ${context:instance-caucased}
 rendered = ${buildout:parts-directory}/instance-caucased.cfg
+monitor = {{ template_monitor }}
 context =
   key ipv6_set slap-configuration:ipv6
   key slapparameter_dict slap-configuration:configuration
   key bin_directory context:bin-directory
+  key template_monitor :monitor
 import-list =
   file caucase context:caucase-jinja2-library
 

@@ -9,9 +9,14 @@ offline = true
 [profile-common]
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
+tar_location = {{ tar_location }}
+curl_location = {{ curl_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
 template_mime_types = {{ template_mime_types_target }} 
 template_launcher = {{ template_launcher_target }} 
+template_index_html = {{ template_index_html_target }}
+template_graceful  = {{ template_graceful_target }}
+template_monitor = {{ template_monitor }}
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2

@@ -1,5 +1,5 @@
 #!/bin/sh
-# BEWARE: This file is operated by slapgrid
+# BEWARE: This file is operated by slapos node
 # BEWARE: It will be overwritten automatically
 exec %(scalability_tester_manager_binary)s %(plugin_name)s -a %(address)s \
   -r %(report_path)s -m %(nb_tester_init)s -t %(nb_tester_max)s \

@@ -8,7 +8,7 @@
       "software-type": "default",
       "description": "Default",
       "request": "instance-srslte-input-schema.json",
-      "response": "instance-srslte-schema.json",
+      "response": "instance-srslte-output-schema.json",
       "index": 1
     }
   }

@@ -63,6 +63,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     return {
         'tcpv4-port': 3306,
         'max-connection-count': 5,
+        'long-query-time': 3,
         'max-slowqueries-threshold': 1,
         'slowest-query-threshold': 0.1,
         # XXX what is this ? should probably not be needed here
@@ -115,12 +116,13 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     # run logrotate a first time so that it create state files
     self._executeCrontabAtDate('logrotate', '2000-01-01')
 
-    # make two slow queries
+    # make two slow queries. We are using long-query-time=3, so the queries
+    # must take more than 3 seconds to be logged.
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query("SELECT SLEEP(1.1)")
+      cnx.query("SELECT SLEEP(3.1)")
       cnx.store_result()
-      cnx.query("SELECT SLEEP(1.2)")
+      cnx.query("SELECT SLEEP(3.2)")
 
     # slow query crontab depends on crontab for log rotation
     # to be executed first.
@@ -171,7 +173,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 """\
 Threshold is lower than expected: 
 Expected total queries : 1.0 and current is: 2
-Expected slowest query : 0.1 and current is: 1
+Expected slowest query : 0.1 and current is: 3
 """)
 
 

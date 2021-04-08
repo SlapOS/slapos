@@ -46,8 +46,10 @@ from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+import urllib3
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase, ManagedHTTPServer
@@ -318,8 +320,13 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     self.assertEqual('selenium', parsed.username)
     self.assertTrue(parsed.password)
 
+    # XXX we are using a self signed certificate, but selenium 3.141.0 does
+    # not expose API to ignore certificate verification
+    executor = RemoteConnection(webdriver_url, keep_alive=True)
+    executor._conn = urllib3.PoolManager(cert_reqs='CERT_NONE', ca_certs=None)
+
     driver = webdriver.Remote(
-        command_executor=webdriver_url,
+        command_executor=executor,
         desired_capabilities=DesiredCapabilities.CHROME)
 
     driver.get(self.server_url)

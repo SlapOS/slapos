@@ -30,7 +30,7 @@ from zc.buildout.easy_install import _safe_arg, script_header
 import sys
 
 template = script_header + r"""
-# BEWARE: This file is operated by slapgrid
+# BEWARE: This file is operated by slapos node
 # BEWARE: It will be overwritten automatically
 import socket
 import sys

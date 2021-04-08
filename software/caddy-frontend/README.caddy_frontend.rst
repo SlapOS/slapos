@@ -6,6 +6,8 @@ Frontend system using Caddy, based on apache-frontend software release, allowing
 
 Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
 
+This documentation covers only specific scenarios. Most of the parameters are described in `software.cfg.json <software.cfg.json>`_.
+
 Software type
 =============
 
@@ -129,7 +131,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem master-key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -157,7 +159,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -215,38 +217,26 @@ Example of value: "/erp5/web_site_module/hosting/"
 
 url
 ~~~
-Necessary to activate cache. ``url`` of backend to use.
-
-``url`` is an optional parameter.
+URL of the backend to use, optional but will result with non functioning slave.
 
 Example: http://mybackend.com/myresource
-
-domain
-~~~~~~
-
-Necessary to activate cache.
-
-The frontend will be accessible from this domain.
-
-``domain`` is an optional parameter.
-
-Example: www.mycustomdomain.com
 
 enable_cache
 ~~~~~~~~~~~~
 
-Necessary to activate cache.
+Enables HTTP cache, optional.
 
-``enable_cache`` is an optional parameter.
 
-backend-active-check-*
-~~~~~~~~~~~~~~~~~~~~~~
+health-check-*
+~~~~~~~~~~~~~~
 
 This set of parameters is used to control the way how the backend checks will be done. Such active checks can be really useful for `stale-if-error` caching technique and especially in case if backend is very slow to reply or to connect to.
 
-`backend-active-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
+`health-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
 
-Please be aware that the `backend-active-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `backend-active-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
+Please be aware that the `health-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `health-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
+
+Thanks to using health-check it's possible to configure failover system. By providing `health-check-failover-url` or `health-check-failover-https-url` some special backend can be used to reply in case if original backend replies with error (codes like `5xx`). As a note one can setup this failover URL like `https://failover.example.com/?p=` so that the path from the incoming request will be passed as parameter. Additionally authentication to failover URL is supported with `health-check-authenticate-to-failover-backend` and SSL Proxy verification with `health-check-failover-ssl-proxy-verify` and `health-check-failover-ssl-proxy-ca-crt`.
 
 Examples
 ========

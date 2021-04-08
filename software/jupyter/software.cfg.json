@@ -1,0 +1,15 @@
+{
+  "name": "Jupyter",
+  "description": "Jupyter Notebook",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-jupyter-input-schema.json",
+      "response": "instance-jupyter-output-schema.json",
+      "index": 1
+    }
+  }
+}

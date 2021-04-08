@@ -28,7 +28,7 @@ recipe = slapos.recipe.template:jinja2
 rendered = $${buildout:directory}/bin/$${:_buildout_section_name_}
 template = inline:
   #!/bin/sh
-  export PATH=${python-with-eggs:location}:$PATH
+  export PATH=${python2.7-with-eggs:location}:$PATH
   exec ${buildout:bin-directory}/${runTestSuite_py:interpreter} ${:_profile_base_location_}/runTestSuite.py --partition_ipv4 {{ list(partition_ipv4)[0] }} --partition_path $${buildout:directory} --test_reference "{{ slapparameter_dict.get('image-to-test-url') }} {{ slapparameter_dict.get('script-to-test-url')}}" --test_location "${test-location:base}/{{ slapparameter_dict.get('test-relative-directory', 'playbook/roles/standalone-shared') }}" --python_interpreter=${buildout:bin-directory}/${runTestSuite_py:interpreter} "$@"
 mode = 0755
 context =
@@ -37,7 +37,7 @@ context =
 
 [switch_softwaretype]
 default = $${:deploy-test}
-deploy-test = $${dynamic-template-deploy-test:rendered}
+deploy-test = dynamic-template-deploy-test:rendered
 
 [dynamic-template-deploy-test]
 recipe = slapos.recipe.template:jinja2

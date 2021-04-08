@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import urllib
 import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler
 from typing import Dict
@@ -166,7 +167,9 @@ class BalancerTestCase(ERP5InstanceTestCase):
         'ssl-authentication-dict': {},
         'ssl': {
             'caucase-url': cls.getManagedResource("caucase", CaucaseService).url,
-        }
+        },
+        'family-path-routing-dict': {},
+        'path-routing-list': [],
       }
 
   @classmethod
@@ -194,14 +197,14 @@ class SlowHTTPServer(ManagedHTTPServer):
     log_message = logging.getLogger(__name__ + '.SlowHandler').info
 
 
-class TestAccessLog(BalancerTestCase, CrontabMixin):
-  """Check access logs emitted by balancer
+class TestLog(BalancerTestCase, CrontabMixin):
+  """Check logs emitted by balancer
   """
   __partition_reference__ = 'l'
   @classmethod
   def _getInstanceParameterDict(cls):
     # type: () -> Dict
-    parameter_dict = super(TestAccessLog, cls)._getInstanceParameterDict()
+    parameter_dict = super(TestLog, cls)._getInstanceParameterDict()
     # use a slow server instead
     parameter_dict['dummy_http_server'] = [[cls.getManagedResource("slow_web_server", SlowHTTPServer).netloc, 1, False]]
     return parameter_dict
@@ -280,6 +283,22 @@ class TestAccessLog(BalancerTestCase, CrontabMixin):
     self._executeCrontabAtDate('logrotate', '2050-01-02')
     self.assertTrue(os.path.exists(rotated_log_file + '.xz'))
     self.assertFalse(os.path.exists(rotated_log_file))
+
+  def test_error_log(self):
+    # stop backend server
+    backend_server = self.getManagedResource("slow_web_server", SlowHTTPServer)
+    self.addCleanup(backend_server.open)
+    backend_server.close()
+    # after a while, balancer should detect and log this event in error log
+    time.sleep(5)
+    self.assertEqual(
+        requests.get(self.default_balancer_url, verify=False).status_code,
+        requests.codes.service_unavailable)
+    with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-error.log')) as error_log_file:
+      error_line = error_log_file.read().splitlines()[-1]
+    self.assertIn('proxy family_default has no server available!', error_line)
+    # this log also include a timestamp
+    self.assertRegexpMatches(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
 class BalancerCookieHTTPServer(ManagedHTTPServer):
@@ -750,7 +769,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     ).json()
     self.assertNotEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
-    with self.assertRaises(OpenSSL.SSL.Error):
+    with self.assertRaisesRegexp(Exception, "certificate required"):
       requests.get(
         balancer_url,
         headers={'X-Forwarded-For': '1.2.3.4'},
@@ -877,3 +896,93 @@ class TestClientTLS(BalancerTestCase):
 
       with self.assertRaisesRegexp(Exception, 'certificate revoked'):
         _make_request()
+
+class TestPathBasedRouting(BalancerTestCase):
+  """Check path-based routing rewrites URLs as expected.
+  """
+  __partition_reference__ = 'pbr'
+
+  @classmethod
+  def _getInstanceParameterDict(cls):
+    # type: () -> Dict
+    parameter_dict = super(
+      TestPathBasedRouting,
+      cls,
+    )._getInstanceParameterDict()
+    parameter_dict['zope-family-dict'][
+      'second'
+    ] = parameter_dict['zope-family-dict'][
+      'default'
+    ]
+    # Routing rules outermost slashes mean nothing. They are internally
+    # stripped and rebuilt in order to correctly represent the request's URL.
+    parameter_dict['family-path-routing-dict'] = {
+      'default': [
+        ['foo/bar', 'erp5/boo/far/faz'], # no outermost slashes
+        ['/foo', '/erp5/somewhere'],
+        ['/foo/shadowed', '/foo_shadowed'], # unreachable
+        ['/next', '/erp5/web_site_module/another_next_website'],
+      ],
+    }
+    parameter_dict['path-routing-list'] = [
+      ['/next', '/erp5/web_site_module/the_next_website'],
+      ['/next2', '/erp5/web_site_module/the_next2_website'],
+      ['//', '//erp5/web_site_module/123//'], # extraneous slashes
+    ]
+    return parameter_dict
+
+  def test_routing(self):
+    # type: () -> None
+    published_dict = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
+    scheme = 'scheme'
+    netloc = 'example.com:8080'
+    prefix = '/VirtualHostBase/' + scheme + '//' + urllib.quote(
+      netloc,
+      safe='',
+    )
+    # For easier reading of test data, visualy separating the virtual host
+    # base from the virtual host root
+    vhr = '/VirtualHostRoot'
+    def assertRoutingEqual(family, path, expected_path):
+      # sanity check: unlike the rules, this test is sensitive to outermost
+      # slashes, and paths must be absolute-ish for code simplicity.
+      assert path.startswith('/')
+      # Frontend is expected to provide URLs with the following path structure:
+      #   /VirtualHostBase/<scheme>//<netloc>/VirtualHostRoot<path>
+      # where:
+      # - scheme is the user-input scheme
+      # - netloc is the user-input netloc
+      # - path is the user-input path
+      # Someday, frontends will instead propagate scheme and netloc via other
+      # means (likely: HTTP headers), in which case this test and the SR will
+      # need to be amended to reconstruct Virtual Host urls itself, and this
+      # test will need to be updated accordingly.
+      self.assertEqual(
+        requests.get(
+          urlparse.urljoin(published_dict[family], prefix + vhr + path),
+          verify=False,
+        ).json()['Path'],
+        expected_path,
+      )
+    # Trailing slash presence is preserved.
+    assertRoutingEqual('default', '/foo/bar',       prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar')
+    assertRoutingEqual('default', '/foo/bar/',      prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar/')
+    # Subpaths are preserved.
+    assertRoutingEqual('default', '/foo/bar/hey',   prefix + '/erp5/boo/far/faz' + vhr + '/_vh_foo/_vh_bar/hey')
+    # Rule precedence: later less-specific rules are applied.
+    assertRoutingEqual('default', '/foo',           prefix + '/erp5/somewhere' + vhr + '/_vh_foo')
+    assertRoutingEqual('default', '/foo/',          prefix + '/erp5/somewhere' + vhr + '/_vh_foo/')
+    assertRoutingEqual('default', '/foo/baz',       prefix + '/erp5/somewhere' + vhr + '/_vh_foo/baz')
+    # Rule precedence: later more-specific rules are meaningless.
+    assertRoutingEqual('default', '/foo/shadowed',  prefix + '/erp5/somewhere' + vhr + '/_vh_foo/shadowed')
+    # Rule precedence: family rules applied before general rules.
+    assertRoutingEqual('default', '/next',          prefix + '/erp5/web_site_module/another_next_website' + vhr + '/_vh_next')
+    # Fallback on general rules when no family-specific rule matches
+    # Note: the root is special in that there is aways a trailing slash in the
+    # produced URL.
+    assertRoutingEqual('default', '/',              prefix + '/erp5/web_site_module/123' + vhr + '/')
+    # Rule-less family reach general rules.
+    assertRoutingEqual('second',  '/foo/bar',       prefix + '/erp5/web_site_module/123' + vhr + '/foo/bar')    # Rules match whole-elements, so the rule order does not matter to
+    # elements which share a common prefix.
+    assertRoutingEqual('second',  '/next',          prefix + '/erp5/web_site_module/the_next_website' + vhr + '/_vh_next')
+    assertRoutingEqual('second',  '/next2',         prefix + '/erp5/web_site_module/the_next2_website' + vhr + '/_vh_next2')

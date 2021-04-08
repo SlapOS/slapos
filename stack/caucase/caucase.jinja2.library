@@ -88,7 +88,10 @@ rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 {%-   else -%}
 [{{ prefix }}-csr]
 recipe = plone.recipe.command
-command = '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+command =
+  if [ ! -f '{{ key_path or crt_path }}' ] && [ ! -f '${:csr}' ] ; then
+    '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+  fi
 {%-   endif %}
 csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem
 {%- endif %}
@@ -124,7 +127,7 @@ recipe = plone.recipe.command
 checksum-file = '{{ template }}.md5'
 command =
   set -e
-  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}').read()).hexdigest()")
+  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}', 'rb').read()).hexdigest()")
   md5_old=$([ -f ${:checksum-file} ] && cat ${:checksum-file} || echo none)
   if [ "$md5_current" != "$md5_old" ] || [ ! -f '{{ csr }}' ] || [ ! -f '{{ key }}' ] ; then
     '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'

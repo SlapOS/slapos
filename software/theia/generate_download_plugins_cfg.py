@@ -24,7 +24,9 @@ for plugin_and_version in '''\
     vscode/handlebars/latest
     vscode/hlsl/latest
     vscode/html/latest
-    vscode/html-language-features/latest
+# latest fails to activate:
+# Activating extension 'HTML Language Features (built-in)' failed: The language client requires VS Code version ^1.52.0 but received version 1.50.0
+    vscode/html-language-features/1.52.1
     vscode/ini/latest
     vscode/jake/latest
     vscode/java/latest
@@ -39,7 +41,7 @@ for plugin_and_version in '''\
     vscode/make/latest
     vscode/markdown/latest
 # https://github.com/eclipse-theia/theia/issues/7780
-    vscode/markdown-language-features/1.39.1
+    vscode/markdown-language-features/1.39.2
     vscode/merge-conflict/latest
     vscode/npm/latest
     ms-vscode/node-debug/latest
@@ -76,13 +78,14 @@ for plugin_and_version in '''\
     EditorConfig/EditorConfig/latest
     dbaeumer/vscode-eslint/latest
     ms-vscode/references-view/latest
-    golang/Go/0.16.2
+# golang.Go removed because it overwrites the PATH in theia shell
+# golang/Go/0.16.2
     vscjava/vscode-java-debug/0.29.0
     redhat/java/0.61.0
     vscjava/vscode-java-test/0.26.0
     ms-python/python/2020.9.112786
     perrinjerome/vscode-zc-buildout/latest
-    jebbs/plantuml/2.13.12
+    jebbs/plantuml/2.14.0
     rafaelmaiolla/diff/latest
     perrinjerome/git-commit-syntax/latest
     perrinjerome/git-rebase-syntax/latest

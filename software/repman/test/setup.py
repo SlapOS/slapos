@@ -43,9 +43,6 @@ setup(
     install_requires=[
         'slapos.core',
         'slapos.libnetworkcache',
-        'erp5.util',
-        'supervisor',
-        'pexpect',
         'requests',
     ],
     zip_safe=True,
