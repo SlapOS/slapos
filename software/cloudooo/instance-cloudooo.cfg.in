@@ -76,10 +76,6 @@ parts =
   xvfb-instance
   wkhtmltopdf-on-xvfb
 
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
 
 [apache]
 recipe = slapos.cookbook:wrapper
