@@ -15,9 +15,9 @@
       "type": "number"
     },
     "check-http-header-dict": {
-      "default": "{}",
+      "default": {},
       "title": "HTTP header dict to check",
-      "description": "JSON dict of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}",
+      "description": "JSON object of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}. Note: Shall be expressed directly as object, without any additional qouting.",
       "type": "object"
     },
     "check-frontend-ip": {
