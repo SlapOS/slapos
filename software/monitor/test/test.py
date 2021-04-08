@@ -147,7 +147,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
       software_release=software_url,
       software_type='edgetest',
       partition_reference=partition_reference,
-      partition_parameter_kw=partition_parameter_kw,
+      partition_parameter_kw={'_': json.dumps(partition_parameter_kw)},
       shared=True
     )
 
@@ -335,7 +335,7 @@ URL =
     )
     self.requestEdgetestSlave(
       'backend-300',
-      {'url': 'https://www.erp5.org/', 'check-status-code': '300'},
+      {'url': 'https://www.erp5.org/', 'check-status-code': 300},
     )
 
 
@@ -356,10 +356,10 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'nameserver': '127.0.1.1 127.0.1.2',
-      'check-frontend-ip': '127.0.0.1 127.0.0.2',
-    }
+    return {'_': json.dumps({
+      'nameserver': ['127.0.1.1', '127.0.1.2'],
+      'check-frontend-ip': ['127.0.0.1', '127.0.0.2'],
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -406,9 +406,9 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-status-code': '500',
-    }
+    return {'_': json.dumps({
+      'check-status-code': 500,
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -466,7 +466,7 @@ URL =
     )
     self.requestEdgetestSlave(
       'backend-501',
-      {'url': 'https://www.erp5.org/', 'check-status-code': '501'},
+      {'url': 'https://www.erp5.org/', 'check-status-code': 501},
     )
 
 
@@ -483,10 +483,10 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
+    return {'_': json.dumps({
       'check-http-header-dict':
         '{"B": "BBB"}',
-    }
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -568,9 +568,9 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-certificate-expiration-days': '10',
-    }
+    return {'_': json.dumps({
+      'check-certificate-expiration-days': 10,
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -658,9 +658,9 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'check-maximum-elapsed-time': '5',
-    }
+    return {'_': json.dumps({
+      'check-maximum-elapsed-time': 5,
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -743,12 +743,12 @@ URL =
     self.requestEdgetestSlave(
       'backend-20',
       {'url': 'https://www.erp5.org/',
-       'check-maximum-elapsed-time': '20'},
+       'check-maximum-elapsed-time': 20},
     )
     self.requestEdgetestSlave(
       'backend-1',
       {'url': 'https://www.erp5.net/',
-       'check-maximum-elapsed-time': '1'},
+       'check-maximum-elapsed-time': 1},
     )
 
 
@@ -766,9 +766,9 @@ URL =
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {
-      'failure-amount': '5'
-    }
+    return {'_': json.dumps({
+      'failure-amount': 5
+    })}
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
