@@ -70,6 +70,10 @@ class ResilientTheiaTestCase(test.TheiaTestCase):
     return os.path.join(cls.slap._instance_root, cls._getTypePartitionId(software_type), *paths)
 
   @classmethod
+  def _getSlapos(cls, software_type='export'):
+    return cls._getTypePartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
+
+  @classmethod
   def _deployEmbeddedSoftware(cls, software_url, instance_name):
     slapos = cls._getSlapos()
     subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
@@ -100,13 +104,23 @@ class TestTheiaResilientWithSR(test.TestTheiaWithSR, ResilientTheiaTestCase):
 
 
 class TestTheiaExportImport(ResilientTheiaTestCase):
-  @classmethod
-  def _getTestSoftwareUrl(cls):
-    return "https://lab.nexedi.com/xavier_thompson/slapos/raw/895f4206/software/theia/test/dummy/software.cfg"
+  def _getTestSoftwareUrl(self):
+    try:
+      return self._test_software_url
+    except AttributeError:
+      # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
+      dummy_target_path = self._getTypePartitionPath('export', 'srv', 'project', 'dummy')
+      shutil.copytree('resilience_dummy', dummy_target_path)
+      self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+      return self._test_software_url
+
+  def _getAdaptedTestSoftwareUrl(self):
+    return self._getTypePartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
 
   def test_export_import(self):
     # Deploy dummy instance in export partition
-    self._deployEmbeddedSoftware(self._getTestSoftwareUrl(), 'dummy_instance')
+    test_software_url = self._getTestSoftwareUrl()
+    self._deployEmbeddedSoftware(test_software_url, 'dummy_instance')
 
     # Check that dummy instance was properly deployed
     log_path = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart0', 'log.log')
@@ -117,7 +131,7 @@ class TestTheiaExportImport(ResilientTheiaTestCase):
 
     # Call export script manually
     theia_export_script = self._getTypePartitionPath('export', 'bin', 'theia-export-script')
-    subprocess.check_call((theia_export_script, ))
+    subprocess.check_call((theia_export_script,))
 
     # Copy <export>/srv/backup/theia to <import>/srv/backup/theia manually
     export_backup_path = self._getTypePartitionPath('export', 'srv', 'backup', 'theia')
@@ -127,7 +141,17 @@ class TestTheiaExportImport(ResilientTheiaTestCase):
 
     # Call the import script manually
     theia_import_script = self._getTypePartitionPath('import', 'bin', 'theia-import-script')
-    subprocess.check_call((theia_import_script, ))
+    subprocess.check_call((theia_import_script,))
+
+    # Check that the software url is correct
+    test_adapted_url = self._getAdaptedTestSoftwareUrl()
+    proxy_content = subprocess.check_output((self._getSlapos('import'), 'proxy', 'show'))
+    self.assertIn(test_adapted_url, proxy_content)
+    if test_adapted_url != test_software_url:
+      self.assertNotIn(test_software_url, proxy_content)
+
+    # Re-deploy the dummy instance
+    subprocess.check_call((self._getSlapos('import'), 'node', 'instance'))
 
     # Check that dummy instance was properly re-deployed
     log_path = self._getTypePartitionPath('import', 'srv', 'runner', 'instance', 'slappart0', 'log.log')
@@ -138,114 +162,8 @@ class TestTheiaExportImport(ResilientTheiaTestCase):
     self.assertTrue(new_log[1].startswith("Hello"), new_log[1])
 
 
-class TestTheiaExportImportLocalSR(TestTheiaExportImport):
-  @classmethod
-  def _getTestSoftwareUrl(cls):
-    # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
-    dummy_target_path = cls._getTypePartitionPath('export', 'srv', 'project', 'dummy')
-    shutil.copytree('resilience_dummy', dummy_target_path)
-    return os.path.join(dummy_target_path, 'software.cfg')
+class TestTheiaExportImportWebURL(TestTheiaExportImport):
+  def _getTestSoftwareUrl(self):
+    return "https://lab.nexedi.com/xavier_thompson/slapos/raw/a0f0ac90/software/theia/test/dummy/software.cfg"
 
-
-class TestTheiaBasicResilience(ResilientTheiaTestCase):
-  def _getTakeoverUrlAndPassword(self, scope="theia-1"):
-    parameter_dict = self.computer_partition.getConnectionParameterDict()
-    takeover_url = parameter_dict["takeover-%s-url" % scope]
-    takeover_password = parameter_dict["takeover-%s-password" % scope]
-    return takeover_url, takeover_password
-
-  def _getTakeoverState(self, takeover_url):
-    resp = requests.get(takeover_url, verify=True)
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    takeover_page_content = resp.text
-    if "<b>Last valid backup:</b> No backup downloaded yet, takeover should not happen now." in takeover_page_content:
-      return "nothing"
-    elif "<b>Importer script(s) of backup in progress:</b> True" in takeover_page_content:
-      return "ongoing"
-    return "ready"
-
-  def _doTakeover(self, takeover_url, takeover_password):
-    resp = requests.get(
-      "%s?password=%s" % (takeover_url, takeover_password),
-      verify=True
-    )
-    self.assertEqual(requests.codes.ok, resp.status_code)
-    self.assertNotIn("Error", resp.text, "An Error occured: %s" % resp.text)
-    self.assertIn("Success", resp.text, "'Success' not in '%s'" % resp.text)
-    return resp.text
-
-  def test_resilience(self):
-    # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
-    dummy_target_path = self._getTypePartitionPath('export', 'srv', 'project', 'dummy')
-    shutil.copytree('resilience_dummy', dummy_target_path)
-    dummy_software_url = os.path.join(dummy_target_path, 'software.cfg')
-
-    # Deploy dummy instance
-    self._deployEmbeddedSoftware(dummy_software_url, 'dummy_instance')
-
-    # Check that dummy instance was properly deployed
-    log_path = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart0', 'log.log')
-    with open(log_path) as f:
-      initial_log = f.readlines()
-    self.assertEqual(len(initial_log), 1)
-    self.assertTrue(initial_log[0].startswith("Hello"), initial_log[0])
-
-    # Call exporter script instead of waiting for cron job
-    # XXX Accelerate cron frequency instead ?
-    exporter_script = self._getTypePartitionPath('export', 'bin', 'exporter')
-    transaction_id = str(int(time.time()))
-    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
-
-    # Get equeue.log file in import instance
-    importer_log = self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')
-
-    def getFileContent(file_path):
-      with open(file_path) as f:
-        return f.read()
-
-    # Wait for importer to start
-    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
-
-    for _ in range(100):
-      takeover_state = self._getTakeoverState(takeover_url)
-      if takeover_state == "ready":
-        break
-      elif takeover_state == "nothing":
-          importer_log_content = getFileContent(importer_log)
-          self.fail("Backup is not even started: %s" % importer_log_content)
-      else:
-        self.logger.info("Backup is ongoing, waiting some more")
-      time.sleep(20)
-    else:
-      importer_log_content = getFileContent(importer_log)
-      self.fail("Timeout before backup is finished, see importer log:\n%s" % importer_log_content)
-
-    # Check that dummy instance was properly re-deployed
-    log_path = self._getTypePartitionPath('import', 'srv', 'runner', 'instance', 'slappart0', 'log.log')
-    with open(log_path) as f:
-      new_log = f.readlines()
-    self.assertEqual(len(new_log), 2)
-    self.assertEqual(new_log[0], initial_log[0])
-    self.assertTrue(new_log[1].startswith("Hello"), new_log[1])
-
-    export_partition_id = self._getTypePartitionId('export')
-    import_partition_id = self._getTypePartitionId('import')
-
-    # Takeover
-    self._doTakeover(takeover_url, takeover_password)
-
-    # Wait for import instance to become export instance and new import to be allocated
-    self.slap.waitForInstance(1)
-
-    previous_computer_partition = self.computer_partition
-    self.computer_partition = self.requestDefaultInstance()
-
-    # Check that the import instance became the export instance
-    new_export_partition_id = self._getTypePartitionId('export')
-    self.assertNotEqual(export_partition_id, import_partition_id)
-    self.assertEqual(import_partition_id, new_export_partition_id)
-
-    # Check that there is a new import instance
-    new_import_partition_id = self._getTypePartitionId('import')
-    self.assertNotEqual(export_partition_id, new_import_partition_id)
-    self.assertNotEqual(new_export_partition_id, new_import_partition_id)
+  _getAdaptedTestSoftwareUrl = _getTestSoftwareUrl

@@ -131,6 +131,10 @@ if [ ! -f "$etc_directory/.project" -a ! -f "$srv_directory/runner/var/proxy.db"
 fi
 
 log_message "Updating slapproxy database..."
+
+# Restart slapproxy to load new slapos.cfg configuration
+{{ supervisorctl }} -c {{ supervisord_conf }} restart slapos-proxy
+
 HOME='{{ directory["home"] }}'
 # XXX Hardcoded
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -158,34 +162,9 @@ DB_PARTITION_TABLE=$(db_query ".table partition__")
 DB_PARTITION_NETWORK_TABLE=$(db_query ".table partition\_network__")
 DB_SOFTWARE_TABLE=$(db_query ".table software__")
 
-# Change slapproxy database to point instances to new software release
-# XXX hardcoded
-PARTITION=$(basename $HOME)
-OLD_SOFTWARE_RELEASE=$(db_query "select software_release from $DB_PARTITION_TABLE where reference='slappart0';")
-if [ "$OLD_SOFTWARE_RELEASE" == "" ];
-then
-   echo "No instance configured"
-   echo 0 > $RESTORE_EXIT_CODE_FILE
-   exit 0
-fi
-SOFTWARE_RELEASE=$({{ sys.executable }} - $OLD_SOFTWARE_RELEASE $PARTITION <<EOF
-if 1:
-  import os, re, sys
-
-  # We want to replace the last occurence only
-  old_software_release, partition = sys.argv[1], sys.argv[2]
-  for match in re.finditer("(slappart|test0-|s)[0-9][0-9]*", old_software_release):
-    start, end = match.start(), match.end()
-
-  print old_software_release[:start] + partition + old_software_release[end:]
-EOF
-)
-
-db_query "update $DB_PARTITION_TABLE set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
-db_query "update $DB_SOFTWARE_TABLE set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from $DB_SOFTWARE_TABLE where url='$OLD_SOFTWARE_RELEASE';"
-# Change slapproxy database to have all instances stopped
+# XXX HACK: Change slapproxy database to have all instances stopped
 db_query "update $DB_PARTITION_TABLE set requested_state='stopped';"
-# Change slapproxy database to get correct IPs
+# XXX HACK: Change slapproxy database to get correct IPs
 IPV4='{{ ipv4 }}'
 IPV6='{{ ipv6 }}'
 db_query "update $DB_PARTITION_NETWORK_TABLE set address='$IPV4' where netmask='255.255.255.255';"
@@ -255,10 +234,13 @@ do
   fi
 done
 
-# Change back slapproxy database to have all instances started
+# XXX HACK: Change back slapproxy database to have all instances started
 DB_PARTITION_TABLE=$(db_query ".table partition__")
 log_message "Set instances as to start after takeover..."
 db_query "update $DB_PARTITION_TABLE set requested_state='started';"
+
+# XXX HACK: Remove stale timestamps after modifying the instances state
+rm -f "$srv_directory"/runner/instance/slappart*/.timestamp
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
 log_message "Writing status file... End"

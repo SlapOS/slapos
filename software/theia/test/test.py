@@ -44,6 +44,7 @@ import sqlite3
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
+from slapos.grid.utils import md5digest
 
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -56,9 +57,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def _getSlapos(cls):
-    partition_root = cls.computer_partition_root_path
-    slapos = os.path.join(partition_root, 'srv', 'runner', 'bin', 'slapos')
-    return slapos
+    return os.path.join(cls.computer_partition_root_path, 'srv', 'runner', 'bin', 'slapos')
 
 
 class TestTheia(TheiaTestCase):
