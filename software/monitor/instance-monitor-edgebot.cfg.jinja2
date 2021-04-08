@@ -12,24 +12,12 @@
 {%-   for slave in json_module.loads(extra_slave_instance_list) | sort(attribute='slave_title') %}
 {%-   if '_' in slave %}
 {%-   do slave.update(json_module.loads(slave.pop('_'))) %}
-{%-   if 'check-status-code' not in slave %}
-{%-     do slave.__setitem__('check-status-code', int(CONFIGURATION['check-status-code'])) %}
-{%-   endif %}
-{%-   if 'check-http-header-dict' not in slave %}
-{%-     do slave.__setitem__('check-http-header-dict', CONFIGURATION['check-http-header-dict']) %}
-{%-   endif %}
-{%-   if 'check-certificate-expiration-days' not in slave %}
-{%-     do slave.__setitem__('check-certificate-expiration-days', int(CONFIGURATION['check-certificate-expiration-days'])) %}
-{%-   endif %}
-{%-   if 'failure-amount' not in slave %}
-{%-     do slave.__setitem__('failure-amount', int(CONFIGURATION['failure-amount'])) %}
-{%-   endif %}
-{%-   if 'check-maximum-elapsed-time' not in slave %}
-{%-     do slave.__setitem__('check-maximum-elapsed-time', int(CONFIGURATION['check-maximum-elapsed-time'])) %}
-{%-   endif %}
-{%-   if 'check-frontend-ip' not in slave %}
-{%-     do slave.__setitem__('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
-{%-   endif %}
+{%-   do slave.setdefault('check-status-code', 200) %}
+{%-   do slave.setdefault('check-http-header-dict', {}) %}
+{%-   do slave.setdefault('check-certificate-expiration-days', 15) %}
+{%-   do slave.setdefault('failure-amount', 2) %}
+{%-   do slave.setdefault('check-maximum-elapsed-time', 2) %}
+{%-   do slave.setdefault('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
 {%-   if 'url' in slave %}
 {%-     set class = slave['check-maximum-elapsed-time'] %}
 {%-     if class not in slave_instance_dict %}
