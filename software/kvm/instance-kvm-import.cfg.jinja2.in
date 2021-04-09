@@ -14,7 +14,7 @@ extends =
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
-{{ k }} = {{ v }}
+{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 
 [resilient-publish-connection-parameter]

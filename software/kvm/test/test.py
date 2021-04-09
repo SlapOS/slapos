@@ -37,10 +37,17 @@ import sqlite3
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
+import tempfile
+import SocketServer
+import SimpleHTTPServer
+import multiprocessing
+import time
+import shutil
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
+from slapos.testing.utils import findFreeTCPPort
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
@@ -105,34 +112,67 @@ bootstrap_machine_param_dict = {
     "enable-monitor": True,
     "keyboard-layout-language": "fr"
 }
-@skipUnlessKvm
-class ServicesTestCase(InstanceTestCase):
-  def test_hashes(self):
-    hash_files = [
-      'software_release/buildout.cfg',
-    ]
-    expected_process_names = [
-      '6tunnel-10022-{hash}-on-watch',
-      '6tunnel-10080-{hash}-on-watch',
-      '6tunnel-10443-{hash}-on-watch',
-      'certificate_authority-{hash}-on-watch',
-      'crond-{hash}-on-watch',
-      'kvm-{hash}-on-watch',
-      'websockify-{hash}-on-watch',
-    ]
 
+
+class KvmMixin(object):
+  def getProcessInfo(self):
+    hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in [
+        'software_release/buildout.cfg',
+      ]
+    ])
     with self.slap.instance_supervisor_rpc as supervisor:
-      process_names = [process['name']
-                       for process in supervisor.getAllProcessInfo()]
+      running_process_info = '\n'.join(sorted([
+        '%(group)s:%(name)s %(statename)s' % q for q
+        in supervisor.getAllProcessInfo()
+        if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+    return running_process_info.replace(hash_value, '{hash}')
 
-    hash_files = [os.path.join(self.computer_partition_root_path, path)
-                  for path in hash_files]
 
-    for name in expected_process_names:
-      h = generateHashFromFiles(hash_files)
-      expected_process_name = name.format(hash=h)
+@skipUnlessKvm
+class TestInstance(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'i'
 
-      self.assertIn(expected_process_name, process_names)
+  def test(self):
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    present_key_list = []
+    assert_key_list = [
+     'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
+     'tap-ipv4', 'tap-ipv6']
+    for k in assert_key_list:
+      if k in connection_parameter_dict:
+        present_key_list.append(k)
+        connection_parameter_dict.pop(k)
+    self.assertEqual(
+      connection_parameter_dict,
+      {
+        'ipv6': self._ipv6_address,
+        'maximum-extra-disk-amount': '0',
+        'monitor-base-url': 'https://[%s]:8026' % (self._ipv6_address,),
+        'nat-rule-port-tcp-22': '%s : 10022' % (self._ipv6_address,),
+        'nat-rule-port-tcp-443': '%s : 10443' % (self._ipv6_address,),
+        'nat-rule-port-tcp-80': '%s : 10080' % (self._ipv6_address,),
+      }
+    )
+    self.assertEqual(set(present_key_list), set(assert_key_list))
+    self.assertEqual(
+      """i0:6tunnel-10022-{hash}-on-watch RUNNING
+i0:6tunnel-10080-{hash}-on-watch RUNNING
+i0:6tunnel-10443-{hash}-on-watch RUNNING
+i0:bootstrap-monitor EXITED
+i0:certificate_authority-{hash}-on-watch RUNNING
+i0:crond-{hash}-on-watch RUNNING
+i0:kvm-{hash}-on-watch RUNNING
+i0:kvm_controller EXITED
+i0:monitor-httpd-{hash}-on-watch RUNNING
+i0:monitor-httpd-graceful EXITED
+i0:websockify-{hash}-on-watch RUNNING
+i0:whitelist-domains-download-{hash} RUNNING
+i0:whitelist-firewall-{hash} RUNNING""",
+      self.getProcessInfo()
+    )
 
 
 class MonitorAccessMixin(object):
@@ -394,7 +434,7 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
 
 @skipIfPython3
 @skipUnlessKvm
-class TestInstanceResilient(InstanceTestCase):
+class TestInstanceResilient(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'ir'
   instance_max_retry = 20
 
@@ -403,22 +443,76 @@ class TestInstanceResilient(InstanceTestCase):
     return 'kvm-resilient'
 
   def test(self):
-    # just check that keys returned on requested partition are for resilient
-    self.assertSetEqual(
-      set(self.computer_partition.getConnectionParameterDict().keys()),
-      set([
-        'backend-url',
-        'feed-url-kvm-1-pull',
-        'feed-url-kvm-1-push',
-        'ipv6',
-        'ipv6-network-info',
-        'monitor-base-url',
-        'monitor-password',
-        'monitor-setup-url',
-        'monitor-user',
-        'takeover-kvm-1-password',
-        'takeover-kvm-1-url',
-        'url']))
+    connection_parameter_dict = self\
+      .computer_partition.getConnectionParameterDict()
+    present_key_list = []
+    assert_key_list = [
+     'monitor-password', 'takeover-kvm-1-password', 'backend-url', 'url',
+     'monitor-setup-url', 'ipv6-network-info']
+    for k in assert_key_list:
+      if k in connection_parameter_dict:
+        present_key_list.append(k)
+        connection_parameter_dict.pop(k)
+    self.assertEqual(
+      connection_parameter_dict,
+      {
+        'feed-url-kvm-1-pull': 'http://[%s]:8088/get/local-ir0-kvm-1-pull' % (
+          self._ipv6_address,),
+        'feed-url-kvm-1-push': 'http://[%s]:8088/get/local-ir0-kvm-1-push' % (
+          self._ipv6_address,),
+        'ipv6': self._ipv6_address,
+        'monitor-base-url': 'https://[%s]:8160' % (self._ipv6_address,),
+        'monitor-user': 'admin',
+        'takeover-kvm-1-url': 'http://[%s]:9263/' % (self._ipv6_address,),
+      }
+    )
+    self.assertEqual(set(present_key_list), set(assert_key_list))
+
+    self.assertEqual(
+      """ir0:bootstrap-monitor EXITED
+ir0:certificate_authority-{hash}-on-watch RUNNING
+ir0:crond-{hash}-on-watch RUNNING
+ir0:monitor-httpd-{hash}-on-watch RUNNING
+ir0:monitor-httpd-graceful EXITED
+ir1:bootstrap-monitor EXITED
+ir1:certificate_authority-{hash}-on-watch RUNNING
+ir1:crond-{hash}-on-watch RUNNING
+ir1:equeue-on-watch RUNNING
+ir1:monitor-httpd-{hash}-on-watch RUNNING
+ir1:monitor-httpd-graceful EXITED
+ir1:notifier-on-watch RUNNING
+ir1:pbs_sshkeys_authority-on-watch RUNNING
+ir2:6tunnel-10022-{hash}-on-watch RUNNING
+ir2:6tunnel-10080-{hash}-on-watch RUNNING
+ir2:6tunnel-10443-{hash}-on-watch RUNNING
+ir2:bootstrap-monitor EXITED
+ir2:certificate_authority-{hash}-on-watch RUNNING
+ir2:crond-{hash}-on-watch RUNNING
+ir2:equeue-on-watch RUNNING
+ir2:kvm-{hash}-on-watch RUNNING
+ir2:kvm_controller EXITED
+ir2:monitor-httpd-{hash}-on-watch RUNNING
+ir2:monitor-httpd-graceful EXITED
+ir2:notifier-on-watch RUNNING
+ir2:resilient_sshkeys_authority-on-watch RUNNING
+ir2:sshd-graceful EXITED
+ir2:sshd-on-watch RUNNING
+ir2:websockify-{hash}-on-watch RUNNING
+ir2:whitelist-domains-download-{hash} RUNNING
+ir2:whitelist-firewall-{hash} RUNNING
+ir3:bootstrap-monitor EXITED
+ir3:certificate_authority-{hash}-on-watch RUNNING
+ir3:crond-{hash}-on-watch RUNNING
+ir3:equeue-on-watch RUNNING
+ir3:monitor-httpd-{hash}-on-watch RUNNING
+ir3:monitor-httpd-graceful EXITED
+ir3:notifier-on-watch RUNNING
+ir3:resilient-web-takeover-httpd-on-watch RUNNING
+ir3:resilient_sshkeys_authority-on-watch RUNNING
+ir3:sshd-graceful EXITED
+ir3:sshd-on-watch RUNNING""",
+      self.getProcessInfo()
+    )
 
 
 @skipIfPython3
@@ -485,9 +579,74 @@ class TestInstanceNbdServer(InstanceTestCase):
     self.assertIn("WARNING", connection_parameter_dict['status_message'])
 
 
+class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+  def log_message(self, *args):
+    if os.environ.get('SLAPOS_TEST_DEBUG'):
+      return SimpleHTTPServer.SimpleHTTPRequestHandler.log_message(self, *args)
+    else:
+      return
+
+
+class FakeImageServerMixin(object):
+  def rerequestInstance(self, parameter_dict, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=parameter_dict,
+        state=state)
+
+  def startImageHttpServer(self):
+    self.image_source_directory = tempfile.mkdtemp()
+    server = SocketServer.TCPServer(
+      (self._ipv4_address, findFreeTCPPort(self._ipv4_address)),
+      FakeImageHandler)
+
+    fake_image_content = 'fake_image_content'
+    self.fake_image_md5sum = hashlib.md5(fake_image_content).hexdigest()
+    with open(os.path.join(
+      self.image_source_directory, self.fake_image_md5sum), 'wb') as fh:
+      fh.write(fake_image_content)
+
+    fake_image2_content = 'fake_image2_content'
+    self.fake_image2_md5sum = hashlib.md5(fake_image2_content).hexdigest()
+    with open(os.path.join(
+      self.image_source_directory, self.fake_image2_md5sum), 'wb') as fh:
+      fh.write(fake_image2_content)
+
+    self.fake_image_wrong_md5sum = self.fake_image2_md5sum
+
+    url = 'http://%s:%s' % server.server_address
+    self.fake_image = '/'.join([url, self.fake_image_md5sum])
+    self.fake_image2 = '/'.join([url, self.fake_image2_md5sum])
+
+    old_dir = os.path.realpath(os.curdir)
+    os.chdir(self.image_source_directory)
+    try:
+      self.server_process = multiprocessing.Process(
+        target=server.serve_forever, name='FakeImageHttpServer')
+      self.server_process.start()
+    finally:
+      os.chdir(old_dir)
+
+  def stopImageHttpServer(self):
+    self.logger.debug('Stopping process %s' % (self.server_process,))
+    self.server_process.join(10)
+    self.server_process.terminate()
+    time.sleep(0.1)
+    if self.server_process.is_alive():
+      self.logger.warning(
+        'Process %s still alive' % (self.server_process, ))
+
+    shutil.rmtree(self.image_source_directory)
+
+
 @skipUnlessKvm
-class TestBootImageUrlList(InstanceTestCase):
+class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biul'
+  kvm_instance_partition_reference = 'biul0'
 
   # variations
   key = 'boot-image-url-list'
@@ -520,6 +679,10 @@ class TestBootImageUrlList(InstanceTestCase):
     # start with empty, but working configuration
     return {}
 
+  def setUp(self):
+    super(InstanceTestCase, self).setUp()
+    self.startImageHttpServer()
+
   def tearDown(self):
     # clean up the instance for other tests
     # 1st remove all images...
@@ -528,28 +691,8 @@ class TestBootImageUrlList(InstanceTestCase):
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
     self.slap.waitForInstance(max_retry=10)
-
-  def rerequestInstance(self, parameter_dict, state='started'):
-    software_url = self.getSoftwareURL()
-    software_type = self.getInstanceSoftwareType()
-    return self.slap.request(
-        software_release=software_url,
-        software_type=software_type,
-        partition_reference=self.default_partition_reference,
-        partition_parameter_kw=parameter_dict,
-        state=state)
-
-  fake_image, = (
-      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
-      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
-      "e5b2721ca4556a0734cb13e65",)
-  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
-  fake_image2, = (
-      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
-      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
-      "2a74b7675a8d8ca20476dba6e",)
-  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
-  fake_image_wrong_md5sum = "c98825aa1b6c8087914d2bfcafec3057"
+    self.stopImageHttpServer()
+    super(InstanceTestCase, self).tearDown()
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
@@ -564,8 +707,10 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
     image_repository = os.path.join(
-      self.computer_partition_root_path, 'srv', self.image_directory)
+      kvm_instance_partition, 'srv', self.image_directory)
     image = os.path.join(image_repository, self.fake_image_md5sum)
     image_link = os.path.join(image_repository, 'image_001')
     self.assertTrue(os.path.exists(image))
@@ -597,25 +742,17 @@ class TestBootImageUrlList(InstanceTestCase):
           if entry.startswith('file') and 'media=cdrom' in entry:
             # do cleanups
             entry = entry.replace(software_root, '')
-            entry = entry.replace(self.computer_partition_root_path, '')
+            entry = entry.replace(kvm_instance_partition, '')
             running_image_list.append(entry)
       return running_image_list
-
-    # check that the image is NOT YET available in kvm
-    self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
-    )
 
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)
 
-    # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
         'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
@@ -628,7 +765,8 @@ class TestBootImageUrlList(InstanceTestCase):
 
     # cleanup of images works, also asserts that configuration changes are
     # reflected
-    self.rerequestInstance({self.key: ''})
+    partition_parameter_kw[self.key] = ''
+    self.rerequestInstance(partition_parameter_kw)
     self.slap.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
@@ -640,7 +778,7 @@ class TestBootImageUrlList(InstanceTestCase):
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -650,12 +788,15 @@ class TestBootImageUrlList(InstanceTestCase):
     )
 
   def assertPromiseFails(self, promise):
+    partition_directory = os.path.join(
+      self.slap.instance_directory,
+      self.kvm_instance_partition_reference)
     monitor_run_promise = os.path.join(
-      self.computer_partition_root_path, 'software_release', 'bin',
+      partition_directory, 'software_release', 'bin',
       'monitor.runpromise'
     )
     monitor_configuration = os.path.join(
-      self.computer_partition_root_path, 'etc', 'monitor.conf')
+      partition_directory, 'etc', 'monitor.conf')
 
     self.assertNotEqual(
       0,
@@ -708,9 +849,19 @@ class TestBootImageUrlList(InstanceTestCase):
     self.assertPromiseFails(self.config_state_promise)
 
 
+@skipIfPython3
+@skipUnlessKvm
+class TestBootImageUrlListResilient(TestBootImageUrlList):
+  kvm_instance_partition_reference = 'biul2'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
 @skipUnlessKvm
 class TestBootImageUrlSelect(TestBootImageUrlList):
   __partition_reference__ = 'bius'
+  kvm_instance_partition_reference = 'bius0'
 
   # variations
   key = 'boot-image-url-select'
@@ -754,7 +905,8 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
       image_repository = os.path.join(
-        self.computer_partition_root_path, 'srv', image_directory)
+        self.slap.instance_directory, self.kvm_instance_partition_reference,
+        'srv', image_directory)
       image = os.path.join(image_repository, self.fake_image_md5sum)
       image_link = os.path.join(image_repository, 'image_001')
       self.assertTrue(os.path.exists(image))
@@ -763,6 +915,9 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
       self.assertEqual(image_md5sum, self.fake_image_md5sum)
       self.assertTrue(os.path.islink(image_link))
       self.assertEqual(os.readlink(image_link), image)
+
+    kvm_instance_partition = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
 
     def getRunningImageList():
       running_image_list = []
@@ -777,25 +932,17 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
           if entry.startswith('file') and 'media=cdrom' in entry:
             # do cleanups
             entry = entry.replace(software_root, '')
-            entry = entry.replace(self.computer_partition_root_path, '')
+            entry = entry.replace(kvm_instance_partition, '')
             running_image_list.append(entry)
       return running_image_list
-
-    # check that the image is NOT YET available in kvm
-    self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
-    )
 
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)
 
-    # now the image is available in the kvm, and its above default image
     self.assertEqual(
       [
         'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
@@ -814,18 +961,29 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
       image_repository = os.path.join(
-        self.computer_partition_root_path, 'srv', image_directory)
+        kvm_instance_partition, 'srv', image_directory)
       self.assertEqual(
         os.listdir(image_repository),
         []
       )
+
+    # cleanup of images works, also asserts that configuration changes are
+    # reflected
+    partition_parameter_kw[self.key] = ''
+    partition_parameter_kw['boot-image-url-list'] = ''
+    self.rerequestInstance(partition_parameter_kw)
+    self.slap.waitForInstance(max_retry=2)
+    self.assertEqual(
+      os.listdir(image_repository),
+      []
+    )
 
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
     self.slap.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=1)
+    self.slap.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -835,28 +993,34 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     )
 
 
+@skipIfPython3
 @skipUnlessKvm
-class TestBootImageUrlListKvmCluster(InstanceTestCase):
+class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
+  kvm_instance_partition_reference = 'bius2'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
   __partition_reference__ = 'biulkc'
 
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-cluster'
 
-  fake_image, = (
-      "https://shacache.nxdcdn.com/shacache/05105cd25d1ad798b71fd46a206c9b73d"
-      "a2c285a078af33d0e739525a595886785725a68811578bc21f75d0a97700a66d5e75bc"
-      "e5b2721ca4556a0734cb13e65",)
-  fake_image_md5sum = "c98825aa1b6c8087914d2bfcafec3058"
-  fake_image2, = (
-      "https://shacache.nxdcdn.com/shacache/54f8a83a32bbf52602d9d211d592ee705"
-      "99f0c6b6aafe99e44aeadb0c8d3036a0e673aa994ffdb28d9fb0de155720123f74d814"
-      "2a74b7675a8d8ca20476dba6e",)
-  fake_image2_md5sum = "d4316a4d05f527d987b9d6e43e4c2bc6"
-
   input_value = "%s#%s"
   key = 'boot-image-url-list'
   config_file_name = 'boot-image-url-list.conf'
+
+  def setUp(self):
+    super(InstanceTestCase, self).setUp()
+    self.startImageHttpServer()
+
+  def tearDown(self):
+    self.stopImageHttpServer()
+    super(InstanceTestCase, self).tearDown()
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -864,13 +1028,9 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
       "kvm-partition-dict": {
         "KVM0": {
             "disable-ansible-promise": True,
-            cls.key: cls.input_value % (
-              cls.fake_image, cls.fake_image_md5sum)
         },
         "KVM1": {
             "disable-ansible-promise": True,
-            cls.key: cls.input_value % (
-              cls.fake_image2, cls.fake_image2_md5sum)
         }
       }
     })}
@@ -878,6 +1038,21 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase):
   def test(self):
     # Note: As there is no way to introspect nicely where partition landed
     #       we assume ordering of the cluster requests
+    self.rerequestInstance({'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            self.key: self.input_value % (
+              self.fake_image, self.fake_image_md5sum)
+        },
+        "KVM1": {
+            "disable-ansible-promise": True,
+            self.key: self.input_value % (
+              self.fake_image2, self.fake_image2_md5sum)
+        }
+      }
+    })})
+    self.slap.waitForInstance(max_retry=10)
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
@@ -999,3 +1174,107 @@ class TestNatRulesKvmCluster(InstanceTestCase):
 class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
   __partition_reference__ = 'nrkcc'
   nat_rules = ["100", "200 300"]
+
+
+@skipUnlessKvm
+class TestWhitelistFirewall(InstanceTestCase):
+  __partition_reference__ = 'wf'
+  kvm_instance_partition_reference = 'wf0'
+
+  def test(self):
+    slapos_whitelist_firewall = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference,
+      '.slapos-whitelist-firewall')
+    self.assertTrue(os.path.exists(slapos_whitelist_firewall))
+    with open(slapos_whitelist_firewall, 'rb') as fh:
+      content = fh.read().encode('utf-8')
+    try:
+      self.content_json = json.loads(content)
+    except ValueError:
+      self.fail('Failed to parse json of %s' % (content,))
+    self.assertTrue(isinstance(self.content_json, list))
+    # check /etc/resolv.conf
+    with open('/etc/resolv.conf', 'rb') as fh:
+      resolv_conf_ip_list = []
+      for line in fh.readlines():
+        line = line.encode('utf-8')
+        if line.startswith('nameserver'):
+          resolv_conf_ip_list.append(line.split()[1])
+    resolv_conf_ip_list = list(set(resolv_conf_ip_list))
+    self.assertFalse(len(resolv_conf_ip_list) == 0)
+    self.assertTrue(all([q in self.content_json for q in resolv_conf_ip_list]))
+    # there is something more
+    self.assertGreater(len(self.content_json), len(resolv_conf_ip_list))
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequest(TestWhitelistFirewall):
+  whitelist_domains = '2.2.2.2 3.3.3.3\n4.4.4.4'
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'whitelist-domains': cls.whitelist_domains,
+    }
+
+  def test(self):
+    super(TestWhitelistFirewallRequest, self).test()
+    self.assertIn('2.2.2.2', self.content_json)
+    self.assertIn('3.3.3.3', self.content_json)
+    self.assertIn('4.4.4.4', self.content_json)
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallResilient(TestWhitelistFirewall):
+  kvm_instance_partition_reference = 'wf2'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
+  kvm_instance_partition_reference = 'wf2'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallCluster(TestWhitelistFirewall):
+  kvm_instance_partition_reference = 'wf1'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True
+        }
+      }
+    })}
+
+
+@skipUnlessKvm
+class TestWhitelistFirewallRequestCluster(TestWhitelistFirewallRequest):
+  kvm_instance_partition_reference = 'wf1'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": {
+            "whitelist-domains": cls.whitelist_domains,
+            "disable-ansible-promise": True
+        }
+      }
+    })}
