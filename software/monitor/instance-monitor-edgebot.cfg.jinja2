@@ -17,7 +17,7 @@
 {%-       do slave.setdefault('check-certificate-expiration-days', 15) %}
 {%-       do slave.setdefault('failure-amount', 2) %}
 {%-       do slave.setdefault('check-maximum-elapsed-time', 2) %}
-{%-       do slave.setdefault('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
+{%-       do slave.setdefault('check-frontend-ip-list', CONFIGURATION['check-frontend-ip-list']) %}
 {%-       if 'url' in slave %}
 {%-         set class = slave['check-maximum-elapsed-time'] %}
 {%-         if class not in slave_instance_dict %}
@@ -46,7 +46,7 @@ config-http-header-dict = {{ json_module.dumps(slave['check-http-header-dict']) 
 config-certificate-expiration-days = {{ slave['check-certificate-expiration-days'] }}
 config-failure-amount = {{ slave['failure-amount'] }}
 config-maximum-elapsed-time = {{ slave['check-maximum-elapsed-time'] }}
-config-ip-list = {{ ' '.join(slave['check-frontend-ip']) }}
+config-ip-list = {{ ' '.join(slave['check-frontend-ip-list']) }}
 config-json-file = ${surykatka-config-{{ class }}:json}
 {%-   endfor %}
 
@@ -63,7 +63,7 @@ db = ${directory:srv}/surykatka-{{ class }}.db
 rendered = ${directory:etc}/surykatka-{{ class }}.ini
 template = {{ template_surykatka_ini }}
 slave_instance_list = {{ dumps(slave_instance_list) }}
-nameserver_list = {{ dumps(CONFIGURATION['nameserver']) }}
+nameserver_list = {{ dumps(CONFIGURATION['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
 timeout = {{ int(class) + 2 }}
