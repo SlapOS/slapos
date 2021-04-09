@@ -283,7 +283,7 @@ TIMEOUT = 4
 SQLITE = %(db_file)s
 URL =
   https://www.checkcertificateexpirationdays.org/
-  https://www.checkfrontendip.org/
+  https://www.checkfrontendiplist.org/
   https://www.checkhttpheaderdict.org/
   https://www.checkstatuscode.org/
   https://www.default.org/
@@ -389,7 +389,7 @@ URL =
         self.surykatka_dict[2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-checkfrontendip-promise.py',
+      'http-query-checkfrontendiplist-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -398,7 +398,7 @@ URL =
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.checkfrontendip.org/'}""" % (
+  'url': 'https://www.checkfrontendiplist.org/'}""" % (
         self.surykatka_dict[2]['json-file'],))
 
   def requestEdgetestSlaves(self):
@@ -435,13 +435,13 @@ URL =
       {'url': 'https://www.failureamount.org/', 'failure-amount': '10'},
     )
     self.requestEdgetestSlave(
-      'checkfrontendip',
-      {'url': 'https://www.checkfrontendip.org/',
-       'check-frontend-ip': ['128.129.130.131', '131.134.135.136']},
+      'checkfrontendiplist',
+      {'url': 'https://www.checkfrontendiplist.org/',
+       'check-frontend-ip-list': ['128.129.130.131', '131.134.135.136']},
     )
 
 
-class TestEdgeNameserverCheckFrontendIp(
+class TestEdgeNameserverListCheckFrontendIpList(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
     2: {'expected_ini': """[SURYKATKA]
@@ -459,8 +459,8 @@ URL =
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
-      'nameserver': ['127.0.1.1', '127.0.1.2'],
-      'check-frontend-ip': ['127.0.0.1', '127.0.0.2'],
+      'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+      'check-frontend-ip-list': ['127.0.0.1', '127.0.0.2'],
     })}
 
   def assertSurykatkaPromises(self):
