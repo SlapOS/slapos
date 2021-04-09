@@ -31,6 +31,7 @@ import os
 import re
 import requests
 import subprocess
+import unittest
 import xml.etree.ElementTree as ET
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -491,4 +492,50 @@ URL =
     self.requestEdgetestSlave(
       'backend',
       {'url': 'https://www.erp5.com/'},
+    )
+
+
+class TestEdgeSlaveNotJson(
+  EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    2: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %(db_file)s
+URL =
+  https://www.erp5.com/"""}
+  }
+
+  # non-json provided in slave '_' results with damaging the cluster
+  # test here is to expose real problem, which has on solution for now
+  @unittest.expectedFailure
+  def test(self):
+    EdgeSlaveMixin.test()
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.default.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'default',
+      {'url': 'https://www.default.org/'},
+    )
+    software_url = self.getSoftwareURL()
+    self.slap.request(
+      software_release=software_url,
+      software_type='edgetest',
+      partition_reference='notajson',
+      partition_parameter_kw={'_': 'notajson'},
+      shared=True
     )
