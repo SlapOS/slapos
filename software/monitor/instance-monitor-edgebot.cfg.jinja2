@@ -10,22 +10,22 @@
 {%- if extra_slave_instance_list %}
 {#- Create slaves to process with setting up defaults #}
 {%-   for slave in json_module.loads(extra_slave_instance_list) | sort(attribute='slave_title') %}
-{%-   if '_' in slave %}
-{%-   do slave.update(json_module.loads(slave.pop('_'))) %}
-{%-   do slave.setdefault('check-status-code', 200) %}
-{%-   do slave.setdefault('check-http-header-dict', {}) %}
-{%-   do slave.setdefault('check-certificate-expiration-days', 15) %}
-{%-   do slave.setdefault('failure-amount', 2) %}
-{%-   do slave.setdefault('check-maximum-elapsed-time', 2) %}
-{%-   do slave.setdefault('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
-{%-   if 'url' in slave %}
-{%-     set class = slave['check-maximum-elapsed-time'] %}
-{%-     if class not in slave_instance_dict %}
-{%-       do slave_instance_dict.__setitem__(class, []) %}
+{%-     if '_' in slave %}
+{%-       do slave.update(json_module.loads(slave.pop('_'))) %}
+{%-       do slave.setdefault('check-status-code', 200) %}
+{%-       do slave.setdefault('check-http-header-dict', {}) %}
+{%-       do slave.setdefault('check-certificate-expiration-days', 15) %}
+{%-       do slave.setdefault('failure-amount', 2) %}
+{%-       do slave.setdefault('check-maximum-elapsed-time', 2) %}
+{%-       do slave.setdefault('check-frontend-ip', CONFIGURATION['check-frontend-ip']) %}
+{%-       if 'url' in slave %}
+{%-         set class = slave['check-maximum-elapsed-time'] %}
+{%-         if class not in slave_instance_dict %}
+{%-           do slave_instance_dict.__setitem__(class, []) %}
+{%-         endif %}
+{%-         do slave_instance_dict[class].append(slave) %}
+{%-       endif %}
 {%-     endif %}
-{%-     do slave_instance_dict[class].append(slave) %}
-{%-   endif %}
-{%-   endif %}
 {%-   endfor %}
 {%- endif %}
 {%- set part_list = [] %}
@@ -101,9 +101,9 @@ cron-entries = ${directory:etc}/cron.d
 name = surykatka-status-{{ class }}
 frequency = */2 * * * *
 command = ${surykatka-status-json-{{ class }}:rendered}
-{%- do part_list.append('surykatka-%i'% (class,)) %}
-{%- do part_list.append('surykatka-bot-promise-%i' % (class,)) %}
-{%- do part_list.append('cron-entry-surykatka-status-%i' % (class,)) %}
+{%-   do part_list.append('surykatka-%i'% (class,)) %}
+{%-   do part_list.append('surykatka-bot-promise-%i' % (class,)) %}
+{%-   do part_list.append('cron-entry-surykatka-status-%i' % (class,)) %}
 {%- endfor %}
 
 [buildout]
@@ -154,4 +154,4 @@ key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
 [slap-parameter]
-{%- endif %}
+{%- endif %} {#- if slap_software_type == software_type #}
