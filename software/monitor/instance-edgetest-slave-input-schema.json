@@ -35,7 +35,7 @@
       "type": "object",
       "default": {}
     },
-    "check-frontend-ip": {
+    "check-frontend-ip-list": {
       "title": "Frontend IPs to check",
       "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
       "type": "array"
