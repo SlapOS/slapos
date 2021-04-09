@@ -66,6 +66,7 @@ port = 4444
 base-url = http://$${:hostname}:$${:port}
 url = $${:base-url}/wd/hub
 register-url = $${:base-url}/grid/register/
+api-url = $${:base-url}/grid/api/hub
 
 
 [selenium-server-node-instance]
@@ -259,6 +260,7 @@ instance-promises =
   $${sshd-listen-promise:name}
   $${selenium-server-frontend-listen-promise:name}
   $${selenium-server-hub-listen-promise:name}
+  $${selenium-server-hub-nodes-registered-promise:name}
   $${selenium-server-node-firefox-52-listen-promise:name}
   $${selenium-server-node-firefox-60-listen-promise:name}
   $${selenium-server-node-firefox-68-listen-promise:name}
@@ -284,6 +286,30 @@ config-port = $${selenium-server-frontend-instance:port}
 <= check-port-listening-promise
 config-hostname = $${selenium-server-hub-instance:hostname}
 config-port = $${selenium-server-hub-instance:port}
+
+# Promise waiting for all nodes to be registered
+[selenium-server-hub-nodes-registered-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = $${:_buildout_section_name_}.py
+config-command =
+  $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
+# We have 4 nodes with 3 slots each
+expected-node-count = 12
+
+[selenium-server-check-nodes-registered]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0755
+template =
+  inline:
+  #!${buildout:executable}
+  import json, urllib, sys
+  api_url = sys.argv[1]
+  expected_node_count = int(sys.argv[2])
+  actual_node_count = json.load(urllib.urlopen(api_url))['slotCounts']['total']
+  sys.exit(0 if expected_node_count == actual_node_count else 1)
+
 
 [selenium-server-node-firefox-52-listen-promise]
 <= check-port-listening-promise
