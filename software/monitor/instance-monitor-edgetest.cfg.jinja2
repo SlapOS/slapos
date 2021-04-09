@@ -16,7 +16,7 @@ extensions = jinja2.ext.do
 extra-context = 
   section slave_information slap-configuration
 
-{% set part_list = [] -%}
+{%  set part_list = [] -%}
 # Publish information for each slave
 {%- set edgebot_software_type = 'edgebot' %}
 {%- set edgebot_quantity = slapparameter_dict.pop('edgebot-quantity', '1') | int %}
@@ -56,7 +56,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{edgebot_software_type}}
 return = monitor-base-url
 
-{% for section, edgebot_request in request_dict.items() %}
+{%  for section, edgebot_request in request_dict.items() %}
 [{{section}}]
 <= replicate
 name = {{ edgebot_request.get('name') }}
@@ -68,7 +68,7 @@ state = {{ edgebot_request.get('state') }}
 {%-   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%-   for config_key, config_value in slave_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
-{%   endfor -%}
+{%    endfor -%}
 {%-   if edgebot_request.get('sla') %}
 {%-     for parameter, value in edgebot_request.get('sla').items() %}
 sla-{{ parameter }} = {{ value }}
@@ -76,8 +76,8 @@ sla-{{ parameter }} = {{ value }}
 {%-   else %}
 # As no SLA was provided, by default it is requested on the same computer
 sla-computer_guid = ${slap-connection:computer-id}
-{%   endif %}
-{%-  do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{%    endif %}
+{%-   do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {%- endfor %}
 {%- set directory_list = [] -%}
 {%- for slave_instance in slave_instance_list -%}
@@ -86,22 +86,22 @@ sla-computer_guid = ${slap-connection:computer-id}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_instance.get('slave_reference') }}
-{% endfor %}
+{%  endfor %}
 
 [monitor-conf-parameters]
 monitor-title = Monitor
 password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
-{% for key, value in monitor_base_url_dict.items() -%}
+{%  for key, value in monitor_base_url_dict.items() -%}
 {{ key }} = {{ value }}
-{% endfor %}
+{%  endfor %}
 
 [buildout]
 extends = {{ instance_base_monitor }}
 parts +=
   slave-test-configuration
-{% for part in part_list %}
+{%  for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
-{%- endif %}
+{%- endif %} {#- if slap_software_type == software_type #}
