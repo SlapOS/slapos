@@ -38,8 +38,8 @@ from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
 import tempfile
-import SocketServer
-import SimpleHTTPServer
+import six.moves.socketserver as SocketServer
+from six.moves import SimpleHTTPServer
 import multiprocessing
 import time
 import shutil
@@ -604,13 +604,13 @@ class FakeImageServerMixin(object):
       (self._ipv4_address, findFreeTCPPort(self._ipv4_address)),
       FakeImageHandler)
 
-    fake_image_content = 'fake_image_content'
+    fake_image_content = b'fake_image_content'
     self.fake_image_md5sum = hashlib.md5(fake_image_content).hexdigest()
     with open(os.path.join(
       self.image_source_directory, self.fake_image_md5sum), 'wb') as fh:
       fh.write(fake_image_content)
 
-    fake_image2_content = 'fake_image2_content'
+    fake_image2_content = b'fake_image2_content'
     self.fake_image2_md5sum = hashlib.md5(fake_image2_content).hexdigest()
     with open(os.path.join(
       self.image_source_directory, self.fake_image2_md5sum), 'wb') as fh:
@@ -1187,17 +1187,16 @@ class TestWhitelistFirewall(InstanceTestCase):
       '.slapos-whitelist-firewall')
     self.assertTrue(os.path.exists(slapos_whitelist_firewall))
     with open(slapos_whitelist_firewall, 'rb') as fh:
-      content = fh.read().encode('utf-8')
+      content = fh.read()
     try:
       self.content_json = json.loads(content)
     except ValueError:
-      self.fail('Failed to parse json of %s' % (content,))
+      self.fail('Failed to parse json of %r' % (content,))
     self.assertTrue(isinstance(self.content_json, list))
     # check /etc/resolv.conf
-    with open('/etc/resolv.conf', 'rb') as fh:
+    with open('/etc/resolv.conf', 'r') as f:
       resolv_conf_ip_list = []
-      for line in fh.readlines():
-        line = line.encode('utf-8')
+      for line in f.readlines():
         if line.startswith('nameserver'):
           resolv_conf_ip_list.append(line.split()[1])
     resolv_conf_ip_list = list(set(resolv_conf_ip_list))
@@ -1223,6 +1222,7 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
     self.assertIn('4.4.4.4', self.content_json)
 
 
+@skipIfPython3
 @skipUnlessKvm
 class TestWhitelistFirewallResilient(TestWhitelistFirewall):
   kvm_instance_partition_reference = 'wf2'
@@ -1232,6 +1232,7 @@ class TestWhitelistFirewallResilient(TestWhitelistFirewall):
     return 'kvm-resilient'
 
 
+@skipIfPython3
 @skipUnlessKvm
 class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
   kvm_instance_partition_reference = 'wf2'
