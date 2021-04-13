@@ -7,6 +7,11 @@
       "description": "URL to check, like https://example.com/",
       "type": "string"
     },
+    "region": {
+      "title": "Applicable Region",
+      "description": "Puts the check on one of regions defined by the cluster. Empty region will result with presence on all regions.",
+      "type": "string"
+    },
     "check-status-code": {
       "title": "HTTP Code Check",
       "description": "Expected response HTTP Code.",
@@ -37,7 +42,7 @@
     },
     "check-frontend-ip-list": {
       "title": "Frontend IPs to check",
-      "description": "List of Frontend IPs to check, if empty no constraint is used (default: comes from master partition).",
+      "description": "List of Frontend IPs to check, if empty no constraint is used. Defaults to region configuration.",
       "type": "array"
     },
     "failure-amount": {
