@@ -34,6 +34,7 @@ import tempfile
 import time
 import re
 import json
+import shutil
 from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
@@ -312,3 +313,205 @@ class TestTheiaEnv(TheiaTestCase):
     # Cleanup the theia shell process
     theia_shell_process.terminate()
     theia_shell_process.wait()
+
+
+class ResilientTheiaTestCase(TheiaTestCase):
+  @classmethod
+  def _getTypePartition(cls, software_type):
+    software_url = cls.getSoftwareURL()
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
+      partition_url = computer_partition.getSoftwareRelease()._software_release
+      partition_type = computer_partition.getType()
+      if partition_url == software_url and partition_type == software_type:
+        return computer_partition
+    raise "Theia %s partition not found" % software_type
+
+  @classmethod
+  def _getTypePartitionId(cls, software_type):
+    return cls._getTypePartition(software_type).getId()
+
+  @classmethod
+  def _getTypePartitionPath(cls, software_type, *paths):
+    return os.path.join(cls.slap._instance_root, cls._getTypePartitionId(software_type), *paths)
+
+  @classmethod
+  def _getSlapos(cls, software_type='export'):
+    return cls._getTypePartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
+
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name):
+    slapos = cls._getSlapos()
+    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
+    subprocess.check_call((slapos, 'node', 'software'))
+    subprocess.check_call((slapos, 'request', instance_name, software_url))
+    subprocess.check_call((slapos, 'node', 'instance'))
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'autorun': 'stopped'}
+
+
+class TestTheiaResilientInterface(TestTheia, ResilientTheiaTestCase):
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientInterface, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = cls._getTypePartitionPath('export')
+
+
+class TestTheiaResilientWithSR(TestTheiaWithSR, ResilientTheiaTestCase):
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientWithSR, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = cls._getTypePartitionPath('export')
+
+
+class TheiaResilienceMixin(object):
+  def _prepareExport(self):
+    pass
+
+  def _doBackup(self):
+    raise NotImplementedError
+
+  def _checkImport(self):
+    pass
+
+  def _doTakeover(self):
+    raise NotImplementedError
+
+  def _checkTakeover(self):
+    pass
+
+  def test(self):
+    # Do stuff on the main instance
+    # e.g. deploy an embedded software instance
+    self._prepareExport()
+
+    # Backup the main instance to a clone
+    # i.e. call export and import scripts
+    self._doBackup()
+
+    # Check that the export-backup-import process went well
+    # e.g. look at logs and compare data
+    self._checkImport()
+
+    # Let the clone become a main instance
+    # i.e. start embedded services
+    self._doTakeover()
+
+    # Check that the takeover went well
+    # e.g. check services
+    self._checkTakeover()
+
+
+class TestTheiaExportImport(TheiaResilienceMixin, ResilientTheiaTestCase):
+  _test_software_url = "https://lab.nexedi.com/xavier_thompson/slapos/raw/a0f0ac90/software/theia/test/dummy/software.cfg"
+
+  def _prepareExport(self):
+    # Deploy dummy instance in export partition
+    self._deployEmbeddedSoftware(self._test_software_url, 'dummy_instance')
+
+    dummy_root = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart0')
+
+    # Check that dummy instance was properly deployed
+    log_path = os.path.join(dummy_root, 'log.log')
+    with open(log_path) as f:
+      initial_log = f.readlines()
+    self.assertEqual(len(initial_log), 1)
+    self.assertTrue(initial_log[0].startswith("Hello"), initial_log[0])
+    self.initial_log = initial_log
+
+    # Create ~/include and ~/include/included
+    os.mkdir(os.path.join(dummy_root, 'include'))
+    with open(os.path.join(dummy_root, 'include', 'included'), 'w') as f:
+      f.write('This file should be included in resilient backup')
+    self.assertTrue(os.path.exists(os.path.join(dummy_root, 'include', 'included')))
+
+    # Create ~/exclude and ~/exclude/excluded
+    os.mkdir(os.path.join(dummy_root, 'exclude'))
+    with open(os.path.join(dummy_root, 'exclude', 'excluded'), 'w') as f:
+      f.write('This file should be excluded from resilient backup')
+    self.assertTrue(os.path.exists(os.path.join(dummy_root, 'exclude', 'excluded')))
+
+    # Check that ~/srv/exporter.exclude and ~/srv/runner-import-restore exist
+    self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', 'exporter.exclude')))
+    self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', 'runner-import-restore')))
+
+  def _doBackup(self):
+    # Call export script manually
+    theia_export_script = self._getTypePartitionPath('export', 'bin', 'theia-export-script')
+    subprocess.check_call((theia_export_script,), stderr=subprocess.STDOUT)
+
+    # Copy <export>/srv/backup/theia to <import>/srv/backup/theia manually
+    export_backup_path = self._getTypePartitionPath('export', 'srv', 'backup', 'theia')
+    import_backup_path = self._getTypePartitionPath('import', 'srv', 'backup', 'theia')
+    shutil.rmtree(import_backup_path)
+    shutil.copytree(export_backup_path, import_backup_path)
+
+    # Call the import script manually
+    theia_import_script = self._getTypePartitionPath('import', 'bin', 'theia-import-script')
+    subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
+
+  def _checkImport(self):
+    dummy_root = self._getTypePartitionPath('import', 'srv', 'runner', 'instance', 'slappart0')
+
+    # Check that the dummy instance is not yet started
+    log_path = os.path.join(dummy_root, 'log.log')
+    with open(log_path) as f:
+      copied_log = f.readlines()
+    self.assertEqual(copied_log, self.initial_log)
+
+    # Check that ~/include and ~/include/included were included
+    self.assertTrue(os.path.exists(os.path.join(dummy_root, 'include', 'included')))
+
+    # Check that ~/exclude was excluded
+    self.assertFalse(os.path.exists(os.path.join(dummy_root, 'exclude')))
+
+    # Check that ~/srv/runner-import-restore was called
+    restore_log_path = os.path.join(dummy_root, 'runner-import-restore.log')
+    self.assertTrue(os.path.exists(restore_log_path))
+    with open(restore_log_path) as f:
+      restore_log = f.readlines()
+    self.assertEqual(len(restore_log), 1)
+    self.assertTrue(restore_log[0].startswith("Hello"), restore_log[0])
+
+  def _doTakeover(self):
+    # Start the dummy instance
+    subprocess.check_call((self._getSlapos('import'), 'node', 'instance'))
+
+  def _checkTakeover(self):
+    # Check that dummy instance was properly re-deployed
+    log_path = self._getTypePartitionPath('import', 'srv', 'runner', 'instance', 'slappart0', 'log.log')
+    with open(log_path) as f:
+      new_log = f.readlines()
+    self.assertEqual(len(new_log), 2)
+    self.assertEqual(new_log[0], self.initial_log[0])
+    self.assertTrue(new_log[1].startswith("Hello"), new_log[1])
+
+
+class TestTheiaExportImportLocalURL(TestTheiaExportImport):
+  _test_software_url= None
+
+  def _prepareExport(self):
+    # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
+    dummy_target_path = self._getTypePartitionPath('export', 'srv', 'project', 'dummy')
+    shutil.copytree('resilience_dummy', dummy_target_path)
+    self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+
+    super(TestTheiaExportImportLocalURL, self)._prepareExport()
+
+  def _checkImport(self):
+    # Check that the software url is correct
+    test_adapted_url = self._getTypePartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
+    proxy_content = subprocess.check_output((self._getSlapos('import'), 'proxy', 'show'))
+    self.assertIn(test_adapted_url, proxy_content)
+    self.assertNotIn(self._test_software_url, proxy_content)
+
+    super(TestTheiaExportImportLocalURL, self)._checkImport()
+
+
