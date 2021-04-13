@@ -51,8 +51,6 @@ from slapos.testing.utils import findFreeTCPPort
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
-skipIfPython3 = unittest.skipIf(
-  six.PY3, 'rdiff-backup is not compatible with Python 3 yet')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -385,7 +383,6 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, InstanceTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
   __partition_reference__ = 'akcb'
@@ -432,7 +429,6 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestInstanceResilient(InstanceTestCase, KvmMixin):
   __partition_reference__ = 'ir'
@@ -515,7 +511,6 @@ ir3:sshd-on-watch RUNNING""",
     )
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestAccessResilientAdditional(InstanceTestCase):
   __partition_reference__ = 'ara'
@@ -849,7 +844,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.assertPromiseFails(self.config_state_promise)
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestBootImageUrlListResilient(TestBootImageUrlList):
   kvm_instance_partition_reference = 'biul2'
@@ -993,7 +987,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     )
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestBootImageUrlSelectResilient(TestBootImageUrlSelect):
   kvm_instance_partition_reference = 'bius2'
@@ -1222,7 +1215,6 @@ class TestWhitelistFirewallRequest(TestWhitelistFirewall):
     self.assertIn('4.4.4.4', self.content_json)
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestWhitelistFirewallResilient(TestWhitelistFirewall):
   kvm_instance_partition_reference = 'wf2'
@@ -1232,7 +1224,6 @@ class TestWhitelistFirewallResilient(TestWhitelistFirewall):
     return 'kvm-resilient'
 
 
-@skipIfPython3
 @skipUnlessKvm
 class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
   kvm_instance_partition_reference = 'wf2'

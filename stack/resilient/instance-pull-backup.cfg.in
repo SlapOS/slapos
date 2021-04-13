@@ -113,7 +113,7 @@ feeds = $${directory:notifier-feeds}
 callbacks-directory = $${directory:notifier-callbacks}
 equeue-socket = $${equeue:socket}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
-rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
 sshclient-binary = $${openssh-client:wrapper-path}
 known-hosts = $${directory:dot-ssh}/known_hosts
 promises-directory = $${basedirectory:promises}
@@ -133,7 +133,7 @@ status-item-directory = $${directory:notifier-status-items}
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
-command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${monitor-instance-parameter:root-instance-title}-PBS" --link $${pbs:log-url}
+command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${monitor-instance-parameter:root-instance-title}-PBS" --link $${pbs:log-url}
 feed-path = $${directory:monitor-resilient}/pbs-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 
@@ -197,7 +197,7 @@ wrapper-path = $${rootdirectory:bin}/ssh
 [resilient-genstatrss-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard-coded Urls
-command-line = ${buildout:directory}/bin/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
+command-line = ${buildout:bin-directory}/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
 wrapper-path = $${directory:bin}/resilient-genstatrss.py
 
 [pbs-push-history-log]
