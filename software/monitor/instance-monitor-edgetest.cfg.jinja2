@@ -19,9 +19,6 @@ extra-context =
 {%  set part_list = [] -%}
 # Publish information for each slave
 {%- set edgebot_software_type = 'edgebot' %}
-{%- set edgebot_quantity = slapparameter_dict.pop('edgebot-quantity', '1') | int %}
-{%- set edgebot_list = [] %}
-{%- set edgebot_section_list = [] %}
 {%- set slave_list_name = 'extra_slave_instance_list' %}
 {%- set request_dict = {} %}
 {%- set namebase = "edgebot" %}
@@ -31,19 +28,24 @@ extra-context =
 {%-   do authorized_slave_list.append(slave) %}
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
-{%- for i in range(1, edgebot_quantity + 1) %}
-{%-   set edgebot_name = "%s-%s" % (namebase, i) %}
-{%-   set request_section_title = 'request-%s' % edgebot_name %}
-{%-   do edgebot_list.append(edgebot_name) %}
-{%-   do edgebot_section_list.append(request_section_title) %}
+{%- set number = {'i': 1} %}
+{%- for region_name, region_parameter_dict in slapparameter_dict['region-dict'].items() %}
+{%-   set edgebot_name = "%s-%s" % (namebase, region_name) %}
+{%-   set request_section_title = 'request-%s' % (hashlib_module.md5(edgebot_name.encode('utf-8')).hexdigest(),) %}
 {%-   do part_list.append(request_section_title) %}
-{%-   do request_dict.__setitem__(request_section_title,
-                                  {
-                                  'config': {'monitor-httpd-port': monitor_base_port + i},
-                                  'name': edgebot_name,
-                                  'sla': {},
-                                  'state': 'started', 
-                                  }) %}
+{%-   do request_dict.__setitem__(
+        request_section_title,
+        {
+          'config': {
+            'monitor-httpd-port': monitor_base_port + number['i'],
+            'check-frontend-ip-list': region_parameter_dict.get('check-frontend-ip-list', []),
+            'nameserver-list': region_parameter_dict.get('nameserver-list', []),
+          },
+          'name': edgebot_name,
+          'sla': {'computer_guid': region_parameter_dict['sla-computer_guid']},
+          'state': region_parameter_dict.get('state', 'started'),
+        }) %}
+{%-   do number.__setitem__('i', number['i'] + 1) %}
 {%- endfor %}
 
 [replicate]
@@ -59,24 +61,16 @@ return = monitor-base-url
 {%  for section, edgebot_request in request_dict.items() %}
 [{{section}}]
 <= replicate
-name = {{ edgebot_request.get('name') }}
-{%-   if edgebot_request.get('state') %}
-state = {{ edgebot_request.get('state') }}
-{%-   endif%}
-{%-   set slave_configuration_dict = slapparameter_dict %}
-{%-   do slave_configuration_dict.update(edgebot_request.get('config')) %}
+name = {{ edgebot_request['name'] }}
+state = {{ edgebot_request['state'] }}
+{%-   set slave_configuration_dict = edgebot_request['config'] %}
 {%-   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
 {%-   for config_key, config_value in slave_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%    endfor -%}
-{%-   if edgebot_request.get('sla') %}
-{%-     for parameter, value in edgebot_request.get('sla').items() %}
+{%-   for parameter, value in edgebot_request['sla'].items() %}
 sla-{{ parameter }} = {{ value }}
-{%-     endfor %}
-{%-   else %}
-# As no SLA was provided, by default it is requested on the same computer
-sla-computer_guid = ${slap-connection:computer-id}
-{%    endif %}
+{%-   endfor %}
 {%-   do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {%- endfor %}
 {%- set directory_list = [] -%}

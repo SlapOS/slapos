@@ -19,7 +19,7 @@
                 "destroyed"
               ]
             },
-            "computer_guid": {
+            "sla-computer_guid": {
               "title": "GUID of the computer on which this region shall be deployed",
               "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
               "type": "string",
