@@ -9,7 +9,7 @@ NAMESERVER =
 {%-   endfor %}
 {% endif %}
 URL =
-{%- for slave in slave_instance_list | sort(attribute='slave_title') %}
+{%- for slave in slave_instance_list | sort(attribute='-slave-title') %}
 {%-   if 'url' in slave %}
   {{ slave['url'] }}
 {%-   endif -%}
