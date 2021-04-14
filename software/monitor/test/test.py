@@ -713,85 +713,63 @@ URL =
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
       'edge1',
-      'http-query-checkcertificateexpirationdays-promise.py',
-      """extra_config_dict = { 'certificate-expiration-days': '20',
+      'http-query-all-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
-  'ip-list': '',
+  'ip-list': '127.0.1.3 127.0.1.4',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
+  'url': 'https://www.all.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-checkcertificateexpirationdays-promise.py',
-      """extra_config_dict = { 'certificate-expiration-days': '20',
+      'edge1',
+      'http-query-onetwo-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
-  'ip-list': '',
+  'ip-list': '127.0.1.3 127.0.1.4',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'url': 'https://www.onetwo.org/'}""" % (
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-checkhttpheaderdict-promise.py',
+      'edge2',
+      'http-query-all-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
-  'http-header-dict': '{"A": "AAA"}',
-  'ip-list': '',
+  'http-header-dict': '{}',
+  'ip-list': '127.0.3.1 127.0.3.2',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.checkhttpheaderdict.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'url': 'https://www.all.org/'}""" % (
+        self.surykatka_dict['edge2'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-checkmaximumelapsedtime1-promise.py',
+      'edge2',
+      'http-query-three-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
-  'ip-list': '',
-  'json-file': '%s',
-  'maximum-elapsed-time': '1',
-  'report': 'http_query',
-  'status-code': '200',
-  'url': 'https://www.checkmaximumelapsedtime1.org/'}""" % (
-        self.surykatka_dict[1]['json-file'],))
-
-    self.assertPromiseContent(
-      'http-query-checkmaximumelapsedtime20-promise.py',
-      """extra_config_dict = { 'certificate-expiration-days': '15',
-  'failure-amount': '2',
-  'http-header-dict': '{}',
-  'ip-list': '',
-  'json-file': '%s',
-  'maximum-elapsed-time': '20',
-  'report': 'http_query',
-  'status-code': '200',
-  'url': 'https://www.checkmaximumelapsedtime20.org/'}""" % (
-        self.surykatka_dict[20]['json-file'],))
-
-    self.assertPromiseContent(
-      'http-query-checkstatuscode-promise.py',
-      """extra_config_dict = { 'certificate-expiration-days': '15',
-  'failure-amount': '2',
-  'http-header-dict': '{}',
-  'ip-list': '',
+  'ip-list': '127.0.3.1 127.0.3.2',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
-  'status-code': '300',
-  'url': 'https://www.checkstatuscode.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'status-code': '200',
+  'url': 'https://www.three.org/'}""" % (
+        self.surykatka_dict['edge2'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-default-promise.py',
+      'edge3',
+      'http-query-all-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -800,31 +778,33 @@ URL =
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.default.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'url': 'https://www.all.org/'}""" % (
+        self.surykatka_dict['edge3'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-failureamount-promise.py',
+      'edge3',
+      'http-query-onetwo-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
-  'failure-amount': '10',
+  'failure-amount': '2',
   'http-header-dict': '{}',
   'ip-list': '',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.failureamount.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'url': 'https://www.onetwo.org/'}""" % (
+        self.surykatka_dict['edge3'][2]['json-file'],))
 
     self.assertPromiseContent(
-      'http-query-checkfrontendiplist-promise.py',
+      'edge3',
+      'http-query-partialmiss-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
-  'ip-list': '128.129.130.131 131.134.135.136',
+  'ip-list': '',
   'json-file': '%s',
   'maximum-elapsed-time': '2',
   'report': 'http_query',
   'status-code': '200',
-  'url': 'https://www.checkfrontendiplist.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+  'url': 'https://www.parialmiss.org/'}""" % (
+        self.surykatka_dict['edge3'][2]['json-file'],))
