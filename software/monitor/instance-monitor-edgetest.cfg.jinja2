@@ -22,10 +22,25 @@ extra-context =
 {%- set slave_list_name = 'extra_slave_instance_list' %}
 {%- set request_dict = {} %}
 {%- set namebase = "edgebot" %}
-{%- set authorized_slave_list = [] %}
+{%- set region_list = slapparameter_dict['region-dict'].keys() %}
+{%- set authorized_slave_dict = {} %}
 {%- set monitor_base_url_dict = {} -%}
 {%- for slave in slave_instance_list | sort(attribute='slave_title') %}
-{%-   do authorized_slave_list.append(slave) %}
+{%-   if '_' in slave %}
+{%-     set slave_dict = json_module.loads(slave.pop('_')) %} {#- XXX: Unsafe! #}
+{%-     set slave_region_list = slave_dict.pop('region-list', []) %}
+{%-     if slave_region_list == [] %}
+{%-       do slave_region_list.extend(region_list) %}
+{%-     endif %}
+{%-     do slave.__setitem__('_', slave_dict) %}
+{%-     for region in slave_region_list %}
+{%-       if region not in authorized_slave_dict %}
+{%-         do authorized_slave_dict.__setitem__(region, [slave]) %}
+{%-       else %}
+{%-         do authorized_slave_dict[region].append(slave) %}
+{%-       endif %}
+{%-     endfor %}
+{%-   endif %}
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
 {%- set number = {'i': 1} %}
@@ -40,6 +55,7 @@ extra-context =
             'monitor-httpd-port': monitor_base_port + number['i'],
             'check-frontend-ip-list': region_parameter_dict.get('check-frontend-ip-list', []),
             'nameserver-list': region_parameter_dict.get('nameserver-list', []),
+            'extra_slave_instance_list': authorized_slave_dict.get(region_name, [])
           },
           'name': edgebot_name,
           'sla': {'computer_guid': region_parameter_dict['sla-computer_guid']},
@@ -63,9 +79,8 @@ return = monitor-base-url
 <= replicate
 name = {{ edgebot_request['name'] }}
 state = {{ edgebot_request['state'] }}
-{%-   set slave_configuration_dict = edgebot_request['config'] %}
-{%-   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
-{%-   for config_key, config_value in slave_configuration_dict.items() %}
+{%-   set edgebot_configuration_dict = edgebot_request['config'] %}
+{%-   for config_key, config_value in edgebot_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%    endfor -%}
 {%-   for parameter, value in edgebot_request['sla'].items() %}
