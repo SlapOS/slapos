@@ -55,6 +55,7 @@ extra-context =
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
 {%- set number = {'i': 1} %}
+{%- set active_region_list = [] %}
 {%- for region_name, region_parameter_dict in slapparameter_dict['region-dict'].items() %}
 {%-   set edgebot_name = "%s-%s" % (namebase, region_name) %}
 {%-   set request_section_title = 'request-%s' % (hashlib_module.md5(edgebot_name.encode('utf-8')).hexdigest(),) %}
@@ -72,6 +73,9 @@ extra-context =
           'sla': {'computer_guid': region_parameter_dict['sla-computer_guid']},
           'state': region_parameter_dict.get('state', 'started'),
         }) %}
+{%-   if request_dict[request_section_title]['state'] == 'started' %}
+{%-     do active_region_list.append(region_name) %}
+{%-   endif %}
 {%-   do number.__setitem__('i', number['i'] + 1) %}
 {%- endfor %}
 
@@ -124,4 +128,9 @@ parts +=
 {%  for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
+
+[publish-connection-information]
+active-region-list = {{ dumps(list(active_region_list)) }}
+sla-computer_guid = {{ dumps(slap_configuration['computer']) }}
+sla-instance_guid = {{ dumps(slap_configuration['instance-guid']) }}
 {%- endif %} {#- if slap_software_type == software_type #}
