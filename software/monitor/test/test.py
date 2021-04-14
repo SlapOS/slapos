@@ -583,29 +583,42 @@ URL =
 
 class TestEdgeRegion(EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
-    1: {'expected_ini': """[SURYKATKA]
+    'edge1': {
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-TIMEOUT = 3
+TIMEOUT = 4
 SQLITE = %(db_file)s
+NAMESERVER =
+  127.0.1.1
+  127.0.1.2
+
 URL =
-  https://www.checkmaximumelapsedtime1.org/"""},
-    2: {'expected_ini': """[SURYKATKA]
+  https://www.all.org/
+  https://www.onetwo.org/"""},
+    },
+    'edge2': {
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
 URL =
-  https://www.checkcertificateexpirationdays.org/
-  https://www.checkfrontendiplist.org/
-  https://www.checkhttpheaderdict.org/
-  https://www.checkstatuscode.org/
-  https://www.default.org/
-  https://www.failureamount.org/"""},
-    20: {'expected_ini': """[SURYKATKA]
+  https://www.all.org/
+  https://www.three.org/"""},
+    },
+    'edge3': {
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
-TIMEOUT = 22
+TIMEOUT = 4
 SQLITE = %(db_file)s
+NAMESERVER =
+  127.0.2.1
+  127.0.2.2
+
 URL =
-  https://www.checkmaximumelapsedtime20.org/"""},
+  https://www.all.org/
+  https://www.onetwo.org/
+  https://www.parialmiss.org/"""},
+    }
   }
 
   def setUpMonitorConfigurationList(self):
@@ -698,6 +711,20 @@ URL =
     )
 
   def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'edge1',
+      'http-query-checkcertificateexpirationdays-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '20',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
+        self.surykatka_dict['edge1'][2]['json-file'],))
+
     self.assertPromiseContent(
       'http-query-checkcertificateexpirationdays-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '20',

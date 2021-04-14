@@ -117,7 +117,7 @@ sla-{{ parameter }} = {{ value }}
 {%-   do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
-active-region-list = {{ dumps(list(active_region_list)) }}
+available-region-list = {{ dumps(list(active_region_list)) }}
 assigned-region-list = {{ dumps(slave_instance['assigned-region-list']) }}
 -slave-reference = {{ slave_instance['reference'] }}
 {%  endfor %}
