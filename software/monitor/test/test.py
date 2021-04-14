@@ -153,27 +153,28 @@ class EdgeSlaveMixin(MonitorTestMixin):
     )
 
   def updateSurykatkaDict(self):
-    for class_ in self.surykatka_dict:
-      update_dict = {}
-      update_dict['ini-file'] = os.path.join(
-        self.bot_partition_path, 'etc', 'surykatka-%s.ini' % (class_,))
-      update_dict['json-file'] = os.path.join(
-        self.bot_partition_path, 'srv', 'surykatka-%s.json' % (class_,))
-      update_dict['status-json'] = os.path.join(
-        self.bot_partition_path, 'bin', 'surykatka-status-json-%s' % (class_,))
-      update_dict['bot-promise'] = 'surykatka-bot-promise-%s.py' % (class_,)
-      update_dict['status-cron'] = os.path.join(
-        self.bot_partition_path, 'etc', 'cron.d', 'surykatka-status-%s' % (
-          class_,))
-      update_dict['db_file'] = os.path.join(
-        self.bot_partition_path, 'srv', 'surykatka-%s.db' % (class_,))
-      self.surykatka_dict[class_].update(update_dict)
+    for instance_reference in self.surykatka_dict:
+      for class_ in self.surykatka_dict[instance_reference]:
+        update_dict = {}
+        update_dict['ini-file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'etc',
+          'surykatka-%s.ini' % (class_,))
+        update_dict['json-file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'srv',
+          'surykatka-%s.json' % (class_,))
+        update_dict['status-json'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'bin',
+          'surykatka-status-json-%s' % (class_,))
+        update_dict['bot-promise'] = 'surykatka-bot-promise-%s.py' % (class_,)
+        update_dict['status-cron'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'etc',
+          'cron.d', 'surykatka-status-%s' % (class_,))
+        update_dict['db_file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'srv',
+          'surykatka-%s.db' % (class_,))
+        self.surykatka_dict[instance_reference][class_].update(update_dict)
 
-  def setUp(self):
-    self.bot_partition_path = os.path.join(
-      self.slap.instance_directory,
-      self.__partition_reference__ + '1')
-    self.updateSurykatkaDict()
+  def setUpMonitorConfigurationList(self):
     self.monitor_configuration_list = [
       {
         'xmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,),
@@ -195,43 +196,60 @@ class EdgeSlaveMixin(MonitorTestMixin):
       }
     ]
 
+  def setUp(self):
+    self.updateSurykatkaDict()
+    self.setUpMonitorConfigurationList()
+
   def assertSurykatkaIni(self):
+    expected_init_path_list = []
+    for instance_reference in self.surykatka_dict:
+      expected_init_path_list.extend(
+        [q['ini-file']
+         for q in self.surykatka_dict[instance_reference].values()])
     self.assertEqual(
       set(
         glob.glob(
-          os.path.join(self.bot_partition_path, 'etc', 'surykatka*.ini'))),
-      {q['ini-file'] for q in self.surykatka_dict.values()}
+          os.path.join(
+            self.slap.instance_directory, '*', 'etc', 'surykatka*.ini'
+          )
+        )
+      ),
+      set(expected_init_path_list)
     )
-    for info_dict in self.surykatka_dict.values():
-      self.assertEqual(
-        info_dict['expected_ini'].strip() % info_dict,
-        open(info_dict['ini-file']).read().strip()
-      )
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertEqual(
+          info_dict['expected_ini'].strip() % info_dict,
+          open(info_dict['ini-file']).read().strip()
+        )
 
-  def assertPromiseContent(self, name, content):
+  def assertPromiseContent(self, instance_reference, name, content):
     promise = open(
       os.path.join(
-        self.bot_partition_path, 'etc', 'plugin', name
+        self.slap.instance_directory, instance_reference, 'etc', 'plugin', name
       )).read().strip()
 
     self.assertTrue(content in promise)
 
   def assertSurykatkaBotPromise(self):
-    for info_dict in self.surykatka_dict.values():
-      self.assertPromiseContent(
-        info_dict['bot-promise'],
-        "'report': 'bot_status'")
-      self.assertPromiseContent(
-        info_dict['bot-promise'],
-        "'json-file': '%s'" % (info_dict['json-file'],)
-      )
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertPromiseContent(
+          instance_reference,
+          info_dict['bot-promise'],
+          "'report': 'bot_status'")
+        self.assertPromiseContent(
+          instance_reference,
+          info_dict['bot-promise'],
+          "'json-file': '%s'" % (info_dict['json-file'],),)
 
   def assertSurykatkaCron(self):
-    for info_dict in self.surykatka_dict.values():
-      self.assertEqual(
-        '*/2 * * * * %s' % (info_dict['status-json'],),
-        open(info_dict['status-cron']).read().strip()
-      )
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertEqual(
+          '*/2 * * * * %s' % (info_dict['status-json'],),
+          open(info_dict['status-cron']).read().strip()
+        )
 
   def initiateSurykatkaRun(self):
     try:
@@ -240,17 +258,18 @@ class EdgeSlaveMixin(MonitorTestMixin):
       pass
 
   def assertSurykatkaStatusJSON(self):
-    for info_dict in self.surykatka_dict.values():
-      if os.path.exists(info_dict['json-file']):
-        os.unlink(info_dict['json-file'])
-      try:
-        subprocess.check_call(info_dict['status-json'])
-      except subprocess.CalledProcessError as e:
-        self.fail('%s failed with code %s and message %s' % (
-          info_dict['status-json'], e.returncode, e.output))
-      with open(info_dict['json-file']) as fh:
-        status_json = json.load(fh)
-      self.assertIn('bot_status', status_json)
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        if os.path.exists(info_dict['json-file']):
+          os.unlink(info_dict['json-file'])
+        try:
+          subprocess.check_call(info_dict['status-json'])
+        except subprocess.CalledProcessError as e:
+          self.fail('%s failed with code %s and message %s' % (
+            info_dict['status-json'], e.returncode, e.output))
+        with open(info_dict['json-file']) as fh:
+          status_json = json.load(fh)
+        self.assertIn('bot_status', status_json)
 
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
@@ -271,13 +290,14 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
 class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
-    1: {'expected_ini': """[SURYKATKA]
+    'edge1': {
+      1: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 3
 SQLITE = %(db_file)s
 URL =
   https://www.checkmaximumelapsedtime1.org/"""},
-    2: {'expected_ini': """[SURYKATKA]
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
@@ -288,16 +308,18 @@ URL =
   https://www.checkstatuscode.org/
   https://www.default.org/
   https://www.failureamount.org/"""},
-    20: {'expected_ini': """[SURYKATKA]
+      20: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 22
 SQLITE = %(db_file)s
 URL =
   https://www.checkmaximumelapsedtime20.org/"""},
+    }
   }
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkcertificateexpirationdays-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '20',
   'failure-amount': '2',
@@ -308,9 +330,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkhttpheaderdict-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -321,9 +344,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.checkhttpheaderdict.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkmaximumelapsedtime1-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -334,9 +358,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.checkmaximumelapsedtime1.org/'}""" % (
-        self.surykatka_dict[1]['json-file'],))
+        self.surykatka_dict['edge1'][1]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkmaximumelapsedtime20-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -347,9 +372,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.checkmaximumelapsedtime20.org/'}""" % (
-        self.surykatka_dict[20]['json-file'],))
+        self.surykatka_dict['edge1'][20]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkstatuscode-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -360,9 +386,10 @@ URL =
   'report': 'http_query',
   'status-code': '300',
   'url': 'https://www.checkstatuscode.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-default-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -373,9 +400,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.default.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-failureamount-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '10',
@@ -386,9 +414,10 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.failureamount.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
     self.assertPromiseContent(
+      'edge1',
       'http-query-checkfrontendiplist-promise.py',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
@@ -399,7 +428,7 @@ URL =
   'report': 'http_query',
   'status-code': '200',
   'url': 'https://www.checkfrontendiplist.org/'}""" % (
-        self.surykatka_dict[2]['json-file'],))
+        self.surykatka_dict['edge1'][2]['json-file'],))
 
   def requestEdgetestSlaves(self):
     self.requestEdgetestSlave(
@@ -444,7 +473,8 @@ URL =
 class TestEdgeNameserverListCheckFrontendIpList(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
+    'edge1': {
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
@@ -454,6 +484,7 @@ NAMESERVER =
 
 URL =
   https://www.erp5.com/"""}
+    }
   }
 
   @classmethod
@@ -465,25 +496,32 @@ URL =
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'ip-list': '127.0.0.1 127.0.0.2'")
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'report': 'http_query'")
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'status-code': '200'")
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'certificate-expiration-days': '15'")
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'url': 'https://www.erp5.com/'")
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
-      "'json-file': '%s'" % (self.surykatka_dict[2]['json-file'],)
+      "'json-file': '%s'" % (self.surykatka_dict['edge1'][2]['json-file'],)
     )
     self.assertPromiseContent(
+      'edge1',
       'http-query-backend-promise.py',
       "'failure-amount': '2'"
     )
@@ -498,12 +536,14 @@ URL =
 class TestEdgeSlaveNotJson(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
   surykatka_dict = {
-    2: {'expected_ini': """[SURYKATKA]
+    'edge1': {
+      2: {'expected_ini': """[SURYKATKA]
 INTERVAL = 120
 TIMEOUT = 4
 SQLITE = %(db_file)s
 URL =
   https://www.erp5.com/"""}
+    }
   }
 
   # non-json provided in slave '_' results with damaging the cluster
