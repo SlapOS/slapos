@@ -42,6 +42,18 @@
         }
       },
       "type": "object"
+    },
+    "nameserver-list": {
+      "default": [],
+      "title": "Nameservers (backward compatibility)",
+      "description": "List of nameservers to use. Note: This is backward compatibility, use region-dict for full configuration control.",
+      "type": "array"
+    },
+    "check-frontend-ip-list": {
+      "default": [],
+      "title": "Default Check Frontend IPs (backward compatibility)",
+      "description": "List of default frontend IPs to check, if empty no constraint is used. Note: This is backward compatibility, use region-dict for full configuration control.",
+      "type": "array"
     }
   }
 }

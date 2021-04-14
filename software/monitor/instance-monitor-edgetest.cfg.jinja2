@@ -22,6 +22,17 @@ extra-context =
 {%- set slave_list_name = 'extra_slave_instance_list' %}
 {%- set request_dict = {} %}
 {%- set namebase = "edgebot" %}
+{%- if 'region-dict' not in slapparameter_dict %}
+{#-   Be nice and allow to work with default configuration #}
+{%-   do slapparameter_dict.__setitem__('region-dict', {
+          '1': {
+            'sla-computer_guid': slap_configuration['computer'],
+            'state': slap_configuration['instance-state'],
+            'nameserver-list': slapparameter_dict.get('slapparameter_dict', []),
+            'check-frontend-ip-list': slapparameter_dict.get('check-frontend-ip-list', []),
+          }
+        }) %}
+{%- endif %}
 {%- set region_list = slapparameter_dict['region-dict'].keys() %}
 {%- set authorized_slave_dict = {} %}
 {%- set monitor_base_url_dict = {} -%}
