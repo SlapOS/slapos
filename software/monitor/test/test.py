@@ -539,3 +539,185 @@ URL =
       partition_parameter_kw={'_': 'notajson'},
       shared=True
     )
+
+
+class TestEdgeRegion(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {
+    1: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 3
+SQLITE = %(db_file)s
+URL =
+  https://www.checkmaximumelapsedtime1.org/"""},
+    2: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 4
+SQLITE = %(db_file)s
+URL =
+  https://www.checkcertificateexpirationdays.org/
+  https://www.checkfrontendiplist.org/
+  https://www.checkhttpheaderdict.org/
+  https://www.checkstatuscode.org/
+  https://www.default.org/
+  https://www.failureamount.org/"""},
+    20: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 22
+SQLITE = %(db_file)s
+URL =
+  https://www.checkmaximumelapsedtime20.org/"""},
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'region-dict': {
+        'Region One': {
+          'sla-computer_guid': cls.slap._computer_id,
+          'state': 'started',
+          'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+          'check-frontend-ip-list': ['127.0.1.3', '127.0.1.4'],
+        },
+        'Region Two': {
+          'sla-computer_guid': cls.slap._computer_id,
+          'state': 'started',
+          'nameserver-list': ['127.0.2.1', '127.0.2.2'],
+        },
+        'Region Three': {
+          'sla-computer_guid': cls.slap._computer_id,
+          'state': 'started',
+          'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
+        }
+      },
+    })}
+
+  def requestEdgetestSlaves(self):
+    self.requestEdgetestSlave(
+      'all',
+      {'url': 'https://www.all.org/'},
+    )
+    self.requestEdgetestSlave(
+      'onetwo',
+      {'url': 'https://www.onetwo.org/',
+       'region-list': ['Region One', 'Region Two']},
+    )
+    self.requestEdgetestSlave(
+      'three',
+      {'url': 'https://www.three.org/',
+       'region-list': ['Region Three']},
+    )
+    self.requestEdgetestSlave(
+      'missed',
+      {'url': 'https://www.missed.org/',
+       'region-list': ['Region Non Existing']},
+    )
+    self.requestEdgetestSlave(
+      'partialmiss',
+      {'url': 'https://www.parialmiss.org/',
+       'region-list': ['Region Two', 'Region Non Existing']},
+    )
+
+  def assertSurykatkaPromises(self):
+    self.assertPromiseContent(
+      'http-query-checkcertificateexpirationdays-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '20',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-checkhttpheaderdict-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{"A": "AAA"}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkhttpheaderdict.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-checkmaximumelapsedtime1-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '1',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkmaximumelapsedtime1.org/'}""" % (
+        self.surykatka_dict[1]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-checkmaximumelapsedtime20-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '20',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkmaximumelapsedtime20.org/'}""" % (
+        self.surykatka_dict[20]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-checkstatuscode-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '300',
+  'url': 'https://www.checkstatuscode.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-default-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.default.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-failureamount-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '10',
+  'http-header-dict': '{}',
+  'ip-list': '',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.failureamount.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
+
+    self.assertPromiseContent(
+      'http-query-checkfrontendiplist-promise.py',
+      """extra_config_dict = { 'certificate-expiration-days': '15',
+  'failure-amount': '2',
+  'http-header-dict': '{}',
+  'ip-list': '128.129.130.131 131.134.135.136',
+  'json-file': '%s',
+  'maximum-elapsed-time': '2',
+  'report': 'http_query',
+  'status-code': '200',
+  'url': 'https://www.checkfrontendiplist.org/'}""" % (
+        self.surykatka_dict[2]['json-file'],))
