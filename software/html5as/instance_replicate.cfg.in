@@ -1,0 +1,51 @@
+[buildout]
+parts =
+    publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[instance-request-base]
+<= slap-connection
+recipe = slapos.cookbook:request
+# It is the same software as the current one
+software-url = ${slap-connection:software-release-url}
+# We want the default behaviour
+software-type = default
+# What parameter are neede to be retrieved
+return = server_url server-cdn-url monitor-setup-url
+# Provided parameters
+config-title = ${slap-parameter:title}
+config-download_url = ${slap-parameter:download_url}
+
+# Request a normal html5as instance
+[instance-1]
+<= instance-request-base
+# Name of the instanc e
+name = instance-html5as-1
+config-port = ${slap-parameter:port1}
+config-title = ${slap-parameter:title1}
+
+[instance-2]
+<= instance-request-base
+# Name of the instance
+name = instance-html5as-2
+config-port = ${slap-parameter:port2}
+config-title = ${slap-parameter:title2}
+
+[slap-parameter]
+title1 =
+title2 =
+download_url =
+port1 = 8081
+port2 = 8082
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+instance-1-server_url = ${instance-1:connection-server_url}
+instance-1-server-cdn-url = ${instance-1:connection-server-cdn-url}
+instance-1-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}
+instance-2-server_url = ${instance-2:connection-server_url}
+instance-2-server-cdn-url = ${instance-1:connection-server-cdn-url}
+instance-2-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}

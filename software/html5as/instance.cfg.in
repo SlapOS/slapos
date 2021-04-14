@@ -23,10 +23,20 @@ recipe = slapos.recipe.template:jinja2
 template = {{ template_instance_html5as_target }}
 rendered = ${buildout:directory}/${:filename}
 filename = instance-html5as.cfg
-context = 
+context =
+  section buildout buildout
+  section parameter_list profile-common
+
+[instance-replicate]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_instance_replicate }}
+rendered = ${buildout:directory}/${:filename}
+filename = instance-replicate-html5as.cfg
+context =
   section buildout buildout
   section parameter_list profile-common
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${instance-html5as:rendered}
+replicate = ${instance-replicate:rendered}
