@@ -111,7 +111,6 @@ sla-{{ parameter }} = {{ value }}
 {%-   endfor %}
 {%-   do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {%- endfor %}
-{%- set directory_list = [] -%}
 # Publish information for each slave
 {%- for slave_instance in processed_slave_instance_dict_list -%}
 {%-   set publish_section_title = 'publish-%s' % slave_instance['reference']  -%}
