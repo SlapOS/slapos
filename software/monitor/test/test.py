@@ -608,6 +608,46 @@ URL =
   https://www.checkmaximumelapsedtime20.org/"""},
   }
 
+  def setUpMonitorConfigurationList(self):
+    self.monitor_configuration_list = [
+     {
+       'htmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,),
+       'text': 'testing partition 0',
+       'title': 'testing partition 0',
+       'type': 'rss',
+       'url': 'https://[%s]:9700/share/private/' % (self._ipv6_address,),
+       'version': 'RSS',
+       'xmlUrl': 'https://[%s]:9700/public/feed' % (self._ipv6_address,)
+     },
+     {
+       'htmlUrl': 'https://[%s]:9701/public/feed' % (self._ipv6_address,),
+       'text': 'edgebot-Region One',
+       'title': 'edgebot-Region One',
+       'type': 'rss',
+       'url': 'https://[%s]:9701/share/private/' % (self._ipv6_address,),
+       'version': 'RSS',
+       'xmlUrl': 'https://[%s]:9701/public/feed' % (self._ipv6_address,)
+     },
+     {
+       'htmlUrl': 'https://[%s]:9702/public/feed' % (self._ipv6_address,),
+       'text': 'edgebot-Region Three',
+       'title': 'edgebot-Region Three',
+       'type': 'rss',
+       'url': 'https://[%s]:9702/share/private/' % (self._ipv6_address,),
+       'version': 'RSS',
+       'xmlUrl': 'https://[%s]:9702/public/feed' % (self._ipv6_address,)
+     },
+     {
+       'htmlUrl': 'https://[%s]:9703/public/feed' % (self._ipv6_address,),
+       'text': 'edgebot-Region Two',
+       'title': 'edgebot-Region Two',
+       'type': 'rss',
+       'url': 'https://[%s]:9703/share/private/' % (self._ipv6_address,),
+       'version': 'RSS',
+       'xmlUrl': 'https://[%s]:9703/public/feed' % (self._ipv6_address,)
+      }
+    ]
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
