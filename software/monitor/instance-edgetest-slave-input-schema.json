@@ -7,10 +7,10 @@
       "description": "URL to check, like https://example.com/",
       "type": "string"
     },
-    "region": {
-      "title": "Applicable Region",
-      "description": "Puts the check on one of regions defined by the cluster. Empty region will result with presence on all regions.",
-      "type": "string"
+    "region-list": {
+      "title": "Applicable Regions",
+      "description": "Puts the check on the defined regions. Empty will result with presence in all regions.",
+      "type": "arrays"
     },
     "check-status-code": {
       "title": "HTTP Code Check",
