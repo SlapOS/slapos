@@ -1205,7 +1205,7 @@ diff -Naur ./Zope-4.5.3/src/reStructuredText/tests/testReST.py ./Zope-4.5.3-Nexe
 +    from unittest import TestSuite, makeSuite
 +    return TestSuite((makeSuite(TestReST),))
 +
-diff -Naur ./Zope-4.5.3/src/Testing/makerequest.py ./Zope-4.5.3-Nexedi/src/Testing/makerequest.py
+diff -Naur Zope-4.5.3/src/Testing/makerequest.py Zope-4.5.3-Nexedi/src/Testing/makerequest.py
 --- Zope-4.5.3/src/Testing/makerequest.py	2020-07-09 14:26:18.000000000 +0200
 +++ Zope-4.5.3-Nexedi/src/Testing/makerequest.py	2021-04-14 09:15:28.545033330 +0200
 @@ -21,6 +21,8 @@
