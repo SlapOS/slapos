@@ -28,6 +28,9 @@ config-download_url = ${slap-parameter:download_url}
 name = instance-html5as-{{ i }}
 config-port = ${slap-parameter:port-{{ i }}}
 config-title = ${slap-parameter:title-{{ i }}}
+{%   if "sla-%s-computer-guid" % i in slapparameter_dict -%}
+sla-computer_guid = {{ slapparameter_dict["sla-%s-computer-guid" % i] }}
+{%   endif -%}
 {% endfor %}
 
 [slap-parameter]
