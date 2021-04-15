@@ -35,6 +35,8 @@ import time
 import re
 import json
 import shutil
+import ssl
+
 from six.moves.urllib.parse import urlparse, urljoin
 
 import pexpect
@@ -42,14 +44,22 @@ import psutil
 import requests
 import sqlite3
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+erp5_software_release_url = 'https://lab.nexedi.com/xavier_thompson/slapos/raw/erp5_fix_export/software/erp5/software.cfg'
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
+
+def setUpModule():
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    [theia_software_release_url, erp5_software_release_url],
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -348,6 +358,9 @@ class ResilientTheiaTestCase(TheiaTestCase):
         continue
       break
     else:
+      # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
+      print("Wait before running slapos node instance one last time")
+      time.sleep(120)
       subprocess.check_call((slapos, 'node', 'instance'))
 
   @classmethod
@@ -540,10 +553,12 @@ class TakeoverMixin(object):
     return resp.text
 
   def _waitBackupStarted(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "No backup downloaded yet, takeover should not happen now." in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: No backup downloaded yet, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup started, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -551,10 +566,12 @@ class TakeoverMixin(object):
       self.fail("Backup did not start before timeout:\n%s" % log)
 
   def _waitBackupFinished(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "<b>Importer script(s) of backup in progress:</b> True" in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: Backup in progress, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup finished, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -571,8 +588,9 @@ class TakeoverMixin(object):
 
 class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
-  test_backup_started_tries = 100
-  test_backup_finished_tries = 100
+  backup_started_tries = 100
+  backup_finished_tries = 100
+  backup_wait_interval = 1
 
   _test_software_url = "https://lab.nexedi.com/xavier_thompson/slapos/raw/theia_resilience/software/theia/test/resilience_dummy/software.cfg"
 
@@ -594,8 +612,8 @@ class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTes
     takeover_url, _ = self._getTakeoverUrlAndPassword()
 
     # Wait for importer to start and finish
-    self._waitBackupStarted(takeover_url, 1, self.test_backup_started_tries)
-    self._waitBackupFinished(takeover_url, 1, self.test_backup_finished_tries)
+    self._waitBackupStarted(takeover_url, self.backup_wait_interval, self.backup_started_tries)
+    self._waitBackupFinished(takeover_url, self.backup_wait_interval, self.backup_finished_tries)
 
   def _doTakeover(self):
     # Takeover
@@ -626,4 +644,145 @@ class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTes
 
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
-    subprocess.check_call((self._getSlapos('export'), 'node', 'instance'))
+    self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class ERP5Mixin(object):
+  _test_software_url = erp5_software_release_url
+  _regex = re.compile(r"{\s*'_'\s*:\s*'(.*)'\s*}")
+
+  def _getERP5ConnexionParameters(self, software_type='export'):
+    slapos = self._getSlapos(software_type)
+    out = subprocess.check_output(
+      (slapos, 'request', 'test_instance', self._test_software_url),
+      stderr=subprocess.STDOUT,
+    )
+    print(out)
+    return json.loads(self._regex.search(out).group(1))
+
+  def _getERP5Url(self, connexion_parameters, path=''):
+    return urljoin(connexion_parameters['family-default-v6'], path)
+
+  def _getERP5User(self, connexion_parameters):
+    return connexion_parameters['inituser-login']
+
+  def _getERP5Password(self, connexion_parameters):
+    return connexion_parameters['inituser-password']
+
+
+class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_started_tries = 1000
+  backup_finished_tries = 1000
+  backup_wait_interval = 10
+
+  def setUp(self):
+    # Symlink the export build directory to the testnode build directory
+    testnode_software_root = self.slap._software_root
+    export_software_root = self._getTypePartitionPath('export', 'srv', 'runner', 'software')
+    os.rmdir(export_software_root)
+    os.symlink(testnode_software_root, export_software_root)
+    # import_software_root = self._getTypePartitionPath('import', 'srv', 'runner', 'software')
+    # os.rmdir(import_software_root)
+    # os.symlink(testnode_software_root, import_software_root)
+
+  def _prepareExport(self):
+    super(TestTheiaResilienceERP5, self)._prepareExport()
+
+    # Connect to erp5
+    info = self._getERP5ConnexionParameters()
+    user = self._getERP5User(info)
+    password = self._getERP5Password(info)
+    url = self._getERP5Url(info, 'erp5')
+
+    for _ in range(5):
+      try:
+        resp = requests.get('%s/getId' % url, auth=(user, password), verify=False, allow_redirects=False)
+      except Exception:
+        time.sleep(20)
+        continue
+      if resp.status_code != 200:
+        time.sleep(20)
+        continue
+      break
+    else:
+      self.fail('Failed to connect to ERP5')
+    self.assertEqual(resp.text, 'erp5')
+
+    # Change title
+    new_title = time.strftime("Portal Types %a %d %b %Y %H:%M:%S", time.localtime(time.time()))
+    requests.get('%s/portal_types/setTitle?value=%s' % (url, new_title), auth=(user, password), verify=False)
+    resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
+    self.assertEqual(resp.text, new_title)
+    self._erp5_obj_title = new_title
+
+    # Compute backup date in the near future
+    soon = time.time() + 120
+    date = '*:%d:00' % time.localtime(soon).tm_min
+    params = '_={"zodb-zeo": {"backup-periodicity": "%s"}, "mariadb": {"backup-periodicity": "%s"} }' % (date, date)
+
+    # Update ERP5 parameters
+    print('Requesting EPR5 with parameters %s' % params)
+    slapos = self._getSlapos()
+    subprocess.check_call((slapos, 'request', 'test_instance', self._test_software_url, '--parameters', params))
+
+    # Process twice to propagate parameter changes
+    for _ in range(2):
+      subprocess.check_call((slapos, 'node', 'instance'))
+
+    # Restart cron (actually all) services to let them take the new date into account
+    # XXX this should not be required, updating ERP5 parameters should be enough
+    subprocess.call((slapos, 'node', 'restart', 'all'))
+
+    now = time.time()
+    self.assertLess(now + 60, soon, 'Instance reprocessing might not have finished before the programmed backup date')
+
+    # Wait until after the programmed backup date, and a bit more
+    time.sleep(180)
+
+    # Check that backup has started
+    export_instance_dir = self._getTypePartitionPath('export', 'srv', 'runner', 'instance')
+    mariadb_backup = os.path.join(export_instance_dir, 'slappart3', 'srv', 'backup', 'mariadb-full')
+    zodb_backup = os.path.join(export_instance_dir, 'slappart4', 'srv', 'backup', 'zodb', 'root')
+    self.assertTrue(os.listdir(mariadb_backup))
+    self.assertTrue(os.listdir(zodb_backup))
+
+  def _checkTakeover(self):
+    super(TestTheiaResilienceERP5, self)._checkTakeover()
+
+    # Connect to erp5
+    info = self._getERP5ConnexionParameters()
+    user = self._getERP5User(info)
+    password = self._getERP5Password(info)
+    url = self._getERP5Url(info, 'erp5')
+
+    for _ in range(5):
+      try:
+        resp = requests.get('%s/getId' % url, auth=(user, password), verify=False, allow_redirects=False)
+      except Exception:
+        time.sleep(20)
+        continue
+      if resp.status_code != 200 or resp.text != 'erp5':
+        time.sleep(20)
+        continue
+      break
+    else:
+      self.fail('Failed to connect to ERP5')
+
+    resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
+    self.assertEqual(resp.text, self._erp5_obj_title)
+
+    # Stop all services
+    slapos = self._getSlapos()
+    print("Stop all services")
+    subprocess.call((slapos, 'node', 'stop', 'all'))
+
+    # Manually restore mariadb from backup
+    mariadb_partition = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart3')
+    mariadb_restore_script = os.path.join(mariadb_partition, 'bin', 'restore-from-backup')
+    print("Restore mariadb from backup")
+    subprocess.check_call(mariadb_restore_script)
+
+    # Check that the test instance is properly redeployed after restoring mariadb
+    # This restarts the services and checks the promises of the test instance
+    self._processEmbeddedInstance(self.test_instance_max_retries)
