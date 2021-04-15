@@ -1,3 +1,4 @@
+{% set replicate_quantity = slapparameter_dict.pop('replicate-quantity', '1') | int %}
 [buildout]
 parts =
     publish-connection-information
@@ -19,33 +20,27 @@ return = server_url server-cdn-url monitor-setup-url
 config-title = ${slap-parameter:title}
 config-download_url = ${slap-parameter:download_url}
 
+{% for i in range(1, replicate_quantity + 1) %}
 # Request a normal html5as instance
-[instance-1]
-<= instance-request-base
-# Name of the instanc e
-name = instance-html5as-1
-config-port = ${slap-parameter:port1}
-config-title = ${slap-parameter:title1}
-
-[instance-2]
+[instance-{{ i }}]
 <= instance-request-base
 # Name of the instance
-name = instance-html5as-2
-config-port = ${slap-parameter:port2}
-config-title = ${slap-parameter:title2}
+name = instance-html5as-{{ i }}
+config-port = ${slap-parameter:port-{{ i }}}
+config-title = ${slap-parameter:title-{{ i }}}
+{% endfor %}
 
 [slap-parameter]
-title1 =
-title2 =
 download_url =
-port1 = 8081
-port2 = 8082
+{% for i in range(1, replicate_quantity + 1) %}
+title-{{ i }} =
+port-{{ i }} = 808{{ i }}
+{% endfor %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-instance-1-server_url = ${instance-1:connection-server_url}
-instance-1-server-cdn-url = ${instance-1:connection-server-cdn-url}
-instance-1-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}
-instance-2-server_url = ${instance-2:connection-server_url}
-instance-2-server-cdn-url = ${instance-1:connection-server-cdn-url}
-instance-2-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}
+{% for i in range(1, replicate_quantity + 1) %}
+instance-{{ i }}-server_url = ${instance-{{ i }}:connection-server_url}
+instance-{{ i }}-server-cdn-url = ${instance-{{ i }}:connection-server-cdn-url}
+instance-{{ i }}-server-monitor-setup-url = ${instance-{{ i }}:connection-monitor-setup-url}
+{% endfor %}
