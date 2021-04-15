@@ -42,14 +42,22 @@ import psutil
 import requests
 import sqlite3
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+erp5_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.187/software/erp5/software.cfg'
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
+
+def setUpModule():
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    [theia_software_release_url, erp5_software_release_url],
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -339,11 +347,8 @@ class ResilientTheiaTestCase(TheiaTestCase):
     return cls._getTypePartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
 
   @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0):
+  def _processEmbeddedInstance(cls, retries=0):
     slapos = cls._getSlapos()
-    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
-    subprocess.check_call((slapos, 'node', 'software'))
-    subprocess.check_call((slapos, 'request', instance_name, software_url))
     for _ in range(retries):
       try:
         subprocess.check_call((slapos, 'node', 'instance'))
@@ -352,6 +357,14 @@ class ResilientTheiaTestCase(TheiaTestCase):
       break
     else:
       subprocess.check_call((slapos, 'node', 'instance'))
+
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0):
+    slapos = cls._getSlapos()
+    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
+    subprocess.check_call((slapos, 'node', 'software'))
+    subprocess.check_call((slapos, 'request', instance_name, software_url))
+    cls._processEmbeddedInstance(retries)
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -498,8 +511,10 @@ class TestTheiaResilience(ResilientTheiaTestCase):
   def test_resilience(self):
     # Deploy test instance
     software_release_url = self._getTestSoftwareUrl()
-    self._deployEmbeddedSoftware(software_release_url, 'test_instance', self.test_instance_max_retries)
-
+    try:
+      self._deployEmbeddedSoftware(software_release_url, 'test_instance', self.test_instance_max_retries)
+    except subprocess.CalledProcessError:
+      import pdb; pdb.set_trace()
     # Check that there is an export and import instance and get their partition IDs
     export_id = self._getTypePartitionId('export')
     import_id = self._getTypePartitionId('import')
@@ -521,7 +536,7 @@ class TestTheiaResilience(ResilientTheiaTestCase):
 
     # Wait for import instance to become export instance and new import to be allocated
     # This also checks that all promises of theia instances succeed
-    self.slap.waitForInstance(10)
+    self.slap.waitForInstance(self.test_instance_max_retries)
     self.computer_partition = self.requestDefaultInstance()
 
     # Check that there is an export, import and frozen instance and get their new partition IDs
@@ -540,4 +555,11 @@ class TestTheiaResilience(ResilientTheiaTestCase):
 
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
-    subprocess.check_call((self._getSlapos('export'), 'node', 'instance'))
+    self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class TestTheiaResilienceERP5(TestTheiaResilience):
+  test_instance_max_retries = 10
+
+  def _getTestSoftwareUrl(self):
+    return erp5_software_release_url
