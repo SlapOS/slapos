@@ -42,14 +42,22 @@ import psutil
 import requests
 import sqlite3
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+erp5_software_release_url = 'https://lab.nexedi.com/xavier_thompson/slapos/raw/erp5_fix_export/software/erp5/software.cfg'
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
+
+def setUpModule():
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    [theia_software_release_url, erp5_software_release_url],
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -506,10 +514,12 @@ class TakeoverMixin(object):
     return resp.text
 
   def _waitBackupStarted(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "No backup downloaded yet, takeover should not happen now." in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: No backup downloaded yet, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup started, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -517,10 +527,12 @@ class TakeoverMixin(object):
       self.fail("Backup did not start before timeout:\n%s" % log)
 
   def _waitBackupFinished(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "<b>Importer script(s) of backup in progress:</b> True" in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: Backup in progress, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup finished, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -537,8 +549,9 @@ class TakeoverMixin(object):
 
 class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
-  test_backup_started_tries = 100
-  test_backup_finished_tries = 100
+  backup_started_tries = 100
+  backup_finished_tries = 100
+  backup_wait_interval = 1
 
   _test_software_url = "https://lab.nexedi.com/xavier_thompson/slapos/raw/a0f0ac90/software/theia/test/dummy/software.cfg"
 
@@ -560,8 +573,8 @@ class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTes
     takeover_url, _ = self._getTakeoverUrlAndPassword()
 
     # Wait for importer to start and finish
-    self._waitBackupStarted(takeover_url, 1, self.test_backup_started_tries)
-    self._waitBackupFinished(takeover_url, 1, self.test_backup_finished_tries)
+    self._waitBackupStarted(takeover_url, self.backup_wait_interval, self.backup_started_tries)
+    self._waitBackupFinished(takeover_url, self.backup_wait_interval, self.backup_finished_tries)
 
   def _doTakeover(self):
     # Takeover
@@ -592,4 +605,72 @@ class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTes
 
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
-    subprocess.check_call((self._getSlapos('export'), 'node', 'instance'))
+    self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class TestTheiaResilienceERP5(TestTheiaResilience):
+  test_instance_max_retries = 12
+  backup_started_tries = 1000
+  backup_finished_tries = 1000
+  backup_wait_interval = 10
+
+  _test_software_url = erp5_software_release_url
+
+  def setUp(self):
+    # Symlink the export build directory to the testnode build directory
+    testnode_software_root = self.slap._software_root
+    export_software_root = self._getTypePartitionPath('export', 'srv', 'runner', 'software')
+    os.rmdir(export_software_root)
+    os.symlink(testnode_software_root, export_software_root)
+    # import_software_root = self._getTypePartitionPath('import', 'srv', 'runner', 'software')
+    # os.rmdir(import_software_root)
+    # os.symlink(testnode_software_root, import_software_root)
+
+  def _prepareExport(self):
+    super(TestTheiaResilienceERP5, self)._prepareExport()
+
+    # Compute backup date in the near future
+    soon = time.time() + 120
+    date = '*:%d:00' % time.localtime(soon).tm_min
+    params = '_={"zodb-zeo": {"backup-periodicity": "%s"}, "mariadb": {"backup-periodicity": "%s"} }' % (date, date)
+
+    # Update ERP5 parameters
+    print('Requesting EPR5 with parameters %s' % params)
+    slapos = self._getSlapos()
+    subprocess.check_call((slapos, 'request', 'test_instance', self._test_software_url, '--parameters', params))
+
+    # Process twice to propagate parameter changes
+    for _ in range(2):
+      subprocess.check_call((slapos, 'node', 'instance'))
+
+    # Restart cron (actually all) services to let them take the new date into account
+    # XXX this should not be required, updating ERP5 parameters should be enough
+    subprocess.check_output((slapos, 'node', 'restart', 'all'))
+
+    now = time.time()
+    self.assertLess(now + 60, soon, 'Instance reprocessing might not have finished before the programmed backup date')
+
+    # Wait until after the programmed backup date
+    time.sleep(120)
+
+    # Check that backup has started
+    export_instance_dir = self._getTypePartitionPath('export', 'srv', 'runner', 'instance')
+    mariadb_backup = os.path.join(export_instance_dir, 'slappart3', 'srv', 'backup', 'mariadb-full')
+    zodb_backup = os.path.join(export_instance_dir, 'slappart4', 'srv', 'backup', 'zodb', 'root')
+    self.assertTrue(os.listdir(mariadb_backup))
+    self.assertTrue(os.listdir(zodb_backup))
+
+  def _doTakeover(self):
+    super(TestTheiaResilienceERP5, self)._doTakeover()
+
+    # Stop existing mariadb service
+    slapos = self._getSlapos()
+    subprocess.call((slapos, 'node', 'status'))
+    print("Stop mariadb service")
+    subprocess.call((slapos, 'node', 'stop', 'slappart3:mariadb'))
+
+    # Manually restore mariadb from backup
+    mariadb_partition = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart3')
+    mariadb_restore_script = os.path.join(mariadb_partition, 'bin', 'restore-from-backup')
+    print("Restore mariadb from backup")
+    subprocess.check_call(mariadb_restore_script)
