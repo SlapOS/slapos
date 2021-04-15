@@ -42,14 +42,22 @@ import psutil
 import requests
 import sqlite3
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+erp5_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.187/software/erp5/software.cfg'
+
+_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
+
+def setUpModule():
+  installSoftwareUrlList(
+    SlapOSInstanceTestCase,
+    [theia_software_release_url, erp5_software_release_url],
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+  )
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -339,11 +347,8 @@ class ResilientTheiaTestCase(TheiaTestCase):
     return cls._getTypePartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
 
   @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0):
+  def _processEmbeddedInstance(cls, retries=0):
     slapos = cls._getSlapos()
-    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
-    subprocess.check_call((slapos, 'node', 'software'))
-    subprocess.check_call((slapos, 'request', instance_name, software_url))
     for _ in range(retries):
       try:
         subprocess.check_call((slapos, 'node', 'instance'))
@@ -352,6 +357,14 @@ class ResilientTheiaTestCase(TheiaTestCase):
       break
     else:
       subprocess.check_call((slapos, 'node', 'instance'))
+
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0):
+    slapos = cls._getSlapos()
+    subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
+    subprocess.check_call((slapos, 'node', 'software'))
+    subprocess.check_call((slapos, 'request', instance_name, software_url))
+    cls._processEmbeddedInstance(retries)
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -449,8 +462,9 @@ class TestTheiaExportImportWebURL(TestTheiaExportImport):
 
 class TestTheiaResilience(ResilientTheiaTestCase):
   test_instance_max_retries = 0
-  test_backup_started_tries = 100
-  test_backup_finished_tries = 100
+  backup_started_tries = 100
+  backup_finished_tries = 100
+  backup_wait_interval = 1
 
   def _getTestSoftwareUrl(self):
     return "https://lab.nexedi.com/xavier_thompson/slapos/raw/a0f0ac90/software/theia/test/dummy/software.cfg"
@@ -467,10 +481,12 @@ class TestTheiaResilience(ResilientTheiaTestCase):
     return resp.text
 
   def _waitBackupStarted(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "No backup downloaded yet, takeover should not happen now." in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: No backup downloaded yet, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup started, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -478,10 +494,12 @@ class TestTheiaResilience(ResilientTheiaTestCase):
       self.fail("Backup did not start before timeout:\n%s" % log)
 
   def _waitBackupFinished(self, takeover_url, wait=1, tries=1):
-    for _ in range(tries):
+    for i in range(tries):
       if "<b>Importer script(s) of backup in progress:</b> True" in self._getTakeoverPage(takeover_url):
+        print("[attempt %d]: Backup in progress, waiting a bit" % i)
         time.sleep(wait)
         continue
+      print("[attempt %d]: Backup finished, continuing" % i)
       break
     else:
       with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
@@ -513,15 +531,15 @@ class TestTheiaResilience(ResilientTheiaTestCase):
     takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
 
     # Wait for importer to start and finish
-    self._waitBackupStarted(takeover_url, 1, self.test_backup_started_tries)
-    self._waitBackupFinished(takeover_url, 1, self.test_backup_finished_tries)
+    self._waitBackupStarted(takeover_url, self.backup_wait_interval, self.backup_started_tries)
+    self._waitBackupFinished(takeover_url, self.backup_wait_interval, self.backup_finished_tries)
 
     # Takeover
     self._doTakeover(takeover_url, takeover_password)
 
     # Wait for import instance to become export instance and new import to be allocated
     # This also checks that all promises of theia instances succeed
-    self.slap.waitForInstance(10)
+    self.slap.waitForInstance(self.instance_max_retry)
     self.computer_partition = self.requestDefaultInstance()
 
     # Check that there is an export, import and frozen instance and get their new partition IDs
@@ -540,4 +558,14 @@ class TestTheiaResilience(ResilientTheiaTestCase):
 
     # Check that the test instance is properly redeployed
     # This checks the promises of the test instance
-    subprocess.check_call((self._getSlapos('export'), 'node', 'instance'))
+    self._processEmbeddedInstance(self.test_instance_max_retries)
+
+
+class TestTheiaResilienceERP5(TestTheiaResilience):
+  test_instance_max_retries = 10
+  backup_started_tries = 1000
+  backup_finished_tries = 1000
+  backup_wait_interval = 10
+
+  def _getTestSoftwareUrl(self):
+    return erp5_software_release_url
