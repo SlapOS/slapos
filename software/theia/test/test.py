@@ -41,13 +41,15 @@ import pexpect
 import psutil
 import requests
 import sqlite3
+import six
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, installSoftwareUrlList
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
-theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+theia_software_release_url = os.path.abspath(os.path.join(
+  os.path.dirname(__file__), '..', 'software%s.cfg' % ('-py3' if six.PY3 else '')))
 erp5_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.187/software/erp5/software.cfg'
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
@@ -56,7 +58,7 @@ def setUpModule():
   installSoftwareUrlList(
     SlapOSInstanceTestCase,
     [theia_software_release_url, erp5_software_release_url],
-    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', six.PY3))),
   )
 
 
