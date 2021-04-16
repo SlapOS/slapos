@@ -132,3 +132,51 @@ class TestGracefulWithPortChange(HTML5ASTestCase):
     self.checkUrlAndGetResponse(url)
 
 
+class TestReplicateHTML5AS(HTML5ASTestCase):
+  """
+  This class test the instance with the parameter "port"
+  """
+
+  instance_parameter_dict = {
+    "port-1": 8088,
+    "title-1": "Title 1",
+  }
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'replicate'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.instance_parameter_dict
+
+  def test_replicate_instance(self):
+   # Check First instance is deployed with proper parameters
+    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = connection_parameter_dict['instance-1-server_url']
+    self.assertEqual(urlparse(url).port, 8088)
+    response = self.checkUrlAndGetResponse(url)
+    result = response.text
+    self.assertTrue("<h1>Title 1</h1>" in result)
+
+    # Check only one instance is deployed by default
+    self.assertTrue("instance-2-server_url" not in connection_parameter_dict)
+
+    # Update replicate quantity parameter
+    self.instance_parameter_dict.update({
+      'replicate-quantity': 2,
+      'port-2': 8089,
+      'sla-2-computer_guid': self.slap._computer_id,
+      "title-2": "Title 314",
+    })
+    # Request instance with the one more replicate
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    # Check the second replicate
+    connection_parameter_dict = self.requestDefaultInstance().getConnectionParameterDict()
+    url = connection_parameter_dict['instance-2-server_url']
+    self.assertEqual(urlparse(url).port, 8089)
+    response = self.checkUrlAndGetResponse(url)
+    result = response.text
+    self.assertTrue("<h1>Title 314</h1>" in result)
