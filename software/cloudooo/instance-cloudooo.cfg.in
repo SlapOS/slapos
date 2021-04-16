@@ -147,7 +147,7 @@ context =
     key includes :includes
 fonts =
 {% for font in parameter_dict['fonts'].splitlines() %}
-   {{ font }}
+    {{ font }}
 {% endfor%}
     ${directory:font}
 includes =
