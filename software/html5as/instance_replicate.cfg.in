@@ -1,0 +1,46 @@
+{% set replicate_quantity = slapparameter_dict.pop('replicate-quantity', '1') | int %}
+[buildout]
+parts =
+    publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[instance-request-base]
+<= slap-connection
+recipe = slapos.cookbook:request
+# It is the same software as the current one
+software-url = ${slap-connection:software-release-url}
+# We want the default behaviour
+software-type = default
+# What parameter are neede to be retrieved
+return = server_url server-cdn-url monitor-setup-url
+# Provided parameters
+config-title = ${slap-parameter:title}
+config-download_url = ${slap-parameter:download_url}
+
+{% for i in range(1, replicate_quantity + 1) %}
+# Request a normal html5as instance
+[instance-{{ i }}]
+<= instance-request-base
+# Name of the instance
+name = instance-html5as-{{ i }}
+config-port = ${slap-parameter:port-{{ i }}}
+config-title = ${slap-parameter:title-{{ i }}}
+{% endfor %}
+
+[slap-parameter]
+download_url =
+{% for i in range(1, replicate_quantity + 1) %}
+title-{{ i }} =
+port-{{ i }} = 808{{ i }}
+{% endfor %}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+{% for i in range(1, replicate_quantity + 1) %}
+instance-{{ i }}-server_url = ${instance-{{ i }}:connection-server_url}
+instance-{{ i }}-server-cdn-url = ${instance-{{ i }}:connection-server-cdn-url}
+instance-{{ i }}-server-monitor-setup-url = ${instance-{{ i }}:connection-monitor-setup-url}
+{% endfor %}

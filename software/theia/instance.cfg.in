@@ -283,7 +283,7 @@ filename = $${:_buildout_section_name_}
 [common-environment]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
-mode = 0777
+mode = 0700
 template =
   inline:
   #!/bin/sh
@@ -319,7 +319,7 @@ template =
   export TEMP=$TMP
   export LC_ALL=C.UTF-8
   export TERMINFO=${ncurses:location}/lib/terminfo/
-  export EDITOR="${python-language-server:location}/bin/python -m theia_open --wait"
+  export EDITOR="${theia-open:rendered} --wait"
   export THEIA_DEFAULT_PLUGINS="local-dir:${theia-plugins:location}"
   . $${common-environment:rendered}
   exec ${theia-wrapper:rendered} "$@"
