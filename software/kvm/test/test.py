@@ -53,17 +53,34 @@ has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
-  setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
+  setUpModule, _InstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
       os.path.join(os.path.dirname(__file__), '..',
                    'software%s.cfg' % ("-py3" if six.PY3 else ""))))
 else:
-  setUpModule, InstanceTestCase = None, unittest.TestCase
+  setUpModule, _InstanceTestCase = None, unittest.TestCase
 
   class SanityCheckTestCase(unittest.TestCase):
     def test_kvm_sanity_check(self):
       self.fail('This environment is not usable for kvm testing,'
                 ' as it lacks kvm_intel kernel module')
+
+
+class InstanceTestCase(_InstanceTestCase):
+  def waitForInstance(self, max_retry):
+    """Wait for instance to be processed, with workarounds.
+
+    This works around missing promises that cause `slapos node instance` to
+    exit with success code too early, when instance is not completly processed
+    yet.
+    The workaround consists in waiting for `slapos node instance` to exit with
+    success code several times. Ideally, `slapos node instance` should exit with
+    error code until the instance is fully ready and this wrapper should not be
+    necessary, `self.slap.waitForInstance()` should be enough.
+    """
+    for _ in range(3):
+      self.slap.waitForInstance(max_retry)
+
 
 bootstrap_common_param_dict = {
     # the bootstrap script is vm-bootstrap
@@ -682,16 +699,17 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # clean up the instance for other tests
     # 1st remove all images...
     self.rerequestInstance({self.key: ''})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstance(max_retry=10)
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstance(max_retry=10)
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
-      self.slap.waitForInstance(max_retry=max_retry)
+      for _ in range(3): # XXX workaround missing promises
+        self.slap.waitForInstance(max_retry=max_retry)
 
   def test(self):
     partition_parameter_kw = {
@@ -700,7 +718,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
         self.fake_image2_md5sum)
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
@@ -744,9 +762,9 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
+    self.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
+    self.waitForInstance(max_retry=3)
 
     self.assertEqual(
       [
@@ -762,7 +780,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # reflected
     partition_parameter_kw[self.key] = ''
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=2)
+    self.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
       []
@@ -771,9 +789,9 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
+    self.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
+    self.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -894,7 +912,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
         self.fake_image, self.fake_image_md5sum)
     }
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstance(max_retry=10)
     # check that image is correctly downloaded and linked
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
@@ -933,9 +951,9 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
+    self.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
+    self.waitForInstance(max_retry=3)
 
     self.assertEqual(
       [
@@ -951,7 +969,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # reflected
     self.rerequestInstance(
       {'boot-image-url-list': '', 'boot-image-url-select': ''})
-    self.slap.waitForInstance(max_retry=2)
+    self.waitForInstance(max_retry=2)
     for image_directory in [
       'boot-image-url-list-repository', 'boot-image-url-select-repository']:
       image_repository = os.path.join(
@@ -966,7 +984,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     partition_parameter_kw[self.key] = ''
     partition_parameter_kw['boot-image-url-list'] = ''
     self.rerequestInstance(partition_parameter_kw)
-    self.slap.waitForInstance(max_retry=2)
+    self.waitForInstance(max_retry=2)
     self.assertEqual(
       os.listdir(image_repository),
       []
@@ -975,9 +993,9 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
-    self.slap.waitForInstance(max_retry=1)
+    self.waitForInstance(max_retry=1)
     self.rerequestInstance(partition_parameter_kw, state='started')
-    self.slap.waitForInstance(max_retry=3)
+    self.waitForInstance(max_retry=3)
 
     # again only default image is available in the running process
     self.assertEqual(
@@ -1045,7 +1063,7 @@ class TestBootImageUrlListKvmCluster(InstanceTestCase, FakeImageServerMixin):
         }
       }
     })})
-    self.slap.waitForInstance(max_retry=10)
+    self.waitForInstance(max_retry=10)
     KVM0_config = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '1', 'etc',
       self.config_file_name)
