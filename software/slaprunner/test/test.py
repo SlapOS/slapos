@@ -280,6 +280,28 @@ class TestWeb(SlaprunnerTestCase):
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertIn('SlapOS', resp.text)
 
+  def test_slaprunner_redirects(self):
+    # redirects also work as expected. In this test we visit stopAllPartition
+    # which should redirect to inspectInstance
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = parameter_dict['url']
+    resp = requests.get(
+        urljoin(url, '/stopAllPartition'),
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    self.assertEqual(resp.url, urljoin(url, '/inspectInstance'))
+
+    # this also works behind a frontend
+    resp = requests.get(
+        urljoin(url, '/stopAllPartition'),
+        verify=False,
+        allow_redirects=False,
+        headers={'Host': 'example.com:1234'},
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(resp.status_code, requests.codes.found)
+    self.assertEqual(resp.headers['Location'], 'https://example.com:1234/inspectInstance')
+
   def test_shellinabox(self):
     # shellinabox exists at /shellinabox and is password protected
     parameter_dict = self.computer_partition.getConnectionParameterDict()
