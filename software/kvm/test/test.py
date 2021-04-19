@@ -127,6 +127,20 @@ class KvmMixin(object):
         if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
     return running_process_info.replace(hash_value, '{hash}')
 
+  def raising_waitForInstance(self, max_retry):
+    with self.assertRaises(SlapOSNodeCommandError):
+      self.slap.waitForInstance(max_retry=max_retry)
+
+  def rerequestInstance(self, parameter_dict, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    return self.slap.request(
+        software_release=software_url,
+        software_type=software_type,
+        partition_reference=self.default_partition_reference,
+        partition_parameter_kw=parameter_dict,
+        state=state)
+
 
 @skipUnlessKvm
 class TestInstance(InstanceTestCase, KvmMixin):
@@ -582,17 +596,7 @@ class FakeImageHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
       return
 
 
-class FakeImageServerMixin(object):
-  def rerequestInstance(self, parameter_dict, state='started'):
-    software_url = self.getSoftwareURL()
-    software_type = self.getInstanceSoftwareType()
-    return self.slap.request(
-        software_release=software_url,
-        software_type=software_type,
-        partition_reference=self.default_partition_reference,
-        partition_parameter_kw=parameter_dict,
-        state=state)
-
+class FakeImageServerMixin(KvmMixin):
   def startImageHttpServer(self):
     self.image_source_directory = tempfile.mkdtemp()
     server = SocketServer.TCPServer(
@@ -688,10 +692,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.slap.waitForInstance(max_retry=10)
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
-
-  def raising_waitForInstance(self, max_retry):
-    with self.assertRaises(SlapOSNodeCommandError):
-      self.slap.waitForInstance(max_retry=max_retry)
 
   def test(self):
     partition_parameter_kw = {
@@ -1270,3 +1270,44 @@ class TestWhitelistFirewallRequestCluster(TestWhitelistFirewallRequest):
         }
       }
     })}
+
+
+@skipUnlessKvm
+class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'ddpwdo'
+  kvm_instance_partition_reference = 'ddpwdo0'
+
+  def test(self):
+    self.rerequestInstance({
+      'disk-device-path': '/dev/virt0 /dev/virt1',
+      'wipe-disk-ondestroy': True
+    })
+    self.slap.waitForInstance(max_retry=2)
+    instance_path = os.path.join(
+      self.slap.instance_directory, self.kvm_instance_partition_reference)
+
+    slapos_wipe_device_disk = os.path.join(
+      instance_path, 'etc', 'prerm', 'slapos_wipe_device_disk')
+    slapos_wipe_device_disk_bin = os.path.join(
+      instance_path, 'bin', 'slapos_wipe_device_disk')
+
+    # check prerm script, it's trusted that prerm manager really works
+    self.assertTrue(os.path.exists(slapos_wipe_device_disk))
+    with open(slapos_wipe_device_disk) as fh:
+      self.assertEqual(
+        fh.read().strip(),
+        """#!/bin/sh
+exec %s \\
+\t"$@"
+        """.strip() % (slapos_wipe_device_disk_bin,)
+      )
+
+    # check referred script
+    self.assertTrue(os.path.exists(slapos_wipe_device_disk_bin))
+    with open(slapos_wipe_device_disk_bin) as fh:
+      self.assertEqual(
+        fh.read().strip(),
+        r"""dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
+dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
+      )
+    self.assertTrue(os.access(slapos_wipe_device_disk_bin, os.X_OK))
