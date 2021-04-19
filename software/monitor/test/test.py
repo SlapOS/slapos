@@ -233,10 +233,23 @@ class EdgeSlaveMixin(MonitorTestMixin):
       )
 
   def initiateSurykatkaRun(self):
-    try:
-      self.slap.waitForInstance(max_retry=2)
-    except Exception:
-      pass
+    # XXX we run twice as a workaround for the fact that after requesting new
+    # shared instances we don't have promise to wait for the processing of
+    # these shared instances to be completed.
+    # The sequence is something like this:
+    #   - `requestEdgetestSlaves` will request edgetest partition
+    #   - first `waitForInstance` will process the edgetest partition, which will
+    #     request a edgebot partition, but without promise to wait for the
+    #     processing to be finished, so the first run of `slapos node instance`
+    #     exits with success code and `waitForInstance` return.
+    #   - second `waitForInstance` process the edgebot partition.
+    # Once we implement a promise (or something similar) here, we should not
+    # have to run twice.
+    for _ in range(2):
+      try:
+        self.slap.waitForInstance(max_retry=2)
+      except Exception:
+        pass
 
   def assertSurykatkaStatusJSON(self):
     for info_dict in self.surykatka_dict.values():

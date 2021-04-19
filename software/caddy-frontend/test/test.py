@@ -5769,8 +5769,9 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         partition_reference='custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
         partition_parameter_kw=slave_parameter_dict,
     )
-
-    self.slap.waitForInstance()
+    # XXX run instance twice because of missing promise
+    for _ in range(2):
+      self.slap.waitForInstance()
     self.runKedifaUpdater()
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -6112,13 +6113,15 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     super(TestSlaveRejectReportUnsafeDamaged, cls).setUpClass()
     cls.fillSlaveParameterDictDict()
     cls.requestSlaves()
-    try:
-      cls.slap.waitForInstance(
-        max_retry=2  # two runs shall be enough
-      )
-    except Exception:
-      # ignores exceptions, as problems are tested
-      pass
+    # XXX run instance twice because of missing promise
+    for _ in range(2):
+      try:
+        cls.slap.waitForInstance(
+          max_retry=2  # two runs shall be enough
+        )
+      except Exception:
+        # ignores exceptions, as problems are tested
+        pass
     cls.updateSlaveConnectionParameterDictDict()
 
   slave_parameter_dict_dict = {}
