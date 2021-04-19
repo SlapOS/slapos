@@ -433,6 +433,10 @@ wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+hash-files =
+  ${kvm-run:rendered}
+  ${boot-image-url-list-download-wrapper:md5sum-state-file}
+  ${boot-image-url-select-download-wrapper:md5sum-state-file}
 
 
 [kvm-controller-wrapper]
