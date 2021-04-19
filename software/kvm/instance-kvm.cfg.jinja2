@@ -1031,11 +1031,13 @@ context =
 
 {%   do part_list.append('wipe-disk-device-wrapper') -%}
 [wipe-disk-device-wrapper]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
-command-line =
-  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
-
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- for disk_device in disk_device_path.split() %}
+  dd if=/dev/zero of={{ disk_device }} bs=4096 count=500k
+{%- endfor %}
+rendered = ${directory:prerm}/slapos_wipe_device_disk
+mode = 0700
 {% endif -%}
 
 {%   do part_list.append('whitelist-firewall') -%}
