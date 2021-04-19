@@ -1034,7 +1034,9 @@ context =
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:prerm}/slapos_wipe_device_disk
 command-line =
-  dd if=/dev/zero of={{disk_device_path}} bs=4096 count=500k
+{%- for disk_device in disk_device_path.split() %}
+  dd if=/dev/zero of={{disk_device}} bs=4096 count=500k
+{%- endfor %}
 
 {% endif -%}
 
