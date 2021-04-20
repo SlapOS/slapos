@@ -7,11 +7,33 @@
       "description": "URL to check, like https://example.com/",
       "type": "string"
     },
-    "region-list": {
+    "region-dict": {
       "title": "Applicable Regions",
-      "description": "Puts the check on the defined regions. Empty will result with presence in all regions.",
-      "type": "array",
-      "default": []
+      "description": "Puts the check on the defined regions. No definition will result with presence in all regions.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "state": {
+              "title": "State",
+              "description": "State of the check of the region. Used only to make it correctly visible in the SlapOS Master UI if no other parameters are defined.",
+              "type": "string",
+              "default": "present",
+              "enum": [
+                "present"
+              ]
+            },
+            "check-frontend-ip-list": {
+              "default": [],
+              "title": "Frontend IPs to check",
+              "description": "List of default frontend IPs to check, if empty no constraint is used. Defaults to region configuration.",
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
     },
     "check-status-code": {
       "title": "HTTP Code Check",
@@ -41,17 +63,17 @@
       "type": "object",
       "default": {}
     },
-    "check-frontend-ip-list": {
-      "title": "Frontend IPs to check",
-      "description": "List of Frontend IPs to check, if empty no constraint is used. Defaults to region configuration.",
-      "type": "array"
-    },
     "failure-amount": {
       "title": "Failure Amount",
       "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages.",
       "type": "number",
       "default": 2,
       "minimum": 1
+    },
+    "check-frontend-ip-list": {
+      "title": "Frontend IPs to check (backward compatibility)",
+      "description": "List of Frontend IPs to check, if empty no constraint is used. Defaults to region configuration. Note: This is backward compatibility, use region-dict's check-frontend-ip-list to ensure specific check on each region.",
+      "type": "array"
     }
   }
 }
