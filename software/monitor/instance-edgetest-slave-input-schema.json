@@ -72,7 +72,7 @@
     },
     "check-frontend-ip-list": {
       "title": "Frontend IPs to check (backward compatibility)",
-      "description": "List of Frontend IPs to check, if empty no constraint is used. Defaults to region configuration. Note: This is backward compatibility, use region-dict's check-frontend-ip-list to ensure specific check on each region.",
+      "description": "List of Frontend IPs to check, if empty no constraint is used. Defaults to region configuration. Note: Use region-dict's check-frontend-ip-list to ensure specific check on each region.",
       "type": "array"
     }
   }
