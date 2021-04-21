@@ -46,7 +46,7 @@ stop-on-error = true
 
 [admin-password]
 recipe = slapos.cookbook:generate.password
-storage-path = $${directory:data}/.passwd
+storage-path = $${directory:data}/passwd
 username = admin
 
 [ice-servers.json]
