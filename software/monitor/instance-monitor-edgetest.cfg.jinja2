@@ -47,22 +47,24 @@ extra-context =
 {%-   do processed_slave.__setitem__('assigned-region-dict', {}) %}
 {%-   if '_' in slave %}
 {%-     set slave_dict = json_module.loads(slave.pop('_')) %} {#- XXX: Unsafe! #}
-{%-     set slave_region_list = slave_dict.pop('region-list', []) %}
-{%-     if slave_region_list == [] %}
-{%-       do slave_region_list.extend(region_list) %}
+# PACZYNKA slave {{ slave }}
+{%-     set slave_region_dict = slave_dict.pop('region-dict', {}) %}
+{%-     if slave_region_dict == {} %}
+{%-       for region in region_list %}
+{%-         do slave_region_dict.__setitem__(region, {}) %}
+{%-       endfor %}
 {%-     endif %}
-{%-     do slave.__setitem__('_', slave_dict) %}
-{%-     for region in slave_region_list %}
+{%-     for region in slave_region_dict %}
 {%-       if region in slapparameter_dict['region-dict'] and slapparameter_dict['region-dict'][region].get('state', 'started') == 'started' %}
 {%-         set region_info = {
-  'nameserver-list': slapparameter_dict['region-dict'].get('nameserver-list', []),
-  'check-frontend-ip-list': slave_dict.get('check-frontend-ip-list') or slapparameter_dict['region-dict'].get('check-frontend-ip-list', []), 
+  'nameserver-list': slapparameter_dict['region-dict'][region].get('nameserver-list', []),
+  'check-frontend-ip-list': slave_region_dict[region].get('check-frontend-ip-list') or slave_dict.get('check-frontend-ip-list') or slapparameter_dict['region-dict'].get('check-frontend-ip-list', []), 
 } %}
 {%-         do processed_slave['assigned-region-dict'].__setitem__(region, region_info) %}
 {%-         if region not in authorized_slave_dict %}
-{%-           do authorized_slave_dict.__setitem__(region, [slave]) %}
+{%-           do authorized_slave_dict.__setitem__(region, [slave_dict]) %}
 {%-         else %}
-{%-           do authorized_slave_dict[region].append(slave) %}
+{%-           do authorized_slave_dict[region].append(slave_dict) %}
 {%-         endif %}
 {%-       endif %}
 {%-     endfor %}
