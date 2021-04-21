@@ -480,11 +480,11 @@
     "wcfs": {
       "description": "Parameters for wendelin.core filesystem",
       "properties": {
-	"enable": {
-	  "description": "Whether to enable WCFS filesystem and use it to access ZBigArray/ZBigFile data. In WCFS mode wendelin.core clients (Zope/ERP5 processes) share in-RAM cache for in-ZODB data without duplicating it for every client. This cache sharing does not affect correctness as isolation property is continued to be provided to every client.",
-	  "default": false,
-	  "type": "boolean"
-	}
+        "enable": {
+          "description": "Whether to enable WCFS filesystem and use it to access ZBigArray/ZBigFile data. In WCFS mode wendelin.core clients (Zope/ERP5 processes) share in-RAM cache for in-ZODB data without duplicating it for every client. This cache sharing does not affect correctness as isolation property is continued to be provided to every client.",
+          "default": false,
+          "type": "boolean"
+        }
       }
     },
     "wendelin-core-zblk-fmt": {
