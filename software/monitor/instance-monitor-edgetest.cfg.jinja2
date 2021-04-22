@@ -32,37 +32,34 @@ extra-context =
           }
         }) %}
 {%- endif %}
-{%- set region_list = slapparameter_dict['region-dict'].keys() %}
-{%- set authorized_slave_dict = {} %}
-{%- set monitor_base_url_dict = {} -%}
-{%- set processed_slave_instance_dict_list = [] %}
 {%- set active_region_list = [] %}
 {%- for region_name, region_parameter_dict in slapparameter_dict['region-dict'].items() %}
 {%-   if region_parameter_dict.get('state', 'started') == 'started' %}
 {%-     do active_region_list.append(region_name) %}
 {%-   endif %}
 {%- endfor %}
+{%- set authorized_slave_dict = {} %}
+{%- set publish_slave_dict_dict = {} %}
 {%- for slave in slave_instance_list | sort(attribute='slave_title') %}
-{%-   set processed_slave = {'-slave-reference': slave['slave_reference']} %}
-{%-   do processed_slave.__setitem__('assigned-region-dict', {}) %}
+{%-   set slave_reference = slave.pop('slave_reference') %}
+{%-   set publish_dict = {'assigned-region-dict': {}} %}
 {%-   if '_' in slave %}
 {%-     set slave_dict = json_module.loads(slave.pop('_')) %} {#- XXX: Unsafe! #}
 {%-     do slave_dict.__setitem__('-slave-title', slave['slave_title']) %}
-{%-     do slave_dict.__setitem__('-slave-reference', slave['slave_reference']) %}
-# PACZYNKA slave {{ slave }}
+{%-     do slave_dict.__setitem__('-slave-reference', slave_reference) %}
 {%-     set slave_region_dict = slave_dict.pop('region-dict', {}) %}
 {%-     if slave_region_dict == {} %}
-{%-       for region in region_list %}
+{%-       for region in active_region_list %}
 {%-         do slave_region_dict.__setitem__(region, {}) %}
 {%-       endfor %}
 {%-     endif %}
 {%-     for region in slave_region_dict %}
-{%-       if region in slapparameter_dict['region-dict'] and slapparameter_dict['region-dict'][region].get('state', 'started') == 'started' %}
+{%-       if region in active_region_list %}
 {%-         set region_info = {
-  'nameserver-list': slapparameter_dict['region-dict'][region].get('nameserver-list', []),
-  'check-frontend-ip-list': slave_region_dict[region].get('check-frontend-ip-list') or slave_dict.get('check-frontend-ip-list') or slapparameter_dict['region-dict'].get('check-frontend-ip-list', []), 
+  'nameserver-list': slapparameter_dict['region-dict'][region].get('nameserver-list') or slapparameter_dict.get('slapparameter_dict') or [],
+  'check-frontend-ip-list': slave_region_dict[region].get('check-frontend-ip-list') or slave_dict.get('check-frontend-ip-list') or slapparameter_dict['region-dict'][region].get('check-frontend-ip-list') or slapparameter_dict.get('check-frontend-ip-list') or [],
 } %}
-{%-         do processed_slave['assigned-region-dict'].__setitem__(region, region_info) %}
+{%-         do publish_dict['assigned-region-dict'].__setitem__(region, region_info) %}
 {%-         if region not in authorized_slave_dict %}
 {%-           do authorized_slave_dict.__setitem__(region, [slave_dict]) %}
 {%-         else %}
@@ -71,7 +68,7 @@ extra-context =
 {%-       endif %}
 {%-     endfor %}
 {%-   endif %}
-{%-   do processed_slave_instance_dict_list.append(processed_slave) %}
+{%-   do publish_slave_dict_dict.__setitem__(slave_reference, publish_dict) %}
 {%- endfor %}
 {%- set monitor_base_port = int(slap_configuration['configuration.monitor-base-port']) %}
 {%- set number = {'i': 1} %}
@@ -105,6 +102,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{edgebot_software_type}}
 return = monitor-base-url
 
+{%- set monitor_base_url_dict = {} -%}
 {%  for section, edgebot_request in request_dict.items() %}
 [{{section}}]
 <= replicate
@@ -120,14 +118,16 @@ sla-{{ parameter }} = {{ value }}
 {%-   do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {%- endfor %}
 # Publish information for each slave
-{%- for slave_instance in processed_slave_instance_dict_list -%}
-{%-   set publish_section_title = 'publish-%s' % slave_instance['-slave-reference']  -%}
+{%- for slave_reference, publish_dict in publish_slave_dict_dict.items() -%}
+{%-   set publish_section_title = 'publish-%s' % (slave_reference,)  -%}
 {%-   do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 available-region-list = {{ dumps(list(active_region_list)) }}
-assigned-region-dict = {{ dumps(slave_instance['assigned-region-dict']) }}
--slave-reference = {{ slave_instance['-slave-reference'] }}
+-slave-reference = {{ slave_reference }}
+{%-   for key, value in publish_dict.items() %}
+{{ key }} = {{ dumps(value) }}
+{%-   endfor %}
 {%  endfor %}
 
 [monitor-conf-parameters]

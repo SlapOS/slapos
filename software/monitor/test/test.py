@@ -144,7 +144,7 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
   def requestEdgetestSlave(self, partition_reference, partition_parameter_kw):
     software_url = self.getSoftwareURL()
-    self.slap.request(
+    return self.slap.request(
       software_release=software_url,
       software_type='edgetest',
       partition_reference=partition_reference,
@@ -691,31 +691,31 @@ URL =
 #      'check-frontend-ip-list': ['127.0.5.1', '127.0.5.2']
     })}
 
+  slave_parameter_dict_dict = {
+    'all': {
+      'url': 'https://www.all.org/'
+    },
+    'onetwo': {
+      'url': 'https://www.onetwo.org/',
+      'region-dict': {'Region One': {}, 'Region Two': {}}
+    },
+    'three': {
+      'url': 'https://www.three.org/',
+      'region-dict': {'Region Three': {}}
+    },
+    'missed': {
+      'url': 'https://www.missed.org/',
+      'region-dict': {'Region Non Existing': {}}
+    },
+    'partialmiss': {
+      'url': 'https://www.parialmiss.org/',
+      'region-dict': {'Region Two': {}, 'Region Non Existing': {}}
+    },
+  }
+
   def requestEdgetestSlaves(self):
-    self.requestEdgetestSlave(
-      'all',
-      {'url': 'https://www.all.org/'},
-    )
-    self.requestEdgetestSlave(
-      'onetwo',
-      {'url': 'https://www.onetwo.org/',
-       'region-list': ['Region One', 'Region Two']},
-    )
-    self.requestEdgetestSlave(
-      'three',
-      {'url': 'https://www.three.org/',
-       'region-list': ['Region Three']},
-    )
-    self.requestEdgetestSlave(
-      'missed',
-      {'url': 'https://www.missed.org/',
-       'region-list': ['Region Non Existing']},
-    )
-    self.requestEdgetestSlave(
-      'partialmiss',
-      {'url': 'https://www.parialmiss.org/',
-       'region-list': ['Region Two', 'Region Non Existing']},
-    )
+    for reference, parameter_dict in self.slave_parameter_dict_dict.items():
+      self.requestEdgetestSlave(reference, parameter_dict)
 
   def assertSurykatkaPromises(self):
     self.assertPromiseContent(
@@ -819,3 +819,79 @@ URL =
   def test(self):
     super(TestEdgeRegion, self).test()
     self.assertSlaveConnectionParameterDict()
+
+  maxDiff = None
+
+  def assertSlaveConnectionParameterDict(self):
+    slave_connection_parameter_dict_dict = {}
+    for reference, parameter_dict in self.slave_parameter_dict_dict.items():
+      slave_connection_parameter_dict_dict[
+        reference] = self.requestEdgetestSlave(
+          reference, parameter_dict).getConnectionParameterDict()
+      # unload the json
+      slave_connection_parameter_dict_dict[
+        reference] = json.loads(
+        slave_connection_parameter_dict_dict[reference].pop('_'))
+    self.assertEqual(
+      {
+        'all': {
+          'available-region-list': [
+            'Region One', 'Region Three', 'Region Two'],
+          'assigned-region-dict': {
+            'Region One': {
+              'check-frontend-ip-list': ['127.0.1.3', '127.0.1.4'],
+              'nameserver-list': ['127.0.1.1', '127.0.1.2']
+            },
+            'Region Three': {
+              'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
+              'nameserver-list': []
+            },
+            'Region Two': {
+              'check-frontend-ip-list': [],
+              'nameserver-list': ['127.0.2.1', '127.0.2.2']
+            }
+          }
+        },
+        'onetwo': {
+          'available-region-list': [
+            'Region One', 'Region Three', 'Region Two'],
+          'assigned-region-dict': {
+            'Region One': {
+              'check-frontend-ip-list': ['127.0.1.3', '127.0.1.4'],
+              'nameserver-list': ['127.0.1.1', '127.0.1.2']
+            },
+            'Region Two': {
+              'check-frontend-ip-list': [],
+              'nameserver-list': ['127.0.2.1', '127.0.2.2']
+            }
+          }
+        },
+        'three': {
+          'available-region-list': [
+            'Region One', 'Region Three', 'Region Two'],
+          'assigned-region-dict': {
+            'Region Three': {
+              'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
+              'nameserver-list': []
+            }
+          }
+        },
+        'missed': {
+          'available-region-list': [
+            'Region One', 'Region Three', 'Region Two'],
+          'assigned-region-dict': {
+          }
+        },
+        'partialmiss': {
+          'available-region-list': [
+            'Region One', 'Region Three', 'Region Two'],
+          'assigned-region-dict': {
+            'Region Two': {
+              'check-frontend-ip-list': [],
+              'nameserver-list': ['127.0.2.1', '127.0.2.2']
+            }
+          }
+        }
+      },
+      slave_connection_parameter_dict_dict
+    )
