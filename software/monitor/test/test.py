@@ -680,8 +680,15 @@ URL =
           'sla-computer_guid': cls.slap._computer_id,
           'state': 'started',
           'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
-        }
+        },
+#        'Region Four': {
+#          'sla-computer_guid': cls.slap._computer_id,
+#          'state': 'started',
+#          'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
+#        }
       },
+#      'nameserver-list': ['127.0.4.1', '127.0.4.2'],
+#      'check-frontend-ip-list': ['127.0.5.1', '127.0.5.2']
     })}
 
   def requestEdgetestSlaves(self):
@@ -808,3 +815,7 @@ URL =
   'status-code': '200',
   'url': 'https://www.parialmiss.org/'}""" % (
         self.surykatka_dict['edge3'][2]['json-file'],))
+
+  def test(self):
+    super(TestEdgeRegion, self).test()
+    self.assertSlaveConnectionParameterDict()
