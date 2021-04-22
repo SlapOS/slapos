@@ -43,10 +43,12 @@ extra-context =
 {%-   endif %}
 {%- endfor %}
 {%- for slave in slave_instance_list | sort(attribute='slave_title') %}
-{%-   set processed_slave = {'reference': slave['slave_reference']} %}
+{%-   set processed_slave = {'-slave-reference': slave['slave_reference']} %}
 {%-   do processed_slave.__setitem__('assigned-region-dict', {}) %}
 {%-   if '_' in slave %}
 {%-     set slave_dict = json_module.loads(slave.pop('_')) %} {#- XXX: Unsafe! #}
+{%-     do slave_dict.__setitem__('-slave-title', slave['slave_title']) %}
+{%-     do slave_dict.__setitem__('-slave-reference', slave['slave_reference']) %}
 # PACZYNKA slave {{ slave }}
 {%-     set slave_region_dict = slave_dict.pop('region-dict', {}) %}
 {%-     if slave_region_dict == {} %}
@@ -119,13 +121,13 @@ sla-{{ parameter }} = {{ value }}
 {%- endfor %}
 # Publish information for each slave
 {%- for slave_instance in processed_slave_instance_dict_list -%}
-{%-   set publish_section_title = 'publish-%s' % slave_instance['reference']  -%}
+{%-   set publish_section_title = 'publish-%s' % slave_instance['-slave-reference']  -%}
 {%-   do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 available-region-list = {{ dumps(list(active_region_list)) }}
 assigned-region-dict = {{ dumps(slave_instance['assigned-region-dict']) }}
--slave-reference = {{ slave_instance['reference'] }}
+-slave-reference = {{ slave_instance['-slave-reference'] }}
 {%  endfor %}
 
 [monitor-conf-parameters]
