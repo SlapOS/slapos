@@ -27,14 +27,6 @@
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
       "index": 2
-    },
-    "edgetest": {
-      "title": "[Internal] Edge Test Bot",
-      "description": "[Internal] Node of Edge Test on which montoring happens.",
-      "request": "instance-edgebot-input-schema.json",
-      "response": "instance-default-output-schema.json",
-      "serialisation": "json-in-xml",
-      "index": 3
     }
   }
 }
