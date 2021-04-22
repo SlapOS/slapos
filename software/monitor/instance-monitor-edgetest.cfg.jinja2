@@ -49,7 +49,6 @@ extra-context =
 {%-     set slave_dict = json_module.loads(slave.pop('_')) %} {#- XXX: Unsafe! #}
 {%-     do slave_dict.__setitem__('-slave-title', slave['slave_title']) %}
 {%-     do slave_dict.__setitem__('-slave-reference', slave['slave_reference']) %}
-# PACZYNKA slave {{ slave }}
 {%-     set slave_region_dict = slave_dict.pop('region-dict', {}) %}
 {%-     if slave_region_dict == {} %}
 {%-       for region in region_list %}
