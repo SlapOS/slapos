@@ -102,7 +102,6 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 software-url = ${slap-connection:software-release-url}
 software-type = {{edgebot_software_type}}
-return = monitor-base-url
 
 {%- set monitor_base_url_dict = {} -%}
 {%  for section, edgebot_request in request_dict.items() %}
@@ -110,6 +109,10 @@ return = monitor-base-url
 <= replicate
 name = {{ edgebot_request['name'] }}
 state = {{ edgebot_request['state'] }}
+{%-   if edgebot_request['state'] != 'destroyed' %}
+{%-     do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') %}
+return = monitor-base-url
+{%-   endif %}
 {%-   set edgebot_configuration_dict = edgebot_request['config'] %}
 {%-   for config_key, config_value in edgebot_configuration_dict.items() %}
 config-{{ config_key }} = {{ dumps(config_value) }}
@@ -117,7 +120,6 @@ config-{{ config_key }} = {{ dumps(config_value) }}
 {%-   for parameter, value in edgebot_request['sla'].items() %}
 sla-{{ parameter }} = {{ value }}
 {%-   endfor %}
-{%-   do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {%- endfor %}
 # Publish information for each slave
 {%- for slave_reference, publish_dict in publish_slave_dict_dict.items() -%}
