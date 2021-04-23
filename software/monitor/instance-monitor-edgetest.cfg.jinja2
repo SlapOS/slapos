@@ -152,6 +152,7 @@ parts +=
 {%- endfor %}
 
 [publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
 active-region-list = {{ dumps(list(active_region_list)) }}
 sla-computer_guid = {{ dumps(slap_configuration['computer']) }}
 sla-instance_guid = {{ dumps(slap_configuration['instance-guid']) }}
