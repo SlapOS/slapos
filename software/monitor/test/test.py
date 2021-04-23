@@ -70,8 +70,10 @@ class MonitorTestMixin:
   monitor_setup_url_key = 'monitor-setup-url'
 
   def test_monitor_setup(self):
-    connection_parameter_dict = self\
+    connection_parameter_dict_serialised = self\
       .computer_partition.getConnectionParameterDict()
+    connection_parameter_dict = json.loads(
+      connection_parameter_dict_serialised['_'])
     self.assertTrue(
       self.monitor_setup_url_key in connection_parameter_dict,
       '%s not in %s' % (self.monitor_setup_url_key, connection_parameter_dict))
@@ -137,6 +139,7 @@ class MonitorTestMixin:
 class EdgeSlaveMixin(MonitorTestMixin):
   __partition_reference__ = 'edge'
   instance_max_retry = 20
+  expected_connection_parameter_dict = {}
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -271,6 +274,18 @@ class EdgeSlaveMixin(MonitorTestMixin):
           status_json = json.load(fh)
         self.assertIn('bot_status', status_json)
 
+  def assertConnectionParameterDict(self):
+    serialised = self.requestDefaultInstance().getConnectionParameterDict()
+    connection_parameter_dict = json.loads(serialised['_'])
+    # tested elsewhere
+    connection_parameter_dict.pop('monitor-setup-url', None)
+    # comes from instance-monitor.cfg.jinja2, not needed here
+    connection_parameter_dict.pop('server_log_url', None)
+    self.assertEqual(
+      self.expected_connection_parameter_dict,
+      connection_parameter_dict
+    )
+
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
     #       this depends too much on the environment and is really hard to
@@ -286,9 +301,13 @@ class EdgeSlaveMixin(MonitorTestMixin):
     self.assertSurykatkaBotPromise()
     self.assertSurykatkaPromises()
     self.assertSurykatkaCron()
+    self.assertConnectionParameterDict()
 
 
 class TestEdge(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  expected_connection_parameter_dict = {
+    'active-region-list': ['1'],
+    'sla-computer_guid': 'local', 'sla-instance_guid': 'local-edge0'}
   surykatka_dict = {
     'edge1': {
       1: {'expected_ini': """[SURYKATKA]
@@ -472,6 +491,9 @@ URL =
 
 class TestEdgeNameserverListCheckFrontendIpList(
   EdgeSlaveMixin, SlapOSInstanceTestCase):
+  expected_connection_parameter_dict = {
+    'active-region-list': ['1'], 'sla-computer_guid': 'local',
+    'sla-instance_guid': 'local-edge0'}
   surykatka_dict = {
     'edge1': {
       2: {'expected_ini': """[SURYKATKA]
@@ -582,6 +604,10 @@ URL =
 
 
 class TestEdgeRegion(EdgeSlaveMixin, SlapOSInstanceTestCase):
+  expected_connection_parameter_dict = {
+    'active-region-list': [
+      'Region One', 'Region Three', 'Region Two'],
+    'sla-computer_guid': 'local', 'sla-instance_guid': 'local-edge0'}
   surykatka_dict = {
     'edge1': {
       2: {'expected_ini': """[SURYKATKA]
