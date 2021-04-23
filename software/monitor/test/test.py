@@ -691,28 +691,30 @@ URL =
       }
     ]
 
+  instance_parameter_dict = {
+    'region-dict': {
+      'Region One': {
+        'sla-computer_guid': 'local', 
+        'state': 'started',
+        'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+        'check-frontend-ip-list': ['127.0.1.3', '127.0.1.4'],
+      },
+      'Region Two': {
+        'sla-computer_guid': 'local',
+        'state': 'started',
+        'nameserver-list': ['127.0.2.1', '127.0.2.2'],
+      },
+      'Region Three': {
+        'sla-computer_guid': 'local',
+        'state': 'started',
+        'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
+      }
+    }
+  }
+
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'region-dict': {
-        'Region One': {
-          'sla-computer_guid': cls.slap._computer_id,
-          'state': 'started',
-          'nameserver-list': ['127.0.1.1', '127.0.1.2'],
-          'check-frontend-ip-list': ['127.0.1.3', '127.0.1.4'],
-        },
-        'Region Two': {
-          'sla-computer_guid': cls.slap._computer_id,
-          'state': 'started',
-          'nameserver-list': ['127.0.2.1', '127.0.2.2'],
-        },
-        'Region Three': {
-          'sla-computer_guid': cls.slap._computer_id,
-          'state': 'started',
-          'check-frontend-ip-list': ['127.0.3.1', '127.0.3.2'],
-        }
-      }
-    })}
+    return {'_': json.dumps(cls.instance_parameter_dict)}
 
   slave_parameter_dict_dict = {
     'all': {
@@ -1025,3 +1027,31 @@ URL =
       },
       slave_connection_parameter_dict_dict
     )
+
+
+class TestEdgeRegionDestroyed(TestEdgeRegion):
+  @classmethod
+  def requestDefaultInstance(cls, state='started'):
+    return super(
+      TestEdgeRegionDestroyed, cls).requestDefaultInstance(state=state)
+
+  def test(self):
+    super(TestEdgeRegionDestroyed, self).test()
+    self._instance_parameter_dict = self.getInstanceParameterDict()
+    self.instance_parameter_dict['region-dict']['Region Three'].update({'state': 'destroyed'})
+    #import ipdb ; ipdb.set_trace()
+  """
+class Paczynka(object):
+  oink = {'a':'b'}
+  @classmethod
+  def get(cls):
+    return cls.oink
+
+p = Paczynka()
+print p.get() == {'a':'b'}
+p.oink = {'c':'d'}
+print p.get() == {'c':'d'}
+p.__class__.oink = {'c':'d'}
+print p.get() == {'c':'d'}
+~                             
+"""
