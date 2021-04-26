@@ -374,7 +374,6 @@ cluster-doc-host =
 cluster-doc-port = 0
 {% endif -%}
 netcat-binary = {{ netcat_bin }}
-language = ${slap-parameter:keyboard-layout-language}
 
 name = {{ slapparameter_dict.get('name', 'Single KVM') }}
 disk-cache = ${slap-parameter:disk-cache}
@@ -963,9 +962,6 @@ authorized-key =
 
 # send some content which will be accessible to the vm through static url: http://10.0.2.100/data
 data-to-vm =
-
-# Change keyboard layout language (Change to en-us if you face some bad bihaviors)
-keyboard-layout-language = fr
 
 {% for k, v in slapparameter_dict.items() -%}
 {% if k == 'authorized-key' and v -%}
