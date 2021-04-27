@@ -417,10 +417,11 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
           "test-machine2": dict(bootstrap_machine_param_dict, **{
               # Debian 9 image
               "virtual-hard-drive-url":
-              "http://shacache.org/shacache/ce07873dbab7fa8501d1bf5565c2737b2"
-              "eed6c8b9361b4997b21daf5f5d1590972db9ac00131cc5b27d9aa353f2f940"
-              "71e073f9980cc61badd6d2427f592e6e8",
-              "virtual-hard-drive-md5sum": "2b113e3cd8276b9740189622603d6f99"
+              "http://shacache.org/shacache/93aeb72a556fe88d9889ce16558dfead"
+              "57a3c8f0a80d0e04ebdcd4a5830dfa6403e3976cc896b8332e74f202fccbd"
+              "a508930046a78cffea6e0e29d03345333cc",
+              "virtual-hard-drive-md5sum": "cdca79619ba987c40b98a8e31d281e4a",
+              "virtual-hard-drive-gzipped": True,
           })
       }
     }))}
