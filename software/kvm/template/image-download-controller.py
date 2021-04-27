@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
+import gzip
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -115,9 +117,25 @@ if __name__ == "__main__":
       # Store yet another failure while computing md5sum for this
       new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
     else:
-      os.rename(destination_tmp, destination)
-      print('INF: %s : Stored with checksum %s' % (
-        image['url'], image['md5sum']))
+      finalize_success = False
+      if image['gzipped']:
+        try:
+          with open(destination, 'w') as disk:
+            with gzip.open(destination_tmp, 'rb') as disk_gz:
+              shutil.copyfileobj(disk_gz, disk)
+        except Exception:
+          if os.path.exists(destination):
+            os.remove(destination)
+          error_list.append('ERR: %s : Failed to ungzip' % (image['url'],))
+        else:
+          finalize_success = True
+          os.remove(destination_tmp)
+      else:
+        finalize_success = True
+        os.rename(destination_tmp, destination)
+      if finalize_success:
+        print('INF: %s : Stored with checksum %s' % (
+          image['url'], image['md5sum']))
   for image in config['image-list']:
     destination = os.path.join(
       config['destination-directory'], image['destination'])
