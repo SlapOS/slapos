@@ -37,14 +37,18 @@ if __name__ == "__main__":
       data_list = data.decode('utf-8').split()
     for entry in data_list:
       split_entry = entry.split('#')
-      if len(split_entry) != 2:
+      if len(split_entry) == 1:
+        url = split_entry[0]
+        md5sum = None
+      elif len(split_entry) == 2:
+        url, md5sum = split_entry
+      else:
         error_list.append('ERR: entry %r is incorrect' % (entry,))
         continue
-      url, md5sum = split_entry
       if not md5sum_re.match(md5sum):
         error_list.append('ERR: checksum in entry %r is malformed' % (entry, ))
         continue
-      if md5sum not in [q['md5sum'] for q in image_list]:
+      if md5sum is None or md5sum not in [q['md5sum'] for q in image_list]:
         image_number += 1
         image_list.append({
           'md5sum': md5sum,
