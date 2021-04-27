@@ -8,10 +8,11 @@ import sys
 
 if __name__ == "__main__":
   source_configuration, destination_configuration, \
-    destination_directory, error_state_file = sys.argv[1:]
+    destination_directory, error_state_file, gzipped = sys.argv[1:]
   md5sum_re = re.compile(r"^([a-fA-F\d]{32})$")
   image_prefix = 'image_'
   maximum_image_amount = 4
+  gzipped = gzipped == 'True'
 
   # build currently wanted list
   configuration_dict = {
@@ -52,6 +53,7 @@ if __name__ == "__main__":
           'destination': md5sum,
           'destination-tmp': md5sum + '_tmp',
           'link': 'image_%03i' % (image_number,),
+          'gzipped': gzipped
         })
       else:
         print('INF: checksum %s repeated, used url %s' % (url, ))
