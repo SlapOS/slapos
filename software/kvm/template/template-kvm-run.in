@@ -6,16 +6,13 @@ import hashlib
 import os
 import socket
 import subprocess
-try:
-  from urllib.request import FancyURLopener
-except ImportError:
-  from urllib import FancyURLopener
 import gzip
 import shutil
 from random import shuffle
 import glob
 import re
 import json
+import sys
 
 import ssl
 
@@ -36,9 +33,6 @@ nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
 default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
 disk_path = '{{ parameter_dict.get("disk-path") }}'
 
-virtual_hard_drive_url = '{{ parameter_dict.get("virtual-hard-drive-url") }}'.strip()
-virtual_hard_drive_md5sum = '{{ parameter_dict.get("virtual-hard-drive-md5sum") }}'.strip()
-virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped") }}'.strip().lower()
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
 use_nat = '{{ parameter_dict.get("use-nat") }}'.lower()
@@ -107,11 +101,7 @@ logfile = '{{ parameter_dict.get("log-file") }}'
 
 boot_image_url_list_json_config = '{{ parameter_dict.get("boot-image-url-list-json-config") }}'
 boot_image_url_select_json_config = '{{ parameter_dict.get("boot-image-url-select-json-config") }}'
-
-if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
-  opener = FancyURLopener(context=ssl._create_unverified_context())
-else:
-  opener = FancyURLopener({})
+virtual_hard_drive_url_json_config = '{{ parameter_dict.get("virtual-hard-drive-url-json-config") }}'
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -172,39 +162,18 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
       lf.write('%s' % external_disk_number)
   return id_list, external_disk_number
 
-# Download existing hard drive if needed at first boot
-if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url != '':
-  print('Downloading virtual hard drive...')
-  try:
-    downloaded_disk = disk_info_list[0]['path']
-    if virtual_hard_drive_gzipped == 'true':
-      downloaded_disk = '%s.gz' % disk_info_list[0]['path']
-    opener.retrieve(virtual_hard_drive_url, downloaded_disk)
-  except:
-    if os.path.exists(downloaded_disk):
-      os.remove(downloaded_disk)
-    raise
-  md5sum = virtual_hard_drive_md5sum.strip()
-  if md5sum:
-    print('Checking MD5 checksum...')
-    local_md5sum = md5Checksum(downloaded_disk)
-    if local_md5sum != md5sum:
-      os.remove(downloaded_disk)
-      raise Exception('MD5 mismatch. MD5 of local file is %s, Specified MD5 is %s.' % (
-          local_md5sum, md5sum))
-    print('MD5sum check passed.')
+# Use downloaded virtual-hard-drive-url
+if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url_json_config != '':
+  print('Using virtual hard drive...')
+  with open(virtual_hard_drive_url_json_config) as fh:
+    image_config = json.load(fh)
+  if image_config['error-amount'] == 0:
+    for image in sorted(image_config['image-list'], key=lambda k: k['link']):
+      link = os.path.join(image_config['destination-directory'], image['link'])
+    disk_info_list[0]['path'] = link
   else:
-    print('Warning: not checksum specified.')
-  if downloaded_disk.endswith('.gz'):
-    try:
-      with open(disk_info_list[0]['path'], 'w') as disk:
-        with gzip.open(downloaded_disk, 'rb') as disk_gz:
-          shutil.copyfileobj(disk_gz, disk)
-    except Exception:
-      if os.path.exists(disk_info_list[0]['path']):
-        os.remove(disk_info_list[0]['path'])
-      raise
-    os.remove(downloaded_disk)
+    print('Problems with virtual-hard-drive-url')
+    sys.exit(1)
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
