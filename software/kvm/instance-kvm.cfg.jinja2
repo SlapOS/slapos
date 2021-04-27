@@ -141,11 +141,12 @@ config-filename = ${boot-image-url-select-processed-config:state-file}
 [boot-image-url-select-json-config]
 # generates json configuration from user configuration
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:rendered} ${:rendered} ${directory:boot-image-url-select-repository} ${:error-state-file}
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-select-source-config:rendered} ${:rendered} ${directory:boot-image-url-select-repository} ${:error-state-file} ${:gzipped}
 update-command = ${:command}
 rendered = ${directory:boot-image-url-select-var}/boot-image-url-select.json
 error-state-filename = boot-image-url-select-json-config-error.txt
 error-state-file = ${directory:boot-image-url-select-expose}/${:error-state-filename}
+gzipped = False
 
 [boot-image-url-select-config-state-promise]
 # promise to check if configuration has been parsed without errors
@@ -240,11 +241,12 @@ config-filename = ${boot-image-url-list-processed-config:state-file}
 [boot-image-url-list-json-config]
 # generates json configuration from user configuration
 recipe = plone.recipe.command
-command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-list-source-config:rendered} ${:rendered} ${directory:boot-image-url-list-repository} ${:error-state-file}
+command = {{ python_executable }} {{ image_download_config_creator }} ${boot-image-url-list-source-config:rendered} ${:rendered} ${directory:boot-image-url-list-repository} ${:error-state-file} ${:gzipped}
 update-command = ${:command}
 rendered = ${directory:boot-image-url-list-var}/boot-image-url-list.json
 error-state-filename = boot-image-url-list-json-config-error.txt
 error-state-file = ${directory:boot-image-url-list-expose}/${:error-state-filename}
+gzipped = False
 
 [boot-image-url-list-config-state-promise]
 # promise to check if configuration has been parsed without errors
