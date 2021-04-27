@@ -17,6 +17,8 @@
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
+{% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
+{% set virtual_hard_drive_url_gzipped = str(slapparameter_dict.get('virtual-hard-drive-gzipped', False)).lower() == 'true' %}
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
@@ -56,6 +58,11 @@ public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
+{%- if virtual_hard_drive_url_enabled %}
+virtual-hard-drive-url-repository = ${:srv}/virtual-hard-drive-url-repository
+virtual-hard-drive-url-var = ${:var}/virtual-hard-drive-url
+virtual-hard-drive-url-expose = ${monitor-directory:private}/virtual-hard-drive-url
+{%- endif %}
 {%- if boot_image_url_list_enabled %}
 boot-image-url-list-repository = ${:srv}/boot-image-url-list-repository
 boot-image-url-list-var = ${:var}/boot-image-url-list
@@ -278,6 +285,106 @@ config-filename = ${boot-image-url-list-download-wrapper:error-state-file}
 ## boot-image-url-list support END
 {% endif %} {# if boot_image_url_list_enabled #}
 
+{% if virtual_hard_drive_url_enabled %}
+## virtual-hard-drive-url support BEGIN
+[empty-file-state-base-virtual-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+# It's very hard to put the username and password correctly, after schema://
+# and before the host, as it's not the way how one can use monitor provided
+# information, so just show the information in the URL
+config-url = ${monitor-base:base-url}/private/virtual-hard-drive-url/${:filename} with username ${monitor-publish-parameters:monitor-user} and password ${monitor-publish-parameters:monitor-password}
+
+[virtual-hard-drive-url-source-config]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+{%- raw %}
+  {{ virtual_hard_drive_url }}
+{% endraw -%}
+{# Enforce md5sum on virtual-hard-drive-url #}
+virtual-hard-drive-url = {{ slapparameter_dict['virtual-hard-drive-url'] }}#{{ slapparameter_dict['virtual-hard-drive-md5sum'] }}
+context =
+  key virtual_hard_drive_url :virtual-hard-drive-url
+rendered = ${directory:etc}/virtual-hard-drive-url.conf
+
+[virtual-hard-drive-url-processed-config]
+# compares if the current configuration has been used by
+# the virtual-hard-drive-url-download, if not, exposes it as not empty file with
+# information
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+  if not os.path.exists(location):
+    os.mkdir(location)
+  with open('${:state-file}', 'w') as state_handler:
+    try:
+      with open('${:config-file}', 'rb') as config_handler, open('${:processed-md5sum}') as processed_handler:
+        config_md5sum = hashlib.md5(config_handler.read()).hexdigest()
+        processed_md5sum = processed_handler.read()
+        if config_md5sum == processed_md5sum:
+          state_handler.write('')
+        else:
+          state_handler.write('config %s != processed %s' % (config_md5sum, processed_md5sum))
+    except Exception as e:
+      state_handler.write(str(e))
+
+update = ${:install}
+config-file = ${virtual-hard-drive-url-source-config:rendered}
+state-filename = virtual-hard-drive-url-processed-config.state
+state-file = ${directory:virtual-hard-drive-url-expose}/${:state-filename}
+processed-md5sum = ${directory:virtual-hard-drive-url-var}/update-image-processed.md5sum
+
+[virtual-hard-drive-url-processed-config-promise]
+# promise to check if the configuration provided by the user has been already
+# processed by the virtual-hard-drive-url-download script, which runs asynchronously
+<= empty-file-state-base-virtual-promise
+filename = ${virtual-hard-drive-url-processed-config:state-filename}
+config-filename = ${virtual-hard-drive-url-processed-config:state-file}
+
+[virtual-hard-drive-url-json-config]
+# generates json configuration from user configuration
+recipe = plone.recipe.command
+command = {{ python_executable }} {{ image_download_config_creator }} ${virtual-hard-drive-url-source-config:rendered} ${:rendered} ${directory:virtual-hard-drive-url-repository} ${:error-state-file}
+update-command = ${:command}
+rendered = ${directory:virtual-hard-drive-url-var}/virtual-hard-drive-url.json
+error-state-filename = virtual-hard-drive-url-json-config-error.txt
+error-state-file = ${directory:virtual-hard-drive-url-expose}/${:error-state-filename}
+
+[virtual-hard-drive-url-config-state-promise]
+# promise to check if configuration has been parsed without errors
+<= empty-file-state-base-virtual-promise
+filename = ${virtual-hard-drive-url-json-config:error-state-filename}
+config-filename = ${virtual-hard-drive-url-json-config:error-state-file}
+
+[virtual-hard-drive-url-download-wrapper]
+# wrapper to execute virtual-hard-drive-url-download on each run
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/virtual-hard-drive-url-updater
+command-line = {{ python_executable }} {{ image_download_controller }} ${virtual-hard-drive-url-json-config:rendered} {{ curl_executable_location }} ${:md5sum-state-file} ${:error-state-file} ${virtual-hard-drive-url-processed-config:processed-md5sum}
+md5sum-state-filename = virtual-hard-drive-url-download-controller-md5sum-fail.json
+md5sum-state-file = ${directory:virtual-hard-drive-url-expose}/${:md5sum-state-filename}
+error-state-filename = virtual-hard-drive-url-download-controller-error.text
+error-state-file = ${directory:virtual-hard-drive-url-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[virtual-hard-drive-url-download-md5sum-promise]
+# promise to report errors with problems with calculating md5sum of the
+# downloaded images
+<= empty-file-state-base-virtual-promise
+filename = ${virtual-hard-drive-url-download-wrapper:md5sum-state-filename}
+config-filename = ${virtual-hard-drive-url-download-wrapper:md5sum-state-file}
+
+[virtual-hard-drive-url-download-state-promise]
+# promise to report errors during download
+<= empty-file-state-base-virtual-promise
+filename = ${virtual-hard-drive-url-download-wrapper:error-state-filename}
+config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
+## virtual-hard-drive-url support END
+{% endif %} {# if virtual_hard_drive_url_enabled #}
+
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
@@ -298,6 +405,11 @@ vnc-ip = ${:ipv4}
 vnc-port = 5901
 
 default-cdrom-iso = {{ debian_amd64_netinst_location }}
+{% if virtual_hard_drive_url_enabled %}
+virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:rendered}
+{% else %}
+virtual-hard-drive-url-json-config =
+{% endif %}
 {% if boot_image_url_list_enabled %}
 boot-image-url-list-json-config = ${boot-image-url-list-json-config:rendered}
 {% else %}
@@ -1108,6 +1220,13 @@ parts =
   cron-service
   cron-entry-logrotate
   frontend-promise
+{% if virtual_hard_drive_url_enabled %}
+  virtual-hard-drive-url-download-wrapper
+  virtual-hard-drive-url-config-state-promise
+  virtual-hard-drive-url-download-md5sum-promise
+  virtual-hard-drive-url-download-state-promise
+  virtual-hard-drive-url-processed-config-promise
+{% endif %}
 {% if boot_image_url_list_enabled %}
   boot-image-url-list-download-wrapper
   boot-image-url-list-config-state-promise
