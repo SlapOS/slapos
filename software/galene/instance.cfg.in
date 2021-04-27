@@ -1,6 +1,7 @@
 [buildout]
 parts =
   publish-connection-parameter
+  stat-password
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -48,6 +49,12 @@ stop-on-error = true
 recipe = slapos.cookbook:generate.password
 storage-path = $${directory:data}/.passwd
 username = admin
+
+[stat-password]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  $${admin-password:username}:$${admin-password:passwd}
+rendered = $${directory:data}/passwd
 
 [ice-servers.json]
 recipe = slapos.recipe.template:jinja2

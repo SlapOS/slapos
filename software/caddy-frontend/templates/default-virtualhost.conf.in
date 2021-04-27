@@ -59,11 +59,11 @@
   } {# tls #}
 {%- endif %} {#- if tls #}
   log / {{ slave_parameter['access_log'] }} "{remote} - {>REMOTE_USER} [{when}] \"{method} {uri} {proto}\" {status} {size} \"{>Referer}\" \"{>User-Agent}\" {latency_ms}" {
-    rotate_size 0
+    rotate_size 10000000
   }
 
   errors {{ slave_parameter['error_log'] }} {
-    rotate_size 0
+    rotate_size 10000000
   }
 
 {%- if not (slave_parameter['type'] == 'zope' and backend_url) %}
