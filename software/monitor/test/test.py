@@ -26,6 +26,7 @@
 ##############################################################################
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -234,6 +235,11 @@ class EdgeSlaveMixin(MonitorTestMixin):
 
     self.assertTrue(content in promise)
 
+  def assertHttpQueryPromiseContent(self, instance_reference, name, content):
+    hashed = 'http-query-%s-promise.py' % (
+      hashlib.md5(('_' + name).encode('utf-8')).hexdigest(),)
+    self.assertPromiseContent(instance_reference, hashed, content)
+
   def assertSurykatkaBotPromise(self):
     for instance_reference in self.surykatka_dict:
       for info_dict in self.surykatka_dict[instance_reference].values():
@@ -337,9 +343,9 @@ URL =
   }
 
   def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkcertificateexpirationdays-promise.py',
+      'checkcertificateexpirationdays',
       """extra_config_dict = { 'certificate-expiration-days': '20',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -351,9 +357,9 @@ URL =
   'url': 'https://www.checkcertificateexpirationdays.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkhttpheaderdict-promise.py',
+      'checkhttpheaderdict',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{"A": "AAA"}',
@@ -365,9 +371,9 @@ URL =
   'url': 'https://www.checkhttpheaderdict.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkmaximumelapsedtime1-promise.py',
+      'checkmaximumelapsedtime1',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -379,9 +385,9 @@ URL =
   'url': 'https://www.checkmaximumelapsedtime1.org/'}""" % (
         self.surykatka_dict['edge1'][1]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkmaximumelapsedtime20-promise.py',
+      'checkmaximumelapsedtime20',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -393,9 +399,9 @@ URL =
   'url': 'https://www.checkmaximumelapsedtime20.org/'}""" % (
         self.surykatka_dict['edge1'][20]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkstatuscode-promise.py',
+      'checkstatuscode',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -407,9 +413,9 @@ URL =
   'url': 'https://www.checkstatuscode.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-default-promise.py',
+      'default',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -421,9 +427,9 @@ URL =
   'url': 'https://www.default.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-failureamount-promise.py',
+      'failureamount',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '10',
   'http-header-dict': '{}',
@@ -435,9 +441,9 @@ URL =
   'url': 'https://www.failureamount.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-checkfrontendiplist-promise.py',
+      'checkfrontendiplist',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -517,34 +523,34 @@ URL =
     })}
 
   def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'ip-list': '127.0.0.1 127.0.0.2'")
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'report': 'http_query'")
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'status-code': '200'")
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'certificate-expiration-days': '15'")
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'url': 'https://www.erp5.com/'")
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'json-file': '%s'" % (self.surykatka_dict['edge1'][2]['json-file'],)
     )
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-backend-promise.py',
+      'backend',
       "'failure-amount': '2'"
     )
 
@@ -575,8 +581,8 @@ URL =
     EdgeSlaveMixin.test()
 
   def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
-      'http-query-default-promise.py',
+    self.assertHttpQueryPromiseContent(
+      'default',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -772,9 +778,9 @@ URL =
       self.requestEdgetestSlave(reference, parameter_dict)
 
   def assertSurykatkaPromises(self):
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-all-promise.py',
+      'all',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -786,9 +792,9 @@ URL =
   'url': 'https://www.all.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-specificcheck-promise.py',
+      'specificcheck',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -800,9 +806,9 @@ URL =
   'url': 'https://www.specificcheck.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-globalcheck-promise.py',
+      'globalcheck',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -814,9 +820,9 @@ URL =
   'url': 'https://www.globalcheck.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-specificoverride-promise.py',
+      'specificoverride',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -828,9 +834,9 @@ URL =
   'url': 'https://www.specificoverride.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge1',
-      'http-query-onetwo-promise.py',
+      'onetwo',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -842,9 +848,9 @@ URL =
   'url': 'https://www.onetwo.org/'}""" % (
         self.surykatka_dict['edge1'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge2',
-      'http-query-all-promise.py',
+      'all',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -856,9 +862,9 @@ URL =
   'url': 'https://www.all.org/'}""" % (
         self.surykatka_dict['edge2'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge2',
-      'http-query-three-promise.py',
+      'three',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -870,9 +876,9 @@ URL =
   'url': 'https://www.three.org/'}""" % (
         self.surykatka_dict['edge2'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge3',
-      'http-query-all-promise.py',
+      'all',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -884,9 +890,9 @@ URL =
   'url': 'https://www.all.org/'}""" % (
         self.surykatka_dict['edge3'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge3',
-      'http-query-onetwo-promise.py',
+      'onetwo',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -898,9 +904,9 @@ URL =
   'url': 'https://www.onetwo.org/'}""" % (
         self.surykatka_dict['edge3'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge3',
-      'http-query-partialmiss-promise.py',
+      'partialmiss',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -912,9 +918,9 @@ URL =
   'url': 'https://www.parialmiss.org/'}""" % (
         self.surykatka_dict['edge3'][2]['json-file'],))
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge3',
-      'http-query-specificoverride-promise.py',
+      'specificoverride',
       """extra_config_dict = { 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
@@ -1372,9 +1378,9 @@ URL =
     }
     self.updateSurykatkaDict()
 
-    self.assertPromiseContent(
+    self.assertHttpQueryPromiseContent(
       'edge4',
-      'http-query-all-promise.py',
+      'all',
       """{ 'certificate-expiration-days': '15',
   'failure-amount': '2',
   'http-header-dict': '{}',
