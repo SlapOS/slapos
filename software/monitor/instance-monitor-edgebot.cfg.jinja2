@@ -29,7 +29,7 @@
 {%- for class, slave_instance_list in slave_instance_dict.items() %}
 {#- class is used to separate surykatka with different timeouts #}
 {%-   for slave in slave_instance_list | sort(attribute='-slave-title') %}
-{%-     set part_id = 'http-query-' ~ slave['-slave-reference'] ~ '-promise' %}
+{%-     set part_id = 'http-query-' ~ hashlib_module.md5(slave['-slave-reference'].encode('utf-8')).hexdigest() ~ '-promise' %}
 {%-     do part_list.append(part_id) %}
 {%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
 [{{part_id}}]
