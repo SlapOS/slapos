@@ -26,6 +26,7 @@
 ##############################################################################
 
 import os
+import time
 import requests
 import json
 
@@ -56,3 +57,35 @@ class TestPortRedirection(Re6stnetTestCase):
             'srcPort': 9201,
             'destPort': 9201,
         }, portredir_config[0])
+
+
+class TestTokens(Re6stnetTestCase):
+
+  partition_reference = "SOFTINST-1"
+
+  @classmethod
+  def requestDefaultInstance(self, state='started'):
+    default_instance = super(
+      Re6stnetTestCase, self).requestDefaultInstance(state=state)
+    self.requestSlaveInstance(state)
+    return default_instance
+
+  @classmethod
+  def requestSlaveInstance(self, state='started'):
+    software_url = self.getSoftwareURL()
+    self.logger.debug('requesting slave "%s"', self.partition_reference)
+    return self.slap.request(
+      software_release=software_url,
+      partition_reference=self.partition_reference,
+      partition_parameter_kw={},
+      shared=True,
+      state=state
+    )
+
+  def test_tokens(self):
+    time.sleep(60 * 10) # Wait until cron executes token manager
+    self.slap.waitForInstance() # Wait until publish is done
+
+    s = self.requestSlaveInstance()
+
+    self.assertEqual("Token is ready for use", s.getConnectionParameterDict()['1_info'])
