@@ -127,7 +127,7 @@ sla-{{ parameter }} = {{ value }}
 {%- endfor %}
 # Publish information for each slave
 {%- for slave_reference, publish_dict in publish_slave_dict_dict.items() -%}
-{%-   set publish_section_title = 'publish-%s' % (slave_reference,)  -%}
+{%-   set publish_section_title = 'publish-%s' % (hashlib_module.md5(slave_reference.encode('utf-8')).hexdigest(),)  -%}
 {%-   do part_list.append(publish_section_title) %}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish.serialised
