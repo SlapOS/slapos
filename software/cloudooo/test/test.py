@@ -27,13 +27,17 @@
 ##############################################################################
 
 import codecs
+import csv
+import multiprocessing
 import os
 import json
 import six.moves.xmlrpc_client as xmlrpclib
+import six.moves.urllib.parse as urllib_parse
 import ssl
 import base64
 import io
 
+import requests
 import PyPDF2
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -256,3 +260,64 @@ class TestLibreOfficeTextConversion(CloudOooTestCase):
             ).encode()),
         codecs.BOM_UTF8 + b'h\xc3\xa9h\xc3\xa9\n',
     )
+
+
+class TestLibreOfficeCluster(CloudOooTestCase):
+  __partition_reference__ = 'lc'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'backend-count': 4}
+
+  def test_multiple_conversions(self):
+    # make this function global so that it can be picked and used by multiprocessing
+    global _convert_html_to_text
+
+    def _convert_html_to_text(src_html):
+      return base64.decodestring(
+          self.server.convertFile(
+              base64.encodestring(src_html.encode()).decode(),
+              'html',
+              'txt',
+          ).encode())
+
+    pool = multiprocessing.Pool(5)
+    # TODO py3: use with pool
+    converted = pool.map(_convert_html_to_text,
+                         ['<html><body>hello</body></html>'] * 100)
+    pool.terminate()
+    pool.join()
+
+    self.assertEqual(converted, [codecs.BOM_UTF8 + b'hello\n'] * 100)
+
+    # haproxy stats are exposed
+    res = requests.get(
+        urllib_parse.urljoin(self.url, '/haproxy;csv'),
+        verify=False,
+        stream=True,
+    )
+    reader = csv.DictReader(res.raw)
+    line_list = list(reader)
+    # requests have been balanced
+    total_hrsp_2xx = {
+        line['svname']: int(line['hrsp_2xx'])
+        for line in line_list
+    }
+    self.assertEqual(total_hrsp_2xx['FRONTEND'], 100)
+    self.assertEqual(total_hrsp_2xx['BACKEND'], 100)
+    for backend in 'cloudooo_1', 'cloudooo_2', 'cloudooo_3', 'cloudooo_4':
+      self.assertIn(total_hrsp_2xx[backend], (24, 25, 26))
+    # no errors
+    total_eresp = {
+        line['svname']: int(line['eresp'] or 0)
+        for line in line_list
+    }
+    self.assertEqual(
+        total_eresp, {
+            'FRONTEND': 0,
+            'cloudooo_1': 0,
+            'cloudooo_2': 0,
+            'cloudooo_3': 0,
+            'cloudooo_4': 0,
+            'BACKEND': 0,
+        })

@@ -44,6 +44,7 @@ setup(name=name,
         'slapos.core',
         'slapos.cookbook',
         'slapos.libnetworkcache',
+        'requests'
         'six',
         'PyPDF2',
       ],
