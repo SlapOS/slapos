@@ -13,6 +13,7 @@ shared_part_list =
   {%- endfor %}
   {{ slaprunner['shared_root'] }}
 master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
+master_rest_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}/hateoas
 computer_id = slaprunner
 maximal_delay = 0
 root_check = {{ slaprunner['root_check'] }}
