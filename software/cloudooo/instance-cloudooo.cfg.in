@@ -173,7 +173,7 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% for index in range(backend_count) -%}
+{% for index in range(1, backend_count + 1) -%}
 {%   set name = 'cloudooo-' ~ index -%}
 [{{ cloudooo(name) }}]
 < = cloudooo-base
@@ -208,8 +208,8 @@ prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
 run-test-suite = ${buildout:bin-directory}/runTestSuite
 
-ooo-paster = ${cloudooo-0:ooo-paster}
-configuration-file = ${cloudooo-0:configuration-file}
+ooo-paster = ${cloudooo-1:ooo-paster}
+configuration-file = ${cloudooo-1:configuration-file}
 
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
 run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
