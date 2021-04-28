@@ -270,6 +270,14 @@ class TestLibreOfficeCluster(CloudOooTestCase):
     pool.terminate()
     pool.join()
 
+    for _ in range(100):
+      pool = multiprocessing.Pool(5)
+      # TODO py3: use with pool
+      converted = pool.map(_convert_html_to_text, ['<html><body>hello</body></html>'] * 100)
+      pool.terminate()
+      pool.join()
+      print('loop')
+
     # XXX for some reason the converted text has some non-breakable space
     self.assertEqual(converted, ['\xef\xbb\xbfhello\n'] * 100)
 
