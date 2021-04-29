@@ -118,21 +118,23 @@ if __name__ == "__main__":
       new_md5sum_state_dict[md5sum_state_key] = md5sum_state_amount + 1
     else:
       finalize_success = False
-      if image['gzipped']:
-        try:
-          with open(destination, 'w') as disk:
-            with gzip.open(destination_tmp, 'rb') as disk_gz:
-              shutil.copyfileobj(disk_gz, disk)
-        except Exception:
+      # always try to unpack the file
+      try:
+        with open(destination, 'w') as disk:
+          with gzip.open(destination_tmp, 'rb') as disk_gz:
+            shutil.copyfileobj(disk_gz, disk)
+      except Exception:
+        if image['gzipped']:
           if os.path.exists(destination):
             os.remove(destination)
           error_list.append('ERR: %s : Failed to ungzip' % (image['url'],))
         else:
+          os.rename(destination_tmp, destination)
           finalize_success = True
-          os.remove(destination_tmp)
       else:
+        print('INF: %s : Ungzipped' % (image['url']))
         finalize_success = True
-        os.rename(destination_tmp, destination)
+        os.unlink(destination_tmp)
       if finalize_success:
         print('INF: %s : Stored with checksum %s' % (
           image['url'], image['md5sum']))
