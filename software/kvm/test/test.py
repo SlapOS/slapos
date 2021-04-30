@@ -1416,3 +1416,91 @@ INF: %(fake_image)s : already downloaded
         'destination': os.path.join(self.destination_directory, 'destination'),
       })
     )
+
+  def test_fail(self):
+    json_dict = {
+      'error-amount': 0,
+      'config-md5sum': 'config-md5sum',
+      'destination-directory': self.destination_directory,
+      'image-list': [
+        {
+          'destination-tmp': 'tmp',
+          'url': self.fake_image,
+          'destination': 'destination',
+          'link': 'image_001',
+          'gzipped': False,
+          'md5sum': self.fake_image_wrong_md5sum,
+        }
+      ]
+    }
+    for try_num in range(1, 5):
+      code, result = self.runImageDownloadControlerWithDict(
+        json_dict
+      )
+      self.assertEqual(
+        (code, result.strip()),
+        (1, """
+INF: Storing errors in %(error_state_file)s
+INF: %(fake_image)s : Downloading
+""".  strip() % {
+          'fake_image': self.fake_image,
+          'error_state_file': self.error_state_file,
+          'symlink': os.path.join(self.destination_directory, 'image_001'),
+          'destination': os.path.join(
+            self.destination_directory, 'destination'),
+        })
+      )
+      fake_image_url = '#'.join([
+        self.fake_image, self.fake_image_wrong_md5sum])
+      self.assertFileContent(
+        self.md5sum_fail_file, """{
+  "%s": %s
+}""" % (fake_image_url, try_num))
+      self.assertFileContent(
+        self.error_state_file, """
+        ERR: %(fake_image)s : MD5 mismatch expected is %(wrong_checksum)s """
+        """but got instead %(real_checksum)s""".strip() % {
+          'fake_image': self.fake_image,
+          'wrong_checksum': self.fake_image_wrong_md5sum,
+          'real_checksum': self.fake_image_md5sum,
+        })
+      self.assertFileContent(self.processed_md5sum, 'config-md5sum')
+      self.assertFalse(
+        os.path.exists(os.path.join(self.destination_directory, 'tmp')))
+      self.assertFalse(
+        os.path.exists(
+          os.path.join(self.destination_directory, 'destination')))
+
+    code, result = self.runImageDownloadControlerWithDict(
+      json_dict
+    )
+    self.assertEqual(
+      (code, result.strip()),
+      (1, """
+INF: Storing errors in %(error_state_file)s
+""".  strip() % {
+        'fake_image': self.fake_image,
+        'error_state_file': self.error_state_file,
+        'symlink': os.path.join(self.destination_directory, 'image_001'),
+        'destination': os.path.join(
+          self.destination_directory, 'destination'),
+      })
+    )
+    fake_image_url = '#'.join([
+      self.fake_image, self.fake_image_wrong_md5sum])
+    self.assertFileContent(
+      self.md5sum_fail_file, """{
+  "%s": %s
+}""" % (fake_image_url, 4))
+    self.assertFileContent(
+      self.error_state_file, """
+      ERR: %(fake_image)s : Checksum is incorrect after 4 tries, will not """
+      """retry""".strip() % {
+        'fake_image': self.fake_image,
+      })
+    self.assertFileContent(self.processed_md5sum, 'config-md5sum')
+    self.assertFalse(
+      os.path.exists(os.path.join(self.destination_directory, 'tmp')))
+    self.assertFalse(
+      os.path.exists(
+        os.path.join(self.destination_directory, 'destination')))
