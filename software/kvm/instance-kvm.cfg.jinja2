@@ -537,14 +537,42 @@ ipv6-port = {{ external_port }}
 {%   endfor -%}
 {% endif -%}
 
+{%- set depend_section_list = [] %}
+{%- set hash_file_list = ['${kvm-run:rendered}'] %}
+{%- macro generate_depend_section(section, key) %}
+{%-  do depend_section_list.append('${' + section + ':command}' ) %}
+{%-  do hash_file_list.append('${' + key + '}') %}
+[{{ section }}]
+recipe = plone.recipe.command
+update-command = ${:command}
+command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
+{%- endmacro %}
+{#- Create depending sections, as state files appear late, so it's better to have empty file which will impact the hash anyway #}
+{%- if boot_image_url_list_enabled %}
+{{    generate_depend_section('boot-image-url-list-depend', 'boot-image-url-list-download-wrapper:md5sum-state-file') }}
+{%- endif %}
+{%- if boot_image_url_select_enabled %}
+{{    generate_depend_section('boot-image-url-select-depend', 'boot-image-url-select-download-wrapper:md5sum-state-file') }}
+{%- endif %}
+{%- if virtual_hard_drive_url_enabled %}
+{{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:md5sum-state-file') }}
+{%- endif %}
+
 [kvm-instance]
+depends =
+{%- for depend_section in depend_section_list %}
+  {{ depend_section }}
+{%- endfor %}
 recipe = slapos.cookbook:wrapper
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-
+hash-files =
+{%- for hash_file in hash_file_list %}
+  {{ hash_file }}
+{%- endfor %}
 
 [kvm-controller-wrapper]
 recipe = slapos.cookbook:wrapper

@@ -28,6 +28,7 @@
 import six.moves.http_client as httplib
 import json
 import os
+import glob
 import hashlib
 import psutil
 import requests
@@ -121,12 +122,25 @@ class KvmMixin(object):
         'software_release/buildout.cfg',
       ]
     ])
+    # find bin/kvm_raw
+    kvm_raw_list = glob.glob(
+      os.path.join(self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
+    self.assertEqual(1, len(kvm_raw_list))  # allow to work only with one
+    hash_file_list = [
+      kvm_raw_list[0],
+      'software_release/buildout.cfg',
+    ]
+    kvm_hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in hash_file_list
+    ])
     with self.slap.instance_supervisor_rpc as supervisor:
       running_process_info = '\n'.join(sorted([
         '%(group)s:%(name)s %(statename)s' % q for q
         in supervisor.getAllProcessInfo()
         if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
-    return running_process_info.replace(hash_value, '{hash}')
+    return running_process_info.replace(
+      hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
@@ -177,7 +191,7 @@ i0:6tunnel-10443-{hash}-on-watch RUNNING
 i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
 i0:crond-{hash}-on-watch RUNNING
-i0:kvm-{hash}-on-watch RUNNING
+i0:kvm-{kvm-hash-value}-on-watch RUNNING
 i0:kvm_controller EXITED
 i0:monitor-httpd-{hash}-on-watch RUNNING
 i0:monitor-httpd-graceful EXITED
@@ -501,7 +515,7 @@ ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
 ir2:equeue-on-watch RUNNING
-ir2:kvm-{hash}-on-watch RUNNING
+ir2:kvm-{kvm-hash-value}-on-watch RUNNING
 ir2:kvm_controller EXITED
 ir2:monitor-httpd-{hash}-on-watch RUNNING
 ir2:monitor-httpd-graceful EXITED
