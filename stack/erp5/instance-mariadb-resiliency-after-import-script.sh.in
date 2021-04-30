@@ -31,8 +31,8 @@ if [ -e "$pid_file" ]; then
   fi
 fi
 
-echo "Deleting existing database..."
-find "$mariadb_data_directory" -mindepth 1 -delete
+# Delete database if it exists
+rm -rf "$mariadb_data_directory"
 
 # $binlog_path can be empty if incremental_backup_retention_days <= -1
 if [ -n "$binlog_path" ]; then
