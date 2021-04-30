@@ -26,6 +26,7 @@
 #
 ##############################################################################
 
+import codecs
 import os
 import json
 import six.moves.xmlrpc_client as xmlrpclib
@@ -37,12 +38,27 @@ import PyPDF2
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, _CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-# Cloudooo needs a lot of time before being available.
-CloudOooTestCase.instance_max_retry = 30
+
+class CloudOooTestCase(_CloudOooTestCase):
+  # Cloudooo needs a lot of time before being available.
+  instance_max_retry = 30
+
+  def setUp(self):
+    self.url = json.loads(
+        self.computer_partition.getConnectionParameterDict()["_"])['cloudooo']
+    # XXX ignore certificate errors
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    self.server = xmlrpclib.ServerProxy(
+        self.url,
+        context=ssl_context,
+        allow_none=True,
+    )
 
 
 def normalizeFontName(font_name):
@@ -87,19 +103,6 @@ class HTMLtoPDFConversionFontTestMixin:
     # type: (str) -> bytes
     """Convert the HTML source to pdf bytes.
     """
-
-  def setUp(self):
-    self.url = json.loads(
-        self.computer_partition.getConnectionParameterDict()["_"])['cloudooo']
-    # XXX ignore certificate errors
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-    self.server = xmlrpclib.ServerProxy(
-        self.url,
-        context=ssl_context,
-        allow_none=True,
-    )
 
   def test(self):
     actual_font_mapping_mapping = {}
@@ -237,3 +240,19 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
             'html',
             'pdf',
         ).encode())
+
+
+class TestLibreOfficeTextConversion(CloudOooTestCase):
+  __partition_reference__ = 'txt'
+
+  def test_html_to_text(self):
+    self.assertEqual(
+        base64.decodestring(
+            self.server.convertFile(
+                base64.encodestring(
+                    u'<html>héhé</html>'.encode('utf-8')).decode(),
+                'html',
+                'txt',
+            ).encode()),
+        codecs.BOM_UTF8 + b'h\xc3\xa9h\xc3\xa9\n',
+    )
