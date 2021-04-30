@@ -178,7 +178,7 @@ if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) an
           os.unlink(disk_info_list[0]['path'])
         raise
   else:
-    raise ValueError('Problems with virtual-hard-drive-url download')
+    raise ValueError('virtual-hard-drive-url not ready yet')
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
