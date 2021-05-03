@@ -301,17 +301,12 @@ kvm_argument_list = [qemu_path,
   '-nodefaults',
 ]
 for disk_info in disk_info_list:
-  additional_disk_options = ''
-
-  if disk_info['format'] == "raw":
-    additional_disk_options += ',discard=on'
-
-  kvm_argument_list.extend([
+  kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s%s%s' % (
-      disk_info['path'], disk_type, additional_disk_options,
+    'file=%s,if=%s,discard=on%s' % (
+      disk_info['path'], disk_type,
       ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
-  ])
+  )
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
