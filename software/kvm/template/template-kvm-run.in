@@ -20,13 +20,10 @@ import json
 import ssl
 
 # XXX: give all of this through parameter, don't use this as template, but as module
-qemu_img_path = '{{ parameter_dict.get("qemu-img-path") }}'
-qemu_path = '{{ parameter_dict.get("qemu-path") }}'
-disk_size = '{{ parameter_dict.get("disk-size") }}'
-disk_type = '{{ parameter_dict.get("disk-type") }}'
-disk_format = '{{ parameter_dict.get("disk-format", "qcow2")}}'
-disk_format = disk_format \
-              if disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
+qemu_img_path = {{ repr(parameter_dict["qemu-img-path"]) }}
+qemu_path = {{ repr(parameter_dict["qemu-path"]) }}
+disk_size = {{ repr(parameter_dict["disk-size"]) }}
+disk_type = {{ repr(parameter_dict["disk-type"]) }}
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
@@ -34,7 +31,6 @@ nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
             ('{{ parameter_dict.get("nbd2-host") }}',
               {{ parameter_dict.get("nbd2-port") }}))
 default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
-disk_path = '{{ parameter_dict.get("disk-path") }}'
 
 virtual_hard_drive_url = '{{ parameter_dict.get("virtual-hard-drive-url") }}'.strip()
 virtual_hard_drive_md5sum = '{{ parameter_dict.get("virtual-hard-drive-md5sum") }}'.strip()
@@ -56,9 +52,7 @@ init_ram_size = {{ parameter_dict.get("init-ram-size") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
-external_disk_format = '{{ parameter_dict.get("external-disk-format", "qcow2") }}'
-external_disk_format = external_disk_format \
-              if external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
+external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
@@ -70,11 +64,6 @@ cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
 url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
-disk_cache = '{{ parameter_dict.get("disk-cache", "writeback") }}'.strip()
-disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe", 
-              "directsync", "writethrough"] else "writeback"
-disk_aio = '{{ parameter_dict.get("disk-aio", "threads") }}'.strip()
-disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
 
 # If a device (ie.: /dev/sdb) is provided, use it instead 
 # the disk_path with disk_format
@@ -84,16 +73,18 @@ for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split
     disk_info_list.append({
       'path': disk_device_path,
       'format': "raw",
-      'io': "native",
+      'aio': "native",
       'cache': "none"
     })
 
-if len(disk_info_list) == 0:
+if not disk_info_list:
   disk_info_list.append({
-    'path': disk_path,
-    'format': disk_format,
-    'io': disk_aio,
-    'cache': disk_cache,
+{%- for k in 'path', 'format', 'aio', 'cache' %}
+{%-   set v = parameter_dict['disk-' + k] %}
+{%-   if v %}
+    {{ repr(k) }}: {{ repr(v) }},
+{%-   endif %}
+{%- endfor %}
   })
 
 smp_count = {{ parameter_dict.get("smp-count") }}
@@ -312,14 +303,14 @@ kvm_argument_list = [qemu_path,
 for disk_info in disk_info_list:
   additional_disk_options = ''
 
-  if disk_info['io'] == 'native':
-    additional_disk_options += ',cache.direct=on'
   if disk_info['format'] == "raw":
     additional_disk_options += ',discard=on'
 
   kvm_argument_list.extend([
     '-drive',
-    'file=%s,if=%s,cache=%s,aio=%s%s' % ( disk_info['path'], disk_type, disk_info['cache'], disk_info['io'], additional_disk_options)
+    'file=%s,if=%s%s%s' % (
+      disk_info['path'], disk_type, additional_disk_options,
+      ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
   ])
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
