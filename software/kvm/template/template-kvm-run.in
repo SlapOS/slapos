@@ -375,6 +375,9 @@ else:
             '-drive',
             'file=%s,media=cdrom' % (link,)
           ])
+    else:
+      raise ValueError('boot-image-url-select not ready yet')
+
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     with open(boot_image_url_list_json_config) as fh:
@@ -387,6 +390,8 @@ else:
             '-drive',
             'file=%s,media=cdrom' % (link,)
           ])
+    else:
+      raise ValueError('boot-image-url-list not ready yet')
   # Always add by default the default image
   kvm_argument_list.extend([
       '-drive', 'file=%s,media=cdrom' % default_cdrom_iso
