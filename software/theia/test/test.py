@@ -187,6 +187,13 @@ class TestTheia(TheiaTestCase):
     )
     self.assertTrue(os.path.exists(script_path))
 
+  def test_slapos_cli(self):
+    slapos = self._getSlapos()
+    proxy_show_output = subprocess.check_output((slapos, 'proxy', 'show'))
+    self.assertIn('slaprunner', proxy_show_output)
+    computer_list_output = subprocess.check_output((slapos, 'computer', 'list'))
+    self.assertIn('slaprunner', computer_list_output)
+
 
 class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
   def test_stopping_instance_stops_embedded_slapos(self):
