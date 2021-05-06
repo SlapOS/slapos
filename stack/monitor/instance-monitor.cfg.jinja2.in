@@ -252,6 +252,11 @@ name = monitor-globalstate
 frequency = */2 * * * *
 command = {{ bin_directory }}/randomsleep 20 && ${monitor-globalstate-wrapper:wrapper-path}
 
+[monitor-globalstate-first-run]
+recipe = plone.recipe.command
+command = ${monitor-globalstate-wrapper:wrapper-path}
+stop-on-error = true
+
 [monitor-configurator-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
@@ -388,6 +393,7 @@ update-command =
 base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
+  ${monitor-globalstate-first-run:recipe}
   ${monitor-configurator-cron-entry:name}
   ${monitor-collect-cron-entry:name}
   ${cron-entry-logrotate:name}
