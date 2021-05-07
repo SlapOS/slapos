@@ -162,6 +162,7 @@ environment =
   LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['gcc'] }}/lib:{{ parameter_dict['gcc'] }}/lib64:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
   FONTCONFIG_FILE = ${fontconfig-conf:rendered}
   PATH = ${binary-link:target-directory}
+  LANG = C.UTF-8
 mimetype_entry_addition =
 {% for entry in mimetype_entry_addition.splitlines() -%}
 {{ "  " ~ entry.strip() }}
@@ -172,7 +173,7 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% for index in range(backend_count) -%}
+{% for index in range(1, backend_count + 1) -%}
 {%   set name = 'cloudooo-' ~ index -%}
 [{{ cloudooo(name) }}]
 < = cloudooo-base
@@ -207,8 +208,8 @@ prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
 run-test-suite = ${buildout:bin-directory}/runTestSuite
 
-ooo-paster = ${cloudooo-0:ooo-paster}
-configuration-file = ${cloudooo-0:configuration-file}
+ooo-paster = ${cloudooo-1:ooo-paster}
+configuration-file = ${cloudooo-1:configuration-file}
 
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
 run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
