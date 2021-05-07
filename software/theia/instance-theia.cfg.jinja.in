@@ -1,3 +1,5 @@
+{% set additional_frontend = slapconfiguration_section['configuration.additional-frontend-guid'] %}
+
 [buildout]
 extends =
   ${monitor-template:rendered}
@@ -33,7 +35,10 @@ offline = true
 [publish-connection-parameter]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-url = $${apache-frontend:connection-secure_access}
+url = $${remote-frontend:connection-secure_access}
+{% if additional_frontend %}
+additional-url = $${remote-additional-frontend:connection-secure_access}
+{% endif %}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
@@ -68,7 +73,10 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
-  $${apache-frontend-url-available-promise:name}
+  $${remote-frontend-url-available-promise:name}
+  {% if additional_frontend %}
+  $${remote-additional-frontend-url-available-promise:name}
+  {% endif %}
   $${slapos-standalone-listen-promise:name}
   $${slapos-autorun-promise:name}
 
@@ -86,12 +94,21 @@ name = $${:_buildout_section_name_}.py
 config-hostname = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
 
-[apache-frontend-url-available-promise]
+[remote-frontend-url-available-promise]
 <= monitor-promise-base
 module = check_url_available
 name = $${:_buildout_section_name_}.py
-config-url = $${apache-frontend:connection-secure_access}
+config-url = $${remote-frontend:connection-secure_access}
 config-check-secure = 1
+
+{% if additional_frontend %}
+[remote-additional-frontend-url-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${remote-additional-frontend:connection-secure_access}
+config-check-secure = 1
+{% endif %}
 
 [slapos-standalone-listen-promise]
 <= monitor-promise-base
@@ -110,21 +127,34 @@ config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
 
 
-# Remote Apache Frontend
-# ----------------------
+# Remote Caddy Frontend
+# ---------------------
 
-[apache-frontend]
+[remote-frontend-base]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Theia Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-url = $${frontend-instance:url}
 config-https-only = true
 config-type = websocket
 config-websocket-path-list = /services /file-upload
 return = domain secure_access
+
+[remote-frontend]
+<= remote-frontend-base
+name = $${instance-parameter:configuration.frontend-name}
+software-url = $${instance-parameter:configuration.frontend-sr}
+software-type = $${instance-parameter:configuration.frontend-sr-type}
+sla-instance_guid = $${instance-parameter:configuration.frontend-guid}
+
+{% if additional_frontend %}
+[remote-additional-frontend]
+<= remote-frontend-base
+name = $${instance-parameter:configuration.additional-frontend-name}
+software-url = $${instance-parameter:configuration.additional-frontend-sr}
+software-type = $${instance-parameter:configuration.additional-frontend-sr-type}
+sla-instance_guid = $${instance-parameter:configuration.additional-frontend-guid}
+{% endif %}
 
 
 # Local Caddy Frontend

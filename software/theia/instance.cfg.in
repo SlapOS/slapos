@@ -12,9 +12,20 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+;Theia default configuration
 configuration.autorun = running
 configuration.embedded-sr =
 configuration.embedded-sr-type =
+;Frontend default configuration
+configuration.frontend-name = Theia Frontend
+configuration.frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+configuration.frontend-sr-type = RootSoftwareInstance
+configuration.frontend-guid =
+;Additional frontend default configuration
+configuration.additional-frontend-name = Theia Additional Frontend
+configuration.additional-frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+configuration.additional-frontend-sr-type = RootSoftwareInstance
+configuration.additional-frontend-guid =
 
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
