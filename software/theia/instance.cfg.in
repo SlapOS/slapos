@@ -230,7 +230,7 @@ recipe = plone.recipe.command
 filename = logo.png
 full-path = $${directory:frontend-static}/$${:filename}
 command =
-  cp -f ${logo.png:output} $${:full-path}
+  cp --remove-destination ${logo.png:output} $${:full-path}
 stop-on-error = true
 
 [frontend-instance-slapos.css]
