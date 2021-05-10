@@ -1298,7 +1298,7 @@ class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
       'disk-device-path': '/dev/virt0 /dev/virt1',
       'wipe-disk-ondestroy': True
     })
-    self.slap.waitForInstance(max_retry=2)
+    self.raising_waitForInstance(3)
     instance_path = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
