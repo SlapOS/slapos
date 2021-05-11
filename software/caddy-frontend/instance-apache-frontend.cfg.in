@@ -508,7 +508,7 @@ filename = logging.yaml
 {%- raw %}
 template = inline:
   map /HTTPS/ http://{{ ipv4 }}:{{ https_port }}
-  map / http://{{ ipv4 }}:{{ http_port }}
+  map /HTTP/ http://{{ ipv4 }}:{{ http_port }}
 {%- endraw %}
 extra-context =
   raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
