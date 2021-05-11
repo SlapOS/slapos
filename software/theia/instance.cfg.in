@@ -7,7 +7,7 @@ theia-environment-parts =
   slapos-repository
   runner-link
   settings.json
-  request-script
+  request-script-template
 
 theia-parts =
   frontend-reload
@@ -230,7 +230,7 @@ recipe = plone.recipe.command
 filename = logo.png
 full-path = $${directory:frontend-static}/$${:filename}
 command =
-  cp -f ${logo.png:output} $${:full-path}
+  cp --remove-destination ${logo.png:output} $${:full-path}
 stop-on-error = true
 
 [frontend-instance-slapos.css]
@@ -551,17 +551,19 @@ recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
 
-[request-script]
+[request-script-template]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:project}/$${:_buildout_section_name_}.sh
 mode = 0700
 template =
   inline:#!/bin/sh
-  software_name=html5as-base #replace the software name
+  # This template is generated automatically, copy it in order to supply and request.
+  # Any manual change to this file may be lost.
+  software_name=html5as-base #replace the software name writen in ~/srv/project/slapos/software/
   software_release_uri=~/srv/project/slapos/software/$software_name/software.cfg
   # slapos supply is used to add the software to the software list to be supplied to a node.
   slapos supply $software_release_uri slaprunner
-  # slapos request the allocation of an instance to the master. 
-  # slapos request also gets status and parameters of the instance if it has any 
+  # slapos request the allocation of an instance to the master.
+  # slapos request also gets status and parameters of the instance if it has any
   # (slapos request is meant to be run multiple time until you get the status).
   slapos request $software_name'_1' $software_release_uri

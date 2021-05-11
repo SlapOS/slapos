@@ -28,6 +28,7 @@
 import six.moves.http_client as httplib
 import json
 import os
+import glob
 import hashlib
 import psutil
 import requests
@@ -43,6 +44,7 @@ from six.moves import SimpleHTTPServer
 import multiprocessing
 import time
 import shutil
+import sys
 
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -120,12 +122,25 @@ class KvmMixin(object):
         'software_release/buildout.cfg',
       ]
     ])
+    # find bin/kvm_raw
+    kvm_raw_list = glob.glob(
+      os.path.join(self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
+    self.assertEqual(1, len(kvm_raw_list))  # allow to work only with one
+    hash_file_list = [
+      kvm_raw_list[0],
+      'software_release/buildout.cfg',
+    ]
+    kvm_hash_value = generateHashFromFiles([
+      os.path.join(self.computer_partition_root_path, hash_file)
+      for hash_file in hash_file_list
+    ])
     with self.slap.instance_supervisor_rpc as supervisor:
       running_process_info = '\n'.join(sorted([
         '%(group)s:%(name)s %(statename)s' % q for q
         in supervisor.getAllProcessInfo()
         if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
-    return running_process_info.replace(hash_value, '{hash}')
+    return running_process_info.replace(
+      hash_value, '{hash}').replace(kvm_hash_value, '{kvm-hash-value}')
 
   def raising_waitForInstance(self, max_retry):
     with self.assertRaises(SlapOSNodeCommandError):
@@ -176,7 +191,7 @@ i0:6tunnel-10443-{hash}-on-watch RUNNING
 i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
 i0:crond-{hash}-on-watch RUNNING
-i0:kvm-{hash}-on-watch RUNNING
+i0:kvm-{kvm-hash-value}-on-watch RUNNING
 i0:kvm_controller EXITED
 i0:monitor-httpd-{hash}-on-watch RUNNING
 i0:monitor-httpd-graceful EXITED
@@ -416,10 +431,11 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, InstanceTestCase):
           "test-machine2": dict(bootstrap_machine_param_dict, **{
               # Debian 9 image
               "virtual-hard-drive-url":
-              "http://shacache.org/shacache/ce07873dbab7fa8501d1bf5565c2737b2"
-              "eed6c8b9361b4997b21daf5f5d1590972db9ac00131cc5b27d9aa353f2f940"
-              "71e073f9980cc61badd6d2427f592e6e8",
-              "virtual-hard-drive-md5sum": "2b113e3cd8276b9740189622603d6f99"
+              "http://shacache.org/shacache/93aeb72a556fe88d9889ce16558dfead"
+              "57a3c8f0a80d0e04ebdcd4a5830dfa6403e3976cc896b8332e74f202fccbd"
+              "a508930046a78cffea6e0e29d03345333cc",
+              "virtual-hard-drive-md5sum": "cdca79619ba987c40b98a8e31d281e4a",
+              "virtual-hard-drive-gzipped": True,
           })
       }
     }))}
@@ -499,7 +515,7 @@ ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
 ir2:equeue-on-watch RUNNING
-ir2:kvm-{hash}-on-watch RUNNING
+ir2:kvm-{kvm-hash-value}-on-watch RUNNING
 ir2:kvm_controller EXITED
 ir2:monitor-httpd-{hash}-on-watch RUNNING
 ir2:monitor-httpd-graceful EXITED
@@ -1282,7 +1298,7 @@ class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
       'disk-device-path': '/dev/virt0 /dev/virt1',
       'wipe-disk-ondestroy': True
     })
-    self.slap.waitForInstance(max_retry=2)
+    self.raising_waitForInstance(3)
     instance_path = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
@@ -1298,3 +1314,210 @@ class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
 dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
       )
     self.assertTrue(os.access(slapos_wipe_device_disk, os.X_OK))
+
+
+@skipUnlessKvm
+class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
+  __partition_reference__ = 'idc'
+  maxDiff = None
+
+  def setUp(self):
+    super(TestImageDownloadController, self).setUp()
+    self.working_directory = tempfile.mkdtemp()
+    self.destination_directory = os.path.join(
+      self.working_directory, 'destination')
+    os.mkdir(self.destination_directory)
+    self.config_json = os.path.join(
+      self.working_directory, 'config.json')
+    self.md5sum_fail_file = os.path.join(
+      self.working_directory, 'md5sum_fail_file')
+    self.error_state_file = os.path.join(
+      self.working_directory, 'error_state_file')
+    self.processed_md5sum = os.path.join(
+      self.working_directory, 'processed_md5sum')
+    self.startImageHttpServer()
+    self.image_download_controller = os.path.join(
+      self.slap.instance_directory, self.__partition_reference__ + '0',
+      'software_release', 'parts', 'image-download-controller',
+      'image-download-controller')
+
+  def tearDown(self):
+    self.stopImageHttpServer()
+    shutil.rmtree(self.working_directory)
+    super(InstanceTestCase, self).tearDown()
+
+  def callImageDownloadController(self, *args):
+    call_list = [sys.executable, self.image_download_controller] + list(args)
+    try:
+      return (0, subprocess.check_output(
+        call_list, stderr=subprocess.STDOUT).decode('utf-8'))
+    except subprocess.CalledProcessError as e:
+      return (e.returncode, e.output.decode('utf-8'))
+
+  def runImageDownloadControlerWithDict(self, json_dict):
+    with open(self.config_json, 'w') as fh:
+      json.dump(json_dict, fh, indent=2)
+    return self.callImageDownloadController(
+      self.config_json,
+      'curl',  # comes from test environemnt, considered to be recent enough
+      self.md5sum_fail_file,
+      self.error_state_file,
+      self.processed_md5sum
+    )
+
+  def assertFileContent(self, path, content):
+    self.assertTrue(os.path.exists, path)
+    with open(path, 'r') as fh:
+      self.assertEqual(
+        fh.read(),
+        content)
+
+  def test(self):
+    json_dict = {
+      'error-amount': 0,
+      'config-md5sum': 'config-md5sum',
+      'destination-directory': self.destination_directory,
+      'image-list': [
+        {
+          'destination-tmp': 'tmp',
+          'url': self.fake_image,
+          'destination': 'destination',
+          'link': 'image_001',
+          'gzipped': False,
+          'md5sum': self.fake_image_md5sum,
+        }
+      ]
+    }
+    code, result = self.runImageDownloadControlerWithDict(
+      json_dict
+    )
+    self.assertEqual(
+      (code, result.strip()),
+      (0, """
+INF: Storing errors in %(error_state_file)s
+INF: %(fake_image)s : Downloading
+INF: %(fake_image)s : Stored with checksum %(checksum)s
+INF: %(fake_image)s : Symlinking %(symlink)s -> %(destination)s
+""".strip() % {
+        'fake_image': self.fake_image,
+        'checksum': self.fake_image_md5sum,
+        'error_state_file': self.error_state_file,
+        'symlink': os.path.join(self.destination_directory, 'image_001'),
+        'destination': os.path.join(self.destination_directory, 'destination'),
+      })
+    )
+    self.assertFileContent(self.md5sum_fail_file, '')
+    self.assertFileContent(self.error_state_file, '')
+    self.assertFileContent(self.processed_md5sum, 'config-md5sum')
+    self.assertFalse(
+      os.path.exists(os.path.join(self.destination_directory, 'tmp')))
+    self.assertFileContent(
+      os.path.join(self.destination_directory, 'destination'),
+      'fake_image_content'
+    )
+
+    # Nothing happens if all is downloaded
+    code, result = self.runImageDownloadControlerWithDict(
+      json_dict
+    )
+    self.assertEqual(
+      (code, result.strip()),
+      (0, """
+INF: Storing errors in %(error_state_file)s
+INF: %(fake_image)s : already downloaded
+""".strip() % {
+        'fake_image': self.fake_image,
+        'checksum': self.fake_image_md5sum,
+        'error_state_file': self.error_state_file,
+        'symlink': os.path.join(self.destination_directory, 'image_001'),
+        'destination': os.path.join(self.destination_directory, 'destination'),
+      })
+    )
+
+  def test_fail(self):
+    json_dict = {
+      'error-amount': 0,
+      'config-md5sum': 'config-md5sum',
+      'destination-directory': self.destination_directory,
+      'image-list': [
+        {
+          'destination-tmp': 'tmp',
+          'url': self.fake_image,
+          'destination': 'destination',
+          'link': 'image_001',
+          'gzipped': False,
+          'md5sum': self.fake_image_wrong_md5sum,
+        }
+      ]
+    }
+    for try_num in range(1, 5):
+      code, result = self.runImageDownloadControlerWithDict(
+        json_dict
+      )
+      self.assertEqual(
+        (code, result.strip()),
+        (1, """
+INF: Storing errors in %(error_state_file)s
+INF: %(fake_image)s : Downloading
+""".  strip() % {
+          'fake_image': self.fake_image,
+          'error_state_file': self.error_state_file,
+          'symlink': os.path.join(self.destination_directory, 'image_001'),
+          'destination': os.path.join(
+            self.destination_directory, 'destination'),
+        })
+      )
+      fake_image_url = '#'.join([
+        self.fake_image, self.fake_image_wrong_md5sum])
+      self.assertFileContent(
+        self.md5sum_fail_file, """{
+  "%s": %s
+}""" % (fake_image_url, try_num))
+      self.assertFileContent(
+        self.error_state_file, """
+        ERR: %(fake_image)s : MD5 mismatch expected is %(wrong_checksum)s """
+        """but got instead %(real_checksum)s""".strip() % {
+          'fake_image': self.fake_image,
+          'wrong_checksum': self.fake_image_wrong_md5sum,
+          'real_checksum': self.fake_image_md5sum,
+        })
+      self.assertFileContent(self.processed_md5sum, 'config-md5sum')
+      self.assertFalse(
+        os.path.exists(os.path.join(self.destination_directory, 'tmp')))
+      self.assertFalse(
+        os.path.exists(
+          os.path.join(self.destination_directory, 'destination')))
+
+    code, result = self.runImageDownloadControlerWithDict(
+      json_dict
+    )
+    self.assertEqual(
+      (code, result.strip()),
+      (1, """
+INF: Storing errors in %(error_state_file)s
+""".  strip() % {
+        'fake_image': self.fake_image,
+        'error_state_file': self.error_state_file,
+        'symlink': os.path.join(self.destination_directory, 'image_001'),
+        'destination': os.path.join(
+          self.destination_directory, 'destination'),
+      })
+    )
+    fake_image_url = '#'.join([
+      self.fake_image, self.fake_image_wrong_md5sum])
+    self.assertFileContent(
+      self.md5sum_fail_file, """{
+  "%s": %s
+}""" % (fake_image_url, 4))
+    self.assertFileContent(
+      self.error_state_file, """
+      ERR: %(fake_image)s : Checksum is incorrect after 4 tries, will not """
+      """retry""".strip() % {
+        'fake_image': self.fake_image,
+      })
+    self.assertFileContent(self.processed_md5sum, 'config-md5sum')
+    self.assertFalse(
+      os.path.exists(os.path.join(self.destination_directory, 'tmp')))
+    self.assertFalse(
+      os.path.exists(
+        os.path.join(self.destination_directory, 'destination')))

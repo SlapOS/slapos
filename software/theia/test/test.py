@@ -183,7 +183,7 @@ class TestTheia(TheiaTestCase):
       self.computer_partition_root_path,
       'srv',
       'project',
-      'request-script.sh',
+      'request-script-template.sh',
     )
     self.assertTrue(os.path.exists(script_path))
 
