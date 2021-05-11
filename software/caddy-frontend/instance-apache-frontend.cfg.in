@@ -466,7 +466,9 @@ target = ${trafficserver-directory:configuration}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['trafficserver'] }}/bin/traffic_manager
 wrapper-path = ${trafficserver-variable:wrapper-path}
-environment = TS_ROOT=${buildout:directory}
+environment =
+  TS_ROOT=${buildout:directory}
+  PROXY_CONFIG_CONFIG_DIR=${trafficserver-directory:configuration}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [trafficserver-reload]
