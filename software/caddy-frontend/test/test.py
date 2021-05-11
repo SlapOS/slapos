@@ -3608,7 +3608,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
   def test_enable_cache_server_alias(self):
@@ -3650,7 +3650,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     result = fakeHTTPResult(
@@ -3712,7 +3712,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     # BEGIN: Check that squid.log is correctly filled in
@@ -3720,13 +3720,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       os.path.join(
         self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
       ))
-    if len(ats_log_file_list) == 1:
-      ats_log_file = ats_log_file_list[0]
+    self.assertEqual(1, len(ats_log_file_list))
+    ats_log_file = ats_log_file_list[0]
     direct_pattern = re.compile(
       r'.*TCP_MISS/200 .*test-path/deeper.*enablecache.example.com'
       '.* - DIRECT*')
     # ATS needs some time to flush logs
-    timeout = 5
+    timeout = 10
     b = time.time()
     while True:
       direct_pattern_match = 0
@@ -3906,7 +3906,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     # check stale-if-error support is really respected if not present in the
@@ -3982,7 +3982,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     pattern = re.compile(
       r'.*ERR_READ_TIMEOUT/504 .*test_enable_cache_ats_timeout'
       '.*TIMEOUT_DIRECT*')
-    timeout = 5
+    timeout = 10
     b = time.time()
     # ATS needs some time to flush logs
     while True:
@@ -4049,7 +4049,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     try:
@@ -4096,7 +4096,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
   def test_enable_http2_false(self):
