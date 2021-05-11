@@ -1485,6 +1485,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'enable_cache': True,
         'disable-via-header': True,
       },
+      'enable_cache-https-only': {
+        'url': cls.backend_url,
+        'https-only': False,
+        'enable_cache': True,
+      },
       'enable-http2-false': {
         'url': cls.backend_url,
         'enable-http2': False,
@@ -3668,6 +3673,61 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         HTTP_PORT,),
       result.headers['Location']
     )
+
+  def test_enable_cache_https_only(self):
+    parameter_dict = self.assertSlaveBase('enable_cache-https-only')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'HTTPS/test', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
+
+    headers = result.headers.copy()
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'HTTP/test', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqualResultJson(result, 'Path', '/HTTP/test')
+
+    headers = result.headers.copy()
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
