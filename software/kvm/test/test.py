@@ -46,6 +46,7 @@ import time
 import shutil
 import sys
 
+from slapos.proxy.db_version import DB_VERSION
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
@@ -214,22 +215,19 @@ class MonitorAccessMixin(object):
     return sqlite3.connect(sqlitedb_file)
 
   def get_all_instantiated_partition_list(self):
-    connection = self.sqlite3_connect()
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    cursor.execute(
-      "SELECT reference, xml, connection_xml, partition_reference, "
-      "software_release, requested_state, software_type "
-      "FROM partition14 "
-      "WHERE slap_state='busy'")
-    return cursor.fetchall()
+    db = self.sqlite3_connect()
+    try:
+      db.row_factory = lambda cursor, row: {
+        col[0]: row[idx]
+        for idx, col in enumerate(cursor.description)
+      }
+      return db.execute(
+        "SELECT reference, xml, connection_xml, partition_reference,"
+              " software_release, requested_state, software_type"
+        " FROM partition%s"
+        " WHERE slap_state='busy'" % DB_VERSION).fetchall()
+    finally:
+      db.close()
 
   def test_access_monitor(self):
     connection_parameter_dict = self.computer_partition\

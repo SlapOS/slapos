@@ -32,7 +32,7 @@ import os
 import requests
 import sqlite3
 
-
+from slapos.proxy.db_version import DB_VERSION
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -169,27 +169,21 @@ class SelectMixin(object):
     )
     return sqlite3.connect(sqlitedb_file)
 
-  def select(self, fields, table, where={}):
-    connection = self.sqlite3_connect()
-
-    def dict_factory(cursor, row):
-      d = {}
-      for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-      return d
-    connection.row_factory = dict_factory
-    cursor = connection.cursor()
-
-    condition = " AND ".join("%s='%s'" % (k, v) for k, v in where.items())
-    cursor.execute(
-      "SELECT %s FROM %s%s"
-      % (
+  def select(self, table, fields=('*',), **where):
+    db = self.sqlite3_connect()
+    try:
+      db.row_factory = lambda cursor, row: {
+        col[0]: row[idx]
+        for idx, col in enumerate(cursor.description)
+      }
+      return db.execute("SELECT %s FROM %s%s%s" % (
         ", ".join(fields),
-        table,
-        " WHERE %s" % condition if where else "",
-      )
-    )
-    return cursor.fetchall()
+        table, DB_VERSION,
+        " WHERE " + " AND ".join("%s='%s'" % x for x in where.items())
+        if where else "",
+      )).fetchall()
+    finally:
+      db.close()
 
 
 class TestJupyterCustomFrontend(SelectMixin, InstanceTestCase):
@@ -226,7 +220,7 @@ class TestJupyterCustomFrontend(SelectMixin, InstanceTestCase):
     except Exception:
       pass
 
-    selection = self.select(fields=["*"], table = "slave14", where = {"hosted_by": r._partition_id})
+    selection = self.select("slave", hosted_by=r._partition_id)
 
     self.assertEqual(len(selection), 1)
 
@@ -268,7 +262,7 @@ class TestJupyterCustomAdditional(SelectMixin, InstanceTestCase):
     except Exception:
       pass
 
-    selection = self.select(fields=["*"], table = "slave14", where = {"hosted_by": r._partition_id})
+    selection = self.select("slave", hosted_by=r._partition_id)
 
     self.assertEqual(len(selection), 1)
 
