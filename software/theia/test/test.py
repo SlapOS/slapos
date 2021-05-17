@@ -369,12 +369,29 @@ class ResilientTheiaTestCase(TheiaTestCase):
     return cls._getTypePartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
 
   @classmethod
-  def _deployEmbeddedSoftware(cls, software_url, instance_name):
-    slapos = cls._getSlapos()
+  def _processEmbeddedInstance(cls, retries=0, software_type='export'):
+    slapos = cls._getSlapos(software_type)
+    for _ in range(retries):
+      try:
+        output = subprocess.check_output((slapos, 'node', 'instance'), stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError:
+        continue
+      print(output)
+      break
+    else:
+      subprocess.check_call((slapos, 'node', 'instance'))
+
+  @classmethod
+  def _deployEmbeddedSoftware(cls, software_url, instance_name, retries=0, software_type='export'):
+    slapos = cls._getSlapos(software_type)
     subprocess.check_call((slapos, 'supply', software_url, 'slaprunner'))
-    subprocess.check_call((slapos, 'node', 'software'))
+    try:
+      subprocess.check_output((slapos, 'node', 'software'), stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      print(e.output)
+      raise
     subprocess.check_call((slapos, 'request', instance_name, software_url))
-    subprocess.check_call((slapos, 'node', 'instance'))
+    cls._processEmbeddedInstance(retries, software_type)
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -545,3 +562,103 @@ class TestTheiaExportImportLocalURL(TestTheiaExportImport):
     super(TestTheiaExportImportLocalURL, self)._checkImport()
 
 
+class TakeoverMixin(object):
+  def _getTakeoverUrlAndPassword(self, scope="theia-1"):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    takeover_url = parameter_dict["takeover-%s-url" % scope]
+    takeover_password = parameter_dict["takeover-%s-password" % scope]
+    return takeover_url, takeover_password
+
+  def _getTakeoverPage(self, takeover_url):
+    resp = requests.get(takeover_url, verify=True)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    return resp.text
+
+  def _waitBackupStarted(self, takeover_url, wait=1, tries=1):
+    for _ in range(tries):
+      if "No backup downloaded yet, takeover should not happen now." in self._getTakeoverPage(takeover_url):
+        time.sleep(wait)
+        continue
+      break
+    else:
+      with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
+        log = f.read()
+      self.fail("Backup did not start before timeout:\n%s" % log)
+
+  def _waitBackupFinished(self, takeover_url, wait=1, tries=1):
+    for _ in range(tries):
+      if "<b>Importer script(s) of backup in progress:</b> True" in self._getTakeoverPage(takeover_url):
+        time.sleep(wait)
+        continue
+      break
+    else:
+      with open(self._getTypePartitionPath('import', 'var', 'log', 'equeue.log')) as f:
+        log = f.read()
+      self.fail("Backup did not finish before timeout:\n%s" % log)
+
+  def _requestTakeover(self, takeover_url, takeover_password):
+    resp = requests.get("%s?password=%s" % (takeover_url, takeover_password), verify=True)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertNotIn("Error", resp.text, "An Error occured: %s" % resp.text)
+    self.assertIn("Success", resp.text, "An Error occured: %s" % resp.text)
+    return resp.text
+
+
+class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
+  test_instance_max_retries = 0
+  test_backup_started_tries = 100
+  test_backup_finished_tries = 100
+
+  _test_software_url = "https://lab.nexedi.com/xavier_thompson/slapos/raw/theia_resilience/software/theia/test/resilience_dummy/software.cfg"
+
+  def _prepareExport(self):
+    # Deploy test instance
+    self._deployEmbeddedSoftware(self._test_software_url, 'test_instance', self.test_instance_max_retries)
+
+    # Check that there is an export and import instance and get their partition IDs
+    self.export_id = self._getTypePartitionId('export')
+    self.import_id = self._getTypePartitionId('import')
+
+  def _doBackup(self):
+    # Call exporter script instead of waiting for cron job
+    # XXX Accelerate cron frequency instead ?
+    exporter_script = self._getTypePartitionPath('export', 'bin', 'exporter')
+    transaction_id = str(int(time.time()))
+    subprocess.check_call((exporter_script, '--transaction-id', transaction_id))
+
+    takeover_url, _ = self._getTakeoverUrlAndPassword()
+
+    # Wait for importer to start and finish
+    self._waitBackupStarted(takeover_url, 1, self.test_backup_started_tries)
+    self._waitBackupFinished(takeover_url, 1, self.test_backup_finished_tries)
+
+  def _doTakeover(self):
+    # Takeover
+    takeover_url, takeover_password = self._getTakeoverUrlAndPassword()
+    self._requestTakeover(takeover_url, takeover_password)
+
+    # Wait for import instance to become export instance and new import to be allocated
+    # This also checks that all promises of theia instances succeed
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.computer_partition = self.requestDefaultInstance()
+
+  def _checkTakeover(self):
+    # Check that there is an export, import and frozen instance and get their new partition IDs
+    import_id = self.import_id
+    export_id = self.export_id
+    new_export_id = self._getTypePartitionId('export')
+    new_import_id = self._getTypePartitionId('import')
+    new_frozen_id = self._getTypePartitionId('frozen')
+
+    # Check that old export instance is now frozen
+    self.assertEqual(export_id, new_frozen_id)
+
+    # Check that old import instance is now the new export instance
+    self.assertEqual(import_id, new_export_id)
+
+    # Check that there is a new import instance
+    self.assertNotIn(new_import_id, (export_id, new_export_id))
+
+    # Check that the test instance is properly redeployed
+    # This checks the promises of the test instance
+    subprocess.check_call((self._getSlapos('export'), 'node', 'instance'))
