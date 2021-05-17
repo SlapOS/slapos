@@ -247,6 +247,22 @@ class TestTheiaWithSR(TheiaTestCase):
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
 
 
+class TestTheiaFrontend(TheiaTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'additional-frontend-guid': 'SOMETHING'
+    }
+
+  def setUp(self):
+    self.connection_parameters = self.computer_partition.getConnectionParameterDict()
+
+  def test_http_get(self):
+    for key in ('url', 'additional-url'):
+      resp = requests.get(self.connection_parameters[key], verify=False)
+      self.assertEqual(requests.codes.unauthorized, resp.status_code)
+
+
 class TestTheiaEnv(TheiaTestCase):
   dummy_software_path = os.path.abspath('dummy/software.cfg')
 
