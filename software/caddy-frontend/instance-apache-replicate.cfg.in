@@ -474,6 +474,7 @@ kedifa = ${request-kedifa:connection-monitor-base-url}
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin/
 srv = ${buildout:directory}/srv/
+tmp = ${buildout:directory}/tmp/
 backup = ${:srv}/backup
 # CAUCASE directories
 caucased = ${:srv}/caucased
@@ -887,9 +888,10 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
       netloc=caucase_netloc,
+      tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,
-      key_len=2048,
+      key_len=2048
 )}}
 
 [buildout]
