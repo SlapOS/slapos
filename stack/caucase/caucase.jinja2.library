@@ -19,6 +19,7 @@ mode = 0750
 [{{ prefix }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = {{ caucased_path }}
+# LUKE tmp {{ tmp }}
 {%- if tmp %}
 environment =
   TMP={{ tmp }}
