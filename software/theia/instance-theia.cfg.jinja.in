@@ -453,6 +453,7 @@ template =
       $${slapos-standalone-config:computer-id} \
       --sr='$${instance-parameter:configuration.embedded-sr}' \
       --srtype='$${instance-parameter:configuration.embedded-sr-type}' \
+      --srparams='$${instance-parameter:configuration.embedded-sr-parameters}' \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \

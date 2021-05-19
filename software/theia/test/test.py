@@ -230,12 +230,14 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 class TestTheiaWithSR(TheiaTestCase):
   sr_url = 'bogus/software.cfg'
   sr_type = 'bogus_type'
+  sr_parameters = '{"bogus_param": "bogus_value"}'
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'embedded-sr': cls.sr_url,
       'embedded-sr-type': cls.sr_type,
+      'embedded-sr-parameters': cls.sr_parameters
     }
 
   def test(self):
@@ -245,6 +247,9 @@ class TestTheiaWithSR(TheiaTestCase):
 
     self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+
+    service_info = subprocess.check_output((slapos, 'service', 'info', 'Embedded Instance'))
+    self.assertIn("{'bogus_param': 'bogus_value'}", service_info)
 
 
 class TestTheiaFrontend(TheiaTestCase):

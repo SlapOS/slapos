@@ -16,6 +16,7 @@ cert = $${slap-connection:cert-file}
 configuration.autorun = running
 configuration.embedded-sr =
 configuration.embedded-sr-type =
+configuration.embedded-sr-parameters =
 ;Frontend default configuration
 configuration.frontend-name = Theia Frontend
 configuration.frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
