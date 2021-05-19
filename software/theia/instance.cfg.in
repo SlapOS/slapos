@@ -34,6 +34,7 @@ default-parameters =
     "autorun": "running",
     "embedded-sr": null,
     "embedded-sr-type": null,
+    "embedded-instance-parameters": "null",
     "frontend-name": "Theia Frontend",
     "frontend-sr": "$${:frontend-sr}",
     "frontend-sr-type": "RootSoftwareInstance",
