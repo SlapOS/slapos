@@ -446,8 +446,11 @@ template =
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
       $${slapos-standalone-config:computer-id} \
+      {% if parameter_dict.get('embedded-sr') %} \
       --sr='{{ parameter_dict['embedded-sr'] }}' \
       --srtype='{{ parameter_dict['embedded-sr-type'] }}' \
+      --srparams='$${embedded-instance-parameters:rendered}' \
+      {% endif %} \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
@@ -573,6 +576,14 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
+
+{% if parameter_dict.get('embedded-sr') -%}
+[embedded-instance-parameters]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}.json
+template =
+  inline:{{ parameter_dict['embedded-instance-parameters'] | indent(2) }}
+{%- endif %}
 
 [request-script-template]
 recipe = slapos.recipe.template:jinja2
