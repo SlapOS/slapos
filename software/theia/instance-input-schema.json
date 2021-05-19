@@ -24,6 +24,11 @@
       "description": "Type of the optional embedded software",
       "type": "string"
     },
+    "embedded-instance-parameters": {
+      "title": "Embedded Instance Parameters",
+      "description": "Parameters for the embedded instance, as a JSON dict",
+      "type": "string"
+    },
     "frontend-guid": {
       "title": "Frontend Instance ID",
       "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
