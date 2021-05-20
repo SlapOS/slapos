@@ -64,8 +64,8 @@ for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split
     disk_info_list.append({
       'path': disk_device_path,
       'format': "raw",
-      'aio': "native",
-      'cache': "none"
+      'aio': {{ parameter_dict['disk-aio'] or "native" }},
+      'cache': {{ parameter_dict['disk-cache'] or "none" }},
     })
 
 if not disk_info_list:
