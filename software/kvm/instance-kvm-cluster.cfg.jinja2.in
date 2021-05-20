@@ -24,7 +24,11 @@ global-ipv6 = {{ ipv6 }}
 
 [slap-parameter]
 {% for k, v in slapparameter_dict.items() -%}
+{%-   if k == 'namebase' %}
+{{ k }} = {{ v }}
+{%-   else %}
 {{ k }} = {{ dumps(v) }}
+{%-   endif %}
 {% endfor -%}
 
 [request-common]
