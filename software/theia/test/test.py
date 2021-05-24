@@ -545,6 +545,29 @@ class TestTheiaExportImportLocalURL(TestTheiaExportImport):
     super(TestTheiaExportImportLocalURL, self)._checkImport()
 
 
+class TestTheiaBadRestoreScript(TestTheiaExportImportLocalURL):
+  def _doBackup(self):
+    # Call export script manually
+    theia_export_script = self._getTypePartitionPath('export', 'bin', 'theia-export-script')
+    subprocess.check_call((theia_export_script,), stderr=subprocess.STDOUT)
+
+    # Copy <export>/srv/backup/theia to <import>/srv/backup/theia manually
+    export_backup_path = self._getTypePartitionPath('export', 'srv', 'backup', 'theia')
+    import_backup_path = self._getTypePartitionPath('import', 'srv', 'backup', 'theia')
+    shutil.rmtree(import_backup_path)
+    shutil.copytree(export_backup_path, import_backup_path)
+
+    # Call the import script manually and check that it fails
+    theia_import_script = self._getTypePartitionPath('import', 'bin', 'theia-import-script')
+    self.assertRaises(
+      subprocess.CalledProcessError,
+      subprocess.check_call,
+      (theia_import_script,),
+      env={'TEST_RESTORE_STATUS': '1'},
+      stderr=subprocess.STDOUT,
+    )
+
+
 class TakeoverMixin(object):
   def _getTakeoverUrlAndPassword(self, scope="theia-1"):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
