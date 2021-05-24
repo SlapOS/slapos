@@ -255,11 +255,18 @@ class TestTheiaWithSR(TheiaTestCase):
 
   def test(self):
     slapos = self._getSlapos()
-    info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
     instance_name = "Embedded Instance"
-
-    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
-    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
+        self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
+        self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+        break
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        time.sleep(20)
 
     service_info = subprocess.check_output((slapos, 'service', 'info', instance_name), universal_newlines=True)
     self.assertIn("{'bogus_param': 'bogus_value'}", service_info)
@@ -727,6 +734,21 @@ class ERP5Mixin(object):
   def _getERP5Password(self, connexion_parameters):
     return connexion_parameters['inituser-password']
 
+  def _waitERP5connected(self, url, user, password):
+    for _ in range(5):
+      try:
+        resp = requests.get('%s/getId' % url, auth=(user, password), verify=False, allow_redirects=False)
+      except Exception:
+        time.sleep(20)
+        continue
+      if resp.status_code != 200:
+        time.sleep(20)
+        continue
+      break
+    else:
+      self.fail('Failed to connect to ERP5')
+    self.assertEqual(resp.text, 'erp5')
+
 
 class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
   test_instance_max_retries = 12
@@ -752,20 +774,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
     user = self._getERP5User(info)
     password = self._getERP5Password(info)
     url = self._getERP5Url(info, 'erp5')
-
-    for _ in range(5):
-      try:
-        resp = requests.get('%s/getId' % url, auth=(user, password), verify=False, allow_redirects=False)
-      except Exception:
-        time.sleep(20)
-        continue
-      if resp.status_code != 200:
-        time.sleep(20)
-        continue
-      break
-    else:
-      self.fail('Failed to connect to ERP5')
-    self.assertEqual(resp.text, 'erp5')
+    self._waitERP5connected(url, user, password)
 
     # Change title
     new_title = time.strftime("Portal Types %a %d %b %Y %H:%M:%S", time.localtime(time.time()))
@@ -773,6 +782,21 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
     resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
     self.assertEqual(resp.text, new_title)
     self._erp5_new_title = new_title
+
+    # Wait until changes have been catalogued
+    mariadb_partition = self._getTypePartitionPath('export', 'srv', 'runner', 'instance', 'slappart3')
+    mysqldump_bin = os.path.join(mariadb_partition, 'bin', 'mysqldump')
+    max_tries = 10
+    for t in range(max_tries):
+      try:
+        mariadb_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
+        self.assertIn(new_title, mariadb_dump, 'Mariadb catalog is not yet synchronised')
+        break
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        print("Mariadb catalog is not yet synchronised, waiting a bit")
+        time.sleep(20)
 
     # Compute backup date in the near future
     soon = time.time() + 120
@@ -813,19 +837,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
     user = self._getERP5User(info)
     password = self._getERP5Password(info)
     url = self._getERP5Url(info, 'erp5')
-
-    for _ in range(5):
-      try:
-        resp = requests.get('%s/getId' % url, auth=(user, password), verify=False, allow_redirects=False)
-      except Exception:
-        time.sleep(20)
-        continue
-      if resp.status_code != 200 or resp.text != 'erp5':
-        time.sleep(20)
-        continue
-      break
-    else:
-      self.fail('Failed to connect to ERP5')
+    self._waitERP5connected(url, user, password)
 
     resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
     self.assertEqual(resp.text, self._erp5_new_title)
@@ -853,5 +865,14 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
       self._processEmbeddedInstance(self.test_instance_max_retries)
 
     # Check that the mariadb catalog was properly restored
-    mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
-    self.assertIn(self._erp5_new_title, mariadb_restored_dump)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
+        self.assertIn(self._erp5_new_title, mariadb_restored_dump, 'Mariadb catalog is not properly restored')
+        break
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        print("Mariadb catalog is not yet restored, waiting a bit")
+        time.sleep(20)
