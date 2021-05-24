@@ -336,6 +336,7 @@ template =
   {{ "{% raw %}" }}
   {% raw %}
   export THEIA_WEBVIEW_EXTERNAL_ENDPOINT='{{hostname}}'
+  export THEIA_MINI_BROWSER_HOST_PATTERN='{{hostname}}'
   {% endraw %}
   {{ "{% endraw %}" }}
   export THEIA_OPEN_EDITOR_TOKEN=$(${openssl:location}/bin/openssl rand -hex 32)
