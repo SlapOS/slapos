@@ -255,11 +255,17 @@ class TestTheiaWithSR(TheiaTestCase):
 
   def test(self):
     slapos = self._getSlapos()
-    info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
     instance_name = "Embedded Instance"
-
-    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
-    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
+        self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
+        self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        time.sleep(20)
 
     service_info = subprocess.check_output((slapos, 'service', 'info', instance_name), universal_newlines=True)
     self.assertIn("{'bogus_param': 'bogus_value'}", service_info)
@@ -853,5 +859,12 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
       self._processEmbeddedInstance(self.test_instance_max_retries)
 
     # Check that the mariadb catalog was properly restored
-    mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
-    self.assertIn(self._erp5_new_title, mariadb_restored_dump)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
+        self.assertIn(self._erp5_new_title, mariadb_restored_dump, 'Mariadb catalog is not properly restored')
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        time.sleep(20)
