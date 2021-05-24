@@ -221,11 +221,18 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 
     # Stop theia's services
     with self.slap.instance_supervisor_rpc as instance_supervisor:
-      process_info, = [
-          p for p in instance_supervisor.getAllProcessInfo()
-          if p['name'].startswith('slapos-standalone-instance-')
-      ]
-      instance_supervisor.stopProcessGroup(process_info['group'])
+      def getProcessInfo():
+        process_info, = [
+            p for p in instance_supervisor.getAllProcessInfo()
+            if p['name'].startswith('slapos-standalone-instance-')
+        ]
+        return process_info
+      instance_supervisor.stopProcessGroup(getProcessInfo()['group'])
+      process_info = getProcessInfo()
+      with open(process_info['stdout_logfile']) as f:
+        print(f.read())
+      self.assertEqual(process_info['statename'], 'STOPPED')
+      self.assertEqual(process_info['exitstatus'], 0)
 
     # the supervisor controlling instances is also stopped
     self.assertFalse(embedded_slapos_process.is_running())
@@ -244,11 +251,17 @@ class TestTheiaWithSR(TheiaTestCase):
 
   def test(self):
     slapos = self._getSlapos()
-    info = subprocess.check_output((slapos, 'proxy', 'show'))
     instance_name = "Embedded Instance"
-
-    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
-    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        info = subprocess.check_output((slapos, 'proxy', 'show'))
+        self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
+        self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        time.sleep(20)
 
 
 class TestTheiaEnv(TheiaTestCase):
@@ -823,5 +836,12 @@ class TestTheiaResilienceERP5(ERP5Mixin, TestTheiaResilience):
       self._processEmbeddedInstance(self.test_instance_max_retries)
 
     # Check that the mariadb catalog was properly restored
-    mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
-    self.assertIn(self._erp5_new_title, mariadb_restored_dump)
+    max_tries = 5
+    for t in range(max_tries):
+      try:
+        mariadb_restored_dump = subprocess.check_output((mysqldump_bin, 'erp5'))
+        self.assertIn(self._erp5_new_title, mariadb_restored_dump, 'Mariadb catalog is not properly restored')
+      except AssertionError:
+        if t == max_tries - 1:
+          raise
+        time.sleep(20)
