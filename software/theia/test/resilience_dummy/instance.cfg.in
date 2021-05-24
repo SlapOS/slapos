@@ -31,4 +31,5 @@ rendered = $${directory:srv}/exporter.exclude
 recipe = slapos.recipe.template:jinja2
 template = inline:#!/bin/sh
   echo "Hello : $(date)" >> $${directory:home}/runner-import-restore.log
+  exit $TEST_RESTORE_STATUS
 rendered = $${directory:srv}/runner-import-restore
