@@ -51,6 +51,8 @@ import urlparse
 import socket
 import sys
 import logging
+import random
+import string
 
 
 try:
@@ -527,6 +529,15 @@ class TestHandler(BaseHTTPRequestHandler):
       response = None
       status_code = 200
       timeout = int(self.headers.dict.get('timeout', '0'))
+      if 'x-maximum-timeout' in self.headers.dict:
+        maximum_timeout = int(self.headers.dict['x-maximum-timeout'])
+        timeout = random.randrange(maximum_timeout)
+      if 'x-response-size' in self.headers.dict:
+        min_response, max_response = [
+          int(q) for q in self.headers.dict['x-response-size'].split(' ')]
+        reponse_size = random.randrange(min_response, max_response)
+        response = ''.join(
+          random.choice(string.lowercase) for x in range(reponse_size))
       compress = int(self.headers.dict.get('compress', '0'))
       header_dict = {}
       prefix = 'x-reply-header-'
