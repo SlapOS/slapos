@@ -9,7 +9,8 @@ import os
 
 
 def post_make_hook(options, buildout, env):
-  os.makedirs(options['tessdata-location'])
+  if not os.path.exists(directory):
+    os.makedirs(options['tessdata-location'])
 
   download = zc.buildout.download.Download(
       buildout['buildout'],
