@@ -40,6 +40,7 @@ extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-re6stnet-parameters
     raw monitor2_template_rendered {{ monitor2_template_rendered }}
+    key slave_instance_list slap-configuration:slave-instance-list
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
