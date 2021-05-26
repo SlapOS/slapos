@@ -26,10 +26,12 @@
 ##############################################################################
 
 import os
+import time
 import requests
 import json
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import CrontabMixin
 
 setUpModule, Re6stnetTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -56,3 +58,34 @@ class TestPortRedirection(Re6stnetTestCase):
             'srcPort': 9201,
             'destPort': 9201,
         }, portredir_config[0])
+
+
+class TestTokens(Re6stnetTestCase, CrontabMixin):
+
+  partition_reference = "SOFTINST-1"
+
+  @classmethod
+  def requestDefaultInstance(cls, state='started'):
+    default_instance = super(
+      Re6stnetTestCase, cls).requestDefaultInstance(state=state)
+    cls.requestSlaveInstance()
+    return default_instance
+
+  @classmethod
+  def requestSlaveInstance(cls):
+    software_url = cls.getSoftwareURL()
+    cls.logger.debug('requesting slave "%s"', cls.partition_reference)
+    return cls.slap.request(
+      software_release=software_url,
+      partition_reference=cls.partition_reference,
+      partition_parameter_kw={},
+      shared=True,
+    )
+
+  def test_tokens(self):
+    self._executeCrontabAtDate('re6stnet-check-token', '+10min')
+    self.slap.waitForInstance() # Wait until publish is done
+
+    s = self.requestSlaveInstance()
+
+    self.assertEqual("Token is ready for use", s.getConnectionParameterDict()['1_info'])
