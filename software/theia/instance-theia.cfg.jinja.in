@@ -1,4 +1,5 @@
-{% set additional_frontend = slapconfiguration_section['configuration.additional-frontend-guid'] %}
+{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
+{% set additional_frontend = parameter_dict['additional-frontend-guid'] %}
 
 [buildout]
 extends =
@@ -24,12 +25,6 @@ parts =
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
-
-
-[instance-parameter]
-{% for k, v in slapconfiguration_section.items() -%}
-{{ k }} = {{ v }}
-{% endfor -%}
 
 
 [publish-connection-parameter]
@@ -142,18 +137,18 @@ return = domain secure_access
 
 [remote-frontend]
 <= remote-frontend-base
-name = $${instance-parameter:configuration.frontend-name}
-software-url = $${instance-parameter:configuration.frontend-sr}
-software-type = $${instance-parameter:configuration.frontend-sr-type}
-sla-instance_guid = $${instance-parameter:configuration.frontend-guid}
+name = {{ parameter_dict['frontend-name'] }}
+software-url = {{ parameter_dict['frontend-sr'] }}
+software-type = {{ parameter_dict['frontend-sr-type'] }}
+sla-instance_guid = {{ parameter_dict['frontend-guid'] }}
 
 {% if additional_frontend %}
 [remote-additional-frontend]
 <= remote-frontend-base
-name = $${instance-parameter:configuration.additional-frontend-name}
-software-url = $${instance-parameter:configuration.additional-frontend-sr}
-software-type = $${instance-parameter:configuration.additional-frontend-sr-type}
-sla-instance_guid = $${instance-parameter:configuration.additional-frontend-guid}
+name = {{ parameter_dict['additional-frontend-name'] }}
+software-url = {{ parameter_dict['additional-frontend-sr'] }}
+software-type = {{ parameter_dict['additional-frontend-sr-type'] }}
+sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 {% endif %}
 
 
@@ -169,7 +164,7 @@ bytes = 12
 recipe = slapos.cookbook:free_port
 minimum = 3000
 maximum = 3100
-ip = $${instance-parameter:ipv6-random}
+ip = {{ ipv6_random }}
 
 [frontend-instance-certificate]
 recipe = plone.recipe.command
@@ -325,7 +320,7 @@ template =
 recipe = slapos.cookbook:free_port
 minimum = 3500
 maximum = 3600
-ip = $${instance-parameter:ipv4-random}
+ip = {{ ipv4_random }}
 
 [theia-service]
 recipe = slapos.recipe.template:jinja2
@@ -360,7 +355,7 @@ command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:p
 hash-existing-files =
   ${yarn.lock:output}
   ${theia-wrapper:rendered}
-ip =  $${instance-parameter:ipv4-random}
+ip =  {{ ipv4_random }}
 hostname = $${:ip}
 port = $${theia-service:port}
 base-url = $${theia-service:base-url}
@@ -416,11 +411,11 @@ command =
 recipe = slapos.cookbook:free_port
 minimum = 4000
 maximum = 4100
-ip = $${instance-parameter:ipv4-random}
+ip = {{ ipv4_random }}
 
 [slapos-standalone-config]
-ipv4 = $${instance-parameter:ipv4-random}
-ipv6 = $${instance-parameter:ipv6-random}
+ipv4 = {{ ipv4_random }}
+ipv6 = {{ ipv6_random }}
 port = $${slapos-standalone-port:port}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
@@ -451,8 +446,11 @@ template =
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
       $${slapos-standalone-config:computer-id} \
-      --sr='$${instance-parameter:configuration.embedded-sr}' \
-      --srtype='$${instance-parameter:configuration.embedded-sr-type}' \
+      {% if parameter_dict.get('embedded-sr') %} \
+      --sr='{{ parameter_dict['embedded-sr'] }}' \
+      --srtype='{{ parameter_dict['embedded-sr-type'] }}' \
+      --srparams='$${embedded-instance-parameters:rendered}' \
+      {% endif %} \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
@@ -482,7 +480,7 @@ command =
 update-command = $${:command}
 service-name = slapos-node-auto
 supervisor-conf = $${directory:runner}/etc/supervisord.conf
-autorun = $${instance-parameter:configuration.autorun}
+autorun = {{ parameter_dict['autorun'] }}
 
 
 # Theia Local Environment Setup
@@ -578,6 +576,14 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
+
+{% if parameter_dict.get('embedded-sr') -%}
+[embedded-instance-parameters]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/$${:_buildout_section_name_}.json
+template =
+  inline:{{ parameter_dict['embedded-instance-parameters'] | indent(2) }}
+{%- endif %}
 
 [request-script-template]
 recipe = slapos.recipe.template:jinja2

@@ -12,20 +12,6 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
-;Theia default configuration
-configuration.autorun = running
-configuration.embedded-sr =
-configuration.embedded-sr-type =
-;Frontend default configuration
-configuration.frontend-name = Theia Frontend
-configuration.frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-configuration.frontend-sr-type = RootSoftwareInstance
-configuration.frontend-guid =
-;Additional frontend default configuration
-configuration.additional-frontend-name = Theia Additional Frontend
-configuration.additional-frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-configuration.additional-frontend-sr-type = RootSoftwareInstance
-configuration.additional-frontend-guid =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
@@ -39,4 +25,23 @@ template = ${instance-theia:output}
 rendered = $${buildout:directory}/instance-theia.cfg
 mode = 0644
 context =
-  section slapconfiguration_section slap-configuration
+  jsonkey default_parameter_dict :default-parameters
+  key parameter_dict slap-configuration:configuration
+  key ipv6_random slap-configuration:ipv6-random
+  key ipv4_random slap-configuration:ipv4-random
+default-parameters =
+  {
+    "autorun": "running",
+    "embedded-sr": null,
+    "embedded-sr-type": null,
+    "embedded-instance-parameters": "null",
+    "frontend-name": "Theia Frontend",
+    "frontend-sr": "$${:frontend-sr}",
+    "frontend-sr-type": "RootSoftwareInstance",
+    "frontend-guid": null,
+    "additional-frontend-name":"Theia Additional Frontend",
+    "additional-frontend-sr": "$${:frontend-sr}",
+    "additional-frontend-sr-type": "RootSoftwareInstance",
+    "additional-frontend-guid": null
+  }
+frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
