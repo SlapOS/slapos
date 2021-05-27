@@ -55,7 +55,7 @@
       "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
     },
     "additional-frontend-sr-type": {
-     "title": "Additional Frontend Software Type",
+      "title": "Additional Frontend Software Type",
       "description": "Type of the frontend instance, like \"frontend\".",
       "type": "string",
       "default": "RootSoftwareInstance"
