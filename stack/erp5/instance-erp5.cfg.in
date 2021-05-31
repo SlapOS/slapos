@@ -259,7 +259,7 @@ config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-z
 config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
-config-wcfs_enable = {{ wcfs_enable }}
+config-wcfs_enable = {{ dumps(wcfs_enable) }}
 software-type = zope
 
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
