@@ -306,9 +306,6 @@ mode = 0700
 template =
   inline:
   #!/bin/sh
-  . ${gowork:env.sh}
-  # reset PS1 from gowork
-  export PS1='$ '
   export HOME=$${buildout:directory}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
 
