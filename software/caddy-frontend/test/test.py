@@ -7329,9 +7329,32 @@ backend _health-check-default-http
     self.assertEqualResultJson(
       result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
 
+    self.assertLastLogLineRegexp(
+      '_health-check-failover-url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'https-backend _health-check-failover-url-https-failover'
+      r'\/_health-check-failover-url-backend '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /failoverpath HTTP/1.1"'
+    )
+
     result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
     self.assertEqualResultJson(
       result, 'Path', '/failover-url?a=b&c=/failoverpath')
+    self.assertLastLogLineRegexp(
+      '_health-check-failover-url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'http-backend _health-check-failover-url-http-failover'
+      r'\/_health-check-failover-url-backend '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /failoverpath HTTP/1.1"'
+    )
 
   def test_health_check_failover_url_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase(
