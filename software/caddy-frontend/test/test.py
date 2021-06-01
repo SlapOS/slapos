@@ -1201,6 +1201,16 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
     return parameter_dict
 
+  def assertLastLogLineRegexp(self, log_name, log_regexp):
+    log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd', log_name
+      ))[0]
+
+    self.assertRegexpMatches(
+      open(log_file, 'r').readlines()[-1],
+      log_regexp)
+
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -1891,38 +1901,24 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Set-Cookie']
     )
 
-    # check access log
-    log_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_access_log'
-      ))[0]
+    self.assertLastLogLineRegexp(
+      '_Url_access_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
+      r'"GET \/test-path\/deep\/..\/.\/deeper HTTP\/1.1" \d{3} '
+      r'\d+ "-" "TEST USER AGENT" \d+'
+    )
 
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
-                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path\/deep\/..\/.\/deeper HTTP\/1.1" \d{3} ' \
-                 r'\d+ "-" "TEST USER AGENT" \d+'
-
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
-
-    # check backend log
-    log_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_backend_log'
-      ))[0]
-
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ ' \
-                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] ' \
-                 r'http-backend _Url-http\/_Url-backend ' \
-                 r'\d+/\d+\/\d+\/\d+\/\d+ ' \
-                 r'200 \d+ - - ---- ' \
-                 r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ ' \
-                 r'"GET /test-path/deeper HTTP/1.1"'
-
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
+    self.assertLastLogLineRegexp(
+      '_Url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'http-backend _Url-http\/_Url-backend '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /test-path/deeper HTTP/1.1"'
+    )
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
