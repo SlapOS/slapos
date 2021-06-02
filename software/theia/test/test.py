@@ -40,15 +40,17 @@ import pexpect
 import psutil
 import requests
 import sqlite3
+import six
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.svcbackend import _getSupervisordSocketPath
 
 
+software_cfg = 'software%s.cfg' % ('-py3' if six.PY3 else '')
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+        os.path.join(os.path.dirname(__file__), '..', software_cfg)))
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -190,9 +192,9 @@ class TestTheia(TheiaTestCase):
   def test_slapos_cli(self):
     slapos = self._getSlapos()
     proxy_show_output = subprocess.check_output((slapos, 'proxy', 'show'))
-    self.assertIn('slaprunner', proxy_show_output)
+    self.assertIn(b'slaprunner', proxy_show_output)
     computer_list_output = subprocess.check_output((slapos, 'computer', 'list'))
-    self.assertIn('slaprunner', computer_list_output)
+    self.assertIn(b'slaprunner', computer_list_output)
 
 
 class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
@@ -230,21 +232,26 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 class TestTheiaWithSR(TheiaTestCase):
   sr_url = 'bogus/software.cfg'
   sr_type = 'bogus_type'
+  instance_parameters = '{\n"bogus_param": "bogus_value"\n}'
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       'embedded-sr': cls.sr_url,
       'embedded-sr-type': cls.sr_type,
+      'embedded-instance-parameters': cls.instance_parameters
     }
 
   def test(self):
     slapos = self._getSlapos()
-    info = subprocess.check_output((slapos, 'proxy', 'show'))
+    info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
     instance_name = "Embedded Instance"
 
     self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+
+    service_info = subprocess.check_output((slapos, 'service', 'info', instance_name), universal_newlines=True)
+    self.assertIn("{'bogus_param': 'bogus_value'}", service_info)
 
 
 class TestTheiaFrontend(TheiaTestCase):

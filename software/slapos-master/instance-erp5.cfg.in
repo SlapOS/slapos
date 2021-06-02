@@ -89,6 +89,7 @@ backup-caucased = ${:srv}/backup/caucased
        backup_dir='${directory:backup-caucased}',
        data_dir='${directory:srv}/caucased',
        netloc=caucase_netloc,
+       tmp='${directory:tmp}',
        service_auto_approve_count=caucase_dict.get('service-auto-approve-amount', 1),
        user_auto_approve_count=caucase_dict.get('user-auto-approve-amount', 0),
        key_len=caucase_dict.get('key-length', 2048),
@@ -252,7 +253,7 @@ config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-z
 config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
-config-wcfs_enable = {{ wcfs_enable }}
+config-wcfs_enable = {{ dumps(wcfs_enable) }}
 software-type = zope
 
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}
@@ -374,6 +375,7 @@ ca-dir = ${buildout:directory}/srv/ssl
 {% endif -%}
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
+tmp = ${buildout:directory}/tmp
 services = ${:etc}/run
 requests = ${:ca-dir}/requests
 private = ${:ca-dir}/private
