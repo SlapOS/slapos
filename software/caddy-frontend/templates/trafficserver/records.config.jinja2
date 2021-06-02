@@ -15,7 +15,6 @@ CONFIG proxy.config.env_prep STRING example_prep.sh
 CONFIG proxy.config.alarm_email STRING nobody
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.output.logfile STRING traffic.out
-CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.admin.user_id STRING {{ '#%s' % os_module.geteuid() }}
 CONFIG proxy.config.admin.number_config_bak INT 0
 LOCAL proxy.local.incoming_ip_to_bind STRING {{ ats_configuration['local-ip'] }}
