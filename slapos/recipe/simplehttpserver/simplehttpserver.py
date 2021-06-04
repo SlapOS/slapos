@@ -43,20 +43,23 @@ class ServerHandler(SimpleHTTPRequestHandler):
     form = cgi.FieldStorage(
       fp=self.rfile,
       headers=self.headers,
-      environ={'REQUEST_METHOD':'POST',
-                'CONTENT_TYPE':self.headers['Content-Type']}
+      environ={'REQUEST_METHOD': 'POST',
+               'CONTENT_TYPE': self.headers['Content-Type']}
     )
-    name = form['path'].value
+    name = form['path'].value.decode('utf-8')
     content = form['content'].value
-    method = 'a'
+    method = 'ab'
     if 'clear' in form and form['clear'].value == '1':
-      method = 'w'
+      method = 'wb'
     self.writeFile(name, content, method)
     self.respond(200, type=self.headers['Content-Type'])
     self.wfile.write(b"Content written to %s" % str2bytes(name))
 
-  def writeFile(self, filename, content, method='a'):
-    file_path = os.path.join(self.document_path, filename)
+  def writeFile(self, filename, content, method='ab'):
+    file_path = os.path.abspath(os.path.join(self.document_path, filename))
+    if not file_path.startswith(self.document_path):
+      self.respond(403, 'text/plain')
+      self.wfile.write(b"Forbidden")
 
     try:
       os.makedirs(os.path.dirname(file_path))
