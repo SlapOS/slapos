@@ -500,6 +500,7 @@ extra-context =
 local-ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = ${slap-network-information:global-ipv6}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
+autocert-directory = {{ frontend_directory['autocert'] }}
 {#- backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }} XXX TODO #}
 {#- backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }} XXX TODO #}
 
