@@ -140,7 +140,9 @@ return = domain secure_access
 name = {{ parameter_dict['frontend-name'] }}
 software-url = {{ parameter_dict['frontend-sr'] }}
 software-type = {{ parameter_dict['frontend-sr-type'] }}
+{%- if parameter_dict.get('frontend-guid') %}
 sla-instance_guid = {{ parameter_dict['frontend-guid'] }}
+{%- endif %}
 
 {% if additional_frontend %}
 [remote-additional-frontend]
@@ -148,7 +150,9 @@ sla-instance_guid = {{ parameter_dict['frontend-guid'] }}
 name = {{ parameter_dict['additional-frontend-name'] }}
 software-url = {{ parameter_dict['additional-frontend-sr'] }}
 software-type = {{ parameter_dict['additional-frontend-sr-type'] }}
+{%- if parameter_dict.get('additional-frontend-guid') %}
 sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
+{%- endif %}
 {% endif %}
 
 
@@ -281,7 +285,7 @@ install =
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      '''$${slap-configuration:root-instance-title}'''
+      b'''{{ root_title }}'''
     ).hexdigest() + "?s=256&d=retro"
     shutil.copy(self.download(gravatar_url), '''$${:location}''')
   except Exception:
@@ -444,11 +448,13 @@ template =
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
       $${slapos-standalone-config:computer-id} \
-      {% if parameter_dict.get('embedded-sr') %} \
+      {%- if parameter_dict.get('embedded-sr') %}
       --sr='{{ parameter_dict['embedded-sr'] }}' \
+      {%- if parameter_dict.get('embedded-sr-type') %}
       --srtype='{{ parameter_dict['embedded-sr-type'] }}' \
+      {%- endif %}
       --srparams='$${embedded-instance-parameters:rendered}' \
-      {% endif %} \
+      {%- endif %}
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
