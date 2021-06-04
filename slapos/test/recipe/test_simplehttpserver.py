@@ -50,8 +50,7 @@ class SimpleHTTPServerTest(unittest.TestCase):
         ))
 
   def test_install(self):
-    # XXX: install should return list of path
-    self.assertEqual(self.recipe.install(), self.wrapper)
+    self.assertEqual(self.recipe.install(), [self.wrapper])
     self.process = subprocess.Popen(
         self.wrapper,
         stdout=subprocess.PIPE,
