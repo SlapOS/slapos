@@ -27,6 +27,7 @@ mode = 0644
 context =
   jsonkey default_parameter_dict :default-parameters
   key parameter_dict slap-configuration:configuration
+  key root_title slap-configuration:root-instance-title
   key ipv6_random slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
 default-parameters =

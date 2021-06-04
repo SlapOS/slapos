@@ -285,7 +285,7 @@ install =
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      '''$${slap-configuration:root-instance-title}'''
+      b'''{{ root_title }}'''
     ).hexdigest() + "?s=256&d=retro"
     shutil.copy(self.download(gravatar_url), '''$${:location}''')
   except Exception:
