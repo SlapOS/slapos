@@ -357,7 +357,7 @@ log-socket = ${frontend-haproxy-rsyslogd-config:log-socket}
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
-frontend-graceful-command = ${frontend-haproxy-validate:rendered} && kill -USR1 $(cat ${:pid-file})
+frontend-graceful-command = ${frontend-haproxy-validate:rendered} && kill -USR2 $(cat ${:pid-file})
 not-found-file = ${frontend-directory:document-root}/${not-found-html:filename}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
 http-port = ${configuration:plain_http_port}
@@ -973,7 +973,7 @@ config-port = ${frontend-configuration:slave-introspection-https-port}
 name = slave-introspection
 log = ${frontend-haproxy-configuration:slave-introspection-access-log} ${frontend-haproxy-configuration:slave-introspection-error-log}
 rotate-num = ${configuration:rotate-num}
-post = kill -USR1 $(cat ${frontend-haproxy-configuration:slave-introspection-pid-file})
+post = kill -USR2 $(cat ${frontend-haproxy-configuration:slave-introspection-pid-file})
 delaycompress =
 
 [promise-logrotate-setup]
