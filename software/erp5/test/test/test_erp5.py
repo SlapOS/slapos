@@ -218,6 +218,45 @@ class TestBalancerPorts(ERP5InstanceTestCase):
         ]))
 
 
+class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 can be instantiated with selenium server for test runner.
+  """
+  __partition_reference__ = 'sel'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        '_':
+        json.dumps({
+            'test-runner': {
+                'selenium': {
+                    "target": "selenium-server",
+                    "server-url": "https://example.com",
+                    "verify-server-certificate": False,
+                    "desired-capabilities": {
+                        "browserName": "firefox",
+                        "version": "68.0.2esr",
+                    }
+                }
+            }
+        })
+    }
+
+  def test_test_runner_configuration_json_file(self):
+    runUnitTest_script, = glob.glob(
+        self.computer_partition_root_path + "/../*/bin/runUnitTest.real")
+    config_file = None
+    with open(runUnitTest_script) as f:
+      for line in f:
+        if 'ERP5_TEST_RUNNER_CONFIGURATION' in line:
+          _, config_file = line.split('=')
+    assert config_file
+    with open(config_file.strip()) as f:
+      self.assertEqual(
+          f.read(),
+          json.dumps(json.loads(self.getInstanceParameterDict()['_'])['test-runner']))
+
+
 class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instantiated without test runner.
   """
