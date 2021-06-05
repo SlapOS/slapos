@@ -128,6 +128,7 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
+    import json json
 import-list =
     file instance_zodb_base context:template-zodb-base
 

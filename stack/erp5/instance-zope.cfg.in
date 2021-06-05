@@ -470,6 +470,7 @@ environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
+  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:rendered}
 {%- if wsgi %}
   erp5_wsgi=1
 {%- endif %}
@@ -487,6 +488,12 @@ command-line =
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
   --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[test-runner-configuration]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/${:_buildout_section_name_}.json
+template = inline:
+  {{ json.dumps(slapparameter_dict['test-runner-configuration']) }}
 
 [{{ section('runUnitTest') }}]
 < = run-test-common
