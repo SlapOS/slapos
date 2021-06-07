@@ -20,6 +20,7 @@ parts =
   resiliency-exclude-file
   shellinabox-frontend-reload
   promises
+  testnode-compatibility
 
 [monitor-publish]
 recipe = slapos.cookbook:publish
@@ -37,7 +38,7 @@ slapos-directory = $${directory:slapos}
 working-directory = $${directory:testnode}
 test-suite-directory = $${directory:test-suite}
 shared-part-list = $${directory:shared}
-proxy-host = $${slap-network-information:local-ipv4}
+proxy-host = {{ partition_ipv4 }}
 proxy-port = 5000
 log-directory = $${directory:log}
 srv-directory = $${rootdirectory:srv}
@@ -45,8 +46,8 @@ software-directory = $${directory:software}
 run-directory = $${directory:run}
 test-node-title = {{ slapparameter_dict['test-node-title'] }}
 node-quantity = {{ slapparameter_dict['node-quantity'] }}
-ipv4-address = $${slap-network-information:local-ipv4}
-ipv6-address = $${slap-network-information:global-ipv6}
+ipv4-address = {{ partition_ipv4 }}
+ipv6-address = {{ partition_ipv6 }}
 test-suite-master-url = {{ slapparameter_dict['test-suite-master-url'] }}
 instance-dict = {{ slapparameter_dict['instance-dict'] }}
 software-path-list = {{ slapparameter_dict['software-path-list'] }}
@@ -61,7 +62,7 @@ httpd-conf-file = $${rootdirectory:etc}/httpd.conf
 httpd-wrapper = $${rootdirectory:bin}/httpd
 httpd-port = 9080
 httpd-software-access-port = 9081
-httpd-ip = $${slap-network-information:global-ipv6}
+httpd-ip = {{ partition_ipv6 }}
 httpd-log-directory = $${basedirectory:log}
 httpd-software-directory = $${directory:software}
 httpd-cert-file = $${rootdirectory:etc}/httpd-public.crt
@@ -119,7 +120,7 @@ template = inline:
       /
     }
   }
-ipv6 = $${slap-network-information:global-ipv6}
+ipv6 = {{ partition_ipv6 }}
 hostname = [$${:ipv6}]
 port = 8080
 username = testnode
@@ -202,7 +203,7 @@ run = $${rootdirectory:var}/run
 [directory]
 recipe = slapos.cookbook:mkdirectory
 slapos = $${rootdirectory:srv}/slapos
-testnode = $${rootdirectory:srv}/testnode
+testnode = $${buildout:directory}/t
 shared = $${rootdirectory:srv}/shared
 test-suite = $${rootdirectory:srv}/test_suite
 log = $${basedirectory:log}/testnode
@@ -210,6 +211,16 @@ run = $${basedirectory:run}/testnode
 software = $${rootdirectory:srv}/software
 shellinabox = $${rootdirectory:srv}/shellinabox
 ca-dir = $${rootdirectory:srv}/ca
+
+[testnode-compatibility]
+# Remove old ~/srv/testnode
+recipe = slapos.recipe.build
+install =
+  import os
+  from zc.buildout.rmtree import rmtree
+  old_testnode_path = self.buildout['rootdirectory']['srv'] + '/testnode'
+  if os.exists(old_testnode_path):
+    rmtree(old_testnode_path)
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
