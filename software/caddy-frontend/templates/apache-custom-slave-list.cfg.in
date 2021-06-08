@@ -101,7 +101,8 @@ context =
 {%-   set enable_cache = (slave_instance['enable_cache'] and slave_type != 'redirect') %}
 {%-   set slave_reference = slave_instance.get('slave_reference') %}
 {%-   set slave_kedifa = slave_kedifa_information.get(slave_reference) %}
-{#-   Setup backend URLs for front facing Caddy #}
+
+{#-   Setup backend URLs for frontend-haproxy #}
 {%-   if slave_type == 'redirect' %}
 {%-     do slave_instance.__setitem__('backend-http-url', slave_instance.get('url', '').rstrip('/')) %}
 {%-     if slave_instance.get('https-url') %}
@@ -124,6 +125,19 @@ context =
 {%-       do slave_instance.__setitem__('backend-https-url', backend_haproxy_https_url) %}
 {%-     endif %}
 {%-   endif %}
+{%-   for frontend_key, key in [('backend-http-info', 'backend-http-url'), ('backend-https-info', 'backend-https-url')] %}
+{%-     if key in slave_instance %}
+{%-       set parsed = urlparse_module.urlparse(slave_instance[key]) %}
+{%-       do slave_instance.__setitem__(frontend_key, {
+            'scheme': parsed.scheme,
+            'hostname': parsed.hostname,
+            'port': parsed.port or DEFAULT_PORT[parsed.scheme],
+            'path': parsed.path,
+            'fragment': parsed.fragment,
+            'query': parsed.query }) %}
+            {%-     endif %}
+{%-   endfor %}
+
 {%-   if slave_kedifa %}
 {%-     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%-   else %}
