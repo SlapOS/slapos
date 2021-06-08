@@ -191,7 +191,7 @@ context =
 {%-     do slave_instance.__setitem__('health-check-http-path', '') %}
 {%-   endif %} {# if slave_instance['health-check'] #}
 {#-   Set Up log files #}
-{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_access_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_frontend_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([frontend_directory['slave-log'], '%s_error_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([frontend_directory['slave-log'], '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
