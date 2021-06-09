@@ -1,0 +1,153 @@
+[buildout]
+parts =
+    nginx_conf
+    mime_types
+    launcher
+    nginx-graceful
+    port-listening-promise
+    logrotate-entry-nginx
+    publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+local-directory = {{buildout['directory']}}
+offline = true
+
+extends = {{ parameter_list['template_monitor'] }}
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+script = ${directory:etc}/run
+service = ${directory:etc}/service
+log = ${directory:var}/log
+run = ${directory:var}/run
+backup = ${directory:srv}/backup
+data = ${directory:srv}/hugo_conf
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${directory:home}/tmp
+client_body_temp_path = ${:tmp}/client_body_temp_path
+proxy_temp_path = ${:tmp}/proxy_temp_path
+fastcgi_temp_path = ${:tmp}/fastcgi_temp_path
+uwsgi_temp_path = ${:tmp}/uwsgi_temp_path
+scgi_temp_path = ${:tmp}/scgi_temp_path
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.site = quickstart
+configuration.port = 8080
+
+[hugo_conf]
+nb_workers = 2
+
+ip = ${slap-configuration:ipv6-random}
+port = ${slap-configuration:configuration.port}
+access_url = http://[${:ip}]:${:port}
+
+path_pid = ${basedirectory:run}/nginx.pid
+path_log = ${basedirectory:log}/nginx.log
+path_access_log = ${basedirectory:log}/nginx.access.log
+path_error_log = ${basedirectory:log}/nginx.error.log
+path_tmp = ${tempdirectory:tmp}
+
+path_nginx_conf = ${directory:etc}/nginx.conf
+path_mime_types = ${directory:etc}/mime_types
+path_shell = {{ parameter_list['dash_location'] }}/bin/dash
+path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
+
+bin_launcher = ${basedirectory:script}/launcher
+
+docroot = ${buildout:local-directory}/parts/${slap-configuration:configuration.site}/public
+default_index = ${buildout:local-directory}/parts/${slap-configuration:configuration.site}/public/index.html
+
+[nginx_conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_nginx_conf'] }}
+rendered = ${hugo_conf:path_nginx_conf}
+context = 
+    section param_hugo_conf hugo_conf
+    section param_tempdir tempdirectory
+
+[mime_types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_mime_types'] }}
+rendered = ${hugo_conf:path_mime_types}
+
+[launcher]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_launcher'] }}
+rendered = ${hugo_conf:bin_launcher}
+mode = 700
+context = 
+    section param_hugo_conf hugo_conf
+
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_hugo_conf hugo_conf
+
+[port-listening-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = nginx-port-listening.py
+config-hostname = ${hugo_conf:ip}
+config-port = ${hugo_conf:port}
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8197
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${hugo_conf:path_access_log} ${hugo_conf:path_error_log}
+post = kill -USR1 $(cat ${hugo_conf:path_pid})
+
+# Request a CDN entry to master
+[hugo_conf-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Hugo frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${hugo_conf:access_url}
+config-https-only = true
+return = domain secure_access
+
+# Add a promise to make sure the cdn is properly configured
+[hugo_conf-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = hugo_conf-http-frontend.py
+url = ${hugo_conf-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
+
+#[slap-parameter]
+#site = quickstart
+#port = 8080
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+server_url = ${hugo_conf:access_url}
+env = ${buildout:local-directory}/go.work/env.sh
+debug = ${hugo_conf:docroot}
+server-cdn-url = ${hugo_conf-frontend-promise:url}
