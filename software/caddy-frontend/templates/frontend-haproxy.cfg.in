@@ -2,6 +2,7 @@ global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
   master-worker
+  expose-experimental-directives
 
 log {{ configuration['log-socket'] }} local0
 defaults
@@ -14,6 +15,11 @@ defaults
 {#-  timeout connect XXX TODO #}
 {#-  retries XXX TODO #}
 
+{%- macro http_request_normalize() %}
+  http-request normalize-uri path-merge-slashes
+  http-request normalize-uri path-strip-dot
+  http-request normalize-uri path-strip-dotdot
+{%- endmacro %}
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
 {%- macro frontend_entry(slave_instance, scheme, wildcard) %}
 {#-   wildcard switch allows to put dangerous entries in the end, as haproxy parses with first match #}
@@ -43,6 +49,7 @@ defaults
 
 frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+{{ http_request_normalize() }}
 # Here use Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'http', False) }}
@@ -53,6 +60,7 @@ frontend http-frontend
 
 frontend https-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
+{{ http_request_normalize() }}
 # Here use ssl_fc_sni and fallback to Host header
 {%- for slave_instance in frontend_slave_list -%}
 {{ frontend_entry(slave_instance, 'https', False) }}
@@ -82,4 +90,4 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-   for k, v in slave_instance.items() %}
 {#- #  {{ k }} => {{ v }} #}
 {%-   endfor %}
-{%- endfor %}
+{% endfor %}

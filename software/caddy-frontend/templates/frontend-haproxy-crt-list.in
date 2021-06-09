@@ -1,4 +1,4 @@
-{#- main certificate #}
+{#- main certificate -#}
 {{ configuration['master-certificate'] }}
 {%- for slave in frontend_slave_list %}
 {%-   set entry_list = [] %}
@@ -7,4 +7,4 @@
 {#-   <snifilter> #}
 {%-   do entry_list.extend(slave['host_list']) %}
 {{    ' '.join(entry_list) }}
-{%- endfor %}
+{% endfor %}
