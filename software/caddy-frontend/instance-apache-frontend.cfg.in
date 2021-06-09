@@ -176,6 +176,7 @@ context =
 template-empty = {{ software_parameter_dict['template_empty'] }}
 template-default-slave-virtualhost = {{ software_parameter_dict['template_default_slave_virtualhost'] }}
 template-frontend-haproxy-configuration = {{ software_parameter_dict['template_frontend_haproxy_configuration'] }}
+template-frontend-haproxy-crt-list = {{ software_parameter_dict['template_frontend_haproxy_crt_list'] }}
 template-frontend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_frontend_haproxy_rsyslogd_conf'] }}
 template-backend-haproxy-configuration = {{ software_parameter_dict['template_backend_haproxy_configuration'] }}
 template-backend-haproxy-rsyslogd-conf = {{ software_parameter_dict['template_backend_haproxy_rsyslogd_conf'] }}
@@ -304,6 +305,7 @@ extra-context =
 # BBB: SlapOS Master non-zero knowledge END
 ## frontend haproxy
     key template_frontend_haproxy_configuration software-release-path:template-frontend-haproxy-configuration
+    key template_frontend_haproxy_crt_list software-release-path:template-frontend-haproxy-crt-list
 ## backend haproxy
     key template_backend_haproxy_configuration software-release-path:template-backend-haproxy-configuration
 ## Configuration passed by section
@@ -353,6 +355,7 @@ delaycompress =
 
 [frontend-haproxy-configuration]
 file = ${directory:etc}/frontend-haproxy.cfg
+crt-list = ${directory:etc}/frontend-haproxy-crt-list.txt
 log-socket = ${frontend-haproxy-rsyslogd-config:log-socket}
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
@@ -560,7 +563,7 @@ template = {{ software_parameter_dict['template_configuration_state_script'] }}
 rendered = ${directory:bin}/${:_buildout_section_name_}
 mode = 0700
 
-path_list = ${frontend-haproxy-configuration:file} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:file} ${frontend-haproxy-configuration:crt-list} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =

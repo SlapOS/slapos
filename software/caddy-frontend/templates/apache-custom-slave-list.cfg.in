@@ -293,6 +293,7 @@ command = {{ software_parameter_dict['htpasswd'] }} -cb ${:file} {{ slave_refere
 {%-   set cert_name = slave_reference.replace('-','.') + '.pem' %}
 {%-   set certificate = '%s/%s' % (frontend_directory['autocert'], cert_name) %}
 {%-   do slave_parameter_dict.__setitem__('certificate', certificate )%}
+{%-   do slave_instance.__setitem__('certificate', certificate )%}
 {#-   Set ssl certificates for each slave #}
 {%-     for cert_name in ('ssl_csr', 'ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt')%}
 {%-       set cert_file_key = 'path_to_' + cert_name %}
@@ -498,13 +499,24 @@ template = inline:
 rendered = ${:file}
 
 ##<Frontend haproxy>
+[frontend-haproxy-slave-list]
+list = {{ dumps(sorted(frontend_slave_list)) }}
+
+[frontend-haproxy-crt-list]
+<= jinja2-template-base
+template = {{ template_frontend_haproxy_crt_list }}
+rendered = ${frontend-haproxy-config:crt-list}
+extra-context =
+  key frontend_slave_list frontend-haproxy-slave-list:list
+  section configuration frontend-haproxy-config
+
 [frontend-haproxy-configuration]
 < = jinja2-template-base
 template = {{ template_frontend_haproxy_configuration }}
 rendered = ${frontend-haproxy-config:file}
-frontend_slave_list = {{ dumps(sorted(frontend_slave_list)) }}
 extra-context =
-  key frontend_slave_list :frontend_slave_list
+  key frontend_slave_list frontend-haproxy-slave-list:list
+  key crt_list frontend-haproxy-crt-list:rendered
   section configuration frontend-haproxy-config
 
 [frontend-haproxy-config]
