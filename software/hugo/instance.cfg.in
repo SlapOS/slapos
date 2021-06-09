@@ -1,0 +1,55 @@
+[buildout]
+parts =
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = http://[$${hugo-wrapper:ip}]:$${hugo-wrapper:port}
+env = ${gowork:env.sh}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+run = $${:var}/run
+
+services   = $${:etc}/service
+data       = $${:srv}/data
+
+[hugo-ssl]
+recipe = plone.recipe.command
+cert-file = $${directory:data}/cert.pem
+key-file = $${directory:data}/key.pem
+update-command =
+stop-on-error = true
+
+[hugo-wrapper]
+recipe = slapos.recipe.template:jinja2
+port = 1313
+ip = $${slap-configuration:ipv6-random}
+template =
+  inline:#!/bin/sh
+  
+  ulimit -n $(ulimit -Hn)
+  exec ${gowork:bin}/hugo \
+    -static ${hugo-get:location}/static \
+    -data $${directory:data} \
+    -http [$${:ip}]:$${:port} \
+    -turn ""
+rendered = $${directory:services}/hugo
