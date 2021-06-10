@@ -26,32 +26,31 @@
 ##############################################################################
 from __future__ import unicode_literals
 
-import os
-import textwrap
-import logging
-import subprocess
-import tempfile
-import time
-import re
 import json
+import logging
+import os
+import re
 import shutil
-from six.moves.urllib.parse import urlparse, urljoin
+import subprocess
+import textwrap
+import time
+import unittest
 
 import pexpect
 import psutil
 import requests
-import sqlite3
 import six
 
+from six.moves.urllib.parse import urlparse, urljoin
+
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.grid.svcbackend import getSupervisorRPC
-from slapos.grid.svcbackend import _getSupervisordSocketPath
+from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 
 
 software_cfg = 'software%s.cfg' % ('-py3' if six.PY3 else '')
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', software_cfg)))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', software_cfg))
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -384,6 +383,9 @@ class ResilientTheiaTestCase(TheiaTestCase):
       print(output)
       break
     else:
+      # Sleep a bit as an attempt to workaround monitoring boostrap not being ready
+      print("Wait before running slapos node instance one last time")
+      time.sleep(120)
       subprocess.check_call((slapos, 'node', 'instance'))
 
   @classmethod
@@ -639,8 +641,8 @@ class TakeoverMixin(object):
 
 class TestTheiaResilience(TheiaResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
-  backup_started_tries = 90
-  backup_finished_tries = 90
+  backup_started_tries = 50
+  backup_finished_tries = 50
   backup_wait_interval = 10
 
   _test_software_url = "https://lab.nexedi.com/xavier_thompson/slapos/raw/theia_resilience/software/theia/test/resilience_dummy/software.cfg"
