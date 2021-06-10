@@ -720,6 +720,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
+    cls.runKedifaUpdater()
 
   @classmethod
   def runKedifaUpdater(cls):
