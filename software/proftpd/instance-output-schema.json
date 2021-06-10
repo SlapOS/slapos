@@ -10,7 +10,8 @@
     },
     "username": {
       "description": "Default username",
-      "type": "string"
+      "type": "string",
+      "optional": true
     },
     "password": {
       "description": "Password for default username, when not using ssh-key",
