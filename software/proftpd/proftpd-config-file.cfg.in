@@ -20,7 +20,7 @@ SFTPEngine on
 SFTPHostKey {{ proftpd['ssh-host-rsa-key'] }}
 SFTPHostKey {{ proftpd['ssh-host-dsa-key'] }}
 SFTPHostKey {{ proftpd['ssh-host-ecdsa-key'] }}
-#SFTPAuthorizedUserKeys file:{{ proftpd['ssh-authorized-keys-dir'] }}%u
+SFTPAuthorizedUserKeys file:{{ proftpd['ssh-authorized-key'] }}
 
 
 # Logging

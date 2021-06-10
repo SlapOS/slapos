@@ -34,11 +34,13 @@ import subprocess
 
 import pysftp
 import psutil
+import paramiko
 from paramiko.ssh_exception import SSHException
 from paramiko.ssh_exception import AuthenticationException
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
+
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -176,9 +178,9 @@ class TestUserManagement(ProFTPdTestCase):
 class TestBan(ProFTPdTestCase):
   def test_client_are_banned_after_5_wrong_passwords(self):
     # Simulate failed 5 login attempts
-    for i in range(5):
+    for _ in range(5):
       with self.assertRaisesRegex(AuthenticationException,
-                                   'Authentication failed'):
+                                  'Authentication failed'):
         self._getConnection(password='wrong')
 
     # after that, even with a valid password we cannot connect
@@ -237,3 +239,66 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
             s for s in self.proftpdProcess.connections('unix')
             if not s.laddr.startswith(self.computer_partition_root_path)
         ])
+
+
+class TestSSHKey(TestSFTPOperations):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    cls.ssh_key = paramiko.DSSKey.generate(1024)
+    return {
+        'ssh-key':
+        '---- BEGIN SSH2 PUBLIC KEY ----\n{}\n---- END SSH2 PUBLIC KEY ----'.
+        format(cls.ssh_key.get_base64())
+    }
+
+  def _getConnection(self, username=None):
+    """Override to log in with the SSH key
+    """
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    sftp_url = urlparse(parameter_dict['url'])
+    username = username or parameter_dict['username']
+
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+
+    with tempfile.NamedTemporaryFile(mode='w') as keyfile:
+      self.ssh_key.write_private_key(keyfile)
+      keyfile.flush()
+      return pysftp.Connection(
+          sftp_url.hostname,
+          port=sftp_url.port,
+          cnopts=cnopts,
+          username=username,
+          private_key=keyfile.name,
+      )
+
+  def test_authentication_failure(self):
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    sftp_url = urlparse(parameter_dict['url'])
+
+    with self.assertRaisesRegex(AuthenticationException,
+                                'Authentication failed'):
+      self._getConnection(username='wrong username')
+
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+
+    # wrong private key
+    with tempfile.NamedTemporaryFile(mode='w') as keyfile:
+      paramiko.DSSKey.generate(1024).write_private_key(keyfile)
+      keyfile.flush()
+      with self.assertRaisesRegex(AuthenticationException,
+                                  'Authentication failed'):
+        pysftp.Connection(
+            sftp_url.hostname,
+            port=sftp_url.port,
+            cnopts=cnopts,
+            username=parameter_dict['username'],
+            private_key=keyfile.name,
+        )
+
+  def test_published_parameters(self):
+    # no password is published, we only login with key
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertIn('username', parameter_dict)
+    self.assertNotIn('password', parameter_dict)
