@@ -8,4 +8,4 @@
 {% endfor %}
 {#- Fallback to default certificate -#}
 {{ configuration['master-certificate'] }}
-
+# END OF FILE
