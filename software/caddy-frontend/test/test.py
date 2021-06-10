@@ -834,6 +834,10 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       httplib.OK,
       requests.get(url + 'access.log', verify=False).status_code
     )
+    self.assertEqual(
+      httplib.OK,
+      requests.get(url + 'backend.log', verify=False).status_code
+    )
     # assert only for few tests, as backend log is not available for many of
     # them, as it's created on the fly
     for test_name in [
