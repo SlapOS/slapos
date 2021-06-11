@@ -27,10 +27,12 @@
 
 import os
 import shutil
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import tempfile
 import io
 import subprocess
+from http.server import BaseHTTPRequestHandler
+import logging
 
 import pysftp
 import psutil
@@ -40,6 +42,7 @@ from paramiko.ssh_exception import AuthenticationException
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
+from slapos.testing.utils import ManagedHTTPServer
 
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -301,4 +304,57 @@ class TestSSHKey(TestSFTPOperations):
     # no password is published, we only login with key
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertIn('username', parameter_dict)
+    self.assertNotIn('password', parameter_dict)
+
+
+class TestAuthenticationURL(TestSFTPOperations):
+  class AuthenticationServer(ManagedHTTPServer):
+    class RequestHandler(BaseHTTPRequestHandler):
+      def do_POST(self):
+        # type: () -> None
+        assert self.headers[
+            'Content-Type'] == 'application/x-www-form-urlencoded', self.headers[
+                'Content-Type']
+        posted_data = dict(
+            parse_qs(
+                self.rfile.read(int(self.headers['Content-Length'])).decode()))
+        if posted_data['login'] == ['login'] and posted_data['password'] == [
+            'password'
+        ]:
+          self.send_response(200)
+          self.send_header("X-Proftpd-Authentication-Result", "Success")
+          self.end_headers()
+          return self.wfile.write(b"OK")
+        self.send_response(401)
+        return self.wfile.write(b"Forbidden")
+
+      log_message = logging.getLogger(__name__ + '.AuthenticationServer').info
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        'authentication-url':
+        cls.getManagedResource('authentication-server',
+                               TestAuthenticationURL.AuthenticationServer).url
+    }
+
+  def _getConnection(self, username='login', password='password'):
+    """Override to log in with the HTTP credentials by default.
+    """
+    return super()._getConnection(username=username, password=password)
+
+  def test_authentication_success(self):
+    with self._getConnection() as sftp:
+      self.assertEqual(sftp.listdir('.'), [])
+
+  def test_authentication_failure(self):
+    with self.assertRaisesRegex(AuthenticationException,
+                                'Authentication failed'):
+      self._getConnection(username='login', password='wrong')
+
+  def test_published_parameters(self):
+    # no login or password are published, logins are defined by their
+    # user name
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    self.assertNotIn('username', parameter_dict)
     self.assertNotIn('password', parameter_dict)

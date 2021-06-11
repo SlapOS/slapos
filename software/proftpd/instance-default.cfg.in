@@ -70,6 +70,7 @@ ssh-authorized-key = ${ssh-authorized-keys:rendered}
 ban-table=${directory:srv}/proftpd-ban-table
 control-socket=${directory:var}/proftpd.sock
 auth-user-file=${auth-user-file:output}
+authentication-url = {{ slapparameter_dict.get('authentication-url', '')}}
 
 recipe = slapos.cookbook:wrapper
 command-line =
@@ -140,7 +141,9 @@ instance-promises =
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = ${proftpd:url}
+{% if not slapparameter_dict.get('authentication-url') %}
 username = ${proftpd-password:username}
-{% if not slapparameter_dict.get('ssh-key') %}
+{%   if not slapparameter_dict.get('ssh-key') %}
 password = ${proftpd-password:passwd}
+{%   endif %}
 {% endif %}

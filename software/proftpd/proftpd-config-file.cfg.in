@@ -34,6 +34,23 @@ RequireValidShell off
 AuthUserFile {{ proftpd['auth-user-file'] }}
 
 
+# http authentication
+{% if proftpd['authentication-url'] %}
+LoadModule mod_auth_web.c
+AuthWebURL {{ proftpd['authentication-url'] }}
+AuthWebRequireHeader "X-Proftpd-Authentication-Result: Success"
+AuthWebUsernameParamName login
+AuthWebPasswordParamName password
+AuthWebLocalUser {{ proftpd['user'] }}
+# mod_auth_web only read /etc/passwd to know the home of the users, 
+# so we rewrite the relative paths to be relative to the data dir.
+LoadModule mod_rewrite.c
+RewriteEngine on
+RewriteCondition %m !USER
+RewriteRule ^([^/]+.*) {{ proftpd['data-dir'] }}$1
+{% endif %}
+
+
 # Prevent partially uploaded files to be visible
 HiddenStores on
 DeleteAbortedStores on
