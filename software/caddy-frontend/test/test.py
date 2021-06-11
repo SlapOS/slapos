@@ -1822,7 +1822,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     proto='https', ignore_header_list=None):
     if ignore_header_list is None:
       ignore_header_list = []
-    self.assertFalse('remote_user' in backend_header_dict.keys())
     if 'Host' not in ignore_header_list:
       self.assertEqual(
         backend_header_dict['host'],
