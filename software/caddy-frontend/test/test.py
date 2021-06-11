@@ -1913,7 +1913,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend '
+      r'http-backend _Url-http\/_Url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -7236,13 +7236,13 @@ backend _health-check-disabled-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-disabled-backend %s""" % (backend,),
+  server _health-check-disabled-backend-http %s""" % (backend,),
       'health-check-connect': """\
 backend _health-check-connect-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-connect-backend %s   check inter 5s"""
+  server _health-check-connect-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
@@ -7250,7 +7250,7 @@ backend _health-check-custom-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-custom-backend %s   check inter 15s"""
+  server _health-check-custom-backend-http %s   check inter 15s"""
       """ rise 3 fall 7
   option httpchk POST /POST-path%%20to%%20be%%20encoded HTTP/1.0
   timeout check 7s""" % (backend,),
@@ -7259,7 +7259,7 @@ backend _health-check-default-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-default-backend %s   check inter 5s"""
+  server _health-check-default-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   option httpchk GET / HTTP/1.1
   timeout check 2s""" % (backend, )
