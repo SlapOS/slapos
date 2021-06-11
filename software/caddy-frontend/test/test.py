@@ -1913,7 +1913,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend '
+      r'http-backend _Url-http\/_Url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
