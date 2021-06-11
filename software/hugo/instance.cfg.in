@@ -56,4 +56,3 @@ template =
     -http [$${:ip}]:$${:port} \
     -turn ""
 rendered = $${directory:services}/hugo
-
