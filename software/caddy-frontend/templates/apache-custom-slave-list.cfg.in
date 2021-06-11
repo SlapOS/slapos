@@ -191,11 +191,9 @@ context =
 {%-     do slave_instance.__setitem__('health-check-http-path', '') %}
 {%-   endif %} {# if slave_instance['health-check'] #}
 {#-   Set Up log files #}
-{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_frontend_log' % slave_reference])) %}
-{%-   do slave_parameter_dict.__setitem__('error_log', '/'.join([frontend_directory['slave-log'], '%s_error_log' % slave_reference])) %}
+{%-   do slave_parameter_dict.__setitem__('access_log', '/'.join([frontend_directory['slave-log'], '%s_access_log' % slave_reference])) %}
 {%-   do slave_parameter_dict.__setitem__('backend_log', '/'.join([frontend_directory['slave-log'], '%s_backend_log' % slave_reference])) %}
 {%-   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) %}
-{%-   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) %}
 {%-   do slave_instance.__setitem__('backend_log', slave_parameter_dict.get('backend_log')) %}
 {#-   Add slave log directory to the slave log access dict #}
 {%-   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
@@ -257,7 +255,7 @@ log-directory = {{ '${slave-log-directory-dict:' + slave_reference.lower() + '}'
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
 name = ${:_buildout_section_name_}
-log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}} {{slave_parameter_dict.get('backend_log')}}
+log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('backend_log')}}
 backup = {{ '${' + slave_log_directory_section + ':log-directory}' }}
 rotate-num = {{ dumps('' ~ configuration['rotate-num']) }}
 # disable delayed compression, as log filenames shall be stable
@@ -269,7 +267,9 @@ delaycompress =
 recipe = plone.recipe.command
 stop-on-error = false
 log-directory = {{ '${' + slave_logrotate_section + ':backup}' }}
-command = ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log && ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
+command =
+  ln -sf {{slave_parameter_dict.get('access_log')}} ${:log-directory}/access.log
+  ln -sf {{slave_parameter_dict.get('backend_log')}} ${:log-directory}/backend.log
 
 {#-   Set password for slave #}
 
