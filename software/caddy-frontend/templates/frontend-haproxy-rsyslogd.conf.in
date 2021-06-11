@@ -13,7 +13,7 @@ $WorkDirectory {{ configuration['spool-directory'] }}
 # Extract file name part from 1st match
 template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
 set $!slave_name = exec_template("extract_slave_name");
-template(name="slave_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_frontend_log")
+template(name="slave_output" type="string" string="{{ configuration['slave-log-directory'] }}/%$!slave_name%_access_log")
 # Output only 2nd match
 template(name="rawoutput" type="string" string="%msg:R,ERE,2,FIELD:{{ regex }}--end%")
 $ActionFileDefaultTemplate rawoutput
