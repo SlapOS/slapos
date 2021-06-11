@@ -5,12 +5,12 @@
   "properties": {
     "autorun": {
       "title": "Automatically Run Sofware/Instance",
-      "description": "The option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'disabled', the user can manage it directly in the local supervisord. ",
+      "description": "The option used to pilot automatic build and run of software and instances hosted inside Theia. When 'running', build and run is done automatically in the background. When 'stopped' build and run processes are stopped and need to be run manually. When 'user-controlled', the user can manage it directly in the local supervisord. ",
       "type": "string",
       "enum": [
         "running",
         "stopped",
-        "disabled"
+        "user-controlled"
       ],
       "default": "running"
     },
