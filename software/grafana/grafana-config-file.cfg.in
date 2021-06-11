@@ -346,7 +346,7 @@ password = {{ slapparameter_dict.get('smtp-password', '') and '"""%s"""' % slapp
 cert_file =
 key_file =
 #skip_verify = false
-skip_verify = {{ slapparameter_dict.get('smtp-verify-ssl', True) and 'false' or 'true' }}
+skip_verify = {{ slapparameter_dict.get('smtp-verify-ssl', 'true').lower() == 'true' and 'false' or 'true' }}
 #from_address = admin@grafana.localhost
 from_address = {{ slapparameter_dict.get('email-from-address', '') }}
 #from_name = Grafana
