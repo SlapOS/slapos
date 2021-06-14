@@ -527,8 +527,14 @@ class TestHandler(BaseHTTPRequestHandler):
       status_code = int(config.pop('status_code'))
       timeout = int(config.pop('Timeout', '0'))
       compress = int(config.pop('Compress', '0'))
+      drop_header_list = []
+      for header in config.pop('X-Drop-Header', '').split():
+        drop_header_list.append(header)
       header_dict = config
     else:
+      drop_header_list = []
+      for header in self.headers.dict.get('x-drop-header', '').split():
+        drop_header_list.append(header)
       response = None
       status_code = 200
       timeout = int(self.headers.dict.get('timeout', '0'))
@@ -568,9 +574,6 @@ class TestHandler(BaseHTTPRequestHandler):
     if self.identification is not None:
       self.send_header('X-Backend-Identification', self.identification)
 
-    drop_header_list = []
-    for header in self.headers.dict.get('x-drop-header', '').split():
-      drop_header_list.append(header)
     if 'Content-Type' not in drop_header_list:
       self.send_header("Content-Type", "application/json")
     if 'Set-Cookie' not in drop_header_list:
