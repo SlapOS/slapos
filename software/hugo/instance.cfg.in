@@ -1,55 +1,115 @@
 [buildout]
 parts =
-  publish-connection-parameter
+  nginx_conf
+  mime_types
+  launcher
+  publish-connection-information
 
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+local-directory = {{buildout['directory']}}
 offline = true
 
 
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-url = http://[$${hugo-wrapper:ip}]:$${hugo-wrapper:port}
-env = ${gowork:env.sh}
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+# Executables put here will be started but not monitored (for startup scripts)
+script = ${directory:etc}/run
+# Executables put here will be started and monitored (for daemons)
+service = ${directory:etc}/service
+log = ${directory:var}/log
+run = ${directory:var}/run
+backup = ${directory:srv}/backup
+data = ${directory:srv}/hugo_conf
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${directory:home}/tmp
+client_body_temp_path = ${:tmp}/client_body_temp_path
+proxy_temp_path = ${:tmp}/proxy_temp_path
+fastcgi_temp_path = ${:tmp}/fastcgi_temp_path
+uwsgi_temp_path = ${:tmp}/uwsgi_temp_path
+scgi_temp_path = ${:tmp}/scgi_temp_path
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
 
-[directory]
-recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-run = $${:var}/run
+[hugo_conf]
+# Options
+nb_workers = 2
 
-services   = $${:etc}/service
-data       = $${:srv}/data
+# Network
+ip = ${slap-configuration:ipv6-random}
+port = 8080
+access_url = http://[${:ip}]:${:port}
 
-[hugo-ssl]
-recipe = plone.recipe.command
-cert-file = $${directory:data}/cert.pem
-key-file = $${directory:data}/key.pem
-update-command =
-stop-on-error = true
+# Paths
+# Log
+path_pid = ${basedirectory:run}/nginx.pid
+path_log = ${basedirectory:log}/nginx.log
+path_access_log = ${basedirectory:log}/nginx.access.log
+path_error_log = ${basedirectory:log}/nginx.error.log
+path_tmp = ${tempdirectory:tmp}
+# Docroot
+docroot = ${buildout:local-directory}/parts/quickstart/public
+default_index = ${buildout:local-directory}/parts/quickstart/public/index.html
+# Config files
+path_nginx_conf = ${directory:etc}/nginx.conf
+path_mime_types = ${directory:etc}/mime_types
+# Binaries
+path_shell = {{ parameter_list['dash_location'] }}/bin/dash
 
-[hugo-wrapper]
+# Executables
+bin_launcher = ${basedirectory:script}/launcher
+
+# Utils
+path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
+
+# Render nginx conf
+[nginx_conf]
 recipe = slapos.recipe.template:jinja2
-port = 1313
-ip = $${slap-configuration:ipv6-random}
-template =
-  inline:#!/bin/sh
-  
-  ulimit -n $(ulimit -Hn)
-  exec ${gowork:bin}/hugo \
-    -static ${hugo-get:location}/static \
-    -data $${directory:data} \
-    -http [$${:ip}]:$${:port} \
-    -turn ""
-rendered = $${directory:services}/hugo
+template = {{ parameter_list['template_nginx_conf'] }}
+rendered = ${hugo_conf:path_nginx_conf}
+context = 
+    section param_hugo_conf hugo_conf
+    section param_tempdir tempdirectory
+
+# Render necessary mime types file for nginx
+[mime_types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_mime_types'] }}
+rendered = ${hugo_conf:path_mime_types}
+
+# Render the script launching nginx
+[launcher]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_launcher'] }}
+rendered = ${hugo_conf:bin_launcher}
+mode = 700
+context = 
+    section param_hugo_conf hugo_conf
+
+# Simple command to put content in the docroot
+# [downloader]
+# recipe = plone.recipe.command
+# command = rm -r ${hugo_conf:docroot}/*; echo "Hello World!" >  ${hugo_conf:docroot}/index.html
+
+# Publish nginx address
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+server_url = ${hugo_conf:access_url}
+env = ${buildout:local-directory}/go.work/env.sh
+debug = ${hugo_conf:docroot}
