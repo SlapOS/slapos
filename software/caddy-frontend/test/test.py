@@ -509,6 +509,7 @@ class TestHandler(BaseHTTPRequestHandler):
     if 'x-reply-body' in self.headers.dict:
       config['Body'] = base64.b64decode(self.headers.dict['x-reply-body'])
 
+    config['X-Drop-Header'] = self.headers.dict.get('x-drop-header')
     self.configuration[self.path] = config
 
     self.send_response(201)
@@ -3877,7 +3878,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     max_stale_age = 30
     max_age = int(max_stale_age / 2.)
-    body_200 = b'Body 200'
+    # body_200 is big enough to trigger
+    # https://github.com/apache/trafficserver/issues/7880
+    body_200 = b'Body 200' * 500
     body_502 = b'Body 502'
     body_502_new = b'Body 502 new'
     body_200_new = b'Body 200 new'
@@ -3891,6 +3894,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body),
+          # drop Content-Length header to ensure
+          # https://github.com/apache/trafficserver/issues/7880
+          'X-Drop-Header': 'Content-Length',
         })
       self.assertEqual(result.status_code, httplib.CREATED)
 
@@ -3901,7 +3907,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       )
       self.assertEqual(result.status_code, status_code)
       self.assertEqual(result.text, body)
-      self.assertNotIn('Expires', result.headers)
 
     # backend returns something correctly
     configureResult('200', body_200)
@@ -3912,9 +3917,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # even if backend returns 502, ATS gives cached result
     checkResult(httplib.OK, body_200)
 
-    time.sleep(max_stale_age + 2)
+    # interesting moment, time is between max_age and max_stale_age, triggers
+    # https://github.com/apache/trafficserver/issues/7880
+    time.sleep(max_age + 1)
+    checkResult(httplib.OK, body_200)
 
     # max_stale_age passed, time to return 502 from the backend
+    time.sleep(max_stale_age + 2)
     checkResult(httplib.BAD_GATEWAY, body_502)
 
     configureResult('502', body_502_new)
