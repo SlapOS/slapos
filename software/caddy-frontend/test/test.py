@@ -72,7 +72,10 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+if int(os.environ.get('SLAPOS_HACK_STANDALONE', '0')) == 1:
+  SlapOSInstanceTestCase = object
+else:
+  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
