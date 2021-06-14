@@ -48,7 +48,7 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.site = quickstart
+configuration.site-dir = /srv/slapgrid/slappart19/srv/runner/software/0f9d9ed1b3b542ccafba3c51e637ebe2/parts/quickstart
 configuration.port = 8080
 
 [hugo_conf]
@@ -71,8 +71,8 @@ path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
 bin_launcher = ${basedirectory:script}/launcher
 
-docroot = ${buildout:local-directory}/parts/${slap-configuration:configuration.site}/public
-default_index = ${buildout:local-directory}/parts/${slap-configuration:configuration.site}/public/index.html
+docroot = ${slap-configuration:configuration.site-dir}/public
+default_index = ${:docroot}/index.html
 
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
