@@ -437,13 +437,17 @@ disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
-enable-device-hotplug = ${kvm-controller-parameter-dict:enable-device-hotplug}
-smp-count = ${kvm-controller-parameter-dict:cpu-count}
+{%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', 'false').lower() == 'true' %}
 smp-max-count = {{ cpu_max_count }}
-
-ram-size = ${kvm-controller-parameter-dict:ram-size}
 ram-max-size = {{ ram_max_size }}
+{%- if enable_device_hotplug %}
 init-ram-size = 1024
+init-smp-count = 1
+{%- else %}
+init-ram-size = ${kvm-controller-parameter-dict:ram-size}
+init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
+{%- endif %}
+
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
 
