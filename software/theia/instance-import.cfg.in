@@ -46,16 +46,62 @@ autorun = stopped
 # in post-notification-run:output and in importer:wrapper.
 
 [post-notification-run]
-recipe = slapos.cookbook:wrapper
-command-line = echo "Import Post Notification Run Not Implemented Yet"
-wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-post-run
-wrapper = $${:wrapper-path}
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/post-notification-run-script
+output = $${:rendered}
+mode = 0700
+template =
+  inline:#!${software-info:bash}
+  # Do nothing because the backup signature will
+  # be verified by the import script itself
+  exit 0
 
 [importer]
-recipe = slapos.cookbook:wrapper
-command-line = echo "Import Not Implemented Yet"
-wrapper-path = $${directory:bin}/$${slap-parameter:namebase}-importer
-wrapper = $${:wrapper-path}
+wrapper = $${theia-import-script:rendered}
+
+[theia-import-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/theia-import-script
+mode = 0700
+exitcode-file = $${directory:srv}/import-exitcode-file
+error-file = $${directory:srv}/import-errormessage-file
+context =
+  raw python ${software-info:python-with-eggs}
+  raw theia_import ${software-info:theia-import}
+  raw bash ${software-info:bash}
+  raw rsync ${software-info:rsync}
+  raw sqlite3 ${software-info:sqlite3}
+  raw slapos ${software-info:slapos}
+  raw slapos_node_software_log $${directory:runner}/var/log/slapos-node-software.log
+  raw slapos_node_instance_log $${directory:runner}/var/log/slapos-node-instance.log
+  raw supervisorctl ${software-info:supervisorctl}
+  raw supervisord_conf $${directory:runner}/etc/supervisord.conf
+  raw root_path $${buildout:directory}
+  raw backup_path $${directory:backup}
+  raw slapos_cfg $${directory:runner}/etc/slapos.cfg
+  raw project_path $${directory:project}
+  raw public_path $${directory:frontend-static-public}
+  key exitfile :exitcode-file
+  key errorfile :error-file
+template =
+  inline:#!{{ bash }}
+  . $${common-environment:rendered}
+  . $${slapos-standalone-activate:rendered}
+  {{ python }} {{ theia_import }} \
+  --rsync {{ rsync }} \
+  --sqlite3 {{ sqlite3 }} \
+  --slapos {{ slapos }} \
+  --srlog {{ slapos_node_software_log }} \
+  --cplog {{ slapos_node_instance_log }} \
+  --supervisorctl {{ supervisorctl }} \
+  --supervisordconf {{ supervisord_conf }} \
+  --root {{ root_path }} \
+  --backup {{ backup_path }} \
+  --cfg {{ slapos_cfg }} \
+  --dirs {{ project_path }} \
+  --dirs {{ public_path }} \
+  --exitfile {{ exitfile }} \
+  --errorfile {{ errorfile }}
 
 
 # Resilient connection parameters of import instance are published
