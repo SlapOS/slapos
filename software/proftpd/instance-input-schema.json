@@ -1,11 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Parameters to instantiate PoFTPd",
+  "description": "Parameters to instantiate ProFTPd",
   "additionalProperties": false,
   "properties": {
     "port": {
-      "description": "Port number to listen to - default to 8022",
-      "type": "number"
+      "description": "Port number to listen to",
+      "type": "number",
+      "default": 8022
+    },
+    "ssh-key": {
+      "description": "SSH public key, in RFC4716 format. Note that this is not the default format used by openssh and that openssh keys must be converted with `ssh-keygen -e -f ~/.ssh/id_rsa.pub`",
+      "type": "string"
+    },
+    "authentication-url": {
+      "description": "URL of an HTTP endpoint to authenticate users. Endoint recieve a `application/x-www-form-urlencoded` POST request with `login` and `password` arguments and must respond with a `X-Proftpd-Authentication-Result: Success` header to signal successful authentication",
+      "type": "string"
     }
   }
 }
