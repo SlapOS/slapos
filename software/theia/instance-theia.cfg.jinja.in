@@ -73,6 +73,7 @@ instance-promises =
   $${remote-additional-frontend-url-available-promise:name}
   {% endif %}
   $${slapos-standalone-listen-promise:name}
+  $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
 
 [theia-listen-promise]
@@ -113,10 +114,15 @@ name = standalone-listen-promise.py
 config-host = $${slapos-standalone-instance:hostname}
 config-port = $${slapos-standalone-instance:port}
 
+[slapos-standalone-ready-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = standalone-ready-promise.py
+config-abstract = $${directory:runner}/standalone_ready
+
 [slapos-autorun-promise]
 <= monitor-promise-base
 module = check_service_state
-# XXX promise plugins can not contain "slapos" in their names
 name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
