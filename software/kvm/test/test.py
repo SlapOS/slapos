@@ -203,6 +203,84 @@ i0:whitelist-firewall-{hash} RUNNING""",
     )
 
 
+@skipUnlessKvm
+class TestMemoryManagement(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'i'
+
+  def getKvmProcessInfo(self, switch_list):
+    return_list = []
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      get_next = False
+      for entry in kvm_process.cmdline():
+        if get_next:
+          return_list.append(entry)
+          get_next = False
+        elif entry in switch_list:
+          get_next = True
+    return kvm_pid, return_list
+
+  def test(self):
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    self.rerequestInstance({
+      'ram-size': '1536',
+      'cpu-count': '2',
+    })
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['2,maxcpus=3', '1536M,slots=128,maxmem=2048M'],
+      info_list
+    )
+
+    # assert that process was restarted
+    self.assertNotEqual(kvm_pid_1, kvm_pid_2)
+
+  def tearDown(self):
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
+
+  def test_enable_device_hotplug(self):
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    parameter_dict = {
+      'enable-device-hotplug': 'true'
+    }
+
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=2)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    self.assertEqual(kvm_pid_1, kvm_pid_2)
+    parameter_dict.update(**{
+      'ram-size': '1536',
+      'cpu-count': '2'
+    })
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_3, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    self.assertEqual(kvm_pid_2, kvm_pid_3)
+    self.fail('Need to assert state of KVM about memory')
+
+
 class MonitorAccessMixin(object):
   def sqlite3_connect(self):
     sqlitedb_file = os.path.join(
