@@ -203,6 +203,109 @@ i0:whitelist-firewall-{hash} RUNNING""",
     )
 
 
+@skipUnlessKvm
+class TestMemoryManagement(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'i'
+
+  def getKvmProcessInfo(self, switch_list):
+    return_list = []
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      get_next = False
+      for entry in kvm_process.cmdline():
+        if get_next:
+          return_list.append(entry)
+          get_next = False
+        elif entry in switch_list:
+          get_next = True
+    return kvm_pid, return_list
+
+  def test(self):
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    self.rerequestInstance({
+      'ram-size': '1536',
+      'cpu-count': '2',
+    })
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['2,maxcpus=3', '1536M,slots=128,maxmem=2048M'],
+      info_list
+    )
+
+    # assert that process was restarted
+    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
+
+  def tearDown(self):
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
+
+  def test_enable_device_hotplug(self):
+    def getHotpluggedCpuRamValue():
+      from slapos.qemuqmpclient import QemuQMPWrapper
+      qemu_wrapper = QemuQMPWrapper(os.path.join(
+        self.computer_partition_root_path, 'var', 'qmp_socket'))
+      ram_mb = sum(
+        [q['size']
+         for q in qemu_wrapper.getMemoryInfo()['hotplugged']]) / 1024 / 1024
+      cpu_count = len(
+        [q['CPU'] for q in qemu_wrapper.getCPUInfo()['hotplugged']])
+      return {'cpu_count': cpu_count, 'ram_mb': ram_mb}
+
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      info_list
+    )
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 0, 'ram_mb': 0}
+    )
+
+    parameter_dict = {
+      'enable-device-hotplug': 'true',
+      # to avoid restarts the max RAM and CPU has to be static
+      'ram-max-size': '2048',
+      'cpu-max-count': '4',
+    }
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=2)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['1,maxcpus=4', '1024M,slots=128,maxmem=2048M'],
+      info_list
+    )
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 0, 'ram_mb': 0}
+    )
+    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
+    parameter_dict.update(**{
+      'ram-size': '1536',
+      'cpu-count': '2'
+    })
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_3, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['1,maxcpus=4', '1024M,slots=128,maxmem=2048M'],
+      info_list
+    )
+    self.assertEqual(kvm_pid_2, kvm_pid_3, "Unexpected: KVM restarted")
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 1, 'ram_mb': 512}
+    )
+
+
 class MonitorAccessMixin(object):
   def sqlite3_connect(self):
     sqlitedb_file = os.path.join(
