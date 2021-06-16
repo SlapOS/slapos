@@ -223,7 +223,7 @@ class MonitorAccessMixin(object):
       }
       return db.execute(
         "SELECT reference, xml, connection_xml, partition_reference,"
-              " software_release, requested_state, software_type"
+        " software_release, requested_state, software_type"
         " FROM partition%s"
         " WHERE slap_state='busy'" % DB_VERSION).fetchall()
     finally:
