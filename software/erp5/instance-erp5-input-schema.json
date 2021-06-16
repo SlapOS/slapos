@@ -78,7 +78,7 @@
       "type": "string"
     },
     "developer-list": {
-      "description": "List of logins which should get the Developper role (required to modify portal_components' content), defaulting to inituser-login's value",
+      "description": "List of logins which should get the Developer role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {
         "pattern": "^\\S+$",
         "type": "string"
@@ -215,7 +215,7 @@
               "type": "integer"
             },
             "timerserver-interval": {
-              "description": "Timerserver tick perdiod, in seconds, or 0 to disable",
+              "description": "Timerserver tick period, in seconds, or 0 to disable",
               "default": 5,
               "type": "number"
             },
@@ -439,7 +439,7 @@
                   "type": "string"
                 },
                 {
-                  "description": "Override value (parameter for maching nodes).",
+                  "description": "Override value (parameter for matching nodes).",
                   "type": [
                     "integer",
                     "string"
@@ -517,7 +517,7 @@
           "type": "boolean"
         },
         "node-count": {
-          "description": "Number of tests this instance can execute in parrallel. This must be at least equal to the number of nodes configured on testnode running the test",
+          "description": "Number of tests this instance can execute in parallel. This must be at least equal to the number of nodes configured on testnode running the test",
           "default": 3,
           "type": "integer"
         },
