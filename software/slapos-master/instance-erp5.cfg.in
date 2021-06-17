@@ -221,7 +221,10 @@ return =
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
-{% set bt5_default_list = 'erp5_full_text_mroonga_catalog slapos_configurator' -%}
+{% set bt5_default_list = [
+  'erp5_full_text_mroonga_catalog',
+  'slapos_configurator',
+] -%}
 {% if has_jupyter -%}
 {%   do bt5_default_list.append('erp5_data_notebook') -%}
 {% endif -%}
