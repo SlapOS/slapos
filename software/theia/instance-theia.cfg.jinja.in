@@ -68,6 +68,7 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${frontend-authentification-promise:name}
   $${remote-frontend-url-available-promise:name}
   {% if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
@@ -88,6 +89,16 @@ module = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[frontend-authentification-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+username = $${frontend-instance-password:username}
+password = $${frontend-instance-password:passwd}
+ip = $${frontend-instance:ip}
+port = $${frontend-instance:port}
+config-url = https://$${:username}:$${:password}@[$${:ip}]:$${:port}
 
 [remote-frontend-url-available-promise]
 <= monitor-promise-base
