@@ -434,3 +434,12 @@ class TestChrome69(
 ):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'
+
+
+class TestChrome91(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
+  user_agent = 'Chrome/91.0.4472.0'
