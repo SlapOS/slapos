@@ -121,6 +121,12 @@ capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromi
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
 port = 7780
 
+[selenium-server-node-instance-chromium-91]
+<= selenium-server-node-instance
+capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
+java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
+port = 7781
+
 
 [selenium-server-admin-password]
 recipe = slapos.cookbook:generate.password
@@ -265,6 +271,7 @@ instance-promises =
   $${selenium-server-node-firefox-60-listen-promise:name}
   $${selenium-server-node-firefox-68-listen-promise:name}
   $${selenium-server-node-instance-chromium-69-listen-promise:name}
+  $${selenium-server-node-instance-chromium-91-listen-promise:name}
 
 
 [check-port-listening-promise]
@@ -294,8 +301,8 @@ module = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
-# We have 4 nodes with 3 slots each
-expected-node-count = 12
+# We have 5 nodes with 3 slots each
+expected-node-count = 15
 
 [selenium-server-check-nodes-registered]
 recipe = slapos.recipe.template:jinja2
@@ -330,6 +337,11 @@ config-port = $${selenium-server-node-instance-firefox-68:port}
 <= check-port-listening-promise
 config-hostname = $${selenium-server-node-instance-chromium-69:hostname}
 config-port = $${selenium-server-node-instance-chromium-69:port}
+
+[selenium-server-node-instance-chromium-91-listen-promise]
+<= check-port-listening-promise
+config-hostname = $${selenium-server-node-instance-chromium-91:hostname}
+config-port = $${selenium-server-node-instance-chromium-91:port}
 
 
 [publish-connection-parameter]
