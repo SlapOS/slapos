@@ -13,6 +13,7 @@ parts =
     downloader
     mime_types
     launcher
+    nginx-graceful
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -75,7 +76,7 @@ nb_workers = 2
 
 # Network
 ip = {{ partition_ipv6 }}
-port = 8081
+port = {{ parameter_dict['port'] }}
 access_url = http://[${:ip}]:${:port}
 
 # Paths
@@ -153,6 +154,15 @@ rendered = ${directory:srv}/index.html
 title = {{ parameter_dict['title'] }}
 context =
   key title :title
+
+### Nginx Graceful
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_graceful'] }}
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+context =
+    section param_html5as html5as
 
 # Publish nginx address
 [publish-connection-information]
