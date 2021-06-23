@@ -3,6 +3,10 @@
 # Deploy html5as instance
 #
 #############################
+# parameter_dict: a dictionary with the default parameters from instance.cfg.in
+# replaces the values with the parameters of the instance request if there are any
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
 [buildout]
 parts =
     nginx_conf
@@ -129,3 +133,4 @@ command = rm -r ${html5as:docroot}/*; echo "Hello World!" >  ${html5as:docroot}/
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 server_url = ${html5as:access_url}
+title = Title {{ parameter_dict['title'] }}!
