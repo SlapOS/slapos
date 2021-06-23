@@ -11,14 +11,15 @@ nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
 template_mime_types = {{ template_mime_types_target }} 
-template_launcher = {{ template_launcher_target }} 
+template_launcher = {{ template_launcher_target }}
+template_index_html = {{ template_index_html_target }}
 
 [instance-html5as]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_instance_html5as_target }}
 rendered = ${buildout:directory}/${:filename}
 filename = instance-html5as.cfg
-context = 
+context =
   section buildout buildout
   section parameter_list profile-common
 # partition_ipv6 is the random ipv6 allocated to the local partition
