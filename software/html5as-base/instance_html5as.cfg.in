@@ -14,6 +14,7 @@ parts =
     mime_types
     launcher
     nginx-graceful
+    port-listening-promise
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -114,6 +115,14 @@ rendered = ${basedirectory:script}/nginx-graceful
 mode = 0700
 context =
     section param_html5as html5as
+
+# Port Listening checking promise
+[port-listening-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = nginx-port-listening.py
+config-host = ${html5as:ip}
+config-port = ${html5as:port}
 
 # Render nginx conf
 [nginx_conf]
