@@ -15,6 +15,7 @@ parts =
     launcher
     nginx-graceful
     port-listening-promise
+    logrotate-entry-nginx
     publish-connection-information
 
 # Define egg directories to be the one from Software Release
@@ -180,6 +181,15 @@ context =
 # use it in a SlapOS webrunner or a Theia SlapOS Runner
 [monitor-instance-parameter]
 monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+
+# Monitor Stack also provides logrotate stack. We only need to extend
+# the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
+# More parameters can be added following the logrotate-entry-base section
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${html5as:path_access_log} ${html5as:path_error_log}
+post = kill -USR1 $(cat ${html5as:path_pid})
 
 # Publish nginx address
 [publish-connection-information]
