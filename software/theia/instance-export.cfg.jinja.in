@@ -61,6 +61,50 @@ template =
 {%- endraw %}
 
 
+# Add a promise to check that the export script has run
+# successfully and recently (at most 2 days ago).
+[promises]
+export-promises =
+  $${export-promise:name}
+
+[export-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = resiliency-export-promise.py
+config-command = $${export-promise-script:rendered}
+
+[initial-export-exitcode-file]
+recipe = slapos.recipe.template:jinja2
+rendered = $${theia-export-script:exitcode-file}
+template = inline:0
+once = $${:rendered}
+
+[export-promise-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/export-promise-script
+exitcode-file = $${initial-export-exitcode-file:rendered}
+context =
+  key exitcodefile :exitcode-file
+  key errorfile theia-export-script:error-file
+{%- raw %}
+template =
+  inline:#!/bin/sh
+  if [ -z $(find {{ repr(exitcodefile) }} -mtime -2) ]
+  then
+    echo "ERROR export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 1
+  elif [ $( cat {{ repr(exitcodefile) }}) -ne 0 ]
+  then
+    echo "ERROR export script failed on " $(date -r {{ repr(exitcodefile) }})
+    cat {{ repr(errorfile) }}
+    exit 1
+  else
+    echo "OK export script last ran on " $(date -r {{ repr(exitcodefile) }})
+    exit 0
+  fi
+{%- endraw %}
+
+
 # Extends publish section with resilient parameters
 [publish-connection-parameter]
 <= resilient-publish-connection-parameter
