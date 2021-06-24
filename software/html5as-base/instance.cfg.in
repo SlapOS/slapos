@@ -39,10 +39,34 @@ default-parameters =
     "monitor-httpd-port": 8197
   }
 
+[instance-replicate]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_instance_replicate }}
+rendered = ${buildout:directory}/${:filename}
+filename = instance-replicate-html5as.cfg
+context =
+  section buildout buildout
+  section parameter_list profile-common
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+# User can specify parameter for any of the two instances
+default-parameters =
+  {
+    "title": "",
+    "title1": "",
+    "title2": "",
+    "download_url": "",
+    "port1": 8081,
+    "port2": 8082,
+    "monitor-httpd-port1": 8197,
+    "monitor-httpd-port2": 8198
+  }
+
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
 default = instance-html5as:rendered
+replicate = instance-replicate:rendered
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
