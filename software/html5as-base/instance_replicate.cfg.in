@@ -1,0 +1,57 @@
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
+# Standard buildout section
+[buildout]
+parts =
+    publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+################################
+# Sections to Request instances
+################################
+
+# Macro section sharing request parameters
+[instance-request-base]
+<= slap-connection
+recipe = slapos.cookbook:request
+# It is the same software as the current one
+software-url = ${slap-connection:software-release-url}
+# We want the default behaviour
+software-type = default
+# What parameter are neede to be retrieved
+return = server_url server-cdn-url monitor-setup-url
+# Provided parameters
+config-title = {{ parameter_dict['title'] }}
+config-download_url = {{ parameter_dict['download_url'] }}
+
+# Request a normal html5as instance
+[instance-1]
+<= instance-request-base
+# Name of the instance
+name = instance-html5as-1
+# Port and title can be configured by instance
+config-port = {{ parameter_dict['port1'] }}
+config-title = {{ parameter_dict['title1'] }}
+config-monitor-httpd-port = {{ parameter_dict['monitor-httpd-port1'] }}
+
+# Request a second html5as instance
+[instance-2]
+<= instance-request-base
+# Name of the instance
+name = instance-html5as-2
+config-port = {{ parameter_dict['port2'] }}
+config-title = {{ parameter_dict['title2'] }}
+config-monitor-httpd-port = {{ parameter_dict['monitor-httpd-port2'] }}
+
+# Publish information to connect to the two instances
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+instance-1-server_url = ${instance-1:connection-server_url}
+instance-1-server-cdn-url = ${instance-1:connection-server-cdn-url}
+instance-1-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}
+instance-2-server_url = ${instance-2:connection-server_url}
+instance-2-server-cdn-url = ${instance-1:connection-server-cdn-url}
+instance-2-server-monitor-setup-url = ${instance-1:connection-monitor-setup-url}
