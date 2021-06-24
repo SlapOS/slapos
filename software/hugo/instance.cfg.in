@@ -30,7 +30,7 @@ service = ${directory:etc}/service
 log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
-data = ${directory:srv}/hugo_conf
+data = ${directory:srv}/hugo
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -51,7 +51,7 @@ cert = ${slap-connection:cert-file}
 configuration.site-dir = /srv/slapgrid/slappart19/srv/project/quickstart
 configuration.port = 8080
 
-[hugo_conf]
+[hugo]
 nb_workers = 2
 
 ip = ${slap-configuration:ipv6-random}
@@ -77,23 +77,23 @@ docroot = ${slap-configuration:configuration.site-dir}/public
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_nginx_conf'] }}
-rendered = ${hugo_conf:path_nginx_conf}
+rendered = ${hugo:path_nginx_conf}
 context = 
-    section param_hugo_conf hugo_conf
+    section param_hugo hugo
     section param_tempdir tempdirectory
 
 [mime_types]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_mime_types'] }}
-rendered = ${hugo_conf:path_mime_types}
+rendered = ${hugo:path_mime_types}
 
 [launcher]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_launcher'] }}
-rendered = ${hugo_conf:bin_launcher}
+rendered = ${hugo:bin_launcher}
 mode = 700
 context = 
-    section param_hugo_conf hugo_conf
+    section param_hugo hugo
 
 ### Nginx Graceful
 [nginx-graceful]
@@ -102,14 +102,14 @@ template = {{ parameter_list['template_graceful'] }}
 rendered = ${basedirectory:script}/nginx-graceful
 mode = 0700
 context =
-    section param_hugo_conf hugo_conf
+    section param_hugo hugo
 
 [port-listening-promise]
 <= monitor-promise-base
 module = check_port_listening
 name = nginx-port-listening.py
-config-hostname = ${hugo_conf:ip}
-config-port = ${hugo_conf:port}
+config-hostname = ${hugo:ip}
+config-port = ${hugo:port}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8197
@@ -117,33 +117,33 @@ monitor-httpd-port = 8197
 [logrotate-entry-nginx]
 <= logrotate-entry-base
 name = nginx
-log = ${hugo_conf:path_access_log} ${hugo_conf:path_error_log}
-post = kill -USR1 $(cat ${hugo_conf:path_pid})
+log = ${hugo:path_access_log} ${hugo:path_error_log}
+post = kill -USR1 $(cat ${hugo:path_pid})
 
 # Request a CDN entry to master
-[hugo_conf-frontend]
+[hugo-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
 name = Hugo frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = ${hugo_conf:access_url}
+config-url = ${hugo:access_url}
 config-https-only = true
 return = domain secure_access
 
 # Add a promise to make sure the cdn is properly configured
-[hugo_conf-frontend-promise]
+[hugo-frontend-promise]
 <= monitor-promise-base
 module = check_url_available
-name = hugo_conf-http-frontend.py
-url = ${hugo_conf-frontend:connection-secure_access}
+name = hugo-http-frontend.py
+url = ${hugo-frontend:connection-secure_access}
 config-url = ${:url}
 config-check-secure = 1
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 <= monitor-publish
-server_url = ${hugo_conf:access_url}
+server_url = ${hugo:access_url}
 env = ${buildout:local-directory}/go.work/env.sh
-debug = ${hugo_conf:docroot}
-server-cdn-url = ${hugo_conf-frontend-promise:url}
+debug = ${hugo:docroot}
+server-cdn-url = ${hugo-frontend-promise:url}
