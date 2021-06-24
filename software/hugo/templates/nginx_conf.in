@@ -1,7 +1,7 @@
-worker_processes {{ param_hugo_conf['nb_workers'] }};
+worker_processes {{ param_hugo['nb_workers'] }};
 
-pid {{ param_hugo_conf['path_pid'] }};
-error_log {{ param_hugo_conf['path_error_log'] }};
+pid {{ param_hugo['path_pid'] }};
+error_log {{ param_hugo['path_error_log'] }};
 
 daemon off;
 
@@ -11,14 +11,14 @@ events {
 }
 
 http {
-	include {{ param_hugo_conf['path_mime_types'] }};
+	include {{ param_hugo['path_mime_types'] }};
 	default_type application/octet-stream;
 	types_hash_bucket_size 64;
-    access_log {{ param_hugo_conf['path_access_log'] }} combined;
+    access_log {{ param_hugo['path_access_log'] }} combined;
 	index index.html;
 
     server {
-        listen [{{ param_hugo_conf['ip'] }}]:{{ param_hugo_conf['port'] }};
+        listen [{{ param_hugo['ip'] }}]:{{ param_hugo['port'] }};
         server_name _;
 
         keepalive_timeout 5;
@@ -29,6 +29,6 @@ http {
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
 
         # path for static files
-        root {{ param_hugo_conf['docroot'] }};
+        root {{ param_hugo['docroot'] }};
     }
 }
