@@ -185,9 +185,9 @@ input = inline:
 [{{ section('apache-promise') }}]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = apache.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ apache_dict.values()[0][0] }}
 
 [{{ section('publish') }}]

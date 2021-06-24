@@ -865,14 +865,14 @@ rendered = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = rejected-slave-publish-ip-port-listening.py
-config-hostname = ${rejected-slave-publish-configuration:ip}
+config-host = ${rejected-slave-publish-configuration:ip}
 config-port = ${rejected-slave-publish-configuration:port}
 
 [rejected-slave-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 module = check_file_state
 name = rejected-slave.py
 config-filename = ${rejected-slave-json:rendered}

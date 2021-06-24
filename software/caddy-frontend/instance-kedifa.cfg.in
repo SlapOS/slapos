@@ -193,9 +193,9 @@ template = inline:
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = expose-csr_id-ip-port-listening.py
-config-hostname = ${expose-csr_id-configuration:ip}
+config-host = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]

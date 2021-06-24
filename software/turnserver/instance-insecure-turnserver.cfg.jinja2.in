@@ -54,9 +54,9 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [promise-check-turnserver-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = turnserver-port-listening.py
-config-hostname = {{ listining_ip }}
+config-host = {{ listining_ip }}
 config-port = {{ turn_port }}
 
 [publish-connection-information]

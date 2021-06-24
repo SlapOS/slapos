@@ -535,9 +535,9 @@ context =
 
 [trafficserver-promise-listen-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = trafficserver-port-listening.py
-config-hostname = ${trafficserver-variable:local-ip}
+config-host = ${trafficserver-variable:local-ip}
 config-port = ${trafficserver-variable:input-port}
 
 [trafficserver-ctl]
@@ -655,44 +655,44 @@ config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = caddy_frontend_ipv4_https.py
-config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
+config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = caddy_frontend_ipv4_http.py
-config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
+config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = caddy_frontend_ipv6_https.py
-config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
+config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = caddy_frontend_ipv6_http.py
-config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
+config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = backend_haproxy_http.py
-config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
+config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = backend_haproxy_https.py
-config-hostname = {{ instance_parameter_dict['ipv4-random'] }}
+config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
 
 [backend-haproxy-configuration]
@@ -981,9 +981,9 @@ context =
 
 [promise-slave-introspection-https]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = slave_introspection_https.py
-config-hostname = {{ instance_parameter_dict['ipv6-random'] }}
+config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
 
 [logrotate-entry-slave-introspection]

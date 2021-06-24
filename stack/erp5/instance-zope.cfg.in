@@ -358,9 +358,9 @@ hash-existing-files =
 
 [{{ section("promise-" ~ name) }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ name }}.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ port }}
 
 {% if use_ipv6 -%}
@@ -373,9 +373,9 @@ ipv4-port = {{ port }}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ zope_tunnel_base_name }}.py
-config-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% else -%}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}

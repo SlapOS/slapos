@@ -269,22 +269,22 @@ instance-promises =
 
 [check-port-listening-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = $${:_buildout_section_name_}.py
 
 [sshd-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${sshd-address:hostname}
+config-host = $${sshd-address:hostname}
 config-port = $${sshd-address:port}
 
 [selenium-server-frontend-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-frontend-instance:ip}
+config-host = $${selenium-server-frontend-instance:ip}
 config-port = $${selenium-server-frontend-instance:port}
 
 [selenium-server-hub-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-hub-instance:hostname}
+config-host = $${selenium-server-hub-instance:hostname}
 config-port = $${selenium-server-hub-instance:port}
 
 # Promise waiting for all nodes to be registered
@@ -313,22 +313,22 @@ template =
 
 [selenium-server-node-firefox-52-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-52:hostname}
+config-host = $${selenium-server-node-instance-firefox-52:hostname}
 config-port = $${selenium-server-node-instance-firefox-52:port}
 
 [selenium-server-node-firefox-60-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-60:hostname}
+config-host = $${selenium-server-node-instance-firefox-60:hostname}
 config-port = $${selenium-server-node-instance-firefox-60:port}
 
 [selenium-server-node-firefox-68-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-68:hostname}
+config-host = $${selenium-server-node-instance-firefox-68:hostname}
 config-port = $${selenium-server-node-instance-firefox-68:port}
 
 [selenium-server-node-instance-chromium-69-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-chromium-69:hostname}
+config-host = $${selenium-server-node-instance-chromium-69:hostname}
 config-port = $${selenium-server-node-instance-chromium-69:port}
 
 

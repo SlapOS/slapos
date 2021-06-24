@@ -212,9 +212,9 @@ wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = sshd.py
-config-hostname = $${slap-network-information:global-ipv6}
+config-host = $${slap-network-information:global-ipv6}
 config-port = $${sshd-port:port}
 
 #----------------
