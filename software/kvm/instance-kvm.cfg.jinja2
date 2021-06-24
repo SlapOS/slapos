@@ -582,9 +582,9 @@ command-line = ${kvm-controller:rendered}
 
 [kvm-vnc-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = vnc_promise.py
-config-hostname = ${kvm-parameter-dict:vnc-ip}
+config-host = ${kvm-parameter-dict:vnc-ip}
 config-port = ${kvm-parameter-dict:vnc-port}
 
 [kvm-disk-image-corruption-bin]
@@ -704,9 +704,9 @@ wrapper = ${directory:bin}/websockify
 
 [novnc-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = novnc_promise.py
-config-hostname = ${novnc-instance:ip}
+config-host = ${novnc-instance:ip}
 config-port = ${novnc-instance:port}
 
 
@@ -797,9 +797,9 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [httpd-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = httpd.py
-config-hostname = ${httpd:host}
+config-host = ${httpd:host}
 config-port = ${httpd:port}
 {% endif %}
 

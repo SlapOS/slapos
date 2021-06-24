@@ -95,9 +95,9 @@ You will use slapos.cookbook:promise.plugin to generate your promise script into
 
     [promise-check-site]
     <= monitor-promise-base
-    module = check_port_listening
+    module = check_socket_listening
     name = check_site.py
-    config-hostname = ${publish:ipv6}
+    config-host = ${publish:ipv6}
     config-port = 2020
     config-foo = bar
 
