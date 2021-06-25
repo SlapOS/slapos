@@ -43,6 +43,9 @@ name = instance-html5as-{{ i }}
 config-port = {{ parameter_dict["port-%s" % i] }}
 config-title = {{ parameter_dict["title-%s" % i] }}
 config-monitor-httpd-port = {{ parameter_dict["monitor-httpd-port-%s" % i] }}
+{%   if "sla-%s-computer-guid" % i in parameter_dict -%}
+sla-computer_guid = {{ parameter_dict["sla-%s-computer-guid" % i] }}
+{%   endif -%}
 {% endfor %}
 
 # Publish information to connect to the two instances
