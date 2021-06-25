@@ -25,9 +25,8 @@
 #
 ##############################################################################
 
-
 from zc.buildout.buildout import Buildout
-
+from zc.buildout import UserError
 
 class SubBuildout(Buildout):
   """Run buildout in buildout, partially copied from infrae.buildout
@@ -52,6 +51,8 @@ class SubBuildout(Buildout):
             opt,
             main_buildout['buildout'][opt],
         ))
+    if not ("slap-connection" in main_buildout):
+      raise UserError("You should use slap-connection in the section [slap-configuration].")
     # Use same slap connection
     for k, v in main_buildout["slap-connection"].items():
       options.append(('slap-connection', k, v))
@@ -71,8 +72,26 @@ class Recipe:
     self.buildout = buildout
     self.options = options
     self.name = name
+
+    if not ("slap-configuration" in self.buildout) or not ("slap-software-type" in buildout["slap-configuration"]):
+      raise UserError("You should have a section [slap-configuration] with " \
+                      "this recipe: slapos.cookbook:slapconfiguration.")
     self.software_type = buildout["slap-configuration"]["slap-software-type"]
-    section, key = self.options[self.software_type].split(":")
+
+    if self.software_type not in self.options:
+      raise UserError("This software type (%s) isn't mapped. RootSoftwareInstance " \
+                      "is the default software type." % self.software_type)
+    try:
+      section, key = self.options[self.software_type].split(":")
+    except:
+      raise UserError("The softwares types in the section [%s] must be separate " \
+                      "by a colon such as: 'section:key', where key is usually 'rendered'. " \
+                      "Don't use: ${section:key}" % self.name)
+
+    if not (section in self.buildout):
+      raise UserError("The section %s can't be found in the file." % section)
+    elif not (key in buildout[section]):
+      raise UserError("The key %s can't be found in the section %s." % (key, section))
     self.base = self.buildout[section][key]
 
   def install(self):
