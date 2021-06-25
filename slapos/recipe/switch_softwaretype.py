@@ -25,9 +25,8 @@
 #
 ##############################################################################
 
-
-from zc.buildout.buildout import Buildout
-
+from zc.buildout.buildout import Buildout, MissingOption, MissingSection
+from zc.buildout import UserError
 
 class SubBuildout(Buildout):
   """Run buildout in buildout, partially copied from infrae.buildout
@@ -71,8 +70,21 @@ class Recipe:
     self.buildout = buildout
     self.options = options
     self.name = name
-    self.software_type = buildout["slap-configuration"]["slap-software-type"]
-    section, key = self.options[self.software_type].split(":")
+    try:
+      self.software_type = buildout["slap-configuration"]["slap-software-type"]
+    except (MissingSection, MissingOption):
+      raise UserError("The section to retrieve slap partition parameters "
+                      "(with slapos.cookbook:slapconfiguration recipe or a derived one) "
+                      "must be named [slap-configuration].")
+    try:
+      section, key = self.options[self.software_type].split(":")
+    except MissingOption:
+      raise MissingOption("This software type (%s) isn't mapped. RootSoftwareInstance "
+                      "is the default software type." % self.software_type)
+    except ValueError:
+      raise UserError("The software types in the section [%s] must be separated "
+                      "by a colon such as: 'section:key', where key is usually 'rendered'. "
+                      "Don't use: ${section:key}" % self.name)
     self.base = self.buildout[section][key]
 
   def install(self):
