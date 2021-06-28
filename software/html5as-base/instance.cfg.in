@@ -21,7 +21,16 @@ filename = instance-html5as.cfg
 context = 
   section buildout buildout
   section parameter_list profile-common
+# partition_ipv6 is the random ipv6 allocated to the local partition
+  key partition_ipv6 slap-configuration:ipv6-random
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = ${instance-html5as:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = ${:default}
+default = instance-html5as:rendered
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
