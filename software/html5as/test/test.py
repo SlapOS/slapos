@@ -27,7 +27,6 @@
 
 import os
 import requests
-from urlparse import urlparse
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -36,9 +35,9 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class HTML5ASTestCase(SlapOSInstanceTestCase):
+class HTML5ASBaseTestCase(SlapOSInstanceTestCase):
   """
-  Common class for testing html5as.
+  Common class for testing html5as base.
   It inherit from SlapOSInstanceTestCase which:
     * Install the software release.
     * Checks it compile without issue.
@@ -57,126 +56,16 @@ class HTML5ASTestCase(SlapOSInstanceTestCase):
     return response
 
 
-class TestEmptyDeploy(HTML5ASTestCase):
+class TestEmptyDeploy(HTML5ASBaseTestCase):
   """
   This class test the instance with no parameters.
   """
 
   def test_deploy_with_no_paramater(self):
+    """
+    Get the connection URL and check it is accessible
+    """
     url = self.requestDefaultInstance().getConnectionParameterDict()['server_url']
     response = self.checkUrlAndGetResponse(url)
     result = response.text
-    self.assertFalse("<h1>" in result)
-    self.assertTrue("<p>Hello World</p>" in result)
-
-class TestDeployWithTitle(HTML5ASTestCase):
-  """
-  This class test an instance with the parameter "title"
-  """
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'title': 'Test1',
-    }
-
-  def test_deploy_with_title_parameter(self):
-    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
-    self.assertEqual(connection_parameter_dict["title"], "Title Test1!")
-    url = connection_parameter_dict['server_url']
-    response = self.checkUrlAndGetResponse(url)
-    result = response.text
-    self.assertTrue("<h1>Test1</h1>" in result)
-    self.assertTrue("<p>Hello World</p>" in result)
-
-class TestGracefulWithPortChange(HTML5ASTestCase):
-  """
-  This class test the instance with the parameter "port"
-  """
-
-  instance_parameter_dict = {
-    'port': 8087
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
-
-  def test_change_port_parameter(self):
-    """
-    This test test port change and its application with graceful restart
-    """
-    # Check initial connection parameter match expected port
-    url = self.computer_partition.getConnectionParameterDict()['server_url']
-    self.assertEqual(urlparse(url).port, 8087)
-    # Check port is listening even thought it is duplicated with the promise:
-    # "port-listening-promise"
-    self.checkUrlAndGetResponse(url)
-
-    # Update port parameter
-    self.instance_parameter_dict.update({
-      'port': 8086,
-
-    })
-    # Request instance with the new port parameter
-    self.requestDefaultInstance()
-    # Reprocess the instance to apply new port and run promises
-    self.slap.waitForInstance(self.instance_max_retry)
-    # Rerequest instance to get update connection parameter
-    url = self.requestDefaultInstance().getConnectionParameterDict()['server_url']
-    # Make sure the new port is the one being used
-    self.assertEqual(urlparse(url).port, 8086)
-
-    # Check port is listening even thought it is duplicated with the promise:
-    # "port-listening-promise"
-    self.checkUrlAndGetResponse(url)
-
-
-class TestReplicateHTML5AS(HTML5ASTestCase):
-  """
-  This class test the instance with the parameter "port"
-  """
-
-  instance_parameter_dict = {
-    "port-1": 8088,
-    "title-1": "Title 1",
-  }
-
-  @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'replicate'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
-
-  def test_replicate_instance(self):
-   # Check First instance is deployed with proper parameters
-    connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
-    url = connection_parameter_dict['instance-1-server_url']
-    self.assertEqual(urlparse(url).port, 8088)
-    response = self.checkUrlAndGetResponse(url)
-    result = response.text
-    self.assertTrue("<h1>Title 1</h1>" in result)
-
-    # Check only one instance is deployed by default
-    self.assertTrue("instance-2-server_url" not in connection_parameter_dict)
-
-    # Update replicate quantity parameter
-    self.instance_parameter_dict.update({
-      'replicate-quantity': 2,
-      'port-2': 8089,
-      'sla-2-computer_guid': self.slap._computer_id,
-      "title-2": "Title 314",
-    })
-    # Request instance with the one more replicate
-    self.requestDefaultInstance()
-    self.slap.waitForInstance(self.instance_max_retry)
-
-    # Check the second replicate
-    connection_parameter_dict = self.requestDefaultInstance().getConnectionParameterDict()
-    url = connection_parameter_dict['instance-2-server_url']
-    self.assertEqual(urlparse(url).port, 8089)
-    response = self.checkUrlAndGetResponse(url)
-    result = response.text
-    self.assertTrue("<h1>Title 314</h1>" in result)
+    self.assertEqual("Hello World!\n", result)
