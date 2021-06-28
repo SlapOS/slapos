@@ -3,6 +3,8 @@
 # Deploy html5as instance
 #
 #############################
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
 [buildout]
 parts =
     nginx_conf
@@ -76,8 +78,8 @@ scgi_temp_path = ${:tmp}/scgi_temp_path
 nb_workers = 2
 
 # Network
-ip = ${slap-network-information:global-ipv6}
-port = ${slap-parameter:port}
+ip = {{ partition_ipv6 }}
+port = {{ parameter_dict['port'] }}
 access_url = http://[${:ip}]:${:port}
 
 # Paths
@@ -138,7 +140,7 @@ stop-on-error = true
 # If the parameter is not provided it fallback to the default template
 command = 
   rm -rf ${html5as:docroot}/*; 
-  URL="${slap-parameter:download_url}"; 
+  URL="{{ parameter_dict['download_url'] }}";
   if [ -n "$URL" ];
   then
     ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${html5as:docroot} --strip-components 1;
@@ -151,7 +153,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_index_html'] }}
 rendered = ${directory:srv}/index.html
 context =
-  key title slap-parameter:title
+  raw title {{ parameter_dict['title'] }}
 
 ### Nginx Graceful
 [nginx-graceful]
@@ -177,7 +179,7 @@ monitor-httpd-port = 8197
 
 # Monitor Stack also provides logrotate stack. We only need to extend
 # the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
-# More parameters can be added following the logrotate-entry-base section  
+# More parameters can be added following the logrotate-entry-base section
 [logrotate-entry-nginx]
 <= logrotate-entry-base
 name = nginx
@@ -191,7 +193,7 @@ recipe = slapos.cookbook:publish
 # be deployed. The parameters needed for accessing monitoring will be published
 <= monitor-publish
 server_url = ${html5as:access_url}
-title = Title ${slap-parameter:title}!
+title = Title {{ parameter_dict['title'] }}!
 # Add dependency to the promise so that frontend sections are processed
 # and there is no need to declare the new part in buildout:parts
 server-cdn-url = ${html5as-frontend-promise:url}
@@ -220,8 +222,3 @@ name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}
 config-check-secure = 1
-
-[slap-parameter]
-title =
-download_url =
-port = 8081
