@@ -1,4 +1,12 @@
-{% set replicate_quantity = slapparameter_dict.pop('replicate-quantity', '1') | int %}
+{%- set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+{%- set replicate_quantity = int(parameter_dict['replicate-quantity']) %}
+# Set default title and port for each replicate based on requested quantity
+{%- for i in range(1, replicate_quantity + 1) %}
+{%- do parameter_dict.setdefault("title-%d" % i, "") %}
+{%- do parameter_dict.setdefault("port-%d" % i, 8081 + i) %}
+{%- endfor %}
+
+# Standard buildout section
 [buildout]
 parts =
     publish-connection-information
@@ -7,6 +15,11 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+################################
+# Sections to Request instances
+################################
+
+# Macro section sharing request parameters
 [instance-request-base]
 <= slap-connection
 recipe = slapos.cookbook:request
@@ -17,29 +30,23 @@ software-type = default
 # What parameter are neede to be retrieved
 return = server_url server-cdn-url monitor-setup-url
 # Provided parameters
-config-title = ${slap-parameter:title}
-config-download_url = ${slap-parameter:download_url}
+config-download_url = {{ parameter_dict['download_url'] }}
 
+# Create request section in a loop.
 {% for i in range(1, replicate_quantity + 1) %}
 # Request a normal html5as instance
 [instance-{{ i }}]
 <= instance-request-base
 # Name of the instance
 name = instance-html5as-{{ i }}
-config-port = ${slap-parameter:port-{{ i }}}
-config-title = ${slap-parameter:title-{{ i }}}
-{%   if "sla-%s-computer-guid" % i in slapparameter_dict -%}
-sla-computer_guid = {{ slapparameter_dict["sla-%s-computer-guid" % i] }}
+config-port = {{ parameter_dict["port-%s" % i] }}
+config-title = {{ parameter_dict["title-%s" % i] }}
+{%   if "sla-%s-computer-guid" % i in parameter_dict -%}
+sla-computer_guid = {{ parameter_dict["sla-%s-computer-guid" % i] }}
 {%   endif -%}
 {% endfor %}
 
-[slap-parameter]
-download_url =
-{% for i in range(1, replicate_quantity + 1) %}
-title-{{ i }} =
-port-{{ i }} = 808{{ i }}
-{% endfor %}
-
+# Publish information to connect to the two instances
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 {% for i in range(1, replicate_quantity + 1) %}
