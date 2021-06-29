@@ -54,7 +54,7 @@ template = inline:#!{{ bash_bin }}
   cd ${repman:config-tmp}/proxies
   {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
   tar -xzf proxies-$NAME.tar.gz
-  cp conf/proxysql.cnf $CONFIG
+  cp etc/proxysql.cnf $CONFIG
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
@@ -209,6 +209,7 @@ command-line =
 wrapper-path = ${directory:controller}/proxysql-{{ name }}
 wait-for-files =
   ${repman:bootstrap}/{{ name }}_bootstrapped
+  ${config-proxysql-{{ name }}:config}
 depends =
   {{ '${proxysql-' ~ name ~ '-admin-promise:recipe}' }}
   {{ '${proxysql-' ~ name ~ '-promise:recipe}' }}

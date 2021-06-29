@@ -242,10 +242,11 @@ bash-bin = {{ bash_bin }}
 db-user = ${init-script-parameters:root-user}
 db-password = ${init-script-parameters:password}
 mysql-dir = ${directory:mysql}
-dbjob-cnf = ${directory:etc}/mysql/my.cnf
+dbjob-cnf = ${directory:etc}/mysql/dbjob.cnf
 log-dir = ${directory:mysql}/.system/logs
 tmp-dir = ${directory:tmp}
 mysqld-socket  = ${my-cnf-parameters:socket}
+mysql-client = ${binary-wrap-mysql:wrapper-path}
 socat-port = {{ int(port) + 9 }}
 restart-script = ${mysqld-restart-script:rendered}
 socat-location = {{ parameter_dict['socat-location'] }}
@@ -313,7 +314,7 @@ template = inline:#!{{ bash_bin }}
   rm -rf ${directory:etc}/mysql
   cp -r etc/mysql ${directory:etc}
   ln -sf ${directory:mysql}/.system ${directory:var}/system
-  ln -sf ${my-cnf:rendered} ${directory:etc}/mysql/custom/01_mariadb.cnf
+  ln -sf ${my-cnf:rendered} ${directory:etc}/mysql/custom.d/01_mariadb.cnf
 
 [{{ section('install-mysql-config') }}]
 recipe = plone.recipe.command
