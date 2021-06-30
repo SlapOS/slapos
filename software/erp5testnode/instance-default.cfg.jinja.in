@@ -20,6 +20,7 @@ parts =
   resiliency-exclude-file
   shellinabox-frontend-reload
   promises
+  testnode-compatibility
 
 [monitor-publish]
 recipe = slapos.cookbook:publish
@@ -202,7 +203,7 @@ run = $${rootdirectory:var}/run
 [directory]
 recipe = slapos.cookbook:mkdirectory
 slapos = $${rootdirectory:srv}/slapos
-testnode = $${rootdirectory:srv}/testnode
+testnode = $${buildout:directory}/t
 shared = $${rootdirectory:srv}/shared
 test-suite = $${rootdirectory:srv}/test_suite
 log = $${basedirectory:log}/testnode
@@ -210,6 +211,16 @@ run = $${basedirectory:run}/testnode
 software = $${rootdirectory:srv}/software
 shellinabox = $${rootdirectory:srv}/shellinabox
 ca-dir = $${rootdirectory:srv}/ca
+
+[testnode-compatibility]
+# Remove old ~/srv/testnode
+recipe = slapos.recipe.build
+install =
+  import os
+  from zc.buildout.rmtree import rmtree
+  old_testnode_path = self.buildout['rootdirectory']['srv'] + '/testnode'
+  if os.exists(old_testnode_path):
+    rmtree(old_testnode_path)
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
