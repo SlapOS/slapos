@@ -34,7 +34,7 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '../software_cfg')))
+        os.path.join(os.path.dirname(__file__), '../software.cfg')))
 
 
 class TestGalene(SlapOSInstanceTestCase):
