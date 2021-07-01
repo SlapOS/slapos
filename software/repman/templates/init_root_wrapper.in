@@ -29,4 +29,7 @@ if [ ! -f "{{ upgrade_done }}" ]; then
   if [ $? -eq 0 ]; then
     touch {{ upgrade_done }};
   fi
+else
+  # only create databases now
+  run_mysql  < {{ init_database_sql }} || exit 1;
 fi

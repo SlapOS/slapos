@@ -115,6 +115,7 @@ context =
   key upgrade_done       :upgrade-done
   key init_root_sql      init-root-sql:rendered
   key mysql_update       update-mysql:output
+  key init_database_sql  init-script:rendered
   raw mysql_conf         ${directory:etc}/mysql/my.cnf
   raw dash_bin           {{ dash }}
   raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql

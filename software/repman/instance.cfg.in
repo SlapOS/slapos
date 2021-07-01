@@ -56,6 +56,7 @@ extra-context =
 <= jinja2-template-base
 template= {{ template_repman_cfg }}
 extra-context =
+    key slave_instance_list         slap-configuration:slave-instance-list
     raw gowork_bin                  {{ gowork_bin }}
     raw haproxy_location            {{ haproxy_location }}
     raw nginx_bin                   {{ nginx_location }}/sbin/nginx
@@ -71,6 +72,7 @@ extra-context =
     raw proxysql_location          {{ proxysql_location }}
     raw template_repman_manager_sh {{ template_repman_manager_sh }}
     raw template_proxy_need_stopstart {{ proxy_need_stop_start_template }}
+    raw template_publish_slave_information {{ template_publish_slave }}
 
 [template-mariadb-parameters]
 bash = {{ bash_location }}
