@@ -26,31 +26,28 @@
 ##############################################################################
 from __future__ import unicode_literals
 
-import os
-import textwrap
-import logging
-import subprocess
-import tempfile
-import time
-import re
 import json
-from six.moves.urllib.parse import urlparse, urljoin
+import logging
+import os
+import re
+import subprocess
+import time
 
 import pexpect
 import psutil
 import requests
-import sqlite3
 import six
 
+from six.moves.urllib.parse import urlparse, urljoin
+
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.grid.svcbackend import getSupervisorRPC
-from slapos.grid.svcbackend import _getSupervisordSocketPath
+from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 
 
 software_cfg = 'software%s.cfg' % ('-py3' if six.PY3 else '')
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', software_cfg)))
+theia_software_release_url = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', software_cfg))
+
+setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(theia_software_release_url)
 
 
 class TheiaTestCase(SlapOSInstanceTestCase):
@@ -352,3 +349,47 @@ class TestTheiaEnv(TheiaTestCase):
       # Cleanup the theia shell process
       theia_shell_process.terminate()
       theia_shell_process.wait()
+
+
+class ResilientTheiaMixin(object):
+  @classmethod
+  def _getPartition(cls, software_type):
+    software_url = cls.getSoftwareURL()
+    for computer_partition in cls.slap.computer.getComputerPartitionList():
+      partition_url = computer_partition.getSoftwareRelease()._software_release
+      partition_type = computer_partition.getType()
+      if partition_url == software_url and partition_type == software_type:
+        return computer_partition
+    raise Exception("Theia %s partition not found" % software_type)
+
+  @classmethod
+  def _getPartitionId(cls, software_type):
+    return cls._getPartition(software_type).getId()
+
+  @classmethod
+  def _getPartitionPath(cls, software_type, *paths):
+    return os.path.join(cls.slap._instance_root, cls._getPartitionId(software_type), *paths)
+
+  @classmethod
+  def _getSlapos(cls, software_type='export'):
+    return cls._getPartitionPath(software_type, 'srv', 'runner', 'bin', 'slapos')
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'resilient'
+
+
+class TestTheiaResilientInterface(ResilientTheiaMixin, TestTheia):
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientInterface, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = cls._getPartitionPath('export')
+
+
+class TestTheiaResilientWithSR(ResilientTheiaMixin, TestTheiaWithSR):
+  @classmethod
+  def setUpClass(cls):
+    super(TestTheiaResilientWithSR, cls).setUpClass()
+    # Patch the computer root path to that of the export theia instance
+    cls.computer_partition_root_path = cls._getPartitionPath('export')
