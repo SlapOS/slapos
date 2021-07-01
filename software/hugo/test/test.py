@@ -69,20 +69,20 @@ class TestEmptyDeploy(HugoTestCase):
     self.assertFalse("<h1>" in result)
     self.assertTrue("<p>Hello World</p>" in result)
 
-class TestDeployWithTitle(HugoTestCase):
+class TestDeployWithSiteDir(HugoTestCase):
   """
-  This class test an instance with the parameter "title"
+  This class test an instance with the parameter "site-dir"
   """
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'title': 'Test1',
+      'site-dir': 'foo',
     }
 
   def test_deploy_with_title_parameter(self):
     connection_parameter_dict = self.computer_partition.getConnectionParameterDict()
-    self.assertEqual(connection_parameter_dict["title"], "Title Test1!")
+    self.assertEqual(connection_parameter_dict["site-dir"], "Title Test1!")
     url = connection_parameter_dict['server_url']
     response = self.checkUrlAndGetResponse(url)
     result = response.text

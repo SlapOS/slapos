@@ -1,1 +1,1 @@
-Tests for html5as software release
+Tests for hugo software release
