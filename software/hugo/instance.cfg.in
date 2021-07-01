@@ -7,6 +7,7 @@ parts =
     port-listening-promise
     logrotate-entry-nginx
     publish-connection-information
+    default-index-page
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -31,6 +32,7 @@ log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
 data = ${directory:srv}/hugo
+project = ${directory:srv}/project
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -48,7 +50,7 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.site-dir = /srv/slapgrid/slappart19/srv/project/quickstart
+configuration.site-dir = ${basedirectory:project}
 configuration.port = 8080
 
 [hugo]
@@ -71,8 +73,7 @@ path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
 bin_launcher = ${basedirectory:script}/launcher
 
-docroot = ${slap-configuration:configuration.site-dir}/public
-#default_index = ${:docroot}/index.html
+docroot = ${slap-configuration:configuration.site-dir}
 
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
@@ -147,3 +148,9 @@ server_url = ${hugo:access_url}
 env = ${buildout:local-directory}/go.work/env.sh
 debug = ${hugo:docroot}
 server-cdn-url = ${hugo-frontend-promise:url}
+
+[default-index-page]
+recipe = slapos.recipe.template:jinja2
+rendered = ${basedirectory:project}/index.html
+template =
+  inline: <p>hello</p>
