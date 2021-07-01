@@ -7,7 +7,7 @@ parts =
     port-listening-promise
     logrotate-entry-nginx
     publish-connection-information
-    default-index-page
+    default_index_html
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -149,8 +149,9 @@ env = ${buildout:local-directory}/go.work/env.sh
 debug = ${hugo:docroot}
 server-cdn-url = ${hugo-frontend-promise:url}
 
-[default-index-page]
+[default_index_html]
 recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
 rendered = ${basedirectory:project}/index.html
-template =
-  inline: <p>hello</p>
+# context =
+#   key title slap-parameter:title
