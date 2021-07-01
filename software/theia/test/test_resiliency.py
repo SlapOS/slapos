@@ -330,6 +330,11 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
 
 
 class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientTheiaTestCase):
+  def test_twice(self):
+    # Run two synchronisations on the same instances
+    # to make sure everything still works the second time
+    self._doSync()
+
   def checkLog(self, log_path, initial=[], newline="Hello"):
     with open(log_path) as f:
       log = f.readlines()
