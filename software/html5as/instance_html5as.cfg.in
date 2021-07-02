@@ -176,7 +176,7 @@ config-port = ${html5as:port}
 # Use a port different from the default one in order to be able to
 # use it in a SlapOS webrunner or a Theia SlapOS Runner
 [monitor-instance-parameter]
-monitor-httpd-port = 8197
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 
 # Monitor Stack also provides logrotate stack. We only need to extend
 # the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
