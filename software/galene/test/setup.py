@@ -42,6 +42,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'slapos.core',
+        'slapos.libnetworkcache',
+        'requests',
     ],
     zip_safe=True,
     test_suite='test',
