@@ -426,6 +426,14 @@ class TestFirefox68(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
+class TestFirefox78(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
+  user_agent = 'Gecko/20100101 Firefox/78.0'
+
 
 class TestChrome69(
     BrowserCompatibilityMixin,
@@ -434,3 +442,12 @@ class TestChrome69(
 ):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'
+
+
+class TestChrome91(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
+  user_agent = 'Chrome/91.0.4472.0'
