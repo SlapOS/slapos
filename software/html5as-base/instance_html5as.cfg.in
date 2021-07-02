@@ -70,7 +70,7 @@ scgi_temp_path = ${:tmp}/scgi_temp_path
 nb_workers = 2
 
 # Network
-ip = ${slap-network-information:global-ipv6}
+ip = {{ partition_ipv6 }}
 port = 8081
 access_url = http://[${:ip}]:${:port}
 
