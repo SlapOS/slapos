@@ -176,7 +176,7 @@ config-port = ${html5as:port}
 # Use a port different from the default one in order to be able to
 # use it in a SlapOS webrunner or a Theia SlapOS Runner
 [monitor-instance-parameter]
-monitor-httpd-port = 8197
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 
 # Monitor Stack also provides logrotate stack. We only need to extend
 # the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
@@ -205,7 +205,7 @@ server-cdn-url = ${html5as-frontend-promise:url}
 <= slap-connection
 # Recipe used to make requests
 recipe = slapos.cookbook:requestoptional
-name = HTM5AS frontend
+name = HTML5AS frontend
 # Specify the software url of the frontend software release
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 # It is not a dedicated instance but an instance allocated on a shared instance
