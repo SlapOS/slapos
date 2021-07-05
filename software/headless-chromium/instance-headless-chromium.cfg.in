@@ -1,0 +1,192 @@
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
+[buildout]
+parts =
+  chromium-launcher
+  generate-passwd-file
+  nginx-config
+  nginx-mime-types
+  nginx-launcher
+  logrotate-entry-nginx
+  publish-connection-information
+  frontend-ok-promise
+  frontend-secure-promise
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends = {{ parameter_list['template-monitor'] }}
+
+# Create necessary directories.
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+tmp = ${:home}/tmp
+log = ${:home}/log
+etc = ${:home}/etc
+ssl = ${:etc}/ssl
+service = ${:etc}/service
+
+# Options for instance configuration. See README.md for a list of
+# options that can be configured when requesting an instance.
+[headless-chromium]
+ipv4 = {{ partition_ipv4 }}
+ipv6 = {{ partition_ipv6 }}
+remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
+url = {{ parameter_dict['target-url'] }}
+remote-debugging-address = ${:ipv4}:${:remote-debugging-port}
+devtools-frontend-root = {{ parameter_list['devtools-frontend'] }}
+
+nginx-port = {{ parameter_dict['nginx-proxy-port'] }}
+proxy-address = [${:ipv6}]:${:nginx-port}
+nginx-config-target = ${directory:etc}/nginx.conf
+nginx-pid-path = ${directory:log}/nginx.pid
+nginx-temp-path = ${directory:tmp}
+nginx-error-log = ${directory:log}/nginx-error.log
+nginx-access-log = ${directory:log}/nginx-access.log
+nginx-htpasswd-file = ${directory:etc}/.htpasswd
+nginx-key-file = ${frontend-instance-certificate:key-file}
+nginx-cert-file = ${frontend-instance-certificate:cert-file}
+nginx-mime-types = ${directory:etc}/mime-types
+
+
+# Create a launcher script in /etc/service for the headless shell
+# executable.
+[chromium-launcher]
+recipe = slapos.recipe.template:jinja2
+template =
+  inline:#!/bin/sh
+
+  export FONTCONFIG_FILE=${font-config:rendered}
+  exec {{ parameter_list['chromium-wrapper'] }} \
+    --remote-debugging-address=${headless-chromium:ipv4} \
+    --remote-debugging-port=${headless-chromium:remote-debugging-port} \
+    ${headless-chromium:url}
+rendered = ${directory:service}/chromium
+
+
+# Configure and launch the proxy server.
+[nginx-config]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template-nginx-config'] }}
+rendered = ${headless-chromium:nginx-config-target}
+mode = 700
+context =
+  section param_headless_chromium headless-chromium
+
+[nginx-mime-types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template-mime-types'] }}
+rendered = ${headless-chromium:nginx-mime-types}
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_list['nginx-location'] }}/sbin/nginx -c ${headless-chromium:nginx-config-target}
+wrapper-path = ${directory:service}/nginx
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${headless-chromium:nginx-error-log} ${headless-chromium:nginx-access-log}
+
+[frontend-instance-password]
+recipe = slapos.cookbook:generate.password
+username = admin
+bytes = 12
+
+[generate-passwd-file]
+recipe = plone.recipe.command
+command =
+  echo -n '${frontend-instance-password:username}:' > ${headless-chromium:nginx-htpasswd-file}
+  openssl passwd -apr1 '${frontend-instance-password:passwd}' >> ${headless-chromium:nginx-htpasswd-file}
+environment =
+  PATH={{ parameter_list['openssl-location'] }}/bin:%(PATH)s
+
+# Generate a self-signed TLS certificate.
+[frontend-instance-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
+      -newkey rsa:1024 -keyout ${:key-file} \
+      -out ${:cert-file}
+    openssl x509 -addtrust serverAuth \
+      -in ${:cert-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${directory:ssl}/${:_buildout_section_name_}.key
+cert-file = ${directory:ssl}/${:_buildout_section_name_}.cert
+common-name = ${headless-chromium:ipv6}
+environment =
+  PATH={{ parameter_list['openssl-location'] }}/bin:%(PATH)s
+
+
+# Generate a fonts.conf file.
+[font-config]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template-fonts-conf'] }}
+rendered = ${directory:etc}/fonts.conf
+context =
+  key cachedir :cache-dir
+  key fonts :fonts
+  key includes :includes
+cache-dir =
+  ${directory:etc}/.fontconfig.cache
+fonts =
+  {{ parameter_list['liberation-fonts-location'] }}
+includes =
+  {{ parameter_list['fontconfig-location'] }}/etc/fonts/conf.d
+
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+remote-debug-url = http://${headless-chromium:remote-debugging-address}
+proxy-url = https://${headless-chromium:proxy-address}
+frontend-url = ${remote-debugging-frontend:connection-secure_access}
+username = ${frontend-instance-password:username}
+password = ${frontend-instance-password:passwd}
+
+# Request a frontend URL from the CDN for the remote debugging interface.
+[remote-debugging-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Headless Chromium Remote Debugging Frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = https://${headless-chromium:proxy-address}
+config-https-only = true
+config-type = websocket
+config-websocket-path-list = /devtools
+return = domain secure_access
+
+
+# Monitoring: check that the Chromium process is alive and responding to
+# requests through the proxy.
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+
+# Promise to make sure the remote debugging frontend returns 200 when
+# queried with the correct credentials.
+[frontend-ok-promise]
+<= monitor-promise-base
+module = check_url_available
+name = headless-chromium-frontend-ok.py
+url = ${remote-debugging-frontend:connection-secure_access}
+config-url = ${:url}
+config-username = ${frontend-instance-password:username}
+config-password = ${frontend-instance-password:passwd}
+
+# Promise to make sure that the remote debugging frontend returns 401
+# when queried with no credentials.
+[frontend-secure-promise]
+<= monitor-promise-base
+module = check_url_available
+name = headless-chromium-frontend-secure.py
+url = ${remote-debugging-frontend:connection-secure_access}
+config-url = ${:url}
+config-http-code = 401
