@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Values returned by headless Chromium instantiation",
+  "properties": {
+    "frontend-url": {
+      "description": "URL to access remote debugging interface",
+      "type": "string"
+    },
+    "username": {
+      "description": "Username for remote debugging interface",
+      "type": "string"
+    },
+    "password": {
+      "description": "Password for remote debugging interface",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "description": "Base URL used by monitor",
+      "type": "string"
+    },
+    "monitor-setup-url": {
+      "description": "One-click link to setup and monitor feeds",
+      "type": "string"
+    },
+    "proxy-url": {
+      "description": "Raw IPv6 address used by Nginx proxy",
+      "type": "string"
+    },
+    "remote-debug-url": {
+      "description": "Local IPv4 address used by Chromium",
+      "type": "string"
+    }
+  }
+}
