@@ -35,7 +35,7 @@ default-parameters =
     "title": "",
     "download_url": "",
     "port": 8081,
-    "monitor-httpd-port" = 8197
+    "monitor-httpd-port": 8197
   }
 
 [instance-replicate]
