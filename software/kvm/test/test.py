@@ -60,6 +60,8 @@ if has_kvm:
     os.path.abspath(
       os.path.join(os.path.dirname(__file__), '..',
                    'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+  # XXX Keep using slapos node instance --all, because of missing promises
+  InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 

@@ -143,6 +143,23 @@ class EdgeSlaveMixin(MonitorTestMixin):
   expected_connection_parameter_dict = {}
 
   @classmethod
+  def setUpClass(cls):
+    # XXX we run these tests with --all as a workaround for the fact that after
+    # requesting new shared instances we don't have promise to wait for the
+    # processing of these shared instances to be completed.
+    # The sequence is something like this:
+    #   - `requestEdgetestSlaves` will request edgetest partition
+    #   - first `waitForInstance` will process the edgetest partition, which will
+    #     request a edgebot partition, but without promise to wait for the
+    #     processing to be finished, so the first run of `slapos node instance`
+    #     exits with success code and `waitForInstance` return.
+    #   - second `waitForInstance` process the edgebot partition.
+    # Once we implement a promise (or something similar) here, we should not
+    # have to use --all
+    cls.slap._force_slapos_node_instance_all = True
+    return super(EdgeSlaveMixin, cls).setUpClass()
+
+  @classmethod
   def getInstanceSoftwareType(cls):
     return 'edgetest'
 
