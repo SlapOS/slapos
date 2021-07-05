@@ -79,6 +79,8 @@ else:
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
+  # XXX Keep using slapos node instance --all, because of missing promises
+  SlapOSInstanceTestCase.slap._force_slapos_node_instance_all = True
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
