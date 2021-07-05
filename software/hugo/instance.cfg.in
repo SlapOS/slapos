@@ -52,7 +52,10 @@ key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 configuration.site-dir = ${basedirectory:project}
 configuration.port = 8080
+<<<<<<< HEAD
 configuration.env = ${buildout:local-directory}/go.work/env.sh
+=======
+>>>>>>> 70a9c56f676c2106ee73255a673d69bc7e768798
 
 [hugo]
 nb_workers = 2
@@ -72,7 +75,11 @@ path_mime_types = ${directory:etc}/mime_types
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
+<<<<<<< HEAD
 bin_launcher = ${basedirectory:script}/launcher 
+=======
+bin_launcher = ${basedirectory:script}/launcher
+>>>>>>> 70a9c56f676c2106ee73255a673d69bc7e768798
 
 docroot = ${slap-configuration:configuration.site-dir}
 
@@ -146,7 +153,11 @@ config-check-secure = 1
 recipe = slapos.cookbook:publish
 <= monitor-publish
 server_url = ${hugo:access_url}
+<<<<<<< HEAD
 env = ${slap-configuration:configuration.env}
+=======
+env = ${buildout:local-directory}/go.work/env.sh
+>>>>>>> 70a9c56f676c2106ee73255a673d69bc7e768798
 debug = ${hugo:docroot}
 server-cdn-url = ${hugo-frontend-promise:url}
 
@@ -154,5 +165,10 @@ server-cdn-url = ${hugo-frontend-promise:url}
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_index_html'] }}
 rendered = ${basedirectory:project}/index.html
+<<<<<<< HEAD
 context =
   key env slap-configuration:configuration.env
+=======
+# context =
+#   key title slap-parameter:title
+>>>>>>> 70a9c56f676c2106ee73255a673d69bc7e768798

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <h1 style="text-align: center;"><img src="https://html-online.com/editor/tiny4_9_11/plugins/emoticons/img/smiley-cool.gif" alt="cool" />Welcome to <a href="https://gohugo.io/" target="_blank">Hugo</a>'s workplace</h1>
 <p>Here are some instructions you might need:&nbsp;</p>
 <ol>
@@ -18,3 +19,6 @@
 <li>Retrieve the CDN URL by re-launching the slapos request command (It should be the same URL as the one you are using now)</li>
 </ol>
 <p style="text-align: center;"><strong>Now you can access your published website powered by Hugo</strong></p>
+=======
+<p>hello temp</p>
+>>>>>>> 70a9c56f676c2106ee73255a673d69bc7e768798
