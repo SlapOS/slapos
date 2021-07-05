@@ -1,0 +1,36 @@
+[buildout]
+parts =
+  launcher
+  publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+# Create the directories that we need. We just have /etc/service
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+service = ${:home}/etc/service
+
+[headless-chromium]
+ip = ${slap-network-information:global-ipv6}
+port = 8081
+url = https://example.com
+remote_debug_url = http://[${:ip}]:${:port}
+
+chromium_wrapper = {{ parameter_list['chromium_wrapper'] }}
+bin_launcher = ${directory:service}/launcher
+bin_shell = {{ parameter_list['dash_location'] }}/bin/dash
+
+[launcher]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_launcher'] }}
+rendered = ${headless-chromium:bin_launcher}
+mode = 700
+context =
+  section param_chromium_headless headless-chromium
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+remote_debug_url = ${headless-chromium:remote_debug_url}

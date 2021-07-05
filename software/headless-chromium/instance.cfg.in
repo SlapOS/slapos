@@ -1,0 +1,25 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[profile-common]
+dash_location = {{ dash_location }}
+chromium_wrapper = {{ chromium_wrapper }}
+template_launcher = {{ template_launcher_target }}
+
+[instance-headless-chromium]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_instance_headless_chromium_target }}
+rendered = ${buildout:directory}/${:filename}
+filename = instance_headless-chromium.cfg
+context =
+  section buildout buildout
+  section parameter_list profile-common
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${instance-headless-chromium:rendered}
