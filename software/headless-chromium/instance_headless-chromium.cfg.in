@@ -7,7 +7,7 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
-# Create the directories that we need. We just have /etc/service
+# Create the directories that we need. We just have /etc/service.
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -34,3 +34,16 @@ context =
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 remote_debug_url = ${headless-chromium:remote_debug_url}
+cdn_url = ${remote-debugging-frontend:connection-secure_access}
+
+# TODO: see if we need the slap-configuration stuff in instance.cfg.in
+
+[remote-debugging-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Headless Chromium Remote Debugging Frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${headless-chromium:remote_debug_url}
+config-https-only = true
+return = domain secure_access
