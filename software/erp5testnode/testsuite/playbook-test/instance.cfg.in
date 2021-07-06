@@ -40,15 +40,11 @@ playbook-test = dynamic-template-playbook-test:rendered
 
 [dynamic-template-playbook-test]
 recipe = slapos.recipe.template:jinja2
-template = ${:_profile_base_location_}/instance-playbook-test.cfg.jinja2
+template = ${dynamic-template-playbook-test:target}
 rendered = $${buildout:directory}/template-playbook-test.cfg
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw bin_directory ${buildout:bin-directory}
-    raw in_vm_test_script ${playbook-script-controller-script:location}
-    raw in_vm_test_script_md5 ${playbook-script-controller-script:md5sum}
-    raw waittime ${playbook-script-controller-script:waittime}
-    raw tries ${playbook-script-controller-script:tries}
 mode = 0644
