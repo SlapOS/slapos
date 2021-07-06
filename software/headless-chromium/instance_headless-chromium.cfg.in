@@ -36,8 +36,6 @@ recipe = slapos.cookbook:publish
 remote_debug_url = ${headless-chromium:remote_debug_url}
 cdn_url = ${remote-debugging-frontend:connection-secure_access}
 
-# TODO: see if we need the slap-configuration stuff in instance.cfg.in
-
 [remote-debugging-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
