@@ -19,7 +19,7 @@ update-command = $${:command}
 command =
   if [ ! -d srv/public ] ; then
     dest=`echo ../*/srv/public`
-    cp ${playbook:output} $dest/playbook.tar.gz &&
+    cp ${playbook:output} $dest/playbook.tar.gz
   fi
 
 [runTestSuite]
