@@ -3,4 +3,5 @@
 # Run headless Chromium
 exec {{ param_chromium_headless['chromium_wrapper'] }} \
   --remote-debugging-port={{ param_chromium_headless['port'] }} \
+  --remote-debugging-address=:: \
   {{ param_chromium_headless['url'] }}
