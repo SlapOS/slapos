@@ -48,7 +48,7 @@ context =
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw bin_directory ${buildout:bin-directory}
-    raw in_vm_test_script ${deploy-script-controller-script:location}
+    raw in_vm_test_script ${deploy-script-controller-script:target}
     raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
     raw waittime ${deploy-script-controller-script:waittime}
     raw tries ${deploy-script-controller-script:tries}
