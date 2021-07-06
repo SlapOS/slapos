@@ -41,7 +41,7 @@ deploy-test = dynamic-template-deploy-test:rendered
 
 [dynamic-template-deploy-test]
 recipe = slapos.recipe.template:jinja2
-template = ${:_profile_base_location_}/instance-deploy-test.cfg.jinja2
+template = ${dynamic-template-deploy-test:target}
 rendered = $${buildout:directory}/template-deploy-test.cfg
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
