@@ -1,5 +1,6 @@
-{% set part_list = [] -%}
-{% set server_name = slapparameter_dict.get('server-name', 'turn.example.com') -%}
+{%- set part_list = [] -%}
+{%- set parameter = dict(default_parameter_dict, **slapparameter_dict) %}
+{%- set server_name = parameter['server-name'] %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -31,9 +32,9 @@ mode = {{ mode }}
 {% do part_list.append(section_name) -%}
 {%- endmacro %}
 
-{% if slapparameter_dict.get('ssl-key') and slapparameter_dict.get('ssl-crt') -%}
-{{ simplefile('ssl-certificate', '${turnserver-ssl:certificate}', slapparameter_dict.get('ssl-crt')) }}
-{{ simplefile('ssl-key', '${turnserver-ssl:key}', slapparameter_dict.get('ssl-key'), 600) }}
+{% if parameter['ssl-key'] and parameter['ssl-crt'] -%}
+{{ simplefile('ssl-certificate', '${turnserver-ssl:certificate}', parameter['ssl-crt']) }}
+{{ simplefile('ssl-key', '${turnserver-ssl:key}', parameter['ssl-key'], 600) }}
 {% else -%}
 {%  do part_list.append('gen-certificate') -%}
 [gen-certificate]
@@ -57,9 +58,9 @@ secret-file = ${directory:etc}/.turnsecret
 command =
   if [ ! -s "${:secret-file}" ]; then
     cat <<EOF > ${:secret-file}
-    [turnserver]
-    secret = $("{{ parameter_dict['openssl'] }}/bin/openssl" rand -hex 32)
-    EOF
+  [turnserver]
+  secret = $("{{ parameter_dict['openssl'] }}/bin/openssl" rand -hex 32)
+  EOF
   fi
   chmod 600 ${:secret-file}
 
@@ -68,9 +69,11 @@ recipe = slapos.cookbook:zero-knowledge.read
 file-path = ${gen-secret:secret-file}
 secret =
 
-{% set turn_port = slapparameter_dict.get('port', 3478) -%}
-{% set turn_tls_port = slapparameter_dict.get('tls-port', 5349) -%}
-{% set listining_ip = slapparameter_dict.get('listening-ip', (ipv4 | list)[0]) -%}
+{% set turn_port = parameter['port'] -%}
+{% set turn_tls_port = parameter['tls-port'] -%}
+# listening-ip parameter is mandatory
+{% set listening_ip = slapparameter_dict['listening-ip'] -%}
+
 [turnserver-config]
 recipe = collective.recipe.template
 input = inline:
@@ -80,9 +83,9 @@ input = inline:
   lt-cred-mech
   use-auth-secret
   static-auth-secret=${read-secret:secret}
-  listening-ip={{ listining_ip }}
-{% if slapparameter_dict.get('external-ip', '') %}
-  external-ip={{ slapparameter_dict['external-ip'] }}
+  listening-ip={{ listening_ip }}
+{% if parameter['external-ip'] %}
+  external-ip={{ parameter['external-ip'] }}
 {% endif %}
   server-name={{ server_name }}
   realm={{ server_name }}
@@ -122,14 +125,14 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 <= monitor-promise-base
 module = check_socket_listening
 name = turnserver-port-listening.py
-config-host = {{ listining_ip }}
+config-host = {{ listening_ip }}
 config-port = {{ turn_port }}
 
 [promise-check-turnserver-tls-port]
 <= monitor-promise-base
 module = check_socket_listening
 name = turnserver-tls-port-listening.py
-config-host = {{ listining_ip }}
+config-host = {{ listening_ip }}
 config-port = {{ turn_tls_port }}
 
 [publish-connection-information]
