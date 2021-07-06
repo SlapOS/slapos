@@ -34,7 +34,7 @@ config-virtual-hard-drive-url = {{ slapparameter_dict.get('image-to-test-url') }
 config-virtual-hard-drive-md5sum = {{ slapparameter_dict.get('image-to-test-md5sum') }}
 
 # The test script
-config-bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+config-bootstrap-script-url = file://{{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
 
 # Script configuration
 config-data-to-vm =
