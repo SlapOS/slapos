@@ -10,6 +10,7 @@
 {% set cluster_list = [] -%}
 {% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
+{% set dabase_slave_list = [] -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -58,6 +59,20 @@ template = inline:#!{{ bash_bin }}
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
+{% set db_name_list = [] -%}
+[database-slave-information]
+{% for instance_dict in slave_instance_list -%}
+{% set slave_dict = {
+  'name': instance_dict.get('db_name', instance_dict['db_name'].replace('-', '_').lower()),
+  'user': instance_dict.get('db_user', 'user'),
+  'password': instance_dict.get('db_password'),
+  'slave_reference': instance_dict['slave_reference']
+  } -%}
+{{ slave_dict['name'] }} = {{ dumps(slave_dict) }}
+{% do dabase_slave_list.append(slave_dict) -%}
+{% do db_name_list.append(slave_dict['name']) -%}
+{% endfor %}
+
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
   "database-amount": 2, "proxysql-user": "external",
@@ -78,7 +93,6 @@ mode = 755
 {% set section = 'request-mariadb-' ~ i -%}
 {% set dbname = 'Mariadb-' ~ i -%}
 
-# {{ dumps(slave_instance_list) }}
 
 [{{ section }}]
 <= request-common
@@ -97,7 +111,7 @@ config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
 config-name = {{ dbname }}
-config-database-list = {{ dumps(slave_instance_list) }}
+config-database-list = {{ dumps(dabase_slave_list) }}
 return = 
   database-host
   receiver-port
@@ -270,11 +284,6 @@ context =
 
 {% do part_list.append(name ~ '-publish-slave-information') -%}
 {% endfor -%}
-
-[database-slave-information]
-{% for slave_dict in slave_instance_list -%}
-{{ slave_dict['name'] }} = {{ dumps(slave_dict) }}
-{% endfor %}
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
@@ -475,12 +484,17 @@ name = nginx
 log = ${nginx-parameter:access-log} ${nginx-parameter:error-log}
 post = kill -USR1 $(cat ${nginx-parameter:pid-file})
 
+{% set db_list = db_name_list | join(' ') -%}
+[db-slave-requested]
+name = {{ db_list }}
+
 [publish-early]
 recipe = slapos.cookbook:publish-early
 -init =
   monitor-password monitor-htpasswd:passwd
   db-root-password gen-root-password:passwd
   repman-password repman-password:passwd
+  database-list db-slave-requested:name
 
 [publish-connection-parameter]
 <= monitor-publish
@@ -489,6 +503,7 @@ recipe = slapos.cookbook:publish
 backend-url = ${nginx-parameter:backend-ssl-url}
 url = ${repman-frontend:connection-secure_access}
 username = ${repman-parameter:username}
+database-list = {{ db_list }}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
