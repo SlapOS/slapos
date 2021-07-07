@@ -1,0 +1,4 @@
+#! {{ param_hugo['path_shell'] }}
+cd /srv/slapgrid/slappart19/srv/project/quickstart
+. {{ go_environment }}
+hugo server -D --bind="2001:67c:1254:e:c0::3f9e" --port="1314"
