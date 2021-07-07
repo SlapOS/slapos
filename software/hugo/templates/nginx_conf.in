@@ -1,4 +1,4 @@
-worker_processes {{ param_hugo['nb_workers'] }};
+worker_processes {{ param_hugo['nb-workers'] }};
 
 pid {{ param_hugo['path_pid'] }};
 error_log {{ param_hugo['path_error_log'] }};

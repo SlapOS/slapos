@@ -12,12 +12,14 @@ nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
 tar_location = {{ tar_location }}
 curl_location = {{ curl_location }}
+go_environment = {{ go_environment }}
 template_nginx_conf = {{ template_nginx_conf_target }}
 template_mime_types = {{ template_mime_types_target }} 
 template_launcher = {{ template_launcher_target }}
 template_index_html = {{ template_index_html_target }}
 template_graceful  = {{ template_graceful_target }}
 template_monitor = {{ template_monitor }}
+template_server = {{ template_server_target }}
 
 [instance-dev]
 # use `hugo server` to host the site
@@ -31,12 +33,11 @@ context =
 # partition_ipv6 is the random ipv6 allocated to the local partition
   key partition_ipv6 slap-configuration:ipv6-random
   key slapparameter_dict slap-configuration:configuration
-  jsonkey default_parameter_dict:default-parameters
+  jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
     "title": "",
-    "download_url": "",
-    "port": 8081
+    "port": 1314
   }
 
 [instance-pro]
