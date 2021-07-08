@@ -92,6 +92,7 @@ heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
 
 [init-script]
 < = jinja2-template-executable
+extensions = jinja2.ext.do
 # XXX: is there a better location ?
 rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}
@@ -119,7 +120,17 @@ context =
   raw mysql_conf         ${directory:etc}/mysql/my.cnf
   raw dash_bin           {{ dash }}
   raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+  raw database-list      {{ slapparameter_dict['database-name'] }}
 template = {{ parameter_dict['template-init-root-wrapper'] }}
+
+[mysql-slave-db-cleanup]
+< = jinja2-template-executable
+rendered = ${directory:bin}/remove_slave_db
+context =
+  raw mysql_conf         ${directory:etc}/mysql/my.cnf
+  raw dash_bin           {{ dash }}
+  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+template = {{ parameter_dict['template-cleanup-db'] }}
 
 [mysqld]
 < = jinja2-template-executable
@@ -285,6 +296,13 @@ cron-entries = ${cron:cron-entries}
 name = mariadb-need-start
 frequency = * * * * *
 command = ${template-mysqld-need-start:rendered}
+
+[{{ section('db-remove-cron-entry') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = slave-db-remove
+frequency = */20 * * * *
+command = ${mysql-slave-db-cleanup:rendered}
 
 [template-mysqld-need-start]
 < = jinja2-template-executable

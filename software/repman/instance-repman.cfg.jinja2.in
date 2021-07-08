@@ -11,6 +11,7 @@
 {% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 {% set dabase_slave_list = [] -%}
+{% set db_name_list = [] -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -59,7 +60,6 @@ template = inline:#!{{ bash_bin }}
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
-{% set db_name_list = [] -%}
 [database-slave-information]
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
@@ -72,6 +72,7 @@ mode = 755
 {% do dabase_slave_list.append(slave_dict) -%}
 {% do db_name_list.append(slave_dict['name']) -%}
 {% endfor %}
+{% set db_list = db_name_list | join(' ') -%}
 
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
@@ -112,6 +113,7 @@ config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
 config-name = {{ dbname }}
 config-database-list = {{ dumps(dabase_slave_list) }}
+config-database-name = {{ dumps(db_list) }}
 return = 
   database-host
   receiver-port
@@ -484,17 +486,13 @@ name = nginx
 log = ${nginx-parameter:access-log} ${nginx-parameter:error-log}
 post = kill -USR1 $(cat ${nginx-parameter:pid-file})
 
-{% set db_list = db_name_list | join(' ') -%}
-[db-slave-requested]
-name = {{ db_list }}
-
 [publish-early]
 recipe = slapos.cookbook:publish-early
 -init =
   monitor-password monitor-htpasswd:passwd
   db-root-password gen-root-password:passwd
   repman-password repman-password:passwd
-  database-list db-slave-requested:name
+database-list = {{ db_list }}
 
 [publish-connection-parameter]
 <= monitor-publish

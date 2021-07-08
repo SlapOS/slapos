@@ -1,0 +1,22 @@
+#!/bin/bash
+
+run_mysql () {
+  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
+  --protocol=socket -uroot -hlocalhost "$@"
+}
+
+DBNAME=$(run_mysql -Be "SELECT name FROM repman_slave_definition.slave WHERE state=false");
+RET=$?
+
+if [ ! "$RET" = "0" ]; then
+  echo "Mysql command failed: $DBNAME"
+  exit $RET
+fi
+
+for NAME in $DBNAME; do
+  if [ ! "$NAME" = "name" ]; then
+    echo "Deleting database $NAME..."
+    run_mysql -e "DROP DATABASE `$NAME`";
+    echo "Done."
+  fi
+done
