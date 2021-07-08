@@ -392,12 +392,12 @@ config-url =
 #--
 #-- Publish slave information
 [publish-slave-information]
-recipe = slapos.cookbook:softwaretype
-default = ${dynamic-publish-slave-information:rendered}
-RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
-replicate = ${dynamic-publish-slave-information:rendered}
-custom-personal = ${dynamic-publish-slave-information:rendered}
-custom-group = ${dynamic-publish-slave-information:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-publish-slave-information:rendered
+RootSoftwareInstance = ${:default}
+replicate = dynamic-publish-slave-information:rendered
+custom-personal = dynamic-publish-slave-information:rendered
+custom-group = dynamic-publish-slave-information:rendered
 
 [request-kedifa]
 <= slap-connection
