@@ -63,7 +63,7 @@ mode = 755
 [database-slave-information]
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
-  'name': instance_dict.get('db_name', instance_dict['db_name'].replace('-', '_').lower()),
+  'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
   'user': instance_dict.get('db_user', 'user'),
   'password': instance_dict.get('db_password'),
   'slave_reference': instance_dict['slave_reference']
