@@ -1,0 +1,4 @@
+#!{{ param_chromium_headless['bin_shell'] }}
+
+{{ param_chromium_headless['bin_nginx'] }} \
+  -c {{ param_chromium_headless['nginx_config_target'] }}
