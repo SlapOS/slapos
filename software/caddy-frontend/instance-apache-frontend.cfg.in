@@ -97,9 +97,9 @@ expose-csr_id-var = ${:var}/expose-csr_id
 slave-introspection-var = ${:var}/slave-introspection
 
 [switch-caddy-softwaretype]
-recipe = slapos.cookbook:softwaretype
-single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
-single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+single-default = dynamic-custom-personal-profile-slave-list:rendered
+single-custom-personal = dynamic-custom-personal-profile-slave-list:rendered
 
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
