@@ -37,6 +37,22 @@ mode = 644
 < = jinja2-template-base
 mode = 755
 
+[jinja2-template-script-base]
+< = jinja2-template-executable
+context =
+  key tmp_dir            directory:tmp
+  key partition_dir      buildout:directory
+  raw username           {{ slapparameter_dict['repman-user'] }}
+  raw password           {{ slapparameter_dict['repman-passwd'] }}
+  raw cluster_name       {{ slapparameter_dict['cluster'] }}
+  raw secure_url         {{ slapparameter_dict['repman-secure-url'] }}
+  raw mysql_conf         ${directory:etc}/mysql/my.cnf
+  raw dash_bin           {{ dash }}
+  raw jq_bin             {{ jq_bin }}
+  raw curl_bin           {{ curl_bin }}
+  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+  ${:extra-context}
+
 [simplefile]
 < = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
@@ -107,30 +123,24 @@ init-script = ${init-script:rendered}
 mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
 [{{ section('update-mysql-script') }}]
-< = jinja2-template-executable
+< = jinja2-template-script-base
 rendered = ${directory:scripts}/mariadb_update
 init-password = ${directory:etc}/.init-passwd.done
 upgrade-done = ${directory:lib}/mariadb-update-done
-context =
+extra-context =
   key init_password_done :init-password
   key upgrade_done       :upgrade-done
   key init_root_sql      init-root-sql:rendered
   key mysql_update       update-mysql:output
   key init_database_sql  init-script:rendered
-  raw mysql_conf         ${directory:etc}/mysql/my.cnf
-  raw dash_bin           {{ dash }}
-  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
-  raw database-list      {{ slapparameter_dict['database-name'] }}
 template = {{ parameter_dict['template-init-root-wrapper'] }}
 
 [mysql-slave-db-cleanup]
-< = jinja2-template-executable
-rendered = ${directory:bin}/remove_slave_db
-context =
-  raw mysql_conf         ${directory:etc}/mysql/my.cnf
-  raw dash_bin           {{ dash }}
-  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
-template = {{ parameter_dict['template-cleanup-db'] }}
+< = jinja2-template-script-base
+rendered = ${directory:bin}/manage_slave_db
+extra-context =
+  raw database_name      {{ slapparameter_dict['database-name'] }}
+template = {{ parameter_dict['template-manage-db'] }}
 
 [mysqld]
 < = jinja2-template-executable

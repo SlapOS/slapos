@@ -19,22 +19,6 @@ GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@'::' IDENTIFIED BY '{{ pa
 {%- endif %}
 {% endmacro -%}
 
-{% set entry_list = [] -%}
 {% for entry in parameter_dict['database-list'] -%}
 {{   database(entry['name'], entry.get('user'), entry.get('password')) }}
-{%   do entry_list.append(entry['name']) -%}
-{% endfor -%}
-
-
-use repman_slave_definition;
-
-CREATE TABLE IF NOT EXISTS `slave` (
-  `name` varchar(20) NOT NULL,
-  `state` tinyint(1) DEFAULT NULL,
-  PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-UPDATE `slave` set `state`=false;
-{% for name in entry_list -%}
-REPLACE INTO `slave` VALUES ('{{ name }}', true);
 {% endfor -%}

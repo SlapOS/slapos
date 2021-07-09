@@ -1,0 +1,58 @@
+#!/bin/bash
+
+curl () {
+  {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
+}
+
+get_token () {
+  curl -s -X POST --data '{"username":"{{ username }}","password":"{{ password}}"}' {{ secure_url }}/api/login
+}
+
+run_mysql () {
+  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
+  --protocol=socket -uroot -hlocalhost "$@"
+}
+
+TOKEN=$(get_token | {{ jq_bin }} -r '.token')
+DATADIR=$(curl -H "Authorization: Bearer ${TOKEN}" \   {{ secure_url }}/api/clusters/{{ cluster_name }}/topology/master | {{ jq_bin }}  -r '.slaposDatadir')
+
+# Only write or delete on master database else, we break replication.
+if [ "$DATADIR" = "{{ partition_dir }}" ]; then
+
+  cat << EOF > {{ tmp_dir }}/.script.sql
+use repman_slave_definition;
+
+CREATE TABLE IF NOT EXISTS \`slave\` (
+  \`name\` varchar(20) NOT NULL,
+  \`state\` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (\`name\`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+UPDATE \`slave\` set \`state\`=false;
+{% for name in database_name.split(' ') -%}
+REPLACE INTO \`slave\` VALUES ('{{ name }}', true);
+{% endfor -%}
+
+EOF
+
+  # Update requested slaves database
+  run_mysql < {{ tmp_dir }}/.script.sql
+  rm -f {{ tmp_dir }}/.script.sql
+
+  DBNAME=$(run_mysql -Be "SELECT name FROM repman_slave_definition.slave WHERE state=false");
+  RET=$?
+
+  if [ ! "$RET" = "0" ]; then
+    echo "Mysql command failed: $DBNAME"
+    exit $RET
+  fi
+
+  for NAME in $DBNAME; do
+    if [ ! "$NAME" = "name" ]; then
+      echo "Deleting database $NAME..."
+      run_mysql -e "DROP DATABASE IF EXISTS $NAME";
+      run_mysql -e "DELETE FROM repman_slave_definition.slave WHERE name='$NAME'";
+      echo "Done."
+    fi
+  done
+fi
