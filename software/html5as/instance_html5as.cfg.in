@@ -8,7 +8,6 @@
 [buildout]
 parts =
     nginx_conf
-    downloader
     mime_types
     launcher
     nginx-graceful
@@ -60,7 +59,6 @@ service = ${directory:etc}/service
 log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
-data = ${directory:srv}/html5as
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,8 +88,8 @@ path_access_log = ${basedirectory:log}/nginx.access.log
 path_error_log = ${basedirectory:log}/nginx.error.log
 path_tmp = ${tempdirectory:tmp}
 # Docroot
-docroot = ${basedirectory:data}
-default_index = ${basedirectory:data}/index.html
+docroot = ${downloader:location}
+default_index = ${:docroot}/index.html
 # Config files
 path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
@@ -132,21 +130,25 @@ context =
 
 # Command to put content in the docroot
 [downloader]
-recipe = plone.recipe.command
-# This section will fail if the command fails.
-stop-on-error = true
-# If a tarball is passed as a parameter in download url
-# it's content will be served by the instance.
-# If the parameter is not provided it fallback to the default template
-command = 
-  rm -rf ${html5as:docroot}/*; 
-  URL = {{ parameter_dict['download_url'] }};
-  if [ -n "$URL" ];
-  then
-    ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${html5as:docroot} --strip-components 1;
-  else
-    cp ${default_index_html:rendered} ${html5as:docroot}/;
-  fi
+recipe = slapos.recipe.build
+location = ${directory:srv}/html5as
+# We add: or '', otherwise jinja2 will render a 'None' string
+url = {{ parameter_dict['download_url'] or '' }}
+default_index_html = ${default_index_html:rendered}
+install =
+  import os, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    self.buildout['buildout']['offline'] = 'false'
+    if options['url']:
+      extract_dir = self.extract(self.download(options['url'], options.get('md5sum')))
+      workdir = guessworkdir(extract_dir)
+      self.copyTree(workdir, location)
+    else:
+      os.makedirs(location)
+      shutil.copy(options['default_index_html'], location)
+  finally:
+    self.buildout['buildout']['offline'] = buildout_offline
 
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
