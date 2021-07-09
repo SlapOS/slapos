@@ -114,7 +114,7 @@ slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 # Self Signed certificate for HTTPS IP accesses to the frontend
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-network-information:global-ipv6}
+ipv6 = ${slap-configuration:ipv6-random}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
@@ -138,7 +138,7 @@ command =
 # Self Signed certificate for HTTPS access to the frontend with fallback certificate
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-network-information:global-ipv6}
+ipv6 = {{instance_parameter_dict['ipv6-random']}}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
@@ -282,6 +282,7 @@ software_type = single-custom-personal
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+partition_ipv6 =  ${slap-configuration:ipv6-random} # {{ dumps(instance_parameter_dict['ipv6-random']) }}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
@@ -293,7 +294,7 @@ extra-context =
     key caddy_log_directory caddy-directory:slave-log
     key expose_csr_id_organization :organization
     key expose_csr_id_organizational_unit :organizational-unit
-    key global_ipv6 slap-network-information:global-ipv6
+    key global_ipv6 slap-configuration:ipv6-random
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key software_type :software_type
@@ -320,6 +321,7 @@ extra-context =
 template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }}
 rendered = ${caddy-configuration:frontend-configuration}
 local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
+# partition_ipv6 =  {{ dumps(instance_parameter_dict['ipv6-random']) }}
 extra-context =
     key instance_home buildout:directory
     key master_certificate caddy-configuration:master-certificate
@@ -328,8 +330,8 @@ extra-context =
     section frontend_configuration frontend-configuration
     key http_port configuration:plain_http_port
     key https_port configuration:port
+    key global_ipv6 slap-configuration:ipv6-random
     key local_ipv4 :local_ipv4
-    key global_ipv6 slap-network-information:global-ipv6
     key error_log caddy-configuration:error-log
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
@@ -904,7 +906,7 @@ recipe = slapos.cookbook:requestoptional
 name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
 return = domain secure_access
 
@@ -914,7 +916,7 @@ recipe = slapos.cookbook:requestoptional
 name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
 
