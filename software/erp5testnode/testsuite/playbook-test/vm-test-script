@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Script for executing ansible playbook test in the VM
+
+# run it only once
+echo 1 > /root/bootstrap/bootstrap-max-retry
+
+# setup
+LOG_FILE=/var/log/test-script-deployment.log
+WORKDIR=$(mktemp -d)
+CONFIG=${WORKDIR}/test-script.cfg
+
+# fetching configuration
+wget -O $CONFIG -q http://10.0.2.100/data
+source $CONFIG
+
+if [ -z "$LOG_FILE" ] ; then
+  echo "Output log file is missing"
+  exit 1
+fi
+
+if [ -z "$SLAPOS_TEST_COMPUTER_TOKEN" ] ; then
+  echo "SLAPOS_TEST_COMPUTER_TOKEN is missing" >> $LOG_FILE 2>&1
+  exit 1
+fi
+
+# PREPARATION
+
+# Install required python package
+apt -y install python-setuptools >> $LOG_FILE 2>&1
+
+# fetch the playbook
+PLAYBOOK=${WORKDIR}/playbook.tar.gz
+PLAYBOOK_URL=http://10.0.2.100/playbook.tar.gz 
+wget -O ${PLAYBOOK} -q $PLAYBOOK_URL|| (echo "Failed to fetch playbook from ${PLAYBOOK_URL}" ; exit 1)
+
+mkdir -p ${WORKDIR}/unpacked
+tar -C ${WORKDIR}/unpacked -xzf ${PLAYBOOK}
+
+cd $WORKDIR
+SLAPOS_TEST_COMPUTER_TOKEN=$SLAPOS_TEST_COMPUTER_TOKEN python ${WORKDIR}/unpacked/setup.py test >> $LOG_FILE 2>&1
+
+function upload ()
+{
+  LOG_FILE=$1
+  t=`date '+%Y%m%d%H%S'`
+  mv $LOG_FILE ${LOG_FILE}.$t
+  # just to be sure flush all disk operations before uploading
+  flush
+  curl -q -X POST --data-urlencode "path=test-script-result/log-file.log.$t" --data-urlencode "content@${LOG_FILE}.$t" http://10.0.2.100/             
+}
+
+upload $LOG_FILE

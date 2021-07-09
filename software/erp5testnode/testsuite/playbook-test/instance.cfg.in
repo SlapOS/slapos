@@ -50,5 +50,4 @@ context =
     raw in_vm_test_script ${vm-test-script:target}
     raw in_vm_test_script_md5 ${vm-test-script:md5sum}
     raw waittime ${vm-test-script:waittime}
-    raw tries ${vm-test-script:tries}
 mode = 0644
