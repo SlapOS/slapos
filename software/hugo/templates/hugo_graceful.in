@@ -1,0 +1,7 @@
+#! {{ param_hugo['path_shell'] }}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+# Run graceful
+hugo_server_pid=$(ps -ef | grep -v grep | grep hugo-server-on-watch | awk '{ print $2 }')
+exec kill -s SIGHUP $hugo_server_pid
