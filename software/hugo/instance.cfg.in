@@ -20,6 +20,7 @@ template_index_html = {{ template_index_html_target }}
 template_graceful  = {{ template_graceful_target }}
 template_monitor = {{ template_monitor }}
 template_server = {{ template_server_target }}
+template_hugo_graceful  = {{ template_hugo_graceful_target }}
 
 [instance-dev]
 # use `hugo server` to host the site
