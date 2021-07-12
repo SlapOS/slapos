@@ -311,7 +311,7 @@ command = ${template-mysqld-need-start:rendered}
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = slave-db-remove
-frequency = */20 * * * *
+frequency = */5 * * * *
 command = ${mysql-slave-db-cleanup:rendered}
 
 [template-mysqld-need-start]

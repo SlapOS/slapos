@@ -10,8 +10,24 @@ DROP FUNCTION IF EXISTS sphinx_snippets;
 
 CREATE DATABASE IF NOT EXISTS `repman_slave_definition`;
 
-{% macro database(name, user, password) -%}
-CREATE DATABASE IF NOT EXISTS `{{ name }}`;
+{% macro database(name, user, password, charset="") -%}
+{% set charset_collate = "" -%}
+{% set charset_dict = {'utf8_general_ci': 'utf8',
+                       'utf8_unicode_ci': 'utf8',
+                       'utf8mb4_bin': 'utf8mb4',
+                       'utf8mb4_general_ci': 'utf8mb4',
+                       'utf8mb4_unicode_ci': 'utf8mb4',
+                       'latin1_general_ci': 'latin1',
+                       'latin1_bin': 'latin1',
+                       'ascii_general_ci': 'ascii',
+                       'ascii_bin': 'ascii'} -%}
+{% if charset %}
+{%   set charset_collate = "CHARACTER SET %s" % charset -%}
+{%   if charset_dict.get(charset) -%}
+{%     set charset_collate = "CHARACTER SET %s COLLATE %s" % (charset_dict[charset], charset) -%}
+{%   endif -%}
+{% endif -%}
+CREATE DATABASE IF NOT EXISTS `{{ name }}` {{ charset_collate }};
 {% if user -%}
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}';
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
@@ -20,5 +36,5 @@ GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@'::' IDENTIFIED BY '{{ pa
 {% endmacro -%}
 
 {% for entry in parameter_dict['database-list'] -%}
-{{   database(entry['name'], entry.get('user'), entry.get('password')) }}
+{{   database(entry['name'], entry.get('user'), entry.get('password'), entry.get('charset')) }}
 {% endfor -%}

@@ -66,7 +66,8 @@ mode = 755
   'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
   'user': instance_dict.get('db_user', 'user'),
   'password': instance_dict.get('db_password'),
-  'slave_reference': instance_dict['slave_reference']
+  'slave_reference': instance_dict['slave_reference'],
+  'charset': instance_dict.get('db_charset', '')
   } -%}
 {{ slave_dict['name'] }} = {{ dumps(slave_dict) }}
 {% do dabase_slave_list.append(slave_dict) -%}
