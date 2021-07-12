@@ -79,4 +79,6 @@ software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/a
 slave = true
 config-url = ${headless-chromium:proxy_url}
 config-https-only = true
+config-type = websocket
+config-websocket-path-list = /devtools
 return = domain secure_access
