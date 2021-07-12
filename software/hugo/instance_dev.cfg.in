@@ -5,6 +5,7 @@ parts =
     hugo-server
     port-listening-promise
     publish-connection-information
+    hugo-server-graceful
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -29,7 +30,6 @@ log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
 data = ${directory:srv}/hugo
-# project = ${directory:srv}/project
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -45,6 +45,14 @@ access_url = http://[${:ip}]:${:port}
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
 go_environment = {{ parameter_list['go_environment'] }}
 
+[hugo-server-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_hugo_graceful'] }}
+rendered = ${basedirectory:script}/hugo-graceful
+mode = 0700
+context =
+    section param_hugo hugo
+
 [hugo-server]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_server'] }}
@@ -53,6 +61,7 @@ mode = 0700
 context =
     section param_hugo hugo
     key go_environment hugo:go_environment
+    key base_url hugo-frontend:connection-secure_access
 
 [port-listening-promise]
 <= monitor-promise-base
