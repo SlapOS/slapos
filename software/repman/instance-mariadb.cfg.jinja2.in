@@ -17,17 +17,10 @@
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
--extends = publish-early
 database-host = {{ host }}:{{ port }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 partition-path = ${buildout:directory}
 receiver-port = ${dbjob-parameter:socat-port}
-
-[publish-early]
-recipe = slapos.cookbook:publish-early
--init =
-
-database-list = {{ dumps(database_list) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2

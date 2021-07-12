@@ -10,8 +10,15 @@
 {% set cluster_list = [] -%}
 {% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
-{% set dabase_slave_list = [] -%}
+{% set database_slave_list = [] -%}
 {% set db_name_list = [] -%}
+
+{% macro password(name) -%}
+[{{ name }}-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
+
+{% endmacro -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -60,18 +67,21 @@ template = inline:#!{{ bash_bin }}
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
-[database-slave-information]
 {% for instance_dict in slave_instance_list -%}
 {% set slave_dict = {
   'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
   'user': instance_dict.get('db_user', 'user'),
-  'password': instance_dict.get('db_password'),
+  'password': instance_dict.get('db_password', '${' ~ instance_dict['slave_reference'] ~ '-password:passwd}'),
   'slave_reference': instance_dict['slave_reference'],
   'charset': instance_dict.get('db_charset', '')
   } -%}
-{{ slave_dict['name'] }} = {{ dumps(slave_dict) }}
-{% do dabase_slave_list.append(slave_dict) -%}
+{% do database_slave_list.append(slave_dict) -%}
 {% do db_name_list.append(slave_dict['name']) -%}
+{{ password(instance_dict['slave_reference']) }}
+{% endfor %}
+[database-slave-information]
+{% for slave_dict in database_slave_list -%}
+{{ slave_dict['name'] }} = !py!{{ slave_dict }}
 {% endfor %}
 {% set db_list = db_name_list | join(' ') -%}
 
@@ -93,7 +103,7 @@ mode = 755
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
 {% set section = 'request-mariadb-' ~ i -%}
-{% set dbname = 'Mariadb-' ~ i -%}
+{% set dbname = 'Mariadb-' ~ i %}
 
 
 [{{ section }}]
@@ -113,7 +123,7 @@ config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
 config-name = {{ dbname }}
-config-database-list = {{ dumps(dabase_slave_list) }}
+config-database-list = !py!{{ database_slave_list }}
 config-database-name = {{ dumps(db_list) }}
 return = 
   database-host

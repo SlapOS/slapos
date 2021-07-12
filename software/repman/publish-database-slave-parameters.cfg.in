@@ -32,6 +32,6 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 parts =
-{% for part in part_list %}
+{% for part in part_list -%}
 {{ '  %s' % part }}
-{% endfor %}
+{% endfor -%}
