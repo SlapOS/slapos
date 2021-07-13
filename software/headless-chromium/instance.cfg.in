@@ -24,9 +24,9 @@ context =
   section parameter_list profile-common
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
+recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = ${:default}
-default = ${instance-headless-chromium:rendered}
+default = instance-headless-chromium:rendered
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
