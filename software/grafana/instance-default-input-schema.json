@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "Parameters to instantiate Grafana",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "email": {
+      "type": "object",
+      "description": "Email configuration",
+      "additionalProperties": false,
+      "properties": {
+        "smtp-server": {
+          "description": "SMTP server used by Grafana to send emails (in host:port format). Leaving this empty will disable email sending.",
+          "type": "string"
+        },
+        "smtp-username": {
+          "description": "Username to connect to SMTP server",
+          "type": "string"
+        },
+        "smtp-password": {
+          "description": "Password to connect to SMTP server",
+          "type": "string"
+        },
+        "smtp-verify-ssl": {
+          "description": "Verify certificate of SMTP server",
+          "type": "boolean",
+          "default": true
+        },
+        "email-from-address": {
+          "description": "Email address used in `From:` header of emails",
+          "type": "string"
+        },
+        "email-from-name": {
+          "description": "Name used in `From:` header of emails",
+          "default": "Grafana",
+          "type": "string"
+        }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "custom-domain": {
+          "description": "Custom domain to use when requesting a rapid-cdn frontend",
+          "type": "string",
+          "format": "hostname"
+        }
+      }
+    },
+    "caucase": {
+      "type": "object",
+      "description": "Caucase configuration. To connect external agents, it's required to approve their client certificates, either using an external caucase referenced as `external-caucase-url` or registering a user with `user-auto-approve-count`",
+      "additionalProperties": false,
+      "properties": {
+        "external-caucase-url": {
+          "description": "URL of a caucase instance to manage all server and clients certificates, to use instead of embedding caucase",
+          "type": "string",
+          "format": "uri"
+        },
+        "user-auto-approve-count": {
+          "description": "Number of users to automatically approve in the embedded caucase",
+          "type": "integer",
+          "default": 0
+        }
+      }
+    },
+    "influxdb": {
+      "description": "Fine tuning influxdb parameters",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default-retention-policy-days": {
+          "description": "Number of days to keep metrics data",
+          "default": 720,
+          "type": "integer"
+        }
+      }
+    },
+    "loki": {
+      "description": "Fine tuning loki parameters",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retention-period-days": {
+          "description": "Number of days to keep log data",
+          "default": 60,
+          "type": "integer"
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "applications": {
+          "$ref": "./instance-agent-input-schema.json#properties/applications"
+        }
+      }
+    }
+  }
+}

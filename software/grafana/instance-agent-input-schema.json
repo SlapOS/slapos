@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "description": "Parameters to instantiate an agent collecting logs and metrics",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "$defs": {
+    "type": {
+      "description": "Type of the application. With `SlapOS` type, some metrics are collected from supervisor and from some known partition types (for example: ERP5's mariadb or ERP5's zopes). With `system` type, only log files are ingested.",
+      "type": "string",
+      "default": "SlapOS",
+      "enum": [
+        "SlapOS",
+        "system"
+      ]
+    },
+    "name": {
+      "description": "Name of this application",
+      "type": "string"
+    },
+    "urls": {
+      "description": "URLs to monitor for availability and certificate lifetime",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "log-file-patterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Glob patterns for watched log files."
+    },
+    "static-tags": {
+      "type": "object",
+      "description": "Static tags for this partition",
+      "examples": [
+        {
+          "service-level": "production",
+          "data-center": "abc123"
+        }
+      ]
+    }
+  },
+  "required": [
+    "applications",
+    "influxdb",
+    "loki"
+  ],
+  "properties": {
+    "applications": {
+      "description": "Applications to monitor",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Configuration for SlapOS type application",
+            "required": [
+              "type",
+              "name",
+              "instance-root",
+              "partitions"
+            ],
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/type",
+                "const": "SlapOS"
+              },
+              "name": {
+                "$ref": "#/$defs/name"
+              },
+              "urls": {
+                "$ref": "#/$defs/urls"
+              },
+              "instance-root": {
+                "description": "Directory containing SlapOS partitions.",
+                "type": "string",
+                "examples": [
+                  "/srv/slapgrid/",
+                  "/srv/slapgrid/slappart30/srv/runner/instance/"
+                ]
+              },
+              "partitions": {
+                "description": "SlapOS partitions to monitor",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "reference"
+                  ],
+                  "unevaluatedProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Friendly name of the partition",
+                      "examples": [
+                        "mariadb",
+                        "zope-activity"
+                      ]
+                    },
+                    "reference": {
+                      "type": "string",
+                      "description": "Reference of the partition",
+                      "examples": [
+                        "slappart1",
+                        "slappart2"
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Type of the partition. Known types have metrics and logs collected",
+                      "enum": [
+                        "erp5/mariadb",
+                        "erp5/balancer",
+                        "erp5/zope-activity",
+                        "erp5/zope-front",
+                        "erp5/zeo",
+                        "mariadb",
+                        "default"
+                      ],
+                      "default": "default"
+                    },
+                    "log-file-patterns": {
+                      "$ref": "#/$defs/log-file-patterns",
+                      "description": "Glob pattern for log files to watch. This mostly makes sense for `default` partition type. `{partition_root_directory}` python `.format`-style substitution variable is supported."
+                    },
+                    "static-tags": {
+                      "$ref": "#/$defs/static-tags"
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "mariadb",
+                              "erp5/mariadb"
+                            ]
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "dbname": {
+                            "type": "string",
+                            "description": "Database name"
+                          },
+                          "username": {
+                            "type": "string",
+                            "description": "Username to connect to database"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "examples": [
+                    {
+                      "name": "zope-backoffice",
+                      "type": "erp5/zope-front",
+                      "reference": "slappart1",
+                      "static-tags": {
+                        "instance": "instance-name"
+                      }
+                    },
+                    {
+                      "name": "mariadb",
+                      "type": "erp5/mariadb",
+                      "reference": "slappart2"
+                    },
+                    {
+                      "name": "Theia",
+                      "type": "default",
+                      "log-file-patterns": [
+                        "{partition_root_directory}/.slappart*log"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Configuration for `system` type application",
+            "required": [
+              "type",
+              "name"
+            ],
+            "properties": {
+              "type": {
+                "$ref": "#/$defs/type",
+                "const": "system"
+              },
+              "name": {
+                "$ref": "#/$defs/name"
+              },
+              "urls": {
+                "$ref": "#/$defs/urls"
+              },
+              "partitions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Friendly name of the partition",
+                      "examples": [
+                        "syslog",
+                        "email"
+                      ]
+                    },
+                    "log-file-patterns": {
+                      "$ref": "#/$defs/log-file-patterns"
+                    },
+                    "static-tags": {
+                      "$ref": "#/$defs/static-tags"
+                    }
+                  },
+                  "examples": [
+                    {
+                      "name": "syslog",
+                      "log-file-patterns": [
+                        "/var/log/syslog"
+                      ]
+                    },
+                    {
+                      "name": "kernel",
+                      "log-file-patterns": [
+                        "/var/log/kern.log",
+                        "/var/log/messages"
+                      ]
+                    },
+                    {
+                      "name": "re6stnet",
+                      "log-file-patterns": [
+                        "/var/log/re6stnet/*.log"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "influxdb": {
+      "description": "Connection information for influxdb",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "database",
+        "username",
+        "password"
+      ],
+      "properties": {
+        "url": {
+          "description": "IPv6 URL of influxdb HTTP endpoint",
+          "format": "uri",
+          "type": "string"
+        },
+        "database": {
+          "description": "database created in influxdb",
+          "type": "string"
+        },
+        "username": {
+          "description": "username for influxdb",
+          "type": "string"
+        },
+        "password": {
+          "description": "password for influxdb user",
+          "type": "string"
+        }
+      }
+    },
+    "loki": {
+      "description": "Connection information for loki",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "caucase-url"
+      ],
+      "properties": {
+        "url": {
+          "description": "Base URL of Loki",
+          "format": "uri",
+          "type": "string"
+        },
+        "caucase-url": {
+          "description": "URL caucase service used by Loki",
+          "format": "uri",
+          "type": "string"
+        }
+      }
+    }
+  }
+}
