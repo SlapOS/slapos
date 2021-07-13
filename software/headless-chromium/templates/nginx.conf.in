@@ -17,22 +17,13 @@ http {
     uwsgi_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
     scgi_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
 
-    # The proxy must set the Host header to an IP address, since the headless Chromium shell refuses to run otherwise, for security reasons.
-
-    location /devtools {
-      proxy_http_version 1.1;
-      proxy_set_header Host [{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }};
-
-      # TODO: do we really need to manually set the Upgrade and Connection headers anymore?
-      proxy_set_header Upgrade "websocket";
-      proxy_set_header Connection "Upgrade";
-      proxy_pass http://[{{ param_chromium_headless['ip']}}]:{{ param_chromium_headless['remote-debugging-port'] }};
-    }
-
     location / {
       proxy_http_version 1.1;
+
+      # The proxy must set the Host header to an IP address, since the headless Chromium shell refuses to run otherwise, for security reasons.
+      # See https://bugs.chromium.org/p/chromium/issues/detail?id=813540.
       proxy_set_header Host [{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }};
-      proxy_pass http://[{{ param_chromium_headless['ip']}}]:{{ param_chromium_headless['remote-debugging-port'] }};
+      proxy_pass {{ param_chromium_headless['remote_debug_url'] }};
 
       # The browser security policy will prevent us from loading the Websocket connection without TLS, so we have to go through the frontend CDN URL. The tricky thing is that the frontend URL is not available yet when this file is built; what we do instead is use the given Host header. This is possibly fragile; perhaps alternatives are worth investigating.
       sub_filter "ws=[{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }}" "wss=$host";

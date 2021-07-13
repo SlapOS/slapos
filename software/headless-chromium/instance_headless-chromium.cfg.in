@@ -18,7 +18,7 @@ service = ${:etc}/service
 log = ${:home}/log
 
 [headless-chromium]
-ip = ${slap-network-information:global-ipv6}
+ip = {{ partition_ipv6 }}
 remote-debugging-port = 9222
 url = https://example.com
 remote_debug_url = http://[${:ip}]:${:remote-debugging-port}

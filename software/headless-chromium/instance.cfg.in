@@ -22,6 +22,7 @@ filename = instance_headless-chromium.cfg
 context =
   section buildout buildout
   section parameter_list profile-common
+  key partition_ipv6 slap-configuration:ipv6-random
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
