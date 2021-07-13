@@ -1,0 +1,725 @@
+{% import "caucase" as caucase with context %}
+
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = {{ buildout_eggs_directory }}
+develop-eggs-directory = {{ buildout_develop_eggs_directory }}
+offline = true
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# apache-frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+tmp = ${:home}/tmp
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+influxdb-data-dir = ${:srv}/influxdb
+grafana-dir = ${:srv}/grafana
+grafana-data-dir = ${:grafana-dir}/data
+grafana-logs-dir = ${:var}/log
+grafana-plugins-dir = ${:grafana-dir}/plugins
+grafana-provisioning-config-dir = ${:grafana-dir}/provisioning-config
+grafana-provisioning-datasources-dir = ${:grafana-provisioning-config-dir}/datasources
+grafana-provisioning-dashboards-dir = ${:grafana-provisioning-config-dir}/dashboards
+grafana-dashboards-dir = ${:grafana-dir}/dashboards
+loki-dir = ${:srv}/loki
+loki-storage-filesystem-directory = ${:loki-dir}/chunks
+loki-compactor-working-directory = ${:loki-dir}/compactor
+srv-caucased-loki = ${:srv}/caucased/loki
+backup-caucased-loki = ${:srv}/backup/caucased/loki
+caucase-updater-loki-server = ${:srv}/caucase-updater/loki-server
+caucase-updater-loki-promise-client = ${:srv}/caucase-updater/loki-client-promise
+caucase-updater-loki-grafana-client = ${:srv}/caucase-updater/loki-client-grafana
+
+# macros
+[generate-insecure-self-signed-certificate]
+# TODO: stop using this, use caucase
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    {{ openssl_bin }} req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
+      -newkey rsa -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+
+[config-file]
+recipe = slapos.recipe.template:jinja2
+url = {{ buildout_parts_directory }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
+extensions = jinja2.ext.do
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[check-url-available-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promise}/${:_buildout_section_name_}
+dash_path = {{ dash_bin }}
+curl_path = {{ curl_bin }}
+
+[influxdb]
+ipv6 = ${instance-parameter:ipv6-random}
+ipv4 = ${instance-parameter:ipv4-random}
+host = ${:ipv6}
+local-host = ${:ipv4}
+rpc-port = 8088
+http-port = 8086
+url = https://[${:host}]:${:http-port}
+data-dir = ${directory:influxdb-data-dir}
+auth-username = ${influxdb-password:username}
+auth-password = ${influxdb-password:passwd}
+unix-socket = ${directory:var}/influxdb.socket
+ssl-cert-file = ${influxdb-certificate:cert-file}
+ssl-key-file = ${influxdb-certificate:key-file}
+database = telegraf
+
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ influxd_bin }} -config ${influxdb-config-file:output}
+wrapper-path = ${directory:service}/influxdb
+
+[influxdb-config-file]
+<= config-file
+context =
+  section influxdb influxdb
+
+[influxdb-password]
+recipe = slapos.cookbook:generate.password
+username = influxdb
+
+[influxdb-certificate]
+<= generate-insecure-self-signed-certificate
+
+[influxdb-listen-promise]
+<= check-port-listening-promise
+hostname = ${influxdb:ipv6}
+port = ${influxdb:http-port}
+
+[influxdb-password-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ influx_bin }} -username ${influxdb:auth-username} -password ${influxdb:auth-password} -socket ${influxdb:unix-socket} -execute "CREATE USER ${influxdb:auth-username} WITH PASSWORD '${influxdb:auth-password}' WITH ALL PRIVILEGES"
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+[influxdb-database-ready-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  bash -c "{{ influx_bin }} \
+     -username ${influxdb:auth-username} \
+     -password ${influxdb:auth-password} \
+     -host [${influxdb:host}] \
+     -port ${influxdb:http-port} \
+     -unsafeSsl \
+     -ssl \
+     -execute 'show databases' | grep '${influxdb:database}'"
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+[influxdb-create-defaul-data-retention-policy-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ influx_bin }}
+    -username ${influxdb:auth-username}
+    -password ${influxdb:auth-password}
+    -socket ${influxdb:unix-socket}
+    -execute 'CREATE RETENTION POLICY "slapos-default-policy" ON "${influxdb:database}" DURATION {{ slapparameter_dict.get('influxdb', {}).get('default-retention-policy-days', 720) }}d REPLICATION 1 DEFAULT'
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+
+[grafana]
+ipv6 = ${instance-parameter:ipv6-random}
+port = 8180
+url = https://[${:ipv6}]:${:port}
+
+data-dir = ${directory:grafana-data-dir}
+logs-dir = ${directory:grafana-logs-dir}
+plugins-dir = ${directory:grafana-plugins-dir}
+provisioning-config-dir = ${directory:grafana-provisioning-config-dir}
+provisioning-datasources-dir = ${directory:grafana-provisioning-datasources-dir}
+provisioning-dashboards-dir = ${directory:grafana-provisioning-dashboards-dir}
+admin-user = ${grafana-password:username}
+admin-password = ${grafana-password:passwd}
+secret-key = ${grafana-secret-key:passwd}
+ssl-key-file = ${grafana-certificate:key-file}
+ssl-cert-file = ${grafana-certificate:cert-file}
+
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ grafana_bin }}
+    server
+    -config ${grafana-config-file:output}
+    -homepath {{ grafana_homepath }}
+wrapper-path = ${directory:service}/grafana
+hash-files =
+  ${grafana-config-file:output}
+hash-existing-files =
+  ${grafana-provisioning-datasources-config-file:location}
+
+[grafana-certificate]
+<= generate-insecure-self-signed-certificate
+
+[grafana-password]
+recipe = slapos.cookbook:generate.password
+username = admin
+
+[grafana-secret-key]
+recipe = slapos.cookbook:generate.password
+
+[grafana-config-file]
+<= config-file
+context =
+  section grafana grafana
+  section apache_frontend apache-frontend
+  key slapparameter_dict slap-configuration:configuration
+depends =
+  ${grafana-provisioning-datasources-config-file:location}
+  ${grafana-provisioning-dashboards-config-file:output}
+
+[grafana-provisioning-datasources-config-file]
+recipe = slapos.recipe.build
+init =
+  # pre-create location, so that we can use hash-existing-files
+  import pathlib
+  datasource_file = pathlib.Path(location)
+  if not datasource_file.parent.exists():
+    datasource_file.parent.mkdir(parents=True)
+  if not datasource_file.exists():
+    datasource_file.touch()
+
+  # make sure this part is reinstalled when certificate is updated
+  import os
+  cert_mtime = -1
+  try:
+    cert_mtime = (
+      os.stat(options['loki-grafana-client-certificate-cert-file']).st_mtime
+      + os.stat(options['loki-server-certificate-ca-file']).st_mtime
+    )
+  except FileNotFoundError:
+    pass
+  options['loki-grafana-client-certificate-cert-mtime'] = str(int(cert_mtime))
+install =
+  import json
+  import os
+
+  def safe_read_file(path):
+    if os.path.exists(path):
+      with open(path) as f:
+        return f.read()
+
+  influxdb_data_source = {
+    "name": "telegraf",
+    "type": "influxdb",
+    "access": "proxy",
+    "url": options['influxdb-url'],
+    "user": options['influxdb-auth-username'],
+    "database": options['influxdb-database'],
+    "isDefault": True,
+    "jsonData": {
+      "tlsSkipVerify": True  # TODO
+    },
+    "secureJsonData": {
+      "password": options['influxdb-auth-password'],
+    },
+    "version": int(options['loki-grafana-client-certificate-cert-mtime']),
+    "editable": False
+  }
+  loki_data_source = {
+    "name": "loki",
+    "type": "loki",
+    "access": "proxy",
+    "url": options['loki-server-url'],
+    "jsonData": {
+      "tlsAuth": True,
+      "tlsAuthWithCACert": True,
+      "maxLines": 5000,  # XXX see max_entries_limit_per_query in loki config
+    },
+    "secureJsonData": {
+      # XXX maybe we can use file directly ?
+      # see https://github.com/grafana/grafana/discussions/44296#discussioncomment-2515929
+      "tlsCACert": safe_read_file(options['loki-server-certificate-ca-file']),
+      "tlsClientCert": safe_read_file(options['loki-grafana-client-certificate-cert-file']),
+      "tlsClientKey": safe_read_file(options['loki-grafana-client-certificate-key-file']),
+    },
+    "version": int(options['loki-grafana-client-certificate-cert-mtime']),
+    "editable": False,
+  }
+  config = {
+    "apiVersion": 1,
+    "datasources": [
+      influxdb_data_source,
+      loki_data_source,
+    ],
+  }
+  with open(options['location'], 'w') as f:
+    json.dump(config, f, indent=2)
+location = ${grafana:provisioning-datasources-dir}/datasources.yaml
+loki-server-url = ${loki-server:url}
+loki-server-certificate-ca-file = ${loki-server-certificate:ca-file}
+loki-grafana-client-certificate-cert-file = ${loki-grafana-client-certificate:cert-file}
+loki-grafana-client-certificate-key-file = ${loki-grafana-client-certificate:key-file}
+influxdb-url = ${influxdb:url}
+influxdb-database = ${influxdb:database}
+influxdb-auth-username = ${influxdb:auth-username}
+influxdb-auth-password = ${influxdb:auth-password}
+
+[grafana-provisioning-dashboards-config-file]
+<= config-file
+rendered = ${grafana:provisioning-dashboards-dir}/dashboard.yaml
+context =
+  key dashboards_dir directory:grafana-dashboards-dir
+
+[grafana-listen-promise]
+<= check-port-listening-promise
+hostname= ${grafana:ipv6}
+port = ${grafana:port}
+
+[grafana-provisioning-datasources-config-file-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ jq_bin }} -e
+    "if .datasources[1].secureJsonData.tlsClientCert != null and .datasources[1].secureJsonData.tlsCACert != null then true else false end"
+    ${grafana-provisioning-datasources-config-file:location}
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+[loki-server]
+storage-filesystem-directory = ${directory:loki-storage-filesystem-directory}
+compactor-working-directory = ${directory:loki-compactor-working-directory}
+path-prefix = ${directory:loki-dir}
+
+http-port = 3100
+url = https://[${:ipv6}]:${:http-port}
+ipv4 = ${instance-parameter:ipv4-random}
+ipv6 = ${instance-parameter:ipv6-random}
+ca-file = ${loki-server-certificate:ca-file}
+cert-file = ${loki-server-certificate:cert-file}
+key-file = ${loki-server-certificate:key-file}
+# TODO: CRL
+
+[loki-service]
+recipe = slapos.cookbook:wrapper
+command-line =
+   {{ loki_bin }} -config.file=${loki-server-config-file:location}
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+ready-url = ${loki-server:url}/ready
+hash-files =
+  ${loki-server-config-file:location}
+hash-existing-files =
+  ${loki-server-certificate:cert-file}
+
+[loki-server-config-file]
+location = ${directory:etc}/${:_buildout_section_name_}.yaml
+recipe = slapos.recipe.build
+
+install =
+  import json
+  loki_server = self.buildout['loki-server']
+  slapparameter_dict = self.buildout['slap-configuration']['configuration']
+  config = {
+    "auth_enabled": False,
+    "server": {
+      "http_listen_address": loki_server['ipv6'],
+      "http_listen_port": int(loki_server['http-port']),
+      "http_tls_config": {
+        "client_ca_file": loki_server['ca-file'],
+        "cert_file": loki_server['cert-file'],
+        "key_file": loki_server['key-file'],
+        "client_auth_type": "RequireAndVerifyClientCert",
+      },
+      "grpc_listen_address": loki_server['ipv4'],
+      "grpc_server_max_recv_msg_size": 104857600,
+      "grpc_server_max_send_msg_size": 104857600
+    },
+    "common": {
+      "instance_addr": loki_server['ipv4'],
+      "replication_factor": 1,
+      "ring": {
+        "instance_addr": loki_server['ipv4'],
+        "kvstore": {
+          "store": "inmemory"
+        }
+      },
+      "path_prefix": loki_server['path-prefix'],
+    },
+    "schema_config": {
+      "configs": [
+        {
+          "from": "2020-05-15",
+          "store": "tsdb",
+          "object_store": "filesystem",
+          "schema": "v13",
+          "index": {
+            "prefix": "index_",
+            "period": "24h"
+          }
+        }
+      ]
+    },
+    "storage_config": {
+      "filesystem": {
+        "directory": loki_server['storage-filesystem-directory'],
+      }
+    },
+    "limits_config": {
+      "ingestion_rate_mb": 1024,
+      "ingestion_burst_size_mb": 1024,
+      # TODO: do we want this ? too large queries make the browser slow.
+      # default is 1000, but it seems we can at least raise to 5000
+      "max_entries_limit_per_query": 5001,
+      "reject_old_samples": False,
+      "retention_period": '{}d'.format(
+        slapparameter_dict.get('loki', {}).get('retention-period-days', 60))
+    },
+    "frontend_worker": {
+      "grpc_client_config": {
+        # TODO check needed
+        # https://github.com/grafana/loki/issues/5143#issuecomment-1697196679
+        "max_send_msg_size": 268435456
+      }
+    },
+    "compactor": {
+      "working_directory": loki_server['compactor-working-directory'],
+      "delete_request_store": "filesystem",
+      "retention_enabled": True,
+      "retention_delete_delay": "2h",
+    }
+  }
+  with open(options['location'], 'w') as f:
+    json.dump(config, f, indent=2)
+
+[loki-server-certificate-init-certificate]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the certificate,
+  # so that we can use hash-existing-files options
+  import pathlib
+  cert_file = pathlib.Path(self.buildout['loki-server-certificate']['cert-file'])
+  if not cert_file.parent.exists():
+    cert_file.parent.mkdir()
+  if not cert_file.exists():
+    cert_file.touch()
+
+[loki-server-certificate]
+init = ${loki-server-certificate-init-certificate:init}
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+ca-file = ${directory:etc}/${:_buildout_section_name_}.ca.crt
+crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
+
+{{
+caucase.updater(
+    prefix='loki-server-certificate',
+    buildout_bin_directory=buildout_bin_directory,
+    updater_path='${directory:service}/loki-server-certificate-updater',
+    url='${loki-caucased:url}',
+    data_dir='${directory:caucase-updater-loki-server}',
+    crt_path='${loki-server-certificate:cert-file}',
+    ca_path='${loki-server-certificate:ca-file}',
+    crl_path='${loki-server-certificate:crl-file}',
+    key_path='${loki-server-certificate:key-file}',
+    template_csr='${loki-server-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+[loki-server-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = loki-server
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 = ${loki-server:ipv4}
+  IP.2 = ${loki-server:ipv6}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}
+
+[loki-server-certificate-prepare-csr]
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ openssl_bin }} req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -sha256 \
+      -nodes \
+      -keyout /dev/null \
+      -config '${loki-server-certificate-csr-config:output}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
+
+[loki-server-listen-promise]
+<= check-url-available-promise
+url = ${loki-service:ready-url}
+ca-cert-file = ${loki-server:ca-file}
+cert-file = ${loki-promise-client-certificate:cert-file}
+key-file = ${loki-promise-client-certificate:key-file}
+
+
+[loki-client-certificate]
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+ca-file = ${directory:etc}/${:_buildout_section_name_}.ca.crt
+crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
+
+[loki-client-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  distinguished_name = dn
+  [ dn ]
+  CN = ${:_buildout_section_name_}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}
+
+[loki-client-certificate-prepare-csr]
+# variable
+config =
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ openssl_bin }} req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -sha256 \
+      -nodes \
+      -keyout /dev/null \
+      -config '${:config}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
+
+
+[loki-promise-client-certificate]
+<= loki-client-certificate
+[loki-promise-client-certificate-csr-config]
+<= loki-client-certificate-csr-config
+[loki-promise-client-certificate-prepare-csr]
+<= loki-client-certificate-prepare-csr
+config = ${loki-promise-client-certificate-csr-config:output}
+{{
+caucase.updater(
+    prefix='loki-promise-client-certificate',
+    buildout_bin_directory=buildout_bin_directory,
+    updater_path='${directory:service}/loki-promise-client-certificate-updater',
+    url='${loki-caucased:url}',
+    data_dir='${directory:caucase-updater-loki-promise-client}',
+    crt_path='${loki-promise-client-certificate:cert-file}',
+    ca_path='${loki-promise-client-certificate:ca-file}',
+    crl_path='${loki-promise-client-certificate:crl-file}',
+    key_path='${loki-promise-client-certificate:key-file}',
+    template_csr='${loki-promise-client-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+[loki-grafana-client-certificate]
+<= loki-client-certificate
+[loki-grafana-client-certificate-csr-config]
+<= loki-client-certificate-csr-config
+[loki-grafana-client-certificate-prepare-csr]
+<= loki-client-certificate-prepare-csr
+config = ${loki-grafana-client-certificate-csr-config:output}
+{{
+caucase.updater(
+    prefix='loki-grafana-client-certificate',
+    buildout_bin_directory=buildout_bin_directory,
+    updater_path='${directory:service}/loki-grafana-client-certificate-updater',
+    url='${loki-caucased:url}',
+    data_dir='${directory:caucase-updater-loki-grafana-client}',
+    crt_path='${loki-grafana-client-certificate:cert-file}',
+    ca_path='${loki-grafana-client-certificate:ca-file}',
+    crl_path='${loki-grafana-client-certificate:crl-file}',
+    key_path='${loki-grafana-client-certificate:key-file}',
+    template_csr='${loki-grafana-client-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+
+{% if slapparameter_dict.get('caucase', {}).get('external-caucase-url') %}
+[loki-caucased]
+url = {{ slapparameter_dict.get('caucase', {}).get('external-caucase-url') }}
+
+{% else %}
+[loki-caucased]
+port = 18080
+ip = ${instance-parameter:ipv6-random}
+netloc = [${:ip}]:${:port}
+url = http://${:netloc}/
+
+
+# service_auto_approve_count is 4 for the default:
+#   - server: loki
+#   - clients: loki promise, grafana, promtail
+{{
+caucase.caucased(
+    prefix='loki-caucased',
+    buildout_bin_directory=buildout_bin_directory,
+    caucased_path='${directory:service}/loki-caucased',
+    backup_dir='${directory:backup-caucased-loki}',
+    data_dir='${directory:srv-caucased-loki}',
+    netloc='${loki-caucased:netloc}',
+    tmp='${directory:tmp}',
+    service_auto_approve_count=4,
+    user_auto_approve_count='${loki-caucased-user-auto-approve-count:user-auto-approve-count}',
+    key_len=2048,
+)}}
+
+[loki-caucased-user-auto-approve-count]
+user-auto-approve-count = {{ slapparameter_dict.get('caucase', {}).get('user-auto-approve-count', 0) }}
+{% endif %}
+
+[apache-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Grafana Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${grafana:url}
+{% if slapparameter_dict.get('frontend', {}).get('custom-domain') %}
+config-custom_domain = {{ slapparameter_dict['frontend']['custom-domain'] }}
+{% endif %}
+return = domain secure_access
+
+[apache-frontend-available-promise]
+<= check-url-available-promise
+url = ${apache-frontend:connection-secure_access}
+
+
+[request-agent-config]
+recipe = slapos.recipe.build
+init =
+  slap_connection = self.buildout["slap-connection"]
+  configuration = self.buildout['slap-configuration']['configuration']
+  applications = configuration.get('agent', {}).get('applications', [])
+  applications.append(
+    # Add a default config ingesting grafana's and influxdb's logs
+    {
+      "name": "Grafana",
+      "type": "system",
+      "partitions": [
+        {
+          "name": "grafana",
+          "static-tags": {
+            "partition_reference": slap_connection['partition-id'],
+          },
+          "log-file-patterns": [
+            f"{self.buildout['directory']['home']}/.*_influxdb*.log",
+          ]
+        },
+        {
+          "name": "influxdb",
+          "static-tags": {
+            "partition_reference": slap_connection['partition-id'],
+          },
+          "log-file-patterns": [
+            f"{self.buildout['directory']['home']}/.*_grafana*.log",
+          ]
+        },
+      ]
+    }
+  )
+  options['applications'] = applications
+  options['loki'] = {
+    'url': self.buildout['loki-server']['url'],
+    'caucase-url': self.buildout['loki-caucased']['url'],
+  }
+  options['influxdb'] = {
+    "url": self.buildout['influxdb']['url'],
+    "database": self.buildout['influxdb']['database'],
+    "username": self.buildout['influxdb']['auth-username'],
+    "password": self.buildout['influxdb']['auth-password'],
+  }
+
+[request-slapos-partition-base]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[request-agent]
+<= request-slapos-partition-base
+software-type = agent
+name = agent
+return = facl-script promtail-url
+config-applications = ${request-agent-config:applications}
+config-loki = ${request-agent-config:loki}
+config-influxdb = ${request-agent-config:influxdb}
+
+[agent-promtail-url]
+recipe = slapos.cookbook:urlparse
+url = ${request-agent:connection-promtail-url}
+
+[agent-promtail-listen-promise]
+<= check-port-listening-promise
+hostname = ${agent-promtail-url:host}
+port = ${agent-promtail-url:port}
+
+[promises]
+recipe =
+instance-promises =
+  ${influxdb-listen-promise:path}
+  ${influxdb-password-promise:wrapper-path}
+  ${influxdb-database-ready-promise:wrapper-path}
+  ${influxdb-create-defaul-data-retention-policy-promise:wrapper-path}
+  ${grafana-listen-promise:path}
+  ${grafana-provisioning-datasources-config-file-promise:wrapper-path}
+  ${loki-server-listen-promise:path}
+  ${apache-frontend-available-promise:path}
+  ${agent-promtail-listen-promise:path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish.serialised
+influxdb-url = ${influxdb:url}
+influxdb-database = ${influxdb:database}
+influxdb-username = ${influxdb:auth-username}
+influxdb-password = ${influxdb:auth-password}
+grafana-url = ${grafana:url}
+grafana-username = ${grafana:admin-user}
+grafana-password = ${grafana:admin-password}
+loki-url = ${loki-server:url}
+loki-caucase-url = ${loki-caucased:url}
+url = ${apache-frontend:connection-secure_access}
+agent-facl-script = ${request-agent:connection-facl-script}
+agent-promtail-url = ${request-agent:connection-promtail-url}
