@@ -7,7 +7,6 @@ develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
 [profile-common]
-dash_location = {{ dash_location }}
 nginx_location = {{ nginx_location }}
 chromium_wrapper = {{ chromium_wrapper }}
 template_launcher = {{ template_launcher_target }}

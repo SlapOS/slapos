@@ -31,20 +31,11 @@ nginx_temp_path = ${directory:tmp}
 nginx_error_log = ${directory:log}/nginx-error.log
 nginx_access_log = ${directory:log}/nginx-access.log
 
-chromium_wrapper = {{ parameter_list['chromium_wrapper'] }}
-bin_chromium_launcher = ${directory:service}/chromium
-bin_nginx_launcher = ${directory:service}/nginx
-bin_shell = {{ parameter_list['dash_location'] }}/bin/dash
-bin_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
-
 # Create a launcher script for the headless shell executable.
 [chromium-launcher]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_launcher'] }}
-rendered = ${headless-chromium:bin_chromium_launcher}
-mode = 700
-context =
-  section param_chromium_headless headless-chromium
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_list['chromium_wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
+wrapper-path = ${directory:service}/chromium
 
 # Create a configuration file for the proxy server.
 [nginx-config]
@@ -57,12 +48,9 @@ context =
 
 # Create a launcher script for the proxy server.
 [nginx-launcher]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_nginx_launcher'] }}
-rendered = ${headless-chromium:bin_nginx_launcher}
-mode = 700
-context =
-  section param_chromium_headless headless-chromium
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_list['nginx_location'] }}/sbin/nginx -c ${headless-chromium:nginx_config_target}
+wrapper-path = ${directory:service}/nginx
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
