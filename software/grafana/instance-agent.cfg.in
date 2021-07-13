@@ -1,0 +1,862 @@
+{% import "caucase" as caucase with context %}
+
+[buildout]
+parts =
+  promises
+  publish-connection-parameter
+
+eggs-directory = {{ buildout_eggs_directory }}
+develop-eggs-directory = {{ buildout_develop_eggs_directory }}
+offline = true
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# apache-frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+tmp = ${:home}/tmp
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+telegraf-dir = ${:srv}/telegraf
+telegraf-extra-config-dir = ${:telegraf-dir}/extra-config
+caucase-updater-loki-promtail-client = ${:srv}/caucase-updater/loki-client-promtail
+promtail-dir = ${:srv}/promtail
+
+# macros
+[config-file]
+recipe = slapos.recipe.template:jinja2
+url = {{ buildout_parts_directory }}/${:_buildout_section_name_}/${:_buildout_section_name_}.cfg.in
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
+extensions = jinja2.ext.do
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[check-url-available-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promise}/${:_buildout_section_name_}
+dash_path = {{ dash_bin }}
+curl_path = {{ curl_bin }}
+
+[influxdb-server]
+recipe = slapos.recipe.build
+slapparameter-dict = ${slap-configuration:configuration}
+init =
+  import urllib.parse
+  influxdb = options['slapparameter-dict']['influxdb']
+  options['url'] = influxdb['url']
+  options['database'] = influxdb['database']
+  options['auth-username'] = influxdb['username']
+  options['auth-password'] = influxdb['password']
+  parsed_url = urllib.parse.urlparse(options['url'])
+  options['hostname'] = parsed_url.hostname
+  options['port'] = str(parsed_url.port)
+
+[influxdb-listen-promise]
+<= check-port-listening-promise
+hostname = ${influxdb-server:hostname}
+port = ${influxdb-server:port}
+
+[telegraf]
+recipe = slapos.cookbook:wrapper
+extra-config-dir = ${directory:telegraf-extra-config-dir}
+# telegraf needs influxdb to be already listening before starting
+command-line =
+   bash -c '${influxdb-listen-promise:path} && ${:nice} {{ telegraf_bin }} --config ${telegraf-config-file:output} --config-directory ${:extra-config-dir}'
+wrapper-path = ${directory:service}/telegraf
+hash-files = ${telegraf-config-file:output}
+# TODO: control nice of the agent ?
+{% if 0 %}
+nice = nice -19 chrt --idle 0 ionice -c3
+{% else %}
+nice =
+{% endif %}
+
+
+[telegraf-config-file]
+recipe = slapos.recipe.build
+output = ${directory:etc}/${:_buildout_section_name_}.toml
+telegraf-input-slapos-bin = {{ telegraf_input_slapos_bin }}
+slapparameter-dict = ${slap-configuration:configuration}
+input-socket = ${directory:var}/tg.sock
+init =
+  import zc.buildout
+  import pkg_resources
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["toml"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"]])
+
+  import collections
+  import pathlib
+  import urllib.parse
+  import toml
+
+  slapparameter_dict = self.options["slapparameter-dict"]
+  slap_connection = self.buildout["slap-connection"]
+  influxdb = self.buildout['influxdb-server']
+
+  self._config_files = {}  # files to create during install step
+  access_path_dict = {}
+  inputs = collections.defaultdict(list)
+  processors = collections.defaultdict(list)
+  config = {
+    "agent": {
+      "debug": False,
+      "flush_interval": "10s",
+      "flush_jitter": "0s",
+      "hostname": "",
+      "interval": "10s",
+      "round_interval": True,
+    },
+    "tags": {
+      "computer_id": slap_connection['computer-id'],
+    },
+    # built-in inputs
+    "cpu": {
+      "drop": ["cpu_time"],
+      "percpu": True,
+      "totalcpu": True,
+    },
+    "disk": {},
+    "io": {},
+    "mem": {},
+    "system": {},
+
+    "inputs": inputs,
+    "processors": processors,
+
+    "outputs": {
+      "influxdb": {
+        "database": influxdb["database"],
+        "insecure_skip_verify": True,  # TODO
+        "username": influxdb["auth-username"],
+        "password": influxdb["auth-password"],
+        "precision": "s",
+        "urls": [
+          influxdb["url"],
+        ],
+      },
+    },
+  }
+  for application in slapparameter_dict.get("applications", []):
+    partition_mapping = {}
+    partition_root_directory = ''
+    for partition in application.get("partitions", []):
+      partition.setdefault("type", "default")
+      if "reference" in partition:
+        partition_mapping[partition["reference"]] = partition["name"]
+        if application.get("instance-root"):
+          partition_root_directory = pathlib.Path(application["instance-root"]) / partition['reference']
+      if partition["type"] in ("erp5/mariadb", "mariadb"):
+        partition.setdefault("username", "root")
+        partition.setdefault("dbname", "erp5")
+        mariadb_socket = f"{partition_root_directory}/var/run/mariadb.sock"
+        dsn = f"{partition['username']}@unix({mariadb_socket})/{partition['dbname']}"
+        access_path_dict[mariadb_socket] = 'rw'
+        inputs["mysql"].append(
+          {
+            "name_override": "mariadb",
+            "servers": [dsn],
+            "gather_innodb_metrics": True,
+            "gather_slave_status": True,
+            "mariadb_dialect": True,
+            "tags": dict(
+              partition.get("static-tags", {}),
+              app=application["name"],
+              name=partition["name"],
+              partition_reference=partition["reference"],
+            ),
+          }
+        )
+        if partition["type"] == "erp5/mariadb":
+          inputs["sql"].append(
+            {
+              "name_override": "mariadb_activities",
+              "driver": "mysql",
+              "dsn": dsn,
+              "query": [
+                {
+                  "query": """
+                    select 'message' as cmf_activity_queue, count(*) as message_count from message
+                    union all select 'message_queue' as cmf_activity_queue, count(*) as message_count from message_queue
+                  """,
+                  "field_columns_include": ["message_count"],
+                  "tag_columns_include": ["cmf_activity_queue"],
+                },
+                {
+                  "query": """
+                    select 'message' as cmf_activity_queue, count(*) as failed_message_count
+                      from message where processing_node between -2 and -10
+                    union all select 'message_queue' as cmf_activity_queue, count(*) as failed_message_count
+                      from message_queue where processing_node between -2 and -10
+                  """,
+                  "field_columns_include": ["failed_message_count"],
+                  "tag_columns_include": ["cmf_activity_queue"],
+                },
+                {
+                  "query": """
+                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message.date)), 0) as int)
+                      as waiting_time, 'message' as cmf_activity_queue
+                      from message where processing_node in (-1, 0) and message.message not like '%after_tag%'
+                    union all
+                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message_queue.date)), 0) as int)
+                      as waiting_time, 'message_queue' as cmf_activity_queue
+                      from message_queue where processing_node in (-1, 0) and message_queue.message not like '%after_tag%'
+                  """,
+                  "field_columns_include": ["waiting_time"],
+                  "tag_columns_include": ["cmf_activity_queue"],
+
+                },
+              ],
+              "tags": dict(
+                partition.get("static-tags", {}),
+                app=application["name"],
+                name=partition["name"],
+                partition_reference=partition["reference"],
+              ),
+            }
+          )
+
+      if partition["type"] == "erp5/balancer":
+        # XXX this produces many measurements
+        haproxy_socket = f"{partition_root_directory}/var/run/ha.sock"
+        access_path_dict[haproxy_socket] = 'rw'
+        inputs["haproxy"].append(
+          {
+            "servers": [haproxy_socket],
+            "tags": dict(
+              partition.get("static-tags", {}),
+              app=application["name"],
+              name=partition["name"],
+              partition_reference=partition["reference"],
+            ),
+          })
+    urls = application.get("urls", [])
+    if urls:
+      inputs["http_response"].append({
+        "interval": "5m",
+        "urls": urls,
+        "tags": {"app": application["name"]},
+      })
+
+    for url in urls:
+      x509_url = url
+      parsed_url = urllib.parse.urlparse(url)
+      if parsed_url.scheme == 'https':
+        # x509_cert wants a port
+        if not parsed_url.port:
+          x509_url = parsed_url._replace(netloc=parsed_url.hostname+':443').geturl()
+        inputs["x509_cert"].append({
+          "sources": [x509_url],
+          "tags": {"url": url},
+          "interval": "5h",
+          "tags": {"app": application["name"]},
+        })
+
+    if application.get("type") == "SlapOS":
+      telegraf_slapos_input_config_file = str(
+        pathlib.Path(self.options['location'])
+        / f"telegraf-input-slapos-{application['name']}.cfg"
+      )
+      self._config_files[telegraf_slapos_input_config_file] = toml.dumps({
+        "inputs": {
+          "slapos": [{
+            "instance_root": application["instance-root"]}]}})
+      access_path_dict[f"{application['instance-root']}/sv.sock"] = 'rw'
+      telegraf_slapos_input_command = self.options['telegraf-input-slapos-bin']
+      inputs["execd"].append({
+        "name_override": "slapos_services",
+        "command": [telegraf_slapos_input_command, '-config', telegraf_slapos_input_config_file],
+        "tags": {"app": application["name"]},
+      })
+      # drop measurements for not monitored partitions.
+      processors["starlark"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 1,
+        "source": f'''
+  def apply(metric):
+    if metric.tags.get('reference') in {list(partition_mapping)!r}:
+      return metric
+  '''
+        })
+      # telegraf-input-slapos outputs the process name as "name", but we rename
+      # this to "process_name", so that it is more understandable in a global
+      # context and because we use the name of the partition as "name" everywhere
+      # else.
+      processors["rename"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 2,
+        "replace": [{
+          "tag": "name",
+          "dest": "process_name",
+        }]})
+      # "normalize" slapos process names, remove hash from hash-files and -on-watch suffix
+      processors["regex"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 3,
+        "tags": [{
+          "key": "process_name",
+          "pattern": "^(.*)-on-watch$",
+          "replacement": "$" + "{1}",
+        }]})
+      processors["regex"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 4,
+        "tags": [{
+          "key": "process_name",
+          "pattern": "^(.*)-\\w{32}",
+           # XXX we concatenate strings so that we don't have to escape them for buildout
+          "replacement": "$" + "{1}",
+        }]})
+      # use consistent `partition_reference` for slappart
+      processors["rename"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 5,
+        "replace": [{
+          "tag": "reference",
+          "dest": "partition_reference",
+        }]})
+      processors["enum"].append({
+        "namepass": ["slapos_services"],
+        "tagpass": {"app": [application["name"]]},
+        "order": 6,
+        "mapping": [{
+          "tag": "partition_reference",
+          "dest": "name",
+          "value_mappings": partition_mapping,
+        }]})
+
+  # add a socket input so that we can have a promise verifying that telegraf is listening
+  inputs['socket_listener'].append({"service_address": f"unix://{self.options['input-socket']}"})
+
+  options['access-path-dict'] = access_path_dict
+  self._config_files[options['output']] = toml.dumps(config)
+
+install =
+  import os
+  os.mkdir(self.options['location'])
+  for fname, content in self._config_files.items():
+    with open(fname, 'w') as f:
+      f.write(content)
+
+[loki-server]
+recipe = slapos.recipe.build
+slapparameter-dict = ${slap-configuration:configuration}
+init =
+  loki = options['slapparameter-dict']['loki']
+  options['url'] = loki['url']
+  options['caucase-url'] = loki['caucase-url']
+
+[loki-client-certificate]
+key-file = ${directory:etc}/${:_buildout_section_name_}.key
+cert-file = ${directory:etc}/${:_buildout_section_name_}.crt
+common-name = ${:_buildout_section_name_}
+ca-file = ${directory:etc}/${:_buildout_section_name_}.ca.crt
+crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
+
+[loki-client-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  distinguished_name = dn
+  [ dn ]
+  CN = ${:cn}
+  L = ${slap-connection:computer-id}
+  O = ${slap-connection:partition-id}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/${:_buildout_section_name_}
+
+[loki-client-certificate-prepare-csr]
+# variable
+config =
+recipe = plone.recipe.command
+command =
+  if [ ! -f '${:csr}' ] ; then
+   {{ openssl_bin }} req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -sha256 \
+      -nodes \
+      -keyout /dev/null \
+      -config '${:config}' \
+      -out '${:csr}'
+  fi
+stop-on-error = true
+csr = ${directory:srv}/${:_buildout_section_name_}.csr.pem
+
+
+[loki-promtail-client-certificate]
+<= loki-client-certificate
+[loki-promtail-client-certificate-csr-config]
+<= loki-client-certificate-csr-config
+cn = loki ${slap-connection:partition-id}@${slap-connection:computer-id}
+[loki-promtail-client-certificate-prepare-csr]
+<= loki-client-certificate-prepare-csr
+config = ${loki-promtail-client-certificate-csr-config:output}
+{{
+caucase.updater(
+    prefix='loki-promtail-client-certificate',
+    buildout_bin_directory=buildout_bin_directory,
+    updater_path='${directory:service}/loki-promtail-client-certificate-updater',
+    url='${loki-server:caucase-url}',
+    data_dir='${directory:caucase-updater-loki-promtail-client}',
+    crt_path='${loki-promtail-client-certificate:cert-file}',
+    ca_path='${loki-promtail-client-certificate:ca-file}',
+    crl_path='${loki-promtail-client-certificate:crl-file}',
+    key_path='${loki-promtail-client-certificate:key-file}',
+    template_csr='${loki-promtail-client-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+
+
+[promtail]
+recipe = slapos.cookbook:wrapper
+command-line = ${:nice} {{ promtail_bin }} -config.file=${promtail-config-file:location}
+wrapper-path = ${directory:service}/promtail
+hash-files =
+  ${promtail-config-file:location}
+# TODO: control nice of the agent ?
+{% if 0 %}
+nice = nice -19 chrt --idle 0 ionice -c3
+{% else %}
+nice =
+{% endif %}
+
+dir = ${directory:promtail-dir}
+http-port = 19080
+grpc-port = 19095
+ip = ${instance-parameter:ipv4-random}
+url = http://${:ip}:${:http-port}
+
+[promtail-config-file]
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.yaml
+slapparameter-dict = ${slap-configuration:configuration}
+depends = ${loki-promtail-client-certificate:recipe}
+
+{% raw %}
+init =
+  import pathlib
+  import json
+  slapparameter_dict = self.options['slapparameter-dict']
+  slap_connection = self.buildout["slap-connection"]
+  loki_certificate = self.buildout['loki-promtail-client-certificate']
+
+  self._config_files = {}  # files to create during install step
+  access_path_dict = {}
+  cfg = {
+    "server": {
+      "http_listen_address": self.buildout['promtail']['ip'],
+      "http_listen_port": int(self.buildout['promtail']['http-port']),
+      "grpc_listen_address": self.buildout['promtail']['ip'],
+      "grpc_listen_port": int(self.buildout['promtail']['grpc-port']),
+      "graceful_shutdown_timeout": 5,
+      "external_url": self.buildout['promtail']['url'],
+    },
+    "positions": {
+      "filename": "{}/positions.yaml".format(self.buildout['promtail']['dir']),
+    },
+    "clients": [
+      {
+        "url": "{}/loki/api/v1/push".format(self.buildout['loki-server']['url']),
+        "tls_config": {
+          "ca_file": loki_certificate['ca-file'],
+          "cert_file": loki_certificate['cert-file'],
+          "key_file": loki_certificate['key-file'],
+        },
+        # this might not be good for copytruncate option of logrotate
+        # see https://grafana.com/docs/loki/latest/send-data/promtail/logrotation/
+        "batchwait": "5s"
+      }
+    ],
+    "scrape_configs": []
+  }
+  def get_job_selector(partition, job_name, application_name):
+    # make a selector in LogQL, like '{job="job_name",key="value"}'
+    selector_parts = []
+    for k, v in dict(
+        partition.get('static-tags', {}),
+        app=application_name,
+        job=job_name
+      ).items():
+      selector_parts.append(f'{k}="{v}"')
+    return "{%s}" % ",".join(selector_parts)
+
+  def get_static_configs(partition, job_name, path_list, application):
+    if not isinstance(path_list, list):
+      raise ValueError(f'{path_list!r} is not a list')
+    partition_root_directory = ''
+    if partition.get('reference') and 'instance-root' in application:
+      instance_root = pathlib.Path(application['instance-root'])
+      partition_root_directory = instance_root / partition['reference']
+      path_list = [path.format(partition_root_directory=partition_root_directory) for path in path_list]
+
+    for path in path_list:
+      access_path_dict[path] = 'r'
+    partition_kw = {}
+    if partition.get('reference'):
+      partition_kw['partition_reference'] = partition['reference']
+    return [
+      {
+        "targets": [
+          "localhost"
+        ],
+        "labels": dict(
+          partition.get('static-tags', {}),
+          job=job_name,
+          app=application['name'],
+          name=partition['name'],
+          computer_id=slap_connection['computer-id'],
+          __path__=path,
+          **partition_kw
+        )
+      } for path in path_list
+    ]
+
+  for application in slapparameter_dict.get('applications', []):
+    for partition in application.get('partitions', []):
+      partition.setdefault("type", "default")
+      if partition['type'] in ('erp5/zope-activity', 'erp5/zope-front'):
+        # job name include the app name because they need to be unique
+        job_name = f"{application['name']}-{partition['name']}-event-log"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "pipeline_stages": [
+            {
+              "match": {
+                "selector": get_job_selector(partition, job_name, application['name']),
+                "stages": [
+                  {
+                    "multiline": {
+                      # TODO this does not seem to work well
+                      "firstline": "^------",
+                      "max_wait_time": "5s"
+                    }
+                  },
+                  {
+                    "regex": {
+                      "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
+                    }
+                  },
+                  {
+                    "timestamp": {
+                      "format": "2021-04-04 03:57:11,242",
+                      "source": "timestamp"
+                    }
+                  },
+                  {
+                    "labels": {
+                      "level": None
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/zope-*-event.log"],
+            application,
+          )})
+        if partition['type'] == 'erp5/zope-front':
+          job_name = f"{application['name']}-{partition['name']}-access-log"
+          cfg['scrape_configs'].append({
+            "job_name": job_name,
+            # drop requests for haproxy health check
+            "pipeline_stages": [
+              {
+                "drop": {
+                  "expression": '.* "GET / HTTP/1.0" 200 .*'
+                }
+              }
+            ],
+            "static_configs": get_static_configs(
+              partition,
+              job_name,
+              ["{partition_root_directory}/var/log/zope-*-Z2.log"],
+              application,
+            )})
+          job_name = f"{application['name']}-{partition['name']}-long-request-log"
+          cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "pipeline_stages": [
+              {
+                "match": {
+                  "selector": get_job_selector(partition, job_name, application['name']),
+                  "stages": [
+                    {
+                      "multiline": {
+                        "firstline": "^\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}",
+                        "max_wait_time": "5s"
+                      }
+                    },
+                    {
+                      "regex": {
+                        "expression": "^(?P<timestamp>.*) .*"
+                      }
+                    },
+                    {
+                      "timestamp": {
+                        "format": "2021-04-04 03:57:11,242",
+                        "source": "timestamp"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "static_configs": get_static_configs(
+              partition,
+              job_name,
+              ["{partition_root_directory}/var/log/longrequest_logger_zope-*.log"],
+              application,
+            )})
+      if partition['type'] in ('erp5/mariadb', 'mariadb'):
+        job_name = f"{application['name']}-{partition['name']}-mariadb-slow-queries"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "pipeline_stages": [
+            {
+              "match": {
+                "selector": get_job_selector(partition, job_name, application['name']),
+                "stages": [
+                  {
+                    "multiline": {
+                      # between each slow query, slow query log has a first line like:
+                      #   # Time: 231008 16:29:01
+                      # and then a second like:
+                      #   # User@Host: user[user] @  [10.0.71.207]
+                      # but the first line is not repeated for subsequent queries that happens
+                      # at the same second
+                      "firstline": r"(^# Time: \d{2}.*\n^# User@Host:.*|^# User@Host:.*)",
+                      "max_wait_time": "5s"
+                    }
+                  },
+                  {
+                    "regex": {
+                      "expression": ".*SET timestamp=(?P<timestamp>\\d+);.*"
+                    }
+                  },
+                  {
+                    "timestamp": {
+                      "format": "Unix",
+                      "source": "timestamp"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/mariadb_slowquery.log"],
+            application,
+          )})
+        job_name = f"{application['name']}-{partition['name']}-mariadb-error-log"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "pipeline_stages": [
+            {
+              "match": {
+                "selector": get_job_selector(partition, job_name, application['name']),
+                "stages": [
+                    {
+                      "timestamp": {
+                        "format": "2021-06-05  3:55:31",
+                        "source": "timestamp"
+                      }
+                    }
+                ]
+              }
+            }
+          ],
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/mariadb_error.log"],
+            application,
+          )})
+      if partition['type'] == 'erp5/zeo':
+        job_name = f"{application['name']}-{partition['name']}-zeo-log"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "pipeline_stages": [
+            {
+              "match": {
+                "selector": get_job_selector(partition, job_name, application['name']),
+                "stages": [
+                    {
+                      "multiline": {
+                        "firstline": "^------",
+                        "max_wait_time": "5s"
+                      }
+                    },
+                    {
+                      "regex": {
+                        "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
+                      }
+                    },
+                    {
+                      "timestamp": {
+                        "format": "2021-04-04 03:57:11,242",
+                        "source": "timestamp"
+                      }
+                    },
+                    {
+                      "labels": {
+                        "level": None,
+                      }
+                    }
+                  ]
+                }
+              }
+          ],
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/zeo-*.log"],
+            application,
+          )})
+      if partition['type'] == 'erp5/balancer':
+        job_name = f"{application['name']}-{partition['name']}-balancer-access-log"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/apache-access.log"],
+            application,
+          )})
+        job_name = f"{application['name']}-{partition['name']}-balancer-error-log"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            ["{partition_root_directory}/var/log/apache-error.log"],
+            application,
+          )})
+
+      if partition.get('log-file-patterns'):
+        job_name = f"{application['name']}-{partition['name']}"
+        cfg['scrape_configs'].append({
+          "job_name": job_name,
+          "static_configs": get_static_configs(
+            partition,
+            job_name,
+            partition['log-file-patterns'],
+            application,
+          )})
+
+  self._config_files[options['location']] = json.dumps(cfg, indent=2)
+  options['access-path-dict'] = access_path_dict
+install =
+  for fname, content in self._config_files.items():
+    with open(fname, 'w') as f:
+      f.write(content)
+{% endraw %}
+
+[promtail-listen-promise]
+<= check-port-listening-promise
+hostname = ${promtail:ip}
+port = ${promtail:http-port}
+
+[telegraf-listen-promise]
+recipe = slapos.cookbook:wrapper
+command-line =
+  test -S ${telegraf-config-file:input-socket}
+wrapper-path = ${directory:promise}/${:_buildout_section_name_}
+
+
+[facl-script]
+recipe = slapos.recipe.build
+promtail-access-path-dict = ${promtail-config-file:access-path-dict}
+telegraf-access-path-dict = ${telegraf-config-file:access-path-dict}
+install =
+  import itertools
+  import os
+  import pathlib
+  import pwd
+  import shlex
+
+  user = pwd.getpwuid(os.getuid()).pw_name
+  script_code = ''
+
+  def quote_path(p):
+    # quote, but preserve *
+    p = str(p)
+    assert '__STAR__' not in p
+    p = p.replace('*', '__STAR__')
+    p = shlex.quote(p)
+    p = p.replace('__STAR__', '*')
+    return p
+
+  # make sure we can access the parents folders
+  parent_access = {}
+  def check_parent_access(path):
+    parent = path.parent
+    if parent != path:
+      parent_access[str(parent)] = 'x'
+      check_parent_access(parent)
+  for path_spec, access in itertools.chain(
+      options['promtail-access-path-dict'].items(),
+      options['telegraf-access-path-dict'].items()):
+    path = pathlib.Path(path_spec)
+    check_parent_access(path)
+
+  for path_spec, access in sorted(itertools.chain(
+      options['promtail-access-path-dict'].items(),
+      options['telegraf-access-path-dict'].items(),
+      parent_access.items())):
+    path = pathlib.Path(path_spec)
+    if '*' in path_spec:
+      script_code += f'setfacl --modify=u:{user}:rx {quote_path(path.parent)}\n'
+    script_code += f'setfacl --modify=u:{user}:{access} {quote_path(path)}\n'
+  pathlib.Path(location).write_text(script_code)
+
+[promises]
+recipe =
+instance-promises =
+  ${promtail-listen-promise:path}
+  ${telegraf-listen-promise:wrapper-path}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish.serialised
+telegraf-extra-config-dir = ${telegraf:extra-config-dir}
+facl-script = ${facl-script:location}
+promtail-url = ${promtail:url}

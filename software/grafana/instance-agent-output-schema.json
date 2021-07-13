@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Values returned by agent instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "telegraf-extra-config-dir": {
+      "description": "Directory in telegraf partition where extra configuration file will be loaded. These files must match *.conf pattern",
+      "type": "string"
+    },
+    "promtail-url": {
+      "description": "URL of embedded server from promtail",
+      "format": "uri",
+      "type": "string"
+    },
+    "facl-script": {
+      "description": "Path of a generated script to set ACL for the agent to access files and sockets. This might be needed depending on how slapos partitions were formatted",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
