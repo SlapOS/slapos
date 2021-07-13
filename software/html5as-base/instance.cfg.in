@@ -9,8 +9,6 @@ offline = true
 [profile-common]
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
-tar_location = {{ tar_location }}
-curl_location = {{ curl_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
 template_mime_types = {{ template_mime_types_target }} 
 template_launcher = {{ template_launcher_target }}
@@ -33,8 +31,8 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "title": "Tutorial html5as",
-    "download_url": "",
+    "title": "",
+    "download_url": null,
     "port": 8081,
     "monitor-httpd-port": 8197
   }
@@ -52,7 +50,7 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "download_url": "",
+    "download_url": null,
     "replicate-quantity": 1
   }
 
