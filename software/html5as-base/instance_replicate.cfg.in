@@ -31,7 +31,8 @@ software-type = default
 # What parameter are neede to be retrieved
 return = server_url server-cdn-url monitor-setup-url
 # Provided parameters
-config-download_url = {{ parameter_dict['download_url'] }}
+# We add: or '', otherwise jinja2 will render a 'None' string
+config-download_url = {{ parameter_dict['download_url'] or '' }}
 
 # Create request section in a loop.
 {% for i in range(1, replicate_quantity + 1) %}
