@@ -398,7 +398,7 @@ recipe = slapos.cookbook:publish
 {#- Define IPv6 to IPV4 tunneling #}
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
-ipv4 = {{ instance_parameter_dict['ipv4-random'] }}
+ipv4 = ${slap-configuration:ipv4-random}
 ipv6 = ${slap-configuration:ipv6-random}
 wrapper-path = {{ directory['service'] }}/6tunnel-${:ipv6-port}
 command-line = {{ software_parameter_dict['sixtunnel'] }}/bin/6tunnel -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
