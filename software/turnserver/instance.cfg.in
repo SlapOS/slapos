@@ -6,12 +6,11 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default  = $${dynamic-template-turnserver:rendered}
-insecure  = $${dynamic-template-insecure-turnserver:rendered}
+recipe = slapos.cookbook:switch-softwaretype
 RootSoftwareInstance = $${:default}
+default  = dynamic-template-turnserver:rendered
+insecure  = dynamic-template-insecure-turnserver:rendered
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -38,12 +37,22 @@ context =
   raw template_monitor ${monitor2-template:rendered}
   raw logrotate_cfg ${template-logrotate-base:rendered}
   $${:extra-context}
-
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "server-name" : "turn.example.com",
+    "ssl-key": "",
+    "ssl-crt": "",
+    "port": "3478",
+    "tls-port": "5349",
+    "external-ip": ""
+# listening-ip parameter is mandatory
+#"listening-ip": null,
+  }
 
 [dynamic-template-turnserver-parameters]
 openssl = ${openssl:location}
 turnserver-location = ${coturn:location}
-
 
 [dynamic-template-turnserver]
 <= jinja2-template-base
