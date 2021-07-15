@@ -1,3 +1,5 @@
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
 [buildout]
 parts =
   chromium-launcher
@@ -20,11 +22,11 @@ service = ${:etc}/service
 
 [headless-chromium]
 ip = {{ partition_ipv6 }}
-remote-debugging-port = 9222
-url = https://example.com
+remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
+url = {{ parameter_dict['target-url'] }}
 remote-debug-url = http://[${:ip}]:${:remote-debugging-port}
 
-nginx-port = 9345
+nginx-port = {{ parameter_dict['nginx-proxy-port'] }}
 proxy-url = http://[${:ip}]:${:nginx-port}
 nginx-config-target = ${directory:etc}/nginx.conf
 nginx-pid-path = ${directory:log}/nginx.pid
@@ -33,9 +35,10 @@ nginx-error-log = ${directory:log}/nginx-error.log
 nginx-access-log = ${directory:log}/nginx-access.log
 
 # Create a launcher script for the headless shell executable.
+# TODO: get rid of --no-sandbox after testing is done
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
+command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 environment =
   FONTCONFIG_FILE=${font-config:rendered}

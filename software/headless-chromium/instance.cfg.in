@@ -23,6 +23,14 @@ context =
   section buildout buildout
   section parameter_list profile-common
   key partition_ipv6 slap-configuration:ipv6-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "remote-debugging-port": 8081,
+    "nginx-proxy-port": 8082,
+    "target-url": "https://www.example.com"
+  }
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
