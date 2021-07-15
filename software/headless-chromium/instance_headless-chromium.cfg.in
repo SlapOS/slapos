@@ -21,42 +21,42 @@ log = ${:home}/log
 ip = {{ partition_ipv6 }}
 remote-debugging-port = 9222
 url = https://example.com
-remote_debug_url = http://[${:ip}]:${:remote-debugging-port}
+remote-debug-url = http://[${:ip}]:${:remote-debugging-port}
 
 nginx-port = 9345
-proxy_url = http://[${:ip}]:${:nginx-port}
-nginx_config_target = ${directory:etc}/nginx.conf
-nginx_pid_path = ${directory:log}/nginx.pid
-nginx_temp_path = ${directory:tmp}
-nginx_error_log = ${directory:log}/nginx-error.log
-nginx_access_log = ${directory:log}/nginx-access.log
+proxy-url = http://[${:ip}]:${:nginx-port}
+nginx-config-target = ${directory:etc}/nginx.conf
+nginx-pid-path = ${directory:log}/nginx.pid
+nginx-temp-path = ${directory:tmp}
+nginx-error-log = ${directory:log}/nginx-error.log
+nginx-access-log = ${directory:log}/nginx-access.log
 
 # Create a launcher script for the headless shell executable.
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['chromium_wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
+command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 
 # Create a configuration file for the proxy server.
 [nginx-config]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_nginx_config'] }}
-rendered = ${headless-chromium:nginx_config_target}
+template = {{ parameter_list['template-nginx-config'] }}
+rendered = ${headless-chromium:nginx-config-target}
 mode = 700
 context =
-  section param_chromium_headless headless-chromium
+  section param_headless_chromium headless-chromium
 
 # Create a launcher script for the proxy server.
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['nginx_location'] }}/sbin/nginx -c ${headless-chromium:nginx_config_target}
+command-line = {{ parameter_list['nginx-location'] }}/sbin/nginx -c ${headless-chromium:nginx-config-target}
 wrapper-path = ${directory:service}/nginx
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-remote_debug_url = ${headless-chromium:remote_debug_url}
-proxy_url = ${headless-chromium:proxy_url}
-cdn_url = ${remote-debugging-frontend:connection-secure_access}
+remote-debug-url = ${headless-chromium:remote-debug-url}
+proxy-url = ${headless-chromium:proxy-url}
+frontend-url = ${remote-debugging-frontend:connection-secure_access}
 
 # Request a frontend URL from the CDN for the remote debugging interface.
 [remote-debugging-frontend]
@@ -65,7 +65,7 @@ recipe = slapos.cookbook:requestoptional
 name = Headless Chromium Remote Debugging Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = ${headless-chromium:proxy_url}
+config-url = ${headless-chromium:proxy-url}
 config-https-only = true
 config-type = websocket
 config-websocket-path-list = /devtools

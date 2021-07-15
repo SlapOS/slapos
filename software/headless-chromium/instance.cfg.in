@@ -7,11 +7,9 @@ develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
 [profile-common]
-nginx_location = {{ nginx_location }}
-chromium_wrapper = {{ chromium_wrapper }}
-template_launcher = {{ template_launcher_target }}
-template_nginx_config = {{ template_nginx_config_target }}
-template_nginx_launcher = {{ template_nginx_launcher_target }}
+nginx-location = {{ nginx_location }}
+chromium-wrapper = {{ chromium_wrapper }}
+template-nginx-config = {{ template_nginx_config_target }}
 
 [instance-headless-chromium]
 recipe = slapos.recipe.template:jinja2

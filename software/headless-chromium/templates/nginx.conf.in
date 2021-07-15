@@ -1,27 +1,27 @@
-pid {{ param_chromium_headless['nginx_pid_path'] }};
-error_log {{ param_chromium_headless['nginx_error_log'] }};
+pid {{ param_headless_chromium['nginx-pid-path'] }};
+error_log {{ param_headless_chromium['nginx-error-log'] }};
 
 events {
   worker_connections 1024;
 }
 
 http {
-  access_log {{ param_chromium_headless['nginx_access_log'] }};
+  access_log {{ param_headless_chromium['nginx-access-log'] }};
 
   server {
-    listen [{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['nginx-port'] }};
+    listen [{{ param_headless_chromium['ip'] }}]:{{ param_headless_chromium['nginx-port'] }};
 
-    client_body_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
-    proxy_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
-    fastcgi_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
-    uwsgi_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
-    scgi_temp_path {{ param_chromium_headless['nginx_temp_path'] }};
+    client_body_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
+    proxy_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
+    fastcgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
+    uwsgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
+    scgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
 
     # All websocket connections are served from /devtools.
     location /devtools {
       proxy_http_version 1.1;
-      proxy_set_header Host [{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }};
-      proxy_pass {{ param_chromium_headless['remote_debug_url'] }};
+      proxy_set_header Host [{{ param_headless_chromium['ip'] }}]:{{ param_headless_chromium['remote-debugging-port'] }};
+      proxy_pass {{ param_headless_chromium['remote-debug-url'] }};
       proxy_set_header Upgrade "websocket";
       proxy_set_header Connection "Upgrade";
     }
@@ -31,11 +31,11 @@ http {
 
       # The proxy must set the Host header to an IP address, since the headless Chromium shell refuses to run otherwise, for security reasons.
       # See https://bugs.chromium.org/p/chromium/issues/detail?id=813540.
-      proxy_set_header Host [{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }};
-      proxy_pass {{ param_chromium_headless['remote_debug_url'] }};
+      proxy_set_header Host [{{ param_headless_chromium['ip'] }}]:{{ param_headless_chromium['remote-debugging-port'] }};
+      proxy_pass {{ param_headless_chromium['remote-debug-url'] }};
 
       # The browser security policy will prevent us from loading the Websocket connection without TLS, so we have to go through the frontend CDN URL. The tricky thing is that the frontend URL is not available yet when this file is built; what we do instead is use the given Host header. This is possibly fragile; perhaps alternatives are worth investigating.
-      sub_filter "ws=[{{ param_chromium_headless['ip'] }}]:{{ param_chromium_headless['remote-debugging-port'] }}" "wss=$host";
+      sub_filter "ws=[{{ param_headless_chromium['ip'] }}]:{{ param_headless_chromium['remote-debugging-port'] }}" "wss=$host";
       sub_filter_once on;
       sub_filter_types application/json;
     }
