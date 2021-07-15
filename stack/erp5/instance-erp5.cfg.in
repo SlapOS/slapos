@@ -71,7 +71,7 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 service-on-watch = ${buildout:directory}/etc/service
 srv = ${buildout:directory}/srv
-tmp = {$buildout:directory}/tmp
+tmp = ${buildout:directory}/tmp
 backup-caucased = ${:srv}/backup/caucased
 
 {% if not caucase_url -%}
