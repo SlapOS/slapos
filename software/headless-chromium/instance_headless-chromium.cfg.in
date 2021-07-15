@@ -21,13 +21,14 @@ etc = ${:home}/etc
 service = ${:etc}/service
 
 [headless-chromium]
-ip = {{ partition_ipv6 }}
+ipv4 = {{ partition_ipv4 }}
+ipv6 = {{ partition_ipv6 }}
 remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
 url = {{ parameter_dict['target-url'] }}
-remote-debug-url = http://[${:ip}]:${:remote-debugging-port}
+remote-debugging-address = ${:ipv4}:${:remote-debugging-port}
 
 nginx-port = {{ parameter_dict['nginx-proxy-port'] }}
-proxy-url = http://[${:ip}]:${:nginx-port}
+proxy-address = [${:ipv6}]:${:nginx-port}
 nginx-config-target = ${directory:etc}/nginx.conf
 nginx-pid-path = ${directory:log}/nginx.pid
 nginx-temp-path = ${directory:tmp}
@@ -36,9 +37,10 @@ nginx-access-log = ${directory:log}/nginx-access.log
 
 # Create a launcher script for the headless shell executable.
 # TODO: get rid of --no-sandbox after testing is done
+# TODO: change --remote-debugging-address to actual IP address?
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=:: --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
+command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=0.0.0.0 --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 environment =
   FONTCONFIG_FILE=${font-config:rendered}
@@ -76,8 +78,8 @@ includes =
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-remote-debug-url = ${headless-chromium:remote-debug-url}
-proxy-url = ${headless-chromium:proxy-url}
+remote-debug-url = http://${headless-chromium:remote-debugging-address}
+proxy-url = http://${headless-chromium:proxy-address}
 frontend-url = ${remote-debugging-frontend:connection-secure_access}
 
 # Request a frontend URL from the CDN for the remote debugging interface.
@@ -87,7 +89,7 @@ recipe = slapos.cookbook:requestoptional
 name = Headless Chromium Remote Debugging Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = ${headless-chromium:proxy-url}
+config-url = http://${headless-chromium:proxy-address}
 config-https-only = true
 config-type = websocket
 config-websocket-path-list = /devtools

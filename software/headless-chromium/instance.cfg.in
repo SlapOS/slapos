@@ -22,6 +22,7 @@ filename = instance_headless-chromium.cfg
 context =
   section buildout buildout
   section parameter_list profile-common
+  key partition_ipv4 slap-configuration:ipv4-random
   key partition_ipv6 slap-configuration:ipv6-random
   key slapparameter_dict slap-configuration:configuration
   jsonkey default_parameter_dict :default-parameters
