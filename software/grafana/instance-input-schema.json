@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Parameters to instantiate Grafana",
   "type": "object",
   "additionalProperties": false,
@@ -18,11 +18,7 @@
     },
     "smtp-verify-ssl": {
       "description": "Verify SSL certificate of SMTP server",
-      "type": "string",
-      "enum": [
-        "true",
-        "false"
-      ]
+      "type": "boolean"
     },
     "email-from-address": {
       "description": "Email address used in From: header of emails",
@@ -32,6 +28,133 @@
       "description": "Name used in From: header of emails",
       "default": "Grafana",
       "type": "string"
+    },
+    "applications": {
+      "description": "Applications to monitor",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "instance-root",
+          "partitions"
+        ],
+        "properties": {
+          "name": {
+            "description": "Name of this application",
+            "type": "string"
+          },
+          "instance-root": {
+            "description": "Directory containing SlapOS partitions.",
+            "type": "string"
+          },
+          "urls": {
+            "description": "URLs to monitor for availability and certificate lifetime",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "partitions": {
+            "description": "SlapOS partitions to monitor",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Friendly name of the partition",
+                  "examples": [
+                    "mariadb",
+                    "zope-activity"
+                  ]
+                },
+                "reference": {
+                  "type": "string",
+                  "description": "Reference of the partition",
+                  "examples": [
+                    "slappart1",
+                    "slappart2"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Type of the partition. Known types have extra metrics and logs collected",
+                  "enum": [
+                    "erp5/mariadb",
+                    "erp5/balancer",
+                    "erp5/zope-activity",
+                    "erp5/zope-front",
+                    "erp5/zeo",
+                    "mariadb",
+                    "default"
+                  ]
+                },
+                "file-path": {
+                  "type": "string",
+                  "description": "Glob for the files to watch. This mostly makes sense for `default` type"
+                },
+                "static-tags": {
+                  "type": "object",
+                  "description": "Static tags for this partition",
+                  "examples": [
+                    {
+                      "region": "eu",
+                      "data-center": "abc123"
+                    }
+                  ]
+                }
+              },
+              "anyOf": [
+                {
+                  "properties": {
+                    "type": {
+                      "const": "default"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "file-path"
+                  ]
+                },
+                {
+                  "properties": {
+                    "type": {
+                      "not": {
+                        "const": "default"
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "reference"
+                  ]
+                }
+              ],
+              "examples": [
+                {
+                  "name": "zope-backoffice",
+                  "type": "erp5/zope-front",
+                  "reference": "slappart1",
+                  "static-tags": {
+                    "instance": "instance-name"
+                  }
+                },
+                {
+                  "name": "mariadb",
+                  "type": "erp5/mariadb",
+                  "reference": "slappart2"
+                },
+                {
+                  "name": "syslog",
+                  "type": "default",
+                  "file-path": "/var/log/syslog"
+                }
+              ]
+            }
+          }
+        }
+      }
     },
     "promtail-extra-scrape-config": {
       "description": "Raw promtail config (experimental parameter, see https://github.com/grafana/loki/blob/v0.3.0/docs/promtail.md#scrape-configs for detail)",

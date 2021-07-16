@@ -1,0 +1,77 @@
+daemon off;
+
+events {
+    worker_connections 1024;
+}
+
+error_log   /dev/stdout;
+
+http {
+  default_type application/octet-stream;
+  access_log   /dev/stdout;
+  sendfile     on;
+  tcp_nopush   on;
+
+  upstream read {
+    server {{ loki['ip'] }}:{{ loki['query-frontend-http-port'] }};
+  }
+
+  upstream write {
+    server {{ loki['ip'] }}:{{ loki['write-http-port'] }};
+  }
+
+  upstream cluster {
+    server {{ loki['ip'] }}:{{ loki['write-http-port'] }};
+    server {{ loki['ip'] }}:{{ loki['query-frontend-http-port'] }};
+    server {{ loki['ip'] }}:{{ loki['querier-http-port'] }};
+
+  }
+
+  upstream query-frontend {
+    server {{ loki['ip'] }}:{{ loki['query-frontend-http-port'] }};
+  }
+
+  server {
+    listen {{ loki['ip'] }}:{{ loki['nginx-port'] }};
+# XXX while debugging
+    listen [{{ loki['ipv6'] }}]:{{ loki['nginx-port'] }};
+
+    location / {
+        return 200 'OK';
+    }
+
+    location = /ring {
+        proxy_pass       http://cluster$request_uri;
+    }
+
+    location = /memberlist {
+        proxy_pass       http://cluster$request_uri;
+    }
+
+    location = /config {
+        proxy_pass       http://cluster$request_uri;
+    }
+
+    location = /metrics {
+        proxy_pass       http://cluster$request_uri;
+    }
+
+    location = /ready {
+        proxy_pass       http://cluster$request_uri;
+    }
+
+    location = /loki/api/v1/push {
+        proxy_pass       http://write$request_uri;
+    }
+
+    location = /loki/api/v1/tail {
+        proxy_pass       http://read$request_uri;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location ~ /loki/api/.* {
+        proxy_pass       http://query-frontend$request_uri;
+    }
+  }
+}

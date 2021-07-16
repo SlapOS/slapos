@@ -55,9 +55,6 @@
 [outputs.influxdb]
   # The full HTTP or UDP endpoint URL for your InfluxDB instance
   # Multiple urls can be specified for InfluxDB cluster support.
-  # urls = ["udp://localhost:8089"] # UDP endpoint example
-  # XXX XXX XXX
-  #urls = ["http://localhost:8086"] # required
   urls = ["{{ influxdb['url'] }}"]
   insecure_skip_verify = true # because we are using a self signed certificate
   # The target database for metrics (telegraf will create it if not exists)
@@ -100,32 +97,9 @@
 
 [system]
 
+{{ extra['extra-config'] }}
 
 ###############################################################################
-#                           ERP5 - PLUGINS                                    #
-###############################################################################
-#
-# Left here as example, don't edit this file directly, but place your config
+# To add ad-hoc config, don't edit this file directly, but place your config
 # files in {{ telegraf['extra-config-dir'] }}
-# 
-
-#[mysql]
-#  servers = ["root@unix(/srv/slapgrid/slappart12/srv/runner/instance/slappart1/var/run/mariadb.sock)/erp5"]
-
-#[memcached]
-#  # XXX kumofs does not support memcached's stat command
-#  servers = ["10.0.248.233:2013", "10.0.248.233:2003"]
-
-#[haproxy]
-#  servers = ["http://10.0.121.162:2150/haproxy", "http://10.0.121.162:2152/haproxy"]
-
-#[[inputs.exec]]
-#  commands = ["/srv/slapgrid/slappart0/bin/slapsensor  /srv/slapgrid/slappart0/srv/runner/instance/etc/supervisord.conf"]
-#  name_suffix = "_slapos"
-#  interval = "5s"
-
-
-
-###############################################################################
-#                              SERVICE PLUGINS                                #
 ###############################################################################

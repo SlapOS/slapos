@@ -8,7 +8,6 @@ develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
 
-
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
 computer = ${slap-connection:computer-id}
@@ -42,11 +41,17 @@ grafana-plugins-dir = ${:grafana-dir}/plugins
 grafana-provisioning-config-dir = ${:grafana-dir}/provisioning-config
 grafana-provisioning-datasources-dir = ${:grafana-provisioning-config-dir}/datasources
 grafana-provisioning-dashboards-dir = ${:grafana-provisioning-config-dir}/dashboards
+grafana-dashboards-dir = ${:grafana-dir}/dashboards
 telegraf-dir = ${:srv}/telegraf
 telegraf-extra-config-dir = ${:telegraf-dir}/extra-config
 loki-dir = ${:srv}/loki
-loki-storage-boltdb-dir = ${:loki-dir}/index/
-loki-storage-filesystem-dir = ${:loki-dir}/chunks/
+loki-boltdb-shipper-active-index-directory = ${:loki-dir}/index
+loki-boltdb-shipper-cache-location = ${:loki-dir}/index-cache
+loki-compactor-working-directory = ${:loki-dir}/compactor
+loki-storage-filesystem-directory = ${:loki-dir}/chunks
+loki-nginx-dir = ${:srv}/loki-nginx
+loki-nginx-logs-dir = ${:loki-nginx-dir}/logs
+
 promtail-dir = ${:srv}/promtail
 
 # macros
@@ -149,6 +154,7 @@ logs-dir = ${directory:grafana-logs-dir}
 plugins-dir = ${directory:grafana-plugins-dir}
 provisioning-config-dir = ${directory:grafana-provisioning-config-dir}
 provisioning-datasources-dir = ${directory:grafana-provisioning-datasources-dir}
+provisioning-dashboards-dir = ${directory:grafana-provisioning-dashboards-dir}
 admin-user = ${grafana-password:username}
 admin-password = ${grafana-password:passwd}
 secret-key = ${grafana-secret-key:passwd}
@@ -164,8 +170,10 @@ wrapper-path = ${directory:service}/grafana
 <= generate-certificate
 
 [grafana-password]
-recipe = slapos.cookbook:generate.password
+# TODO
+#recipe = slapos.cookbook:generate.password
 username = admin
+passwd = admin
 
 [grafana-secret-key]
 recipe = slapos.cookbook:generate.password
@@ -177,21 +185,26 @@ context =
   section apache_frontend apache-frontend
   key slapparameter_dict slap-configuration:configuration
 depends =
-  ${grafana-provisioning-config-file:output}
+  ${grafana-provisioning-datasources-config-file:output}
+  ${grafana-provisioning-dashboards-config-file:output}
 
-[grafana-provisioning-config-file]
+[grafana-provisioning-datasources-config-file]
 <= config-file
 output = ${grafana:provisioning-datasources-dir}/datasource.yaml
 context =
   section influxdb influxdb
   section loki loki
 
+[grafana-provisioning-dashboards-config-file]
+<= config-file
+rendered = ${grafana:provisioning-dashboards-dir}/dashboard.yaml
+context =
+  key dashboards_dir directory:grafana-dashboards-dir
+
 [grafana-listen-promise]
 <= check-port-listening-promise
 hostname= ${grafana:ipv6}
 port = ${grafana:port}
-
-
 
 [telegraf]
 recipe = slapos.cookbook:wrapper
@@ -206,20 +219,368 @@ wrapper-path = ${directory:service}/telegraf
 context =
   section influxdb influxdb
   section telegraf telegraf
+  section extra telegraf-config-file-extra
+
+[telegraf-config-file-extra]
+recipe = slapos.recipe.build
+telegraf-input-slapos-bin = {{ telegraf_input_slapos_bin }}
+slapparameter-dict = ${slap-configuration:configuration}
+init =
+  import zc.buildout
+  import pkg_resources
+
+  buildout_options = self.buildout["buildout"]
+  zc.buildout.easy_install.install(
+    ["toml"],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[
+      buildout_options["develop-eggs-directory"],
+      buildout_options["eggs-directory"],
+    ],
+  )
+
+  import collections
+  import os.path
+  import urllib.parse
+  import toml
+
+  # files to create during install step
+  self._config_files = {}
+
+  inputs = collections.defaultdict(list)
+  processors = collections.defaultdict(list)
+  slapparameter_dict = self.options["slapparameter-dict"]
+  for application in slapparameter_dict.get('applications', []):
+    partition_mapping = {}
+    for partition in application.get("partitions", []):
+      partition.setdefault("type", "default")
+      if "reference" in partition:
+        partition_mapping[partition["reference"]] = partition["name"]
+        partition_directory = os.path.join(application["instance-root"], partition['reference'])
+      if partition["type"] in ("erp5/mariadb", "mariadb"):
+        partition.setdefault("username", "root")
+        partition.setdefault("dbname", "erp5")
+        dsn = f"{partition['username']}@unix({partition_directory}/var/run/mariadb.sock)/{partition['dbname']}"
+        inputs["mysql"].append(
+          {
+            "name_override": f"{partition['name']}-mysql",
+            "servers": [dsn],
+            "gather_innodb_metrics": True,
+            "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+          }
+        )
+        if partition["type"] == "erp5/mariadb":
+          inputs["sql"].append(
+            {
+              "name_override": f"{partition['name']}-activities",
+              "driver": "mysql",
+              "dsn": dsn,
+              "query": [
+                {
+                  "query": "select count(*) as message_count from message",
+                  "field_columns_include": ["message_count"],
+                },
+                {
+                  "query": "select count(*) as message_queue_count from message_queue",
+                  "field_columns_include": ["message_queue_count"],
+                },
+                {
+                  "query": "select count(*) as message_failed_count from message where processing_node=-2",
+                  "field_columns_include": ["message_failed_count"],
+                },
+                {
+                  "query": "select count(*) as message_queue_failed_count from message_queue where processing_node=-2",
+                  "field_columns_include": ["message_queue_failed_count"],
+                },
+                {
+                  "query": """
+                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message.date)), 0) as int)
+                      as message_waiting_time from message
+                      where processing_node in (-1, 0) and message not like '%after_tag%'
+                  """,
+                  "field_columns_include": ["message_waiting_time"],
+                },
+                {
+                  "query": """
+                    select cast(coalesce(max(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(message_queue.date)), 0) as int)
+                      as message_queue_waiting_time from message_queue
+                      where processing_node in (-1, 0) and message not like '%after_tag%'
+                  """,
+                  "field_columns_include": ["message_queue_waiting_time"],
+                }
+              ],
+              "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+            }
+          )
+
+      if partition["type"] == "erp5/balancer":
+        inputs["tail"].append(
+          {
+            "data_format": "grok",
+            "files": [f"{partition_directory}/var/log/apache-access.log"],
+            "grok_custom_pattern_files": [],
+            "grok_custom_patterns": "",
+            "grok_patterns": [
+              '%{IPORHOST:client_ip} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HTTPDATE:timestamp}\\] "(?:%{WORD:verb:tag} %{NOTSPACE:request}(?: HTTP/%{NUMBER:http_version:float})?|%{DATA})" %{NUMBER:resp_code:tag} (?:%{NUMBER:resp_bytes:int}|-) %{QS:referrer} %{QS:agent} %{NUMBER:response_time:int}'
+            ],
+            "grok_timezone": "Local",
+            "name_override": f"{partition['name']}",
+            "tags": dict(partition.get("static-tags", {}), app=application["name"]),
+          }
+        )
+    urls = application.get("urls", [])
+    if urls:
+      inputs["http_response"].append({
+        "interval": "5m",
+        "urls": urls,
+        "tags": {"app": application["name"]},
+      })
+
+    for url in urls:
+      x509_url = url
+      parsed_url = urllib.parse.urlparse(url)
+      if parsed_url.scheme == 'https':
+        # x509_cert wants a port
+        if not parsed_url.port:
+          x509_url = parsed_url._replace(netloc=parsed_url.hostname+':443').geturl()
+      inputs["x509_cert"].append({
+        "sources": [x509_url],
+        "tags": {"url": url},
+        "interval": "5h",
+        "tags": {"app": application["name"]},
+      })
+
+
+    # TODO: don't run more than one per instance_root
+    telegraf_slapos_input_config_file = os.path.join(
+        self.options['location'],
+        f"telegraf-input-slapos-{application['name']}.cfg")
+    self._config_files[telegraf_slapos_input_config_file] = toml.dumps({
+      "inputs": {
+        "slapos": [{
+          "instance_root": application['instance-root']}]}})
+
+    # TODO: supervisor process finder for
+    # https://github.com/influxdata/telegraf/tree/master/plugins/inputs/procstat ?
+    telegraf_slapos_input_command = self.options['telegraf-input-slapos-bin']
+    inputs["execd"].append({
+      "name_override": f"{application['name']}-processes",
+      "command": [telegraf_slapos_input_command, '-config', telegraf_slapos_input_config_file],
+      "tags": {"app": application["name"]},
+    })
+    # "cleanup" slapos process names, remove hash from wrappers and -on-watch suffix
+    processors["regex"].append({
+      "namepass": [f"{application['name']}-processes"],
+      "order": 1,
+      "tags": [{
+        "key": "name",
+        "pattern": "^(.*)-.{32}",
+         # XXX we concatenate strings so that we don't have to escape them for buildout
+        "replacement": "$" + "{1}",
+      }]})
+    processors["regex"].append({
+      "namepass": [f"{application['name']}-processes"],
+      "order": 2,
+      "tags": [{
+        "key": "name",
+        "pattern": "^(.*)-on-watch$",
+        "replacement": "$" + "{1}",
+      }]})
+    processors["enum"].append({
+      "namepass": [ f"{application['name']}-processes"],
+      "mapping": [{
+#        "tag": "group", # TODO: rename this in input plugin
+        "tag": "slappart",
+        "dest": "partition",
+        "value_mappings": partition_mapping,
+      }]})
+
+  # TODOs:
+  #  - [ ] slapos input
+  #    - [x] friendly name of slappart
+  #    - [x] strip hashes from -on-watch
+  #  - [x] activity metrics
+  #  - [ ] alert dashboard
+  #  - [ ] inclu "jerome-dev" partout ???
+  #  - [ ] apdex
+
+  options["extra-config"] = toml.dumps({
+    "inputs": inputs,
+    "processors": processors})
+  # import pdb; pdb.set_trace()
+
+# apdex
+# SELECT sum("success") / sum("all") FROM
+#     (SELECT count("duration") AS "all" FROM "jerome-dev-balancer" WHERE $timeFilter GROUP BY time($__interval) fill(null)),
+#     (SELECT count("duration") AS "success" FROM "jerome-dev-balancer" WHERE  ("resp_code"  = '200' ) AND $timeFilter GROUP BY time($__interval) fill(null))
+
+#SELECT sum("success") + sum("all") FROM
+#     (SELECT count("duration") AS "all" FROM "jerome-dev-balancer" WHERE $timeFilter GROUP BY time($__interval) fill(0)),
+#     (SELECT count("duration") AS "success" FROM "jerome-dev-balancer" WHERE  ("resp_code"  = '200' ) AND $timeFilter GROUP BY time($__interval) fill(0))
+
+
+install =
+  import os
+  os.mkdir(self.options['location'])
+  for fname, content in self._config_files.items():
+    with open(fname, 'w') as f:
+      f.write(content)
 
 
 [loki]
+boltdb-shipper-active-index-directory = ${directory:loki-boltdb-shipper-active-index-directory}
+boltdb-shipper-cache-location = ${directory:loki-boltdb-shipper-cache-location}
+compactor-working-directory = ${directory:loki-compactor-working-directory}
+storage-filesystem-directory = ${directory:loki-storage-filesystem-directory}
+
+ip = ${instance-parameter:ipv4-random}
+read-1-http-port = 3101
+read-1-grpc-port = 9096
+read-1-memberlist-port = 7947
+read-2-http-port = 3102
+read-2-grpc-port = 9097
+read-2-memberlist-port = 7948
+write-http-port = 3103
+write-grpc-port = 9098
+write-memberlist-port = 7949
+query-frontend-http-port = 3104
+query-frontend-grpc-port = 9099
+query-frontend-memberlist-port = 7950
+
+querier-http-port = 3105
+querier-grpc-port = 9100
+querier-memberlist-port = 7951
+
+index-gateway-http-port = 3106
+index-gateway-grpc-port = 9101
+index-gateway-memberlist-port = 7952
+
+query-scheduler-http-port = 3107
+query-scheduler-grpc-port = 9102
+query-scheduler-memberlist-port = 7953
+
+# compactor
+
+nginx-port = 3100
+url = http://${:ip}:${:nginx-port}
+
+ipv6 = ${instance-parameter:ipv6-random}
+
+
+[loki-service-macro]
 recipe = slapos.cookbook:wrapper
 command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} -config.file=${loki-config-file:output}'
-wrapper-path = ${directory:service}/loki
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ loki_bin }} \
+      -config.file=${loki-config-file:output} \
+      \
+      -boltdb.shipper.compactor.ring.instance-addr=${loki:ip} \
+      -boltdb.shipper.compactor.ring.instance-id=${:_buildout_section_name_} \
+      -common.embedded-cachering.instance-addr=${loki:ip} \
+      -common.embedded-cachering.instance-id=${:_buildout_section_name_} \
+      -distributor.ring.instance-addr=${loki:ip} \
+      -distributor.ring.instance-id=${:_buildout_section_name_} \
+      -frontend.instance-addr=${loki:ip} \
+      -frontend.instance-port=${loki:query-frontend-grpc-port} \
+      -index-gateway.ring.instance-addr=${loki:ip} \
+      -index-gateway.ring.instance-id=${:_buildout_section_name_} \
+      -memberlist.advertise-port=${:memberlist-port} \
+      -memberlist.bind-port=${:memberlist-port} \
+      -memberlist.nodename=${:_buildout_section_name_} \
+      -query-scheduler.ring.instance-addr=${loki:ip} \
+      -query-scheduler.ring.instance-id=${:_buildout_section_name_} \
+      -ruler.ring.instance-addr=${loki:ip} \
+      -ruler.ring.instance-id=${:_buildout_section_name_} \
+      -server.grpc-listen-port=${:grpc-port} \
+      -server.http-listen-port=${:http-port} \
+      ${:extra-command-line}'
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+extra-command-line =
 
-storage-boltdb-dir = ${directory:loki-storage-boltdb-dir}
-storage-filesystem-dir = ${directory:loki-storage-filesystem-dir}
-ip = ${instance-parameter:ipv4-random}
-port = 3100
-grpc-port = 9095
-url = http://${:ip}:${:port}
+# level=error ts=2022-09-24T14:40:13.636615531Z caller=scheduler_processor.go:182 org_id=fake msg="error notifying frontend about finished query" err="rpc error: code = ResourceExhausted desc = grpc: received message larger than max (4200411 vs. 4194304)" frontend=10.0.44.65:9099
+
+
+[loki-listen-promise-macro]
+<= check-url-available-promise
+url = http://${loki:ip}:${:port}/ready
+
+[loki-read-1-service]
+<= loki-service-macro
+extra-command-line = -target=read -querier.scheduler-address=${loki:ip}:${loki:read-2-grpc-port} -query-scheduler.ring.instance-port=${loki:read-1-grpc-port}
+http-port = ${loki:read-1-http-port}
+grpc-port = ${loki:read-1-grpc-port}
+memberlist-port = ${loki:read-1-memberlist-port}
+
+[loki-read-1-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-read-1-service:http-port}
+
+[loki-read-2-service]
+<= loki-service-macro
+extra-command-line = -target=read -querier.scheduler-address=${loki:ip}:${loki:read-1-grpc-port} -query-scheduler.ring.instance-port=${loki:read-2-grpc-port}
+http-port = ${loki:read-2-http-port}
+grpc-port = ${loki:read-2-grpc-port}
+memberlist-port = ${loki:read-2-memberlist-port}
+
+[loki-read-2-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-read-2-service:http-port}
+
+[loki-write-service]
+<= loki-service-macro
+extra-command-line = -target=write
+http-port = ${loki:write-http-port}
+grpc-port = ${loki:write-grpc-port}
+memberlist-port = ${loki:write-memberlist-port}
+
+[loki-write-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-write-service:http-port}
+
+[loki-querier-service]
+<= loki-service-macro
+extra-command-line = -target=querier -querier.scheduler-address=${loki:ip}:${loki:query-scheduler-grpc-port} -query-scheduler.ring.instance-port=${loki:querier-grpc-port}
+http-port = ${loki:querier-http-port}
+grpc-port = ${loki:querier-grpc-port}
+memberlist-port = ${loki:querier-memberlist-port}
+
+[loki-querier-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-querier-service:http-port}
+
+[loki-index-gateway-service]
+<= loki-service-macro
+extra-command-line = -target=index-gateway -boltdb.shipper.query-ready-num-days=30
+# XXX -boltdb.shipper.query-ready-num-days=30 useful ?
+http-port = ${loki:index-gateway-http-port}
+grpc-port = ${loki:index-gateway-grpc-port}
+memberlist-port = ${loki:index-gateway-memberlist-port}
+
+[loki-index-gateway-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-index-gateway-service:http-port}
+
+[loki-query-frontend-service]
+<= loki-service-macro
+extra-command-line = -target=query-frontend -frontend.scheduler-address=${loki:ip}:${loki:query-scheduler-grpc-port}
+http-port = ${loki:query-frontend-http-port}
+grpc-port = ${loki:query-frontend-grpc-port}
+memberlist-port = ${loki:query-frontend-memberlist-port}
+
+[loki-query-frontend-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-query-frontend-service:http-port}
+
+[loki-query-scheduler-service]
+<= loki-service-macro
+extra-command-line = -target=query-scheduler
+http-port = ${loki:query-scheduler-http-port}
+grpc-port = ${loki:query-scheduler-grpc-port}
+memberlist-port = ${loki:query-scheduler-memberlist-port}
+
+[loki-query-scheduler-listen-promise]
+<= loki-listen-promise-macro
+port = ${loki-query-scheduler-service:http-port}
 
 
 [loki-config-file]
@@ -227,14 +588,26 @@ url = http://${:ip}:${:port}
 context =
   section loki loki
 
-[loki-listen-promise]
+[loki-nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line =
+   {{ nginx_bin }} -p ${directory:loki-nginx-dir} -c ${loki-nginx-config-file:output}
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+url = http://${loki:ip}:${loki:nginx-port}
+
+[loki-nginx-listen-promise]
 <= check-url-available-promise
-url = ${loki:url}/ready
+url = ${loki-nginx-service:url}
+
+[loki-nginx-config-file]
+<= config-file
+context =
+  section loki loki
 
 [promtail]
 recipe = slapos.cookbook:wrapper
 command-line =
-   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:output}'
+   bash -c 'nice -19 chrt --idle 0 ionice -c3 {{ promtail_bin }} -config.file=${promtail-config-file:location}'
 wrapper-path = ${directory:service}/promtail
 
 dir = ${directory:promtail-dir}
@@ -244,17 +617,315 @@ ip = ${instance-parameter:ipv4-random}
 url = http://${:ip}:${:http-port}
 
 [promtail-config-file]
-<= config-file
-context =
-  section promtail promtail
-  section loki loki
-  key slapparameter_dict slap-configuration:configuration
+recipe = slapos.recipe.build
+location = ${directory:etc}/${:_buildout_section_name_}.cfg
+slapparameter-dict = ${slap-configuration:configuration}
+install =
+{% raw %}
+  import os
+  # XXX make extra eggs available to buildout
+  import zc.buildout
+  import pkg_resources
+  buildout_options = self.buildout['buildout']
+  zc.buildout.easy_install.install(
+      ['pyyaml'],
+      dest=None,
+      working_set=pkg_resources.working_set,
+      path=[
+          buildout_options['develop-eggs-directory'],
+          buildout_options['eggs-directory']])
+
+  import yaml
+  slapparameter_dict = self.options['slapparameter-dict']
+  cfg = {
+      "server": {
+          "http_listen_address": self.buildout['promtail']['ip'],
+          "http_listen_port": int(self.buildout['promtail']['http-port']),
+          "grpc_listen_address": self.buildout['promtail']['ip'],
+          "grpc_listen_port": int(self.buildout['promtail']['grpc-port']),
+          "graceful_shutdown_timeout": 5,
+          "external_url": self.buildout['promtail']['url'],
+      },
+      "positions": {
+          "filename": "{}/positions.yaml".format(self.buildout['promtail']['dir']),
+      },
+      "clients": [
+          {
+              "url": "{}/loki/api/v1/push".format(self.buildout['loki']['url']),
+              "batchwait": "5s"
+          }
+      ],
+      "scrape_configs": []
+  }
+  def get_job_selector(partition, job_name, application_name):
+    # make a selector in LogQL, like '{job="job_name",key="value"}'
+    selector_parts = [f'app="{application_name}"']
+    for k, v in dict(partition.get('static-tags', {}), job=job_name).items():
+      selector_parts.append(f'{k}="{v}"')
+    return "{%s}" % ",".join(selector_parts)
+
+  def get_static_configs(partition, job_name, path, application):
+    directory = ''
+    if partition.get('reference'):
+      directory = os.path.join(application['instance-root'], partition['reference'])
+    return [
+        {
+            "targets": [
+                "localhost"
+            ],
+            "labels": dict(
+                partition.get('static-tags', {}),
+                job=job_name,
+                partition=partition['name'],
+                app=application['name'],
+                __path__=path.format(directory=directory),
+            )
+        }
+      ]
+
+  for application in slapparameter_dict.get('applications', []):
+    for partition in application.get('partitions', []):
+      partition.setdefault("type", "default")
+      if partition['type'] in ('erp5/zope-activity', 'erp5/zope-front'):
+        job_name = f"{partition['name']}-event-log"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "pipeline_stages": [
+              {
+                "match": {
+                  "selector": get_job_selector(partition, job_name, application['name']),
+                  "stages": [
+                    {
+                      "multiline": {
+                        "firstline": "^------",
+                        "max_wait_time": "3s"
+                      }
+                    },
+                    {
+                      "regex": {
+                        "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
+                      }
+                    },
+                    {
+                      "timestamp": {
+                        "format": "2021-04-04 03:57:11,242",
+                        "source": "timestamp"
+                      }
+                    },
+                    {
+                      "labels": {
+                        "level": None,
+                        # XXX do we really want `component` ? it may cause lots of cardinality
+                        # "component": None
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/zope-*-event.log",
+                application,
+            )})
+        if partition['type'] == 'erp5/zope-front':
+          job_name = f"{partition['name']}-access-log"
+          cfg['scrape_configs'].append({
+              "job_name": job_name,
+              # drop requests for haproxy health check
+              "pipeline_stages": [
+                  {
+                      "drop": {
+                          "expression": '.* "GET / HTTP/1.0" 200 .*'
+                      }
+                  }
+              ],
+              "static_configs": get_static_configs(
+                  partition,
+                  job_name,
+                  "{directory}/var/log/zope-*-Z2.log",
+                  application,
+              )})
+          job_name = f"{partition['name']}-long-request-log"
+          cfg['scrape_configs'].append({
+              "job_name": job_name,
+              "pipeline_stages": [
+                {
+                  "match": {
+                    "selector": get_job_selector(partition, job_name, application['name']),
+                    "stages": [
+                      {
+                        "multiline": {
+                          "firstline": "^\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}",
+                          "max_wait_time": "3s"
+                        }
+                      },
+                      {
+                        "regex": {
+                          "expression": "^(?P<timestamp>.*) .*"
+                        }
+                      },
+                      {
+                        "timestamp": {
+                          "format": "2021-04-04 03:57:11,242",
+                          "source": "timestamp"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "static_configs": get_static_configs(
+                  partition,
+                  job_name,
+                  "{directory}/var/log/zope-*-longrequest.log",
+                  application,
+              )})
+      if partition['type'] in ('erp5/mariadb', 'mariadb'):
+        job_name = f"{partition['name']}-mariadb-slow-queries"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "pipeline_stages": [
+              {
+                "match": {
+                  "selector": get_job_selector(partition, job_name, application['name']),
+                  "stages": [
+                    {
+                      "multiline": {
+                        # TODO
+                        #"firstline": "^# Time: \\d{2}\\d{2}\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}",
+                        "firstline": r"^# Time: \d{2}.*",
+                        "max_wait_time": "3s"
+                      }
+                    },
+                    {
+                      "regex": {
+                        "expression": ".*SET timestamp=(?P<timestamp>\\d+);.*"
+                      }
+                    },
+                    {
+                      "timestamp": {
+                        "format": "Unix",
+                        "source": "timestamp"
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/mariadb_slowquery.log",
+                application,
+            )})
+        job_name = f"{partition['name']}-mariadb-error-log"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "pipeline_stages": [
+              {
+                "match": {
+                  "selector": get_job_selector(partition, job_name, application['name']),
+                  "stages": [
+                      {
+                        "timestamp": {
+                          "format": "2021-06-05  3:55:31",
+                          "source": "timestamp"
+                        }
+                      }
+                  ]
+                }
+              }
+            ],
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/mariadb_error.log",
+                application,
+            )})
+      if partition['type'] == 'erp5/zeo':
+        job_name = f"{partition['name']}-zeo-log"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "pipeline_stages": [
+              {
+                "match": {
+                  "selector": get_job_selector(partition, job_name, application['name']),
+                  "stages": [
+                      {
+                        "multiline": {
+                          "firstline": "^------",
+                          "max_wait_time": "3s"
+                        }
+                      },
+                      {
+                        "regex": {
+                          "expression": "^------\\n(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}\\:\\d{2}\\:\\d{2}\\,\\d{3}) (?P<level>\\S+) (?P<component>\\S+) (?P<message>.*)"
+                        }
+                      },
+                      {
+                        "timestamp": {
+                          "format": "2021-04-04 03:57:11,242",
+                          "source": "timestamp"
+                        }
+                      },
+                      {
+                        "labels": {
+                          "level": None,
+                          "component": None
+                        }
+                      }
+                    ]
+                  }
+                }
+            ],
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/zeo-*.log",
+                application,
+            )})
+      if partition['type'] == 'erp5/balancer':
+        job_name = f"{partition['name']}-balancer-access-log"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/apache-access.log",
+                application,
+            )})
+        job_name = f"{partition['name']}-balancer-error-log"
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                "{directory}/var/log/apache-error.log",
+                application,
+            )})
+
+      if partition.get('file-path'):
+        job_name = partition['name']
+        cfg['scrape_configs'].append({
+            "job_name": job_name,
+            "static_configs": get_static_configs(
+                partition,
+                job_name,
+                f"{partition['file-path']}",
+                application,
+            )})
+
+  with open(self.options['location'], 'w') as f:
+    yaml.dump(cfg, f)
+
+{% endraw %}
 
 [promtail-listen-promise]
 <= check-port-listening-promise
 hostname= ${promtail:ip}
 port = ${promtail:http-port}
-
 
 
 [apache-frontend]
@@ -280,8 +951,14 @@ instance-promises =
   ${influxdb-password-promise:wrapper-path}
   ${influxdb-database-ready-promise:wrapper-path}
   ${grafana-listen-promise:path}
-  ${loki-listen-promise:path}
-  ${promtail-listen-promise:path}
+  ${loki-query-frontend-listen-promise:path}
+  ${loki-query-scheduler-listen-promise:path}
+#  ${loki-index-gateway-listen-promise:path}
+  ${loki-querier-listen-promise:path}
+#  ${loki-read-1-listen-promise:path}
+#  ${loki-read-2-listen-promise:path}
+  ${loki-write-listen-promise:path}
+  ${loki-nginx-listen-promise:path}
   ${promtail-listen-promise:path}
   ${apache-frontend-available-promise:path}
 
