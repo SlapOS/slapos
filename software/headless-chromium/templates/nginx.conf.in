@@ -11,6 +11,9 @@ http {
   server {
     listen {{ param_headless_chromium['proxy-address'] }};
 
+    auth_basic "Remote Debugging";
+    auth_basic_user_file {{ param_headless_chromium['nginx-htpasswd-file'] }};
+
     client_body_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
     proxy_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
     fastcgi_temp_path {{ param_headless_chromium['nginx-temp-path'] }};

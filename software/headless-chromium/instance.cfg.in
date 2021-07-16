@@ -7,6 +7,7 @@ develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
 [profile-common]
+openssl-location = {{ openssl_location }}
 nginx-location = {{ nginx_location }}
 liberation-fonts-location = {{ liberation_fonts_location }}
 fontconfig-location = {{ fontconfig_location }}

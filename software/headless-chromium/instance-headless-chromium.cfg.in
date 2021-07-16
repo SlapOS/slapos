@@ -3,6 +3,7 @@
 [buildout]
 parts =
   chromium-launcher
+  generate-passwd-file
   nginx-config
   nginx-launcher
   publish-connection-information
@@ -34,13 +35,14 @@ nginx-pid-path = ${directory:log}/nginx.pid
 nginx-temp-path = ${directory:tmp}
 nginx-error-log = ${directory:log}/nginx-error.log
 nginx-access-log = ${directory:log}/nginx-access.log
+nginx-htpasswd-file = ${directory:etc}/.htpasswd
 
 # Create a launcher script for the headless shell executable.
 # TODO: get rid of --no-sandbox after testing is done
 # TODO: change --remote-debugging-address to actual IP address?
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=0.0.0.0 --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
+command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 environment =
   FONTCONFIG_FILE=${font-config:rendered}
@@ -76,11 +78,27 @@ fonts =
 includes =
   {{ parameter_list['fontconfig-location'] }}/etc/fonts/conf.d
 
+[frontend-instance-password]
+recipe = slapos.cookbook:generate.password
+username = admin
+bytes = 12
+
+# TODO: If we need to add replicate instances, I'm not sure that storing all the passwords in etc/.htpasswd will do, especially given that they all have the same default username...
+[generate-passwd-file]
+recipe = plone.recipe.command
+command =
+  echo -n '${frontend-instance-password:username}:' > ${headless-chromium:nginx-htpasswd-file}
+  openssl passwd -apr1 '${frontend-instance-password:passwd}' >> ${headless-chromium:nginx-htpasswd-file}
+environment =
+  PATH={{ parameter_list['openssl-location'] }}/bin:%(PATH)s
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 remote-debug-url = http://${headless-chromium:remote-debugging-address}
 proxy-url = http://${headless-chromium:proxy-address}
 frontend-url = ${remote-debugging-frontend:connection-secure_access}
+username = ${frontend-instance-password:username}
+password = ${frontend-instance-password:passwd}
 
 # Request a frontend URL from the CDN for the remote debugging interface.
 [remote-debugging-frontend]
