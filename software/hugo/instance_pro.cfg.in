@@ -1,3 +1,5 @@
+{% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
+
 [buildout]
 parts =
     nginx_conf
@@ -7,11 +9,10 @@ parts =
     port-listening-promise
     logrotate-entry-nginx
     publish-connection-information
-    default_index_html
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
-local-directory = {{buildout['directory']}}
+# local-directory = {{buildout['directory']}}
 offline = true
 
 extends = {{ parameter_list['template_monitor'] }}
@@ -50,12 +51,10 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.site-dir = ${basedirectory:project}
 configuration.port = 8080
-configuration.env = ${buildout:local-directory}/go.work/env.sh
 
 [hugo]
-nb_workers = 2
+nb-workers = 2
 
 ip = ${slap-configuration:ipv6-random}
 port = ${slap-configuration:configuration.port}
@@ -74,7 +73,14 @@ path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
 bin_launcher = ${basedirectory:script}/launcher 
 
-docroot = ${slap-configuration:configuration.site-dir}
+#docroot = ${slap-configuration:configuration.site-dir}
+
+# Docroot
+docroot = ${downloader:location}/public/
+default_index = ${:docroot}/index.html
+
+curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
+tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 
 [nginx_conf]
 recipe = slapos.recipe.template:jinja2
@@ -96,6 +102,34 @@ rendered = ${hugo:bin_launcher}
 mode = 700
 context = 
     section param_hugo hugo
+
+[downloader]
+recipe = slapos.recipe.build
+location = ${directory:srv}/hugo
+url = {{ parameter_dict['download_url'] or '' }}
+default_index_html = ${default_index_html:rendered}
+install =
+  import os, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    self.buildout['buildout']['offline'] = 'false'
+    if options['url']:
+      file = self.download(options['url'])
+      extract_dir = self.extract(file)
+      workdir = guessworkdir(extract_dir)
+      self.copyTree(workdir, location)
+    else:
+      os.makedirs(location)
+      shutil.copy(options['default_index_html'], location)
+  finally:
+    self.buildout['buildout']['offline'] = buildout_offline
+
+[default_index_html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${basedirectory:project}/index.html
+context =
+  key env slap-configuration:configuration.port
 
 ### Nginx Graceful
 [nginx-graceful]
@@ -146,13 +180,5 @@ config-check-secure = 1
 recipe = slapos.cookbook:publish
 <= monitor-publish
 server_url = ${hugo:access_url}
-env = ${slap-configuration:configuration.env}
 debug = ${hugo:docroot}
 server-cdn-url = ${hugo-frontend-promise:url}
-
-[default_index_html]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_list['template_index_html'] }}
-rendered = ${basedirectory:project}/index.html
-context =
-  key env slap-configuration:configuration.env
