@@ -32,6 +32,7 @@ import os
 import tempfile
 import textwrap
 import time
+import json
 
 import psutil
 import requests
@@ -185,8 +186,93 @@ class TestTelegraf(GrafanaTestCase):
 
 
 class TestLoki(GrafanaTestCase):
+  instance_max_retry = 2
   @classmethod
   def getInstanceParameterDict(cls):
+    cls._logfile = tempfile.NamedTemporaryFile(suffix='log')
+    parameter_dict = {
+        "applications": [
+    {
+      "name": "ERP5",
+      "instance-root": "/srv/slapgrid/slappart4/srv/slapos/inst/",
+      "urls": [
+        "https://softinst12345-erp5.host.vifib.net/",
+      ],
+      "partitions": [
+        {
+          "name": "jerome-dev-mariadb",
+          "reference": "slappart6",
+          "type": "erp5/mariadb",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-zodb",
+          "reference": "slappart7",
+          "type": "erp5/zeo",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-balancer",
+          "reference": "slappart9",
+          "type": "erp5/balancer",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-zope-front",
+          "reference": "slappart8",
+          "type": "erp5/zope-front",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-zope-front",
+          "reference": "slappart13",
+          "type": "erp5/zope-activity",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        }
+      ]
+    }
+  ],
+  # TODO: drop this
+        'promtail-extra-scrape-config':
+        textwrap.dedent(r'''
+                - job_name: {cls.__name__}
+                  pipeline_stages:
+                    - match:
+                        selector: '{{job="{cls.__name__}"}}'
+                        stages:
+                          - multiline:
+                              firstline: '^\d{{4}}-\d{{2}}-\d{{2}}\s\d{{1,2}}\:\d{{2}}\:\d{{2}}\,\d{{3}}'
+                              max_wait_time: 3s
+                          - regex:
+                              expression: '^(?P<timestamp>.*) - (?P<name>\S+) - (?P<level>\S+) - (?P<message>.*)'
+                          - timestamp:
+                              format: 2006-01-02T15:04:05Z00:00
+                              source: timestamp
+                          - labels:
+                              level:
+                              name:
+                  static_configs:
+                    - targets:
+                        - localhost
+                      labels:
+                        job: {cls.__name__}
+                        __path__: {cls._logfile.name}
+            ''').format(**locals())
+    }
+    return {'_': json.dumps(parameter_dict)}
+
+
+  def xgetInstanceParameterDict(cls):
     cls._logfile = tempfile.NamedTemporaryFile(suffix='log')
     return {
         'promtail-extra-scrape-config':
@@ -227,6 +313,7 @@ class TestLoki(GrafanaTestCase):
     )['loki-url']
 
   def test_loki_available(self):
+
     self.assertEqual(
         requests.codes.ok,
         requests.get('{self.loki_url}/ready'.format(**locals()),
