@@ -55,8 +55,10 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "download_url": "",
-    "replicate-quantity": 1
+    "title": "",
+    "download_url": null,
+    "port": 8081,
+    "monitor-httpd-port": 8197
   }
 
 [switch-softwaretype]
