@@ -1,55 +1,86 @@
+# insipired from
+# https://github.com/grafana/loki/blob/1489c1731277c327e3661da182bfc6c90d4559f4/tools/dev/loki-boltdb-storage-s3/docker-compose.yml
+# and othe configuration examples with microservices, because the single binary
+# mode assumes running on 127.0.0.1, but in slapos we want to bind on partition's
+# addresses
+
 auth_enabled: false
+
+http_prefix:
 
 server:
   http_listen_address: {{ loki['ip'] }}
-  http_listen_port: {{ loki['port'] }}
   grpc_listen_address: {{ loki['ip'] }}
-  grpc_listen_port: {{ loki['grpc-port'] }}
+  grpc_server_max_recv_msg_size: 1.048576e+08
+  grpc_server_max_send_msg_size: 1.048576e+08
+
+# # TODO ?
+# wal:
+#   enabled: true
+#   dir: /loki/wal
+
+common:
+  compactor_address: http://{{ loki['ip'] }}:{{ loki['write-http-port'] }}
+
+schema_config:
+  configs:
+  - from: 2020-05-15
+    store: boltdb-shipper
+    object_store: filesystem
+    schema: v11
+    index:
+      prefix: index_
+      period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: {{ loki['boltdb-shipper-active-index-directory'] }}
+    cache_location: {{ loki['boltdb-shipper-cache-location'] }}
+  filesystem:
+    directory: {{ loki['storage-filesystem-directory'] }}
+
+limits_config:
+  reject_old_samples: false
+  enforce_metric_name: false
+  ingestion_rate_mb: 1024
+  ingestion_burst_size_mb: 1024
+
 
 ingester:
   lifecycler:
     address: {{ loki['ip'] }}
     ring:
       kvstore:
-        store: inmemory
+        store: memberlist
       replication_factor: 1
-  chunk_idle_period: 15m
 
-schema_config:
-  configs:
-  - from: 2018-04-15
-    store: boltdb
-    object_store: filesystem
-    schema: v9
-    index:
-      prefix: index_
-      period: 168h
+compactor:
+    compaction_interval: 1m
+    retention_enabled: true
+    working_directory: {{ loki['compactor-working-directory'] }}
 
-storage_config:
-  boltdb:
-    directory: {{ loki['storage-boltdb-dir'] }}
+frontend:
+  log_queries_longer_than: 5s
+  compress_responses: true
+  max_outstanding_per_tenant: 2048
+  tail_proxy_url: http://{{ loki['ip'] }}:{{ loki['querier-http-port']}}
 
-  filesystem:
-    directory: {{ loki['storage-filesystem-dir'] }}
+frontend_worker:
+  scheduler_address: {{ loki['ip'] }}:{{ loki['query-scheduler-grpc-port'] }}
+#testERP5Type
+memberlist:
+  bind_addr:
+    - {{ loki['ip'] }}
 
-limits_config:
-  enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
+  join_members:
+#  - {{ loki['ip'] }}:{{ loki['read-1-memberlist-port'] }}
+  - {{ loki['ip'] }}:{{ loki['querier-memberlist-port'] }}
+#  - {{ loki['ip'] }}:{{ loki['write-memberlist-port'] }}
 
-chunk_store_config:
-  max_look_back_period: 0
 
-table_manager:
-  chunk_tables_provisioning:
-    inactive_read_throughput: 0
-    inactive_write_throughput: 0
-    provisioned_read_throughput: 0
-    provisioned_write_throughput: 0
-  index_tables_provisioning:
-    inactive_read_throughput: 0
-    inactive_write_throughput: 0
-    provisioned_read_throughput: 0
-    provisioned_write_throughput: 0
-  retention_deletes_enabled: false
-  retention_period: 0
+query_scheduler:
+  max_outstanding_requests_per_tenant: 1024
+
+querier:
+  query_ingesters_within: 2h
+

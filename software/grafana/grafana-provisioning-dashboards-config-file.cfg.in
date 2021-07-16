@@ -1,0 +1,11 @@
+# https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards
+
+apiVersion: 1
+
+providers:
+  - name: SlapOS
+    folder: ''
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: {{ dashboards_dir }}

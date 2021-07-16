@@ -6,6 +6,7 @@
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
+{% set character_set_server = slapparameter_dict.get('character-set-server', 'utf8mb4') -%}
 {% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
@@ -99,7 +100,8 @@ time = {{ dumps(backup_periodicity) }}
 #   can be fully restored.
 # master-data: use value "2" as we are not in a replication case
 #}
-command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+command = "${binary-wrap-mysqldump:wrapper-path}" --all-databases --default-character-set={{ character_set_server }} --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+xcommand = "${binary-wrap-mysqldump:wrapper-path}" --all-databases--flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
 {# KEEP GLOB PATTERN IN SYNC with generated filenames above
 #           YYYYmmddHHMMSS -#}
 file-glob = ??????????????.sql.gz

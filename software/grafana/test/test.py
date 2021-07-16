@@ -32,6 +32,7 @@ import os
 import tempfile
 import textwrap
 import time
+import json
 
 import psutil
 import requests
@@ -102,7 +103,7 @@ class TestGrafana(GrafanaTestCase):
     with open(
         os.path.join(self.computer_partition_root_path, 'etc',
                      'grafana-config-file.cfg')) as f:
-      config.readfp(io.StringIO('[default]\n' + f.read()))
+      config.read_file(io.StringIO('[default]\n' + f.read()))
     self.assertEqual(config.get('smtp', 'enabled'), 'false')
 
 
@@ -185,8 +186,109 @@ class TestTelegraf(GrafanaTestCase):
 
 
 class TestLoki(GrafanaTestCase):
+  instance_max_retry = 2
   @classmethod
   def getInstanceParameterDict(cls):
+    cls._logfile = tempfile.NamedTemporaryFile(suffix='log')
+    parameter_dict = {
+        "applications": [
+    {
+      "name": "System",
+      "instance-root": "/",
+      "partitions": [
+        {
+          # no slapos for system application
+          # XXX example
+          "name": "syslog",
+          "reference": "syslog",
+          "files": [
+            "/srv/slapgrid/slappart15/grosgzip/bench.log",
+          ]
+        },
+      ]
+    },
+    {
+      "name": "ERP5",
+      "instance-root": "/srv/slapgrid/slappart15/srv/runner/instance/",
+      "urls": [
+        # TODO
+       # "https://XXX.host.vifib.net/erp5/",
+      ],
+      "partitions": [
+        {
+          "name": "jerome-dev-mariadb",
+          "reference": "slappart3",
+          "type": "erp5/mariadb",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-zodb",
+          "reference": "slappart4",
+          "type": "erp5/zeo",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-balancer",
+          "reference": "slappart6",
+          "type": "erp5/balancer",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        {
+          "name": "jerome-dev-zope-front",
+          "reference": "slappart5",
+          "type": "erp5/zope-front",
+          #"static-tags": {
+          #  "XXX": "needed?"
+          #}
+        },
+        # {
+          # "name": "jerome-dev-zope-front",
+          # "reference": "slappart13",
+          # "type": "erp5/zope-activity",
+          # #"static-tags": {
+          # #  "XXX": "needed?"
+          # #}
+        # }
+      ]
+    }
+  ],
+  # TODO: drop this
+        'promtail-extra-scrape-config':
+        textwrap.dedent(r'''
+                - job_name: {cls.__name__}
+                  pipeline_stages:
+                    - match:
+                        selector: '{{job="{cls.__name__}"}}'
+                        stages:
+                          - multiline:
+                              firstline: '^\d{{4}}-\d{{2}}-\d{{2}}\s\d{{1,2}}\:\d{{2}}\:\d{{2}}\,\d{{3}}'
+                              max_wait_time: 3s
+                          - regex:
+                              expression: '^(?P<timestamp>.*) - (?P<name>\S+) - (?P<level>\S+) - (?P<message>.*)'
+                          - timestamp:
+                              format: 2006-01-02T15:04:05Z00:00
+                              source: timestamp
+                          - labels:
+                              level:
+                              name:
+                  static_configs:
+                    - targets:
+                        - localhost
+                      labels:
+                        job: {cls.__name__}
+                        __path__: {cls._logfile.name}
+            ''').format(**locals())
+    }
+    return {'_': json.dumps(parameter_dict)}
+
+
+  def xgetInstanceParameterDict(cls):
     cls._logfile = tempfile.NamedTemporaryFile(suffix='log')
     return {
         'promtail-extra-scrape-config':
@@ -227,9 +329,10 @@ class TestLoki(GrafanaTestCase):
     )['loki-url']
 
   def test_loki_available(self):
+    import pdb;pdb; set_trace()
     self.assertEqual(
         requests.codes.ok,
-        requests.get('{self.loki_url}/ready'.format(**locals()),
+        requests.get(f'{self.loki_url}/ready',
                      verify=False).status_code)
 
   def test_log_ingested(self):
