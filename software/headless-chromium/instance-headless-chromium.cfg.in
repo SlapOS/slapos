@@ -19,6 +19,7 @@ home = ${buildout:directory}
 tmp = ${:home}/tmp
 log = ${:home}/log
 etc = ${:home}/etc
+ssl = ${:etc}/ssl
 service = ${:etc}/service
 
 [headless-chromium]
@@ -36,6 +37,8 @@ nginx-temp-path = ${directory:tmp}
 nginx-error-log = ${directory:log}/nginx-error.log
 nginx-access-log = ${directory:log}/nginx-access.log
 nginx-htpasswd-file = ${directory:etc}/.htpasswd
+nginx-key-file = ${frontend-instance-certificate:key-file}
+nginx-cert-file = ${frontend-instance-certificate:cert-file}
 
 # Create a launcher script for the headless shell executable.
 # TODO: get rid of --no-sandbox after testing is done
@@ -78,6 +81,28 @@ fonts =
 includes =
   {{ parameter_list['fontconfig-location'] }}/etc/fonts/conf.d
 
+# Generate a self-signed certificate for the Nginx proxy.
+[frontend-instance-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${:common-name}" \
+      -newkey rsa:1024 -keyout ${:key-file} \
+      -out ${:cert-file}
+    openssl x509 -addtrust serverAuth \
+      -in ${:cert-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${directory:ssl}/${:_buildout_section_name_}.key
+cert-file = ${directory:ssl}/${:_buildout_section_name_}.cert
+common-name = ${headless-chromium:ipv6}
+environment =
+  PATH={{ parameter_list['openssl-location'] }}/bin:%(PATH)s
+
+# Generate a username/password combination for the Nginx proxy.
 [frontend-instance-password]
 recipe = slapos.cookbook:generate.password
 username = admin
@@ -95,7 +120,7 @@ environment =
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 remote-debug-url = http://${headless-chromium:remote-debugging-address}
-proxy-url = http://${headless-chromium:proxy-address}
+proxy-url = https://${headless-chromium:proxy-address}
 frontend-url = ${remote-debugging-frontend:connection-secure_access}
 username = ${frontend-instance-password:username}
 password = ${frontend-instance-password:passwd}
@@ -107,7 +132,7 @@ recipe = slapos.cookbook:requestoptional
 name = Headless Chromium Remote Debugging Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = http://${headless-chromium:proxy-address}
+config-url = https://${headless-chromium:proxy-address}
 config-https-only = true
 config-type = websocket
 config-websocket-path-list = /devtools

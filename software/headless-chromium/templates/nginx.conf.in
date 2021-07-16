@@ -9,10 +9,15 @@ http {
   access_log {{ param_headless_chromium['nginx-access-log'] }};
 
   server {
-    listen {{ param_headless_chromium['proxy-address'] }};
+    listen {{ param_headless_chromium['proxy-address'] }} ssl;
 
+    # Require username/password to access remote debugging port.
     auth_basic "Remote Debugging";
     auth_basic_user_file {{ param_headless_chromium['nginx-htpasswd-file'] }};
+
+    # Use self-signed SSL certificate.
+    ssl_certificate {{ param_headless_chromium['nginx-cert-file'] }};
+    ssl_certificate_key {{ param_headless_chromium['nginx-key-file'] }};
 
     client_body_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
     proxy_temp_path {{ param_headless_chromium['nginx-temp-path'] }};
