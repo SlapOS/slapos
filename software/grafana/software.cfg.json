@@ -1,7 +1,7 @@
 {
   "name": "Grafana",
   "description": "Grafana, Telegraf and Influxdb",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "Default",
