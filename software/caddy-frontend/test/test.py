@@ -1815,6 +1815,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_missing.text
     )
 
+  @skip('Not implemented in new switch-software recipe')
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
