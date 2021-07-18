@@ -1815,6 +1815,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_missing.text
     )
 
+  @skip('Not implemented in new switch-software recipe')
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
@@ -4618,6 +4619,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       }
     }
 
+  @skip('Not implemented in new switch-software recipe')
   def test_extra_slave_instance_list_not_present_destroyed_request(self):
     # now instantiate 2nd partition in started state
     # and due to port collision, stop the first one

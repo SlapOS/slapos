@@ -96,9 +96,9 @@ expose-csr_id-var = ${:var}/expose-csr_id
 slave-introspection-var = ${:var}/slave-introspection
 
 [switch-caddy-softwaretype]
-recipe = slapos.cookbook:switch-softwaretype
-single-default = dynamic-custom-personal-profile-slave-list:rendered
-single-custom-personal = dynamic-custom-personal-profile-slave-list:rendered
+recipe = slapos.cookbook:softwaretype
+single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
+single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
 
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
@@ -282,7 +282,6 @@ organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
 partition_ipv6 =  ${slap-configuration:ipv6-random}
-# {{ dumps(instance_parameter_dict['ipv6-random']) }}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
@@ -321,7 +320,6 @@ extra-context =
 template = {{ software_parameter_dict['template_caddy_frontend_configuration'] }}
 rendered = ${caddy-configuration:frontend-configuration}
 local_ipv4 =  {{ dumps(instance_parameter_dict['ipv4-random']) }}
-# partition_ipv6 =  {{ dumps(instance_parameter_dict['ipv6-random']) }}
 extra-context =
     key instance_home buildout:directory
     key master_certificate caddy-configuration:master-certificate
