@@ -312,7 +312,7 @@ output = ${directory:plugins}/${:name}
 module = check_url_available
 name = monitor-httpd-listening-on-tcp.py
 config-url = ${monitor-httpd-conf-parameter:url}
-config-check-secure = 1
+config-http-code = 401
 
 [monitor-publish-parameters]
 # XXX depends on monitor-base section
@@ -362,7 +362,7 @@ module = check_url_available
 name = monitor-http-frontend.py
 url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
-config-check-secure = 1
+config-http-code = 401
 
 [monitor-bootstrap-promise]
 <= monitor-promise-base

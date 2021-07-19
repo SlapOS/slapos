@@ -94,7 +94,7 @@ config-port = $${frontend-instance:port}
 module = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${remote-frontend:connection-secure_access}
-config-check-secure = 1
+config-http-code = 401
 
 {% if additional_frontend %}
 [remote-additional-frontend-url-available-promise]
@@ -102,7 +102,7 @@ config-check-secure = 1
 module = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${remote-additional-frontend:connection-secure_access}
-config-check-secure = 1
+config-http-code = 401
 {% endif %}
 
 [slapos-standalone-listen-promise]
