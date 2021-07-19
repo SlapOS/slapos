@@ -7,6 +7,7 @@ parts =
   nginx-config
   nginx-launcher
   publish-connection-information
+  frontend-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -45,7 +46,7 @@ nginx-cert-file = ${frontend-instance-certificate:cert-file}
 # TODO: change --remote-debugging-address to actual IP address?
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line =  {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
+command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 environment =
   FONTCONFIG_FILE=${font-config:rendered}
@@ -119,6 +120,7 @@ environment =
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+<= monitor-publish
 remote-debug-url = http://${headless-chromium:remote-debugging-address}
 proxy-url = https://${headless-chromium:proxy-address}
 frontend-url = ${remote-debugging-frontend:connection-secure_access}
@@ -137,3 +139,36 @@ config-https-only = true
 config-type = websocket
 config-websocket-path-list = /devtools
 return = domain secure_access
+
+# Old-style promise to make sure that the CDN is properly configured.
+[frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = headless-chromium-frontend.py
+config-url = ${remote-debugging-frontend:connection-secure_access}
+config-check-secure = 1
+
+# The following is the new-style promise, for when
+# https://lab.nexedi.com/nexedi/slapos.toolbox/merge_requests/98 gets
+# merged.
+
+# Promise to make sure the remote debugging frontend returns 200 when
+# queried with the correct credentials.
+# [frontend-200-promise]
+# <= monitor-promise-base
+# module = check_url_available
+# name = headless-chromium-frontend-ok.py
+# url = ${remote-debugging-frontend:connection-secure_access}
+# config-url = ${:url}
+# config-username = ${frontend-instance-password:username}
+# config-password = ${frontend-instance-password:passwd}
+
+# Promise to make sure that the remote debugging frontend returns 401
+# when queried with no credentials.
+# [frontend-401-promise]
+# <= monitor-promise-base
+# module = check_url_available
+# name = headless-chromium-frontend-secure.py
+# url = ${remote-debugging-frontend:connection-secure_access}
+# config-url = ${:url}
+# config-http-code = 401

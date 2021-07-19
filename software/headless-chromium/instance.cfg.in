@@ -14,6 +14,7 @@ fontconfig-location = {{ fontconfig_location }}
 chromium-wrapper = {{ chromium_wrapper }}
 template-nginx-config = {{ template_nginx_config_target }}
 template-fonts-conf = {{ template_fonts_conf_target }}
+template-monitor = {{ template_monitor }}
 
 [instance-headless-chromium]
 recipe = slapos.recipe.template:jinja2
