@@ -3,7 +3,7 @@ SET @@SESSION.SQL_LOG_BIN=0;
 USE mysql;
 {% set mroonga = parameter_dict.get('mroonga', 'ha_mroonga.so') -%}
 {% if mroonga %}
-SOURCE {{ parameter_dict['mroonga-mariadb-install-sql'] }};
+#SOURCE {{ parameter_dict['mroonga-mariadb-install-sql'] }};
 {% endif %}
 DROP FUNCTION IF EXISTS sphinx_snippets;
 #CREATE FUNCTION sphinx_snippets RETURNS STRING SONAME 'ha_sphinx.so';
@@ -22,9 +22,9 @@ CREATE DATABASE IF NOT EXISTS `repman_slave_definition`;
                        'ascii_general_ci': 'ascii',
                        'ascii_bin': 'ascii'} -%}
 {% if charset %}
-{%   set charset_collate = "CHARACTER SET %s" % charset -%}
+{%   set charset_collate = "DEFAULT CHARACTER SET %s" % charset -%}
 {%   if charset_dict.get(charset) -%}
-{%     set charset_collate = "CHARACTER SET %s COLLATE %s" % (charset_dict[charset], charset) -%}
+{%     set charset_collate = "DEFAULT CHARACTER SET %s COLLATE %s" % (charset_dict[charset], charset) -%}
 {%   endif -%}
 {% endif -%}
 CREATE DATABASE IF NOT EXISTS `{{ name }}` {{ charset_collate }};

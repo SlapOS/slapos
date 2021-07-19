@@ -10,7 +10,7 @@ get_token () {
 
 run_mysql () {
   {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
-  --protocol=socket -uroot -hlocalhost "$@"
+  --protocol=socket -u$USER -hlocalhost "$@"
 }
 
 TOKEN=$(get_token | {{ jq_bin }} -r '.token')
@@ -23,10 +23,10 @@ if [ "$DATADIR" = "{{ partition_dir }}" ]; then
 use repman_slave_definition;
 
 CREATE TABLE IF NOT EXISTS \`slave\` (
-  \`name\` varchar(20) NOT NULL,
+  \`name\` varchar(80) NOT NULL,
   \`state\` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (\`name\`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 UPDATE \`slave\` set \`state\`=false;
 {% for name in database_name.split(' ') -%}

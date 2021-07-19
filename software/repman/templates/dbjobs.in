@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER={{ parameter_dict['db-user'] }}
+DBUSER={{ parameter_dict['db-user'] }}
 PASSWORD={{ parameter_dict['db-password'] }}
 ERROLOG={{ parameter_dict['mysql-dir'] }}/.system/logs/errors.log
 SLOWLOG={{ parameter_dict['mysql-dir']}}/.system/logs/sql-slow
@@ -54,7 +54,7 @@ partialRestore()
     mv $BACKUPDIR/mysql/$file.* $DATADIR/mysql/
     $MYSQL_CLIENT  -e "set sql_log_bin=0;FLUSH TABLE mysql.$file"
  done
- cat $BACKUPDIR/xtrabackup_info | grep binlog_pos | awk  -F, '{ print $3 }' | sed -e 's/GTID of the last change/set sql_log_bin=0;set global gtid_slave_pos=/g' | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER
+ cat $BACKUPDIR/xtrabackup_info | grep binlog_pos | awk  -F, '{ print $3 }' | sed -e 's/GTID of the last change/set sql_log_bin=0;set global gtid_slave_pos=/g' | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER
  $MYSQL_CLIENT -e "flush privileges;start slave;"
 }
 
@@ -63,7 +63,7 @@ kill -9 $(lsof -t -i:{{ parameter_dict['socat-port'] }} -sTCP:LISTEN)
 for job in "${JOBS[@]}"
 do
 
- TASK=($(echo "select concat(id,'@',server,':',port) from replication_manager_schema.jobs WHERE task='$job' and done=0 order by task desc limit 1" | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER -N))
+ TASK=($(echo "select concat(id,'@',server,':',port) from replication_manager_schema.jobs WHERE task='$job' and done=0 order by task desc limit 1" | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER -N))
 
  ADDRESS=($(echo $TASK | awk -F@ '{ print $2 }'))
  ID=($(echo $TASK | awk -F@ '{ print $1 }'))
@@ -78,13 +78,13 @@ do
       reseedmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="reset master;set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER --init-command="reset master;set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
        $MYSQL_CLIENT -e 'start slave;'
       ;;
       flashbackmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$USER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
        $MYSQL_CLIENT  -e 'start slave;'
       ;;
       reseedmariabackup)
@@ -108,7 +108,7 @@ do
       ;;
       mariabackup)
        cd {{ parameter_dict['tmp-dir'] }}
-       mariadb-backup --innobackupex --defaults-file={{ parameter_dict['dbjob-cnf'] }} --socket='{{ parameter_dict["mysqld-socket"] }}'  --no-version-check  --user=$USER --password=$PASSWORD --stream=xbstream {{ parameter_dict['tmp-dir'] }}/ | socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
+       mariadb-backup --innobackupex --defaults-file={{ parameter_dict['dbjob-cnf'] }} --socket='{{ parameter_dict["mysqld-socket"] }}'  --no-version-check  --user=$USER --stream=xbstream {{ parameter_dict['tmp-dir'] }}/ | socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
       ;;
       error)
        cat $ERROLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out

@@ -131,8 +131,9 @@ template = {{ parameter_dict['template-init-root-wrapper'] }}
 [mysql-slave-db-cleanup]
 < = jinja2-template-script-base
 rendered = ${directory:bin}/manage_slave_db
+db-name = {{ slapparameter_dict['database-name'] }}
 extra-context =
-  raw database_name      {{ slapparameter_dict['database-name'] }}
+  key database_name      :db-name
 template = {{ parameter_dict['template-manage-db'] }}
 
 [mysqld]
@@ -193,13 +194,18 @@ target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
 
 [binary-wrap-base]
-recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
 # will reject it.
-command-line = 
-  "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
-  --defaults-file="${directory:etc}/mysql/my.cnf" --protocol=socket ${:extra-args}
-wrapper-path = ${directory:bin}/${:command}
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/${:command}
+mode = 755
+template =
+  inline:#!/bin/sh
+  exec {{ parameter_dict['mariadb-location'] }}/bin/${:command} \
+  --defaults-file="${directory:etc}/mysql/my.cnf" \
+  --protocol=socket --user=$USER \
+  ${:extra-args} "$@"
+wrapper-path = ${:rendered}
 extra-args =
 
 [binary-wrap-mysql]
@@ -223,6 +229,11 @@ command = mysqladmin
 <= binary-wrap-base
 command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --skip-write-binlog
 command = mysql_tzinfo_to_sql
+template =
+  inline:#!/bin/sh
+  exec {{ parameter_dict['mariadb-location'] }}/bin/${:command} \
+  --defaults-file="${directory:etc}/mysql/my.cnf" \
+  --skip-write-binlog "$@"
 
 [binary-wrap-pt-digest]
 <= binary-wrap-base
