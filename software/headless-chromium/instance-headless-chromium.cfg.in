@@ -13,6 +13,9 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
+# Extend monitoring stack.
+extends = {{ parameter_list['template-monitor'] }}
+
 # Create necessary directories.
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -23,6 +26,7 @@ etc = ${:home}/etc
 ssl = ${:etc}/ssl
 service = ${:etc}/service
 
+# Options for instance configuration.
 [headless-chromium]
 ipv4 = {{ partition_ipv4 }}
 ipv6 = {{ partition_ipv6 }}
@@ -109,7 +113,9 @@ recipe = slapos.cookbook:generate.password
 username = admin
 bytes = 12
 
-# TODO: If we need to add replicate instances, I'm not sure that storing all the passwords in etc/.htpasswd will do, especially given that they all have the same default username...
+# TODO: If we need to add replicate instances, I'm not sure that storing
+# all the passwords in etc/.htpasswd will do, especially given that they
+# all have the same default username...
 [generate-passwd-file]
 recipe = plone.recipe.command
 command =
@@ -139,6 +145,9 @@ config-https-only = true
 config-type = websocket
 config-websocket-path-list = /devtools
 return = domain secure_access
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 
 # Old-style promise to make sure that the CDN is properly configured.
 [frontend-promise]

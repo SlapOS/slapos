@@ -32,7 +32,8 @@ default-parameters =
   {
     "remote-debugging-port": 8081,
     "nginx-proxy-port": 8082,
-    "target-url": "https://www.example.com"
+    "target-url": "https://www.example.com",
+    "monitor-httpd-port": 8083
   }
 
 [switch-softwaretype]
