@@ -1815,10 +1815,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_missing.text
     )
 
-  @skip('Not implemented in new switch-software recipe')
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg.cfg')
     for line in [
       q for q in open(buildout_file).readlines()
       if q.startswith('config-slave-list') or q.startswith(
@@ -4619,7 +4618,6 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
       }
     }
 
-  @skip('Not implemented in new switch-software recipe')
   def test_extra_slave_instance_list_not_present_destroyed_request(self):
     # now instantiate 2nd partition in started state
     # and due to port collision, stop the first one
@@ -4644,7 +4642,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     self.slap.waitForInstance(self.instance_max_retry)
 
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
     with open(buildout_file) as fh:
       buildout_file_content = fh.read()
       node_1_present = re.search(
