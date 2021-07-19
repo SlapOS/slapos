@@ -253,7 +253,7 @@ extra-context =
 module = check_url_available
 name = kedifa-http-reply.py
 # Kedifa replies 400 on /, so use it to be sure that Kedifa replied
-config-http_code = 400
+config-http-code = 400
 config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
 config-ca-cert-file = ${kedifa-config:ca-certificate}
 
