@@ -2,7 +2,7 @@
 
 run_mysql () {
   {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
-  --protocol=socket -uroot -hlocalhost "$@"
+  --protocol=socket -u$USER -hlocalhost "$@"
 }
 
 if [ ! -f "{{ init_password_done }}" ]; then
