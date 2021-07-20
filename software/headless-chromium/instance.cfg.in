@@ -20,7 +20,7 @@ template-monitor = {{ template_monitor }}
 recipe = slapos.recipe.template:jinja2
 template = {{ template_instance_headless_chromium_target }}
 rendered = ${buildout:directory}/${:filename}
-filename = instance_headless-chromium.cfg
+filename = instance-headless-chromium.cfg
 context =
   section buildout buildout
   section parameter_list profile-common
