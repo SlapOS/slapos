@@ -815,7 +815,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       self.fail(e)
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
-    raise NotImplementedError(parameter_dict)
     log_access_url = parameter_dict.pop('log-access-url')
 
     self.assertTrue(len(log_access_url) >= 1)
