@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export LD_LIBRARY_PATH={{ ld_library_path }}
+exec {{ chromium_binary }} "$@"
