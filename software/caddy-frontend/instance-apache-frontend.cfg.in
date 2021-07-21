@@ -10,6 +10,7 @@ parts =
   directory
   logrotate-entry-caddy
   caddy-frontend
+  caddyprofiledeps
   switch-caddy-softwaretype
   caucase-updater
   caucase-updater-promise
