@@ -10,6 +10,7 @@ parts =
   directory
   logrotate-entry-caddy
   caddy-frontend
+  caddyprofiledeps
   switch-caddy-softwaretype
   caucase-updater
   caucase-updater-promise
@@ -98,7 +99,7 @@ slave-introspection-var = ${:var}/slave-introspection
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:rendered
-RootSoftwareInstance = ${:default}
+RootSoftwareInstance = $${:default}
 single-default = dynamic-custom-personal-profile-slave-list:rendered
 single-custom-personal = dynamic-custom-personal-profile-slave-list:rendered
 
@@ -277,6 +278,7 @@ stop-on-error = True
 < = jinja2-template-base
 depends = ${caddyprofiledeps:recipe}
 template = {{ software_parameter_dict['profile_slave_list'] }}
+rendered = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
 filename = custom-personal-instance-slave-list.cfg
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
 software_type = single-custom-personal
