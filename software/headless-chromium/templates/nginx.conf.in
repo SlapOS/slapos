@@ -65,6 +65,9 @@ http {
       sub_filter_once on;
       sub_filter_types application/json;
 
+      sub_filter "ws://{{ param_headless_chromium['remote-debugging-address'] }}" "wss://$host";
+      sub_filter_types application/json;
+
       # We want to use our own DevTools frontend rather than
       # https://chrome-devtools-frontend.appspot.com. There should be a
       # --custom-devtools-frontend flag for Chromium, but it doesn't
