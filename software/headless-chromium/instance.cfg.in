@@ -12,6 +12,7 @@ nginx-location = {{ nginx_location }}
 liberation-fonts-location = {{ liberation_fonts_location }}
 fontconfig-location = {{ fontconfig_location }}
 chromium-wrapper = {{ chromium_wrapper }}
+devtools-frontend = {{ devtools_frontend }}
 template-nginx-config = {{ template_nginx_config_target }}
 template-fonts-conf = {{ template_fonts_conf_target }}
 template-monitor = {{ template_monitor }}

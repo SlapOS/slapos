@@ -33,6 +33,7 @@ ipv6 = {{ partition_ipv6 }}
 remote-debugging-port = {{ parameter_dict['remote-debugging-port'] }}
 url = {{ parameter_dict['target-url'] }}
 remote-debugging-address = ${:ipv4}:${:remote-debugging-port}
+devtools-frontend-root = {{ parameter_list['devtools-frontend'] }}
 
 nginx-port = {{ parameter_dict['nginx-proxy-port'] }}
 proxy-address = [${:ipv6}]:${:nginx-port}
@@ -47,7 +48,6 @@ nginx-cert-file = ${frontend-instance-certificate:cert-file}
 
 # Create a launcher script for the headless shell executable.
 # TODO: get rid of --no-sandbox after testing is done
-# TODO: change --remote-debugging-address to actual IP address?
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}

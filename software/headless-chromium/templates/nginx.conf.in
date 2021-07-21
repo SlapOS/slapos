@@ -8,6 +8,12 @@ events {
 http {
   access_log {{ param_headless_chromium['nginx-access-log'] }};
 
+  types {
+    text/html html;
+    text/css css;
+    application/javascript js;
+  }
+
   server {
     listen {{ param_headless_chromium['proxy-address'] }} ssl;
 
@@ -34,6 +40,11 @@ http {
       proxy_set_header Connection "Upgrade";
     }
 
+    # The DevTools frontend is served from /serve_file/@{version_hash}.
+    location ~ "^\/serve_file\/@[0-9a-f]{5,40}\/(.*)" {
+      alias {{ param_headless_chromium['devtools-frontend-root'] }}/$1;
+    }
+
     location / {
       proxy_http_version 1.1;
 
@@ -53,6 +64,13 @@ http {
       sub_filter "ws={{ param_headless_chromium['remote-debugging-address'] }}" "wss=$host";
       sub_filter_once on;
       sub_filter_types application/json;
+
+      # We want to use our own DevTools frontend rather than
+      # https://chrome-devtools-frontend.appspot.com. There should be a
+      # --custom-devtools-frontend flag for Chromium, but it doesn't
+      # seem to work.
+      sub_filter "chrome-devtools-frontend.appspot.com" "$host";
+      sub_filter_types *;
     }
   }
 }
