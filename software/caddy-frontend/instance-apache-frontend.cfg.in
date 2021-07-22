@@ -276,7 +276,7 @@ stop-on-error = True
 
 [dynamic-custom-personal-profile-slave-list]
 < = jinja2-template-base
-depends = ${caddyprofiledeps:recipe}
+depends = ${caddyprofiledeps:recipe}:${profile-slave-list:target}:${software-parameter-section}:${slave-log-directory-dict}
 template = {{ software_parameter_dict['profile_slave_list'] }}
 filename = custom-personal-instance-slave-list.cfg
 master_key_download_url = {{ dumps(slapparameter_dict['master-key-download-url']) }}
