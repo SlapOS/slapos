@@ -1,4 +1,3 @@
-{% if instance_parameter_dict['slap-software-type'] in software_type %}
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
 {#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
@@ -44,13 +43,7 @@ context =
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
-{% if instance_parameter_dict['slap-software-type'] == "replicate" %}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
-{% elif instance_parameter_dict['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
-{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
-{% else %}
-{%   set frontend_type = "%s%s" % (single_type_key, instance_parameter_dict['slap-software-type']) %}
-{% endif %}
+{% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
 {% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
@@ -910,5 +903,3 @@ parts =
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
-#      publish-information
-{% endif %}
