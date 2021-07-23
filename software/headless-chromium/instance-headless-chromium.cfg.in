@@ -6,6 +6,7 @@ parts =
   generate-passwd-file
   nginx-config
   nginx-launcher
+  logrotate-entry-nginx
   publish-connection-information
   frontend-promise
 
@@ -69,6 +70,11 @@ context =
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_list['nginx-location'] }}/sbin/nginx -c ${headless-chromium:nginx-config-target}
 wrapper-path = ${directory:service}/nginx
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${headless-chromium:nginx-error-log} ${headless-chromium:nginx-access-log}
 
 # Generate a fonts.conf file.
 [font-config]
