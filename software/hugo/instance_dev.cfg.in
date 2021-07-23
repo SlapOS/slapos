@@ -62,6 +62,8 @@ context =
     section param_hugo hugo
     key go_environment hugo:go_environment
     key base_url hugo-frontend:connection-secure_access
+    key ip hugo:ip
+    key port hugo:port
 
 [port-listening-promise]
 <= monitor-promise-base
@@ -76,8 +78,8 @@ monitor-httpd-port = 8197
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 <= monitor-publish
-server_url = ${hugo:access_url}
-server-cdn-url = ${hugo-frontend-promise:url}
+hugo_server_url = ${hugo:access_url}
+hugo-server-cdn-url = ${hugo-frontend-promise:url}
 
 [hugo-frontend]
 <= slap-connection
