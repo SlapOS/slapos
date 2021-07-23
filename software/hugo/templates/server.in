@@ -2,4 +2,4 @@
 cd /srv/slapgrid/slappart19/srv/project/quickstart
 if [ -d "public" ]; then rm -Rf public; fi
 . {{ go_environment }}
-hugo && hugo server --bind="2001:67c:1254:e:c0::3f9e" --port=1314 --baseURL={{ base_url }} --appendPort=false
+hugo && hugo server --bind={{ ip }} --port={{ port }} --baseURL={{ base_url }} --appendPort=false
