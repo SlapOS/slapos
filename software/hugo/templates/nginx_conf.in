@@ -18,7 +18,7 @@ http {
 	index index.html;
 
     server {
-        listen [{{ param_hugo['ip'] }}]:{{ param_hugo['port'] }};
+        listen [{{ param_hugo['ip'] }}]:{{ param_hugo['nginx-port'] }};
         server_name _;
 
         keepalive_timeout 5;
