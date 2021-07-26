@@ -236,7 +236,7 @@ context =
 {#-   Set slave logrotate entry #}
 [{{slave_log_directory_section}}]
 recipe = slapos.cookbook:mkdirectory
-log-directory = {{ '${slave-log-directory-dict:' + slave_reference.lower() + '}' }}
+log-directory = {{ '${slave-log-directory-dict:' + slave_reference + '}' }}
 
 [{{slave_logrotate_section}}]
 <= logrotate-entry-base
