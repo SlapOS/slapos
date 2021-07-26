@@ -48,10 +48,9 @@ nginx-key-file = ${frontend-instance-certificate:key-file}
 nginx-cert-file = ${frontend-instance-certificate:cert-file}
 
 # Create a launcher script for the headless shell executable.
-# TODO: get rid of --no-sandbox after testing is done
 [chromium-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} --no-sandbox ${headless-chromium:url}
+command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
 wrapper-path = ${directory:service}/chromium
 environment =
   FONTCONFIG_FILE=${font-config:rendered}

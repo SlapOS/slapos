@@ -1,4 +1,5 @@
 #!/bin/sh
 
+# Note that the prebuild version needs --no-sandbox set, which is not really safe.
 export LD_LIBRARY_PATH={{ ld_library_path }}
-exec {{ chromium_binary }} "$@"
+exec {{ chromium_binary }} --no-sandbox "$@"
