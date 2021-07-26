@@ -221,7 +221,10 @@ return =
 {%- if test_runner_enabled %}
   test-runner-address-list
 {% endif %}
-{% set bt5_default_list = 'erp5_full_text_mroonga_catalog slapos_configurator' -%}
+{% set bt5_default_list = [
+  'erp5_full_text_mroonga_catalog',
+  'slapos_configurator',
+] -%}
 {% if has_jupyter -%}
 {%   do bt5_default_list.append('erp5_data_notebook') -%}
 {% endif -%}
@@ -254,6 +257,7 @@ config-wsgi = {{ dumps(slapparameter_dict.get('wsgi', True)) }}
 config-test-runner-enabled = {{ dumps(test_runner_enabled) }}
 config-test-runner-node-count = {{ dumps(test_runner_node_count) }}
 config-wcfs_enable = {{ dumps(wcfs_enable) }}
+config-test-runner-configuration = {{ dumps(slapparameter_dict.get('test-runner', {})) }}
 software-type = zope
 
 {% set global_publisher_timeout = slapparameter_dict.get('publisher-timeout') -%}

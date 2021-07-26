@@ -60,9 +60,9 @@ log = ${httpd-wrapper:log-file}
 
 [httpd-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = httpd-listen.py
-config-hostname = ${httpd-wrapper:host}
+config-host = ${httpd-wrapper:host}
 config-port = ${httpd-wrapper:port}
 
 [jscrawler-wrapper]

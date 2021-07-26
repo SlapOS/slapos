@@ -43,6 +43,7 @@ setup(name=name,
       install_requires=[
           'slapos.core',
           'slapos.cookbook',
+          'slapos.toolbox',
           'slapos.libnetworkcache',
           'erp5.util',
           'supervisor',

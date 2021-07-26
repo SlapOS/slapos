@@ -23,6 +23,31 @@
       "example": "https://softinst1234.host.vifib.net/"
     },
     "test-runner": {
+      "default": {
+        "target": "firefox"
+      },
+      "examples": [
+        {
+          "target": "selenium-server",
+          "server-url": "https://selenium.example.com",
+          "desired-capabilities": {
+            "browserName": "firefox",
+            "version": "68.0.2esr",
+            "acceptInsecureCerts": true
+          }
+        },
+        {
+          "target": "selenium-server",
+          "server-url": "https://selenium.example.com",
+          "desired-capabilities": {
+            "browserName": "chrome",
+            "version": "91.0.4472.101"
+          }
+        },
+        {
+          "target": "node"
+        }
+      ],
       "oneOf": [
         {
           "type": "object",
@@ -46,14 +71,14 @@
               "format": "uri"
             },
             "verify-server-certificate": {
-              "description": "Verify the SSL/TLS Certificats of the selenium server when using HTTPS",
+              "description": "Verify the SSL/TLS certificate of the selenium server when using HTTPS",
               "type": "boolean",
               "default": true
             },
             "server-ca-certificate": {
-              "description": "PEM encoded bundle of CA Certificates to verify the SSL/TLS Certificate of the selenium server when using HTTPS",
+              "description": "PEM encoded bundle of CA certificates to verify the SSL/TLS certificate of the selenium server when using HTTPS",
               "type": "string",
-              "default": "root certificates from http://certifi.io/en/latest/"
+              "default": "Root certificates from http://certifi.io/en/latest/"
             },
             "desired-capabilities": {
               "description": "Desired browser capabilities",
@@ -63,8 +88,13 @@
               "type": "object",
               "properties": {
                 "browserName": {
-                  "description": "Name of the browser being used, for example firefox, chrome",
-                  "type": "string"
+                  "description": "Name of the browser being used",
+                  "type": "string",
+                  "examples": [
+                    "firefox",
+                    "chrome",
+                    "safari"
+                  ]
                 },
                 "version": {
                   "description": "The browser version",
@@ -77,7 +107,7 @@
         {
           "type": "object",
           "title": "Firefox",
-          "description": "Configuration for Firefox",
+          "description": "Configuration for using firefox running as a sub-process",
           "additionalProperties": false,
           "properties": {
             "target": {

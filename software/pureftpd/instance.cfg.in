@@ -33,12 +33,12 @@ pureftpd-dir = ${:srv}/pureftpd/
 
 [check-port-listening-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = check_nginx_port.py
 
 [pureftpd-listen-promise]
 <= check-port-listening-promise
-config-hostname = ${pureftpd:ipv6}
+config-host = ${pureftpd:ipv6}
 config-port = ${pureftpd:ftp-port}
 
 [pureftpd-userinfo]

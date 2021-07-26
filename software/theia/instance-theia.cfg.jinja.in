@@ -77,16 +77,16 @@ instance-promises =
 
 [theia-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = $${:_buildout_section_name_}.py
-config-hostname = $${theia-instance:ip}
+config-host = $${theia-instance:ip}
 config-port = $${theia-instance:port}
 
 [frontend-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = $${:_buildout_section_name_}.py
-config-hostname = $${frontend-instance:ip}
+config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
 
 [remote-frontend-url-available-promise]
@@ -107,10 +107,10 @@ config-check-secure = 1
 
 [slapos-standalone-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 # XXX promise plugins can not contain "slapos" in their names
 name = standalone-listen-promise.py
-config-hostname = $${slapos-standalone-instance:hostname}
+config-host = $${slapos-standalone-instance:hostname}
 config-port = $${slapos-standalone-instance:port}
 
 [slapos-autorun-promise]

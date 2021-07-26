@@ -216,23 +216,23 @@ depends =
 
 [proxysql-{{ name }}-admin-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = proxysql-{{ name }}-admin-port-listening.py
-config-hostname=  {{ ipv4 }}
+config-host =  {{ ipv4 }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}
 
 [proxysql-{{ name }}-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = proxysql-{{ name }}-port-listening.py
-config-hostname=  {{ ipv4 }}
+config-host =  {{ ipv4 }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 [proxysql-{{ name }}-ipv6-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = proxysql-{{ name }}-ipv6-port-listening.py
-config-hostname=  {{ ip }}
+config-host =  {{ ip }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
@@ -403,16 +403,16 @@ context =
 
 [repman-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = repman_service_listen.py
-config-hostname = ${repman-parameter:ipv4}
+config-host = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:port}
 
 [repman-listen-ssl-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = repman_service_ssl_listen.py
-config-hostname = ${repman-parameter:ipv4}
+config-host = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:secure-port}
 
 [nginx-conf]
