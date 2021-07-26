@@ -131,14 +131,6 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
   </logfile>
 </logger>
 
-<zodb_db temporary>
-  <temporarystorage>
-    name temporary storage for sessioning
-  </temporarystorage>
-  mount-point /temp_folder
-  container-class Products.TemporaryFolder.TemporaryContainer
-</zodb_db>
-
 {% set developer_list = parameter_dict['developer-list'] -%}
 {% set publisher_timeout = parameter_dict['publisher-timeout'] -%}
 {% set activity_timeout = parameter_dict['activity-timeout'] -%}
