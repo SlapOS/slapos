@@ -53,9 +53,6 @@ recipe = slapos.recipe.template:jinja2
 template =
   inline:#!/bin/sh
 
-  # Set a reasonable limit (like 4 GB = 4000000 KB) on RAM usage
-  ulimit -v 4000000
-
   export FONTCONFIG_FILE=${font-config:rendered}
   exec {{ parameter_list['chromium-wrapper'] }} \
     --remote-debugging-address=${headless-chromium:ipv4} \
