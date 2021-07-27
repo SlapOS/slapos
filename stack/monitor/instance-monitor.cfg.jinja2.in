@@ -127,9 +127,9 @@ recipe = slapos.recipe.template:jinja2
 template = {{ monitor_conf_template }}
 rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
-context = section parameter_dict           monitor-conf-parameters
+context = section parameter_dict          monitor-conf-parameters
           section promise_parameter_dict  monitor-promise-conf
-          section monitor_base_urls        monitor-base-url-dict
+          section monitor_base_urls       monitor-base-url-dict
 
 [start-monitor]
 recipe = slapos.cookbook:wrapper
@@ -326,7 +326,7 @@ monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
-monitor-base-url = ${monitor-frontend-promise:url}
+monitor-base-url = ${monitor-frontend:connection-secure_access}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
@@ -373,7 +373,7 @@ config-password = ${monitor-instance-parameter:username}
 <= monitor-promise-base
 module = check_url_available
 name = monitor-http-frontend.py
-url = ${check-monitor-password-promise:url}
+url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
 config-http-code = 401
 
@@ -415,6 +415,8 @@ depends =
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd-service:wrapper-path}
   ${monitor-httpd-promise:name}
+  ${monitor-frontend-promise:name}
+  ${check-monitor-password-promise:name}
   ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
