@@ -56,7 +56,7 @@ template =
   # Set a reasonable limit (like 4 GB = 4000000 KB) on RAM usage
   ulimit -v 4000000
 
-  export FRONTCONFIG_FILE=${font-config:rendered}
+  export FONTCONFIG_FILE=${font-config:rendered}
   exec {{ parameter_list['chromium-wrapper'] }} \
     --remote-debugging-address=${headless-chromium:ipv4} \
     --remote-debugging-port=${headless-chromium:remote-debugging-port} \
