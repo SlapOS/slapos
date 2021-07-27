@@ -474,6 +474,7 @@ kedifa = ${request-kedifa:connection-monitor-base-url}
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin/
 srv = ${buildout:directory}/srv/
+tmp = ${buildout:directory}/tmp/
 backup = ${:srv}/backup
 # CAUCASE directories
 caucased = ${:srv}/caucased
@@ -864,14 +865,14 @@ rendered = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = rejected-slave-publish-ip-port-listening.py
-config-hostname = ${rejected-slave-publish-configuration:ip}
+config-host = ${rejected-slave-publish-configuration:ip}
 config-port = ${rejected-slave-publish-configuration:port}
 
 [rejected-slave-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 module = check_file_state
 name = rejected-slave.py
 config-filename = ${rejected-slave-json:rendered}
@@ -887,9 +888,10 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
       netloc=caucase_netloc,
+      tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,
-      key_len=2048,
+      key_len=2048
 )}}
 
 [buildout]

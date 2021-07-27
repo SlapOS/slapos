@@ -41,9 +41,10 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       backup_dir='${directory:backup-caucased}',
       data_dir='${directory:caucased}',
       netloc=caucase_netloc,
+      tmp='${directory:tmp}',
       service_auto_approve_count=0,
       user_auto_approve_count=1,
-      key_len=2048,
+      key_len=2048
 )}}
 
 # Create all needed directories
@@ -192,9 +193,9 @@ template = inline:
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = expose-csr_id-ip-port-listening.py
-config-hostname = ${expose-csr_id-configuration:ip}
+config-host = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]

@@ -57,10 +57,6 @@ class SlaprunnerTestCase(SlapOSInstanceTestCase):
   # Slaprunner uses unix sockets, so it needs short paths.
   __partition_reference__ = 's'
 
-class SlaprunnerTestCase(SlapOSInstanceTestCase):
-  # Slaprunner uses unix sockets, so it needs short paths.
-  __partition_reference__ = 's'
-
   def _openSoftwareRelease(self, software_release="erp5testnode/testsuite/dummy"):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     url = "%s/setCurrentProject" % parameter_dict['url']
@@ -280,6 +276,28 @@ class TestWeb(SlaprunnerTestCase):
     self.assertEqual(requests.codes.ok, resp.status_code)
     self.assertIn('SlapOS', resp.text)
 
+  def test_slaprunner_redirects(self):
+    # redirects also work as expected. In this test we visit stopAllPartition
+    # which should redirect to inspectInstance
+    parameter_dict = self.computer_partition.getConnectionParameterDict()
+    url = parameter_dict['url']
+    resp = requests.get(
+        urljoin(url, '/stopAllPartition'),
+        verify=False,
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    self.assertEqual(resp.url, urljoin(url, '/inspectInstance'))
+
+    # this also works behind a frontend
+    resp = requests.get(
+        urljoin(url, '/stopAllPartition'),
+        verify=False,
+        allow_redirects=False,
+        headers={'Host': 'example.com:1234'},
+        auth=(parameter_dict['init-user'], parameter_dict['init-password']))
+    self.assertEqual(resp.status_code, requests.codes.found)
+    self.assertEqual(resp.headers['Location'], 'https://example.com:1234/inspectInstance')
+
   def test_shellinabox(self):
     # shellinabox exists at /shellinabox and is password protected
     parameter_dict = self.computer_partition.getConnectionParameterDict()
@@ -401,14 +419,14 @@ class TestSlapOS(SlaprunnerTestCase):
   def test_slapos_command(self):
     # in ~/bin/slapos there is a wrapper setting configuration to use slapos from
     # the web runner.
-    proxy_show_output = subprocess.check_output(
-        (
-            os.path.join(self.computer_partition_root_path, 'bin', 'slapos'),
-            'proxy',
-            'show',
-        ),
-        env={})
+    slapos = os.path.join(self.computer_partition_root_path, 'bin', 'slapos')
+    # ensure the node is formatted
+    subprocess.check_call((slapos, 'node', 'format', '--now'), env={})
+    proxy_show_output = subprocess.check_output((slapos, 'proxy', 'show'), env={})
     self.assertIn(b'slaprunner', proxy_show_output)
+    # check hateoas cli support
+    computer_list_output = subprocess.check_output((slapos, 'computer', 'list'), env={})
+    self.assertIn(b'slaprunner', computer_list_output)
 
   def test_shared_part_list(self):
     # this slapos used shared_part_list

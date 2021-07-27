@@ -103,7 +103,7 @@ recipe = slapos.cookbook:pbs
 client = false
 path = $${directory:backup}
 wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+rdiffbackup-binary = ${rdiff-backup-1.3.4:location}/bin/rdiff-backup
 
 
 #----------------
@@ -141,7 +141,7 @@ context =
 
 [notifier-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
-command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${notifier:status-item-directory} --title "Status feed for $${notifier:instance-root-name}" --link $${notifier:log-url}
+command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --status-item-path $${notifier:status-item-directory} --title "Status feed for $${notifier:instance-root-name}" --link $${notifier:log-url}
 feed-path = $${directory:monitor-resilient}/notifier-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 
@@ -212,9 +212,9 @@ wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = sshd.py
-config-hostname = $${slap-network-information:global-ipv6}
+config-host = $${slap-network-information:global-ipv6}
 config-port = $${sshd-port:port}
 
 #----------------

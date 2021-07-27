@@ -65,9 +65,9 @@ key = ${gen-passwd:passwd}
 
 [onetimeupload-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = onetimeupload_promise.py
-config-hostname = ${onetimeupload-instance:ip}
+config-host = ${onetimeupload-instance:ip}
 config-port = ${onetimeupload-instance:port}
 
 [publish-connection-information]

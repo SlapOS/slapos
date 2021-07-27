@@ -73,9 +73,9 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 
 [{{promise_section_title}}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{promise_section_title}}.py
-config-hostname = {{ '${' ~ request_section_title ~ ':connection-powerdns-ipv6}' }}
+config-host = {{ '${' ~ request_section_title ~ ':connection-powerdns-ipv6}' }}
 config-port = {{ '${' ~ request_section_title ~ ':connection-powerdns-port}' }}
 
 {%  do monitor_url_list.append('${' ~ request_section_title ~ ':connection-monitor-base-url}') -%}

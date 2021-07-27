@@ -194,9 +194,9 @@ virtual-depends =
 
 [nginx-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = nginx_listen.py
-config-hostname = $${nginx-configuration:ip}
+config-host = $${nginx-configuration:ip}
 config-port = $${nginx-configuration:port}
 
 [nginx-configuration]
@@ -206,7 +206,7 @@ output = $${directory:etc}/nginx.cfg
 mode = 0600
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
-ip = $${slap-network-information:global-ipv6}
+ip = {{ partition_ipv6 }}
 port = 9443
 ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr

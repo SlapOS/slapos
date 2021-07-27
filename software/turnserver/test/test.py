@@ -60,6 +60,12 @@ class TurnServerTestCase(InstanceTestCase):
 
 class TestServices(TurnServerTestCase):
 
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'listening-ip': cls._ipv4_address
+    }
+
   def test_process_list(self):
     hash_list = [
       'software_release/buildout.cfg',
@@ -138,7 +144,7 @@ class TestParameters(TurnServerTestCase):
       'port': 3488,
       'tls-port': 5369,
       'external-ip': '127.0.0.1',
-      'listening-ip': '127.0.0.1'
+      'listening-ip': cls._ipv4_address
     }
 
   def test_turnserver_with_parameters(self):
@@ -180,7 +186,7 @@ userdb=%(instance_path)s/srv/turndb
 pidfile=%(instance_path)s/var/run/turnserver.pid
 verbose""" % {'instance_path': self.partition_path,
               'secret': secret,
-              'ipv4': '127.0.0.1',
+              'ipv4': self._ipv4_address,
               'name': 'turn.site.com',
               'external_ip': '127.0.0.1',
               'port': 3488,
@@ -192,6 +198,12 @@ verbose""" % {'instance_path': self.partition_path,
     self.assertEqual(current_config.splitlines(), expected_config.splitlines())
 
 class TestInsecureServices(TurnServerTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'listening-ip': cls._ipv4_address
+    }
 
   @classmethod
   def getInstanceSoftwareType(cls):

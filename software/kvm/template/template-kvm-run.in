@@ -6,10 +6,6 @@ import hashlib
 import os
 import socket
 import subprocess
-try:
-  from urllib.request import FancyURLopener
-except ImportError:
-  from urllib import FancyURLopener
 import gzip
 import shutil
 from random import shuffle
@@ -17,16 +13,11 @@ import glob
 import re
 import json
 
-import ssl
-
 # XXX: give all of this through parameter, don't use this as template, but as module
-qemu_img_path = '{{ parameter_dict.get("qemu-img-path") }}'
-qemu_path = '{{ parameter_dict.get("qemu-path") }}'
-disk_size = '{{ parameter_dict.get("disk-size") }}'
-disk_type = '{{ parameter_dict.get("disk-type") }}'
-disk_format = '{{ parameter_dict.get("disk-format", "qcow2")}}'
-disk_format = disk_format \
-              if disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
+qemu_img_path = {{ repr(parameter_dict["qemu-img-path"]) }}
+qemu_path = {{ repr(parameter_dict["qemu-path"]) }}
+disk_size = {{ repr(parameter_dict["disk-size"]) }}
+disk_type = {{ repr(parameter_dict["disk-type"]) }}
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
@@ -34,11 +25,7 @@ nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
             ('{{ parameter_dict.get("nbd2-host") }}',
               {{ parameter_dict.get("nbd2-port") }}))
 default_cdrom_iso = '{{ parameter_dict.get("default-cdrom-iso") }}'
-disk_path = '{{ parameter_dict.get("disk-path") }}'
 
-virtual_hard_drive_url = '{{ parameter_dict.get("virtual-hard-drive-url") }}'.strip()
-virtual_hard_drive_md5sum = '{{ parameter_dict.get("virtual-hard-drive-md5sum") }}'.strip()
-virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped") }}'.strip().lower()
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
 use_nat = '{{ parameter_dict.get("use-nat") }}'.lower()
@@ -50,15 +37,13 @@ mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
 tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
 numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
-ram_size = {{ parameter_dict.get("ram-size") }}
 ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
 init_ram_size = {{ parameter_dict.get("init-ram-size") }}
+init_smp_count = {{ parameter_dict.get("init-smp-count") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
-external_disk_format = '{{ parameter_dict.get("external-disk-format", "qcow2") }}'
-external_disk_format = external_disk_format \
-              if external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed'] else 'qcow2'
+external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
 disk_storage_dict = {}
 disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
 map_storage_list = []
@@ -67,19 +52,9 @@ httpd_port = {{ parameter_dict.get("httpd-port") }}
 netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
 cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
 cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
-language = '{{ parameter_dict.get("language") }}'
-language_list = ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
-    'fo', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'hr', 'hu', 'is', 'it', 'ja', 'lt',
-    'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
-    'th', 'tr']
 url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
 auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
 vm_name = '{{ parameter_dict.get("name") }}'
-disk_cache = '{{ parameter_dict.get("disk-cache", "writeback") }}'.strip()
-disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe", 
-              "directsync", "writethrough"] else "writeback"
-disk_aio = '{{ parameter_dict.get("disk-aio", "threads") }}'.strip()
-disk_aio = disk_aio if disk_aio in ["threads", "native"] else "threads"
 
 # If a device (ie.: /dev/sdb) is provided, use it instead 
 # the disk_path with disk_format
@@ -89,19 +64,20 @@ for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split
     disk_info_list.append({
       'path': disk_device_path,
       'format': "raw",
-      'io': "native",
-      'cache': "none"
+      'aio': "{{ parameter_dict['disk-aio'] or 'native' }}",
+      'cache': "{{ parameter_dict['disk-cache'] or 'none' }}",
     })
 
-if len(disk_info_list) == 0:
+if not disk_info_list:
   disk_info_list.append({
-    'path': disk_path,
-    'format': disk_format,
-    'io': disk_aio,
-    'cache': disk_cache,
+{%- for k in 'path', 'format', 'aio', 'cache' %}
+{%-   set v = parameter_dict['disk-' + k] %}
+{%-   if v %}
+    {{ repr(k) }}: {{ repr(v) }},
+{%-   endif %}
+{%- endfor %}
   })
 
-smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
 cpu_model = '{{ parameter_dict.get("cpu-model") }}'.strip()
@@ -112,11 +88,8 @@ logfile = '{{ parameter_dict.get("log-file") }}'
 
 boot_image_url_list_json_config = '{{ parameter_dict.get("boot-image-url-list-json-config") }}'
 boot_image_url_select_json_config = '{{ parameter_dict.get("boot-image-url-select-json-config") }}'
-
-if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
-  opener = FancyURLopener(context=ssl._create_unverified_context())
-else:
-  opener = FancyURLopener({})
+virtual_hard_drive_url_json_config = '{{ parameter_dict.get("virtual-hard-drive-url-json-config") }}'
+virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped") }}'.strip().lower()
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -177,39 +150,34 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
       lf.write('%s' % external_disk_number)
   return id_list, external_disk_number
 
-# Download existing hard drive if needed at first boot
-if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url != '':
-  print('Downloading virtual hard drive...')
-  try:
-    downloaded_disk = disk_info_list[0]['path']
+# Use downloaded virtual-hard-drive-url
+if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url_json_config != '':
+  print('Using virtual hard drive...')
+  with open(virtual_hard_drive_url_json_config) as fh:
+    image_config = json.load(fh)
+  if image_config['error-amount'] == 0:
+    image = image_config['image-list'][0]
+    downloaded_image = os.path.join(image_config['destination-directory'], image['destination'])
+    # previous version was using disk in place, but here it would result with
+    # redownload, so copy it
     if virtual_hard_drive_gzipped == 'true':
-      downloaded_disk = '%s.gz' % disk_info_list[0]['path']
-    opener.retrieve(virtual_hard_drive_url, downloaded_disk)
-  except:
-    if os.path.exists(downloaded_disk):
-      os.remove(downloaded_disk)
-    raise
-  md5sum = virtual_hard_drive_md5sum.strip()
-  if md5sum:
-    print('Checking MD5 checksum...')
-    local_md5sum = md5Checksum(downloaded_disk)
-    if local_md5sum != md5sum:
-      os.remove(downloaded_disk)
-      raise Exception('MD5 mismatch. MD5 of local file is %s, Specified MD5 is %s.' % (
-          local_md5sum, md5sum))
-    print('MD5sum check passed.')
+      try:
+        with open(disk_info_list[0]['path'], 'wb') as d_fh:
+          with gzip.open(downloaded_image, 'rb') as s_fh:
+            shutil.copyfileobj(s_fh, d_fh)
+      except Exception:
+        if os.path.exists(disk_info_list[0]['path']):
+          os.unlink(disk_info_list[0]['path'])
+        raise
+    else:
+      try:
+        shutil.copyfile(downloaded_image, disk_info_list[0]['path'])
+      except Exception:
+        if os.path.exists(disk_info_list[0]['path']):
+          os.unlink(disk_info_list[0]['path'])
+        raise
   else:
-    print('Warning: not checksum specified.')
-  if downloaded_disk.endswith('.gz'):
-    try:
-      with open(disk_info_list[0]['path'], 'w') as disk:
-        with gzip.open(downloaded_disk, 'rb') as disk_gz:
-          shutil.copyfileobj(disk_gz, disk)
-    except Exception:
-      if os.path.exists(disk_info_list[0]['path']):
-        os.remove(disk_info_list[0]['path'])
-      raise
-    os.remove(downloaded_disk)
+    raise ValueError('virtual-hard-drive-url not ready yet')
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
@@ -298,12 +266,8 @@ if use_tap == 'true':
             tap_interface, vhost),
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, tap_mac_address)]
 
-if enable_device_hotplug != 'true':
-  smp = '%s,maxcpus=%s' % (smp_count, smp_max_count)
-  ram = '%sM,slots=128,maxmem=%sM' % (ram_size, ram_max_size)
-else:
-  smp = '1,maxcpus=%s' % smp_max_count
-  ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
+smp = '%s,maxcpus=%s' % (init_smp_count, smp_max_count)
+ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
@@ -315,17 +279,12 @@ kvm_argument_list = [qemu_path,
   '-nodefaults',
 ]
 for disk_info in disk_info_list:
-  additional_disk_options = ''
-
-  if disk_info['io'] == 'native':
-    additional_disk_options += ',cache.direct=on'
-  if disk_info['format'] == "raw":
-    additional_disk_options += ',discard=on'
-
-  kvm_argument_list.extend([
+  kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s,cache=%s,aio=%s%s' % ( disk_info['path'], disk_type, disk_info['cache'], disk_info['io'], additional_disk_options)
-  ])
+    'file=%s,if=%s,discard=on%s' % (
+      disk_info['path'], disk_type,
+      ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
+  )
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
@@ -337,8 +296,6 @@ if tap_network_parameter == [] and nat_network_parameter == []:
   print('Warning : No network interface defined.')
 else:
   kvm_argument_list += nat_network_parameter + tap_network_parameter
-if language in language_list:
-  kvm_argument_list.extend(['-k', language])
 
 for disk in additional_disk_list:
   kvm_argument_list.extend([
@@ -399,6 +356,9 @@ else:
             '-drive',
             'file=%s,media=cdrom' % (link,)
           ])
+    else:
+      raise ValueError('boot-image-url-select not ready yet')
+
   if boot_image_url_list_json_config:
     # Support boot-image-url-list
     with open(boot_image_url_list_json_config) as fh:
@@ -411,6 +371,8 @@ else:
             '-drive',
             'file=%s,media=cdrom' % (link,)
           ])
+    else:
+      raise ValueError('boot-image-url-list not ready yet')
   # Always add by default the default image
   kvm_argument_list.extend([
       '-drive', 'file=%s,media=cdrom' % default_cdrom_iso

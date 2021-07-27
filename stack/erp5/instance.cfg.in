@@ -31,11 +31,13 @@ extra-context =
 [dynamic-template-erp5-parameters]
 default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
 jupyter-enable-default = {{ jupyter_enable_default }}
+wcfs-enable-default = {{ wcfs_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 
 [context]
 root-common = {{ root_common }}
 caucase-jinja2-library = {{ caucase_jinja2_library }}
+template-zodb-base = {{ template_zodb_base }}
 
 [dynamic-template-erp5]
 <= jinja2-template-base
@@ -44,6 +46,7 @@ filename = instance-erp5.cfg
 extra-context =
     key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
+    key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
     import re re
@@ -125,6 +128,9 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
+    import json json
+import-list =
+    file instance_zodb_base context:template-zodb-base
 
 [dynamic-template-kumofs-parameters]
 <= default-dynamic-template-parameters
@@ -190,6 +196,15 @@ mode = 644
 [dynamic-template-jupyter]
 rendered = {{ template_jupyter_cfg }}
 
+[dynamic-template-wcfs]
+<= jinja2-template-base
+template = {{ instance_wcfs_cfg_in }}
+filename = instance_wcfs.cfg
+extra-context =
+    section parameter_dict dynamic-template-zope-parameters
+import-list =
+    file instance_zodb_base context:template-zodb-base
+
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
@@ -208,6 +223,7 @@ zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo:rendered
 zope = dynamic-template-zope:rendered
 jupyter = dynamic-template-jupyter:rendered
+wcfs = dynamic-template-wcfs:rendered
 
 # Keep cloudooo backward compatibility
 cloudooo = dynamic-template-legacy:output

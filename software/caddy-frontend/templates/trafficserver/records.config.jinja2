@@ -9,15 +9,11 @@
 ##############################################################################
 CONFIG proxy.config.proxy_name STRING {{ ats_configuration['hostname'] }}
 CONFIG proxy.config.local_state_dir STRING {{ ats_directory['local-state'] }}
-CONFIG proxy.config.config_dir STRING {{ ats_directory['configuration'] }}
 CONFIG proxy.config.bin_path STRING {{ ats_directory['bin_path'] }}
 CONFIG proxy.config.env_prep STRING example_prep.sh
-CONFIG proxy.config.alarm_email STRING nobody
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.output.logfile STRING traffic.out
-CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.admin.user_id STRING {{ '#%s' % os_module.geteuid() }}
-CONFIG proxy.config.admin.number_config_bak INT 0
 LOCAL proxy.local.incoming_ip_to_bind STRING {{ ats_configuration['local-ip'] }}
 CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Implement RFC 5861 with core
@@ -67,7 +63,6 @@ CONFIG proxy.config.http.insert_response_via_str INT 0
 #    https://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/parent.config.en.html
 ##############################################################################
-CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
 CONFIG proxy.config.http.parent_proxy.retry_time INT 300
 CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
@@ -80,7 +75,7 @@ CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
 CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30 {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ ats_configuration['request-timeout'] }}
 CONFIG proxy.config.http.transaction_active_timeout_in INT 900
 CONFIG proxy.config.http.transaction_active_timeout_out INT 0
 CONFIG proxy.config.http.accept_no_activity_timeout INT 120
@@ -153,7 +148,7 @@ CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 30000
 CONFIG proxy.config.net.max_connections_in INT 30000
-CONFIG proxy.config.net.max_connections_active_in INT 10000
+CONFIG proxy.config.net.max_requests_in INT 10000
 
 ##############################################################################
 # RAM and disk cache configurations. Docs:
@@ -198,7 +193,7 @@ CONFIG proxy.config.reverse_proxy.enabled INT 1
 #    https://docs.trafficserver.apache.org/records.config#client-related-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.config.en.html
 ##############################################################################
-CONFIG proxy.config.ssl.client.verify.server INT 0
+CONFIG proxy.config.ssl.client.verify.server.properties STRING NONE
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.server.cipher_suite STRING ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
 

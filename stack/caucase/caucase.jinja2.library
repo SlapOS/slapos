@@ -4,6 +4,7 @@
   caucased_path,
   data_dir,
   netloc,
+  tmp,
   service_auto_approve_count=0,
   user_auto_approve_count=1,
   key_len=None,
@@ -18,6 +19,11 @@ mode = 0750
 [{{ prefix }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = {{ caucased_path }}
+{%- if tmp %}
+environment =
+  TMP={{ tmp }}
+  TMPDIR={{ tmp }}
+{%- endif %}
 command-line = '{{ buildout_bin_directory }}/caucased'
   --db          '${ {{- prefix }}-directory:data-dir}/caucase.sqlite'
   --server-key  '${ {{- prefix }}-directory:data-dir}/server.key.pem'
@@ -88,7 +94,10 @@ rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
 {%-   else -%}
 [{{ prefix }}-csr]
 recipe = plone.recipe.command
-command = '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+command =
+  if [ ! -f '{{ key_path or crt_path }}' ] && [ ! -f '${:csr}' ] ; then
+    '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+  fi
 {%-   endif %}
 csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem
 {%- endif %}
@@ -124,7 +133,7 @@ recipe = plone.recipe.command
 checksum-file = '{{ template }}.md5'
 command =
   set -e
-  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}').read()).hexdigest()")
+  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}', 'rb').read()).hexdigest()")
   md5_old=$([ -f ${:checksum-file} ] && cat ${:checksum-file} || echo none)
   if [ "$md5_current" != "$md5_old" ] || [ ! -f '{{ csr }}' ] || [ ! -f '{{ key }}' ] ; then
     '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'

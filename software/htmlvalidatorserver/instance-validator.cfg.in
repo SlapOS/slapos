@@ -49,15 +49,15 @@ recipe = slapos.recipe.template
 url = ${template-tomcat-configuration:output}
 output = $${basedirectory:catalina_conf}/server.xml
 mode = 0600
-ip = $${slap-network-information:global-ipv6}
+ip = {{ partition_ipv6 }}
 port = 8899
 scheme = https
 
 [tomcat-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = tomcat_listen.py
-config-hostname = $${tomcat-configuration:ip}
+config-host = $${tomcat-configuration:ip}
 config-port = $${tomcat-configuration:port}
 
 #################################

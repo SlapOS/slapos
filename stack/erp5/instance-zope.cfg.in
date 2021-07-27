@@ -1,9 +1,9 @@
+{% from "instance_zodb_base" import zodb_dict  with context %}
 {% set wsgi = slapparameter_dict['wsgi'] -%}
 {% set webdav = slapparameter_dict['webdav'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
-{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
 {% set selenium_server_configuration_dict = slapparameter_dict.get('selenium-server-configuration-dict', None) -%}
@@ -63,6 +63,12 @@ environment +=
   FONTCONFIG_FILE=${fontconfig-conf:rendered}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
+  WENDELIN_CORE_WCFS_AUTOSTART=no
+{% if slapparameter_dict['wcfs_enable'] %}
+  WENDELIN_CORE_VIRTMEM=r:wcfs+w:uvmm
+{% else %}
+  WENDELIN_CORE_VIRTMEM=rw:uvmm
 {% endif %}
   ${:environment-extra}
 
@@ -257,24 +263,6 @@ cloudooo-url = {{ (cloudooo if cloudooo.port == None else
   cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
 
 {% endif -%}
-{% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
-{% for name, zodb in zodb_dict.iteritems() -%}
-{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
-{%   if zodb['type'] == 'zeo' -%}
-{%     do storage_dict.update(zeo_dict.get(name, ())) -%}
-{%   else -%}
-{%     if name == slapparameter_dict.get('neo-name') -%}
-{%       do storage_dict.update(master_nodes=slapparameter_dict['neo-masters'],
-                                name=slapparameter_dict['neo-cluster']) -%}
-{%     endif -%}
-{{     assert(storage_dict['master_nodes'], name) }}
-{%     if storage_dict.pop('ssl', 1) -%}
-{%       do storage_dict.update(ca='~/etc/ca.crt',
-                                cert='~/etc/neo.crt',
-                                key='~/etc/neo.key') -%}
-{%     endif -%}
-{%   endif -%}
-{% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
 activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
@@ -370,9 +358,9 @@ hash-existing-files =
 
 [{{ section("promise-" ~ name) }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ name }}.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ port }}
 
 {% if use_ipv6 -%}
@@ -385,9 +373,9 @@ ipv4-port = {{ port }}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ zope_tunnel_base_name }}.py
-config-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% else -%}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
@@ -482,6 +470,7 @@ environment-extra =
   REAL_INSTANCE_HOME=${:instance-home}
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
+  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:rendered}
 {%- if wsgi %}
   erp5_wsgi=1
 {%- endif %}
@@ -499,6 +488,12 @@ command-line =
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
   --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[test-runner-configuration]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/${:_buildout_section_name_}.json
+template = inline:
+  {{ json.dumps(slapparameter_dict['test-runner-configuration']) }}
 
 [{{ section('runUnitTest') }}]
 < = run-test-common

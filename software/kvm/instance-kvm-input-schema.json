@@ -5,7 +5,7 @@
   "properties": {
     "enable-device-hotplug": {
       "title": "Enable device hotplug mode",
-      "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
+      "description": "Allows to increase amount of RAM (ram-size) and CPU (cmp-count) without restart of the VM process, up to defined maximums (ram-max-size and cpu-max-count). Operation system have to support online addition of RAM and CPU.",
       "type": "boolean",
       "default": false
     },
@@ -125,47 +125,6 @@
       "type": "string",
       "default": "host"
     },
-    "keyboard-layout-language": {
-      "title": "Use keyboard layout language",
-      "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
-      "type": "string",
-      "enum": [
-        "ar",
-        "da",
-        "de",
-        "de-ch",
-        "en-gb",
-        "en-us",
-        "es",
-        "et",
-        "fi",
-        "fo",
-        "fr",
-        "fr-be",
-        "fr-ca",
-        "fr-ch",
-        "hr",
-        "hu",
-        "is",
-        "it",
-        "ja",
-        "lt",
-        "lv",
-        "mk",
-        "nl",
-        "nl-be",
-        "no",
-        "pl",
-        "pt",
-        "pt-br",
-        "ru",
-        "sl",
-        "sv",
-        "th",
-        "tr"
-      ],
-      "default": "fr"
-    },
     "nbd-host": {
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
@@ -201,7 +160,7 @@
     },
     "virtual-hard-drive-md5sum": {
       "title": "Checksum of virtual hard drive",
-      "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
+      "description": "MD5 checksum of virtual hard drive, required if virtual-hard-drive-url is specified.",
       "type": "string"
     },
     "virtual-hard-drive-gzipped": {
@@ -419,6 +378,12 @@
           "title": "FreeBSD 12.1 RELEASE bootonly x86_64"
         }
       ]
+    },
+    "whitelist-domains": {
+      "title": "Whitelist domains",
+      "description": "List of whitelisted domain names to be accessed from the VM. They will be resolved to IPs depending on where the VM end up. IPs can be used too.",
+      "type": "string",
+      "textarea": true
     }
   }
 }

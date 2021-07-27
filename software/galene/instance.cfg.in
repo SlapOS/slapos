@@ -1,6 +1,7 @@
 [buildout]
 parts =
   publish-connection-parameter
+  stat-password
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -49,6 +50,12 @@ recipe = slapos.cookbook:generate.password
 storage-path = $${directory:data}/.passwd
 username = admin
 
+[stat-password]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  $${admin-password:username}:$${admin-password:passwd}
+rendered = $${directory:data}/passwd
+
 [ice-servers.json]
 recipe = slapos.recipe.template:jinja2
 template = inline:
@@ -61,8 +68,7 @@ template = inline:{
     "public":true,
     "op": [{"username":"$${admin-password:username}","password":"$${admin-password:passwd}"}],
     "other": [],
-    "presenter": [{"username": "", "password": "nexedi"}],
-    "max-users":100
+    "presenter": [{"username": "", "password": "nexedi"}]
   }
 rendered = $${directory:groups}/public.json
 
@@ -74,8 +80,8 @@ template =
   inline:#!/bin/sh
   
   ulimit -n $(ulimit -Hn)
-  exec ${galene:location}/bin/galene \
-    -static ${galene-repository:location}/static \
+  exec ${gowork:bin}/galene \
+    -static ${galene:location}/static \
     -recordings $${directory:recordings} \
     -groups $${directory:groups} \
     -data $${directory:data} \

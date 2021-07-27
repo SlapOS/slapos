@@ -26,11 +26,12 @@
 ##############################################################################
 
 import os
+import time
 import requests
 import json
 
-from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import CrontabMixin
 
 setUpModule, Re6stnetTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -59,33 +60,32 @@ class TestPortRedirection(Re6stnetTestCase):
         }, portredir_config[0])
 
 
+class TestTokens(Re6stnetTestCase, CrontabMixin):
 
-class ServicesTestCase(Re6stnetTestCase):
+  partition_reference = "SOFTINST-1"
 
   @classmethod
-  def getInstanceParameterDict(cls):
-    return {'uri-scheme': 'https'}
+  def requestDefaultInstance(cls, state='started'):
+    default_instance = super(
+      Re6stnetTestCase, cls).requestDefaultInstance(state=state)
+    cls.requestSlaveInstance()
+    return default_instance
 
-  def test_hashes(self):
-    hash_files = [
-        'software_release/buildout.cfg',
-    ]
-    expected_process_names = [
-        'httpd-{hash}-on-watch',
-    ]
+  @classmethod
+  def requestSlaveInstance(cls):
+    software_url = cls.getSoftwareURL()
+    cls.logger.debug('requesting slave "%s"', cls.partition_reference)
+    return cls.slap.request(
+      software_release=software_url,
+      partition_reference=cls.partition_reference,
+      partition_parameter_kw={},
+      shared=True,
+    )
 
-    with self.slap.instance_supervisor_rpc as supervisor:
-      process_names = [
-          process['name'] for process in supervisor.getAllProcessInfo()
-      ]
+  def test_tokens(self):
+    self._executeCrontabAtDate('re6stnet-check-token', '+10min')
+    self.slap.waitForInstance() # Wait until publish is done
 
-    hash_files = [
-        os.path.join(self.computer_partition_root_path, path)
-        for path in hash_files
-    ]
+    s = self.requestSlaveInstance()
 
-    for name in expected_process_names:
-      h = generateHashFromFiles(hash_files)
-      expected_process_name = name.format(hash=h)
-
-      self.assertIn(expected_process_name, process_names)
+    self.assertEqual("Token is ready for use", s.getConnectionParameterDict()['1_info'])

@@ -51,6 +51,8 @@ import urlparse
 import socket
 import sys
 import logging
+import random
+import string
 
 
 try:
@@ -70,10 +72,15 @@ from cryptography.x509.oid import NameOID
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+if int(os.environ.get('SLAPOS_HACK_STANDALONE', '0')) == 1:
+  SlapOSInstanceTestCase = object
+else:
+  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
+  # XXX Keep using slapos node instance --all, because of missing promises
+  SlapOSInstanceTestCase.slap._force_slapos_node_instance_all = True
 
 # ports chosen to not collide with test systems
 HTTP_PORT = '11080'
@@ -504,6 +511,7 @@ class TestHandler(BaseHTTPRequestHandler):
     if 'x-reply-body' in self.headers.dict:
       config['Body'] = base64.b64decode(self.headers.dict['x-reply-body'])
 
+    config['X-Drop-Header'] = self.headers.dict.get('x-drop-header')
     self.configuration[self.path] = config
 
     self.send_response(201)
@@ -522,11 +530,26 @@ class TestHandler(BaseHTTPRequestHandler):
       status_code = int(config.pop('status_code'))
       timeout = int(config.pop('Timeout', '0'))
       compress = int(config.pop('Compress', '0'))
+      drop_header_list = []
+      for header in config.pop('X-Drop-Header', '').split():
+        drop_header_list.append(header)
       header_dict = config
     else:
+      drop_header_list = []
+      for header in self.headers.dict.get('x-drop-header', '').split():
+        drop_header_list.append(header)
       response = None
       status_code = 200
       timeout = int(self.headers.dict.get('timeout', '0'))
+      if 'x-maximum-timeout' in self.headers.dict:
+        maximum_timeout = int(self.headers.dict['x-maximum-timeout'])
+        timeout = random.randrange(maximum_timeout)
+      if 'x-response-size' in self.headers.dict:
+        min_response, max_response = [
+          int(q) for q in self.headers.dict['x-response-size'].split(' ')]
+        reponse_size = random.randrange(min_response, max_response)
+        response = ''.join(
+          random.choice(string.lowercase) for x in range(reponse_size))
       compress = int(self.headers.dict.get('compress', '0'))
       header_dict = {}
       prefix = 'x-reply-header-'
@@ -554,9 +577,6 @@ class TestHandler(BaseHTTPRequestHandler):
     if self.identification is not None:
       self.send_header('X-Backend-Identification', self.identification)
 
-    drop_header_list = []
-    for header in self.headers.dict.get('x-drop-header', '').split():
-      drop_header_list.append(header)
     if 'Content-Type' not in drop_header_list:
       self.send_header("Content-Type", "application/json")
     if 'Set-Cookie' not in drop_header_list:
@@ -709,6 +729,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       data=cls.key_pem + cls.certificate_pem,
       verify=cls.ca_certificate_file)
     assert upload.status_code == httplib.CREATED
+    cls.runKedifaUpdater()
 
   @classmethod
   def runKedifaUpdater(cls):
@@ -1190,6 +1211,16 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
 
     return parameter_dict
 
+  def assertLastLogLineRegexp(self, log_name, log_regexp):
+    log_file = glob.glob(
+      os.path.join(
+        self.instance_path, '*', 'var', 'log', 'httpd', log_name
+      ))[0]
+
+    self.assertRegexpMatches(
+      open(log_file, 'r').readlines()[-1],
+      log_regexp)
+
 
 class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   @classmethod
@@ -1485,6 +1516,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'enable_cache': True,
         'disable-via-header': True,
       },
+      'enable_cache-https-only': {
+        'url': cls.backend_url,
+        'https-only': False,
+        'enable_cache': True,
+      },
       'enable-http2-false': {
         'url': cls.backend_url,
         'enable-http2': False,
@@ -1681,9 +1717,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '50',
+      'accepted-slave-amount': '51',
       'rejected-slave-amount': '0',
-      'slave-amount': '50',
+      'slave-amount': '51',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -1796,7 +1832,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     proto='https', ignore_header_list=None):
     if ignore_header_list is None:
       ignore_header_list = []
-    self.assertFalse('remote_user' in backend_header_dict.keys())
     if 'Host' not in ignore_header_list:
       self.assertEqual(
         backend_header_dict['host'],
@@ -1875,38 +1910,24 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Set-Cookie']
     )
 
-    # check access log
-    log_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_access_log'
-      ))[0]
+    self.assertLastLogLineRegexp(
+      '_Url_access_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
+      r'"GET \/test-path\/deep\/..\/.\/deeper HTTP\/1.1" \d{3} '
+      r'\d+ "-" "TEST USER AGENT" \d+'
+    )
 
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - ' \
-                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] ' \
-                 r'"GET \/test-path\/deep\/..\/.\/deeper HTTP\/1.1" \d{3} ' \
-                 r'\d+ "-" "TEST USER AGENT" \d+'
-
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
-
-    # check backend log
-    log_file = glob.glob(
-      os.path.join(
-        self.instance_path, '*', 'var', 'log', 'httpd', '_Url_backend_log'
-      ))[0]
-
-    log_regexp = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ ' \
-                 r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] ' \
-                 r'http-backend _Url-http\/_Url-backend ' \
-                 r'\d+/\d+\/\d+\/\d+\/\d+ ' \
-                 r'200 \d+ - - ---- ' \
-                 r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ ' \
-                 r'"GET /test-path/deeper HTTP/1.1"'
-
-    self.assertRegexpMatches(
-      open(log_file, 'r').readlines()[-1],
-      log_regexp)
+    self.assertLastLogLineRegexp(
+      '_Url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'http-backend _Url-http\/_Url-backend-http '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /test-path/deeper HTTP/1.1"'
+    )
 
     result_http = fakeHTTPResult(
       parameter_dict['domain'],
@@ -3608,7 +3629,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
   def test_enable_cache_server_alias(self):
@@ -3650,7 +3671,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     result = fakeHTTPResult(
@@ -3668,6 +3689,61 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         HTTP_PORT,),
       result.headers['Location']
     )
+
+  def test_enable_cache_https_only(self):
+    parameter_dict = self.assertSlaveBase('enable_cache-https-only')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    headers = result.headers.copy()
+
+    self.assertKeyWithPop('Server', headers)
+    self.assertKeyWithPop('Date', headers)
+    self.assertKeyWithPop('Age', headers)
+
+    # drop keys appearing randomly in headers
+    headers.pop('Transfer-Encoding', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Connection', None)
+    headers.pop('Keep-Alive', None)
+
+    self.assertEqual(
+      {
+        'Content-type': 'application/json',
+        'Set-Cookie': 'secured=value;secure, nonsecured=value',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'HTTPS/test', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
+
+    headers = result.headers.copy()
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'HTTP/test', headers={
+        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
+        'revalidate=3600, stale-if-error=3600'})
+
+    self.assertEqual(httplib.OK, result.status_code)
+    self.assertEqualResultJson(result, 'Path', '/HTTP/test')
+
+    headers = result.headers.copy()
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3712,7 +3788,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     # BEGIN: Check that squid.log is correctly filled in
@@ -3720,13 +3796,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       os.path.join(
         self.instance_path, '*', 'var', 'log', 'trafficserver', 'squid.log'
       ))
-    if len(ats_log_file_list) == 1:
-      ats_log_file = ats_log_file_list[0]
+    self.assertEqual(1, len(ats_log_file_list))
+    ats_log_file = ats_log_file_list[0]
     direct_pattern = re.compile(
       r'.*TCP_MISS/200 .*test-path/deeper.*enablecache.example.com'
       '.* - DIRECT*')
     # ATS needs some time to flush logs
-    timeout = 5
+    timeout = 10
     b = time.time()
     while True:
       direct_pattern_match = 0
@@ -3804,7 +3880,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     max_stale_age = 30
     max_age = int(max_stale_age / 2.)
-    body_200 = b'Body 200'
+    # body_200 is big enough to trigger
+    # https://github.com/apache/trafficserver/issues/7880
+    body_200 = b'Body 200' * 500
     body_502 = b'Body 502'
     body_502_new = b'Body 502 new'
     body_200_new = b'Body 200 new'
@@ -3818,6 +3896,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
           'X-Reply-Header-Cache-Control': 'max-age=%s, public' % (max_age,),
           'X-Reply-Status-Code': status_code,
           'X-Reply-Body': base64.b64encode(body),
+          # drop Content-Length header to ensure
+          # https://github.com/apache/trafficserver/issues/7880
+          'X-Drop-Header': 'Content-Length',
         })
       self.assertEqual(result.status_code, httplib.CREATED)
 
@@ -3828,7 +3909,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       )
       self.assertEqual(result.status_code, status_code)
       self.assertEqual(result.text, body)
-      self.assertNotIn('Expires', result.headers)
 
     # backend returns something correctly
     configureResult('200', body_200)
@@ -3839,9 +3919,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # even if backend returns 502, ATS gives cached result
     checkResult(httplib.OK, body_200)
 
-    time.sleep(max_stale_age + 2)
+    # interesting moment, time is between max_age and max_stale_age, triggers
+    # https://github.com/apache/trafficserver/issues/7880
+    time.sleep(max_age + 1)
+    checkResult(httplib.OK, body_200)
 
     # max_stale_age passed, time to return 502 from the backend
+    time.sleep(max_stale_age + 2)
     checkResult(httplib.BAD_GATEWAY, body_502)
 
     configureResult('502', body_502_new)
@@ -3906,7 +3990,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     # check stale-if-error support is really respected if not present in the
@@ -3982,7 +4066,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     pattern = re.compile(
       r'.*ERR_READ_TIMEOUT/504 .*test_enable_cache_ats_timeout'
       '.*TIMEOUT_DIRECT*')
-    timeout = 5
+    timeout = 10
     b = time.time()
     # ATS needs some time to flush logs
     while True:
@@ -4049,7 +4133,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
     try:
@@ -4096,7 +4180,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/8.1.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
     )
 
   def test_enable_http2_false(self):
@@ -7169,13 +7253,13 @@ backend _health-check-disabled-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-disabled-backend %s""" % (backend,),
+  server _health-check-disabled-backend-http %s""" % (backend,),
       'health-check-connect': """\
 backend _health-check-connect-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-connect-backend %s   check inter 5s"""
+  server _health-check-connect-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
@@ -7183,7 +7267,7 @@ backend _health-check-custom-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-custom-backend %s   check inter 15s"""
+  server _health-check-custom-backend-http %s   check inter 15s"""
       """ rise 3 fall 7
   option httpchk POST /POST-path%%20to%%20be%%20encoded HTTP/1.0
   timeout check 7s""" % (backend,),
@@ -7192,7 +7276,7 @@ backend _health-check-default-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-default-backend %s   check inter 5s"""
+  server _health-check-default-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   option httpchk GET / HTTP/1.1
   timeout check 2s""" % (backend, )
@@ -7262,9 +7346,32 @@ backend _health-check-default-http
     self.assertEqualResultJson(
       result, 'Path', '/failover-https-url?a=b&c=/failoverpath')
 
+    self.assertLastLogLineRegexp(
+      '_health-check-failover-url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'https-backend _health-check-failover-url-https-failover'
+      r'\/_health-check-failover-url-backend-https '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /failoverpath HTTP/1.1"'
+    )
+
     result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
     self.assertEqualResultJson(
       result, 'Path', '/failover-url?a=b&c=/failoverpath')
+    self.assertLastLogLineRegexp(
+      '_health-check-failover-url_backend_log',
+      r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
+      r'http-backend _health-check-failover-url-http-failover'
+      r'\/_health-check-failover-url-backend-http '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'200 \d+ - - ---- '
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
+      r'"GET /failoverpath HTTP/1.1"'
+    )
 
   def test_health_check_failover_url_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase(

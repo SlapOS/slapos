@@ -2,6 +2,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
+{% set frontend_caucase_url_list = ssl_parameter_dict.get('frontend-caucase-url-list', []) -%}
 {% set shared_ca_path = slapparameter_dict.get('shared-certificate-authority-path') -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
@@ -38,7 +39,7 @@ mode = 644
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
-{% set test_runner_url_dict = {} %} {# family_name => list of apache URLs #}
+{% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
@@ -59,19 +60,19 @@ mode = 644
 {%     set test_runner_address_list = slapparameter_dict.get(parameter_id ~ '-test-runner-address-list', []) %}
 {%     if test_runner_address_list -%}
 {%       set test_runner_backend_mapping = {} %}
-{%       set test_runner_apache_url_list = [] %}
+{%       set test_runner_balancer_url_list = [] %}
 {%       set test_runner_external_port = next_port() %}
 {%       for i, (test_runner_internal_ip, test_runner_internal_port) in enumerate(test_runner_address_list) %}
 {%         do test_runner_backend_mapping.__setitem__(
                 'unit_test_' ~ i,
                 'http://' ~ test_runner_internal_ip ~ ':' ~ test_runner_internal_port ) %}
-{%         do test_runner_apache_url_list.append(
+{%         do test_runner_balancer_url_list.append(
                 'https://' ~ ipv4 ~ ':' ~ test_runner_external_port ~ '/unit_test_' ~ i ~ '/' ) %}
 {%       endfor %}
 {%       do zope_virtualhost_monster_backend_dict.__setitem__(
               (ipv4, test_runner_external_port),
               ( ssl_authentication, test_runner_backend_mapping ) ) -%}
-{%       do test_runner_url_dict.__setitem__(family_name, test_runner_apache_url_list) -%}
+{%       do test_runner_url_dict.__setitem__(family_name, test_runner_balancer_url_list) -%}
 {%     endif -%}
 {%   endfor -%}
 
@@ -122,6 +123,23 @@ caucase-cert = ${directory:apache-conf}/apache-caucase.crt
 caucase-key = ${directory:apache-conf}/apache-caucase.pem
 ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
+
+[simplefile]
+< = jinja2-template-base
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}
@@ -185,9 +203,9 @@ input = inline:
 [{{ section('apache-promise') }}]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = apache.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ apache_dict.values()[0][0] }}
 
 [{{ section('publish') }}]
@@ -273,8 +291,6 @@ template = inline:
   {% endfor %}
 
 [apachedex-parameters]
-# XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
-# which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = ${apache-conf-parameter-dict:access-log}
 configuration = ${monitor-apachedex-report-config:rendered}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}

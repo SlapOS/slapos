@@ -303,9 +303,9 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 [{{ section('haproxy-promise') }}]
 <= monitor-promise-base
 # Check any haproxy port in ipv4, expect other ports and ipv6 to behave consistently
-module = check_port_listening
+module = check_socket_listening
 name = haproxy.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ haproxy_dict.values()[0][0] }}
 
 [{{ section('publish') }}]

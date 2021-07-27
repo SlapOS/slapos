@@ -25,6 +25,8 @@
 #
 ##############################################################################
 
+from __future__ import unicode_literals
+import io
 import logging
 import os
 import tempfile
@@ -33,6 +35,7 @@ import time
 
 import psutil
 import requests
+from six.moves import configparser
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -92,6 +95,52 @@ class TestGrafana(GrafanaTestCase):
     self.assertEqual(
         sorted(['influxdb', 'loki']),
         sorted([ds['type'] for ds in resp.json()]))
+
+  def test_email_disabled(self):
+    config = configparser.ConfigParser()
+    # grafana config file is like an ini file with an implicit default section
+    with open(
+        os.path.join(self.computer_partition_root_path, 'etc',
+                     'grafana-config-file.cfg')) as f:
+      config.readfp(io.StringIO('[default]\n' + f.read()))
+    self.assertEqual(config.get('smtp', 'enabled'), 'false')
+
+
+class TestGrafanaEmailEnabled(GrafanaTestCase):
+  __partition_reference__ = 'mail'
+  smtp_verify_ssl = "true"
+  smtp_skip_verify = "false"
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        "smtp-server": "smtp.example.com:25",
+        "smtp-username": "smtp_username",
+        "smtp-password": "smtp_password",
+        'smtp-verify-ssl': cls.smtp_verify_ssl,
+        "email-from-address": "grafana@example.com",
+        "email-from-name": "Grafana From Name",
+    }
+
+  def test_email_enabled(self):
+    config = configparser.ConfigParser()
+    with open(
+        os.path.join(self.computer_partition_root_path, 'etc',
+                     'grafana-config-file.cfg')) as f:
+      config.readfp(io.StringIO('[default]\n' + f.read()))
+
+    self.assertEqual(config.get('smtp', 'enabled'), 'true')
+    self.assertEqual(config.get('smtp', 'host'), 'smtp.example.com:25')
+    self.assertEqual(config.get('smtp', 'user'), 'smtp_username')
+    self.assertEqual(config.get('smtp', 'password'), '"""smtp_password"""')
+    self.assertEqual(config.get('smtp', 'skip_verify'), self.smtp_skip_verify)
+    self.assertEqual(config.get('smtp', 'from_address'), 'grafana@example.com')
+    self.assertEqual(config.get('smtp', 'from_name'), 'Grafana From Name')
+
+
+class TestGrafanaEmailEnabledSkipVerify(TestGrafanaEmailEnabled):
+  smtp_verify_ssl = "false"
+  smtp_skip_verify = "true"
 
 
 class TestInfluxDb(GrafanaTestCase):

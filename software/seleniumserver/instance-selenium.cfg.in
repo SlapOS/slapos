@@ -61,11 +61,12 @@ command-line =
 
 # newSessionWaitTimeout: let clients wait in the queue when no node are available
 # maxSession: to accept enough clients
-hostname = $${instance-parameter:ipv4-random}
+hostname = $${slap-configuration:ipv4-random}
 port = 4444
 base-url = http://$${:hostname}:$${:port}
 url = $${:base-url}/wd/hub
 register-url = $${:base-url}/grid/register/
+api-url = $${:base-url}/grid/api/hub
 
 
 [selenium-server-node-instance]
@@ -93,7 +94,7 @@ environment =
   XORG_LOCK_DIR=$${directory:tmp}
   DISPLAY=$${xvfb-instance:display}
   FONTCONFIG_FILE=$${fontconfig-conf:rendered}
-hostname = $${instance-parameter:ipv4-random}
+hostname = $${slap-configuration:ipv4-random}
 
 
 [selenium-server-node-instance-firefox-52]
@@ -114,11 +115,23 @@ capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX
 java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
 port = 7779
 
+[selenium-server-node-instance-firefox-78]
+<= selenium-server-node-instance
+capabilities = browserName=firefox,maxInstances=3,marionette=true,platform=LINUX,version=${firefox-78:version},firefox_binary=${firefox-wrapper-78:location}
+java-args = -Dwebdriver.gecko.driver=${geckodriver-0.24.0:location}
+port = 7780
+
 [selenium-server-node-instance-chromium-69]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-69:version},chrome_binary=${chromium-wrapper-69:location}
 java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-2.41:location}
-port = 7780
+port = 7781
+
+[selenium-server-node-instance-chromium-91]
+<= selenium-server-node-instance
+capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-91:version},chrome_binary=${chromium-wrapper-91:location}
+java-args = -Dwebdriver.chrome.driver=${chromedriver-wrapper-91:location}
+port = 7782
 
 
 [selenium-server-admin-password]
@@ -151,7 +164,7 @@ template = inline:
       $${:path-hub}
     }
   }
-ip = $${instance-parameter:ipv6-random}
+ip = $${slap-configuration:ipv6-random}
 hostname = [$${:ip}]
 port = 9443
 path-admin = /grid/console
@@ -179,7 +192,7 @@ recipe = slapos.cookbook:userinfo
 recipe = slapos.cookbook:free_port
 minimum = 22222
 maximum = 22231
-ip = $${slap-network-information:global-ipv6}
+ip = $${slap-configuration:ipv6-random}
 hostname = $${:ip}
 
 [ssh-keygen-base]
@@ -250,7 +263,7 @@ recipe = plone.recipe.command
 stop-on-error = true
 location = $${buildout:directory}/.ssh
 authorized-keys-file = $${:location}/authorized_keys
-command = mkdir -p $${:location} && echo '$${instance-parameter:configuration.ssh-authorized-key}' > $${:authorized-keys-file}
+command = mkdir -p $${:location} && echo '$${slap-configuration:configuration.ssh-authorized-key}' > $${:authorized-keys-file}
 
 
 [promises]
@@ -259,51 +272,88 @@ instance-promises =
   $${sshd-listen-promise:name}
   $${selenium-server-frontend-listen-promise:name}
   $${selenium-server-hub-listen-promise:name}
+  $${selenium-server-hub-nodes-registered-promise:name}
   $${selenium-server-node-firefox-52-listen-promise:name}
   $${selenium-server-node-firefox-60-listen-promise:name}
   $${selenium-server-node-firefox-68-listen-promise:name}
+  $${selenium-server-node-firefox-78-listen-promise:name}
   $${selenium-server-node-instance-chromium-69-listen-promise:name}
+  $${selenium-server-node-instance-chromium-91-listen-promise:name}
 
 
 [check-port-listening-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = $${:_buildout_section_name_}.py
 
 [sshd-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${sshd-address:hostname}
+config-host = $${sshd-address:hostname}
 config-port = $${sshd-address:port}
 
 [selenium-server-frontend-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-frontend-instance:ip}
+config-host = $${selenium-server-frontend-instance:ip}
 config-port = $${selenium-server-frontend-instance:port}
 
 [selenium-server-hub-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-hub-instance:hostname}
+config-host = $${selenium-server-hub-instance:hostname}
 config-port = $${selenium-server-hub-instance:port}
+
+# Promise waiting for all nodes to be registered
+[selenium-server-hub-nodes-registered-promise]
+<= monitor-promise-base
+module = check_command_execute
+name = $${:_buildout_section_name_}.py
+config-command =
+  $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}
+# We have 6 nodes with 3 slots each
+expected-node-count = 18
+
+[selenium-server-check-nodes-registered]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+mode = 0755
+template =
+  inline:
+  #!${buildout:executable}
+  import json, urllib, sys
+  api_url = sys.argv[1]
+  expected_node_count = int(sys.argv[2])
+  actual_node_count = json.load(urllib.urlopen(api_url))['slotCounts']['total']
+  sys.exit(0 if expected_node_count == actual_node_count else 1)
+
 
 [selenium-server-node-firefox-52-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-52:hostname}
+config-host = $${selenium-server-node-instance-firefox-52:hostname}
 config-port = $${selenium-server-node-instance-firefox-52:port}
 
 [selenium-server-node-firefox-60-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-60:hostname}
+config-host = $${selenium-server-node-instance-firefox-60:hostname}
 config-port = $${selenium-server-node-instance-firefox-60:port}
 
 [selenium-server-node-firefox-68-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-firefox-68:hostname}
+config-host = $${selenium-server-node-instance-firefox-68:hostname}
 config-port = $${selenium-server-node-instance-firefox-68:port}
+
+[selenium-server-node-firefox-78-listen-promise]
+<= check-port-listening-promise
+config-host = $${selenium-server-node-instance-firefox-78:hostname}
+config-port = $${selenium-server-node-instance-firefox-78:port}
 
 [selenium-server-node-instance-chromium-69-listen-promise]
 <= check-port-listening-promise
-config-hostname = $${selenium-server-node-instance-chromium-69:hostname}
+config-host = $${selenium-server-node-instance-chromium-69:hostname}
 config-port = $${selenium-server-node-instance-chromium-69:port}
+
+[selenium-server-node-instance-chromium-91-listen-promise]
+<= check-port-listening-promise
+config-host = $${selenium-server-node-instance-chromium-91:hostname}
+config-port = $${selenium-server-node-instance-chromium-91:port}
 
 
 [publish-connection-parameter]
@@ -321,7 +371,7 @@ ssh-fingerprint = $${ssh-key-fingerprint:fingerprint}
 run-node-command = PORT=7999 bash -c 'trap '"'"'kill -TERM $SSHPID; wait $SSHPID '"'"' TERM INT; ssh -L 4444:$${selenium-server-hub-instance:hostname}:$${selenium-server-hub-instance:port} -R $PORT:127.0.0.1:$PORT -p $${sshd-service:port} $${sshd-service:username}@$${sshd-service:ip} & SSHPID=$!; java -jar selenium-server-standalone-3.14.0.jar -role node -host 127.0.0.1 -port $PORT ; wait "$SSHPID"'
 
 
-[instance-parameter]
+[slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
