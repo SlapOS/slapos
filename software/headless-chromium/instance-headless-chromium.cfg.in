@@ -49,11 +49,19 @@ nginx-cert-file = ${frontend-instance-certificate:cert-file}
 
 # Create a launcher script for the headless shell executable.
 [chromium-launcher]
-recipe = slapos.cookbook:wrapper
-command-line = {{ parameter_list['chromium-wrapper'] }} --remote-debugging-address=${headless-chromium:ipv4} --remote-debugging-port=${headless-chromium:remote-debugging-port} ${headless-chromium:url}
-wrapper-path = ${directory:service}/chromium
-environment =
-  FONTCONFIG_FILE=${font-config:rendered}
+recipe = slapos.recipe.template:jinja2
+template =
+  inline:#!/bin/sh
+
+  # Set a reasonable limit (like 4 GB = 4000000 KB) on RAM usage
+  ulimit -v 4000000
+
+  export FRONTCONFIG_FILE=${font-config:rendered}
+  exec {{ parameter_list['chromium-wrapper'] }} \
+    --remote-debugging-address=${headless-chromium:ipv4} \
+    --remote-debugging-port=${headless-chromium:remote-debugging-port} \
+    ${headless-chromium:url}
+rendered = ${directory:service}/chromium
 
 # Create a configuration file for the proxy server.
 [nginx-config]

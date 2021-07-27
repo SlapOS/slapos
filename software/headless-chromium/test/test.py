@@ -38,7 +38,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class TestHeadlessChromium(SlapOSInstanceTestCase):
   def setUp(self):
     self.connection_parameters = self.requestDefaultInstance().getConnectionParameterDict()
-  
+
   def test_remote_debugging_port(self):
     # The headless browser should respond at /json with a list of
     # available pages, each of which has a webSocketDebuggerUrl.
