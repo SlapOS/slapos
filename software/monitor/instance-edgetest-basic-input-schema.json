@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "nameserver-list": {
+      "default": [],
+      "title": "Nameservers",
+      "description": "List of nameservers IPs (like 1.2.3.4) to use.",
+      "type": "array"
+    },
+    "check-frontend-ip-list": {
+      "default": [],
+      "title": "Default Frontend IPs to check",
+      "description": "List of default frontend IPs (like 1.2.3.4) to check, if empty no constraint is used.",
+      "type": "array"
+    },
+    "check-dict": {
+      "title": "Configuration of checks",
+      "description": "Configure checks.",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "url-list": {
+              "default": [],
+              "title": "URLs to check",
+              "description": "List of URLs to check, can be domain (example.com) or URL (https://example.com/)",
+              "type": "array"
+            },
+            "check-status-code": {
+              "title": "HTTP Code Check",
+              "description": "Expected response HTTP Code. Defaults to global configuration.",
+              "type": "number",
+              "minimum": 100,
+              "maximum": 599
+            },
+            "check-frontend-ip-list": {
+              "default": [],
+              "title": "Frontend IPs to check (optional)",
+              "description": "List of frontend IPs (like 1.2.3.4) to check. Defaults to global configuration.",
+              "type": "array"
+            },
+            "check-certificate-expiration-days": {
+              "title": "Certificate Expiration Check (days)",
+              "description": "Amount of days to consider certificate as being to-be-expired. Defaults to global configuration.",
+              "type": "number",
+              "minimum": 1
+            },
+            "check-maximum-elapsed-time": {
+              "title": "Maximum Elapsed Check (seconds)",
+              "description": "Maximum elapsed time for a site to reply to be considered good. Defaults to global configuration.",
+              "type": "number",
+              "minimum": 1
+            },
+            "failure-amount": {
+              "title": "Failure Amount",
+              "description": "Amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages. Defaults to global configuration.",
+              "type": "number",
+              "minimum": 1
+            },
+            "check-http-header-dict": {
+              "title": "HTTP Header Check",
+              "description": "JSON object of expected HTTP header, like {\"Cache-Control\": \"max-age=3600, public\", \"Vary\": \"Accept-Encoding\"}. Note: Shall be expressed directly as object, without any additional qouting.",
+              "type": "object",
+              "default": {}
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "check-status-code": {
+      "title": "Default HTTP Code Check",
+      "description": "Default expected response HTTP Code.",
+      "type": "number",
+      "default": 200,
+      "minimum": 100,
+      "maximum": 599
+    },
+    "check-certificate-expiration-days": {
+      "title": "Default Certificate Expiration Check (days)",
+      "description": "Default amount of days to consider certificate as being to-be-expired.",
+      "type": "number",
+      "default": 15,
+      "minimum": 1
+    },
+    "check-maximum-elapsed-time": {
+      "title": "Default Maximum Elapsed Check (seconds)",
+      "description": "Default maximum elapsed time for a site to reply to be considered good.",
+      "type": "number",
+      "default": 2,
+      "minimum": 1
+    },
+    "failure-amount": {
+      "title": "Default Failure Amount",
+      "description": "Default amount of failures to consider URL as in bad state, can be set to higher value for endpoints with accepted short outages.",
+      "type": "number",
+      "default": 2,
+      "minimum": 1
+    }
+  }
+}
