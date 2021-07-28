@@ -95,7 +95,7 @@ command =
 environment =
   PATH={{ parameter_list['openssl-location'] }}/bin:%(PATH)s
 
-# Generate a self-signed certificate.
+# Generate a self-signed TLS certificate.
 [frontend-instance-certificate]
 recipe = plone.recipe.command
 command =
@@ -157,38 +157,28 @@ config-websocket-path-list = /devtools
 return = domain secure_access
 
 
+# Monitoring: check that the Chromium process is alive and responding to
+# requests through the proxy.
 [monitor-instance-parameter]
 monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 
-# Old-style promise to make sure that the CDN is properly configured.
-[frontend-promise]
-<= monitor-promise-base
-module = check_url_available
-name = headless-chromium-frontend.py
-config-url = ${remote-debugging-frontend:connection-secure_access}
-config-check-secure = 1
-
-# The following is the new-style promise, for when
-# https://lab.nexedi.com/nexedi/slapos.toolbox/merge_requests/98 gets
-# merged.
-
 # Promise to make sure the remote debugging frontend returns 200 when
 # queried with the correct credentials.
-# [frontend-ok-promise]
-# <= monitor-promise-base
-# module = check_url_available
-# name = headless-chromium-frontend-ok.py
-# url = ${remote-debugging-frontend:connection-secure_access}
-# config-url = ${:url}
-# config-username = ${frontend-instance-password:username}
-# config-password = ${frontend-instance-password:passwd}
+[frontend-ok-promise]
+<= monitor-promise-base
+module = check_url_available
+name = headless-chromium-frontend-ok.py
+url = ${remote-debugging-frontend:connection-secure_access}
+config-url = ${:url}
+config-username = ${frontend-instance-password:username}
+config-password = ${frontend-instance-password:passwd}
 
 # Promise to make sure that the remote debugging frontend returns 401
 # when queried with no credentials.
-# [frontend-secure-promise]
-# <= monitor-promise-base
-# module = check_url_available
-# name = headless-chromium-frontend-secure.py
-# url = ${remote-debugging-frontend:connection-secure_access}
-# config-url = ${:url}
-# config-http-code = 401
+[frontend-secure-promise]
+<= monitor-promise-base
+module = check_url_available
+name = headless-chromium-frontend-secure.py
+url = ${remote-debugging-frontend:connection-secure_access}
+config-url = ${:url}
+config-http-code = 401
