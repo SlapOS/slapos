@@ -9,8 +9,6 @@ offline = true
 [profile-common]
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
-tar_location = {{ tar_location }}
-curl_location = {{ curl_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
 template_mime_types = {{ template_mime_types_target }} 
 template_launcher = {{ template_launcher_target }}
@@ -28,13 +26,15 @@ context =
   section parameter_list profile-common
 # partition_ipv6 is the random ipv6 allocated to the local partition
   key partition_ipv6 slap-configuration:ipv6-random
+# slapparameter_dict: dictionary of all parameters
   key slapparameter_dict slap-configuration:configuration
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
     "title": "",
-    "download_url": "",
-    "port": 8081
+    "download_url": null,
+    "port": 8081,
+    "monitor-httpd-port": 8197
   }
 
 [instance-replicate]
@@ -50,7 +50,7 @@ context =
   jsonkey default_parameter_dict :default-parameters
 default-parameters =
   {
-    "download_url": "",
+    "download_url": null,
     "replicate-quantity": 1
   }
 

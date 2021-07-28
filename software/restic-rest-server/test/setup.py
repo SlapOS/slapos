@@ -27,29 +27,24 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.kvm'
-with open("README.md") as f:
-  long_description = f.read()
+name = 'slapos.test.restic_rest_server'
+long_description = open("README.md").read()
 
-setup(name=name,
-      version=version,
-      description="Test for SlapOS' kvm",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      maintainer="Nexedi",
-      maintainer_email="info@nexedi.com",
-      url="https://lab.nexedi.com/nexedi/slapos",
-      packages=find_packages(),
-      install_requires=[
-          'slapos.core',
-          'slapos.cookbook',
-          'slapos.toolbox',
-          'slapos.libnetworkcache',
-          'erp5.util',
-          'supervisor',
-          'psutil',
-          'six',
-      ],
-      zip_safe=True,
-      test_suite='test',
-      )
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' restic Rest Server",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'requests',
+    ],
+    zip_safe=True,
+    test_suite='test',
+)

@@ -1,5 +1,6 @@
 {% set part_list = [] -%}
-{% set server_name = slapparameter_dict.get('server-name', 'turn.example.com') -%}
+{%- set parameter = dict(default_parameter_dict, **slapparameter_dict) %}
+{%- set server_name = parameter['server-name'] %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -17,9 +18,11 @@ plugins = ${:etc}/plugin
 recipe = slapos.cookbook:generate.password
 bytes = 8
 
-{% set turn_port = slapparameter_dict.get('port', 3478) -%}
-{% set turn_tls_port = slapparameter_dict.get('tls-port', 5349) -%}
-{% set listining_ip = slapparameter_dict.get('listening-ip', (ipv4 | list)[0]) -%}
+{% set turn_port = parameter['port'] -%}
+{% set turn_tls_port = parameter['tls-port'] -%}
+# listening-ip parameter is mandatory
+{% set listening_ip = slapparameter_dict['listening-ip'] -%}
+
 [turnserver-config]
 recipe = collective.recipe.template
 user = nxdturn
@@ -27,11 +30,11 @@ input = inline:
   listening-port={{ turn_port }}
   lt-cred-mech
   realm={{ server_name }}
-{% if slapparameter_dict.get('external-ip', '') %}
-  external-ip={{ slapparameter_dict['external-ip'] }}
+{% if parameter['external-ip'] %}
+  external-ip={{ parameter['external-ip'] }}
 {% endif %}
   fingerprint
-  listening-ip={{ listining_ip }}
+  listening-ip={{ listening_ip }}
   server-name={{ server_name }}
   no-stdout-log
   simple-log
@@ -56,7 +59,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 <= monitor-promise-base
 module = check_socket_listening
 name = turnserver-port-listening.py
-config-host = {{ listining_ip }}
+config-host = {{ listening_ip }}
 config-port = {{ turn_port }}
 
 [publish-connection-information]

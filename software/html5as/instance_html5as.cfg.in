@@ -3,12 +3,13 @@
 # Deploy html5as instance
 #
 #############################
+# parameter_dict: a dictionary with the default parameters from instance.cfg.in
+# replaces the values with the parameters of the instance request if there are any
 {% set parameter_dict = dict(default_parameter_dict, **slapparameter_dict) %}
 
 [buildout]
 parts =
     nginx_conf
-    downloader
     mime_types
     launcher
     nginx-graceful
@@ -60,7 +61,6 @@ service = ${directory:etc}/service
 log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
-data = ${directory:srv}/html5as
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,15 +90,13 @@ path_access_log = ${basedirectory:log}/nginx.access.log
 path_error_log = ${basedirectory:log}/nginx.error.log
 path_tmp = ${tempdirectory:tmp}
 # Docroot
-docroot = ${basedirectory:data}
-default_index = ${basedirectory:data}/index.html
+docroot = ${downloader:location}
+default_index = ${:docroot}/index.html
 # Config files
 path_nginx_conf = ${directory:etc}/nginx.conf
 path_mime_types = ${directory:etc}/mime_types
 # Binaries
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
-curl-binary = {{ parameter_list['curl_location'] }}/bin/curl
-tar-binary = {{ parameter_list['tar_location'] }}/bin/tar
 
 # Executables
 bin_launcher = ${basedirectory:service}/launcher
@@ -132,21 +130,40 @@ context =
 
 # Command to put content in the docroot
 [downloader]
-recipe = plone.recipe.command
-# This section will fail if the command fails.
-stop-on-error = true
+recipe = slapos.recipe.build
+# Path where the recipe stores any produced file,
+# it will be automatically removed at the beginning of "install".
+location = ${directory:srv}/html5as
+# All the keys in this section will be available as a dict called "self.options"
+# We add: or '', otherwise jinja2 will render a 'None' string
+url = {{ parameter_dict['download_url'] or '' }}
+default_index_html = ${default_index_html:rendered}
 # If a tarball is passed as a parameter in download url
 # it's content will be served by the instance.
 # If the parameter is not provided it fallback to the default template
-command = 
-  rm -rf ${html5as:docroot}/*; 
-  URL = {{ parameter_dict['download_url'] }};
-  if [ -n "$URL" ];
-  then
-    ${html5as:curl-binary} -Lks $URL | ${html5as:tar-binary} xzv -C ${html5as:docroot} --strip-components 1;
-  else
-    cp ${default_index_html:rendered} ${html5as:docroot}/;
-  fi
+install =
+  import os, shutil
+  buildout_offline = self.buildout['buildout']['offline']
+  try:
+    # Allow to do self.download() which can only be used in "online" mode
+    self.buildout['buildout']['offline'] = 'false'
+    if self.options['url']:
+      # Use fonctions from the slapos.recipe.build repository
+      # Download a file from a URL to a temporary path
+      file = self.download(self.options['url'])
+      # Create a directory and extract the file that are compressed inside
+      extract_dir = self.extract(file)
+      # Return the right directory path
+      workdir = guessworkdir(extract_dir)
+      # Recursively copy directory
+      self.copyTree(workdir, location)
+    else:
+      # Create directory and copy the default template inside
+      os.makedirs(location)
+      shutil.copy(self.options['default_index_html'], location)
+  finally:
+    # reset the parameter
+    self.buildout['buildout']['offline'] = buildout_offline
 
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
@@ -176,7 +193,7 @@ config-port = ${html5as:port}
 # Use a port different from the default one in order to be able to
 # use it in a SlapOS webrunner or a Theia SlapOS Runner
 [monitor-instance-parameter]
-monitor-httpd-port = 8197
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 
 # Monitor Stack also provides logrotate stack. We only need to extend
 # the logrotate-entry-base defined in instance-logrotate-base.cfg.in .
@@ -205,7 +222,7 @@ server-cdn-url = ${html5as-frontend-promise:url}
 <= slap-connection
 # Recipe used to make requests
 recipe = slapos.cookbook:requestoptional
-name = HTM5AS frontend
+name = HTML5AS frontend
 # Specify the software url of the frontend software release
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 # It is not a dedicated instance but an instance allocated on a shared instance
@@ -222,4 +239,4 @@ module = check_url_available
 name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}
-config-check-secure = 1
+config-http-code = 401
