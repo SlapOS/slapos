@@ -1,0 +1,6 @@
+[buildout]
+extends = {{ instance_base_monitor }}
+# slapparameter_dict
+{%- for k, v in slapparameter_dict.items() %}
+# {{ k }}  ==> {{ v }}
+{%- endfor %}
