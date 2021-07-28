@@ -1,0 +1,134 @@
+{#- PREPARE #}
+{%- set DEFAULT_DICT = {
+  'check-status-code': 200,
+  'check-http-header-dict': {},
+  'check-certificate-expiration-days': 15,
+  'failure-amount': 2,
+  'check-maximum-elapsed-time': 2,
+  'check-frontend-ip-list': [],
+  'nameserver-list': []
+} %}
+{%- for default_key in ['check-frontend-ip-list', 'nameserver-list', 'check-status-code', 'check-certificate-expiration-days', 'check-maximum-elapsed-time', 'failure-amount'] %}
+{%-   if default_key in slapparameter_dict %}
+{%-     do DEFAULT_DICT.__setitem__(default_key, slapparameter_dict[default_key]) %}
+{%-   endif %}
+{%- endfor %}
+{%- set CHECK_DICT = {} %}
+{%- for check_name, check_definition in slapparameter_dict['check-dict'].items() %}
+{%-   if 'url-list' in check_definition %}
+{%-     set check = DEFAULT_DICT.copy()  %}
+{%-     set url_list = [] %}
+{%-     for url in check_definition.pop('url-list') %}
+{%-       if len(url.strip()) > 0 %}
+{#-         Support various URL entries #}
+{%-         if url.startswith('http:') or url.startswith('https:') %}
+{%-           if url not in url_list %}
+{%-             do url_list.append(url) %}
+{%-           endif %}
+{%-         else %}
+{%-           for schema in ['http://', 'https://'] %}
+{%-             set add_url = '%s%s' % (schema, url) %}
+{%-             if add_url not in url_list %}
+{%-               do url_list.append('%s%s' % (schema, url)) %}
+{%-             endif %}
+{%-           endfor %}
+{%-         endif %}
+{%-       endif %}
+{%-     endfor %}
+{%-     do check.update(check_definition) %}
+{%-     do check.__setitem__('url-list', url_list) %}
+{%-     set class = check['check-maximum-elapsed-time'] %}
+{%-     if class not in CHECK_DICT %}
+{%-       do CHECK_DICT.__setitem__(class, []) %}
+{%-     endif %}
+{%-     do check.__setitem__('-name', check_name) %}
+{%-     do CHECK_DICT[class].append(check) %}
+{%-   endif %}
+{%- endfor %}
+
+{%- set PART_LIST = [] %}
+{%- for class, class_check_list in CHECK_DICT.items() %}
+{#- class is used to separate surykatka with different timeouts #}
+{%-   set CLASS_URL_LIST = [] %}
+{%-   for check in class_check_list | sort(attribute='-name') %}
+{%-     do CLASS_URL_LIST.extend(check['url-list']) %}
+{%-     for url in check['url-list'] %}
+{%-       set promise_name = 'http-query-' ~ hashlib_module.md5(check['-name'].encode('utf-8')).hexdigest() ~ '-' ~ hashlib_module.md5(url.encode('utf-8')).hexdigest() ~ '-promise' %}
+{%-       do PART_LIST.append(promise_name) %}
+[{{promise_name}}]
+<= monitor-promise-base
+module = check_surykatka_json
+name = {{ promise_name }}.py
+config-report = http_query
+config-url = {{ url }}
+config-status-code = {{ check['check-status-code'] }}
+config-http-header-dict = {{ json_module.dumps(check['check-http-header-dict']) }}
+config-certificate-expiration-days = {{ check['check-certificate-expiration-days'] }}
+config-failure-amount = {{ check['failure-amount'] }}
+config-maximum-elapsed-time = {{ check['check-maximum-elapsed-time'] }}
+config-ip-list = {{ ' '.join(check['check-frontend-ip-list']) }}
+config-json-file = ${surykatka-config-{{ class }}:json}
+{%-     endfor %} {#- for url in check['url-list'] #}
+{%-   endfor %} {#- for check in class_check_list | sort(attribute='-name') #}
+
+[surykatka-bot-promise-{{ class }}]
+<= monitor-promise-base
+module = check_surykatka_json
+name = ${:_buildout_section_name_}.py
+config-report = bot_status
+config-json-file = ${surykatka-config-{{ class }}:json}
+
+[surykatka-config-{{ class }}]
+recipe = slapos.recipe.template:jinja2
+db = ${directory:srv}/surykatka-{{ class }}.db
+rendered = ${directory:etc}/surykatka-{{ class }}.ini
+template = {{ template_surykatka_ini }}
+url_list = {{ dumps(CLASS_URL_LIST) }}
+nameserver_list = {{ dumps(DEFAULT_DICT['nameserver-list']) }}
+json = ${directory:srv}/surykatka-{{ class }}.json
+{#- timeout is just a bit bigger than class time #}
+timeout = {{ int(class) + 2 }}
+
+context =
+  import json_module json
+  key db :db
+  key nameserver_list :nameserver_list
+  key url_list :url_list
+  key timeout :timeout
+
+[surykatka-{{ class }}]
+recipe = slapos.cookbook:wrapper
+config = ${surykatka-config-{{ class }}:rendered}
+command-line =
+  {{ surykatka_binary }} --run crawl --reload --configuration ${:config}
+wrapper-path = ${monitor-directory:service}/${:_buildout_section_name_}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[surykatka-status-json-{{ class }}]
+recipe = slapos.recipe.template:jinja2
+json = ${surykatka-config-{{ class }}:json}
+template = inline:#!/bin/sh
+  {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json --stdout ${:json}
+rendered = ${monitor-directory:bin}/${:_buildout_section_name_}
+mode = 0755
+
+[cron-entry-surykatka-status-{{ class }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${directory:etc}/cron.d
+name = surykatka-status-{{ class }}
+frequency = */2 * * * *
+command = ${surykatka-status-json-{{ class }}:rendered}
+{%-     do PART_LIST.append('surykatka-%i'% (class,)) %}
+{%-     do PART_LIST.append('surykatka-bot-promise-%i' % (class,)) %}
+{%-     do PART_LIST.append('cron-entry-surykatka-status-%i' % (class,)) %}
+{%- endfor %} {#- for class, class_check_list in CHECK_DICT.items() #}
+
+[buildout]
+extends = {{ instance_base_monitor }}
+parts +=
+{% for part_id in sorted(PART_LIST) %}
+  {{ part_id }}
+{% endfor %}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
