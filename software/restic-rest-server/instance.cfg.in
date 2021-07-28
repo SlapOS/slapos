@@ -185,7 +185,7 @@ return = domain secure_access
 [frontend-available-promise]
 <= check-url-available-promise
 url = ${frontend:connection-secure_access}
-check-secure = 1
+config-http-code = 401
 
 
 [promises]

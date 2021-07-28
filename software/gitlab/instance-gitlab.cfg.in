@@ -444,7 +444,7 @@ tune-command =
 <= monitor-promise-base
 module = check_command_execute
 name   = ${:_buildout_section_name_}.py
-config-http_code   = 200
+config-http-code   = 200
 
 
 

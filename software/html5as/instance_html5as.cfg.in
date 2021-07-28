@@ -239,4 +239,4 @@ module = check_url_available
 name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}
-config-check-secure = 1
+config-http-code = 401
