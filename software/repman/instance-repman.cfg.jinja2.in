@@ -12,6 +12,10 @@
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 {% set database_slave_list = [] -%}
 {% set db_name_list = [] -%}
+{% set count = namespace(value=1) %}
+{% set caucase_bind = '[' ~ ip ~ ']:8890' -%}
+{% set caucase_url = 'http://' ~ caucase_bind -%}
+{% set csrid_list = [] -%}
 
 {% macro password(name) -%}
 [{{ name }}-password]
@@ -34,6 +38,9 @@ log = ${:var}/log
 data = ${:var}/lib
 nginx-prefix = ${:var}/nginx
 tmp = ${:home}/tmp
+backup-caucased = ${:srv}/backup-caucased
+caucased = ${:srv}/caucased
+ssl = ${:etc}/ssl
 
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-ctl" -%}
@@ -48,6 +55,7 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
+config-caucase-url = {{ caucase_url }}
 
 [download-proxy-config]
 recipe = slapos.recipe.template:jinja2
@@ -100,6 +108,7 @@ mode = 755
 {% set db_amount = 2 -%}
 {% endif -%}
 
+{% set count.value = count.value + db_amount %}
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
 {% set section = 'request-mariadb-' ~ i -%}
@@ -125,17 +134,19 @@ config-cluster = {{ name }}
 config-name = {{ dbname }}
 config-database-list = !py!{{ database_slave_list }}
 config-database-name = {{ dumps(db_list) }}
-return = 
+return =
   database-host
   receiver-port
   monitor-base-url
   partition-path
+  csr-id
 
 {% do part_list.append(section) -%}
 {% do mariadb_server_list.append('${' ~ section ~ ':connection-database-host}') -%}
 {% do receiver_port_list.append('${' ~ section ~ ':connection-receiver-port}') -%}
 {% do mariadb_path_list.append('${' ~ section ~ ':connection-partition-path}') -%}
 {% do monitor_base_url_dict.__setitem__('mariadb' ~ i, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% do csrid_list.append('${' ~ section ~ ':connection-csr-id}') -%}
 
 {% endfor -%}
 
@@ -298,6 +309,84 @@ context =
 {% do part_list.append(name ~ '-publish-slave-information') -%}
 {% endfor -%}
 
+# deploy caucase
+{% import "caucase" as caucase with context %}
+{{ caucase.caucased(
+    prefix='caucased',
+    buildout_bin_directory=buildout_bin_directory,
+    caucased_path='${directory:service}/caucased',
+    backup_dir='${directory:backup-caucased}',
+    data_dir='${directory:caucased}',
+    netloc=caucase_bind,
+    tmp='${directory:tmp}',
+    service_auto_approve_count=count.value,
+    user_auto_approve_count=1,
+    key_len=2048,
+)}}
+{% do part_list.append('caucased') -%}
+{% do part_list.append('caucased-promise') -%}
+{% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=buildout_bin_directory,
+     updater_path='${directory:services}/caucase-updater',
+     url=caucase_url,
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${directory:ssl}/repman-cert.crt',
+     ca_path='${directory:srv}/caucase-updater/ca.crt',
+     crl_path='${directory:srv}/caucase-updater/crl.pem',
+     key_path='${directory:ssl}/repman-cert.key',
+     on_renew=None,
+     max_sleep=None,
+     template_csr_pem=None,
+     openssl=openssl_bin,
+)}}
+{% do part_list.append('caucase-updater') -%}
+{% do part_list.append('caucase-updater-promise') -%}
+
+#caucase user certificate
+{{ caucase.updater(
+     prefix='caucase-user-updater',
+     buildout_bin_directory=buildout_bin_directory,
+     updater_path='${directory:services}/caucase-user-updater',
+     url=caucase_url,
+     data_dir='${directory:srv}/caucase-user-updater',
+     crt_path='${directory:ssl}/caucase.user.crt',
+     ca_path='${directory:srv}/caucase-user-updater/ca.crt',
+     crl_path='${directory:srv}/caucase-user-updater/crl.pem',
+     key_path='${directory:ssl}/caucase.user.key',
+     on_renew=None,
+     max_sleep=None,
+     template_csr_pem=None,
+     openssl=openssl_bin,
+     mode='user',
+)}}
+{% do part_list.append('caucase-user-updater') -%}
+{% do part_list.append('caucase-user-updater-promise') -%}
+
+[caucase-sign-csr]
+recipe = slapos.recipe.template:jinja2
+mode = 755
+rendered = ${directory:bin}/caucase-sign
+template =
+  inline:#!/bin/sh
+  cp ${directory:ssl}/caucase.user.key ${directory:ssl}/caucase-full.key
+  cat ${directory:ssl}/caucase.user.crt >> ${directory:ssl}/caucase-full.key
+  for csr_id in {{ csrid_list | join(' ') }}; do
+    if [ "$csr_id" = "None" ]; then
+      continue
+    fi
+    {{ buildout_bin_directory }}/caucase --ca-url {{ caucase_url }} --user-key ${directory:ssl}/caucase-full.key --sign-csr $csr_id
+  done
+
+[cron-caucase-sign-csr]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = caucase-sign-csr
+frequency = * * * * *
+command = ${caucase-sign-csr:rendered}
+{% do part_list.append('cron-caucase-sign-csr') -%}
+
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration
 computer = ${slap-connection:computer-id}
@@ -331,8 +420,9 @@ proxies-log = ${directory:log}/proxy
 ipv6 = ${instance-parameter:ipv6-random}
 port = ${instance-parameter:nginx-port}
 ssl-port = ${instance-parameter:nginx-ssl-port}
-ssl-certificate = ${ca-nginx:cert-file}
-ssl-key = ${ca-nginx:key-file}
+ssl-certificate = ${directory:ssl}/repman-cert.crt
+ca-certificate = ${directory:srv}/caucase-updater/ca.crt
+ssl-key = ${directory:ssl}/repman-cert.key
 pid-file = ${directory:run}/nginx.pid
 access-log = ${directory:log}/nginx_access.log
 error-log = ${directory:log}/nginx_error.log
@@ -463,11 +553,12 @@ command-line =
   {{ nginx_bin }}
   -p ${directory:nginx-prefix}
   -c ${nginx-conf:rendered}
-wrapper-path = ${directory:bin}/nginx-start
+wrapper-path = ${directory:services}/nginx
 wait-for-files =
-  ${ca-directory:certs}/nginx.key
-  ${ca-directory:certs}/nginx.crt
-  ${nginx-graceful-wrapper:rendered}
+  ${directory:ssl}/repman-cert.crt
+  ${directory:srv}/caucase-updater/ca.crt
+  ${directory:ssl}/repman-cert.key
+
 
 [nginx-graceful-wrapper]
 recipe = slapos.recipe.template:jinja2
@@ -476,20 +567,6 @@ template = inline:#!{{ bash_bin }}
 rendered = ${directory:scripts}/nginx-graceful
 context =
 mode = 755
-
-[ca-nginx]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-cert-file = ${ca-directory:certs}/nginx.crt
-key-file = ${ca-directory:certs}/nginx.key
-executable = ${nginx-launcher:wrapper-path}
-wrapper = ${directory:bin}/ca-nginx
-
-[ca-nginx-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${ca-nginx:wrapper}
-wrapper-path = ${directory:services}/nginx
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [logrotate-entry-nginx]
 <= logrotate-entry-base
@@ -598,7 +675,7 @@ parts =
   replication-manager
   monitor-base
   logrotate-entry-nginx
-  ca-nginx-service
+  nginx-launcher
   publish-connection-parameter
   repman-frontend-promise
   repman-backend-promise

@@ -21,6 +21,7 @@ database-host = {{ host }}:{{ port }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 partition-path = ${buildout:directory}
 receiver-port = ${dbjob-parameter:socat-port}
+csr-id = ${caucase-csr-id:csr_id}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -62,6 +63,47 @@ context = key content {{content_section_name}}:content
 mode = {{ mode }}
 {%- endmacro %}
 
+{% import "caucase" as caucase with context %}
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=buildout_bin_directory,
+     updater_path='${directory:services}/caucase-updater',
+     url=slapparameter_dict['caucase-url'],
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${directory:ssl}/mariadb-cert.crt',
+     ca_path='${directory:srv}/caucase-updater/ca.crt',
+     crl_path='${directory:srv}/caucase-updater/crl.pem',
+     key_path='${directory:ssl}/mariadb-cert.key',
+     on_renew=None,
+     max_sleep=None,
+     template_csr_pem=None,
+     openssl=openssl_bin,
+)}}
+{% do part_list.append('caucase-updater') -%}
+{% do part_list.append('caucase-updater-promise') -%}
+
+[get-csr-id]
+recipe = plone.recipe.command
+output = ${directory:tmp}/csr_id
+command = 
+  if [ -s "${directory:ssl}/mariadb-cert.crt" ]; then
+    echo "None" > ${:output};
+  else
+    if [ -f "${caucase-updater-csr:csr}" ]; then
+      result=$({{ caucase_bin_client }} --ca-url {{ slapparameter_dict['caucase-url'] }} --send-csr ${caucase-updater-csr:csr} | cut -d ' ' -f1)
+      if [ ! $? -eq 0 ]; then
+        $result="None";
+      fi
+      echo "$result" > ${:output}
+    fi
+  fi
+update-command = ${:command}
+
+[caucase-csr-id]
+recipe = collective.recipe.shelloutput
+commands = 
+  csr_id = if [ -f "${get-csr-id:output}" ]; then cat ${get-csr-id:output}; fi
+
 [my-cnf-parameters]
 socket = ${directory:run}/mariadb.sock
 ip = {{ ip }}
@@ -75,9 +117,12 @@ innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0
 innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
-ssl-crt = ${directory:mariadb-ssl}/crt.pem
-ssl-key = ${directory:mariadb-ssl}/key.pem
-ssl-ca-crt = ${certificate-authority:ca-dir}/cacert.pem
+#ssl-crt = ${directory:mariadb-ssl}/crt.pem
+#ssl-key = ${directory:mariadb-ssl}/key.pem
+#ssl-ca-crt = ${certificate-authority:ca-dir}/cacert.pem
+ssl-crt = ${directory:ssl}/mariadb-cert.crt
+ssl-key = ${directory:ssl}/mariadb-cert.key
+ssl-ca-crt = ${directory:srv}/caucase-updater/ca.crt
 
 [my-cnf]
 < = jinja2-template-base
@@ -152,18 +197,17 @@ environ =
   {{ variable }}
   {%- endfor %}
 
-[ca-mysqld]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-key-file = ${my-cnf-parameters:ssl-key}
-cert-file = ${my-cnf-parameters:ssl-crt}
-executable = ${mysqld:rendered}
-wrapper = ${directory:controller}/mariadb
+[mysqld-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = ${mysqld:rendered}
+wrapper-path = ${directory:controller}/mariadb
+wait-for-files =
+  ${directory:ssl}/mariadb-cert.crt
 
 {% import "supervisord_lib" as supervisord_lib with context %}
 {{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
 {% do part_list.append("supervisord-mariadb-ctl") -%}
-{% set maradb_program_dict = {"name": "mariadb", "command": "${ca-mysqld:wrapper}",
+{% set maradb_program_dict = {"name": "mariadb", "command": "${mysqld-launcher:wrapper-path}",
   "stopwaitsecs": 86400, "environment": [],
   "stdout_logfile": "${directory:log}/mariadb_stdout.log",
   "stderr_logfile": "${directory:log}/mariadb_stdout.log" } %}
@@ -262,6 +306,7 @@ log = ${:var}/log
 run = ${:var}/run
 config-tmp = ${:tmp}/config
 custom = ${directory:etc}/mysql/custom
+ssl = ${:etc}/ssl
 
 [dbjob-parameter]
 bash-bin = {{ bash_bin }}
