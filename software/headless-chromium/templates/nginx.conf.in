@@ -59,8 +59,7 @@ http {
       # Websocket connection without TLS, so we have to go through the
       # frontend CDN URL. The tricky thing is that the frontend URL is
       # not available yet when this file is built; what we do instead is
-      # use the given Host header. This is possibly fragile; perhaps
-      # alternatives are worth investigating.
+      # use the given Host header.
       sub_filter "ws={{ param_headless_chromium['remote-debugging-address'] }}" "wss=$host";
       sub_filter_once on;
       sub_filter_types application/json;
@@ -71,7 +70,7 @@ http {
       # We want to use our own DevTools frontend rather than
       # https://chrome-devtools-frontend.appspot.com. There should be a
       # --custom-devtools-frontend flag for Chromium, but it doesn't
-      # seem to work.
+      # seem to work with the remote debugging port.
       sub_filter "chrome-devtools-frontend.appspot.com" "$host";
       sub_filter_types *;
     }
