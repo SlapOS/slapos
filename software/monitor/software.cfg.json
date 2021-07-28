@@ -19,22 +19,22 @@
       "index": 1
     },
     "edgetest": {
-      "title": "Edge Test",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "title": "Edge Test [OBSOLETE]",
+      "description": "Cluster of bots to perform a distributed monitoring. OBSOLETE: Use Edge Test Basic.",
       "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
-      "index": 3
+      "index": 2
     },
     "edgetest-slave": {
-      "title": "Edge Test Slave",
+      "title": "Edge Test Slave [OBSOLETE]",
       "shared": true,
       "software-type": "edgetest",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "description": "Cluster of bots to perform a distributed monitoring. OBSOLETE: Use Edge Test Basic.",
       "request": "instance-edgetest-slave-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
-      "index": 4
+      "index": 3
     }
   }
 }
