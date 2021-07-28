@@ -10,13 +10,29 @@
       "response": "instance-default-output-schema.json",
       "index": 0
     },
+    "edgetest-basic": {
+      "title": "Edge Test Basic",
+      "description": "Basic URL monitoring configuration",
+      "request": "instance-edgetest-basic-input-schema.json",
+      "response": "instance-edgetest-basic-output-schema.json",
+      "serialisation": "json-in-xml",
+      "index": 1
+    },
+    "edgetest-cluster": {
+      "title": "Edge Test Cluster",
+      "description": "Cluster URL monitoring configuration. XXX: This seems overkill, as defining checks will be super hard. It seems better to have few instances of Edge Test Basic.",
+      "request": "instance-edgetest-cluster-input-schema.json",
+      "response": "instance-edgetest-cluster-output-schema.json",
+      "serialisation": "json-in-xml",
+      "index": 2
+    },
     "edgetest": {
       "title": "Edge Test Shared Cluster",
       "description": "Cluster of bots to perform a distributed monitoring with shared instances",
       "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
-      "index": 1
+      "index": 3
     },
     "edgetest-slave": {
       "title": "Edge Test Shared Instance",
@@ -26,7 +42,7 @@
       "request": "instance-edgetest-slave-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
-      "index": 2
+      "index": 4
     }
   }
 }
