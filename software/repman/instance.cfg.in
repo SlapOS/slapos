@@ -28,8 +28,10 @@ mode    = 0644
 extensions = jinja2.ext.do
 rendered= ${buildout:directory}/${:_buildout_section_name_}
 supervisord-lib = {{ supervisord_lib }}
+causace-lib = {{ caucase_library }}
 import-list =
   file supervisord_lib :supervisord-lib
+  file caucase         :causace-lib
 context =
     key slapparameter_dict      slap-configuration:configuration
     key computer_id             slap-configuration:computer
@@ -48,6 +50,8 @@ context =
     raw bash_bin                {{ bash_location }}/bin/bash
     raw jq_bin                  {{ jq_location }}/bin/jq
     raw curl_bin                {{ curl_location }}/bin/curl
+    raw openssl_bin            {{ openssl_location }}/bin/openssl
+    raw caucase_bin_client     {{ caucase_bin_client }}
 
     ${:extra-context}
 extra-context =
