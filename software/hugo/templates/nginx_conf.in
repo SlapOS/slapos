@@ -21,6 +21,8 @@ http {
         listen [{{ param_hugo['ip'] }}]:{{ param_hugo['nginx-port'] }};
         server_name _;
 
+        error_page {{ param_hugo['default_index'] }}
+
         keepalive_timeout 5;
         client_body_temp_path {{ param_tempdir['client_body_temp_path'] }};
         proxy_temp_path {{ param_tempdir['proxy_temp_path'] }};

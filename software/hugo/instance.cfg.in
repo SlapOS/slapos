@@ -9,6 +9,8 @@ parts =
     nginx-graceful
     port-listening-promise
     logrotate-entry-nginx
+    default_index_html
+    default_config_toml
     
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -28,6 +30,7 @@ configuration.nginx-port = 8081
 configuration.monitor-httpd-port = 8197
 configuration.nginx-monitor-httpd-port =8198
 configuration.download-url =
+configuration.site =
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -79,13 +82,11 @@ path_mime_types = ${directory:etc}/mime_types
 path_shell = {{ parameter_list['dash_location'] }}/bin/dash
 path_nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
-bin_launcher = ${basedirectory:script}/launcher 
+bin_launcher = ${basedirectory:script}/launcher
 
 # Docroot
-docroot = ${downloader:location}/public/
-default_index = ${:docroot}/index.html
-
-path_project = ${directory:srv}/project
+docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
+default_index = ${basedirectory:data}/index.html
 
 [hugo-server-graceful]
 recipe = slapos.recipe.template:jinja2
@@ -104,8 +105,10 @@ context =
     section param_hugo hugo
     key go_environment hugo:go_environment
     key base_url hugo-frontend:connection-secure_access
+    key data basedirectory:data
     key ip hugo:ip
     key port hugo:port
+    key site slap-configuration:configuration.site
 
 [port-listening-promise]
 <= monitor-promise-base
@@ -180,9 +183,16 @@ install =
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_index_html'] }}
-rendered = ${hugo:path_project}/index.html
+rendered = ${basedirectory:data}/index.html
 context =
   key env slap-configuration:configuration.port
+
+[default_config_toml]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_config_toml'] }}
+rendered = ${basedirectory:data}/config.toml
+context =
+    key base_url hugo-frontend:connection-secure_access
 
 ### Nginx Graceful
 [nginx-graceful]

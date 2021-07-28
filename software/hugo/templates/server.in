@@ -1,5 +1,10 @@
 #! {{ param_hugo['path_shell'] }}
-cd /srv/slapgrid/slappart19/srv/project/quickstart
-if [ -d "public" ]; then rm -Rf public; fi
 . {{ go_environment }}
-hugo && hugo server --bind={{ ip }} --port={{ port }} --baseURL={{ base_url }} --appendPort=false
+cd {{ data }}
+if [ {{ site }} ]; then
+  cd {{ site }}
+  if [ -d "public" ]; then rm -Rf public; fi
+  hugo && hugo server --bind={{ ip }} --port={{ port }} --baseURL={{ base_url }} --appendPort=false
+else
+  hugo server --bind={{ ip }} --port={{ port }}
+fi
