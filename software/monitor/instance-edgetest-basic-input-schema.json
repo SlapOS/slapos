@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "nameserver-list": {
+      "default": [],
+      "title": "Nameservers",
+      "description": "List of nameservers to use.",
+      "type": "array"
+    },
+    "check-frontend-ip-list": {
+      "default": [],
+      "title": "Default Frontend IPs to check",
+      "description": "List of default frontend IPs to check, if empty no constraint is used.",
+      "type": "array"
+    }
+  }
+}
