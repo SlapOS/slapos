@@ -28,7 +28,9 @@
 {%- set part_list = [] %}
 {%- for class, slave_instance_list in slave_instance_dict.items() %}
 {#- class is used to separate surykatka with different timeouts #}
+{%-   set URL_LIST = [] %}
 {%-   for slave in slave_instance_list | sort(attribute='-slave-title') %}
+{%-     do URL_LIST.append(slave['url']) %}
 {%-     set part_id = 'http-query-' ~ hashlib_module.md5(slave['-slave-reference'].encode('utf-8')).hexdigest() ~ '-promise' %}
 {%-     do part_list.append(part_id) %}
 {%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
@@ -59,7 +61,7 @@ recipe = slapos.recipe.template:jinja2
 db = ${directory:srv}/surykatka-{{ class }}.db
 rendered = ${directory:etc}/surykatka-{{ class }}.ini
 template = {{ template_surykatka_ini }}
-slave_instance_list = {{ dumps(slave_instance_list) }}
+url_list = {{ dumps(URL_LIST) }}
 nameserver_list = {{ dumps(CONFIGURATION['nameserver-list']) }}
 json = ${directory:srv}/surykatka-{{ class }}.json
 {#- timeout is just a bit bigger than class time #}
@@ -69,7 +71,7 @@ context =
   import json_module json
   key db :db
   key nameserver_list :nameserver_list
-  key slave_instance_list :slave_instance_list
+  key url_list :url_list
   key timeout :timeout
 
 [surykatka-{{ class }}]
