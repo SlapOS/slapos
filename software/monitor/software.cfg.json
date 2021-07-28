@@ -11,18 +11,18 @@
       "index": 0
     },
     "edgetest": {
-      "title": "Edge Test",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "title": "Edge Test Shared Cluster",
+      "description": "Cluster of bots to perform a distributed monitoring with shared instances",
       "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
       "index": 1
     },
     "edgetest-slave": {
-      "title": "Edge Test Slave",
+      "title": "Edge Test Shared Instance",
       "shared": true,
       "software-type": "edgetest",
-      "description": "Cluster of bots to perform a distributed monitoring ",
+      "description": "Definition of monitorig for Edge Test Shared Cluster",
       "request": "instance-edgetest-slave-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
