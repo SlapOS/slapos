@@ -32,8 +32,7 @@
           "type": "object"
         }
       },
-      "type": "object",
-      "default": {}
+      "type": "object"
     },
     "check-status-code": {
       "title": "HTTP Code Check",
