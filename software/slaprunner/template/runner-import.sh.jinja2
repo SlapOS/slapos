@@ -181,7 +181,25 @@ EOF
 )
 
 db_query "update $DB_PARTITION_TABLE set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
-db_query "update $DB_SOFTWARE_TABLE set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || db_query "delete from $DB_SOFTWARE_TABLE where url='$OLD_SOFTWARE_RELEASE';"
+
+SOFTWARE_RELEASE_LIST=$(db_query "select url from $DB_SOFTWARE_TABLE")
+for SOFTWARE_RELEASE_TO_MIGRATE in $SOFTWARE_RELEASE_LIST; do
+    SOFTWARE_RELEASE_MIGRATED=$({{ sys.executable }} - $SOFTWARE_RELEASE_TO_MIGRATE $PARTITION <<EOF
+if 1:
+  import os, re, sys
+
+  # We want to replace the last occurence only
+  old_software_release, partition = sys.argv[1], sys.argv[2]
+  for match in re.finditer("(slappart|test0-)[0-9][0-9]*", old_software_release):
+    start, end = match.start(), match.end()
+
+  print old_software_release[:start] + partition + old_software_release[end:]
+EOF
+)
+    db_query "update $DB_SOFTWARE_TABLE set url='$SOFTWARE_RELEASE_MIGRATED' where url='$SOFTWARE_RELEASE_TO_MIGRATE';" || db_query "delete from $DB_SOFTWARE_TABLE where url='$SOFTWARE_RELEASE_TO_MIGRATE';"
+done
+
+
 # Change slapproxy database to have all instances stopped
 db_query "update $DB_PARTITION_TABLE set requested_state='stopped';"
 # Change slapproxy database to get correct IPs
