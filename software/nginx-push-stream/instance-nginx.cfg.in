@@ -27,12 +27,10 @@ ssl = $${:etc}/ssl
 # Nginx service
 #################################
 [nginx-service]
-recipe = slapos.recipe.template
-url = ${template-nginx-service:output}
-output = $${directory:services}/nginx
-mode = 0700
-virtual-depends =
-  $${nginx-configuration:ip}
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/nginx
+command-line =
+  ${nginx-push-stream-output:nginx} -c $${nginx-configuration:output}
 
 [nginx-configuration]
 recipe = slapos.recipe.template
