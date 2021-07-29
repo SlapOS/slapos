@@ -8,7 +8,7 @@ events {
   # multi_accept on;
 }
 
-error_log $${nginx-configuration:error_log};
+error_log $${nginx-configuration:error-log};
 
 http {
 
@@ -33,8 +33,8 @@ http {
   # Logging Settings
   ##
 
-  access_log $${nginx-configuration:access_log};
-  error_log $${nginx-configuration:error_log};
+  access_log $${nginx-configuration:access-log};
+  error_log $${nginx-configuration:error-log};
 
   ##
   # Gzip Settings
@@ -56,7 +56,7 @@ http {
 
 server {
   listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
-  listen $${nginx-configuration:local_ip}:$${nginx-configuration:port};
+  listen $${nginx-configuration:local-ip}:$${nginx-configuration:port};
 
   fastcgi_temp_path  $${directory:varnginx} 1 2;
   uwsgi_temp_path  $${directory:varnginx} 1 2;
@@ -73,27 +73,27 @@ server {
     return 204;
   }
 
-  location $${nginx-configuration:publisher_location_prefix} {
+  location $${nginx-configuration:publisher-location-prefix} {
             push_stream_publisher;
 
             push_stream_channels_path               $arg_id;
             # store messages in memory
-            push_stream_store_messages              $${nginx-configuration:publisher_push_stream_store_messages};
+            push_stream_store_messages              $${nginx-configuration:publisher-push-stream-store-messages};
 
             # Message size limit
             # client_max_body_size MUST be equal to client_body_buffer_size or
             # you will be sorry.
-            client_max_body_size                    $${nginx-configuration:publisher_client_max_body_size};
-            client_body_buffer_size                 $${nginx-configuration:publisher_client_body_buffer_size};
+            client_max_body_size                    $${nginx-configuration:publisher-client-max-body-size};
+            client_body_buffer_size                 $${nginx-configuration:publisher-client-body-buffer-size};
 
    }
 
-   location ~ $${nginx-configuration:subscriber_location_prefix}/(.*) {
+   location ~ $${nginx-configuration:subscriber-location-prefix}/(.*) {
             # activate subscriber mode for this location
-            add_header "Access-Control-Allow-Origin" $${nginx-configuration:subscriber_allow_origin};
-            add_header 'Access-Control-Allow-Credentials' $${nginx-configuration:subscriber_allow_credential};
-            add_header 'Access-Control-Allow-Methods' $${nginx-configuration:subscriber_allow_methods};
-            add_header 'Access-Control-Allow-Headers' $${nginx-configuration:subscriber_allow_headers};
+            add_header "Access-Control-Allow-Origin" $${nginx-configuration:subscriber-allow-origin};
+            add_header 'Access-Control-Allow-Credentials' $${nginx-configuration:subscriber-allow-credential};
+            add_header 'Access-Control-Allow-Methods' $${nginx-configuration:subscriber-allow-methods};
+            add_header 'Access-Control-Allow-Headers' $${nginx-configuration:subscriber-allow-headers};
 
             push_stream_subscriber eventsource;
             # positional channel path
