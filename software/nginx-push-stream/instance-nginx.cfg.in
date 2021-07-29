@@ -1,8 +1,6 @@
 [buildout]
 parts =
   nginx-service
-  htpasswd
-  htpasswd-runner
   publish-connection-information
 
 eggs-directory = ${buildout:eggs-directory}
@@ -53,24 +51,9 @@ subscriber-location-prefix = /sub
 subscriber-allow-credential = 'false'
 subscriber-allow-methods = 'GET, HEAD, OPTIONS'
 subscriber-allow-headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
-
-[htpasswd]
-recipe = slapos.cookbook:generate.password
-storage-path = $${directory:etc}/.pwd
-bytes = 8
-
-[htpasswd-runner]
-recipe = plone.recipe.command
-stop-on-error = true
-htpasswd-path = $${directory:etc}/.htpasswd
-command = if [ ! -f "$${:htpasswd-path}" ]; then ${buildout:bin-directory}/htpasswd -cb $${:htpasswd-path} $${:user} $${:password}; fi
-update-command = $${:command}
-user = admin
-password = $${htpasswd:passwd}
+base-url = http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-init-password = $${htpasswd:passwd}
-init-user = $${htpasswd-runner:user}
-publisher-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:publisher-location-prefix}
-subscriber-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:subscriber-location-prefix}
+publisher-url = $${nginx-configuration:base-url}$${nginx-configuration:publisher-location-prefix}
+subscriber-url = $${nginx-configuration:base-url}$${nginx-configuration:subscriber-location-prefix}
