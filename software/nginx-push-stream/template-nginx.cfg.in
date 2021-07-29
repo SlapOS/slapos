@@ -70,6 +70,11 @@ server {
     return 204;
   }
 
+  location = /status {
+    default_type "text/plain";
+    return 200 'OK';
+  }
+
   location $${nginx-configuration:publisher-location-prefix} {
             push_stream_publisher;
 

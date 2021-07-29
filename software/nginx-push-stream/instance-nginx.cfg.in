@@ -1,7 +1,10 @@
 [buildout]
 parts =
   nginx-service
+  promises
   publish-connection-information
+
+extends = ${monitor-template:rendered}
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -52,6 +55,17 @@ subscriber-allow-credential = 'false'
 subscriber-allow-methods = 'GET, HEAD, OPTIONS'
 subscriber-allow-headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
 base-url = http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
+
+[promises]
+recipe =
+promises =
+  $${nginx-available-promise:recipe}
+
+[nginx-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${nginx-configuration:base-url}/status
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
