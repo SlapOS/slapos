@@ -37,22 +37,22 @@ recipe = slapos.recipe.template
 url = ${template-nginx-configuration:output}
 output = $${directory:etc}/nginx.cfg
 mode = 0600
-access_log = $${directory:log}/nginx-access.log
-error_log = $${directory:log}/nginx-error.log
+access-log = $${directory:log}/nginx-access.log
+error-log = $${directory:log}/nginx-error.log
 ip = $${slap-network-information:global-ipv6}
-local_ip = $${slap-network-information:local-ipv4}
+local-ip = $${slap-network-information:local-ipv4}
 port = 9443
-publisher_location_prefix = /pub
-publisher_push_stream_store_messages = off
-publisher_client_max_body_size = 16k
-publisher_client_body_buffer_size = 16k
+publisher-location-prefix = /pub
+publisher-push-stream-store-messages = off
+publisher-client-max-body-size = 16k
+publisher-client-body-buffer-size = 16k
 
-subscriber_allow_origin = '*'
-subscriber_location_prefix = /sub
+subscriber-allow-origin = '*'
+subscriber-location-prefix = /sub
 # Prevent to use credential if origin is star
-subscriber_allow_credential = 'false'
-subscriber_allow_methods = 'GET, HEAD, OPTIONS'
-subscriber_allow_headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
+subscriber-allow-credential = 'false'
+subscriber-allow-methods = 'GET, HEAD, OPTIONS'
+subscriber-allow-headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
 
 [htpasswd]
 recipe = slapos.cookbook:generate.password
@@ -72,5 +72,5 @@ password = $${htpasswd:passwd}
 recipe = slapos.cookbook:publish
 init-password = $${htpasswd:passwd}
 init-user = $${htpasswd-runner:user}
-publisher-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:publisher_location_prefix}
-subscriber-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:subscriber_location_prefix}
+publisher-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:publisher-location-prefix}
+subscriber-url = http://$${htpasswd-runner:user}:$${htpasswd:passwd}@[$${nginx-configuration:ip}]:$${nginx-configuration:port}$${nginx-configuration:subscriber-location-prefix}
