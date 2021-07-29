@@ -25,7 +25,7 @@ instance are:
 
 - target-url:             URL for Chromium to load on startup.
 - remote-debugging-port:  Port for Chromium to listen on.
-- nginx-port:             Port for Ningx proxy to listen on.
-- monitor-port:           Port for monitor.
+- nginx-proxy-port:       Port for Ningx proxy to listen on.
+- monitor-httpd-port:     Port for monitor.
 
 Defaults are set in instance.cfg.in.
