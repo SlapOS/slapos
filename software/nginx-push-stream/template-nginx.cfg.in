@@ -65,9 +65,6 @@ server {
   client_body_temp_path $${directory:varnginx} 1 2;
   proxy_temp_path $${directory:varnginx} 1 2;
 
-  auth_basic           "Nginx Access";
-  auth_basic_user_file $${htpasswd-runner:htpasswd-path};
-
   ## Serve an error 204 (No Content) for favicon.ico
   location = /favicon.ico {
     return 204;
