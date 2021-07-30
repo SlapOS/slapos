@@ -8,7 +8,8 @@ parts =
   nginx-launcher
   logrotate-entry-nginx
   publish-connection-information
-  frontend-promise
+  frontend-ok-promise
+  frontend-secure-promise
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
