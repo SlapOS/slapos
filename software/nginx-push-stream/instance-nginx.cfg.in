@@ -54,7 +54,24 @@ subscriber-location-prefix = /sub
 subscriber-allow-credential = 'false'
 subscriber-allow-methods = 'GET, HEAD, OPTIONS'
 subscriber-allow-headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
-base-url = http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
+base-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
+
+# Generate a self-signed TLS certificate.
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:key-file} ]
+  then
+    ${openssl:location}/bin/openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${nginx-configuration:ip}" \
+      -newkey rsa:1024 -keyout $${:key-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+key-file = $${directory:ssl}/${:_buildout_section_name_}.key
+cert-file = $${directory:ssl}/${:_buildout_section_name_}.cert
+common-name = $${nginx-configuration:ip}
+stop-on-error = true
 
 [promises]
 recipe =
