@@ -50,7 +50,6 @@ return = secure_access domain
 module = check_url_available
 name = jscrawler_frontend.py
 config-url = ${request-jscrawler-frontend:connection-secure_access}
-config-http-code = 401
 
 [logrotate-entry-httpd]
 <= logrotate-entry-base
