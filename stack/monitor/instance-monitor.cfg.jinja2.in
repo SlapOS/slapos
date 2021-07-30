@@ -364,7 +364,7 @@ name = check-monitor-frontend-password.py
 url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
 config-username = ${monitor-instance-parameter:username}
-config-password = ${monitor-instance-parameter:username}
+config-password = ${monitor-instance-parameter:password}
 
 # Requests to the frontend URL should fail when no credentials are
 # supplied.
