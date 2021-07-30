@@ -99,7 +99,7 @@ slave-introspection-var = ${:var}/slave-introspection
 [switch-caddy-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:rendered
-RootSoftwareInstance = $${:default}
+RootSoftwareInstance = ${:default}
 single-default = dynamic-custom-personal-profile-slave-list:rendered
 single-custom-personal = dynamic-custom-personal-profile-slave-list:rendered
 
