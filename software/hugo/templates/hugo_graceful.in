@@ -3,5 +3,5 @@
 # BEWARE: It will be overwritten automatically
 
 # Run graceful
-hugo_server_pid=$(ps -ef | grep -v grep | grep hugo-server-on-watch | awk '{ print $2 }')
-exec kill -s SIGHUP $hugo_server_pid
+hugo_server=$(slapos node status | grep hugo-server | awk '{ print $1 }')
+exec slapos node restart $hugo_server

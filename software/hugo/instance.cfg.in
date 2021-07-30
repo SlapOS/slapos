@@ -86,7 +86,6 @@ bin_launcher = ${basedirectory:script}/launcher
 
 # Docroot
 docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
-default_index = ${basedirectory:data}/index.html
 
 [hugo-server-graceful]
 recipe = slapos.recipe.template:jinja2
