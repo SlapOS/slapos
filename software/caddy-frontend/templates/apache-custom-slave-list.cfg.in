@@ -194,7 +194,7 @@ context =
 {%-   do slave_publish_dict.__setitem__('backend-client-caucase-url', backend_client_caucase_url) %}
 {#-   Set slave domain if none was defined #}
 {%-   if slave_instance.get('custom_domain', None) == None %}
-{%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "") %}
+{%-     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").replace("_", "").lower() %}
 {%-     do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) %}
 {%-   endif %}
 {%-   do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) %}
