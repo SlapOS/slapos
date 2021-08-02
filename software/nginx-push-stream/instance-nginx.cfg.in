@@ -43,17 +43,6 @@ error-log = $${directory:log}/nginx-error.log
 ip = $${slap-network-information:global-ipv6}
 local-ip = $${slap-network-information:local-ipv4}
 port = 9443
-publisher-location-prefix = /pub
-publisher-push-stream-store-messages = off
-publisher-client-max-body-size = 16k
-publisher-client-body-buffer-size = 16k
-
-subscriber-allow-origin = '*'
-subscriber-location-prefix = /sub
-# Prevent to use credential if origin is star
-subscriber-allow-credential = 'false'
-subscriber-allow-methods = 'GET, HEAD, OPTIONS'
-subscriber-allow-headers = 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since'
 base-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 
 # Generate a self-signed TLS certificate.
@@ -86,5 +75,5 @@ config-url = $${nginx-configuration:base-url}/status
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-publisher-url = $${nginx-configuration:base-url}$${nginx-configuration:publisher-location-prefix}
-subscriber-url = $${nginx-configuration:base-url}$${nginx-configuration:subscriber-location-prefix}
+publisher-url = $${nginx-configuration:base-url}/pub
+subscriber-url = $${nginx-configuration:base-url}/sub
