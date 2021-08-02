@@ -44,6 +44,7 @@ setup(
         'slapos.core',
         'slapos.libnetworkcache',
         'requests',
+        'uritemplate',
     ],
     zip_safe=True,
     test_suite='test',
