@@ -87,34 +87,32 @@ server {
     return 200 'OK';
   }
 
-  location $${nginx-configuration:publisher-location-prefix} {
-            push_stream_publisher;
+  location /pub {
+    push_stream_publisher;
 
-            push_stream_channels_path               $arg_id;
-            # store messages in memory
-            push_stream_store_messages              $${nginx-configuration:publisher-push-stream-store-messages};
+    push_stream_channels_path               $arg_id;
+    # store messages in memory
+    push_stream_store_messages              off;
 
-            # Message size limit
-            # client_max_body_size MUST be equal to client_body_buffer_size or
-            # you will be sorry.
-            client_max_body_size                    $${nginx-configuration:publisher-client-max-body-size};
-            client_body_buffer_size                 $${nginx-configuration:publisher-client-body-buffer-size};
+    # Message size limit
+    client_max_body_size                    16k;
+    client_body_buffer_size                 16k;
+    
+  }
 
-   }
+  location ~ /sub/(.*) {
+    # activate subscriber mode for this location
+    add_header "Access-Control-Allow-Origin" '*';
+    add_header 'Access-Control-Allow-Credentials' 'false';
+    add_header 'Access-Control-Allow-Methods' 'GET, HEAD, OPTIONS';
+    add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since';
 
-   location ~ $${nginx-configuration:subscriber-location-prefix}/(.*) {
-            # activate subscriber mode for this location
-            add_header "Access-Control-Allow-Origin" $${nginx-configuration:subscriber-allow-origin};
-            add_header 'Access-Control-Allow-Credentials' $${nginx-configuration:subscriber-allow-credential};
-            add_header 'Access-Control-Allow-Methods' $${nginx-configuration:subscriber-allow-methods};
-            add_header 'Access-Control-Allow-Headers' $${nginx-configuration:subscriber-allow-headers};
+    push_stream_subscriber eventsource;
+    # positional channel path
+    push_stream_channels_path                   $1;
 
-            push_stream_subscriber eventsource;
-            # positional channel path
-            push_stream_channels_path                   $1;
-
-            # content-type
-            default_type                                "text/event-stream; charset=utf-8";
+    # content-type
+    default_type                                "text/event-stream; charset=utf-8";
   }
 
   location / {
