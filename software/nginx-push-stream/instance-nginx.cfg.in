@@ -6,9 +6,6 @@ parts =
 
 extends = ${monitor-template:rendered}
 
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline = true
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -40,8 +37,8 @@ output = $${directory:etc}/nginx.cfg
 mode = 0600
 access-log = $${directory:log}/nginx-access.log
 error-log = $${directory:log}/nginx-error.log
-ip = $${slap-network-information:global-ipv6}
-local-ip = $${slap-network-information:local-ipv4}
+ip = $${slap-configuration:ipv6-random}
+local-ip = $${slap-configuration:ipv4-random}
 port = 9443
 base-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
 
