@@ -28,6 +28,7 @@
 import os
 import multiprocessing
 
+import uritemplate
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -46,7 +47,9 @@ class TestNginxPushStream(SlapOSInstanceTestCase):
     def process_messages(q):
       # type:(multiprocessing.Queue[bytes]) -> None
       req = requests.get(
-          self.connection_parameters['subscriber-url'] + '/channel_id',
+          uritemplate.URITemplate(
+              self.connection_parameters['subscriber-url']).expand(
+                  id='channel_id'),
           verify=False,
           stream=True,
       )
@@ -62,7 +65,9 @@ class TestNginxPushStream(SlapOSInstanceTestCase):
     self.assertEqual(q.get(timeout=30), b'ready')
 
     resp = requests.post(
-        self.connection_parameters['publisher-url'] + '?id=channel_id',
+        uritemplate.URITemplate(
+            self.connection_parameters['publisher-url']).expand(
+                id='channel_id'),
         verify=False,
         data='Hello',
         timeout=2,
