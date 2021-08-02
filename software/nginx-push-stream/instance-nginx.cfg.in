@@ -72,5 +72,7 @@ config-url = $${nginx-configuration:base-url}/status
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-publisher-url = $${nginx-configuration:base-url}/pub
-subscriber-url = $${nginx-configuration:base-url}/sub
+# publisher-url and subscriber-url are URITemplates, with an id
+# parameter which is the ID of the channel.
+publisher-url = $${nginx-configuration:base-url}/pub{?id}
+subscriber-url = $${nginx-configuration:base-url}/sub{/id}
