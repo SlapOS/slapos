@@ -531,12 +531,12 @@ class TestHandler(BaseHTTPRequestHandler):
       timeout = int(config.pop('Timeout', '0'))
       compress = int(config.pop('Compress', '0'))
       drop_header_list = []
-      for header in config.pop('X-Drop-Header', '').split():
+      for header in (config.pop('X-Drop-Header') or '').split():
         drop_header_list.append(header)
       header_dict = config
     else:
       drop_header_list = []
-      for header in self.headers.dict.get('x-drop-header', '').split():
+      for header in (self.headers.dict.get('x-drop-header') or '').split():
         drop_header_list.append(header)
       response = None
       status_code = 200
