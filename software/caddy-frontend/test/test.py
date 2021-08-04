@@ -1813,7 +1813,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
     for line in [
       q for q in open(buildout_file).readlines()
       if q.startswith('config-slave-list') or q.startswith(
@@ -4590,7 +4590,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     self.slap.waitForInstance(self.instance_max_retry)
 
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
     with open(buildout_file) as fh:
       buildout_file_content = fh.read()
       node_1_present = re.search(
