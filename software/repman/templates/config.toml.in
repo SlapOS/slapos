@@ -48,6 +48,7 @@ backup-restic-password = "{{ parameter_dict['password'] }}"
 backup-mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
 backup-mysqlbinlog-path = "{{ parameter_dict['mysqlbinlog-path'] }}"
 backup-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
+backup-mysqldump-options = "--hex-blob --single-transaction --verbose --all-databases --add-drop-database"
 
 # Mail configuration
 # Alert email sender (default "mrm@localhost")

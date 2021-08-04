@@ -107,7 +107,7 @@ commands =
 [my-cnf-parameters]
 socket = ${directory:run}/mariadb.sock
 ip = {{ ip }}
-data-directory = ${directory:srv}/mariadb
+data-directory = ${directory:mysql}
 pid-file = ${directory:run}/mariadb.pid
 plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
 groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
@@ -202,6 +202,7 @@ recipe = slapos.cookbook:wrapper
 command-line = ${mysqld:rendered}
 wrapper-path = ${directory:controller}/mariadb
 wait-for-files =
+  ${directory:etc}/mysql/my.cnf
   ${directory:ssl}/mariadb-cert.crt
 
 {% import "supervisord_lib" as supervisord_lib with context %}
