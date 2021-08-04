@@ -57,7 +57,7 @@ template =
   inline:#!/bin/sh
 
   export FONTCONFIG_FILE=${font-config:rendered}
-  exec {{ parameter_list['chromium-binary'] }} \
+  exec {{ parameter_list['chromium-wrapper'] }} \
     --remote-debugging-address=${headless-chromium:ipv4} \
     --remote-debugging-port=${headless-chromium:remote-debugging-port} \
     ${headless-chromium:url}
