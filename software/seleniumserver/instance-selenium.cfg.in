@@ -137,7 +137,7 @@ port = 7782
 [selenium-server-node-instance-headless-chromium]
 <= selenium-server-node-instance
 capabilities = browserName=chrome,maxInstances=3,platform=LINUX,version=${chromium-source:version},chrome_binary=${headless-chromium-wrapper:rendered}
-java-args = -Dwebdriver.chrome.driver=${headless-chromium-chromedriver:binary}
+java-args = -Dwebdriver.chrome.driver=${headless-chromium:chromedriver}
 port = 7783
 
 
