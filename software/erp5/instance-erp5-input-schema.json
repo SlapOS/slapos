@@ -565,7 +565,8 @@
                 "target": {
                   "description": "Target system",
                   "type": "string",
-                  "const": "selenium-server"
+                  "const": "selenium-server",
+                  "default": "selenium-server"
                 },
                 "server-url": {
                   "description": "URL of the selenium server",

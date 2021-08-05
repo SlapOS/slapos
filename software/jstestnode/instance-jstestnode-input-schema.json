@@ -64,7 +64,8 @@
             "target": {
               "description": "Target system",
               "type": "string",
-              "const": "selenium-server"
+              "const": "selenium-server",
+              "default": "selenium-server"
             },
             "server-url": {
               "description": "URL of the selenium server",
@@ -128,7 +129,8 @@
             "target": {
               "description": "Target system",
               "const": "node",
-              "type": "string"
+              "type": "string",
+              "default": "node"
             }
           }
         }
