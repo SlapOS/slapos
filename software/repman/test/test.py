@@ -26,6 +26,7 @@
 ##############################################################################
 
 import os
+import time
 from six.moves.urllib.parse import urljoin
 
 import requests
@@ -68,16 +69,21 @@ class TestRepman(SlapOSInstanceTestCase):
     )
     self.assertEqual(resp.status_code, requests.codes.ok)
 
-    resp = requests.get(
-        urljoin(self.url, '/api/clusters'),
-        params={
-            'query': '{"method":"GET","isArray":false}',
-        },
-        headers=headers,
-        verify=False,
-    )
-    self.assertEqual(resp.status_code, requests.codes.ok)
-    cluster, = resp.json()
+    for i in range(20):
+      resp = requests.get(
+          urljoin(self.url, '/api/clusters'),
+          params={
+              'query': '{"method":"GET","isArray":false}',
+          },
+          headers=headers,
+          verify=False,
+      )
+      self.assertEqual(resp.status_code, requests.codes.ok)
+      cluster, = resp.json()
+      if cluster['isProvision'] and cluster['isFailable'] and not cluster['isDown']:
+        break
+      time.sleep(i)
+
     self.assertTrue(cluster['isProvision'])
     self.assertTrue(cluster['isFailable'])
     self.assertFalse(cluster['isDown'])
