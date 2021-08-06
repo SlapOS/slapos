@@ -8,6 +8,9 @@ events {
 http {
   access_log {{ param_headless_chromium['nginx-access-log'] }};
 
+  include {{ param_headless_chromium['nginx-mime-types'] }};
+  default_type application/octet-stream;
+
   types {
     text/html html;
     text/css css;

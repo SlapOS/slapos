@@ -20,12 +20,11 @@ The proxy is necessary because Chromium only accepts local connections
 for remote debugging.
 
 ## Parameters
-The options that you can set at the command line when requesting an
-instance are:
+The following instance parameters can be configured:
 
 - target-url:             URL for Chromium to load on startup.
 - remote-debugging-port:  Port for Chromium to listen on.
 - nginx-proxy-port:       Port for Ningx proxy to listen on.
 - monitor-httpd-port:     Port for monitor.
 
-Defaults are set in instance.cfg.in.
+See `instance-headless-chromium-input-schema.json` for default values.

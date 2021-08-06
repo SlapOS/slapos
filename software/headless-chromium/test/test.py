@@ -40,9 +40,31 @@ class TestHeadlessChromium(SlapOSInstanceTestCase):
     self.connection_parameters = self.requestDefaultInstance().getConnectionParameterDict()
 
   def test_remote_debugging_port(self):
-    # The headless browser should respond at /json with a list of
-    # available pages, each of which has a webSocketDebuggerUrl.
+    # The headless browser should respond at /json with a nonempty list
+    # of available pages, each of which has a webSocketDebuggerUrl and a
+    # devtoolsFrontendUrl.
     url = self.connection_parameters['remote-debug-url']
     response = requests.get('%s/json' % url)
+
+    # Check that request was successful and the response was a nonempty
+    # list.
     self.assertEqual(requests.codes['ok'], response.status_code)
-    self.assertIn('webSocketDebuggerUrl', response.json()[0])
+    self.assertTrue(len(response.json()) > 0)
+
+    # Check that the first page has the correct fields.
+    first_page = response.json()[0]
+    self.assertIn('webSocketDebuggerUrl', first_page)
+    self.assertIn('devtoolsFrontendUrl', first_page)
+
+  def test_devtools_frontend_ok(self):
+    # The proxy should serve the DevTools frontend from
+    # /serve_file/@{hash}/inspector.html, where {hash} is a 5-32 digit
+    # hash.
+    proxyURL = self.connection_parameters['proxy-url']
+    username = self.connection_parameters['username']
+    password = self.connection_parameters['password']
+    frontend = '/serve_file/@aaaaa/inspector.html'
+
+    response = requests.get(proxyURL + frontend, verify=False,
+                            auth=(username, password))
+    self.assertEqual(requests.code['ok'], response.status_code)

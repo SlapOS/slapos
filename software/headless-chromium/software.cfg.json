@@ -1,7 +1,7 @@
 {
   "name": "Headless Chromium",
   "description": "Headless (stripped-down) Chromium shell",
-  "serialization": "",
+  "serialization": "xml",
   "software-type": {
     "default": {
       "title": "Default",

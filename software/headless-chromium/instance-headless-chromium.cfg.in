@@ -5,6 +5,7 @@ parts =
   chromium-launcher
   generate-passwd-file
   nginx-config
+  nginx-mime-types
   nginx-launcher
   logrotate-entry-nginx
   publish-connection-information
@@ -47,6 +48,7 @@ nginx-access-log = ${directory:log}/nginx-access.log
 nginx-htpasswd-file = ${directory:etc}/.htpasswd
 nginx-key-file = ${frontend-instance-certificate:key-file}
 nginx-cert-file = ${frontend-instance-certificate:cert-file}
+ngins-mime-types = ${directory:etc}/mime-types
 
 
 # Create a launcher script in /etc/service for the headless shell
@@ -72,6 +74,11 @@ rendered = ${headless-chromium:nginx-config-target}
 mode = 700
 context =
   section param_headless_chromium headless-chromium
+
+[nginx-mime-types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template-mime-types'] }}
+rendered = ${headless-chromium:nginx-mime-types}
 
 [nginx-launcher]
 recipe = slapos.cookbook:wrapper
