@@ -511,14 +511,12 @@ return = domain secure_access
 module = check_url_available
 name = check_repman_frontend.py
 config-url = https://${repman-frontend:connection-domain}
-config-check-secure = 1
 
 [repman-backend-promise]
 <= monitor-promise-base
 module = check_url_available
 name = check_repman_backend.py
 config-url = ${nginx-parameter:backend-ssl-url}
-config-check-secure = 1
 
 [template-proxysql-need-stop-start]
 recipe = slapos.recipe.template:jinja2
