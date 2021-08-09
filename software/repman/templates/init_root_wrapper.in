@@ -2,7 +2,7 @@
 
 run_mysql () {
   {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
-  --protocol=socket -u$USER -hlocalhost "$@"
+  --protocol=socket -hlocalhost "$@"
 }
 
 if [ ! -f "{{ init_password_done }}" ]; then
@@ -19,6 +19,9 @@ if [ ! -f "{{ init_password_done }}" ]; then
   fi
   echo "Setting mariabdb root password...";
   run_mysql  < {{ init_root_sql }} && touch {{ init_password_done }} || exit 1;
+  echo "remove unwanted users...";
+  run_mysql -e "DROP USER IF EXISTS 'root'@'$HOSTNAME';"
+  run_mysql -e "DROP USER IF EXISTS ''@'$HOSTNAME';"
   echo "done"
 fi
 

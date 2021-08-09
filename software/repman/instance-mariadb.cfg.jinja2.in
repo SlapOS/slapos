@@ -248,7 +248,7 @@ template =
   inline:#!/bin/sh
   exec {{ parameter_dict['mariadb-location'] }}/bin/${:command} \
   --defaults-file="${directory:etc}/mysql/my.cnf" \
-  --protocol=socket --user=$USER \
+    --protocol=socket \
   ${:extra-args} "$@"
 wrapper-path = ${:rendered}
 extra-args =
