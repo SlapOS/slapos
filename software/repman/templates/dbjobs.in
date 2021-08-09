@@ -109,7 +109,7 @@ do
       ;;
       mariabackup)
        cd {{ parameter_dict['tmp-dir'] }}
-       mariadb-backup --innobackupex --defaults-file={{ parameter_dict['dbjob-cnf'] }} --socket='{{ parameter_dict["mysqld-socket"] }}'  --no-version-check  --user=$USER --stream=xbstream {{ parameter_dict['tmp-dir'] }}/ | socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
+       mariadb-backup --innobackupex --defaults-file={{ parameter_dict['dbjob-cnf'] }} --socket='{{ parameter_dict["mysqld-socket"] }}'  --no-version-check  --user=root --stream=xbstream {{ parameter_dict['tmp-dir'] }}/ | socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
       ;;
       error)
        cat $ERROLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
