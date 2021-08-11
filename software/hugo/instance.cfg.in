@@ -30,7 +30,7 @@ configuration.nginx-port = 8081
 configuration.monitor-httpd-port = 8197
 configuration.nginx-monitor-httpd-port =8198
 configuration.download-url =
-configuration.site =
+configuration.site = default
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -48,6 +48,8 @@ log = ${directory:var}/log
 run = ${directory:var}/run
 backup = ${directory:srv}/backup
 data = ${directory:srv}/hugo
+default-site = ${:data}/default
+default-public = ${:default-site}/public
 
 [tempdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -158,31 +160,10 @@ mode = 700
 context = 
     section param_hugo hugo
 
-[downloader]
-recipe = slapos.recipe.build
-location = ${directory:srv}/hugo
-url =  {{ '' }}
-default_index_html = ${default_index_html:rendered}
-install =
-  import os, shutil
-  buildout_offline = self.buildout['buildout']['offline']
-  try:
-    self.buildout['buildout']['offline'] = 'false'
-    if options['url']:
-      file = self.download(options['url'])
-      extract_dir = self.extract(file)
-      workdir = guessworkdir(extract_dir)
-      self.copyTree(workdir, location)
-    else:
-      os.makedirs(location)
-      shutil.copy(options['default_index_html'], location)
-  finally:
-    self.buildout['buildout']['offline'] = buildout_offline
-
 [default_index_html]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_index_html'] }}
-rendered = ${basedirectory:data}/index.html
+rendered = ${basedirectory:default-public}/index.html
 context =
   key env slap-configuration:configuration.port
 

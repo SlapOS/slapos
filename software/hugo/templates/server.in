@@ -1,10 +1,10 @@
 #! {{ param_hugo['path_shell'] }}
 . {{ go_environment }}
 cd {{ data }}
-if [ {{ site }} ]; then
+if [ {{ site }} = "default" ]; then
+  hugo server --bind={{ ip }} --port={{ port }}
+else
   cd {{ site }}
   if [ -d "public" ]; then rm -Rf public; fi
-  hugo && hugo server --bind={{ ip }} --port={{ port }} --baseURL={{ base_url }} --appendPort=false
-else
-  hugo server --bind={{ ip }} --port={{ port }}
+  hugo && hugo server --bind={{ ip }} --port={{ port }} --baseURL={{ base_url }} --appendPort=false  
 fi
