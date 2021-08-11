@@ -1,20 +1,26 @@
-<h1 style="text-align: center;"><img src="https://html-online.com/editor/tiny4_9_11/plugins/emoticons/img/smiley-cool.gif" alt="cool" />Welcome to <a href="https://gohugo.io/" target="_blank">Hugo</a>'s workplace</h1>
-<p>Here are some instructions you might need:&nbsp;</p>
+<h1 id="-cool-https-html-online-com-editor-tiny4_9_11-plugins-emoticons-img-smiley-cool-gif-welcome-to-hugo-https-gohugo-io-s-workplace" style="text-align: center;" dir="ltr"><span style="font-family: 'comic sans ms', sans-serif;"><img src="https://html-online.com/editor/tiny4_9_11/plugins/emoticons/img/smiley-cool.gif" alt="cool" />Welcome to <a href="https://gohugo.io/">Hugo</a>'s workplace</span></h1>
+<table border="1" style="border-collapse: collapse; width: 66%; border-color: #ffffff; margin-left: auto; margin-right: auto;">
+<tbody>
+<tr>
+<td style="width: 99.934%;">
+<p><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Here are some instructions you might need:</span></p>
 <ol>
-<li>To get started, please <code>source</code> the <code>go.work</code>'s environment path by typing the following command in your terminal:<br /><code>$ source {{ env }}<br /></code>You can also find the path (<code>env</code>) from the published information of the request script.</li>
-<li>Once you see <code>(go.work) bash-4.3$</code> displayed on your terminal, you can follow the official documentation from Hugo to a <a href="https://gohugo.io/getting-started/quick-start/">quick start</a>:
-<ul>
-<li style="list-style-type: none;">
-<ul>
-<li>It is necessary to define the bind-address to launch the development website, eg. <code>hugo server -D --bind="ipv6_addr"</code></li>
-<li><code>hugo</code> to create a public directory containing all the static files (index.html, etc..)</li>
-<li>locate the directory of the site. eg. <code>/srv/slapgrid/slappart19/srv/project/quickstart</code>, while <code>index.html</code> is located <code>/srv/slapgrid/slappart19/srv/project/quickstart/public/index.html</code></li>
-</ul>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">To get started, please change the directory to a Hugo workplace by</span><br />
+<pre><code>$ cd {{ data }}</code></pre>
+<span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">It's suggested that you store your splendid Hugo site in this directory that you can also find from the published information of the request script (<code>data</code>). There is always a Hugo server running for you so that the website can dynamically update according to your changes.<br /><br /></span></li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Then let's <code>source</code> the <code>go.work</code>'s environment path by typing the following command in your terminal:</span><br />
+<pre><code>$ source {{ go_environment }}</code></pre>
+<span style="font-family: 'comic sans ms', sans-serif; font-size: 14pt;">&nbsp;You can also find the path (<code>go_environment</code>) from the published information of the request script.<br /><br /></span></li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Once you see <code>(go.work) bash-4.3$</code> displayed on your terminal, you can follow Hugo's official documentation to have a <a href="https://gohugo.io/getting-started/quick-start/">quick start</a><br /><br /></span></li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Pass the <code>site</code> by <code>--parameter site='your_site'</code> with slapos request command (you can do it in the request script) to make your website online, eg.</span><br />
+<pre><code>$ slapos request $software_name'_1' $software_release_uri --parameters site='quickstart'</code></pre>
 </li>
-</ul>
-</li>
-<li>Pass the <code>site-dir</code> by <code>--parameter site-dir='pubic_directory'</code> with slapos request command, eg.&nbsp;<br /><code>slapos request $software_name'_1' $software_release_uri --parameters site-dir='/srv/slapgrid/slappart19/srv/project/quickstart/public'</code></li>
-<li><code>update-hash</code> and <code>slapos node software --all &amp;&amp; slapos node instance --all</code> if the autorun is not on.</li>
-<li>Retrieve the CDN URL by re-launching the slapos request command (It should be the same URL as the one you are using now)</li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><a href="https://handbook.rapid.space/user/rapidspace-HowTo.Move.To.Md5sum.Automatic.Update" target="_blank" rel="noopener"><code>update-hash</code></a> and <a href="https://handbook.rapid.space/user/rapidspace-HowTo.Supply.A.Software.And.Request.An.Instance.On.Theia.Runner">re-compile/re-instanciate</a><br /><br /></span></li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Retrieve the CDN URLs by re-launching the slapos request command. </span><br /><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><code>hugo-server-cdn-url</code> is the website hosted by the Hugo server while <code>nginx-server-cdn-url</code> is the website hosted by the Ngnix server.</span></li>
 </ol>
-<p style="text-align: center;"><strong>Now you can access your published website powered by Hugo</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p style="text-align: center;"><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><strong></strong></span></p>
+<p style="text-align: center;"><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><strong>Now you can access your published website powered by Hugo</strong></span></p>

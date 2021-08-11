@@ -165,7 +165,8 @@ recipe = slapos.recipe.template:jinja2
 template = {{ parameter_list['template_index_html'] }}
 rendered = ${basedirectory:default-public}/index.html
 context =
-  key env slap-configuration:configuration.port
+  key go_environment hugo:go_environment
+  key data basedirectory:data
 
 [default_config_toml]
 recipe = slapos.recipe.template:jinja2
