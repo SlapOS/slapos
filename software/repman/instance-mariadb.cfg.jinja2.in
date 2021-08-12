@@ -69,11 +69,11 @@ mode = {{ mode }}
      buildout_bin_directory=buildout_bin_directory,
      updater_path='${directory:services}/caucase-updater',
      url=slapparameter_dict['caucase-url'],
-     data_dir='${directory:srv}/caucase-updater',
-     crt_path='${directory:ssl}/mariadb-cert.crt',
-     ca_path='${directory:srv}/caucase-updater/ca.crt',
-     crl_path='${directory:srv}/caucase-updater/crl.pem',
-     key_path='${directory:ssl}/mariadb-cert.key',
+     data_dir='${mysql-directory:ssl}',
+     crt_path='${mysql-directory:ssl}/server-cert.pem',
+     ca_path='${mysql-directory:ssl}/ca-cert.pem',
+     crl_path='${mysql-directory:ssl}/crl.pem',
+     key_path='${mysql-directory:ssl}/server-key.pem',
      on_renew=None,
      max_sleep=None,
      template_csr_pem=None,
@@ -86,7 +86,7 @@ mode = {{ mode }}
 recipe = plone.recipe.command
 output = ${directory:tmp}/csr_id
 command = 
-  if [ -s "${directory:ssl}/mariadb-cert.crt" ]; then
+  if [ -s "${mysql-directory:ssl}/server-cert.pem" ]; then
     echo "None" > ${:output};
   else
     if [ -f "${caucase-updater-csr:csr}" ]; then
@@ -107,7 +107,7 @@ commands =
 [my-cnf-parameters]
 socket = ${directory:run}/mariadb.sock
 ip = {{ ip }}
-data-directory = ${directory:mysql}
+data-directory = ${mysql-directory:data}
 pid-file = ${directory:run}/mariadb.pid
 plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
 groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
@@ -117,12 +117,6 @@ innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0
 innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
-#ssl-crt = ${directory:mariadb-ssl}/crt.pem
-#ssl-key = ${directory:mariadb-ssl}/key.pem
-#ssl-ca-crt = ${certificate-authority:ca-dir}/cacert.pem
-ssl-crt = ${directory:ssl}/mariadb-cert.crt
-ssl-key = ${directory:ssl}/mariadb-cert.key
-ssl-ca-crt = ${directory:srv}/caucase-updater/ca.crt
 
 [my-cnf]
 < = jinja2-template-base
@@ -143,6 +137,7 @@ database-list = {{ dumps(database_list) }}
 mroonga-mariadb-install-sql = {{ dumps(parameter_dict['mroonga-mariadb-install-sql']) }}
 root-user = repman
 heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
+require-ssl = {{ dumps(slapparameter_dict['require-ssl']) }}
 
 [init-script]
 < = jinja2-template-executable
@@ -202,8 +197,8 @@ recipe = slapos.cookbook:wrapper
 command-line = ${mysqld:rendered}
 wrapper-path = ${directory:controller}/mariadb
 wait-for-files =
-  ${directory:etc}/mysql/my.cnf
-  ${directory:ssl}/mariadb-cert.crt
+  ${mysql-directory:mysql}/my.cnf
+  ${mysql-directory:ssl}/server-cert.pem
 
 {% import "supervisord_lib" as supervisord_lib with context %}
 {{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
@@ -297,25 +292,26 @@ plugin = ${:etc}/plugin
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 backup = ${:srv}/backup
-mariadb-backup-full = ${:backup}/mariadb-full
-mariadb-backup-incremental = ${:backup}/mariadb-incremental
-mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 lib = ${:var}/lib
-mysql = ${:lib}/mysql
 log = ${:var}/log
 run = ${:var}/run
 config-tmp = ${:tmp}/config
-custom = ${directory:etc}/mysql/custom
-ssl = ${:etc}/ssl
+
+[mysql-directory]
+recipe = slapos.cookbook:mkdirectory
+mysql = ${directory:etc}/mysql
+ssl = ${:mysql}/ssl
+data = ${directory:lib}/mysql
+custom = ${:mysql}/custom.d
 
 [dbjob-parameter]
 bash-bin = {{ bash_bin }}
 db-user = ${init-script-parameters:root-user}
 db-password = ${init-script-parameters:password}
-mysql-dir = ${directory:mysql}
-dbjob-cnf = ${directory:etc}/mysql/dbjob.cnf
-log-dir = ${directory:mysql}/.system/logs
+mysql-dir = ${mysql-directory:data}
+dbjob-cnf = ${mysql-directory:mysql}/dbjob.cnf
+log-dir = ${mysql-directory:data}/.system/logs
 tmp-dir = ${directory:tmp}
 mysqld-socket  = ${my-cnf-parameters:socket}
 mysql-client = ${binary-wrap-mysql:wrapper-path}
@@ -389,11 +385,11 @@ template = inline:#!{{ bash_bin }}
   cd ${directory:config-tmp} &&
   {{ curl_bin }} -o config.tar.gz {{ slapparameter_dict['repman-url'] }}/api/clusters/${:cluster}/servers/{{ host }}/{{ port }}/config
   tar -xzf config.tar.gz
-  cp -r data/.system ${directory:mysql}
-  rm -rf ${directory:etc}/mysql
-  cp -r etc/mysql ${directory:etc}
-  ln -sf ${directory:mysql}/.system ${directory:var}/system
-  ln -sf ${my-cnf:rendered} ${directory:etc}/mysql/custom.d/01_mariadb.cnf
+  rm -r etc/mysql/ssl  # we don't need generated ssl files
+  cp -r data/.system ${mysql-directory:data}
+  cp -r etc/mysql/* ${mysql-directory:mysql}
+  ln -sf ${mysql-directory:data}/.system ${directory:var}/system
+  ln -sf ${my-cnf:rendered} ${mysql-directory:custom}/01_mariadb.cnf
 
 [{{ section('install-mysql-config') }}]
 recipe = plone.recipe.command

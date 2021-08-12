@@ -113,7 +113,8 @@
         "mroonga",
         "utctime",
         "readcommitted",
-        "nohandshake"
+        "nohandshake",
+        "ssl"
       ]
     },
     "http-session-lifetime": {
@@ -137,6 +138,12 @@
     "autoseed": {
       "title": "Automatic join a standalone node",
       "description": "Automatic join a standalone node",
+      "type": "boolean",
+      "default": true
+    },
+    "require-ssl": {
+      "title": "Enable REQUIRE SSL for repman database users",
+      "description": "Enable secure connection between repman and mariadb databases. This option is an initial value, used only when creating database users.",
       "type": "boolean",
       "default": true
     },
@@ -197,7 +204,7 @@
             },
             "proxy-tags": {
               "title": "Proxy tag list",
-              "description": "playbook configuration tags. Default: [\"pkg\", \"masterslave\", \"linux\", \"noreadwritesplit\"]",
+              "description": "playbook configuration tags. Default: [\"pkg\", \"masterslave\", \"linux\", \"noreadwritesplit\", \"ssl\"]",
               "type": "array",
               "items": {
                 "type": "string"
@@ -206,7 +213,8 @@
                 "pkg",
                 "masterslave",
                 "linux",
-                "noreadwritesplit"
+                "noreadwritesplit",
+                "ssl"
               ]
             },
             "logical-backup-cron": {

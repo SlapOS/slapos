@@ -8,11 +8,13 @@
 {% set ip = (ipv6_set | list)[0] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set cluster_list = [] -%}
-{% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
+{% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow",
+  "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci",
+  "mroonga", "utctime", "readcommitted", "nohandshake", "ssl"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 {% set database_slave_list = [] -%}
 {% set db_name_list = [] -%}
-{% set count = namespace(value=1) %}
+{% set count = namespace(value=2) %}
 {% set caucase_bind = '[' ~ ip ~ ']:8890' -%}
 {% set caucase_url = 'http://' ~ caucase_bind -%}
 {% set csrid_list = [] -%}
@@ -42,6 +44,11 @@ backup-caucased = ${:srv}/backup-caucased
 caucased = ${:srv}/caucased
 ssl = ${:etc}/ssl
 
+[proxysql-directory]
+recipe = slapos.cookbook:mkdirectory
+config = ${directory:etc}/proxysql
+ssl = ${:config}/ssl
+
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-ctl" -%}
 {{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
@@ -65,13 +72,13 @@ template = inline:#!{{ bash_bin }}
   PORT=$3
   CONFIG=$4
   if [ -z "$CONFIG" ]; then
-    CONFIG="${repman:proxies}/proxysql-$NAME.cnf"
+    CONFIG="${proxysql-directory:config}/proxysql.cnf"
   fi
   mkdir -p ${repman:config-tmp}/proxies
   cd ${repman:config-tmp}/proxies
   {{ curl_bin }} -o proxies-$NAME.tar.gz ${nginx-parameter:repman-url}/api/clusters/$NAME/servers/$HOST/$PORT/config
   tar -xzf proxies-$NAME.tar.gz
-  cp etc/proxysql.cnf $CONFIG
+  cp etc/proxysql/proxysql.cnf $CONFIG
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
@@ -81,7 +88,8 @@ mode = 755
   'user': instance_dict.get('db_user', 'user'),
   'password': instance_dict.get('db_password', '${' ~ instance_dict['slave_reference'] ~ '-password:passwd}'),
   'slave_reference': instance_dict['slave_reference'],
-  'charset': instance_dict.get('db_charset', '')
+  'charset': instance_dict.get('db_charset', ''),
+  'require_ssl': 'True'
   } -%}
 {% do database_slave_list.append(slave_dict) -%}
 {% do db_name_list.append(slave_dict['name']) -%}
@@ -134,6 +142,7 @@ config-cluster = {{ name }}
 config-name = {{ dbname }}
 config-database-list = !py!{{ database_slave_list }}
 config-database-name = {{ dumps(db_list) }}
+config-require-ssl = {{ dumps(slapparameter_dict.get('require-ssl', True)) }}
 return =
   database-host
   receiver-port
@@ -190,7 +199,7 @@ password = ${repman-parameter:password}
 proxysql-partition = ${buildout:directory}
 receiver-port-list = {{ receiver_port_list | join(',') }}
 enabled-tags = {{ slapparameter_dict.get("tag-list", tag_list) | join(',') }}
-proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit"]) | join(',') }}
+proxy-tags = {{ parameter_dict.get("proxy-tags", ["pkg", "masterslave", "linux", "noreadwritesplit", "ssl"]) | join(',') }}
 logical-backup-cron = {{ parameter_dict.get("logical-backup-cron", "0 22 * * *") }}
 physical-backup-cron = {{ parameter_dict.get("physical-backup-cron", "0 0 * * *") }}
 proxy-cpu-cores = {{ parameter_dict.get("proxy-cpu-cores", 2) }}
@@ -230,7 +239,7 @@ context =
 recipe = plone.recipe.command
 # if Repman is not started, cannot download config from server
 stop-on-error = false
-config = ${repman:proxies}/proxysql-{{ name }}.cnf
+config = ${proxysql-directory:config}/proxysql.cnf
 data = ${repman:proxy-data}/{{ name }}
 command =
   mkdir -p ${:data} &&
@@ -364,6 +373,25 @@ context =
 {% do part_list.append('caucase-user-updater') -%}
 {% do part_list.append('caucase-user-updater-promise') -%}
 
+#caucase proxysql certificate
+{{ caucase.updater(
+     prefix='caucase-proxysql-updater',
+     buildout_bin_directory=buildout_bin_directory,
+     updater_path='${directory:services}/caucase-proxysql-updater',
+     url=caucase_url,
+     data_dir='${proxysql-directory:ssl}',
+     crt_path='${proxysql-directory:ssl}/client-cert.pem',
+     ca_path='${proxysql-directory:ssl}/ca-cert.pem',
+     crl_path='${proxysql-directory:ssl}/crl.pem',
+     key_path='${proxysql-directory:ssl}/client-key.pem',
+     on_renew=None,
+     max_sleep=None,
+     template_csr_pem=None,
+     openssl=openssl_bin,
+)}}
+{% do part_list.append('caucase-proxysql-updater') -%}
+{% do part_list.append('caucase-proxysql-updater-promise') -%}
+
 [caucase-sign-csr]
 recipe = slapos.recipe.template:jinja2
 mode = 755
@@ -410,7 +438,6 @@ etc      = ${directory:etc}/repman
 data-dir = ${directory:var}/lib
 root-dir = ${directory:srv}/repman
 clusters = ${:etc}/cluster.d
-proxies  = ${:etc}/proxy
 proxy-data = ${:data-dir}/proxy
 config-tmp = ${directory:tmp}/config
 bootstrap = ${:etc}/bootstrap

@@ -40,6 +40,7 @@ scheduler-db-servers-physical-backup-cron = "0 {{ parameter_dict['physical-backu
 backup-physical-type = "mariabackup"
 backup-logical-type = "mysqldump"
 scheduler-db-servers-receiver-ports= "{{ parameter_dict['receiver-port-list'] }}"
+#scheduler-db-servers-receiver-use-ssl   ## set to true when ssl enabled on socat
 
 prov-proxy-cpu-cores = {{ parameter_dict['proxy-cpu-cores'] }}
 prov-proxy-memory = {{ parameter_dict['proxy-memory'] }}
@@ -49,6 +50,7 @@ prov-db-memory = {{ parameter_dict['db-memory'] }}
 prov-db-memory-shared-pct = "{{ parameter_dict['db-memory-shared-pct'] }}"
 prov-db-memory-threaded-pct = "{{ parameter_dict['db-memory-threaded-pct'] }}"
 
+replication-use-ssl = true
 test-inject-traffic = true
 # failover
 failover-mode = "{{ parameter_dict['failover-mode'] }}"
