@@ -145,12 +145,17 @@ command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --
 feed-path = $${directory:monitor-resilient}/notifier-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 
+[notifier-status-feed-first-run]
+recipe = plone.recipe.command
+command = $${notifier-resilient-status-feed:wrapper-path}
+stop-on-error = true
+
 [cron-entry-notifier-status-feed]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = resilient-notifier-status-feed
 frequency = */5 * * * *
-command = $${notifier-resilient-status-feed:wrapper-path}
+command = $${notifier-status-feed-first-run:command}
 
 [notifier-stalled-promise-bin]
 recipe = slapos.cookbook:wrapper
