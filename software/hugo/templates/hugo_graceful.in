@@ -1,0 +1,7 @@
+#! {{ param_hugo['path_shell'] }}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+# Run graceful
+hugo_server=$(slapos node status | grep hugo-server | awk '{ print $1 }')
+exec slapos node restart $hugo_server
