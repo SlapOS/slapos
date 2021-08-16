@@ -1,0 +1,240 @@
+[buildout]
+parts =
+    default-index-html
+    default-config-toml
+    hugo-server
+    hugo-server-service
+    hugo-port-listening-promise
+    logrotate-entry-nginx
+    mime-types
+    nginx-conf
+    nginx-launcher
+    nginx-graceful
+    nginx-certificate
+    nginx-port-listening-promise
+    publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends = {{ parameter_list['template_monitor'] }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.hugo-port = 8080
+configuration.nginx-port = 8081
+configuration.hugo-monitor-httpd-port = 8196
+configuration.nginx-monitor-httpd-port =8197
+configuration.site = default
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+bin = ${:home}/bin
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+script = ${directory:etc}/run
+service = ${directory:etc}/service
+log = ${directory:var}/log
+run = ${directory:var}/run
+backup = ${directory:srv}/backup
+data = ${directory:srv}/hugo
+ssl = ${directory:etc}/ssl
+
+default-site = ${:data}/default
+default-public = ${:default-site}/public
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+tmp = ${directory:home}/tmp
+client-body-temp-path = ${:tmp}/client_body_temp_path
+proxy-temp-path = ${:tmp}/proxy_temp_path
+fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
+uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
+scgi-temp-path = ${:tmp}/scgi_temp_path
+
+[hugo]
+nb-workers = 2
+go-environment = {{ parameter_list['go_environment'] }}
+
+ip = ${slap-configuration:ipv6-random}
+hugo-port = ${slap-configuration:configuration.hugo-port}
+nginx-port = ${slap-configuration:configuration.nginx-port}
+
+hugo-access-url = http://[${:ip}]:${:hugo-port}
+nginx-access-url = https://[${:ip}]:${:nginx-port}
+
+path-pid = ${basedirectory:run}/nginx.pid
+path-log = ${basedirectory:log}/nginx.log
+path-access-log = ${basedirectory:log}/nginx.access.log
+path-error-log = ${basedirectory:log}/nginx.error.log
+path-tmp = ${tempdirectory:tmp}
+
+path-nginx-conf = ${directory:etc}/nginx.conf
+path-mime-types = ${directory:etc}/mime_types
+path-nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
+
+# Docroot
+docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
+
+[hugo-server]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/hugo-server
+mode = 0700
+template =
+  inline:#!/bin/sh
+  . ${hugo:go-environment}
+  cd ${basedirectory:data}/${slap-configuration:configuration.site}
+  if [ -d "public" ]; then rm -Rf public; fi
+  hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false  
+
+# Generate a self-signed TLS certificate.
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    {{ parameter_list['openssl_location'] }}/bin/openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${hugo:ip}" \
+      -newkey rsa:1024 -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${basedirectory:ssl}/nginx-certificate.key
+cert-file = ${basedirectory:ssl}/nginx-certificate.cert
+common-name = ${hugo:ip}
+stop-on-error = true
+
+[hugo-server-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${basedirectory:service}/hugo-server
+command-line = ${hugo-server:rendered}
+hash-files =
+  ${hugo-server:rendered}
+
+[hugo-port-listening-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = hugo-port-listening.py
+config-host = ${hugo:ip}
+config-port = ${hugo:hugo-port}
+
+[monitor-instance-parameter]
+monitor-httpd-port = ${slap-configuration:configuration.hugo-monitor-httpd-port}
+
+[hugo-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Hugo frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${hugo:hugo-access-url}
+config-https-only = true
+return = domain secure_access
+
+[hugo-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = hugo-http-frontend.py
+url = ${hugo-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_nginx_conf'] }}
+rendered = ${hugo:path-nginx-conf}
+context =
+    section param_hugo hugo
+    section param_tempdir tempdirectory
+    section param_nginxcert nginx-certificate
+
+[mime-types]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_mime_types'] }}
+rendered = ${hugo:path-mime-types}
+
+[nginx-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_list['nginx_location'] }}/sbin/nginx -c ${hugo:path-nginx-conf}
+wrapper-path = ${basedirectory:service}/nginx
+
+[default-index-html]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_list['template_index_html'] }}
+rendered = ${basedirectory:default-public}/index.html
+context =
+  key go_environment hugo:go-environment
+  key data basedirectory:data
+
+[default-config-toml]
+recipe = slapos.recipe.template:jinja2
+rendered = ${basedirectory:default-site}/config.toml
+template = 
+  inline:
+  baseURL = "${hugo-frontend:connection-secure_access}"
+  languageCode = "en-us"
+  title = "My New Hugo Site"
+
+[nginx-graceful]
+recipe = slapos.recipe.template:jinja2
+rendered = ${basedirectory:script}/nginx-graceful
+mode = 0700
+template =
+  inline:#!/bin/sh
+  exec kill -s SIGHUP $(cat ${hugo:path-pid})
+
+[nginx-port-listening-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = nginx-port-listening.py
+config-host = ${hugo:ip}
+config-port = ${hugo:nginx-port}
+
+[monitor-instance-parameter]
+monitor-httpd-port = ${slap-configuration:configuration.nginx-monitor-httpd-port}
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log = ${hugo:path-access-log} ${hugo:path-error-log}
+post = kill -USR1 $(cat ${hugo:path-pid})
+
+[nginx-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Hugo Nginx frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${hugo:nginx-access-url}
+config-https-only = true
+return = domain secure_access
+
+[nginx-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = nginx-http-frontend.py
+url = ${nginx-frontend:connection-secure_access}
+config-url = ${:url}
+config-check-secure = 1
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+<= monitor-publish
+go-environment = ${hugo:go-environment}
+data = ${basedirectory:data}
+hugo-server-url = ${hugo:hugo-access-url}
+nginx-server-url = ${hugo:nginx-access-url}
+hugo-server-cdn-url = ${hugo-frontend-promise:url}
+nginx-server-cdn-url = ${nginx-frontend-promise:url}
