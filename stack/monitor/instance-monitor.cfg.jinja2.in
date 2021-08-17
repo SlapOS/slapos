@@ -339,6 +339,8 @@ username = admin
 # XXX: type key value
 # ex raw monitor-password resqdsdsd34
 instance-configuration =
+threshold-check-free-disk-space =
+threshold-days-check-free-disk-space =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
 
@@ -393,10 +395,29 @@ config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 
 [promise-check-free-disk-space]
 <= monitor-promise-base
+eggs =
+  slapos.toolbox
+# use the line below if config-display-prediction = 1
+  slapos.toolbox[prediction]
 module = check_free_disk_space
 name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
 config-threshold-file = ${directory:etc}/min-free-disk-size
+config-threshold = ${monitor-instance-parameter:threshold-check-free-disk-space}
+config-threshold-days = ${monitor-instance-parameter:threshold-days-check-free-disk-space}
+# use 0 and 1 instead of False and True
+config-display-partition = 1
+config-display-prediction = 1
+
+[promise-monitor-partition-space]
+<= monitor-promise-base
+eggs =
+  slapos.toolbox
+  slapos.toolbox[pandas]
+module = monitor_partition_space
+name = monitor-partition-space.py
+config-collectordb = ${monitor-instance-parameter:collector-db}
+config-threshold-ratio =
 
 [monitor-base]
 # create dependencies between required monitor parts
@@ -422,6 +443,7 @@ depends =
   ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
+  ${promise-monitor-partition-space:name}
   ${logrotate-entry-monitor-httpd:name}
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
