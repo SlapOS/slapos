@@ -1,7 +1,7 @@
 worker_processes {{ param_hugo['nb-workers'] }};
 
-pid {{ param_hugo['path_pid'] }};
-error_log {{ param_hugo['path_error_log'] }};
+pid {{ param_hugo['path-pid'] }};
+error_log {{ param_hugo['path-error-log'] }};
 
 daemon off;
 
@@ -11,10 +11,10 @@ events {
 }
 
 http {
-	include {{ param_hugo['path_mime_types'] }};
+	include {{ param_hugo['path-mime-types'] }};
 	default_type application/octet-stream;
 	types_hash_bucket_size 64;
-    access_log {{ param_hugo['path_access_log'] }} combined;
+    access_log {{ param_hugo['path-access-log'] }} combined;
 	index index.html;
 
     server {
@@ -22,11 +22,11 @@ http {
         server_name _;
 
         keepalive_timeout 5;
-        client_body_temp_path {{ param_tempdir['client_body_temp_path'] }};
-        proxy_temp_path {{ param_tempdir['proxy_temp_path'] }};
-        fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
-        uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
-        scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
+        client_body_temp_path {{ param_tempdir['client-body-temp-path'] }};
+        proxy_temp_path {{ param_tempdir['proxy-temp-path'] }};
+        fastcgi_temp_path {{ param_tempdir['fastcgi-temp-path'] }};
+        uwsgi_temp_path {{ param_tempdir['uwsgi-temp-path'] }};
+        scgi_temp_path {{ param_tempdir['scgi-temp-path'] }};
 
         # path for static files
         root {{ param_hugo['docroot'] }};

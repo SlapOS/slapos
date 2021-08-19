@@ -15,7 +15,7 @@
 <li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Pass the <code>site</code> by <code>--parameter site='your_site'</code> with slapos request command (you can do it in the request script) to make your website online, eg.</span><br />
 <pre><code>$ slapos request $software_name'_1' $software_release_uri --parameters site='quickstart'</code></pre>
 </li>
-<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><a href="https://handbook.rapid.space/user/rapidspace-HowTo.Move.To.Md5sum.Automatic.Update" target="_blank" rel="noopener"><code>update-hash</code></a> and <a href="https://handbook.rapid.space/user/rapidspace-HowTo.Supply.A.Software.And.Request.An.Instance.On.Theia.Runner">re-instanciate</a>(<code>slapos node instance</code>)<br /><br /></span></li>
+<li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><a href="https://handbook.rapid.space/user/rapidspace-HowTo.Supply.A.Software.And.Request.An.Instance.On.Theia.Runner">re-instanciate</a>(<code>slapos node instance</code>)<br /><br /></span></li>
 <li><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;">Retrieve the CDN URLs by re-launching the slapos request command. </span><br /><span style="font-size: 14pt; font-family: 'comic sans ms', sans-serif;"><code>hugo-server-cdn-url</code> is the website hosted by the Hugo server while <code>nginx-server-cdn-url</code> is the website hosted by the Ngnix server.</span></li>
 </ol>
 </td>
