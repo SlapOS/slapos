@@ -397,9 +397,6 @@ template =
     . {{ activate }}
     unset GIT_EXEC_PATH
     set -- --rcfile {{ bashrc }}
-  # otherwise, assume this shell is running task and add an artificial delay to workaround https://github.com/eclipse-theia/theia/issues/2961
-  else
-    sleep 1
   fi
   exec "$SHELL" "$@"
   {% endraw %}
