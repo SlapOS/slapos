@@ -339,6 +339,8 @@ username = admin
 # XXX: type key value
 # ex raw monitor-password resqdsdsd34
 instance-configuration =
+threshold-check-free-disk-space =
+threshold-days-check-free-disk-space =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
 
@@ -397,6 +399,11 @@ module = check_free_disk_space
 name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
 config-threshold-file = ${directory:etc}/min-free-disk-size
+config-threshold = ${monitor-instance-parameter:threshold-check-free-disk-space}
+config-threshold-days = ${monitor-instance-parameter:threshold-days-check-free-disk-space}
+# use 0 and 1 instead of False and True
+config-display-partition = 1
+
 
 [monitor-base]
 # create dependencies between required monitor parts
