@@ -41,23 +41,26 @@ backend-url = $${frontend-instance:url}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-dot-theia = $${buildout:directory}/.theia/
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+srv = $${:home}/srv
+bin = $${:home}/bin
+tmp = $${:home}/tmp
+dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
 runner = $${:srv}/runner
+backup = $${:srv}/backup/theia
 project = $${:srv}/project
+
 frontend-static = $${:srv}/frontend-static
 frontend-static-public = $${:frontend-static}/public
 frontend-static-css = $${:frontend-static}/css
 
-bash-completions = $${buildout:directory}/.local/share/bash-completion/completions/
-fish-completions = $${buildout:directory}/.config/fish/completions/
+bash-completions = $${:home}/.local/share/bash-completion/completions/
+fish-completions = $${:home}/.config/fish/completions/
 
 
 # Promises
@@ -68,11 +71,13 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
+  $${frontend-authentification-promise:name}
   $${remote-frontend-url-available-promise:name}
   {% if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
   {% endif %}
   $${slapos-standalone-listen-promise:name}
+  $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
 
 [theia-listen-promise]
@@ -88,6 +93,16 @@ module = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
+
+[frontend-authentification-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+username = $${frontend-instance-password:username}
+password = $${frontend-instance-password:passwd}
+ip = $${frontend-instance:ip}
+port = $${frontend-instance:port}
+config-url = https://$${:username}:$${:password}@[$${:ip}]:$${:port}
 
 [remote-frontend-url-available-promise]
 <= monitor-promise-base
@@ -113,13 +128,19 @@ name = standalone-listen-promise.py
 config-host = $${slapos-standalone-instance:hostname}
 config-port = $${slapos-standalone-instance:port}
 
+[slapos-standalone-ready-promise]
+<= monitor-promise-base
+module = check_socket_listening
+name = standalone-ready-promise.py
+config-abstract = $${directory:runner}/standalone_ready
+
 [slapos-autorun-promise]
 <= monitor-promise-base
 module = check_service_state
-# XXX promise plugins can not contain "slapos" in their names
 name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
+config-run-directory = $${directory:runner}/var/run
 
 
 # Remote Caddy Frontend
@@ -279,13 +300,14 @@ wait-for-files = $${frontend-instance:pidfile}
 [favicon.ico]
 # generate a pseudo random favicon, different for each instance name.
 recipe = slapos.recipe.build
+seed = {{ root_title }}
 install =
   import hashlib, shutil
   buildout_offline = self.buildout['buildout']['offline']
   self.buildout['buildout']['offline'] = 'false'
   try:
     gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-      b'''{{ root_title }}'''
+      b'''$${:seed}'''
     ).hexdigest() + "?s=256&d=retro"
     shutil.copy(self.download(gravatar_url), '''$${:location}''')
   except Exception:
@@ -310,7 +332,7 @@ mode = 0700
 template =
   inline:
   #!/bin/sh
-  export HOME=$${buildout:directory}
+  export HOME=$${directory:home}
   export PATH=${python-language-server:location}/bin:${java-jdk:location}/bin:${cli-utilities:PATH}:$HOME/.cargo/bin:$PATH
 
 
@@ -419,6 +441,7 @@ ip = {{ ipv4_random }}
 ipv4 = {{ ipv4_random }}
 ipv6 = {{ ipv6_random }}
 port = $${slapos-standalone-port:port}
+local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
 
@@ -447,6 +470,7 @@ template =
       $${slapos-standalone-config:ipv4} \
       $${slapos-standalone-config:ipv6} \
       $${slapos-standalone-config:port} \
+      $${slapos-standalone-config:local-software-release-root} \
       $${slapos-standalone-config:computer-id} \
       {%- if parameter_dict.get('embedded-sr') %}
       --sr='{{ parameter_dict['embedded-sr'] }}' \
