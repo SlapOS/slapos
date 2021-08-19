@@ -1,0 +1,19 @@
+[buildout]
+
+extends =
+  {{ template_monitor_base }}
+
+[monitor-base]
+extra-depends = ${promise-monitor-partition-space:name}
+
+[promise-check-free-disk-space]
+eggs = slapos.toolbox[prediction]
+config-display-prediction = 1
+
+[promise-monitor-partition-space]
+<= monitor-promise-base
+eggs = slapos.toolbox[pandas]
+module = monitor_partition_space
+name = monitor-partition-space.py
+config-collectordb = ${monitor-instance-parameter:collector-db}
+config-threshold-ratio =
