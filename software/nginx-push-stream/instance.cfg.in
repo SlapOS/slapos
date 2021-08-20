@@ -1,36 +1,87 @@
 [buildout]
 parts =
-  switch-softwaretype
-
+  nginx-service
+  promises
+  publish-connection-information
+extends = ${monitor-template:rendered}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = $${:nginx}
-nginx = $${dynamic-template-nginx:rendered}
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+run = $${:var}/run
+log = $${:var}/log
+varnginx = $${:var}/nginx
+services = $${:etc}/service
+cron-entries = $${:etc}/cron.d
+www = $${:srv}/www
+ssl = $${:etc}/ssl
 
-[dynamic-template-nginx]
-recipe = slapos.recipe.template:jinja2
-template = ${template-nginx:output}
-rendered = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:filename}
-filename = instance-nginx.cfg
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
 
-[slap-connection]
-computer-id = $${slap_connection:computer_id}
-partition-id = $${slap_connection:partition_id}
-server-url = $${slap_connection:server_url}
-software-release-url = $${slap_connection:software_release_url}
-key-file = $${slap_connection:key_file}
-cert-file = $${slap_connection:cert_file}
+#################################
+# Nginx service
+#################################
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/nginx
+command-line =
+  ${nginx-push-stream-output:nginx} -c $${nginx-configuration:output}
 
-[instance-parameter]
-# Fetches parameters defined in SlapOS Master for this instance.
-# Always the same.
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = $${slap_connection:computer_id}
-partition = $${slap_connection:partition_id}
-url = $${slap_connection:server_url}
-key = $${slap_connection:key_file}
-cert = $${slap_connection:cert_file}
+[nginx-configuration]
+recipe = slapos.recipe.template
+url = ${template-nginx-configuration:output}
+output = $${directory:etc}/nginx.cfg
+mode = 0600
+access-log = $${directory:log}/nginx-access.log
+error-log = $${directory:log}/nginx-error.log
+ip = $${slap-configuration:ipv6-random}
+local-ip = $${slap-configuration:ipv4-random}
+port = 9443
+base-url = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}
+
+# Generate a self-signed TLS certificate.
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e $${:key-file} ]
+  then
+    ${openssl:location}/bin/openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${nginx-configuration:ip}" \
+      -newkey rsa:1024 -keyout $${:key-file} \
+      -out $${:cert-file}
+  fi
+update-command = $${:command}
+key-file = $${directory:ssl}/${:_buildout_section_name_}.key
+cert-file = $${directory:ssl}/${:_buildout_section_name_}.cert
+common-name = $${nginx-configuration:ip}
+stop-on-error = true
+
+[promises]
+recipe =
+promises =
+  $${nginx-available-promise:recipe}
+
+[nginx-available-promise]
+<= monitor-promise-base
+module = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url = $${nginx-configuration:base-url}/status
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+# publisher-url and subscriber-url are URITemplates, with an id
+# parameter which is the ID of the channel.
+publisher-url = $${nginx-configuration:base-url}/pub{?id}
+subscriber-url = $${nginx-configuration:base-url}/sub{/id}
