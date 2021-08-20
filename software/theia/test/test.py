@@ -32,6 +32,7 @@ import os
 import re
 import subprocess
 import time
+import datetime
 
 import pexpect
 import psutil
@@ -404,3 +405,95 @@ class TestTheiaResilientWithSR(ResilientTheiaMixin, TestTheiaWithSR):
     super(TestTheiaResilientWithSR, cls).setUpClass()
     # Patch the computer root path to that of the export theia instance
     cls.computer_partition_root_path = cls._getPartitionPath('export')
+
+class TestTheiaPrediction(TheiaTestCase):
+
+  def test_new_modules(self):
+    # check that the new modules are in the develop-eggs folder
+    develop_eggs_path = os.path.join(
+      self.computer_partition_root_path,
+      'software_release',
+      'develop-eggs')
+
+    pandas_path = os.path.join(develop_eggs_path, 'pandas-0.19.2-py2.7-linux-x86_64.egg')
+    self.assertEqual(os.path.exists(pandas_path), True)
+    scipy_path = os.path.join(develop_eggs_path, 'scipy-1.0.1-py2.7-linux-x86_64.egg')
+    self.assertEqual(os.path.exists(scipy_path), True)
+    statsmodels_path = os.path.join(develop_eggs_path, 'statsmodels-0.8.0-py2.7-linux-x86_64.egg')
+    self.assertEqual(os.path.exists(statsmodels_path), True)
+
+  def test_arima_run(self):
+    now = datetime.datetime.now()
+    parameter_dict = {
+      'display-prediction': '1',
+    }
+    self.slap.request(
+      software_release=self.getSoftwareURL(),
+      partition_reference=self.default_partition_reference,
+      partition_parameter_kw=parameter_dict
+    )
+    # Force promises to recompute regardless of periodicity
+    self.slap._force_slapos_node_instance_all = True
+    self.slap.waitForInstance(error_lines=0)
+
+    promise_result_path = os.path.join(
+      self.computer_partition_root_path,
+      '.slapgrid',
+      'promise',
+      'result')
+
+    # check file exist
+    path_check_free_disk_space = os.path.join(promise_result_path, 'check-free-disk-space.status.json')
+    self.assertEqual(os.path.exists(path_check_free_disk_space), True)
+    # check monitor_partition_space promise has not been run
+    path_monitor_partition_space = os.path.join(promise_result_path, 'monitor-partition-space.status.json')
+    self.assertEqual(os.path.exists(path_monitor_partition_space), False)
+
+    # check ARIMA option is True
+    f = open(path_check_free_disk_space)
+    result = json.load(f)
+    self.assertIn("Enable to display disk space predictions: True", result['result']['message'])
+    self.assertFalse(result['result']['failed'])
+    # check that promise timestamp is later than now
+    promise_time = datetime.datetime.strptime(result['result']['date'], "%Y-%m-%dT%H:%M:%S+%f")
+    self.assertTrue(promise_time < now)
+
+  def test_monitor_partition_space_run(self):
+    now = datetime.datetime.now()
+    parameter_dict = {
+      'display-anomaly': '1',
+    }
+    self.slap.request(
+      software_release=self.getSoftwareURL(),
+      partition_reference=self.default_partition_reference,
+      partition_parameter_kw=parameter_dict
+    )
+    # Force promises to recompute regardless of periodicity
+    self.slap._force_slapos_node_instance_all = True
+    self.slap.waitForInstance(error_lines=0)
+
+    promise_result_path = os.path.join(
+      self.computer_partition_root_path,
+      '.slapgrid',
+      'promise',
+      'result')
+
+    # check file exist
+    path_check_free_disk_space = os.path.join(promise_result_path, 'check-free-disk-space.status.json')
+    self.assertEqual(os.path.exists(path_check_free_disk_space), True)
+    path_monitor_partition_space = os.path.join(promise_result_path, 'monitor-partition-space.status.json')
+    self.assertEqual(os.path.exists(path_monitor_partition_space), True)
+
+    # check ARIMA option is False
+    f = open(path_check_free_disk_space)
+    result = json.load(f)
+    self.assertIn("Enable to display disk space predictions: False", result['result']['message'])
+
+    # check monitor_partition_space ran
+    f = open(path_monitor_partition_space)
+    result = json.load(f)
+    self.assertTrue(result['result']['message'] is not None)
+    self.assertFalse(result['result']['failed'])
+    # check that promise timestamp is later than now
+    promise_time = datetime.datetime.strptime(result['result']['date'], "%Y-%m-%dT%H:%M:%S+%f")
+    self.assertTrue(promise_time < now)
