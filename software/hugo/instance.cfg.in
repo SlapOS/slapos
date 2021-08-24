@@ -31,8 +31,8 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.hugo-port = 9313
-configuration.nginx-port = 9314
+configuration.hugo-port = 11313
+configuration.nginx-port = 11314
 configuration.hugo-monitor-httpd-port = 8196
 configuration.nginx-monitor-httpd-port = 8197
 configuration.site = default
@@ -103,23 +103,6 @@ template =
   if [ -d "public" ]; then rm -Rf public; fi
   hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false  
 
-# Generate a self-signed TLS certificate.
-[nginx-certificate]
-recipe = plone.recipe.command
-command =
-  if [ ! -e ${:key-file} ]
-  then
-    {{ parameter_list['openssl_location'] }}/bin/openssl req -x509 -nodes -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${hugo:ip}" \
-      -newkey rsa:1024 -keyout ${:key-file} \
-      -out ${:cert-file}
-  fi
-update-command = ${:command}
-key-file = ${basedirectory:ssl}/nginx-certificate.key
-cert-file = ${basedirectory:ssl}/nginx-certificate.cert
-common-name = ${hugo:ip}
-stop-on-error = true
-
 [hugo-server-service]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${basedirectory:service}/hugo-server
@@ -172,6 +155,23 @@ rendered = ${hugo:path-mime-types}
 recipe = slapos.cookbook:wrapper
 command-line = {{ parameter_list['nginx_location'] }}/sbin/nginx -c ${hugo:path-nginx-conf}
 wrapper-path = ${basedirectory:service}/nginx
+
+# Generate a self-signed TLS certificate.
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    {{ parameter_list['openssl_location'] }}/bin/openssl req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${hugo:ip}" \
+      -newkey rsa:1024 -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${basedirectory:ssl}/nginx-certificate.key
+cert-file = ${basedirectory:ssl}/nginx-certificate.cert
+common-name = ${hugo:ip}
+stop-on-error = true
 
 [default-index-html]
 recipe = slapos.recipe.template:jinja2
