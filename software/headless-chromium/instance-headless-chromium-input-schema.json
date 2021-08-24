@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "target-url": {
+      "description": "URL for Chromium to load on startup.",
+      "title": "Target URL",
+      "type": "string",
+      "default": "https://www.example.com"
+    },
+    "remote-debugging-port": {
+      "description": "Port for Chromium to listen on.",
+      "title": "Remote Debugging Port",
+      "type": "integer",
+      "default": 8081
+    },
+    "nginx-proxy-port": {
+      "description": "Port for Nginx proxy to listen on.",
+      "title": "Nginx Proxy Port",
+      "type": "integer",
+      "default": 8082
+    },
+    "monitor-httpd-port": {
+      "description": "Port for monitor frontend.",
+      "title": "Monitor Httpd Port",
+      "type": "integer",
+      "default": 8083
+    }
+  }
+}

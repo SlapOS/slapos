@@ -1479,10 +1479,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'websocket-path-list': '////ws//// /with%20space/',
         'websocket-transparent': 'false',
       },
-      # 'type-eventsource': {
-      #   'url': cls.backend_url,
-      #   'type': 'eventsource',
-      # },
       'type-redirect': {
         'url': cls.backend_url,
         'type': 'redirect',
@@ -1817,7 +1813,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
     for line in [
       q for q in open(buildout_file).readlines()
       if q.startswith('config-slave-list') or q.startswith(
@@ -3261,54 +3257,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
     self.assertFalse('x-real-ip' in j['Incoming Headers'])
 
-  @skip('Feature postponed')
-  def test_type_eventsource(self):
-    # Caddy: For event source, if I understand
-    #        https://github.com/mholt/caddy/issues/1355 correctly, we could use
-    #        Caddy as a proxy in front of nginx-push-stream . If we have a
-    #        "central shared" caddy instance, can it handle keeping connections
-    #        opens for many clients ?
-    parameter_dict = self.parseSlaveParameterDict('type-eventsource')
-    self.assertLogAccessUrlWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'domain': 'typeeventsource.nginx.example.com',
-        'replication_number': '1',
-        'url': 'http://typeeventsource.nginx.example.com',
-        'site_url': 'http://typeeventsource.nginx.example.com',
-        'secure_access': 'https://typeeventsource.nginx.example.com',
-        'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
-      },
-      parameter_dict
-    )
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'pub',
-      #  NGINX_HTTPS_PORT
-    )
-
-    self.assertEqual(
-      self.certificate_pem,
-      der2pem(result.peercert))
-
-    self.assertEqual(
-      '',
-      result.content
-    )
-    headers = result.headers.copy()
-    self.assertKeyWithPop('Expires', headers)
-    self.assertKeyWithPop('Date', headers)
-    self.assertEqual(
-      {
-        'X-Nginx-PushStream-Explain': 'No channel id provided.',
-        'Content-Length': '0',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Connection': 'keep-alive',
-        'Server': 'nginx'
-      },
-      headers
-    )
-
   def test_type_redirect(self):
     parameter_dict = self.assertSlaveBase('type-redirect')
 
@@ -3629,7 +3577,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
   def test_enable_cache_server_alias(self):
@@ -3671,7 +3619,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
     result = fakeHTTPResult(
@@ -3788,7 +3736,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
     # BEGIN: Check that squid.log is correctly filled in
@@ -3990,7 +3938,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
     # check stale-if-error support is really respected if not present in the
@@ -4133,7 +4081,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
     try:
@@ -4180,7 +4128,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9.0.1\)$'
+      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
     )
 
   def test_enable_http2_false(self):
@@ -4642,7 +4590,7 @@ class TestReplicateSlaveOtherDestroyed(SlaveHttpFrontendTestCase):
     self.slap.waitForInstance(self.instance_max_retry)
 
     buildout_file = os.path.join(
-      self.getMasterPartitionPath(), 'buildout-switch-softwaretype.cfg')
+      self.getMasterPartitionPath(), 'instance-caddy-replicate.cfg')
     with open(buildout_file) as fh:
       buildout_file_content = fh.read()
       node_1_present = re.search(

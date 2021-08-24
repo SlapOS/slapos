@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
     "custom_domain": {
-      "description": "Custom Domain to use for the website",
+      "description": "Custom Domain to use for the website. Shall contain only letters, numbers and -, and can look like example.com, first2.example.com special-site.example.com.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
       "title": "Custom Domain",
       "type": "string"
@@ -15,14 +15,13 @@
     },
     "type": {
       "default": "",
-      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster. Implemented are default, zope, redirect, notebook and websocket, not implemneted is eventsource.",
+      "description": "Type of slave. If redirect, the slave will redirect to the given URL. If zope, the rewrite rules will be compatible with Virtual Host Monster.",
       "enum": [
         "",
         "zope",
         "redirect",
         "notebook",
-        "websocket",
-        "eventsource"
+        "websocket"
       ],
       "title": "Backend Type",
       "type": "string"
