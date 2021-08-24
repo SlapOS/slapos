@@ -33,8 +33,8 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
-configuration.hugo-port = ${hugo-frontend-port:port}
-configuration.nginx-port = ${nginx-frontend-port:port}
+#configuration.hugo-port = ${hugo-frontend-port:port}
+#configuration.nginx-port = ${nginx-frontend-port:port}
 configuration.hugo-monitor-httpd-port = 8196
 configuration.nginx-monitor-httpd-port = 8197
 configuration.site = default
@@ -70,13 +70,25 @@ fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
 uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
 scgi-temp-path = ${:tmp}/scgi_temp_path
 
+[hugo-frontend-port]
+recipe = slapos.cookbook:free_port
+minimum = 1313
+maximum = 1323
+ip = ${slap-configuration:ipv6-random}
+
+[nginx-frontend-port]
+recipe = slapos.cookbook:free_port
+minimum = 1324
+maximum = 1334
+ip = ${slap-configuration:ipv6-random}
+
 [hugo]
 nb-workers = 2
 go-environment = {{ parameter_list['go_environment'] }}
 
 ip = ${slap-configuration:ipv6-random}
-hugo-port = ${slap-configuration:configuration.hugo-port}
-nginx-port = ${slap-configuration:configuration.nginx-port}
+hugo-port = ${hugo-frontend-port:port} #${slap-configuration:configuration.hugo-port}
+nginx-port = ${nginx-frontend-port:port} #${slap-configuration:configuration.nginx-port}
 
 hugo-access-url = http://[${:ip}]:${:hugo-port}
 nginx-access-url = https://[${:ip}]:${:nginx-port}
@@ -93,18 +105,6 @@ path-nginx = {{ parameter_list['nginx_location'] }}/sbin/nginx
 
 # Docroot
 docroot = ${basedirectory:data}/${slap-configuration:configuration.site}/public
-
-[hugo-frontend-port]
-recipe = slapos.cookbook:free_port
-minimum = 8000
-maximum = 9000
-ip = $${slap-configuration:ipv6-random}
-
-[nginx-frontend-port]
-recipe = slapos.cookbook:free_port
-minimum = 8000
-maximum = 9000
-ip = $${slap-configuration:ipv6-random}
 
 [hugo-server]
 recipe = slapos.recipe.template:jinja2
