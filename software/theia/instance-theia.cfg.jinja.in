@@ -142,6 +142,17 @@ config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
 config-run-directory = $${directory:runner}/var/run
 
+[monitor-instance-parameter]
+# change the value of "display-prediction" to 1 to use ARIMA in the check_free_disk_space promise
+display-prediction-check-free-disk-space = {{ parameter_dict.get('display-prediction', 0) }}
+# by default the prediction will be for the next 10 days, this parameter can be changed below
+days-check-free-disk-space =
+
+# allow to use the monitor_partition_space promise if display-anomaly is True
+{%- if parameter_dict.get('display-anomaly') in ('True', 'on', '1') %}
+[monitor-base]
+extra-depends = $${promise-monitor-partition-space:name}
+{%- endif %}
 
 # Remote Caddy Frontend
 # ---------------------
