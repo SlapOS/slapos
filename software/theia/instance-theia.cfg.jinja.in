@@ -66,6 +66,10 @@ fish-completions = $${:home}/.config/fish/completions/
 # Promises
 # --------
 
+[monitor-instance-parameter]
+# by default the prediction will be for the next 10 days
+days-check-free-disk-space =
+
 [promises]
 recipe =
 instance-promises =
@@ -79,6 +83,9 @@ instance-promises =
   $${slapos-standalone-listen-promise:name}
   $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
+  {% if parameter_dict.get('display-anomaly') in ('True', 'on', '1') %}
+  $${monitor-partition-space-promise:name}
+  {% endif %}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -142,6 +149,21 @@ config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
 config-run-directory = $${directory:runner}/var/run
 
+[promise-check-free-disk-space]
+eggs = slapos.toolbox[prediction]
+config-nb-days-predicted = $${monitor-instance-parameter:days-check-free-disk-space}
+# change "display-prediction" to decide if we use ARIMA
+config-display-prediction = {{ parameter_dict.get('display-prediction', 0) }}
+# change "display-partition" to decide if we display the three biggest partitions in case of error
+config-display-partition = {{ parameter_dict.get('display-partition', 1) }}
+
+[monitor-partition-space-promise]
+<= monitor-promise-base
+eggs = slapos.toolbox[pandas]
+module = monitor_partition_space
+name = monitor-partition-space.py
+config-collectordb = $${monitor-instance-parameter:collector-db}
+config-threshold-ratio =
 
 # Remote Caddy Frontend
 # ---------------------
