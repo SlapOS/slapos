@@ -329,7 +329,6 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
-rejected-slave-promise-url = ${rejected-slave-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -861,15 +860,6 @@ name = rejected-slave-publish-ip-port-listening.py
 config-host = ${rejected-slave-publish-configuration:ip}
 config-port = ${rejected-slave-publish-configuration:port}
 
-[rejected-slave-promise]
-<= monitor-promise-base
-module = check_socket_listening
-module = check_file_state
-name = rejected-slave.py
-config-filename = ${rejected-slave-json:rendered}
-config-state = empty
-config-url = ${rejected-slave-publish:url}
-
 [caucased-backend-client]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {{  caucase.caucased(
@@ -894,7 +884,6 @@ parts =
   publish-slave-information
   publish-information
   request-kedifa
-  rejected-slave-promise
   promise-rejected-slave-publish-ip-port
   caucased-backend-client
   caucased-backend-client-promise
