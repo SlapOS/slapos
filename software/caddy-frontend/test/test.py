@@ -395,16 +395,6 @@ class TestDataMixin(object):
         'backend-haproxy-%s' % (partition_id)] = generateHashFromFiles(
         [backend_haproxy_wrapper_path] + hash_file_list
       )
-    for rejected_slave_publish_path in glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'nginx-rejected-slave.conf')):
-      partition_id = rejected_slave_publish_path.split('/')[-3]
-      rejected_slave_pem_path = os.path.join(
-        self.instance_path, partition_id, 'etc', 'rejected-slave.pem')
-      hash_value_dict[
-        'rejected-slave-publish'
-      ] = generateHashFromFiles(
-        [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
-      )
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(runtime_data, hash_value_dict=hash_value_dict)
@@ -794,25 +784,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
   def callSupervisorMethod(cls, method, *args, **kwargs):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
-
-  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
-    rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
-
-    try:
-      result = requests.get(rejected_slave_promise_url, verify=False)
-      if result.text == '':
-        result_json = {}
-      else:
-        result_json = result.json()
-      self.assertEqual(
-        parameter_dict['rejected-slave-dict'],
-        result_json
-      )
-    except AssertionError:
-      raise
-    except Exception as e:
-      self.fail(e)
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
@@ -1238,7 +1209,6 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     self.assertEqual(
       {
@@ -1269,7 +1239,6 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -1707,7 +1676,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -5286,7 +5254,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -5948,7 +5915,6 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -6053,7 +6019,6 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -6298,7 +6263,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
