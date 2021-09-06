@@ -1,4 +1,3 @@
-{% if instance_parameter_dict['slap-software-type'] in software_type %}
 {% set aibcc_enabled = True %}
 {% import "caucase" as caucase with context %}
 {#- SERVER_POLLUTED_KEY_LIST is a list of keys which comes from various SlapOS Master implementations, which mix request and publish keys on each slave information -#}
@@ -44,13 +43,7 @@ context =
 {% set popen = functools_module.partial(subprocess_module.Popen, stdout=subprocess_module.PIPE, stderr=subprocess_module.STDOUT, stdin=subprocess_module.PIPE) %}
 {% set part_list = [] %}
 {% set single_type_key = 'single-' %}
-{% if instance_parameter_dict['slap-software-type'] == "replicate" %}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') %}
-{% elif instance_parameter_dict['slap-software-type'] in ['default', 'RootSoftwareInstance'] %}
-{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
-{% else %}
-{%   set frontend_type = "%s%s" % (single_type_key, instance_parameter_dict['slap-software-type']) %}
-{% endif %}
+{% set frontend_type = "%s%s" % (single_type_key, 'custom-personal') %}
 {% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
 {% set slave_list_name = 'extra_slave_instance_list' %}
 {% set frontend_list = [] %}
@@ -117,9 +110,7 @@ context =
 {%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
 {%   set slave_type = slave.get('type') %}
-{%   if slave_type == 'eventsource' %}
-{%     do slave_error_list.append('type:eventsource is not implemented') %}
-{%   elif slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
+{%   if slave_type not in [None, '', 'default', 'zope', 'redirect', 'notebook', 'websocket'] %}
 {%     do slave_error_list.append('type:%s is not supported' % (slave_type,)) %}
 {%   endif %}
 {#   Check health-check-* #}
@@ -392,12 +383,12 @@ config-url =
 #--
 #-- Publish slave information
 [publish-slave-information]
-recipe = slapos.cookbook:softwaretype
-default = ${dynamic-publish-slave-information:rendered}
-RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
-replicate = ${dynamic-publish-slave-information:rendered}
-custom-personal = ${dynamic-publish-slave-information:rendered}
-custom-group = ${dynamic-publish-slave-information:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-publish-slave-information:rendered
+RootSoftwareInstance = ${:default}
+replicate = dynamic-publish-slave-information:rendered
+custom-personal = dynamic-publish-slave-information:rendered
+custom-group = dynamic-publish-slave-information:rendered
 
 [request-kedifa]
 <= slap-connection
@@ -910,5 +901,3 @@ parts =
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
-#      publish-information
-{% endif %}

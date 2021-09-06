@@ -133,7 +133,7 @@ recipe = plone.recipe.command
 checksum-file = '{{ template }}.md5'
 command =
   set -e
-  md5_current=$(${buildout:executable} -c "import hashlib ; hashlib.md5(open('{{ template }}', 'rb').read()).hexdigest()")
+  md5_current=$(${buildout:executable} -c "import hashlib ; print hashlib.md5(open('{{ template }}', 'rb').read()).hexdigest()")
   md5_old=$([ -f ${:checksum-file} ] && cat ${:checksum-file} || echo none)
   if [ "$md5_current" != "$md5_old" ] || [ ! -f '{{ csr }}' ] || [ ! -f '{{ key }}' ] ; then
     '{{ buildout_bin_directory }}/caucase-rerequest' --template '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
