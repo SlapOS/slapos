@@ -594,7 +594,8 @@ template =
       "**/node_modules/**": true,
       "$${directory:runner}/**":true,
       "$${directory:project}/runner/**":true
-    }
+    },
+    "git.terminalAuthentication": false
   }
 
 [runner-link]

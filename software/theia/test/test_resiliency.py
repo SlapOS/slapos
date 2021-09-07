@@ -30,10 +30,8 @@ import errno
 import os
 import re
 import shutil
-import six
 import subprocess
 import time
-import unittest
 
 import requests
 
@@ -472,7 +470,6 @@ class TakeoverMixin(ExportAndImportMixin):
     return resp.text
 
 
-@unittest.skipIf(six.PY3, "resilient stack is not python3-compatible")
 class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
   backup_max_tries = 70
