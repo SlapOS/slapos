@@ -103,10 +103,12 @@ context =
 {% set authorized_slave_string_list = [] %}
 {% set authorized_slave_list = [] %}
 {% set rejected_slave_dict = {} %}
+{% set critical_rejected_slave_dict = {} %}
 {% set warning_slave_dict = {} %}
 {% set used_host_list = [] %}
 {% for slave in sorted(instance_parameter_dict['slave-instance-list']) %}
 {%   set slave_error_list = [] %}
+{%   set slave_critical_error_list = [] %}
 {%   set slave_warning_list = [] %}
 {%   set slave_server_alias_unclashed = [] %}
 {%   set slave_type = slave.get('type') %}
@@ -165,7 +167,9 @@ context =
 {%     endif %}
 {%   set custom_domain = slave.get('custom_domain') %}
 {%   if custom_domain and custom_domain in used_host_list %}
-{%      do slave_error_list.append('custom_domain %r clashes' % (custom_domain,)) %}
+{%      set message = 'custom_domain %r clashes' % (custom_domain,) %}
+{%      do slave_error_list.append(message) %}
+{%      do slave_critical_error_list.append(message) %}
 {%   else %}
 {%      do used_host_list.append(custom_domain) %}
 {%   endif %}
@@ -182,7 +186,9 @@ context =
 {%         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
 {#           optionally do something about reporting back that server-alias has been unclashed #}
 {%         elif slave_alias in used_host_list %}
-{%           do slave_error_list.append('server-alias \'%s\' clashes' % (slave_alias,)) %}
+{%           set message = 'server-alias \'%s\' clashes' % (slave_alias,) %}
+{%           do slave_error_list.append(message) %}
+{%           do slave_critical_error_list.append(message) %}
 {%         else %}
 {%           do slave_server_alias_unclashed.append(slave_alias) %}
 {%           do used_host_list.append(slave_alias) %}
@@ -250,6 +256,9 @@ context =
 {%     do authorized_slave_list.append(authorized_slave) %}
 {%   else %}
 {%     do rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_error_list)) %}
+{%   endif %}
+{%   if len(slave_critical_error_list) > 0 %}
+{%     do critical_rejected_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_critical_error_list)) %}
 {%   endif %}
 {%   if len(slave_warning_list) > 0 %}
 {%     do warning_slave_dict.__setitem__(slave.get('slave_reference'), sorted(slave_warning_list)) %}
@@ -752,9 +761,9 @@ filename = rejected-slave.json
 directory = ${directory:promise-output}
 rendered = ${:directory}/${:filename}
 template = {{ software_parameter_dict['template_empty'] }}
-{% if rejected_slave_dict %}
+{% if critical_rejected_slave_dict %}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
-content = {{ dumps(json_module.dumps(rejected_slave_dict, indent=2, sort_keys=True)) }}
+content = {{ dumps(json_module.dumps(critical_rejected_slave_dict, indent=2, sort_keys=True)) }}
 {% else %}
 content =
 {% endif %}
