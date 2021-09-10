@@ -11,7 +11,7 @@
       "response": "schema-rapid-cdn-simple-frontend-output.json",
       "title": "Simple Frontend",
       "shared": true,
-      "software-type": "frontend"
+      "software-type": "rapid-cdn-simple-frontend"
     },
     "advanced-frontend": {
       "description": "Advanced Frontend with all possible options for advanced use.",
@@ -19,7 +19,7 @@
       "request": "schema-rapid-cdn-advanced-frontend-input.json",
       "response": "schema-rapid-cdn-advanced-frontend-output.json",
       "shared": true,
-      "software-type": "frontend",
+      "software-type": "rapid-cdn-advanced-frontend",
       "title": "Advanced Frontend"
     },
     "cluster": {
@@ -27,7 +27,7 @@
       "index": 3,
       "request": "schema-rapid-cdn-cluster-input.json",
       "response": "schema-rapid-cdn-cluster-output.json",
-      "software-type": "cluster",
+      "software-type": "rapid-cdn-cluster",
       "title": "Cluster"
     }
   }
