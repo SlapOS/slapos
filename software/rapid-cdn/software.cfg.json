@@ -9,7 +9,7 @@
       "shared": true,
       "request": "schema-rapid-cdn-simple-frontend-input.json",
       "response": "schema-rapid-cdn-simple-frontend-output.json",
-      "title": "Simple Frontend",
+      "title": "Rapid.CDN Simple Frontend",
       "shared": true,
       "software-type": "rapid-cdn-simple-frontend"
     },
@@ -20,7 +20,7 @@
       "response": "schema-rapid-cdn-advanced-frontend-output.json",
       "shared": true,
       "software-type": "rapid-cdn-advanced-frontend",
-      "title": "Advanced Frontend"
+      "title": "Rapid.CDN Advanced Frontend"
     },
     "cluster": {
       "description": "Cluster deployment which can hold many slaves.",
@@ -28,7 +28,7 @@
       "request": "schema-rapid-cdn-cluster-input.json",
       "response": "schema-rapid-cdn-cluster-output.json",
       "software-type": "rapid-cdn-cluster",
-      "title": "Cluster"
+      "title": "Rapid.CDN Cluster"
     }
   }
 }
