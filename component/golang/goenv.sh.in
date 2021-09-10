@@ -14,7 +14,7 @@ done <<-EOF
 EOF
 
 # PATH so that go & friends work out of the box
-export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:${gcc:prefix}/bin:$PATH
+export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:${gcc:prefix}/bin:${swig:location}/bin:$PATH
 X=${gowork:directory}
 
 export PKG_CONFIG_PATH=$(echo -n "${gowork:cpkgpath}" |tr '\n' ':'):$PKG_CONFIG_PATH
