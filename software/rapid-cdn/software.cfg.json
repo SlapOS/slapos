@@ -4,14 +4,14 @@
   "serialisation": "xml",
   "software-type": {
     "simple-frontend": {
-      "description": "Simple Frontend with the least possible options for basic use.",
+      "description": "Rapid.CDN frontend with Rapid.CDN provided domain. Requires no additionall configuration to function.",
       "index": 1,
       "shared": true,
-      "request": "schema-rapid-cdn-simple-frontend-input.json",
-      "response": "schema-rapid-cdn-simple-frontend-output.json",
-      "title": "Rapid.CDN Simple Frontend",
+      "request": "schema-rapid-cdn-simple-frontend-provided-domain.input.json",
+      "response": "schema-rapid-cdn-simple-frontend-provided-domain.output.json",
+      "title": "Rapid.CDN Simple Frontend with Rapid.CDN Provided Domain",
       "shared": true,
-      "software-type": "rapid-cdn-simple-frontend"
+      "software-type": "rapid-cdn-simple-frontend-provided-domain"
     },
     "advanced-frontend": {
       "description": "Advanced Frontend with all possible options for advanced use.",
