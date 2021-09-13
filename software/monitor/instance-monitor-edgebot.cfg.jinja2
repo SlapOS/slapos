@@ -84,11 +84,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = slapos.recipe.template:jinja2
 json = ${surykatka-config-{{ class }}:json}
 template = inline:#!/bin/sh
-  if {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json > ${:json}.tmp ; then
-    mv -f ${:json}.tmp ${:json}
-  else
-    rm -f ${:json}.tmp
-  fi
+  {{ surykatka_binary }} --run status --configuration ${surykatka-{{ class }}:config} --output json --stdout ${:json}
 rendered = ${monitor-directory:bin}/${:_buildout_section_name_}
 mode = 0755
 
