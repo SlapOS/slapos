@@ -137,11 +137,96 @@ class MonitorTestMixin:
     )
 
 
-class EdgeSlaveMixin(MonitorTestMixin):
+class EdgeMixin(object):
   __partition_reference__ = 'edge'
   instance_max_retry = 20
   expected_connection_parameter_dict = {}
 
+  def assertSurykatkaIni(self):
+    expected_init_path_list = []
+    for instance_reference in self.surykatka_dict:
+      expected_init_path_list.extend(
+        [q['ini-file']
+         for q in self.surykatka_dict[instance_reference].values()])
+    self.assertEqual(
+      set(
+        glob.glob(
+          os.path.join(
+            self.slap.instance_directory, '*', 'etc', 'surykatka*.ini'
+          )
+        )
+      ),
+      set(expected_init_path_list)
+    )
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertEqual(
+          info_dict['expected_ini'].strip() % info_dict,
+          open(info_dict['ini-file']).read().strip()
+        )
+
+  def assertPromiseContent(self, instance_reference, name, content):
+    promise = open(
+      os.path.join(
+        self.slap.instance_directory, instance_reference, 'etc', 'plugin', name
+      )).read().strip()
+
+    self.assertTrue(content in promise)
+
+  def assertSurykatkaBotPromise(self):
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertPromiseContent(
+          instance_reference,
+          info_dict['bot-promise'],
+          "'report': 'bot_status'")
+        self.assertPromiseContent(
+          instance_reference,
+          info_dict['bot-promise'],
+          "'json-file': '%s'" % (info_dict['json-file'],),)
+
+  def assertSurykatkaCron(self):
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        self.assertEqual(
+          '*/2 * * * * %s' % (info_dict['status-json'],),
+          open(info_dict['status-cron']).read().strip()
+        )
+
+  def initiateSurykatkaRun(self):
+    try:
+      self.slap.waitForInstance(max_retry=2)
+    except Exception:
+      pass
+
+  def assertSurykatkaStatusJSON(self):
+    for instance_reference in self.surykatka_dict:
+      for info_dict in self.surykatka_dict[instance_reference].values():
+        if os.path.exists(info_dict['json-file']):
+          os.unlink(info_dict['json-file'])
+        try:
+          subprocess.check_call(info_dict['status-json'])
+        except subprocess.CalledProcessError as e:
+          self.fail('%s failed with code %s and message %s' % (
+            info_dict['status-json'], e.returncode, e.output))
+        with open(info_dict['json-file']) as fh:
+          status_json = json.load(fh)
+        self.assertIn('bot_status', status_json)
+
+  def assertConnectionParameterDict(self):
+    serialised = self.requestDefaultInstance().getConnectionParameterDict()
+    connection_parameter_dict = json.loads(serialised['_'])
+    # tested elsewhere
+    connection_parameter_dict.pop('monitor-setup-url', None)
+    # comes from instance-monitor.cfg.jinja2, not needed here
+    connection_parameter_dict.pop('server_log_url', None)
+    self.assertEqual(
+      self.expected_connection_parameter_dict,
+      connection_parameter_dict
+    )
+
+
+class EdgeSlaveMixin(EdgeMixin, MonitorTestMixin):
   @classmethod
   def setUpClass(cls):
     # XXX we run these tests with --all as a workaround for the fact that after
@@ -162,6 +247,11 @@ class EdgeSlaveMixin(MonitorTestMixin):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'edgetest'
+
+  def assertHttpQueryPromiseContent(self, instance_reference, name, content):
+    hashed = 'http-query-%s-promise.py' % (
+      hashlib.md5(('_' + name).encode('utf-8')).hexdigest(),)
+    self.assertPromiseContent(instance_reference, hashed, content)
 
   def requestEdgetestSlave(self, partition_reference, partition_parameter_kw):
     software_url = self.getSoftwareURL()
@@ -220,94 +310,6 @@ class EdgeSlaveMixin(MonitorTestMixin):
   def setUp(self):
     self.updateSurykatkaDict()
     self.setUpMonitorConfigurationList()
-
-  def assertSurykatkaIni(self):
-    expected_init_path_list = []
-    for instance_reference in self.surykatka_dict:
-      expected_init_path_list.extend(
-        [q['ini-file']
-         for q in self.surykatka_dict[instance_reference].values()])
-    self.assertEqual(
-      set(
-        glob.glob(
-          os.path.join(
-            self.slap.instance_directory, '*', 'etc', 'surykatka*.ini'
-          )
-        )
-      ),
-      set(expected_init_path_list)
-    )
-    for instance_reference in self.surykatka_dict:
-      for info_dict in self.surykatka_dict[instance_reference].values():
-        self.assertEqual(
-          info_dict['expected_ini'].strip() % info_dict,
-          open(info_dict['ini-file']).read().strip()
-        )
-
-  def assertPromiseContent(self, instance_reference, name, content):
-    promise = open(
-      os.path.join(
-        self.slap.instance_directory, instance_reference, 'etc', 'plugin', name
-      )).read().strip()
-
-    self.assertTrue(content in promise)
-
-  def assertHttpQueryPromiseContent(self, instance_reference, name, content):
-    hashed = 'http-query-%s-promise.py' % (
-      hashlib.md5(('_' + name).encode('utf-8')).hexdigest(),)
-    self.assertPromiseContent(instance_reference, hashed, content)
-
-  def assertSurykatkaBotPromise(self):
-    for instance_reference in self.surykatka_dict:
-      for info_dict in self.surykatka_dict[instance_reference].values():
-        self.assertPromiseContent(
-          instance_reference,
-          info_dict['bot-promise'],
-          "'report': 'bot_status'")
-        self.assertPromiseContent(
-          instance_reference,
-          info_dict['bot-promise'],
-          "'json-file': '%s'" % (info_dict['json-file'],),)
-
-  def assertSurykatkaCron(self):
-    for instance_reference in self.surykatka_dict:
-      for info_dict in self.surykatka_dict[instance_reference].values():
-        self.assertEqual(
-          '*/2 * * * * %s' % (info_dict['status-json'],),
-          open(info_dict['status-cron']).read().strip()
-        )
-
-  def initiateSurykatkaRun(self):
-    try:
-      self.slap.waitForInstance(max_retry=2)
-    except Exception:
-      pass
-
-  def assertSurykatkaStatusJSON(self):
-    for instance_reference in self.surykatka_dict:
-      for info_dict in self.surykatka_dict[instance_reference].values():
-        if os.path.exists(info_dict['json-file']):
-          os.unlink(info_dict['json-file'])
-        try:
-          subprocess.check_call(info_dict['status-json'])
-        except subprocess.CalledProcessError as e:
-          self.fail('%s failed with code %s and message %s' % (
-            info_dict['status-json'], e.returncode, e.output))
-        with open(info_dict['json-file']) as fh:
-          status_json = json.load(fh)
-        self.assertIn('bot_status', status_json)
-
-  def assertConnectionParameterDict(self):
-    serialised = self.requestDefaultInstance().getConnectionParameterDict()
-    connection_parameter_dict = json.loads(serialised['_'])
-    # tested elsewhere
-    connection_parameter_dict.pop('monitor-setup-url', None)
-    # comes from instance-monitor.cfg.jinja2, not needed here
-    connection_parameter_dict.pop('server_log_url', None)
-    self.assertEqual(
-      self.expected_connection_parameter_dict,
-      connection_parameter_dict
-    )
 
   def test(self):
     # Note: Those tests do not run surykatka and do not do real checks, as
@@ -1408,3 +1410,85 @@ URL =
   'status-code': '200',
   'url': 'https://www.all.org/'}""" % (
         self.surykatka_dict['edge4'][2]['json-file'],))
+
+
+class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
+  surykatka_dict = {}
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'nameserver-list': ['127.0.1.1', '127.0.1.2'],
+      'check-frontend-ip-list': ['127.0.0.1', '127.0.0.2'],
+      "check-maximum-elapsed-time": 5,
+      "check-certificate-expiration-days": 7,
+      "check-status-code": 201,
+      "failure-amount": 1,
+      "check-dict": {
+        "path-check": {
+           "url-list": [
+             "https://path.example.com/path",
+           ]
+        },
+        "domain-check": {
+           "url-list": [
+             "domain.example.com",
+           ]
+        },
+        "frontend-check": {
+           "url-list": [
+             "frontend.example.com",
+           ],
+           "check-frontend-ip-list": ['127.0.0.3'],
+        },
+        "status-check": {
+           "url-list": [
+             "status.example.com",
+           ],
+           "check-status-code": 202,
+        },
+        "certificate-check": {
+           "url-list": [
+             "certificate.example.com",
+           ],
+           "check-certificate-expiration-days": 11,
+        },
+        "time-check": {
+           "url-list": [
+             "time.example.com",
+           ],
+           "check-maximum-elapsed-time": 11,
+        },
+        "failure-check": {
+           "url-list": [
+             "failure.example.com",
+           ],
+           "failure-amount": 3,
+        },
+        "header-check": {
+           "url-list": [
+             "header.example.com",
+           ],
+           'check-http-header-dict': {"A": "AAA"},
+        },
+      }
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'edgetest-basic'
+
+  def test(self):
+    # Note: Those tests do not run surykatka and do not do real checks, as
+    #       this depends too much on the environment and is really hard to
+    #       mock
+    #       So it is possible that some bugs might slip under the radar
+    #       Nevertheless the surykatka and check_surykatka_json are heavily
+    #       unit tested, and configuration created by the profiles is asserted
+    #       here, so it shall be enough as reasonable status
+    self.initiateSurykatkaRun()
+    self.assertSurykatkaStatusJSON()
+    self.assertSurykatkaIni()
+    self.assertSurykatkaBotPromise()
+    self.assertSurykatkaPromises()
+    self.assertSurykatkaCron()
+    self.assertConnectionParameterDict()
