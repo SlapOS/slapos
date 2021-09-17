@@ -816,13 +816,13 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
   def getRunningImageList(self, kvm_instance_partition,
       _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
+      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
       ):
     with self.slap.instance_supervisor_rpc as instance_supervisor:
       kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
                        if 'kvm-' in q['name'])['pid']
-    software_root = os.path.join(
-      self.slap.software_directory,
-      hashlib.md5(self.getSoftwareURL().encode()).hexdigest())
+    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
+                            % re.escape(self.slap.shared_directory)).sub
     image_list = []
     for entry in psutil.Process(kvm_pid).cmdline():
       m = _match_cdrom(entry)
@@ -831,9 +831,10 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
         st = os.stat(path)
         if stat.S_ISREG(st.st_mode) and st.st_size:
           image_list.append(
+            _sub_iso(r'\1-${ver}\3',
+            sub_shared(r'${shared}/',
             path.replace(kvm_instance_partition, '${inst}')
-                .replace(software_root, '${soft}')
-          )
+          )))
     return image_list
 
   def test(self):
@@ -878,7 +879,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
       [
         '${inst}/srv/%s/image_001' % self.image_directory,
         '${inst}/srv/%s/image_002' % self.image_directory,
-        '${soft}/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
     )
@@ -902,7 +903,7 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['${soft}/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso'],
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
       self.getRunningImageList(kvm_instance_partition)
     )
 
@@ -1048,7 +1049,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
       [
         '${inst}/srv/boot-image-url-select-repository/image_001',
         '${inst}/srv/boot-image-url-list-repository/image_001',
-        '${soft}/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
       self.getRunningImageList(kvm_instance_partition)
     )
@@ -1087,7 +1088,7 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['${soft}/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso'],
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
       self.getRunningImageList(kvm_instance_partition)
     )
 
