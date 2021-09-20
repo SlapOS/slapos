@@ -142,6 +142,31 @@ class EdgeMixin(object):
   instance_max_retry = 20
   expected_connection_parameter_dict = {}
 
+  def setUp(self):
+    self.updateSurykatkaDict()
+
+  def updateSurykatkaDict(self):
+    for instance_reference in self.surykatka_dict:
+      for class_ in self.surykatka_dict[instance_reference]:
+        update_dict = {}
+        update_dict['ini-file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'etc',
+          'surykatka-%s.ini' % (class_,))
+        update_dict['json-file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'srv',
+          'surykatka-%s.json' % (class_,))
+        update_dict['status-json'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'bin',
+          'surykatka-status-json-%s' % (class_,))
+        update_dict['bot-promise'] = 'surykatka-bot-promise-%s.py' % (class_,)
+        update_dict['status-cron'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'etc',
+          'cron.d', 'surykatka-status-%s' % (class_,))
+        update_dict['db_file'] = os.path.join(
+          self.slap.instance_directory, instance_reference, 'srv',
+          'surykatka-%s.db' % (class_,))
+        self.surykatka_dict[instance_reference][class_].update(update_dict)
+
   def assertSurykatkaIni(self):
     expected_init_path_list = []
     for instance_reference in self.surykatka_dict:
@@ -263,28 +288,6 @@ class EdgeSlaveMixin(EdgeMixin, MonitorTestMixin):
       shared=True
     )
 
-  def updateSurykatkaDict(self):
-    for instance_reference in self.surykatka_dict:
-      for class_ in self.surykatka_dict[instance_reference]:
-        update_dict = {}
-        update_dict['ini-file'] = os.path.join(
-          self.slap.instance_directory, instance_reference, 'etc',
-          'surykatka-%s.ini' % (class_,))
-        update_dict['json-file'] = os.path.join(
-          self.slap.instance_directory, instance_reference, 'srv',
-          'surykatka-%s.json' % (class_,))
-        update_dict['status-json'] = os.path.join(
-          self.slap.instance_directory, instance_reference, 'bin',
-          'surykatka-status-json-%s' % (class_,))
-        update_dict['bot-promise'] = 'surykatka-bot-promise-%s.py' % (class_,)
-        update_dict['status-cron'] = os.path.join(
-          self.slap.instance_directory, instance_reference, 'etc',
-          'cron.d', 'surykatka-status-%s' % (class_,))
-        update_dict['db_file'] = os.path.join(
-          self.slap.instance_directory, instance_reference, 'srv',
-          'surykatka-%s.db' % (class_,))
-        self.surykatka_dict[instance_reference][class_].update(update_dict)
-
   def setUpMonitorConfigurationList(self):
     self.monitor_configuration_list = [
       {
@@ -308,7 +311,7 @@ class EdgeSlaveMixin(EdgeMixin, MonitorTestMixin):
     ]
 
   def setUp(self):
-    self.updateSurykatkaDict()
+    super().setUpClass()
     self.setUpMonitorConfigurationList()
 
   def test(self):
@@ -1414,6 +1417,7 @@ URL =
 
 class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
   surykatka_dict = {}
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
@@ -1472,6 +1476,46 @@ class TestEdgeBasic(EdgeMixin, SlapOSInstanceTestCase):
         },
       }
     })}
+
+  surykatka_dict = {
+    'edge0': {
+      5: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 7
+SQLITE = %(db_file)s
+NAMESERVER =
+  127.0.1.1
+  127.0.1.2
+
+URL =
+  http://certificate.example.com
+  http://domain.example.com
+  http://failure.example.com
+  http://frontend.example.com
+  http://header.example.com
+  http://status.example.com
+  https://certificate.example.com
+  https://domain.example.com
+  https://failure.example.com
+  https://frontend.example.com
+  https://header.example.com
+  https://path.example.com/path
+  https://status.example.com
+"""},
+      11: {'expected_ini': """[SURYKATKA]
+INTERVAL = 120
+TIMEOUT = 13
+SQLITE = %(db_file)s
+NAMESERVER =
+  127.0.1.1
+  127.0.1.2
+
+URL =
+  http://time.example.com
+  https://time.example.com
+"""},
+    }
+  }
 
   @classmethod
   def getInstanceSoftwareType(cls):
