@@ -75,7 +75,7 @@ config-json-file = ${surykatka-config-{{ class }}:json}
 [surykatka-bot-promise-{{ class }}]
 <= monitor-promise-base
 module = check_surykatka_json
-name = surykatka-bot-{{ class }}.py
+name = ${:_buildout_section_name_}.py
 config-report = bot_status
 config-json-file = ${surykatka-config-{{ class }}:json}
 
