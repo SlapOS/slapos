@@ -225,8 +225,8 @@ class EdgeSlaveMixin(EdgeMixin, MonitorTestMixin):
     # processing of these shared instances to be completed.
     # The sequence is something like this:
     #   - `requestEdgetestSlaves` will request edgetest partition
-    #   - first `waitForInstance` will process the edgetest partition, which will
-    #     request a edgebot partition, but without promise to wait for the
+    #   - first `waitForInstance` will process the edgetest partition, which
+    #     will request a edgebot partition, but without promise to wait for the
     #     processing to be finished, so the first run of `slapos node instance`
     #     exits with success code and `waitForInstance` return.
     #   - second `waitForInstance` process the edgebot partition.
