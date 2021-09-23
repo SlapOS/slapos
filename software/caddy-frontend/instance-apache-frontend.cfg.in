@@ -58,6 +58,7 @@ parts =
   promise-slave-introspection-https
   promise-slave-introspection-configuration
   logrotate-entry-slave-introspection
+  backend-haproxy-statistic-frontend-promise
 
 [caddyprofiledeps]
 recipe = caddyprofiledeps
@@ -920,6 +921,14 @@ slave = true
 config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
+
+[backend-haproxy-statistic-frontend-promise]
+<= monitor-promise-base
+module = check_url_available
+name = backend-haproxy-statistic-frontend.py
+config-http-code = 401
+config-url =
+  ${backend-haproxy-statistic-frontend:connection-secure_access}
 
 [slave-introspection-configuration-state]
 <= jinja2-template-base
