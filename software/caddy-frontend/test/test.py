@@ -2231,7 +2231,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result,
       'Path',
       '/VirtualHostBase/'
-      'https//typezopepath.example.com:443/path/to/some/resource'
+      'https/typezopepath.example.com:443/path/to/some/resource'
       '/VirtualHostRoot/'
       'test-path/deeper'
     )
@@ -2793,7 +2793,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//typezope.example.com:443/'
+      '/VirtualHostBase/https/typezope.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2833,8 +2833,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2845,8 +2845,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostBase/http/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2868,8 +2868,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2883,8 +2883,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostBase/http/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2911,8 +2911,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackend.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2949,8 +2949,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackend.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2982,8 +2982,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//typezopevirtualhostroothttpport'
-      '.example.com:12345//VirtualHostRoot/test-path'
+      '/VirtualHostBase/http/typezopevirtualhostroothttpport'
+      '.example.com:12345/VirtualHostRoot/test-path'
     )
 
   def test_type_zope_virtualhostroot_https_port(self):
@@ -3000,8 +3000,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//typezopevirtualhostroothttpsport'
-      '.example.com:12345//VirtualHostRoot/test-path'
+      '/VirtualHostBase/https/typezopevirtualhostroothttpsport'
+      '.example.com:12345/VirtualHostRoot/test-path'
     )
 
   def test_type_notebook(self):
