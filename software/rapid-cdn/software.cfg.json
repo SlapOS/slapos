@@ -11,7 +11,7 @@
       "response": "schema-rapid-cdn-simple-frontend.output.json",
       "title": "Rapid.CDN Simple Frontend",
       "shared": true,
-      "software-type": "rapid-cdn-simple-frontend"
+      "software-type": "rapid-cdn-frontend"
     },
     "rapid-cdn-advanced-frontend": {
       "description": "Advanced Frontend with all possible options for advanced use.",
@@ -19,7 +19,7 @@
       "request": "schema-rapid-cdn-advanced-frontend.input.json",
       "response": "schema-rapid-cdn-advanced-frontend.output.json",
       "shared": true,
-      "software-type": "rapid-cdn-advanced-frontend",
+      "software-type": "rapid-cdn-frontend",
       "title": "Rapid.CDN Advanced Frontend"
     },
     "cluster": {
