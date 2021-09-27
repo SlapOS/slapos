@@ -35,49 +35,49 @@
       "request": "schema-rapid-cdn-simple-frontend.input.json",
       "response": "schema-rapid-cdn-simple-frontend.output.json",
       "software-type": "rapid-cdn-simple-frontend",
-      "description": "[INTERNAL] [TECHNICAL] Special node to catch simple frontends"
+      "title": "[INTERNAL] [TECHNICAL] Allocates simple frontends"
     },
     "advanced-frontend": {
       "index": 10001,
       "request": "schema-rapid-cdn-advanced-frontend.input.json",
       "response": "schema-rapid-cdn-advanced-frontend.output.json",
       "software-type": "rapid-cdn-simple-frontend",
-      "description": "[INTERNAL] [TECHNICAL] Special node to catch advanced frontends"
+      "title": "[INTERNAL] [TECHNICAL] Allocates advanced frontends"
     },
-    "node": {
+    "access": {
       "index": 10002,
-      "request": "schema-rapid-cdn-node.input.json",
-      "response": "schema-rapid-cdn-node.output.json",
-      "software-type": "rapid-cdn-node",
-      "description": "[INTERNAL] [TECHNICAL] Access exposed node"
+      "request": "schema-rapid-cdn-access.input.json",
+      "response": "schema-rapid-cdn-access.output.json",
+      "software-type": "rapid-cdn-access",
+      "title": "[INTERNAL] [TECHNICAL] Access point (PoP) of the cluster"
     },
     "kedifa": {
       "index": 10003,
       "request": "schema-rapid-cdn-kedifa.input.json",
       "response": "schema-rapid-cdn-kedifa.output.json",
       "software-type": "rapid-cdn-kedifa",
-      "description": "[INTERNAL] [TECHNICAL] Kedifa server"
+      "title": "[INTERNAL] [TECHNICAL] Kedifa server"
     },
     "human": {
       "index": 10004,
       "request": "schema-rapid-cdn-human.input.json",
       "response": "schema-rapid-cdn-human.output.json",
       "software-type": "rapid-cdn-human",
-      "description": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing)"
+      "title": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing)"
     },
     "log-aggregator": {
       "index": 10005,
       "request": "schema-rapid-cdn-log-aggregator.input.json",
       "response": "schema-rapid-cdn-log-aggregator.output.json",
       "software-type": "rapid-cdn-log-aggregator",
-      "description": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs"
+      "title": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs"
     },
     "custom-personal": {
       "index": 10100,
       "request": "schema-rapid-cdn-custom-personl.input.json",
       "response": "schema-rapid-cdn-custom-personal.output.json",
       "software-type": "custom-personal",
-      "description": "[INTERNAL] [TECHNICAL] Special node to catch backward compatibility frontends"
+      "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends"
     }
   }
 }
