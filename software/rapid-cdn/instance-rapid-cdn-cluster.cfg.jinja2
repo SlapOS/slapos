@@ -2,3 +2,53 @@
 extends =
   {{ software_parameter_dict['template_common'] }}
   {{ software_parameter_dict['template_monitor2'] }}
+
+parts =
+  publish-information
+
+{#- Setup requests #}
+
+{%- macro sla(sla_key) %}
+{%-   set sla_key_length = sla_key | length %}
+{%-   for key in slapparameter_dict.keys() %}
+{%-     if key.startswith(key) %}
+sla-{{ key[sla_key_length:] }} = {{ slapparameter_dict.pop(key) }}
+{%-     endif %}
+{%-   endfor %}
+{%- endmacro %}
+
+{%- for name in ['kedifa', 'simple-frontend', 'advanced-frontend', 'human', 'log-aggregator', 'custom-personal'] %}
+{%-   set sla_key = '-sla-%s-computer_guid' % (name,) %}
+{%-   if name == 'custom-personal' %}
+{#-     Backward compatbility software type name #}
+{%-     set software_type = 'custom-personal' %}
+{%-   else %}
+{%-     set software_type = 'rapid-cdn-%s' % (name,) %}
+{%-   endif %}
+{%-   if not sla_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(sla_key, '${slap-connection:computer-id}') %}
+{%-   endif %}
+{%-   set software_key = '-%s-software-release-url' % (name,) %}
+{%-   if not software_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(software_key, '${slap-connection:software-release-url}') %}
+{%-   endif %}
+[request-{{ name }}]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+name = {{ name }}
+software-type = {{ software_type }}
+software-url = {{ slapparameter_dict.pop('-%s-software-release-url' % (name,)) }}
+{{ sla('-sla-%s-' % (name,)) }}
+
+{%- endfor %}
+
+[publish-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+xxx-replace-with-information-fetch-depends =
+  ${request-kedifa:recipe}
+  ${request-human:recipe}
+  ${request-log-aggregator:recipe}
+  ${request-custom-personal:recipe}
+  ${request-simple-frontend:recipe}
+  ${request-advanced-frontend:recipe}
