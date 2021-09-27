@@ -6,7 +6,17 @@ parts =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
+{#- Cluster itself #}
 rapid-cdn-cluster = template-rapid-cdn-cluster:rendered
+
+rapid-cdn-human = template-rapid-cdn-human:rendered
+rapid-cdn-kedifa = template-rapid-cdn-kedifa:rendered
+rapid-cdn-log-aggregator = template-rapid-cdn-log-aggregator:rendered
+rapid-cdn-simple-frontend = template-rapid-cdn-simple-frontend:rendered
+rapid-cdn-advanced-frontend = template-rapid-cdn-advanced-frontend:rendered
+custom-personal = template-rapid-cdn-custom-personal:rendered
+
+{#- Defaults... #}
 default = ${:rapid-cdn-cluster}
 RootSoftwareInstance = ${:rapid-cdn-cluster}
 
@@ -30,6 +40,30 @@ import-list =
 filename = ${:_buildout_section_name_}.cfg
 
 [template-rapid-cdn-cluster]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-human]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-kedifa]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-log-aggregator]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-simple-frontend]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-advanced-frontend]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-custom-personal]
 <= template-base
 template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
 
