@@ -1,0 +1,78 @@
+[buildout]
+extends = {{ software_parameter_dict['template_common'] }}
+
+parts =
+  switch-softwaretype
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+{#- Cluster itself #}
+rapid-cdn-cluster = template-rapid-cdn-cluster:rendered
+
+rapid-cdn-human = template-rapid-cdn-human:rendered
+rapid-cdn-kedifa = template-rapid-cdn-kedifa:rendered
+rapid-cdn-log-aggregator = template-rapid-cdn-log-aggregator:rendered
+rapid-cdn-simple-frontend = template-rapid-cdn-frontend:rendered
+rapid-cdn-advanced-frontend = template-rapid-cdn-frontend:rendered
+custom-personal = template-rapid-cdn-frontend:rendered
+
+{#- Defaults... #}
+default = ${:rapid-cdn-cluster}
+RootSoftwareInstance = ${:rapid-cdn-cluster}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+    import json json
+    import hashlib hashlib
+    key slapparameter_dict slap-configuration:configuration
+    section instance_parameter_dict slap-configuration
+    section software_parameter_dict software-parameter-section
+    ${:extra-context}
+caucase-jinja2-library = {{ software_parameter_dict['caucase_jinja2_library'] }}
+import-list =
+  file caucase :caucase-jinja2-library
+
+[template-base]
+<= jinja2-template-base
+filename = ${:_buildout_section_name_}.cfg
+
+[template-rapid-cdn-cluster]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+
+[template-rapid-cdn-human]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_human'] }}
+
+[template-rapid-cdn-kedifa]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_kedifa'] }}
+
+[template-rapid-cdn-log-aggregator]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_log_aggregator'] }}
+
+[template-rapid-cdn-frontend]
+<= template-base
+template = {{ software_parameter_dict['template_rapid_cdn_frontend'] }}
+
+[software-parameter-section]
+{% for key,value in software_parameter_dict.iteritems() %}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+configuration.autogeneration-domain =
