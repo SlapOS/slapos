@@ -1,0 +1,199 @@
+[buildout]
+extends =
+  {{ software_parameter_dict['template-common'] }}
+  {{ software_parameter_dict['template-monitor2'] }}
+
+{#- Manage frontends #}
+{%- set FRONTEND_PARAMETER_KEY_LIST = ['url', 'domain', 'domain-icp-validation'] %} {#- matches schema-rapid-cdn-frontend-shared.input.json #}
+{%- set BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST = ['url'] %} {#- based on old JSON and also found important keys #}
+{%- set FRONTEND_LIST = [] %}
+{%- for slave in instance_parameter_dict['slave-instance-list'] %}
+{%-   set frontend = {} %}
+{%-   do frontend.__setitem__('title', slave['slave_title']) %}
+{%-   do frontend.__setitem__('reference', slave['slave_reference']) %}
+{%-   if '_' in slave %}
+{%-     do frontend.__setitem__('_', slave['_']) %}
+{%-   else %}
+{%-     for key in BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST %}
+{%-       if key in slave %}
+{%-         do frontend.__setitem__(key, slave[key]) %}
+{%-       endif %}
+{%-     endfor %}
+{%-   endif %}
+{%- do FRONTEND_LIST.append(frontend) %}
+{%- endfor %}
+
+{%- set PART_LIST = [] %}
+
+{%- for frontend in FRONTEND_LIST | sort(attribute='title') %}
+{%-   if '_' in frontend %}
+{%-     set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set rapid_url = 'https://%s/' % (hostname,) %}
+{%-     do PART_LIST.append(frontend_section_title) %}
+[{{ frontend_section_title }}]
+recipe = slapos.cookbook:publish.serialised
+-slave-reference = {{ frontend['reference'] }}
+rapid-url = {{ rapid_url }}
+{%-   endif %}
+{%- endfor %}
+
+{%- for frontend in FRONTEND_LIST | sort(attribute='title') %}
+{%-   if '_' not in frontend %}
+{%-     set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set url = 'http://%s/' % (hostname, ) %}
+{%-     set https_url = 'https://%s/' % (hostname,) %}
+{%-     do PART_LIST.append(frontend_section_title) %}
+[{{ frontend_section_title }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ frontend['reference'] }}
+01-ATTENTION = Backward compatbility and obsolete frontend definition detected.
+02-ATTENTION = The instance parameters are hidden in the UI, you see everything empty.
+03-ATTENTION = Do not update parameters in the UI without checking the previous ones, as otherwise they will be lost.
+04-ATTENTION = You can access your parameters by switching to XML view with "Show Parameter XML".
+05-ATTENTION = Then you can wisely migrate them to the new way.
+url = {{ url }}
+secure_access = {{ https_url }}
+site_url = {{ url }}
+domain = {{ hostname }}
+log-access-url = XXX-TODO
+backend-client-caucase-url = XXX-TODO
+key-generate-auth-url = XXX-TODO
+replication_number = XXX-TODO
+{%-   endif %}
+{%- endfor %}
+
+{#- Request the tree #}
+{%- macro sla(sla_key) %}
+{%-   set sla_key_length = sla_key | length %}
+{%-   for key in slapparameter_dict.keys() %}
+{%-     if key.startswith(sla_key) %}
+sla-{{ key[sla_key_length:] }} = {{ slapparameter_dict[key] }}
+{%-     endif %}
+{%-   endfor %}
+{%- endmacro %}
+
+{%- for name in ['kedifa', 'human', 'log-aggregator'] %}
+{%-   set sla_key = '-sla-%s-computer_guid' % (name,) %}
+{%-   set software_type = 'rapid-cdn-' ~ name %}
+{%-   if not sla_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(sla_key, '${slap-connection:computer-id}') %}
+{%-   endif %}
+{%-   set software_key = '-%s-software-release-url' % (name,) %}
+{%-   if not software_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(software_key, '${slap-connection:software-release-url}') %}
+{%-   endif %}
+[request-{{ name }}]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+name = {{ name }}
+software-type = {{ software_type }}
+software-url = {{ slapparameter_dict['-%s-software-release-url' % (name,)] }}
+{{ sla('-sla-%s-' % (name,)) }}
+{%- endfor %}
+
+{%- set NODE_PART_LIST = [] %}
+{%- for node, node_dict in slapparameter_dict.get('cluster-dict', {}).items() %}
+{%-   set node_name = 'node-' ~ node %}
+{%-   set part_name = 'request-' ~ node %}
+{%-   do NODE_PART_LIST.append(part_name) %}
+{%-   set sla_dict = node_dict.get('sla', {'computer_guid': '${slap-connection:computer-id}'}) %}
+{%-   set software_release_url = node_dict.pop('-software-release-url', '${slap-connection:software-release-url}') %}
+[{{part_name }}]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+name = {{ node_name }}
+software-type = rapid-cdn-pop
+software-url = {{ software_release_url }}
+config-node-name = {{ node_name }}
+config-frontend-list = {{ dumps(FRONTEND_LIST) }}
+config-kedifa-caucase-url = ${kedifa-caucase-promise:config-url}
+{%-   for sla_key, sla_value in sla_dict.items() %}
+sla-{{ sla_key }} = {{ sla_value }}
+{%-   endfor %}
+{%- endfor %}
+
+[request-kedifa]
+config-kedifa-port = {{ dumps(slapparameter_dict.get('-kedifa-port', 7890)) }}
+config-caucase-port = {{ dumps(slapparameter_dict.get('-kedifa-caucase-port', 8090)) }}
+config-frontend-list = {{ dumps(FRONTEND_LIST) }}
+return =
+  caucase-url
+  master-key-generate-auth-url
+  master-key-upload-url
+
+[kedifa-caucase-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = ${:_buildout_section_name_}.py
+config-http-code = 200
+config-url = ${request-kedifa:connection-caucase-url}
+
+[directory]
+url-done = ${:var}/url-done
+
+[url-ready]
+recipe = slapos.recipe.build
+depot = ${directory:url-done}
+file = ${directory:url-done}/${:_buildout_section_name_}
+marker = ${kedifa-config:marker}
+init =
+  import os
+  if options['marker'] in options['url']:
+    if os.path.exists(options['file']):
+      os.unlink(options['file'])
+  else:
+    try:
+      with open(options['file'], 'w') as fh:
+        fh.write('')
+    except FileNotFoundError:
+      # directories are created during install, but promise runs during init
+      # so do nothing in such case
+      pass
+
+[kedifa-master-key-generate-auth-url]
+<= url-ready
+url = ${request-kedifa:connection-master-key-generate-auth-url}
+
+[kedifa-master-key-upload-url]
+<= url-ready
+url = ${request-kedifa:connection-master-key-upload-url}
+
+[kedifa-master-key-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = present
+
+[kedifa-master-key-generate-auth-url-promise]
+<= kedifa-master-key-promise
+config-filename = ${kedifa-master-key-generate-auth-url:file}
+url = ${kedifa-master-key-generate-auth-url:url}
+
+[kedifa-master-key-upload-url-promise]
+<= kedifa-master-key-promise
+config-filename = ${kedifa-master-key-upload-url:file}
+url = ${kedifa-master-key-upload-url:url}
+
+[publish-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+xxx-replace-with-information-fetch-depends =
+  ${request-human:name}
+  ${request-log-aggregator:name}
+{%- for node_part in NODE_PART_LIST %}
+  {{ '${' ~ node_part}}:name}
+{%- endfor %}
+
+kedifa-caucase-url = ${kedifa-caucase-promise:config-url}
+key-generate-auth-url = ${kedifa-master-key-generate-auth-url-promise:url}
+key-upload-url = ${kedifa-master-key-upload-url-promise:url}
+
+[buildout]
+parts +=
+  publish-information
+{% for part in PART_LIST %}
+{{ '  %s' % part }}
+{% endfor %}
