@@ -1,0 +1,13 @@
+[buildout]
+eggs-directory = {{ software_parameter_dict['eggs-directory'] }}
+develop-eggs-directory = {{ software_parameter_dict['develop-eggs-directory'] }}
+offline = true
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
