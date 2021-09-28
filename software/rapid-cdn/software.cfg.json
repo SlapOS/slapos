@@ -32,15 +32,15 @@
     },
     "simple-frontend": {
       "index": 10000,
-      "request": "schema-rapid-cdn-simple-frontend.input.json",
-      "response": "schema-rapid-cdn-simple-frontend.output.json",
+      "request": "schema-rapid-cdn-frontend.input.json",
+      "response": "schema-rapid-cdn-frontend.output.json",
       "software-type": "rapid-cdn-simple-frontend",
       "title": "[INTERNAL] [TECHNICAL] Allocates simple frontends"
     },
     "advanced-frontend": {
       "index": 10001,
-      "request": "schema-rapid-cdn-advanced-frontend.input.json",
-      "response": "schema-rapid-cdn-advanced-frontend.output.json",
+      "request": "schema-rapid-cdn-frontend.input.json",
+      "response": "schema-rapid-cdn-frontend.output.json",
       "software-type": "rapid-cdn-simple-frontend",
       "title": "[INTERNAL] [TECHNICAL] Allocates advanced frontends"
     },
@@ -74,8 +74,8 @@
     },
     "custom-personal": {
       "index": 10100,
-      "request": "schema-rapid-cdn-custom-personl.input.json",
-      "response": "schema-rapid-cdn-custom-personal.output.json",
+      "request": "schema-rapid-cdn-frontend.input.json",
+      "response": "schema-rapid-cdn-frontend.output.json",
       "software-type": "custom-personal",
       "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends"
     }
