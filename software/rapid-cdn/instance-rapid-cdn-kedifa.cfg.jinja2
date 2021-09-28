@@ -1,0 +1,163 @@
+{%- import "caucase" as caucase with context %}
+[buildout]
+extends =
+  {{ software_parameter_dict['template-common'] }}
+  {{ software_parameter_dict['template-monitor2'] }}
+
+parts +=
+  kedifa
+  caucased
+  caucase-updater
+  publish-information
+
+[caucased]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{% set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
+{%- set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict['caucase-port'] -%}
+{%- set caucase_url = 'http://' ~ caucase_netloc -%}
+{{-  caucase.caucased(
+      prefix='caucased',
+      buildout_bin_directory=software_parameter_dict['bin-directory'],
+      caucased_path='${directory:service}/caucased',
+      backup_dir='${directory:backup-caucased}',
+      data_dir='${directory:caucased}',
+      netloc=caucase_netloc,
+      tmp='${directory:tmp}',
+      service_auto_approve_count=0,
+      user_auto_approve_count=1,
+      key_len=2048
+)}}
+
+[caucase-updater]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin-directory'],
+     updater_path='${directory:service}/caucase-updater',
+     url=caucase_url,
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${kedifa-config:certificate}',
+     ca_path='${kedifa-config:ca-certificate}',
+     crl_path='${kedifa-config:crl}',
+     key_path='${kedifa-csr:key}',
+     on_renew='${kedifa-reloader:rendered}',
+     template_csr='${kedifa-csr:template-csr}'
+)}}
+
+
+[kedifa-csr]
+<= csr
+organizational_unit = Kedifa Partition
+template-csr = ${kedifa-config:template-csr}
+key = ${kedifa-config:key}
+ip = ${kedifa-config:ip}
+
+[kedifa-reloader]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-run}/kedifa-reloader
+mode = 0700
+
+template = inline:#!{{ software_parameter_dict['dash'] }}
+{%- raw %}
+  {{ content }}
+{%- endraw %}
+
+command =
+  kill -HUP `cat ${kedifa-config:pidfile}`
+context =
+  key content :command
+
+[directory]
+# KeDiFa directories
+srv-kedifa = ${:srv}/kedifa
+
+# CAUCASE directories
+caucased = ${:srv}/caucased
+backup-caucased = ${:backup}/caucased
+
+# reservation
+reservation = ${:srv}/reservation
+
+[kedifa-config]
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+port = {{ slapparameter_dict['kedifa-port'] }}
+db = ${directory:srv-kedifa}/kedifa.sqlite
+certificate = ${directory:srv-kedifa}/certificate.pem
+key = ${:certificate}
+ca-certificate = ${directory:srv-kedifa}/ca-certificate.pem
+crl = ${directory:srv-kedifa}/crl.pem
+template-csr = ${directory:srv-kedifa}/template-csr.pem
+pidfile = ${directory:run}/kedifa.pid
+logfile = ${directory:log}/kedifa.log
+
+[kedifa]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['kedifa'] }}
+  --ip ${kedifa-config:ip}
+  --port ${kedifa-config:port}
+  --db ${kedifa-config:db}
+  --certificate ${kedifa-config:certificate}
+  --ca-certificate ${kedifa-config:ca-certificate}
+  --crl ${kedifa-config:crl}
+  --pidfile ${kedifa-config:pidfile}
+  --logfile ${kedifa-config:logfile}
+
+wrapper-path = ${directory:service}/kedifa
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[master-auth-random-config]
+file = ${directory:reservation}/${:_buildout_section_name_}
+
+[master-auth-random-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${master-auth-random-config:file}
+config-state = present
+
+[master-auth-random]
+recipe = slapos.recipe.build
+kedifa-reserve = https://[${kedifa-config:ip}]:${kedifa-config:port}/reserve-id
+cert = ${kedifa-config:certificate}
+cacert = ${kedifa-config:ca-certificate}
+result = ${kedifa-config:marker}
+file = ${master-auth-random-promise:config-filename}
+# The reservation has to happen during init, this slapos.recipe.build is used
+# with python's requests instead of curl
+init =
+  import errno
+  import os
+  import requests
+  try:
+    with open(options['file']) as fh:
+      options['result'] = fh.read()
+  except FileNotFoundError:
+    try:
+      result = requests.post(
+        options['kedifa-reserve'],
+        cert=options['cert'],
+        verify=options['cacert']
+      )
+      status_code = result.status_code
+    except Exception:
+      status_code = 500
+    if status_code == 201:
+      with open(options['file'], 'w') as fh:
+        fh.write(result.text)
+      options['result'] = result.text
+
+[promise-kedifa-http-reply]
+<= monitor-promise-base
+module = check_url_available
+name = kedifa-http-reply.py
+# Kedifa replies 400 on /, so use it to be sure that Kedifa replied
+config-http-code = 400
+config-url = https://[${kedifa-config:ip}]:${kedifa-config:port}
+config-ca-cert-file = ${kedifa-config:ca-certificate}
+
+[publish-information]
+recipe = slapos.cookbook:publish.serialised
+caucase-url = {{ caucase_url }}
+master-key-generate-auth-url = ${promise-kedifa-http-reply:config-url}/${master-auth-random:result}/generateauth
+master-key-upload-url = ${promise-kedifa-http-reply:config-url}/${master-auth-random:result}?auth=
+master-key-download-url = ${promise-kedifa-http-reply:config-url}/${master-auth-random:result}
