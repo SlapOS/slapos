@@ -1,0 +1,56 @@
+[buildout]
+extends =
+  {{ software_parameter_dict['template_common'] }}
+  {{ software_parameter_dict['template_monitor2'] }}
+
+parts +=
+  kedifa
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+tmp = ${buildout:directory}/tmp/
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+etc-run = ${:etc}/run
+
+# KeDiFa directories
+kedifa = ${:srv}/kedifa
+etc-kedifa = ${:etc}/kedifa
+
+# reservation
+reservation = ${:srv}/reservation
+
+[kedifa-config]
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+port = {{ slapparameter_dict['kedifa-port'] }}
+db = ${directory:kedifa}/kedifa.sqlite
+certificate = ${directory:etc-kedifa}/certificate.pem
+key = ${:certificate}
+ca-certificate = ${directory:etc-kedifa}/ca-certificate.pem
+crl = ${directory:etc-kedifa}/crl.pem
+template-csr = ${directory:etc-kedifa}/template-csr.pem
+pidfile = ${directory:run}/kedifa.pid
+logfile = ${directory:log}/kedifa.log
+
+[kedifa]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['kedifa'] }}
+  --ip ${kedifa-config:ip}
+  --port ${kedifa-config:port}
+  --db ${kedifa-config:db}
+  --certificate ${kedifa-config:certificate}
+  --ca-certificate ${kedifa-config:ca-certificate}
+  --crl ${kedifa-config:crl}
+  --pidfile ${kedifa-config:pidfile}
+  --logfile ${kedifa-config:logfile}
+
+wrapper-path = ${directory:service}/kedifa
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
