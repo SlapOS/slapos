@@ -1,0 +1,21 @@
+[buildout]
+extends =
+  {{ software_parameter_dict['template_common'] }}
+  {{ software_parameter_dict['template_monitor2'] }}
+
+parts +=
+  publish-information
+
+{%- set frontend_list = [] %}
+{%- for slave in instance_parameter_dict['slave-instance-list'] %}
+{%-   do slave.pop('timestamp') %}
+{%-   do slave.pop('connection-parameter-hash') %}
+{%-   do slave.__setitem__('title', slave.pop('slave_title')) %}
+{%-   do slave.__setitem__('reference', slave.pop('slave_reference')) %}
+{%-   do frontend_list.append(slave) %}
+{%- endfor %}
+[publish-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+
+frontend-list = {{ dumps(frontend_list | sort(attribute='title')) }}
