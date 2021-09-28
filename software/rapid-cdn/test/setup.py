@@ -41,9 +41,9 @@ setup(
     url="https://lab.nexedi.com/nexedi/slapos",
     packages=find_packages(),
     install_requires=[
+        'requests',
         'slapos.core',
         'slapos.libnetworkcache',
-        'requests',
     ],
     zip_safe=True,
     test_suite='test',
