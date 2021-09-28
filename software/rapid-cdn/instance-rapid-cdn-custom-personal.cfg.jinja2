@@ -1,0 +1,46 @@
+[buildout]
+extends =
+  {{ software_parameter_dict['template_common'] }}
+  {{ software_parameter_dict['template_monitor2'] }}
+
+{%- set frontend_list = [] %}
+{%- for slave in instance_parameter_dict['slave-instance-list'] %}
+{%-   do slave.pop('timestamp') %}
+{%-   do slave.pop('connection-parameter-hash') %}
+{%-   do slave.__setitem__('title', slave.pop('slave_title')) %}
+{%-   do slave.__setitem__('reference', slave.pop('slave_reference')) %}
+{%-   do frontend_list.append(slave) %}
+{%- endfor %}
+[publish-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish.serialised
+frontend-list = {{ dumps(frontend_list | sort(attribute='title')) }}
+
+
+{%- set PART_LIST = [] %}
+{%- for frontend in frontend_list | sort(attribute='title') %}
+{%-   set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}
+{%-   set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}
+{%-   set url = 'http://%s/' % (hostname, ) %}
+{%-   set https_url = 'https://%s/' % (hostname,) %}
+{%-   do PART_LIST.append(frontend_section_title) %}
+[{{ frontend_section_title }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ frontend['reference'] }}
+url = {{ url }}
+secure_access = {{ https_url }}
+site_url = {{ url }}
+domain = {{ hostname }}
+log-access-url = XXX-TODO
+backend-client-caucase-url = XXX-TODO
+kedifa-caucase-url = XXX-TODO
+key-generate-auth-url = XXX-TODO
+replication_number = XXX-TODO
+{%- endfor %}
+
+[buildout]
+parts +=
+  publish-information
+{% for part in PART_LIST %}
+{{ '  %s' % part }}
+{% endfor %}
