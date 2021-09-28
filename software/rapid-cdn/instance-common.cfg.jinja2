@@ -1,0 +1,49 @@
+[buildout]
+eggs-directory = {{ software_parameter_dict['eggs-directory'] }}
+develop-eggs-directory = {{ software_parameter_dict['develop-eggs-directory'] }}
+offline = true
+
+[kedifa-config]
+# shared kedifa configuration parameters for the whole cluster
+marker = __NotReadyYet__
+
+[csr]
+recipe = plone.recipe.command
+organization = ${slap-configuration:root-instance-title}
+command =
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    /bin/bash -c '{{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa:2048 -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -reqexts SAN \
+      -config <(cat {{ software_parameter_dict['openssl-cnf'] }} \
+      <(printf "\n[SAN]\nsubjectAltName=IP:${:ip}")) \
+      -out ${:template-csr}'
+  fi
+update-command = ${:command}
+{#- Can be stopped on error, as does not rely on self provided service #}
+stop-on-error = True
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+tmp = ${buildout:directory}/tmp/
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+etc-run = ${:etc}/run
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
