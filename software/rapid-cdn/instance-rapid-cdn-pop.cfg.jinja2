@@ -1,0 +1,41 @@
+{%- import "caucase" as caucase with context %}
+[buildout]
+extends =
+  {{ software_parameter_dict['template-common'] }}
+  {{ software_parameter_dict['template-monitor2'] }}
+
+parts +=
+  kedifa-caucase-updater
+
+[directory]
+kedifa-ssl = ${:srv}/kedifa-ssl
+kedifa-caucase-updater = ${:srv}/kedifa-caucase-updater
+
+[kedifa-config]
+certificate = ${directory:kedifa-ssl}/certificate.pem
+key = ${:certificate}
+ca-certificate = ${directory:kedifa-ssl}/ca-certificate.pem
+crl = ${directory:kedifa-ssl}/crl.pem
+template-csr = ${directory:kedifa-ssl}/template-csr.pem
+
+[kedifa-csr]
+<= csr
+organizational_unit = {{ slapparameter_dict['node-name'] }}
+template-csr = ${kedifa-config:template-csr}
+key = ${kedifa-config:key}
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+
+[kedifa-caucase-updater]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{ caucase.updater(
+     prefix='kedifa-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin-directory'],
+     updater_path='${directory:service}/kedifa-caucase-updater',
+     url=slapparameter_dict['kedifa-caucase-url'],
+     data_dir='${directory:kedifa-caucase-updater}',
+     crt_path='${kedifa-config:certificate}',
+     ca_path='${kedifa-config:ca-certificate}',
+     crl_path='${kedifa-config:crl}',
+     key_path='${kedifa-csr:key}',
+     template_csr='${kedifa-csr:template-csr}'
+)}}
