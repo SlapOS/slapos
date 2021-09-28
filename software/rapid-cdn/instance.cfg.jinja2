@@ -1,0 +1,61 @@
+[buildout]
+extends = {{ software_parameter_dict['template-common'] }}
+
+parts =
+  switch-softwaretype
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+{#- Cluster itself #}
+rapid-cdn-frontend = template-rapid-cdn-frontend:rendered
+
+rapid-cdn-pop = template-rapid-cdn-pop:rendered
+rapid-cdn-human = template-rapid-cdn-human:rendered
+rapid-cdn-kedifa = template-rapid-cdn-kedifa:rendered
+rapid-cdn-log-aggregator = template-rapid-cdn-log-aggregator:rendered
+
+{#- Defaults... #}
+default = ${:rapid-cdn-frontend}
+RootSoftwareInstance = ${:rapid-cdn-frontend}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+    import json json
+    import hashlib hashlib
+    key slapparameter_dict slap-configuration:configuration
+    section instance_parameter_dict slap-configuration
+    section software_parameter_dict software-parameter-section
+    ${:extra-context}
+import-list =
+  file caucase software-parameter-section:caucase-jinja2-library
+
+[template-base]
+<= jinja2-template-base
+filename = ${:_buildout_section_name_}.cfg
+
+{%- for template in software_parameter_dict.keys() %}
+{%-   if template.startswith('template-rapid-cdn-') %}
+[{{ template }}]
+<= template-base
+template = {{ software_parameter_dict[template] }}
+{%-   endif %}
+{%- endfor %}
+
+[software-parameter-section]
+{%- for key, value in software_parameter_dict.items() %}
+{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
