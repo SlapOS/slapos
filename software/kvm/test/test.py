@@ -230,7 +230,7 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
   def test(self):
     kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
     self.assertEqual(
-      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
       info_list
     )
     self.rerequestInstance({
@@ -264,7 +264,7 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
 
     kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
     self.assertEqual(
-      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
       info_list
     )
     self.assertEqual(
@@ -275,15 +275,15 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
     parameter_dict = {
       'enable-device-hotplug': 'true',
       # to avoid restarts the max RAM and CPU has to be static
-      'ram-max-size': '2048',
-      'cpu-max-count': '4',
+      'ram-max-size': '8192',
+      'cpu-max-count': '6',
     }
     self.rerequestInstance(parameter_dict)
     self.slap.waitForInstance(max_retry=2)
     kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
 
     self.assertEqual(
-      ['1,maxcpus=4', '1024M,slots=128,maxmem=2048M'],
+      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
       info_list
     )
     self.assertEqual(
@@ -292,21 +292,21 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
     )
     self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
     parameter_dict.update(**{
-      'ram-size': '1536',
-      'cpu-count': '2'
+      'ram-size': '5120',
+      'cpu-count': '4'
     })
     self.rerequestInstance(parameter_dict)
     self.slap.waitForInstance(max_retry=10)
     kvm_pid_3, info_list = self.getKvmProcessInfo(['-smp', '-m'])
 
     self.assertEqual(
-      ['1,maxcpus=4', '1024M,slots=128,maxmem=2048M'],
+      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
       info_list
     )
     self.assertEqual(kvm_pid_2, kvm_pid_3, "Unexpected: KVM restarted")
     self.assertEqual(
       getHotpluggedCpuRamValue(),
-      {'cpu_count': 1, 'ram_mb': 512}
+      {'cpu_count': 2, 'ram_mb': 1024}
     )
 
 
