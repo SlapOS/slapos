@@ -1,15 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
   "properties": {
-    "frontend-status": {
-      "title": "Status of frontends",
-      "description": "Contains information about each frontend handled by the node.",
-      "type": "object"
-    },
     "autogeneration-domain": {
+      "title": "Autogeneration Domain",
+      "description": "Domain, like host.example.com, which will be used to automatically generate frontend domains, which will look like xyz.host.example.com.",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
       "type": "string"
     }
   },
+  "required": [],
   "title": "Input Parameters",
   "type": "object"
 }

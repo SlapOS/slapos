@@ -3,51 +3,24 @@
   "name": "Rapid.CDN",
   "serialisation": "xml",
   "software-type": {
-    "rapid-cdn-simple-frontend": {
-      "title": "Rapid.CDN Simple Frontend [TENTATIVE/MERGE: rapid-cdn-advanced-frontend]",
-      "description": "Rapid.CDN simple frontend with Rapid.CDN.",
+    "rapid-cdn-frontend": {
+      "title": "Rapid.CDN Frontend",
       "serialisation": "json-in-xml",
       "index": 1,
       "shared": true,
-      "request": "schema-rapid-cdn-simple-frontend.input.json",
+      "request": "schema-rapid-cdn-frontend-shared.input.json",
       "response": "schema-rapid-cdn-frontend-shared.output.json",
       "shared": true,
-      "software-type": "rapid-cdn-simple-frontend"
+      "software-type": "rapid-cdn-frontend"
     },
-    "rapid-cdn-advanced-frontend": {
-      "title": "Rapid.CDN Advanced Frontend [TENTATIVE/MERGE: rapid-cdn-simple-frontend]",
-      "description": "Advanced Frontend with all possible options for advanced use.",
-      "serialisation": "json-in-xml",
-      "index": 2,
-      "request": "schema-rapid-cdn-advanced-frontend.input.json",
-      "response": "schema-rapid-cdn-frontend-shared.output.json",
-      "shared": true,
-      "software-type": "rapid-cdn-advanced-frontend"
-    },
-    "cluster": {
-      "title": "Rapid.CDN Cluster [TENTATIVE/MERGE: simple-frontend, advanced-frontend] (resilient)",
+    "rapid-cdn-frontend-cluster": {
+      "title": "Rapid.CDN Frontend Cluster (resilient)",
       "description": "Cluster deployment which can hold many slaves.",
       "serialisation": "json-in-xml",
       "index": 100,
-      "request": "schema-rapid-cdn-cluster.input.json",
-      "response": "schema-rapid-cdn-cluster.output.json",
-      "software-type": "rapid-cdn-cluster"
-    },
-    "simple-frontend": {
-      "title": "[INTERNAL] [TECHNICAL] Allocates simple frontends [TENTATIVE/MERGE: cluster]",
-      "index": 1000,
-      "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-frontend.input.json",
       "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "rapid-cdn-simple-frontend"
-    },
-    "advanced-frontend": {
-      "title": "[INTERNAL] [TECHNICAL] Allocates advanced frontends [TENTATIVE/MERGE: cluster]",
-      "index": 1001,
-      "serialisation": "json-in-xml",
-      "request": "schema-rapid-cdn-frontend.input.json",
-      "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "rapid-cdn-simple-frontend"
+      "software-type": "rapid-cdn-frontend"
     },
     "access": {
       "title": "[INTERNAL] [TECHNICAL] Access point (PoP) of the cluster",
@@ -82,20 +55,20 @@
       "software-type": "rapid-cdn-log-aggregator"
     },
     "custom-personal": {
-      "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends",
-      "index": 1100,
-      "serialisation": "json-in-xml",
-      "request": "schema-rapid-cdn-frontend.input.json",
-      "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "custom-personal"
-    },
-    "custom-personal-frontend": {
       "title": "[BACKWARD COMPATIBILITY] custom-personal frontend",
       "serialisation": "xml",
-      "index": 1101,
-      "request": "schema-rapid-cdn-custom-personal-frontend.input.json",
-      "response": "schema-rapid-cdn-custom-personal-frontend.output.json",
+      "index": 1100,
+      "request": "schema-rapid-cdn-custom-personal-shared.input.json",
+      "response": "schema-rapid-cdn-custom-personal-shared.output.json",
       "shared": true,
+      "software-type": "custom-personal"
+    },
+    "custom-personal-node": {
+      "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends",
+      "index": 1101,
+      "serialisation": "json-in-xml",
+      "request": "schema-rapid-cdn-custom-personal.input.json",
+      "response": "schema-rapid-cdn-custom-personal.output.json",
       "software-type": "custom-personal"
     }
   }
