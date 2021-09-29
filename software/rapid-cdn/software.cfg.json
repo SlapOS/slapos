@@ -4,90 +4,99 @@
   "serialisation": "xml",
   "software-type": {
     "rapid-cdn-simple-frontend": {
+      "title": "Rapid.CDN Simple Frontend",
       "description": "Rapid.CDN simple frontend with Rapid.CDN.",
       "serialisation": "json-in-xml",
-      "index": 2,
+      "index": 1,
       "shared": true,
       "request": "schema-rapid-cdn-simple-frontend.input.json",
       "response": "schema-rapid-cdn-frontend-shared.output.json",
-      "title": "Rapid.CDN Simple Frontend",
       "shared": true,
       "software-type": "rapid-cdn-simple-frontend"
     },
     "rapid-cdn-advanced-frontend": {
+      "title": "Rapid.CDN Advanced Frontend",
       "description": "Advanced Frontend with all possible options for advanced use.",
       "serialisation": "json-in-xml",
-      "index": 100,
+      "index": 2,
       "request": "schema-rapid-cdn-advanced-frontend.input.json",
       "response": "schema-rapid-cdn-frontend-shared.output.json",
       "shared": true,
-      "software-type": "rapid-cdn-advanced-frontend",
-      "title": "Rapid.CDN Advanced Frontend"
+      "software-type": "rapid-cdn-advanced-frontend"
     },
     "cluster": {
+      "title": "Rapid.CDN Cluster",
       "description": "Cluster deployment which can hold many slaves.",
       "serialisation": "json-in-xml",
-      "index": 1000,
+      "index": 100,
       "request": "schema-rapid-cdn-cluster.input.json",
       "response": "schema-rapid-cdn-cluster.output.json",
-      "software-type": "rapid-cdn-cluster",
-      "title": "Rapid.CDN Cluster"
+      "software-type": "rapid-cdn-cluster"
     },
     "simple-frontend": {
-      "index": 10000,
+      "title": "[INTERNAL] [TECHNICAL] Allocates simple frontends",
+      "index": 1000,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-frontend.input.json",
       "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "rapid-cdn-simple-frontend",
-      "title": "[INTERNAL] [TECHNICAL] Allocates simple frontends"
+      "software-type": "rapid-cdn-simple-frontend"
     },
     "advanced-frontend": {
-      "index": 10001,
+      "title": "[INTERNAL] [TECHNICAL] Allocates advanced frontends",
+      "index": 1001,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-frontend.input.json",
       "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "rapid-cdn-simple-frontend",
-      "title": "[INTERNAL] [TECHNICAL] Allocates advanced frontends"
+      "software-type": "rapid-cdn-simple-frontend"
     },
     "access": {
-      "index": 10002,
+      "title": "[INTERNAL] [TECHNICAL] Access point (PoP) of the cluster",
+      "index": 1002,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-access.input.json",
       "response": "schema-rapid-cdn-access.output.json",
-      "software-type": "rapid-cdn-access",
-      "title": "[INTERNAL] [TECHNICAL] Access point (PoP) of the cluster"
+      "software-type": "rapid-cdn-access"
     },
     "kedifa": {
-      "index": 10003,
+      "title": "[INTERNAL] [TECHNICAL] Kedifa server",
+      "index": 1003,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-kedifa.input.json",
       "response": "schema-rapid-cdn-kedifa.output.json",
-      "software-type": "rapid-cdn-kedifa",
-      "title": "[INTERNAL] [TECHNICAL] Kedifa server"
+      "software-type": "rapid-cdn-kedifa"
     },
     "human": {
-      "index": 10004,
+      "title": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing)",
+      "index": 1004,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-human.input.json",
       "response": "schema-rapid-cdn-human.output.json",
-      "software-type": "rapid-cdn-human",
-      "title": "[INTERNAL] [TECHNICAL] Node to automate some human maintenance of the frontend (eg. internal certificate signing)"
+      "software-type": "rapid-cdn-human"
     },
     "log-aggregator": {
-      "index": 10005,
+      "title": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs",
+      "index": 1005,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-log-aggregator.input.json",
       "response": "schema-rapid-cdn-log-aggregator.output.json",
-      "software-type": "rapid-cdn-log-aggregator",
-      "title": "[INTERNAL] [TECHNICAL] Node to aggregate and expose logs"
+      "software-type": "rapid-cdn-log-aggregator"
     },
     "custom-personal": {
-      "index": 10100,
+      "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends",
+      "index": 1100,
       "serialisation": "json-in-xml",
       "request": "schema-rapid-cdn-frontend.input.json",
       "response": "schema-rapid-cdn-frontend.output.json",
-      "software-type": "custom-personal",
-      "title": "[INTERNAL] [TECHNICAL] Allocates backward compatiblity frontends"
+      "software-type": "custom-personal"
+    },
+    "custom-personal-frontend": {
+      "title": "[BACKWARD COMPATIBILITY] custom-personal frontend",
+      "serialisation": "xml",
+      "index": 1101,
+      "request": "schema-rapid-cdn-custom-personal-frontend.input.json",
+      "response": "schema-rapid-cdn-custom-personal-frontend.output.json",
+      "shared": true,
+      "software-type": "custom-personal"
     }
   }
 }
