@@ -230,7 +230,7 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
   def test(self):
     kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
     self.assertEqual(
-      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
       info_list
     )
     self.rerequestInstance({
@@ -264,7 +264,7 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
 
     kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
     self.assertEqual(
-      ['1,maxcpus=2', '1024M,slots=128,maxmem=1536M'],
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
       info_list
     )
     self.assertEqual(
