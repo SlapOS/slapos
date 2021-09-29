@@ -7,18 +7,16 @@ parts =
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 {#- Cluster itself #}
-rapid-cdn-cluster = template-rapid-cdn-cluster:rendered
+rapid-cdn-frontend = template-rapid-cdn-frontend:rendered
 
 rapid-cdn-human = template-rapid-cdn-human:rendered
 rapid-cdn-kedifa = template-rapid-cdn-kedifa:rendered
 rapid-cdn-log-aggregator = template-rapid-cdn-log-aggregator:rendered
-rapid-cdn-simple-frontend = template-rapid-cdn-frontend:rendered
-rapid-cdn-advanced-frontend = template-rapid-cdn-frontend:rendered
 custom-personal = template-rapid-cdn-frontend:rendered
 
 {#- Defaults... #}
-default = ${:rapid-cdn-cluster}
-RootSoftwareInstance = ${:rapid-cdn-cluster}
+default = ${:rapid-cdn-frontend}
+RootSoftwareInstance = ${:rapid-cdn-frontend}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -40,9 +38,9 @@ import-list =
 <= jinja2-template-base
 filename = ${:_buildout_section_name_}.cfg
 
-[template-rapid-cdn-cluster]
+[template-rapid-cdn-frontend]
 <= template-base
-template = {{ software_parameter_dict['template_rapid_cdn_cluster'] }}
+template = {{ software_parameter_dict['template_rapid_cdn_frontend'] }}
 
 [template-rapid-cdn-human]
 <= template-base
@@ -55,10 +53,6 @@ template = {{ software_parameter_dict['template_rapid_cdn_kedifa'] }}
 [template-rapid-cdn-log-aggregator]
 <= template-base
 template = {{ software_parameter_dict['template_rapid_cdn_log_aggregator'] }}
-
-[template-rapid-cdn-frontend]
-<= template-base
-template = {{ software_parameter_dict['template_rapid_cdn_frontend'] }}
 
 [software-parameter-section]
 {% for key,value in software_parameter_dict.iteritems() %}

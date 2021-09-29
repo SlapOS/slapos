@@ -3,34 +3,59 @@ extends =
   {{ software_parameter_dict['template_common'] }}
   {{ software_parameter_dict['template_monitor2'] }}
 
-{%- set frontend_list = [] %}
-{%- for slave in instance_parameter_dict['slave-instance-list'] %}
-{%-   do slave.pop('timestamp') %}
-{%-   do slave.pop('connection-parameter-hash') %}
-{%-   do slave.__setitem__('title', slave.pop('slave_title')) %}
-{%-   do slave.__setitem__('reference', slave.pop('slave_reference')) %}
-{%-   do frontend_list.append(slave) %}
+parts =
+  publish-information
+
+{#- Setup requests #}
+
+{%- macro sla(sla_key) %}
+{%-   set sla_key_length = sla_key | length %}
+{%-   for key in slapparameter_dict.keys() %}
+{%-     if key.startswith(sla_key) %}
+sla-{{ key[sla_key_length:] }} = {{ slapparameter_dict[key] }}
+{%-     endif %}
+{%-   endfor %}
+{%- endmacro %}
+
+{%- for name in ['kedifa', 'human', 'log-aggregator', 'custom-personal'] %}
+{%-   set sla_key = '-sla-%s-computer_guid' % (name,) %}
+{%-   if name == 'custom-personal' %}
+{#-     Backward compatbility software type name #}
+{%-     set software_type = 'custom-personal' %}
+{%-   else %}
+{%-     set software_type = 'rapid-cdn-%s' % (name,) %}
+{%-   endif %}
+{%-   if not sla_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(sla_key, '${slap-connection:computer-id}') %}
+{%-   endif %}
+{%-   set software_key = '-%s-software-release-url' % (name,) %}
+{%-   if not software_key in slapparameter_dict %}
+{%-     do slapparameter_dict.__setitem__(software_key, '${slap-connection:software-release-url}') %}
+{%-   endif %}
+[request-{{ name }}]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+name = {{ name }}
+software-type = {{ software_type }}
+software-url = {{ slapparameter_dict['-%s-software-release-url' % (name,)] }}
+{{ sla('-sla-%s-' % (name,)) }}
 {%- endfor %}
+
+{#- TODO Now the fun starts. It is required to being able to parse frontend-list in order to provide frontend-status #}
+{#-      Maybe it will be required to request them deeper in the other profile, time will tell #}
+{#-      The problem is that frontend-list is available to buildout processing, but not to jinja level processing #}
+{%- set custom_frontend_status = {} %}
+
+[request-custom-personal]
+config-frontend-status = {{ dumps(custom_frontend_status) }}
+config-autogeneration-domain = {{ dumps(slapparameter_dict['autogeneration-domain']) }}
+return = frontend-list
+
 [publish-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
-frontend-list = {{ dumps(frontend_list | sort(attribute='title')) }}
-
-
-{%- set PART_LIST = [] %}
-{%- for frontend in frontend_list | sort(attribute='title') %}
-{%-   set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}
-{%-   set auto_url = 'https://%s.%s/' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}
-{%-   do PART_LIST.append(frontend_section_title) %}
-[{{ frontend_section_title }}]
-recipe = slapos.cookbook:publish.serialised
--slave-reference = {{ frontend['reference'] }}
-url = {{ auto_url }}
-{%- endfor %}
-
-[buildout]
-parts +=
-  publish-information
-{% for part in PART_LIST %}
-{{ '  %s' % part }}
-{% endfor %}
+xxx-replace-with-information-fetch-depends =
+  ${request-kedifa:recipe}
+  ${request-human:recipe}
+  ${request-log-aggregator:recipe}
+  ${request-custom-personal:recipe}
