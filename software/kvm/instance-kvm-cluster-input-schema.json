@@ -225,7 +225,7 @@
               "title": "RAM size",
               "description": "RAM size, in MB.",
               "type": "integer",
-              "default": 1024,
+              "default": 4096,
               "minimum": 1024,
               "multipleOf": 512
             },
@@ -254,7 +254,7 @@
               "title": "Disk size",
               "description": "Disk size, in GB.",
               "type": "integer",
-              "default": 10,
+              "default": 40,
               "minimum": 1
             },
             "disk-format": {
@@ -313,6 +313,7 @@
               "title": "CPU count",
               "description": "Number of CPU cores.",
               "type": "integer",
+              "default": 2,
               "minimum": 1
             },
             "cpu-max-count": {
