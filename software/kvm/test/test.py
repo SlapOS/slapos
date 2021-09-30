@@ -31,10 +31,12 @@ import os
 import glob
 import hashlib
 import psutil
+import re
 import requests
 import six
 import slapos.util
 import sqlite3
+import stat
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
@@ -812,6 +814,29 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
 
+  def getRunningImageList(self, kvm_instance_partition,
+      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
+      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
+      ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                       if 'kvm-' in q['name'])['pid']
+    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
+                            % re.escape(self.slap.shared_directory)).sub
+    image_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_cdrom(entry)
+      if m:
+        path = m.group(1)
+        st = os.stat(path)
+        if stat.S_ISREG(st.st_mode) and st.st_size:
+          image_list.append(
+            _sub_iso(r'\1-${ver}\3',
+            sub_shared(r'${shared}/',
+            path.replace(kvm_instance_partition, '${inst}')
+          )))
+    return image_list
+
   def test(self):
     partition_parameter_kw = {
       self.key: self.test_input % (
@@ -843,23 +868,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.assertTrue(os.path.islink(image2_link))
     self.assertEqual(os.readlink(image2_link), image2)
 
-    def getRunningImageList():
-      running_image_list = []
-      with self.slap.instance_supervisor_rpc as instance_supervisor:
-        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                   if 'kvm-' in q['name']][0]['pid']
-        kvm_process = psutil.Process(kvm_pid)
-        software_root = '/'.join([
-          self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
-        for entry in kvm_process.cmdline():
-          if entry.startswith('file') and 'media=cdrom' in entry:
-            # do cleanups
-            entry = entry.replace(software_root, '')
-            entry = entry.replace(kvm_instance_partition, '')
-            running_image_list.append(entry)
-      return running_image_list
-
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
@@ -869,12 +877,11 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     self.assertEqual(
       [
-        'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
-        'file=/srv/%s/image_002,media=cdrom' % (self.image_directory,),
-        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom'
+        '${inst}/srv/%s/image_001' % self.image_directory,
+        '${inst}/srv/%s/image_002' % self.image_directory,
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      getRunningImageList()
+      self.getRunningImageList(kvm_instance_partition)
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -896,9 +903,8 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
     )
 
   def assertPromiseFails(self, promise):
@@ -1032,23 +1038,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
-    def getRunningImageList():
-      running_image_list = []
-      with self.slap.instance_supervisor_rpc as instance_supervisor:
-        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                   if 'kvm-' in q['name']][0]['pid']
-        kvm_process = psutil.Process(kvm_pid)
-        software_root = '/'.join([
-          self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
-        for entry in kvm_process.cmdline():
-          if entry.startswith('file') and 'media=cdrom' in entry:
-            # do cleanups
-            entry = entry.replace(software_root, '')
-            entry = entry.replace(kvm_instance_partition, '')
-            running_image_list.append(entry)
-      return running_image_list
-
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
@@ -1058,12 +1047,11 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     self.assertEqual(
       [
-        'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
-        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom'
+        '${inst}/srv/boot-image-url-select-repository/image_001',
+        '${inst}/srv/boot-image-url-list-repository/image_001',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      getRunningImageList()
+      self.getRunningImageList(kvm_instance_partition)
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -1100,9 +1088,8 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
     )
 
 

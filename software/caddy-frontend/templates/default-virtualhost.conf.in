@@ -2,6 +2,11 @@
 {%- if slave_parameter['prefer-gzip-encoding-to-backend'] %}
 {%- do proxy_append_list.append(('prefer-gzip', 'Proxy which always overrides Accept-Encoding to gzip if such is found')) %}
 {%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
+{%- if slave_parameter['path'].strip().strip('/') %}
+{%-   set zope_path = slave_parameter['path'].strip().strip('/') ~ '/' %}
+{%- else %}
+{%-   set zope_path = '' %}
+{%- endif %}
 {%- set http_host_list = [] %}
 {%- set https_host_list = [] %}
 {%- for host in slave_parameter['host_list'] %}
@@ -129,27 +134,27 @@
     regexp (.*)
     if {>Accept-Encoding} match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
 {%- if tls %}
-    to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /prefer-gzip/VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- else %}
-    to /prefer-gzip/VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /prefer-gzip/VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- endif %}
   }
   rewrite {
     regexp (.*)
     if {>Accept-Encoding} not_match "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)"
 {%- if tls %}
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- else %}
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- endif %}
   }
 {%- else %}
   rewrite {
     regexp (.*)
 {%- if tls %}
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-https-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- else %}
-    to /VirtualHostBase/{scheme}%2F%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ slave_parameter['path'] }}%2FVirtualHostRoot/{1}
+    to /VirtualHostBase/{scheme}%2F{hostonly}:{{ slave_parameter['virtualhostroot-http-port'] }}%2F{{ zope_path }}VirtualHostRoot/{1}
 {%- endif %}
   } {# rewrite #}
 {%- endif %} {#- if slave_parameter['prefer-gzip-encoding-to-backend'] #}
