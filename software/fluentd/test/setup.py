@@ -41,6 +41,7 @@ setup(name=name,
       url="https://lab.nexedi.com/nexedi/slapos",
       packages=find_packages(),
       install_requires=[
+          'msgpack',
           'slapos.core',
           'slapos.libnetworkcache',
           'erp5.util',
