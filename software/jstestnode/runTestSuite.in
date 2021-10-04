@@ -69,7 +69,7 @@ def main():
     target = test_runner.get('target', 'firefox')
     if target == 'node':
       # Execute NodeJS tests
-      result_string = check_output(['${nodejs:node}/bin/node', '${jio-repository.git:location}/test/node.js'],
+      result_string = check_output(['${nodejs:location}/bin/node', '${jio-repository.git:location}/test/node.js'],
                                    cwd='${jio-repository.git:location}',
                                    env={'CI': 'true'})
       result_dict = json.loads(result_string)
