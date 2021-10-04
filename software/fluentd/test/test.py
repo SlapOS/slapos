@@ -238,9 +238,12 @@ class GatewayConfTestCase(WendelinTutorialTestCase):
   streamtool_uri http://[%s]:%s/erp5/portal_ingestion_policies/default
   user      foo
   password  bar
-  buffer_type file
-  buffer_path fluentd-buffer-file/
-  flush_interval %ss
+  <buffer>
+    flush_mode interval
+    @type file
+    path fluentd-buffer-file/
+    flush_interval %ss
+  </buffer>
 </match>''' % (fluentd_port, cls._ipv6_address, cls._ipv6_address,
                wendelin_port, FLUSH_INTERVAL)
 
