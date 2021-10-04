@@ -46,7 +46,7 @@ class Recipe(object):
     try:
       with open(storage_path) as f:
         readline = f.readline()
-    except IOError, e:
+    except IOError as e:
       if e.errno != errno.ENOENT:
         raise
       readline = None
