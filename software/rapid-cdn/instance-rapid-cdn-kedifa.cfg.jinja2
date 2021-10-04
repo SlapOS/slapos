@@ -152,6 +152,8 @@ cacert = ${kedifa-config:ca-certificate}
 result = ${master-auth-random-config:marker}
 file = ${master-auth-random-config:file}
 file-tmp = ${master-auth-random-promise:config-filename}
+# The reservation has to happen during init, this slapos.recipe.build is used
+# with python's requests instead of curl
 init =
   import errno
   import os
