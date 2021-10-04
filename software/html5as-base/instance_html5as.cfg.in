@@ -14,6 +14,7 @@ parts =
     launcher
     nginx-graceful
     port-listening-promise
+    index-exists-promise
     logrotate-entry-nginx
     publish-connection-information
 
@@ -189,6 +190,14 @@ module = check_socket_listening
 name = nginx-port-listening.py
 config-host = ${html5as:ip}
 config-port = ${html5as:port}
+
+# Custom promise to check that the index file exists
+[index-exists-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.promise.html5as
+content = from promise import RunPromise
+output = ${directory:plugins}/index-exists.py
+config-filepath = ${html5as:default_index}
 
 # Use a port different from the default one in order to be able to
 # use it in a SlapOS webrunner or a Theia SlapOS Runner
