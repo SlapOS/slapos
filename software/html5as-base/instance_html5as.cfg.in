@@ -14,6 +14,7 @@ parts =
     launcher
     nginx-graceful
     port-listening-promise
+    index-exists-promise
     logrotate-entry-nginx
     publish-connection-information
 
@@ -240,3 +241,11 @@ name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}
 config-check-secure = 1
+
+# Add the custom promise to check that the index file exists
+[index-exists-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = {{ parameter_list['custom_promise'] }}
+output = ${directory:plugins}/index-exists.py
+config-filepath = ${html5as:default_index}
