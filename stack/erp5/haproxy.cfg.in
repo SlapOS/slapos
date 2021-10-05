@@ -165,9 +165,16 @@ listen family_{{ name }}
   # remove X-Forwarded-For unless client presented a verified certificate
   acl client_cert_verified ssl_c_used ssl_c_verify 0
   http-request del-header X-Forwarded-For unless client_cert_verified
-  # set Remote-User if client presented a verified certificate
-  http-request del-header Remote-User
-  http-request set-header Remote-User %{+Q}[ssl_c_s_dn(cn)] if client_cert_verified
+  # Keep Remote-User if client is trusted (present a verified certificate).
+  # the client here might be a frontend, which does it's own way to obtain the
+  # Remote-User value, eg. by verifying it's client with SSL certificate
+  # *This* haproxy is not a frontend, and it uses client verification on
+  # machine-to-machine level
+  # Note: This is change for future compatibility, when so called SSL Edge
+  #       Authentication will be implemented in the frontend and accepted
+  #       fully by a backend. Maybe more headers will be provided by the
+  #       frontend then, so they shall be "del-header <SOME-HEADER> unless"
+  http-request del-header Remote-User unless client_cert_verified
 
   # logs
   capture request header Referer len 512
