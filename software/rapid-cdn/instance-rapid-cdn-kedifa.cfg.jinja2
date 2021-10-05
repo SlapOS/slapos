@@ -161,25 +161,30 @@ init =
   try:
     with open(options['file']) as fh:
       options['result'] = fh.read()
-  except IOError as e:
-    if e.errno != errno.ENOENT:
-      raise
-    with open(options['file-tmp'], 'w') as fh:
-      fh.write('')
+  except FileNotFoundError:
     try:
-      result = requests.post(
-        options['kedifa-reserve'],
-        cert=options['cert'],
-        verify=options['cacert']
-      )
-      status_code = result.status_code
-    except Exception:
-      status_code = 500
-    if status_code == 201:
-      with open(options['file'], 'w') as fh:
-        fh.write(result.text)
-      options['result'] = result.text
-      os.unlink(options['file-tmp'])
+      with open(options['file-tmp'], 'w') as fh:
+        fh.write('')
+    except FileNotFoundError:
+      # slapos.cookbook:mkdirectory used in directory section create
+      # directories during install, but this HAS to run during init, so ignore
+      # missing directory
+      pass
+    else:
+      try:
+        result = requests.post(
+          options['kedifa-reserve'],
+          cert=options['cert'],
+          verify=options['cacert']
+        )
+        status_code = result.status_code
+      except Exception:
+        status_code = 500
+      if status_code == 201:
+        with open(options['file'], 'w') as fh:
+          fh.write(result.text)
+        options['result'] = result.text
+        os.unlink(options['file-tmp'])
 
 [publish-information]
 recipe = slapos.cookbook:publish.serialised
