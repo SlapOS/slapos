@@ -4,41 +4,48 @@ extends =
   {{ software_parameter_dict['template-monitor2'] }}
 
 {#- Manage frontends #}
+{%- set FRONTEND_PARAMETER_KEY_LIST = ['url', 'domain', 'domain-icp-validation'] %} {#- matches schema-rapid-cdn-frontend-shared.input.json #}
+{%- set BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST = ['url'] %} {#- based on old JSON and also found important keys #}
 {%- set FRONTEND_LIST = [] %}
-{#- Note: BACKWARD_COMPATIBLE_FRONTEND_LIST requires SlapOS Master ComputerPartition_getCustomAllocationParameterDict script coordination, to map the Slave's software types to rapid-cdn-frontend #}
-{%- set BACKWARD_COMPATIBLE_FRONTEND_LIST = [] %}
 {%- for slave in instance_parameter_dict['slave-instance-list'] %}
-{%-   do slave.pop('timestamp') %}
-{%-   do slave.pop('connection-parameter-hash') %}
-{%-   do slave.__setitem__('title', slave.pop('slave_title')) %}
-{%-   do slave.__setitem__('reference', slave.pop('slave_reference')) %}
+{%-   set frontend = {} %}
+{%-   do frontend.__setitem__('title', slave['slave_title']) %}
+{%-   do frontend.__setitem__('reference', slave['slave_reference']) %}
 {%-   if '_' in slave %}
-{%-     do FRONTEND_LIST.append(slave) %}
+{%-     do frontend.__setitem__('_', slave['_']) %}
 {%-   else %}
-{%-     do BACKWARD_COMPATIBLE_FRONTEND_LIST.append(slave) %}
+{%-     for key in BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST %}
+{%-       if key in slave %}
+{%-         do frontend.__setitem__(key, slave[key]) %}
+{%-       endif %}
+{%-     endfor %}
 {%-   endif %}
+{%- do FRONTEND_LIST.append(frontend) %}
 {%- endfor %}
 
 {%- set PART_LIST = [] %}
 
 {%- for frontend in FRONTEND_LIST | sort(attribute='title') %}
-{%-   set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
-{%-   set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
-{%-   set rapid_url = 'https://%s/' % (hostname,) %}
-{%-   do PART_LIST.append(frontend_section_title) %}
+{%-   if '_' in frontend %}
+{%-     set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set rapid_url = 'https://%s/' % (hostname,) %}
+{%-     do PART_LIST.append(frontend_section_title) %}
 [{{ frontend_section_title }}]
 recipe = slapos.cookbook:publish.serialised
 -slave-reference = {{ frontend['reference'] }}
 rapid-url = {{ rapid_url }}
+{%-   endif %}
 {%- endfor %}
 
-{%- for frontend in BACKWARD_COMPATIBLE_FRONTEND_LIST | sort(attribute='title') %}
-{%-   set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
-{%-   set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
-{%-   set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
-{%-   set url = 'http://%s/' % (hostname, ) %}
-{%-   set https_url = 'https://%s/' % (hostname,) %}
-{%-   do PART_LIST.append(frontend_section_title) %}
+{%- for frontend in FRONTEND_LIST | sort(attribute='title') %}
+{%-   if '_' not in frontend %}
+{%-     set frontend_section_title = 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest() %}                                
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set hostname = '%s.%s' % (frontend['reference'].replace("-", "").replace("_", "").lower(), slapparameter_dict['autogeneration-domain']) %}      
+{%-     set url = 'http://%s/' % (hostname, ) %}
+{%-     set https_url = 'https://%s/' % (hostname,) %}
+{%-     do PART_LIST.append(frontend_section_title) %}
 [{{ frontend_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ frontend['reference'] }}
@@ -55,6 +62,7 @@ log-access-url = XXX-TODO
 backend-client-caucase-url = XXX-TODO
 key-generate-auth-url = XXX-TODO
 replication_number = XXX-TODO
+{%-   endif %}
 {%- endfor %}
 
 {#- Request the tree #}
@@ -90,6 +98,7 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 [request-kedifa]
 config-kedifa-port = {{ dumps(slapparameter_dict.get('-kedifa-port', 7890)) }}
 config-caucase-port = {{ dumps(slapparameter_dict.get('-kedifa-caucase-port', 8090)) }}
+config-frontend-list = {{ dumps(FRONTEND_LIST) }}
 return =
   caucase-url
   master-key-generate-auth-url

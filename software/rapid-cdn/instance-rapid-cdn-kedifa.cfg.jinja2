@@ -177,6 +177,8 @@ init =
 [publish-information]
 recipe = slapos.cookbook:publish.serialised
 caucase-url = {{ caucase_url }}
+{%- if len(slapparameter_dict['frontend-list']) > 0 %}
 master-key-generate-auth-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:result}/generateauth
 master-key-upload-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:result}?auth=
 master-key-download-url = https://[${kedifa-config:ip}]:${kedifa-config:port}/${master-auth-random:result}
+{%- endif %}
