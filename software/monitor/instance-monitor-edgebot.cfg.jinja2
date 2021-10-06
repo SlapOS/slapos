@@ -36,7 +36,7 @@
 {%-     set safe_name = part_id.replace('_', '').replace('.', '-').replace(' ', '-') %}
 [{{part_id}}]
 <= monitor-promise-base
-module = check_surykatka_json
+promise = check_surykatka_json
 name = {{ safe_name }}.py
 config-report = http_query
 config-url = {{ slave['url'] }}
@@ -51,7 +51,7 @@ config-json-file = ${surykatka-config-{{ class }}:json}
 
 [surykatka-bot-promise-{{ class }}]
 <= monitor-promise-base
-module = check_surykatka_json
+promise = check_surykatka_json
 name = surykatka-bot-promise-{{ class }}.py
 config-report = bot_status
 config-json-file = ${surykatka-config-{{ class }}:json}

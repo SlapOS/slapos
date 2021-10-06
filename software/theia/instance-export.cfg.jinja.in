@@ -69,7 +69,7 @@ export-promises =
 
 [export-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = resiliency-export-promise.py
 config-command = $${export-promise-script:rendered}
 

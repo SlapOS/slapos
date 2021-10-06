@@ -75,7 +75,7 @@ promises =
 
 [nginx-available-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${nginx-configuration:base-url}/status
 

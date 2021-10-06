@@ -33,7 +33,7 @@ pureftpd-dir = ${:srv}/pureftpd/
 
 [check-port-listening-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = check_nginx_port.py
 
 [pureftpd-listen-promise]

@@ -37,7 +37,7 @@ command-line = '{{ buildout_bin_directory }}/caucased'
 {% if promise -%}
 [{{ prefix }}-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = {{ prefix }}.py
 config-command = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc }}'
 {%- endif %}
@@ -119,7 +119,7 @@ command-line = '{{ buildout_bin_directory }}/caucase-updater'
 {% if promise -%}
 [{{ prefix }}-promise]
 <= monitor-promise-base
-module = check_certificate
+promise = check_certificate
 name = {{ prefix }}.py
 config-certificate = {{ crt_path }}
 config-key = {{ key_path }}

@@ -86,7 +86,7 @@ rendered = ${directory:srv}/exporter.exclude
 # Deploy zope promises scripts
 [promise-template]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 config-host = ${kumofs-instance:ip}
 config-port = ${kumofs-instance:server-listen-port}
 
@@ -112,7 +112,7 @@ config-port = ${kumofs-instance:manager-port}
 
 [promise-check-computer-memory]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 

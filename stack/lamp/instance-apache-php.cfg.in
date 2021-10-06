@@ -207,7 +207,7 @@ backend-url = ${apache-php-configuration:url}
 [promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}

@@ -107,8 +107,7 @@ recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
 output = $${directory:plugin}/{{ slave_reference }}_check_backup.py
-content =
-  from slapos.promise.plugin.backupserver_check_backup import RunPromise
+module = slapos.promise.plugin.backupserver_check_backup
 config-status_dirbasename = $${variables:status_dirbasename}
 config-status_name = {{ '$${' ~ slave_reference }}-backup-script:status_name}
 config-status_fullpath = {{ '$${' ~ slave_reference }}-backup-script:status_log}
@@ -117,7 +116,6 @@ config-cron_frequency = {{ frequency }}
 config-monitor_url = $${monitor-publish:monitor-base-url}
 config-statistic_dirbasename = $${variables:statistic_dirbasename}
 config-statistic_name = {{ '$${' ~ slave_reference }}-backup-script:statistic_name}
-mode = 600
 {%   do part_list.append("%s-promise-check-backup" % slave_reference) -%}
 
 [{{ slave_reference }}-backup-script]
@@ -194,7 +192,7 @@ virtual-depends =
 
 [nginx-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = nginx_listen.py
 config-host = $${nginx-configuration:ip}
 config-port = $${nginx-configuration:port}

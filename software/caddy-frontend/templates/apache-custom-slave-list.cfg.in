@@ -353,7 +353,7 @@ filename = {{ '%s.conf' % slave_reference }}
 {%-     do part_list.append(monitor_ipv6_section_title) %}
 [{{ monitor_ipv6_section_title }}]
 <= monitor-promise-base
-module = check_icmp_packet_lost
+promise = check_icmp_packet_lost
 name = {{ monitor_ipv6_section_title }}.py
 config-address = {{ dumps(monitor_ipv6_test) }}
 # promise frequency in minutes (2 times/day)
@@ -365,7 +365,7 @@ config-frequency = 720
 {%-     do part_list.append(monitor_ipv4_section_title) %}
 [{{ monitor_ipv4_section_title }}]
 <= monitor-promise-base
-module = check_icmp_packet_lost
+promise = check_icmp_packet_lost
 name = {{ monitor_ipv4_section_title }}.py
 config-address = {{ dumps(monitor_ipv4_test) }}
 config-ipv4 = true
@@ -632,7 +632,7 @@ template = inline:
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = expose-csr_id-ip-port-listening.py
 config-host = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
@@ -655,7 +655,7 @@ commands =
 
 [promise-logrotate-setup]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d

@@ -216,21 +216,21 @@ depends =
 
 [proxysql-{{ name }}-admin-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = proxysql-{{ name }}-admin-port-listening.py
 config-host =  {{ ipv4 }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-admin-port}' }}
 
 [proxysql-{{ name }}-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = proxysql-{{ name }}-port-listening.py
 config-host =  {{ ipv4 }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 [proxysql-{{ name }}-ipv6-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = proxysql-{{ name }}-ipv6-port-listening.py
 config-host =  {{ ip }}
 config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
@@ -403,14 +403,14 @@ context =
 
 [repman-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = repman_service_listen.py
 config-host = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:port}
 
 [repman-listen-ssl-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = repman_service_ssl_listen.py
 config-host = ${repman-parameter:ipv4}
 config-port = ${repman-parameter:secure-port}
@@ -508,13 +508,13 @@ return = domain secure_access
 
 [repman-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = check_repman_frontend.py
 config-url = https://${repman-frontend:connection-domain}
 
 [repman-backend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = check_repman_backend.py
 config-url = ${nginx-parameter:backend-ssl-url}
 

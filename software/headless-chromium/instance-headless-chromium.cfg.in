@@ -174,7 +174,7 @@ monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 # queried with the correct credentials.
 [frontend-ok-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = headless-chromium-frontend-ok.py
 url = ${remote-debugging-frontend:connection-secure_access}
 config-url = ${:url}
@@ -185,7 +185,7 @@ config-password = ${frontend-instance-password:passwd}
 # when queried with no credentials.
 [frontend-secure-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = headless-chromium-frontend-secure.py
 url = ${remote-debugging-frontend:connection-secure_access}
 config-url = ${:url}

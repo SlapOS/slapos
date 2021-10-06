@@ -18,7 +18,7 @@ plugin =  ${:etc}/plugin
 
 [monitor-neo-health]
 <= monitor-promise-base
-module = check_neo_health
+promise = check_neo_health
 name = ${:_buildout_section_name_}.py
 config-neoctl = ${neoctl:wrapper-path}
 {%- if bang_on_problem != None %}
