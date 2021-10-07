@@ -84,9 +84,9 @@ class CaucaseBinaryClient(object):
 class Test(SlapOSInstanceTestCase):
   # full diffs are very informative for those tests
   maxDiff = None
-  # as instantiation is split in chunks with cluster administrator operations,
-  # let it run a bit rarely
-  instance_max_retry = 5
+  ## as instantiation is split in chunks with cluster administrator operations,
+  ## let it run a bit rarely
+  #instance_max_retry = 5
 
   @classmethod
   def _setUpClass(cls):

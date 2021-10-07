@@ -111,6 +111,51 @@ name = ${:_buildout_section_name_}.py
 config-http-code = 200
 config-url = ${request-kedifa:connection-caucase-url}
 
+[directory]
+url-done = ${:var}/url-done
+
+[url-ready]
+recipe = slapos.recipe.build
+depot = ${directory:url-done}
+file = ${directory:url-done}/${:_buildout_section_name_}
+marker = ${kedifa-config:marker}
+init =
+  if options['marker'] in options['url']:
+    if os.path.exists(options['file']):
+      os.unlink(options['file'])
+  else:
+    try:
+      with open(options['file'], 'w') as fh:
+        fh.write('')
+    except FileNotFoundError:
+      # directories are created during install, but promise runs during init
+      # so do nothing in such case
+      pass
+
+[kedifa-master-key-generate-auth-url]
+<= url-ready
+url = ${request-kedifa:connection-master-key-generate-auth-url}
+
+[kedifa-master-key-upload-url]
+<= url-ready
+url = ${request-kedifa:connection-master-key-upload-url}
+
+[kedifa-master-key-promise]
+<= monitor-promise-base
+module = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = present
+
+[kedifa-master-key-generate-auth-url-promise]
+<= kedifa-master-key-promise
+config-filename = ${kedifa-master-key-generate-auth-url:file}
+url = ${kedifa-master-key-generate-auth-url:url}
+
+[kedifa-master-key-upload-url-promise]
+<= kedifa-master-key-promise
+config-filename = ${kedifa-master-key-upload-url:file}
+url = ${kedifa-master-key-upload-url:url}
+
 [publish-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
@@ -118,8 +163,8 @@ xxx-replace-with-information-fetch-depends =
   ${request-human:recipe}
   ${request-log-aggregator:recipe}
 kedifa-caucase-url = ${kedifa-caucase-promise:config-url}
-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
+key-generate-auth-url = ${kedifa-master-key-generate-auth-url-promise:url}
+key-upload-url = ${kedifa-master-key-upload-url-promise:url}
 
 [buildout]
 parts +=

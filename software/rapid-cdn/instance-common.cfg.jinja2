@@ -3,6 +3,10 @@ eggs-directory = {{ software_parameter_dict['eggs-directory'] }}
 develop-eggs-directory = {{ software_parameter_dict['develop-eggs-directory'] }}
 offline = true
 
+[kedifa-config]
+# shared kedifa configuration parameters for the whole cluster
+marker = __NotReadyYet__
+
 [slap_connection]
 # Kept for backward compatibility
 computer_id = ${slap-connection:computer-id}
