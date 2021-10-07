@@ -31,6 +31,7 @@ from urllib.parse import urlparse, parse_qs
 import tempfile
 import io
 import subprocess
+import time
 from http.server import BaseHTTPRequestHandler
 import logging
 
@@ -152,7 +153,12 @@ class TestSFTPOperations(ProFTPdTestCase):
 
       with self.assertRaises(IOError):
         sftp.sftp_client.putfo(ErrorFile(), "destination")
+
     # no half uploaded file is kept
+    for _ in range(10):
+      if not os.listdir(self.upload_dir):
+        break
+      time.sleep(0.1)
     self.assertEqual([], os.listdir(self.upload_dir))
 
   def test_user_cannot_escape_home(self):
