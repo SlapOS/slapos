@@ -17,6 +17,7 @@ changes to the code, run tests and publish changes.
 
 ```bash
 # install this software release and request an instance
+# use software-py3.cfg instead of software.cfg if the SR you want to test is written in Python 3
 SR=https://lab.nexedi.com/nexedi/slapos/raw/1.0/software/slapos-sr-testing/software.cfg
 COMP=slaprunner
 INSTANCE_NAME=$COMP
@@ -32,7 +33,7 @@ slapos request --node=computer_guid=$COMP $INSTANCE_NAME $SR
 source ( environment-script from step above )
 
 # The source code is a git clone working copy on the instance
-cd ~/srv/runner/instance/slappartXXX/parts/slapos/
+cd ~/srv/runner/instance/slappartXXX/software_release/parts/slapos-repository/
 
 # change directory to the directory containing test for this software
 cd ./software/helloworld/test/
