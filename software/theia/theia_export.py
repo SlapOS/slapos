@@ -9,8 +9,8 @@ import traceback
 import six
 from six.moves import configparser
 
-sys.path.append(os.path.dirname(__file__))
-from theia_common import copytree, copydb, hashwalk, parse_installed, remove
+sys.path.insert(0, os.path.dirname(__file__))
+from theia_common import *
 
 
 os.environ['LC_ALL'] = 'C'
@@ -59,9 +59,13 @@ class TheiaExport(object):
     return os.path.abspath(os.path.join(
       self.backup_dir, os.path.relpath(src, start=self.root_dir)))
 
-  def backuptree(self, src, exclude=[], extrargs=[], verbosity='-v'):
+  def backuptree(self, src, exclude=(), extrargs=(), verbosity='-v'):
     dst = self.mirrorpath(src)
     return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
+
+  def backupfile(self, src):
+    dst = self.mirrorpath(src)
+    return copyfile(src, dst)
 
   def backupdb(self):
     copydb(self.sqlite3_bin, self.proxy_db, self.mirrorpath(self.proxy_db))
@@ -118,12 +122,12 @@ class TheiaExport(object):
   def export(self):
     export_start_date = int(time.time())
 
-    etc_dir = os.path.join(self.root_dir, 'etc')
-    with open(os.path.join(etc_dir, '.resilient_timestamp'), 'w') as f:
+    timestamp = os.path.join(self.root_dir, 'etc', '.resilient_timestamp')
+    with open(timestamp, 'w') as f:
       f.write(str(export_start_date))
 
-    self.loginfo('Backup directory ' + etc_dir)
-    self.backuptree(etc_dir, extrargs=('--filter=- */', '--filter=-! .*'))
+    self.loginfo('Backup resilient timestamp ' + timestamp)
+    self.backupfile(timestamp)
 
     for d in self.dirs:
       self.loginfo('Backup directory ' + d)
