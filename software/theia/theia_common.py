@@ -4,6 +4,7 @@ import glob
 import hashlib
 import os
 import re
+import shutil
 import subprocess as sp
 import sqlite3
 
@@ -21,13 +22,19 @@ EXCLUDE_FLAGS = ['--exclude={}'.format(x) for x in sorted(EXCLUDE_PATTERNS)]
 
 def makedirs(path):
   try:
-    os.makedirs(path if os.path.isdir(path) else os.path.dirname(path))
+    os.makedirs(path)
   except OSError as e:
     if e.errno != errno.EEXIST:
       raise
 
 
-def copytree(rsyncbin, src, dst, exclude=[], extrargs=[], verbosity='-v'):
+def copyfile(src, dst):
+  dst = os.path.abspath(dst)
+  makedirs(os.path.dirname(dst))
+  shutil.copy2(src, dst)
+
+
+def copytree(rsyncbin, src, dst, exclude=(), extrargs=(), verbosity='-v'):
   # Ensure there is a trailing slash in the source directory
   # to avoid creating an additional directory level at the destination
   src = os.path.join(src, '')
@@ -60,15 +67,15 @@ def copytree(rsyncbin, src, dst, exclude=[], extrargs=[], verbosity='-v'):
 
 
 def copydb(sqlite3bin, src_db, dst_db):
-  makedirs(dst_db)
+  makedirs(os.path.dirname(dst_db))
   sp.check_output((sqlite3bin, src_db, '.backup ' + dst_db))
 
 
 def remove(path):
   try:
     os.remove(path)
-  except OSError:
-    if os.path.exists(path):
+  except OSError as e:
+    if e.errno != errno.ENOENT:
       raise
 
 

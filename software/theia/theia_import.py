@@ -10,7 +10,7 @@ import six
 from six.moves import configparser
 
 sys.path.append(os.path.dirname(__file__))
-from theia_common import copytree, copydb, hashwalk, parse_installed, remove
+from theia_common import *
 
 
 os.environ['LC_ALL'] = 'C'
@@ -70,9 +70,13 @@ class TheiaImport(object):
     return os.path.abspath(os.path.join(
       self.root_dir, os.path.relpath(src, start=self.backup_dir)))
 
-  def restoretree(self, dst, exclude=[], extrargs=[], verbosity='-v'):
+  def restoretree(self, dst, exclude=(), extrargs=(), verbosity='-v'):
     src = self.mirrorpath(dst)
     return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
+
+  def restorefile(self, dst):
+    src = self.mirrorpath(dst)
+    return copyfile(src, dst)
 
   def restoredb(self):
     copydb(self.sqlite3_bin, self.mirrorpath(self.proxy_db), self.proxy_db)
@@ -157,9 +161,9 @@ class TheiaImport(object):
     self.loginfo('Restore slapproxy database')
     self.restoredb()
 
-    etc_dir = os.path.join(self.root_dir, 'etc')
-    self.loginfo('Restore directory ' + etc_dir)
-    self.restoretree(etc_dir, extrargs=('--filter=- */', '--filter=-! .*'))
+    timestamp = os.path.join(self.root_dir, 'etc', '.resilient_timestamp')
+    self.loginfo('Restore resilient timestamp ' + timestamp)
+    self.restorefile(timestamp)
 
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):
