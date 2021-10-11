@@ -82,7 +82,7 @@ extra-context =
   raw dash_executable_location ${dash:location}/bin/dash
   raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
   raw dcron_executable_location ${dcron:location}/sbin/crond
-  raw debian_amd64_netinst_location ${debian-amd64-buster-netinst.iso:target}
+  raw debian_amd64_netinst_location ${debian-amd64-bullseye-netinst.iso:target}
   raw whitelist_domains_default ${whitelist-domains-default:location}/${whitelist-domains-default:filename}
   raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:target}
   raw image_download_controller ${image-download-controller:target}
