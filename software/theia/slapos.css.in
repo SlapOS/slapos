@@ -1,3 +1,12 @@
+/* backported fixes */
+/* https://github.com/eclipse-theia/theia/commit/616c34e1c446a706f4cb02182b2d9195ef3ea854 */
+.monaco-editor .monaco-list .monaco-list-row.focused,
+.monaco-editor .monaco-list .monaco-list-row.focused,
+.monaco-editor .monaco-list .monaco-list-row.focused .suggest-icon {
+  color: var(--theia-list-activeSelectionForeground) !important;
+  background-color: var(--theia-list-activeSelectionBackground) !important;
+}
+
 /* logo */
 .theia-icon {
     background-image: url('/{{ logo_image }}');
