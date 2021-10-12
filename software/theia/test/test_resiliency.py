@@ -363,11 +363,14 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     self.writeFile(os.path.join(dummy_root, 'exclude', 'excluded'),
       'This file should be excluded from resilient backup')
 
-    # Check that ~/srv/exporter.exclude and ~/srv/runner-import-restore
+    # Check that ~/srv/exporter.exclude and ~/srv/runner-import-restore exist
     # As well as ~/srv/.backup_identity_script
     self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', 'exporter.exclude')))
     self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', 'runner-import-restore')))
     self.assertTrue(os.path.exists(os.path.join(dummy_root, 'srv', '.backup_identity_script')))
+
+    # Remember content of ~/etc in the import theia
+    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
 
   def _doSync(self):
     self._doExport()
@@ -383,6 +386,10 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
       (self._getSlapos('import'), 'proxy', 'show'), universal_newlines=True)
     self.assertIn(adapted_test_url, proxy_content)
     self.assertNotIn(self._test_software_url, proxy_content)
+
+    # Check that ~/etc still contains everything it did before
+    etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
     # Check that ~/srv/project was exported
     self.assertTrue(os.path.exists(adapted_test_url))
@@ -477,6 +484,14 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
 
   _test_software_url = dummy_software_url
 
+  def test_twice(self):
+    # Run two synchronisations on the same instances
+    # to make sure everything still works the second time
+    # Check ~/etc in import theia again
+    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self._doSync()
+    self._checkSync()
+
   def _prepareExport(self):
     # Deploy test instance
     self._deployEmbeddedSoftware(self._test_software_url, 'test_instance', self.test_instance_max_retries)
@@ -484,6 +499,9 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
     # Check that there is an export and import instance and get their partition IDs
     self.export_id = self._getPartitionId('export')
     self.import_id = self._getPartitionId('import')
+
+    # Remember content of ~/etc in the import theia
+    self.etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
 
   def _doSync(self):
     start = time.time()
@@ -498,6 +516,11 @@ class TestTheiaResilience(ResilienceMixin, TakeoverMixin, ResilientTheiaTestCase
 
     # Wait for takoever to be ready
     self._waitTakeoverReady(takeover_url, start, self.backup_max_tries, self.backup_wait_interval)
+
+  def _checkSync(self):
+    # Check that ~/etc still contains everything it did before
+    etc_listdir = os.listdir(self._getPartitionPath('import', 'etc'))
+    self.assertTrue(set(self.etc_listdir).issubset(etc_listdir))
 
   def _doTakeover(self):
     # Takeover
