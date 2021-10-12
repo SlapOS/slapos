@@ -146,7 +146,7 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = frontend_promise.py
 config-url = ${publish-connection-parameter:url}
 
@@ -160,7 +160,7 @@ sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 
 [frontend-additional-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = frontend_additional_promise.py
 config-url = ${publish-connection-parameter:url-additional}
 {% endif %}

@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.212'
+version = '1.0.213'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -110,7 +110,6 @@ setup(name=name,
           'generic.kumofs = slapos.recipe.generic_kumofs:Recipe',
           'generic.memcached = slapos.recipe.generic_memcached:Recipe',
           'generic.mysql.wrap_update_mysql = slapos.recipe.generic_mysql:WrapUpdateMySQL',
-          'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'gitinit = slapos.recipe.gitinit:Recipe',
           'haproxy = slapos.recipe.haproxy:Recipe',
           'ipv4toipv6 = slapos.recipe.6tunnel:FourToSix',
@@ -166,7 +165,6 @@ setup(name=name,
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
-          'stunnel = slapos.recipe.stunnel:Recipe',
           'switch-softwaretype = slapos.recipe.switch_softwaretype:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',

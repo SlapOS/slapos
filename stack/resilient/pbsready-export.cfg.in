@@ -60,7 +60,7 @@ rendered = ${rootdirectory:bin}/exporter-status
 
 [notifier-exporter-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = exporter-status.py
 config-command = ${notifier-exporter-promise-bin:rendered}
 

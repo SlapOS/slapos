@@ -65,7 +65,7 @@ stop-on-error = true
 
 [httpd-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = apache-httpd.py
 config-host = ${apache-conf:ip}
 config-port = ${apache-conf:port}

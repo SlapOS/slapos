@@ -382,7 +382,7 @@ kedifa-csr_id-certificate = ${request-kedifa:connection-csr_id-certificate}
 {%   set section_part = '${request-' + frontend %}
 [{{ part_name }}]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = check-backend-haproxy-statistic-url-{{ frontend }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
@@ -865,15 +865,15 @@ rendered = ${directory:etc}/nginx-rejected-slave.conf
 
 [promise-rejected-slave-publish-ip-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = rejected-slave-publish-ip-port-listening.py
 config-host = ${rejected-slave-publish-configuration:ip}
 config-port = ${rejected-slave-publish-configuration:port}
 
 [rejected-slave-promise]
 <= monitor-promise-base
-module = check_socket_listening
-module = check_file_state
+promise = check_socket_listening
+promise = check_file_state
 name = rejected-slave.py
 config-filename = ${rejected-slave-json:rendered}
 config-state = empty

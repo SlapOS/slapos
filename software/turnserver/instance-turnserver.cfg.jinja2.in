@@ -123,14 +123,14 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [promise-check-turnserver-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = turnserver-port-listening.py
 config-host = {{ listening_ip }}
 config-port = {{ turn_port }}
 
 [promise-check-turnserver-tls-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = turnserver-tls-port-listening.py
 config-host = {{ listening_ip }}
 config-port = {{ turn_tls_port }}
