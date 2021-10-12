@@ -91,7 +91,7 @@ class Recipe(GenericBaseRecipe):
     if klass == 'RunPromise':
       klass = None
     elif klass and not isPythonName(klass):
-      raise UserError("%r is not valid class name" % klass)
+      raise UserError("%r is not a valid class name" % klass)
 
     if bool(module) == bool(filepath):
       raise UserError("Either 'module' or 'file' is required but not both")
