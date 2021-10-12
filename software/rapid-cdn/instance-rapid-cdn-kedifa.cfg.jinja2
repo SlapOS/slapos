@@ -110,7 +110,7 @@ file = ${directory:reservation}/${:_buildout_section_name_}
 
 [master-auth-random-promise]
 <= monitor-promise-base
-module = check_file_state
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${master-auth-random-config:file}
 config-state = present
@@ -148,7 +148,7 @@ init =
 
 [promise-kedifa-http-reply]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = kedifa-http-reply.py
 # Kedifa replies 400 on /, so use it to be sure that Kedifa replied
 config-http-code = 400

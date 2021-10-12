@@ -126,7 +126,7 @@ return =
 
 [kedifa-caucase-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = ${:_buildout_section_name_}.py
 config-http-code = 200
 config-url = ${request-kedifa:connection-caucase-url}
@@ -163,7 +163,7 @@ url = ${request-kedifa:connection-master-key-upload-url}
 
 [kedifa-master-key-promise]
 <= monitor-promise-base
-module = check_file_state
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-state = present
 
