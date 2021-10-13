@@ -51,7 +51,8 @@ default-parameters =
     "additional-frontend-name":"Theia Additional Frontend",
     "additional-frontend-sr": "$${:frontend-sr}",
     "additional-frontend-sr-type": "RootSoftwareInstance",
-    "additional-frontend-guid": null
+    "additional-frontend-guid": null,
+    "monitor-httpd-port": 8386
   }
 frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 

@@ -1,7 +1,7 @@
-{% import 'parts' as parts %}
-{% import 'replicated' as replicated with context %}
+{% import 'parts' as parts -%}
+{% import 'replicated' as replicated with context -%}
 
-{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 1)|int %}
+{% set clones_amount = slapparameter_dict.get('resilient-clone-number', 1)|int + 1 -%}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
@@ -11,59 +11,38 @@ extends =
   {{ monitor_template }}
 
 parts +=
-# Generate the parts to request theia-export, pull-backup and theia-import
-# See stack/resilient/template-parts.cfg.in and stack/resilient/template-replicated.cfg.in
-# See below for the generation of the sections corresponding to the parts generated here
-  {{ parts.replicate("theia", number_of_instances + 1) }}
-# Also publish some connection parameters
-  publish-connection-parameter
+  publish
+{#- Generate the parts to request the main theia, the clones and the PBS. #}
+{#- See ../../stack/resilient/template-parts.cfg.in #}
+  {{ parts.replicate("theia", clones_amount) }}
 
-[ArgLeader]
 
-[ArgBackup]
+{#- Prepare monitoring information to transmit to and request from the main theia, the clones and the PBS #}
+{%- set monitor_cors_domains = slapparameter_dict.pop('monitor-cors-domains', 'monitor.app.officejs.com') %}
+{%- set monitor_username = slapparameter_dict.get('monitor-username', '${monitor-instance-parameter:username}') %}
+{%- set monitor_password = slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}') %}
+{%- set monitor_return = ['monitor-base-url', 'monitor-setup-url'] %}
+{%- set monitor_parameter = {'monitor-cors-domains': monitor_cors_domains, 'monitor-username' : monitor_username, 'monitor-password': monitor_password} %}
+{%- set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} %}
 
-# Generate sections to request theia-export, pull-backup and theia-import
-# See stack/resilient/template-replicated.cfg.in
-# In particular:
-#
-# [request-theia]
-# <= ArgLeader
-# software-type = export
-# ...
-#
-# [request-theia-pseudo-replicating-1]
-# <= ArgBackup
-# software-type = import
-# ...
-#
-# [request-pbs-theia-1]
-# software-type = pull-backup
-# ...
-#
-{{ replicated.replicate("theia", number_of_instances + 1,
-                        "export", "import",
-                        "ArgLeader", "ArgBackup",
-                        slapparameter_dict=slapparameter_dict) }}
 
-# Extend the list of return parameters for the export request
-# The monitor parameters are only there to assert they are
-# actually published by the export instance
+{# Generate the sections to request the main theia, the clones and the PBS. #}
+{#- See ../../stack/resilient/template-replicated.cfg.in #}
+{{ replicated.replicate("theia", clones_amount, "export", "import", slapparameter_dict=slapparameter_dict, monitor_parameter_dict=monitor_dict) }}
+
+
+# Ask for the connection parameters of the main theia
 [request-theia]
-return += url username password backend-url monitor-base-url monitor-setup-url
+return += url username password backend-url
 
-# Extend the list of return parameters for the import request
-# with the monitor parameters to assert they are actually published
-[request-theia-pseudo-replicating-1]
-return += monitor-base-url monitor-setup-url
 
-# Publish some parameters from the export instance
-[publish-connection-parameter]
+# Publish connection parameters of the main theia and resiliency parameters
+[publish]
 recipe = slapos.cookbook:publish
 url = ${request-theia:connection-url}
 username = ${request-theia:connection-username}
 password = ${request-theia:connection-password}
 backend-url = ${request-theia:connection-backend-url}
-
-# Publish resiliency parameters fetched by the resilient stack
-[publish-connection-parameter]
+monitor-base-url = ${request-theia:connection-monitor-base-url}
+monitor-setup-url = ${request-theia:connection-monitor-setup-url}
 <= publish-connection-information
