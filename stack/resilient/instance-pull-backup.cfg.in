@@ -250,6 +250,7 @@ monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
 monitor-url = $${monitor-publish-parameters:monitor-url}
 monitor-user = $${monitor-publish-parameters:monitor-user}
 monitor-password = $${monitor-publish-parameters:monitor-password}
+monitor-setup-url = $${monitor-publish:monitor-setup-url}
 
 #----------------
 #--

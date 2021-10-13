@@ -63,6 +63,25 @@ bash-completions = $${:home}/.local/share/bash-completion/completions/
 fish-completions = $${:home}/.config/fish/completions/
 
 
+# Monitor
+# -------
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+{%- for k in ('monitor-cors-domains', 'monitor-username', 'monitor-password') %}
+{%-   set v = parameter_dict.get(k) %}
+{%-   if v %}
+{{ k[8:] }} = {{ v }}
+{%-   endif %}
+{%- endfor %}
+{%- for k in ('monitor-url-list', ) %}
+{%-   set v = parameter_dict.get(k) %}
+{%-   if v %}
+{{ k }} = {{ v }}
+{%-   endif %}
+{%- endfor %}
+
+
 # Promises
 # --------
 
