@@ -26,10 +26,11 @@
 #
 ##############################################################################
 
+from __future__ import absolute_import
 import os
 import json
 import glob
-import urlparse
+import six.moves.urllib.parse
 import socket
 import sys
 import time
@@ -60,6 +61,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
 
   @classmethod
   def _getInstanceParameterDict(cls):
+    # type: () -> dict
     return {
         'tcpv4-port': 3306,
         'max-connection-count': 5,
@@ -75,12 +77,14 @@ class MariaDBTestCase(ERP5InstanceTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
+    # type: () -> dict
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
   def getDatabaseConnection(self):
+    # type: () -> MySQLdb.connections.Connection
     connection_parameter_dict = json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
-    db_url = urlparse.urlparse(connection_parameter_dict['database-list'][0])
+    db_url = six.moves.urllib.parse.urlparse(connection_parameter_dict['database-list'][0])
     self.assertEqual('mysql', db_url.scheme)
 
     self.assertTrue(db_url.path.startswith('/'))
@@ -91,12 +95,15 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         host=db_url.hostname,
         port=db_url.port,
         db=database_name,
+        use_unicode=True,
+        charset='utf8mb4'
     )
 
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
   def test_full_backup(self):
+    # type: () -> None
     self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
     with gzip.open(
         os.path.join(
@@ -106,10 +113,11 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
             'mariadb-full',
             '20500101000000.sql.gz',
         ),
-        'r') as dump:
+        'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
 
   def test_logrotate_and_slow_query_digest(self):
+    # type: () -> None
     # slow query digest needs to run after logrotate, since it operates on the rotated
     # file, so this tests both logrotate and slow query digest.
 
@@ -148,7 +156,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
         'slowquery_digest',
         'slowquery_digest.txt-2050-01-01.xz',
     )
-    with lzma.open(slow_query_report, 'r') as f:
+    with lzma.open(slow_query_report, 'rt') as f:
       # this is the hash for our "select sleep(n)" slow query
       self.assertIn("ID 0xF9A57DD5A41825CA", f.read())
 
@@ -170,7 +178,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       subprocess.check_output('faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'], shell=True)
     self.assertEqual(
         error_context.exception.output,
-"""\
+b"""\
 Threshold is lower than expected: 
 Expected total queries : 1.0 and current is: 2
 Expected slowest query : 0.1 and current is: 3
@@ -179,6 +187,7 @@ Expected slowest query : 0.1 and current is: 3
 
 class TestMariaDB(MariaDBTestCase):
   def test_utf8_collation(self):
+    # type: () -> None
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query(
@@ -199,11 +208,12 @@ class TestMariaDB(MariaDBTestCase):
           """
           select * from test_utf8_collation where col1 = "a"
           """)
-      self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
+      self.assertEqual(((six.ensure_text('à'),),), cnx.store_result().fetch_row(maxrows=2))
 
 
 class TestMroonga(MariaDBTestCase):
   def test_mroonga_plugin_loaded(self):
+    # type: () -> None
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query("show plugins")
@@ -213,6 +223,7 @@ class TestMroonga(MariaDBTestCase):
           plugins)
 
   def test_mroonga_normalize_udf(self):
+    # type: () -> None
     # example from https://mroonga.org/docs/reference/udf/mroonga_normalize.html#usage
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -220,7 +231,8 @@ class TestMroonga(MariaDBTestCase):
           """
           SELECT mroonga_normalize("ABCDあぃうぇ㍑")
           """)
-      self.assertEqual((('abcdあぃうぇリットル',),),
+      # XXX this is returned as bytes by mroonga/mariadb (this might be a bug)
+      self.assertEqual(((u'abcdあぃうぇリットル'.encode('utf-8'),),),
                        cnx.store_result().fetch_row(maxrows=2))
 
       if 0:
@@ -233,10 +245,11 @@ class TestMroonga(MariaDBTestCase):
             """
             SELECT mroonga_normalize("aBｃＤあぃウェ㍑", "NormalizerMySQLUnicodeCIExceptKanaCIKanaWithVoicedSoundMark")
             """)
-        self.assertEqual((('ABCDあぃうぇ㍑',),),
+        self.assertEqual((('ABCDあぃうぇ㍑'.encode('utf-8'),),),
                          cnx.store_result().fetch_row(maxrows=2))
 
   def test_mroonga_full_text_normalizer(self):
+    # type: () -> None
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-normalizer
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -269,11 +282,12 @@ class TestMroonga(MariaDBTestCase):
            WHERE MATCH (content) AGAINST ("+ﾌﾞﾗｯｸ" IN BOOLEAN MODE)
           """)
       self.assertEqual(
-          ((datetime.date(2013, 4, 23), 'ブラックコーヒーを飲んだ。'),),
+          ((datetime.date(2013, 4, 23), six.ensure_text('ブラックコーヒーを飲んだ。')),),
           cnx.store_result().fetch_row(maxrows=2),
       )
 
   def test_mroonga_full_text_normalizer_TokenBigramSplitSymbolAlphaDigit(self):
+    # type: () -> None
     # Similar to as ERP5's testI18NSearch with erp5_full_text_mroonga_catalog
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
@@ -317,11 +331,12 @@ class TestMroonga(MariaDBTestCase):
       self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
 
   def test_mroonga_full_text_stem(self):
+    # type: () -> None
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-token-filters
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
       cnx.query("SELECT mroonga_command('register token_filters/stem')")
-      self.assertEqual((('true',),), cnx.store_result().fetch_row(maxrows=2))
+      self.assertEqual(((b'true',),), cnx.store_result().fetch_row(maxrows=2))
       cnx.query(
           """
           CREATE TABLE memos (
