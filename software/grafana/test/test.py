@@ -103,7 +103,7 @@ class TestGrafana(GrafanaTestCase):
     with open(
         os.path.join(self.computer_partition_root_path, 'etc',
                      'grafana-config-file.cfg')) as f:
-      config.readfp(io.StringIO('[default]\n' + f.read()))
+      config.read_file(io.StringIO('[default]\n' + f.read()))
     self.assertEqual(config.get('smtp', 'enabled'), 'false')
 
 
