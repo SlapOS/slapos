@@ -1,27 +1,5 @@
-diff --git a/.gitignore b/.gitignore
-new file mode 100644
-index 0000000..67f2f47
---- /dev/null
-+++ b/.gitignore
-@@ -0,0 +1,16 @@
-+*.o
-+*.so
-+*.a
-+*.out
-+.obj/
-+hello.c
-+qjs
-+qjsc
-+qjscalc
-+qjscalc.c
-+test_fib.c
-+repl.c
-+run-test*
-+examples/hello
-+examples/hello_module
-+examples/test_fib
 diff --git a/Makefile b/Makefile
-index e6ae827..f7e0f01 100644
+index 49b1f6f..d88c866 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -41,7 +41,7 @@ CONFIG_DEFAULT_AR=y
@@ -47,11 +25,11 @@ index e6ae827..f7e0f01 100644
  LIBS=-lm
  ifndef CONFIG_WIN32
 -LIBS+=-ldl -lpthread
-+LIBS=$(MAVSDK_LIB) -lm -ldl -lstdc++ -lpthread
++LIBS+=$(MAVSDK_LIB) -ldl -lstdc++ -lpthread
  endif
+ LIBS+=$(EXTRA_LIBS)
  
- $(OBJDIR):
-@@ -200,7 +200,7 @@ $(QJSC): $(OBJDIR)/qjsc.host.o \
+@@ -201,7 +201,7 @@ $(QJSC): $(OBJDIR)/qjsc.host.o \
  
  endif #CROSS_PREFIX
  
@@ -60,7 +38,7 @@ index e6ae827..f7e0f01 100644
  ifdef CONFIG_LTO
  QJSC_DEFINES+=-DCONFIG_LTO
  endif
-@@ -226,11 +226,13 @@ LTOEXT=
+@@ -227,11 +227,13 @@ LTOEXT=
  endif
  
  libquickjs$(LTOEXT).a: $(QJS_LIB_OBJS)
@@ -76,17 +54,8 @@ index e6ae827..f7e0f01 100644
  endif # CONFIG_LTO
  
  repl.c: $(QJSC) repl.js
-diff --git a/env.sh b/env.sh
-new file mode 100644
-index 0000000..dbe4f22
---- /dev/null
-+++ b/env.sh
-@@ -0,0 +1,3 @@
-+export MAVSDK_INC=/home/jhg/Documents/projets/c-astral/mavsdk_wrapper/include/
-+export MAVSDK_LIB=/home/jhg/Documents/projets/c-astral/mavsdk_wrapper/lib/libmavsdk_wrapper.a
-+export QUICKJS_DIR=/home/jhg/Documents/projets/c-astral/quickjs
 diff --git a/qjs.c b/qjs.c
-index 4dd11f8..9b6eae2 100644
+index d56b843..32423a3 100644
 --- a/qjs.c
 +++ b/qjs.c
 @@ -120,6 +120,7 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
@@ -97,7 +66,7 @@ index 4dd11f8..9b6eae2 100644
      return ctx;
  }
  
-@@ -489,12 +490,14 @@ int main(int argc, char **argv)
+@@ -495,12 +496,14 @@ int main(int argc, char **argv)
  #endif
          js_std_add_helpers(ctx, argc - optind, argv + optind);
  
@@ -115,7 +84,7 @@ index 4dd11f8..9b6eae2 100644
          }
  
 diff --git a/qjsc.c b/qjsc.c
-index f5bda57..0a68457 100644
+index b9f1e4c..2d38666 100644
 --- a/qjsc.c
 +++ b/qjsc.c
 @@ -452,6 +452,7 @@ static int output_executable(const char *out_filename, const char *cfilename,
@@ -137,7 +106,7 @@ index f5bda57..0a68457 100644
          c = getopt(argc, argv, "ho:cN:f:mxevM:p:S:D:");
          if (c == -1)
 diff --git a/quickjs-libc.c b/quickjs-libc.c
-index e8b81e9..e1dcf56 100644
+index e180dd0..2c36cc7 100644
 --- a/quickjs-libc.c
 +++ b/quickjs-libc.c
 @@ -70,6 +70,7 @@ typedef sig_t sighandler_t;
@@ -148,16 +117,7 @@ index e8b81e9..e1dcf56 100644
  
  /* TODO:
     - add socket calls
-@@ -2177,8 +2178,6 @@ static int handle_posted_message(JSRuntime *rt, JSContext *ctx,
-             goto fail;
-         obj = JS_NewObject(ctx);
-         if (JS_IsException(obj)) {
--            JS_FreeValue(ctx, data_obj);
--            goto fail;
-         }
-         JS_DefinePropertyValueStr(ctx, obj, "data", data_obj, JS_PROP_C_W_E);
- 
-@@ -3454,7 +3453,6 @@ static JSValue js_worker_postMessage(JSContext *ctx, JSValueConst this_val,
+@@ -3499,7 +3500,6 @@ static JSValue js_worker_postMessage(JSContext *ctx, JSValueConst this_val,
      js_free(ctx, data);
      js_free(ctx, sab_tab);
      return JS_EXCEPTION;
@@ -165,7 +125,7 @@ index e8b81e9..e1dcf56 100644
  }
  
  static JSValue js_worker_set_onmessage(JSContext *ctx, JSValueConst this_val,
-@@ -3667,6 +3665,223 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name)
+@@ -3712,6 +3712,223 @@ JSModuleDef *js_init_module_os(JSContext *ctx, const char *module_name)
      return m;
  }
  
