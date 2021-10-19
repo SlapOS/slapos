@@ -1,0 +1,59 @@
+{%- macro apache_log_format() %}
+  capture request header Referer len 512
+  capture request header User-Agent len 512
+  log-format "%{+Q}o %{-Q}ci - - [%trg] %r %ST %B %{+Q}[capture.req.hdr(0)] %{+Q}[capture.req.hdr(1)] %Tt"
+{%- endmacro %}
+
+global
+  pidfile {{ configuration['pid-file'] }}
+  # master-worker is compatible with foreground with process management
+  master-worker
+
+log {{ configuration['log-socket'] }} local0
+
+defaults
+  log global
+  mode http
+  option httplog
+  timeout queue 60s
+  timeout server {{ configuration['request-timeout'] }}s
+  timeout client {{ configuration['request-timeout'] }}s
+  timeout connect {{ configuration['backend-connect-timeout'] }}s
+  retries {{ configuration['backend-connect-retries'] }}
+  default-server init-addr last,libc,none {#- Allow to start with not resolved yet servers #}
+
+# statistic
+frontend statistic
+  bind {{ configuration['global-ipv6']}}:{{ configuration['statistic-port'] }} {#- ssl crt-list /proper-file #}
+  stats enable
+  stats uri /
+  stats show-desc {{ configuration['statistic-identification'] }}
+  stats auth {{ configuration['statistic-username'] }}:{{ configuration['statistic-password'] }}
+  stats realm {{ configuration['statistic-identification'] }}
+  stats scope http-backend
+  stats scope https-backend
+{{- apache_log_format() }}
+
+frontend http
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+{{- apache_log_format() }}
+{%- for frontend in configuration['frontend-list'] %}
+  acl is_{{ frontend['reference'] }}_http hdr_reg(host) -i ^{{ frontend['hostname'] }}($|:.*)
+  use_backend {{ frontend['reference'] }}-http if is_{{ frontend['reference'] }}_http
+{%- endfor %}
+
+frontend https
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+{{- apache_log_format() }}
+
+{%- for frontend in configuration['frontend-list'] %}
+{%-   set ssl_list = [] %}
+{%-   if frontend['backend-url']['scheme'] == 'https' %}
+{%-     do ssl_list.append('ssl verify none') %}
+{%-   endif %}
+backend {{ frontend['reference'] }}-http
+  server {{ frontend['reference'] }}-backend-http {{ frontend['backend-url']['hostname'] }}:{{ frontend['backend-url']['port'] }} {{ ' '.join(ssl_list) }}
+{%- endfor %}
+# frontend-list: {{ configuration['frontend-list'] }}
+{#- keep the empty line below #}
+

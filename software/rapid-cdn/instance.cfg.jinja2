@@ -45,6 +45,10 @@ template = {{ software_parameter_dict[template] }}
 {%-   endif %}
 {%- endfor %}
 
+[template-rapid-cdn-frontend]
+extra-context =
+  import urllib_parse urllib.parse
+
 [software-parameter-section]
 {%- for key, value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
