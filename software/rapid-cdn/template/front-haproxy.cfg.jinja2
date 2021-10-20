@@ -25,7 +25,7 @@ defaults
 
 # statistic
 frontend statistic
-  bind {{ configuration['statistic-ip']}}:{{ configuration['statistic-port'] }} {#- ssl crt-list /proper-file #}
+  bind {{ configuration['ipv6']}}:{{ configuration['statistic-port'] }} {#- ssl crt-list /proper-file #}
   stats enable
   stats uri /
   stats show-desc {{ configuration['statistic-identification'] }}
@@ -34,7 +34,8 @@ frontend statistic
 {{- apache_log_format() }}
 
 frontend http
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+  bind {{ configuration['ipv4'] }}:{{ configuration['http-port'] }}
+  bind {{ configuration['ipv6'] }}:{{ configuration['http-port'] }}
 {{- apache_log_format() }}
 {%- for frontend in configuration['frontend-list'] %}
   acl is_{{ frontend['reference'] }}_http hdr_reg(host) -i ^{{ frontend['hostname'] }}($|:.*)
@@ -42,7 +43,8 @@ frontend http
 {%- endfor %}
 
 frontend https
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+  bind {{ configuration['ipv4'] }}:{{ configuration['https-port'] }}
+  bind {{ configuration['ipv6'] }}:{{ configuration['http-port'] }}
 {{- apache_log_format() }}
 
 {%- for frontend in configuration['frontend-list'] %}

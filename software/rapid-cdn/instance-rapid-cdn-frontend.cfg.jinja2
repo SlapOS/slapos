@@ -50,6 +50,7 @@ extends =
 {%- set PART_LIST = [] %}
 
 {%- for frontend in FRONTEND_LIST | sort(attribute='title') %}
+{%-   do PART_LIST.append(frontend['section-title']) %}
 [{{ frontend['section-title'] }}]
 {%-   if '_' in frontend %}
 recipe = slapos.cookbook:publish.serialised
