@@ -10,7 +10,6 @@ all: $(LIB_NAME)
 $(LIB_NAME): $(OBJS)
 	$(foreach lib,$(LIB_LIST),$(AR) x $(lib);)
 	$(AR) qc $@ *.o
-	rm *.o
 
 %.o: $(MAVSDK_WRAPPER_HEADERS)
 
@@ -22,4 +21,4 @@ install: all
 
 .PHONY: clean
 clean:
-	rm -f $(LIB_NAME)
+	rm -f *.o $(LIB_NAME)
