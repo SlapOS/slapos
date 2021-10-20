@@ -29,12 +29,12 @@ import os
 import json
 # import multiprocessing
 # import ssl
-from BaseHTTPServer import HTTPServer
-from BaseHTTPServer import BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
+from http.server import HTTPServer
+from http.server import BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import time
 # import tempfile
-import StringIO
+import io
 import gzip
 import base64
 import socket
@@ -67,7 +67,7 @@ def patch_broken_pipe_error():
     """Monkey Patch BaseServer.handle_error to not write
     a stacktrace to stderr on broken pipe.
     https://stackoverflow.com/a/7913160"""
-    from SocketServer import BaseServer
+    from socketserver import BaseServer
 
     handle_error = BaseServer.handle_error
 
@@ -112,19 +112,19 @@ class TestHandler(BaseHTTPRequestHandler):
 
   def do_PUT(self):
     config = {
-      'status_code': self.headers.dict.get('x-reply-status-code', '200')
+      'status_code': self.headers.get('x-reply-status-code', '200')
     }
     prefix = 'x-reply-header-'
     length = len(prefix)
-    for key, value in self.headers.dict.items():
+    for key, value in list(self.headers.items()):
       if key.startswith(prefix):
         header = '-'.join([q.capitalize() for q in key[length:].split('-')])
         config[header] = value.strip()
 
-    if 'x-reply-body' in self.headers.dict:
-      config['Body'] = base64.b64decode(self.headers.dict['x-reply-body'])
+    if 'x-reply-body' in self.headers:
+      config['Body'] = base64.b64decode(self.headers['x-reply-body'])
 
-    config['X-Drop-Header'] = self.headers.dict.get('x-drop-header')
+    config['X-Drop-Header'] = self.headers.get('x-drop-header')
     self.configuration[self.path] = config
 
     self.send_response(201)
@@ -149,42 +149,42 @@ class TestHandler(BaseHTTPRequestHandler):
       header_dict = config
     else:
       drop_header_list = []
-      for header in (self.headers.dict.get('x-drop-header') or '').split():
+      for header in (self.headers.get('x-drop-header') or '').split():
         drop_header_list.append(header)
       response = None
       status_code = 200
-      timeout = int(self.headers.dict.get('timeout', '0'))
-      if 'x-maximum-timeout' in self.headers.dict:
-        maximum_timeout = int(self.headers.dict['x-maximum-timeout'])
+      timeout = int(self.headers.get('timeout', '0'))
+      if 'x-maximum-timeout' in self.headers:
+        maximum_timeout = int(self.headers['x-maximum-timeout'])
         timeout = random.randrange(maximum_timeout)
-      if 'x-response-size' in self.headers.dict:
+      if 'x-response-size' in self.headers:
         min_response, max_response = [
-          int(q) for q in self.headers.dict['x-response-size'].split(' ')]
+          int(q) for q in self.headers['x-response-size'].split(' ')]
         reponse_size = random.randrange(min_response, max_response)
         response = ''.join(
           random.choice(string.lowercase) for x in range(reponse_size))
-      compress = int(self.headers.dict.get('compress', '0'))
+      compress = int(self.headers.get('compress', '0'))
       header_dict = {}
       prefix = 'x-reply-header-'
       length = len(prefix)
-      for key, value in self.headers.dict.items():
+      for key, value in list(self.headers.items()):
         if key.startswith(prefix):
           header = '-'.join([q.capitalize() for q in key[length:].split('-')])
           header_dict[header] = value.strip()
     if response is None:
-      if 'x-reply-body' not in self.headers.dict:
+      if 'x-reply-body' not in self.headers:
         response = {
           'Path': self.path,
-          'Incoming Headers': self.headers.dict
+          'Incoming Headers': dict(self.headers)
         }
         response = json.dumps(response, indent=2)
       else:
-        response = base64.b64decode(self.headers.dict['x-reply-body'])
+        response = base64.b64decode(self.headers['x-reply-body'])
 
     time.sleep(timeout)
     self.send_response(status_code)
 
-    for key, value in header_dict.items():
+    for key, value in list(header_dict.items()):
       self.send_header(key, value)
 
     if self.identification is not None:
@@ -198,7 +198,7 @@ class TestHandler(BaseHTTPRequestHandler):
 
     if compress:
       self.send_header('Content-Encoding', 'gzip')
-      out = StringIO.StringIO()
+      out = io.StringIO()
       # compress with level 0, to find out if in the middle someting would
       # like to alter the compression
       with gzip.GzipFile(fileobj=out, mode="w", compresslevel=0) as f:
@@ -208,7 +208,7 @@ class TestHandler(BaseHTTPRequestHandler):
     if 'Content-Length' not in drop_header_list:
       self.send_header('Content-Length', len(response))
     self.end_headers()
-    self.wfile.write(response)
+    self.wfile.write(response.encode())
 
 
 class CertificateAuthority(object):
@@ -217,10 +217,10 @@ class CertificateAuthority(object):
     public_key = self.key.public_key()
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, str(common_name)),
     ]))
     builder = builder.issuer_name(x509.Name([
-      x509.NameAttribute(NameOID.COMMON_NAME, unicode(common_name)),
+      x509.NameAttribute(NameOID.COMMON_NAME, str(common_name)),
     ]))
     builder = builder.not_valid_before(
       datetime.datetime.utcnow() - datetime.timedelta(days=2))
@@ -424,5 +424,5 @@ if __name__ == '__main__':
     url_template = 'http://%s:%s/'
 
   server = klass((ip, port), TestHandler)
-  print url_template % server.server_address[:2]
+  print(url_template % server.server_address[:2])
   server.serve_forever()
