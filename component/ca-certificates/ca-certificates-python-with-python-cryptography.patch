@@ -1,0 +1,11 @@
+--- mozilla/Makefile.orig	2021-10-22 12:21:13.315287770 +0200
++++ mozilla/Makefile	2021-10-22 12:21:41.115288486 +0200
+@@ -3,7 +3,7 @@
+ #
+ 
+ all:
+-	python3 certdata2pem.py
++	python-with-python-cryptography certdata2pem.py
+ 
+ clean:
+ 	-rm -f *.crt
