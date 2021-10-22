@@ -286,7 +286,7 @@ def isHTTP2(domain):
   out, err = prc.communicate()
   assert prc.returncode == 0, "Problem running %r. Output:\n%s\nError:\n%s" % (
     curl_command, out, err)
-  return 'Using HTTP2, server supports multi-use' in err
+  return 'Using HTTP2, server supports' in err
 
 
 class TestDataMixin(object):
