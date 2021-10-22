@@ -92,6 +92,12 @@ KEDIFA_PORT = '15080'
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
 
+# ATS version expectation in Via string
+VIA_STRING = (
+  r'^http\/1.1 caddy-frontend-1\[.*\] '
+  r'\(ApacheTrafficServer\/9\.[0-9]\.[0-9]+\)$',
+)[0]
+
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
@@ -3576,7 +3582,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
   def test_enable_cache_server_alias(self):
@@ -3618,7 +3624,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
     result = fakeHTTPResult(
@@ -3735,7 +3741,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
     # BEGIN: Check that squid.log is correctly filled in
@@ -3937,7 +3943,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
     # check stale-if-error support is really respected if not present in the
@@ -4080,7 +4086,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
     try:
@@ -4127,7 +4133,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNotEqual(via, None)
     self.assertRegexpMatches(
       via,
-      r'^http\/1.1 caddy-frontend-1\[.*\] \(ApacheTrafficServer\/9\.0\.[0-9]+\)$'
+      VIA_STRING
     )
 
   def test_enable_http2_false(self):
