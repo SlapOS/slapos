@@ -1,10 +1,10 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <mavsdk.h>
-#include <plugins/action/action.h>
-#include <plugins/mavlink_passthrough/mavlink_passthrough.h>
-#include <plugins/telemetry/telemetry.h>
+#include <mavsdk/mavsdk.h>
+#include <mavsdk/plugins/action/action.h>
+#include <mavsdk/plugins/mavlink_passthrough/mavlink_passthrough.h>
+#include <mavsdk/plugins/telemetry/telemetry.h>
 #include <iostream>
 #include <fstream>
 #include <functional>
