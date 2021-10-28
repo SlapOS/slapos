@@ -1,0 +1,76 @@
+{
+	"type": "object",
+	"$schema": "http://json-schema.org/draft-04/schema",
+
+	"title": "Input Parameters",
+	"properties": {
+	    "sim_algo": {
+		    "title": "sim_algo",
+			"description": "",
+			"type": "string",
+            "default": ""
+	    },
+	    "imsi": {
+			"title": "imsi",
+			"description": "imsi",
+			"type": "string",
+            "default": ""
+	    },
+	    "op": {
+			"title": "op",
+			"description": "op",
+			"type": "string",
+            "default": ""
+	    },
+
+	    "opc": {
+			"title": "opc",
+			"description": "opc",
+			"type": "string",
+            "default": ""
+	    },
+
+	    "amf": {
+			"title": "amf",
+			"description": "amf",
+			"type": "string",
+            "default": ""
+	    },
+	    "sqn": {
+			"title": "sqn",
+			"description": "sqn",
+			"type": "string",
+            "default": ""
+	    },
+	    "K": {
+			"title": "K",
+			"description": "K",
+			"type": "string",
+            "default": ""
+	    },
+        "impu": {
+			"title": "impu",
+			"description": "impu",
+			"type": "string",
+            "default": ""
+	    },
+	    "impi": {
+			"title": "impi",
+			"description": "impi",
+			"type": "string",
+            "default": ""
+	    },
+	    "authent_type": {
+	    	"title": "authent_type",
+			"description": "authent_type",
+			"type": "string",
+            "default": ""
+	    },
+	    "domain": {
+	    	"title": "domain",
+			"description": "domain",
+			"type": "string",
+            "default": ""
+	    }
+	}
+}

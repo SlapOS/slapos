@@ -1,0 +1,162 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-04/schema",
+
+    "title": "EPC Input Parameters",
+    "properties": {
+        "log": {
+            "type": "object",
+            "title": "Log Configuration",
+            "properties": {
+                "options": {
+                    "title": "Log Options",
+                    "description": "Log Options",
+                    "type": "string",
+                    "default": "all.level=debug,all.max_size=32"
+                }
+            }
+        },
+        "plmn": {
+            "title": "PLMN",
+            "description": "PLMN",
+            "type": "string",
+	    "default": ""
+        },
+        "mme_group_id": {
+            "title": "Group ID",
+            "description": "Group ID",
+            "type": "string",
+	    "default": ""
+        },
+        "mme_code": {
+            "title": "Code",
+            "description": "Code",
+            "type": "string",
+	    "default": ""
+        },
+         "license_key_path" : {
+            "title": "License Key Path",
+            "description": "Path to where the license *.key files are on the filesytem (to replace ~/.license folder",
+            "type": "string",
+            "default": ""
+        },
+        "gtp_addr": {
+            "title": "GTP bind address",
+            "description": "IP address of the network interface connected to the core network",
+            "type": "string",
+            "default": "127.0.1.1"
+        },
+        "gtp_addr": {
+            "title": "GTP bind address",
+            "description": "IP address of the network interface connected to the core network",
+            "type": "string",
+            "default": "127.0.1.1"
+        },
+        "mme_addr": {
+            "title": "MME address",
+            "description": "address of MME for S1AP connection",
+            "type": "string",
+            "default": "127.0.1.100"
+        },
+        "ims_list": {
+            "title": "IMS Address List",
+            "description": "List of IMSAddresses",
+            "type": "object",
+            "patternProperties": {
+                ".*": {
+                    "properties": {
+                        "address": {
+                             "title": "IMS address",
+                             "description": "IMS Address",
+                             "type": "string"
+			}
+		    }
+		}
+	    }
+        },
+        "rx": {
+            "type": "object",
+            "title": "RX interface",
+            "properties": {
+                "audio_qci": {
+                    "title": "Audio QCI",
+                    "description": "Audio QCI",
+                    "type": "number",
+                    "default": 1
+                },
+                "video_qci": {
+                    "title": "Video QCI",
+                    "description": "Video QCI",
+                    "type": "number",
+                    "default": 2
+                }
+            }
+        },
+        "network_name": {
+            "title": "Network name",
+            "description": "Network name",
+            "type": "string",
+            "default": "Amarisoft Network"
+        },
+        "network_short_name": {
+            "title": "Network short name",
+            "description": "Network Short Name",
+            "type": "string",
+            "default": "Amarisoft"
+        },
+        "cp_ciot_opt": {
+            "title": "Control Plane Cellular IoT EPS optimization",
+            "description": "Control Plane Cellular IoT EPS optimisation",
+            "type": "boolean"
+        },
+        "pdn_list": {
+            "title": "PDN List",
+            "description": "List of available Packet Data Networks",
+            "patternProperties": {
+                ".*": {
+                    "properties": {
+                        "access_point_name": {
+                            "title": "APN",
+                            "description": "Access Point Name",
+                            "type": "string",
+                            "default": "defaultt"
+                        },
+                        "pdn_type": {
+                            "title": "PDN TYPE",
+                            "description": "PDN type can be ipv4, ipv6, ipv4v6, non-ip",
+                            "type": "string",
+                            "default": "ipv4"
+                        },
+                        "first_ip_addr": {
+                            "title": "First IP Address",
+                            "description": "First available IPv4 address",
+                            "type": "string",
+                            "default": "192.168.2.2"
+                        },
+                        "last_ip_addr": {
+                            "title": "Last IP Address",
+                            "description": "Last available IPv4 address",
+                            "type": "string",
+                            "default": "192.168.2.254"
+                        },
+                        "dns_addr": {
+                            "title": "DNS Address",
+                            "description": "Last available IPv4 address",
+                            "type": "string",
+                            "default": "8.8.8.8"
+                        }
+                    },
+                    "type": "object"
+                },
+                "type": "object"
+            },
+            "type": "object"
+        },
+        "ue_db_path" : {
+            "title": "UE configuration path (optional)",
+            "description": "ue_db_path is used to extend configuration for include ue_db configuration",
+            "type": "string",
+            "default": ""
+        }
+    }
+}

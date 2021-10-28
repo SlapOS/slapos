@@ -1,0 +1,83 @@
+#!{{executable}}
+
+from ZODB import DB
+from BTrees.OOBTree import OOBTree
+from neo.client.Storage import Storage
+from neo.lib import logging
+from time import sleep
+import argparse
+import json
+import transaction
+import hashlib
+
+def main():
+  parser = argparse.ArgumentParser(
+        description="Save a dict on NEO Storage",
+        )
+  _ = parser.add_argument
+  _('--ca', help="Path to the ca.crt file.")
+  _('--key', help="Path to the neo.crt file.")
+  _('--cert', help="Path to the neo.crt file.")
+  _('--json', help="Path to the json file.")
+  _('--master', help="Address to a NEO Master Node.",
+     default='[2001:67c:1254:e:ad::a164]:2051')
+  _('--log', help="Path to the log file.", 
+     default="x.log")
+  _('--name', help="Name of the Database to store the json.",
+     default='simcarddb')
+  _('-v', '--verbose', action='store_true', 
+                       help="Show the results on stdout.")
+
+  config = parser.parse_args()
+
+  master = config.master
+
+  if master.startswith("!py!"):
+    master = master[4:]
+
+  if master.startswith("u["):
+    master = master[1:]
+
+  logging.backlog(max_size=None, max_packet=None) # log everything & without bufferring
+
+  kw= {
+            'master_nodes':     master,  # M on webr-wneo-2
+            'name':             config.name, #'simcarddb',
+            #'read_only':        True,
+
+            'logfile':  config.log,
+
+            'ca': config.ca,
+            'cert': config.cert,
+            'key': config.key
+  }
+
+  stor = Storage(**kw)
+  db = DB(stor)
+  conn = db.open()
+  root = conn.root()
+
+  try:
+    tree = root["v1"]
+  except KeyError:
+    root["v1"] = OOBTree()
+    root["v1"].update({"index": "NOT_SET_YET"})
+
+  with open(config.json) as f:
+    j = json.load(f)
+  
+  index = hashlib.md5(str(j)).hexdigest()
+
+  if index == root["v1"]['index']:
+    print "Nothing to do"
+    return  
+
+  root["v1"].update({"index": index, 
+                       "json": j})
+
+  transaction.commit()
+  print "Updated to %s." % root["v1"]['index']
+
+
+if __name__ == '__main__':
+    main()
