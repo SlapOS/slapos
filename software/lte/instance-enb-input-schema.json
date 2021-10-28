@@ -1,0 +1,163 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-04/schema",
+
+    "title": "Input Parameters",
+    "properties": {
+        "log": {
+            "type": "object",
+            "title": "Log Configuration",
+            "properties": {
+                "options": {
+                    "title": "Log Options",
+                    "description": "Log Options",
+                    "type": "string",
+                    "default": "all.level=debug,all.max_size=32"
+                }
+            }
+        },
+        "license_key_path": {
+            "title": "License Key Path",
+            "description": "Path to where the license *.key files are on the filesytem (to replace ~/.license folder",
+            "type": "string",
+            "default": ""
+        },
+        "gtp_addr": {
+            "title": "GTP bind address",
+            "description": "IP address of the network interface connected to the core network",
+            "type": "string",
+            "default": "127.0.1.1"
+        },
+        "mme_addr": {
+            "title": "MME address",
+            "description": "address of MME for S1AP connection",
+            "type": "string",
+            "default": "127.0.1.100"
+        },
+        "rf_params": {
+            "type": "object",
+            "title": "RF Parameters",
+            "properties": {
+                "tx_gain": {
+                    "title": "Tx gain",
+                    "description": "Tx gain (in dB)",
+                    "type": "number",
+                    "default": 90.0
+                },
+                "rx_gain": {
+                    "title": "Rx gain",
+                    "description": "Rx gain (in dB)",
+                    "type": "number",
+                    "default": 53.0
+                }
+            }
+        },
+        "cell_list": {
+            "title": "Cell List",
+            "description": "Cell List",
+            "patternProperties": {
+                ".*": {
+                    "properties": {
+                        "plmnt_list": {
+                           "title": "PLMNs (one per line)",
+                           "description": "PLMNs",
+                           "type": "array"
+		       },
+                        "dl_earfcn": {
+                            "title": "DL EARFCN",
+                            "description": "Downlink EARFCN of the cell",
+                            "type": "number",
+                            "default": 3350
+                        },
+                        "cell_id": {
+                            "title": "Cell Id",
+                            "description": "Cell Id",
+                            "type": "number"
+                        },
+                        "n_rb_dl": {
+                            "title": "DL RB",
+                            "description": "number of DL resource blocks",
+                            "type": "number",
+                            "default": 100
+                        },
+                        "n_id_cell": {
+                            "title": "Physical cell ID",
+                            "description": "Physical cell ID",
+                            "type": "number",
+                            "default": 1
+                        },
+                        "tac": {
+                            "title": "TAC",
+                            "description": "TAC",
+                            "type": "number",
+                            "default": 1
+                        },
+                        "root_sequence_index": {
+                            "title": "PRACH root seq. index",
+                            "description": "PRACH root seq. index",
+                            "type": "number",
+                            "default": 1
+                        },
+                        "n_antenna_dl": {
+                            "title": "DL Antenna Count",
+                            "description": "DL Antenna Count",
+                            "type": "number",
+                            "default": 1
+                        },
+                        "n_antenna_ul": {
+                            "title": "UL Antenna Count",
+                            "description": "UL Antenna Count",
+                            "type": "number",
+                            "default": 1
+                        },
+                        "cyclic_prefix": {
+                            "title": "Cyclic prefix",
+                            "description": "Cyclic prefix",
+                            "type": "string",
+			    "default": "normal",
+                            "enums": [ "normal", "extended"]
+                        },
+                        "inactivity_timer": {
+                            "title": "Inactivity timer",
+                            "description": "Inactivity timer",
+                            "type": "number",
+			    "default": 10000
+                        },
+                        "srs_dedicated": {
+                           "title": "SRS",
+                           "description": "SRS",
+                           "patternProperties": {
+                               ".*": {
+                                   "properties": {
+                                      "srs_period": {
+                                          "title": "Pediod",
+                                          "description": "Period",
+                                          "type": "number",
+                                           "default": 40
+                                     },
+                                      "srs_bandwidth": {
+                                          "title": "Bandwidth",
+                                          "description": "Bandwith",
+                                          "type": "number",
+                                           "default": 1
+                                     },
+                                      "srs_hopping_bandwidth": {
+                                          "title": "Hopping Bandwidth",
+                                          "description": "Bandwith",
+                                          "type": "number",
+                                           "default": 0
+                                     }
+				   }
+			       }
+			   },
+			   "type": "object"
+		       }
+                    },
+                    "type": "object"
+                },
+                "type": "object"
+            },
+            "type": "object"
+        }
+    }
+}

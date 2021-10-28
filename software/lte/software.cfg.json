@@ -1,0 +1,55 @@
+{
+    "name": "LTE",
+    "description": "LTE",
+    "serialisation": "json-in-xml",
+    "software-type": {
+        "enb": {
+             "title": "eNB",
+             "software-type": "enb",
+             "description": "eNodeB Configuration",
+             "request": "instance-enb-input-schema.json",
+             "response": "instance-enb-schema.json",
+             "index": 0
+         },
+        "epc": {
+             "title": "EPC",
+             "software-type": "epc",
+             "description": "EPC Configuration",
+             "request": "instance-epc-input-schema.json",
+             "response": "instance-epc-schema.json",
+             "index": 1
+         },
+        "ims": {
+             "title": "IMS",
+             "software-type": "ims",
+             "description": "IMS Configuration",
+             "request": "instance-ims-input-schema.json",
+             "response": "instance-ims-schema.json",
+             "index": 2
+         },
+        "ims": {
+            "title": "MBMS",
+            "software-type": "mbms",
+            "description": "MBMS Configuration",
+            "request": "instance-mbms-input-schema.json",
+            "response": "instance-mbms-schema.json",
+            "index": 2
+        },
+        "license-server": {
+             "title": "License Server",
+             "software-type": "license",
+             "description": "License Server",
+             "request": "instance-license-server-input-schema.json",
+             "response": "instance-license-schema.json",
+             "index": 2
+         },
+        "default": {
+            "title": "Default",
+            "software-type": "default",
+            "description": "Default",
+            "request": "instance-lte-input-schema.json",
+            "response": "instance-lte-schema.json",
+            "index": 3
+        }
+    }
+}
