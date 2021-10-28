@@ -1,0 +1,8 @@
+{# format the json to determinate the API #}
+{% set db_dict = {} %}
+
+{% for slave in slave_instance_list %}
+{%  do db_dict.__setitem__(slave.get('slave_reference'), slave) %}
+{% endfor %}
+
+{{ json_module.dumps(db_dict) }} 
