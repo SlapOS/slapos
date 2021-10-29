@@ -97,15 +97,16 @@ class WendelinTutorialTestCase(FluentdTestCase):
 
   @classmethod
   def setUpClass(cls):
-    fluentd_dir = os.path.join(cls.computer_partition_root_path,
-                               'software_release', 'parts', 'fluentd')
-    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
-    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
     cls._tmp_dir = tempfile.mkdtemp()
     cls._measurementList = cls.sensor_value_list()
     cls._conf = cls.get_configuration()
 
     super(FluentdTestCase, cls).setUpClass()
+
+    fluentd_dir = os.path.join(cls.computer_partition_root_path,
+                               'software_release', 'parts', 'fluentd')
+    cls._fluentd_bin = os.path.join(fluentd_dir, 'bin', 'fluentd')
+    cls._gem_path = os.path.join(fluentd_dir, 'lib', 'ruby', 'gems')
 
   @classmethod
   def sensor_value_list(cls):
