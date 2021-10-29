@@ -256,7 +256,7 @@ static JSValue js_mavsdk_start(JSContext *ctx, JSValueConst this_val,
     if (JS_ToInt32(ctx, &timeout, argv[2]))
         return JS_EXCEPTION;
 
-    res = start(url, log_file, timeout);
+    res = start(url, log_file, timeout, pubsub_set_coordinates);
     JS_FreeCString(ctx, url);
     JS_FreeCString(ctx, log_file);
 

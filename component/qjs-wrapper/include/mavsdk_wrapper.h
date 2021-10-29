@@ -4,7 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int start(const char * url, const char * log_file, int timeout);
+int start(const char * url, const char * log_file, int timeout,
+          void (*publishCoordinates)(double, double, float));
 int missionPush(
     double latitude_deg,
     double longitude_deg,

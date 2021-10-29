@@ -54,8 +54,10 @@ static const double PI = 3.14159265358979323846264338328F;
 static const double EARTH_RADIUS = 6371000.F;
 
 static int mavsdk_started = 0;
+static void (*publish_fn)(double, double, float);
 
-int start(const char * url, const char * log_file, int timeout)
+int start(const char * url, const char * log_file, int timeout,
+          void (*publishCoordinates)(double, double, float))
 {
     std::string connection_url(url);
     ConnectionResult connection_result;
@@ -110,11 +112,13 @@ int start(const char * url, const char * log_file, int timeout)
 
     log_file_fd << "Subscribing to position..." << std::endl;
     // Set up callback to monitor altitude while the vehicle is in flight
+    publish_fn = publishCoordinates;
     telemetry->subscribe_position([](Telemetry::Position position) {
         drone_la = position.latitude_deg;
         drone_lo = position.longitude_deg;
         drone_a = position.absolute_altitude_m;
         drone_at = position.relative_altitude_m;
+        publish_fn(drone_la, drone_lo, drone_a);
 
         if(!initial_coords_set) {
             initial_drone_la = drone_la;
