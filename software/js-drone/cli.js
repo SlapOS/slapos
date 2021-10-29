@@ -2,6 +2,9 @@ import * as mavsdk from "{{ qjs_wrapper }}";
 import * as os from "os";
 import { fdopen, printf } from "std";
 
+const IP = "{{ autopilot_ip }}";
+const PORT = "7909";
+const URL = "udp://" + IP + ":" +  PORT;
 const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
 
 function test(a, b) {
@@ -11,13 +14,8 @@ function test(a, b) {
 function cli() {
 
         var f = fdopen(os.stdin, "r");
-
-        printf("IP: ");
-        const IP = f.getline();
-
         var dict = {};
 
-        const URL = "udp://" + IP + ":7909";
         printf("Will connect to %s\n", URL);
 
         while(true) {

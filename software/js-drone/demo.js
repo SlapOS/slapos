@@ -9,7 +9,7 @@ function exit_on_fail(ret, msg) {
   }
 }
 
-const IP    = "169.79.1.1";
+const IP    = "{{ autopilot_ip }}";
 const PORT  = "7909";
 const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
 const EPSILON = 105;
