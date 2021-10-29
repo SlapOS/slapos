@@ -348,6 +348,16 @@
       ],
       "type": "string",
       "default": "false"
+    },
+    "url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"Backend URL\"",
+      "description": "Space separated list of netlocs (ip and port) of backend to connect to. They will share the scheme and path of the original URL and additional backend parameters (like \"SSL Backend Authority's Certificate\"). Each of them will be used, and at least one is enough for the connectivity to work, and the best results are with \"Health Check\" feature enabled. Port is mandatory, so hostnames shall be provided as hostname:port (eg. example.com:80), IPv4 - as ipv4:port (eg. 127.0.0.1:80), IPv6 - as ipv6:port (eg. ::1:80). Other way this parameters only overridate netloc (network location) of the original URL."
+    },
+    "https-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"HTTPS Backend URL\"",
+      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
     }
   },
   "title": "Input Parameters",
