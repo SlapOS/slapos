@@ -1,4 +1,4 @@
-import * as mavsdk from "{{ mavsdk }}";
+import * as mavsdk from "{{ qjs_wrapper }}";
 import * as os from "os";
 import * as std from "std";
 

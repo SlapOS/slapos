@@ -1,5 +1,4 @@
-import * as mavsdk from "{{ mavsdk }}";
-import { publish } from "{{ open62541 }}";
+import * as mavsdk from "{{  qjs_wrapper}}";
 import * as os from "os";
 import * as std from "std";
 
