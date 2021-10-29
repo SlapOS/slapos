@@ -590,8 +590,6 @@ promise = check_socket_listening
 name = vnc_promise.py
 config-host = ${kvm-parameter-dict:vnc-ip}
 config-port = ${kvm-parameter-dict:vnc-port}
-result-count = 1
-failure-amount = 1
 
 [kvm-disk-image-corruption-bin]
 recipe = collective.recipe.template
