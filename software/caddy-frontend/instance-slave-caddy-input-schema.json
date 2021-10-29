@@ -348,6 +348,16 @@
       ],
       "type": "string",
       "default": "false"
+    },
+    "url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for `url`",
+      "description": "Space separated list of netlocs (ip and port) of backend to connect to. They will share the additional backend parameters. Each of them will be used, and at least one is enough for the connectivity to work. IPv6 shall be presented as [::1]:port. Note: Those netlocs override netloc part of the `url`."
+    },
+    "https-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for `https-url`",
+      "description": "See \"[EXPERT] List of netlocs for `url`\" description."
     }
   },
   "title": "Input Parameters",
