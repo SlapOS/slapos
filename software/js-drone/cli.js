@@ -35,6 +35,7 @@ function cli() {
                 continue;
               }
               cmd = () => {return mavsdk.start(URL, LOG_FILE, timeout);};
+	      var worker = new os.Worker("{{ publish_script }}");
               break;
 
             case "disconnect":
@@ -137,6 +138,7 @@ function cli() {
               break;
 
             case "exit":
+	      mavsdk.stopPubsub();
               return;
 
             case "help":

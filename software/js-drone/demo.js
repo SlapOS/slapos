@@ -1,5 +1,5 @@
-import * as mavsdk from "{{  qjs_wrapper}}";
-import { sleep  } from "os";
+import * as mavsdk from "{{ qjs_wrapper }}";
+import { sleep, Worker } from "os";
 import { exit, printf } from "std";
 
 function exit_on_fail(ret, msg) {
@@ -128,6 +128,7 @@ function land() {
 
 console.log("[DEMO] Connecting...\n");
 connect();
+var worker = new Worker("{{ publish_script }}");
 console.log("[DEMO] Setting loiter mode...\n");
 
 while(true) {
@@ -147,3 +148,5 @@ setLatLong(LAT1, LON1, HIGH_ALTITUDE);
 sleep(30000);
 console.log("[DEMO] Landing...\n");
 land();
+mavsdk.stopPubsub();
+
