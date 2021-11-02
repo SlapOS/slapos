@@ -1,11 +1,11 @@
 import * as mavsdk from "{{  qjs_wrapper}}";
-import * as os from "os";
-import * as std from "std";
+import { sleep  } from "os";
+import { exit, printf } from "std";
 
 function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
-    std.exit(-1);
+    exit(-1);
   }
 }
 
@@ -39,7 +39,7 @@ if(DEMO) {
 
 const URL = "udp://" + IP + ":" + PORT;
 
-std.printf("Will connect to %s\n", URL);
+console.log("Will connect to", URL);
 
 function connect() {
   exit_on_fail(mavsdk.start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
@@ -73,18 +73,18 @@ function setLatLong(latitude, longitude, target_altitude) {
   var i;
   for(i = 0; i < 3; i++) {
     exit_on_fail(mavsdk.setTargetLatLong(latitude, longitude), "Failed to go to (" + latitude + ", " + longitude + ")");
-    os.sleep(500);
+    sleep(500);
   }
   while(true) {
     var cur_latitude = mavsdk.getLatitude();
     var cur_longitude = mavsdk.getLongitude();
     var d = distance(cur_latitude, cur_longitude, latitude, longitude);
-    std.printf("Waiting for drone to get to destination (%s m), (%s , %s), (%s, %s)\n", d, cur_latitude, cur_longitude, latitude, longitude);
+    printf("Waiting for drone to get to destination (%s m), (%s , %s), (%s, %s)\n", d, cur_latitude, cur_longitude, latitude, longitude);
     if(d < EPSILON) {
-      os.sleep(6000);
+      sleep(6000);
       return;
     }
-    os.sleep(1000);
+    sleep(1000);
   }
 
   if(target_altitude != 0)
@@ -98,10 +98,10 @@ function setAltitude(target_altitude, wait, go) {
   if(wait) {
     while(true) {
       var altitude = mavsdk.getAltitude();
-      std.printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, target_altitude);
+      printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, target_altitude);
       if(abs(altitude - target_altitude) < EPSILON_ALTITUDE)
         break;
-      os.sleep(1000);
+      sleep(1000);
     }
   }
 }
@@ -116,10 +116,10 @@ function land() {
 
   while(true) {
     var yaw = mavsdk.getYaw();
-    std.printf("[DEMO] Waiting for yaw... (%s , %s)\n", yaw, TARGET_YAW);
+    printf("[DEMO] Waiting for yaw... (%s , %s)\n", yaw, TARGET_YAW);
     if(abs(yaw - TARGET_YAW) < EPSILON_YAW)
       break;
-    os.sleep(250);
+    sleep(250);
   }
 
   std.printf("[DEMO] Deploying parachute...\n");
@@ -132,18 +132,18 @@ console.log("[DEMO] Setting loiter mode...\n");
 
 while(true) {
   var altitude = mavsdk.getAltitude();
-  std.printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, INITIAL_ALTITUDE);
+  printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, INITIAL_ALTITUDE);
   if(altitude > INITIAL_ALTITUDE)
     break;
-  os.sleep(1000);
+  sleep(1000);
 }
 
 mavsdk.loiter();
-os.sleep(1000);
+sleep(1000);
 
 console.log("[DEMO] Going to first point...\n");
 setLatLong(LAT1, LON1, HIGH_ALTITUDE);
 
-os.sleep(30000);
+sleep(30000);
 console.log("[DEMO] Landing...\n");
 land();

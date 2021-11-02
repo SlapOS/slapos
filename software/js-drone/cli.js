@@ -1,6 +1,6 @@
 import * as mavsdk from "{{ qjs_wrapper }}";
 import * as os from "os";
-import * as std from "std";
+import { fdopen, printf } from "std";
 
 const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
 
@@ -10,25 +10,25 @@ function test(a, b) {
 
 function cli() {
 
-        var f = std.fdopen(os.stdin, "r");
+        var f = fdopen(os.stdin, "r");
 
-        std.printf("IP: ");
+        printf("IP: ");
         const IP = f.getline();
 
         var dict = {};
 
         const URL = "udp://" + IP + ":7909";
-        std.printf("Will connect to %s\n", URL);
+        printf("Will connect to %s\n", URL);
 
         while(true) {
-          std.printf("> ");
+          printf("> ");
           var s = f.getline();
           var cmd;
           var undefined_cmd = false;
 
           switch(s) {
             case "connect":
-              std.printf("Timeout: ");
+              printf("Timeout: ");
               var timeout = parseInt(f.getline());
               if(isNaN(timeout)) {
                 console.log("Wrong parameters");
@@ -54,17 +54,17 @@ function cli() {
               break;
 
             case "define":
-              std.printf("Name: ");
+              printf("Name: ");
               var name = f.getline();
-              std.printf("Latitude: ");
+              printf("Latitude: ");
               var latitude = parseFloat(f.getline());
-              std.printf("Longitude: ");
+              printf("Longitude: ");
               var longitude = parseFloat(f.getline());
               dict[name] = [latitude, longitude];
               continue;
 
             case "print":
-              std.printf("Name: ");
+              printf("Name: ");
               var name = f.getline();
               if(name in dict) {
                 console.log(dict[name][0]);
@@ -73,7 +73,7 @@ function cli() {
               continue;
 
             case "parachute":
-              std.printf("Action: ");
+              printf("Action: ");
               var param = parseInt(f.getline());
               if(isNaN(param)) {
                 console.log("Wrong parameters");
@@ -88,7 +88,7 @@ function cli() {
               break;
 
             case "goto":
-              std.printf("Name: ");
+              printf("Name: ");
               var name = f.getline();
               if(name in dict) {
                 var latitude = dict[name][0];
@@ -100,13 +100,13 @@ function cli() {
                 cmd = () => {return mavsdk.setTargetLatLong(latitude, longitude);};
               }
               else {
-                std.printf("%s wasn't defined yet\n", name);
+                printf("%s wasn't defined yet\n", name);
                 continue;
               }
               break;
 
             case "altitude":
-              std.printf("Altitude: ");
+              printf("Altitude: ");
               var altitude = parseFloat(f.getline());
               if(isNaN(altitude)) {
                 console.log("Wrong parameters");
@@ -115,7 +115,7 @@ function cli() {
               cmd = () => {return mavsdk.setAltitude(altitude);};
               break;
             case "speed":
-              std.printf("Speed: ");
+              printf("Speed: ");
               var speed = parseFloat(f.getline());
               if(isNaN(speed)) {
                 console.log("Wrong parameters");
@@ -125,9 +125,9 @@ function cli() {
               break;
 
             case "gotoCoord":
-              std.printf("Latitude: ");
+              printf("Latitude: ");
               var latitude = parseFloat(f.getline());
-              std.printf("Longitude: ");
+              printf("Longitude: ");
               var longitude = parseFloat(f.getline());
               if(isNaN(latitude) || isNaN(longitude)) {
                 console.log("Wrong parameters");
