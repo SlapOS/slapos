@@ -202,7 +202,16 @@ int loiter(void) {
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
+    if (cmd_result != MavlinkPassthrough::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Loiter failed" << cmd_result
+	       	          << NORMAL_CONSOLE_TEXT << std::endl;
+       return 1;
+   }
+
+   log_file_fd << "Loiter mode set to ( " << drone_la << " , " << drone_lo
+               << " ) " << drone_a << " m" << std::endl;
+    return 0;
 }
 
 int arm(void)
@@ -219,6 +228,11 @@ int arm(void)
         return 1;
     }
     return 0;
+}
+
+int healthAllOk(void)
+{
+    return telemetry->health_all_ok();
 }
 
 int takeOff(void)
@@ -248,6 +262,9 @@ int setTargetCoordinates(double la, double lo, double a, double y)
                   << NORMAL_CONSOLE_TEXT << std::endl;
         return 1;
     }
+
+    std::cout << "Going to location ( " << la << " , " << lo << " ) "
+              << a << " m" << std::endl;
     return 0;
 }
 
@@ -269,11 +286,30 @@ double getRoll(void) {
 double getPitch(void) {
   return drone_pitch;
 }
+double getInitialLatitude(void) {
+  return initial_drone_la;
+}
 double getLatitude(void) {
   return drone_la;
 }
+double getInitialLongitude(void) {
+  return initial_drone_lo;
+}
 double getLongitude(void) {
   return drone_lo;
+}
+double getTakeOffAltitude(void) {
+  const std::pair<Action::Result, float> response = action->get_takeoff_altitude();
+
+  if(response.first != Action::Result::Success) {
+    log_file_fd << ERROR_CONSOLE_TEXT << "Get takeoff altitude failed:" << response.first
+                << NORMAL_CONSOLE_TEXT << std::endl;
+    return -1;
+  }
+  return response.second;
+}
+double getInitialAltitude(void) {
+  return initial_drone_a;
 }
 double getAltitude(void) {
   return drone_a;

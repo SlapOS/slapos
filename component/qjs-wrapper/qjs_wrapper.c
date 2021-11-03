@@ -269,6 +269,12 @@ static JSValue js_mavsdk_stop(JSContext *ctx, JSValueConst this_val,
     return JS_UNDEFINED;
 }
 
+static JSValue js_mavsdk_healthAllOk(JSContext *ctx, JSValueConst this_val,
+				     int argc, JSValueConst *argv)
+{
+    return JS_NewBool(ctx, healthAllOk());
+}
+
 static JSValue js_mavsdk_arm(JSContext *ctx, JSValueConst this_val,
                              int argc, JSValueConst *argv)
 {
@@ -351,16 +357,44 @@ static JSValue js_mavsdk_getYaw(JSContext *ctx, JSValueConst this_val,
     return JS_NewFloat64(ctx, getYaw());
 }
 
+static JSValue js_mavsdk_getInitialLatitude(JSContext *ctx,
+                                            JSValueConst this_val,
+					                                  int argc, JSValueConst *argv)
+{
+    return JS_NewFloat64(ctx, getInitialLatitude());
+}
+
 static JSValue js_mavsdk_getLatitude(JSContext *ctx, JSValueConst this_val,
                                      int argc, JSValueConst *argv)
 {
     return JS_NewFloat64(ctx, getLatitude());
 }
 
+static JSValue js_mavsdk_getInitialLongitude(JSContext *ctx,
+                                             JSValueConst this_val,
+					                                   int argc, JSValueConst *argv)
+{
+    return JS_NewFloat64(ctx, getInitialLongitude());
+}
+
 static JSValue js_mavsdk_getLongitude(JSContext *ctx, JSValueConst this_val,
                                       int argc, JSValueConst *argv)
 {
     return JS_NewFloat64(ctx, getLongitude());
+}
+
+static JSValue js_mavsdk_getTakeOffAltitude(JSContext *ctx,
+                                            JSValueConst this_val,
+					                                  int argc, JSValueConst *argv)
+{
+    return JS_NewFloat64(ctx, getTakeOffAltitude());
+}
+
+static JSValue js_mavsdk_getInitialAltitude(JSContext *ctx,
+                                            JSValueConst this_val,
+                                            int argc, JSValueConst *argv)
+{
+    return JS_NewFloat64(ctx, getInitialAltitude());
 }
 
 static JSValue js_mavsdk_getAltitude(JSContext *ctx, JSValueConst this_val,
@@ -432,6 +466,7 @@ static JSValue js_mavsdk_land(JSContext *ctx, JSValueConst this_val,
 static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("start", 3, js_mavsdk_start ),
     JS_CFUNC_DEF("stop", 0, js_mavsdk_stop ),
+    JS_CFUNC_DEF("healthAllOk", 0, js_mavsdk_healthAllOk ),
     JS_CFUNC_DEF("arm", 0, js_mavsdk_arm ),
     JS_CFUNC_DEF("setTargetCoordinates", 4, js_mavsdk_setTargetCoordinates ),
     JS_CFUNC_DEF("setTargetLatLong", 2, js_mavsdk_setTargetLatLong ),
@@ -444,8 +479,12 @@ static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("getRoll", 0, js_mavsdk_getRoll ),
     JS_CFUNC_DEF("getPitch", 0, js_mavsdk_getPitch ),
     JS_CFUNC_DEF("getYaw", 0, js_mavsdk_getYaw ),
+    JS_CFUNC_DEF("getInitialLatitude", 0, js_mavsdk_getInitialLatitude ),
     JS_CFUNC_DEF("getLatitude", 0, js_mavsdk_getLatitude ),
+    JS_CFUNC_DEF("getInitialLongitude", 0, js_mavsdk_getInitialLongitude ),
     JS_CFUNC_DEF("getLongitude", 0, js_mavsdk_getLongitude ),
+    JS_CFUNC_DEF("getTakeOffAltitude", 0, js_mavsdk_getTakeOffAltitude ),
+    JS_CFUNC_DEF("getInitialAltitude", 0, js_mavsdk_getInitialAltitude ),
     JS_CFUNC_DEF("getAltitude", 0, js_mavsdk_getAltitude ),
     JS_CFUNC_DEF("takeOff", 0, js_mavsdk_takeOff ),
     JS_CFUNC_DEF("land", 0, js_mavsdk_land ),

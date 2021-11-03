@@ -5,6 +5,8 @@ import { exit, printf } from "std";
 function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
+    mavsdk.stopPubsub();
+    sleep(1000);
     exit(-1);
   }
 }
@@ -18,6 +20,7 @@ const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
 
 const DEMO = false;
+const SIMULATION = {{ is_a_simulation }};
 
 var LANDING_ALTITUDE = 150;
 var INITIAL_ALTITUDE = 210;
@@ -109,6 +112,8 @@ function setAltitude(target_altitude, wait, go) {
 function land() {
   var latitude, longitude;
 
+  var cmd_res;
+
   console.log("[DEMO] Going to landing coords...\n");
   setLatLong(LAT2, LON2, 0);
   console.log("[DEMO] Setting altitude...\n");
@@ -129,6 +134,25 @@ function land() {
 console.log("[DEMO] Connecting...\n");
 connect();
 var worker = new Worker("{{ publish_script }}");
+if(SIMULATION) {
+  /*while(mavsdk.healthAllOk() != true) {
+    console.log("[DEMO] Vehicule not ready to arm ...");
+    sleep(1000);
+  }*/
+  exit_on_fail(arm(), "Failed to arm");
+
+  do {
+    sleep(1000);
+    cmd_res = takeOff();
+  } while(cmd_res);
+  mavsdk.setAltitude(INITIAL_ALTITUDE + 1);
+
+  LAT1 = (mavsdk.getInitialLatitude() - 0.00166).toFixed(5);
+  LON1 = (mavsdk.getInitialLongitude() - 0.00193).toFixed(5);
+  LAT2 = (LAT1 - 0.00166).toFixed(5);
+  LON2 = (LON1 - 0.00193).toFixed(5);
+}
+
 console.log("[DEMO] Setting loiter mode...\n");
 
 while(true) {
@@ -149,4 +173,4 @@ sleep(30000);
 console.log("[DEMO] Landing...\n");
 land();
 mavsdk.stopPubsub();
-
+sleep(3000)

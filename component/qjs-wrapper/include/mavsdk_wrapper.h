@@ -17,6 +17,7 @@ int missionPush(
 int uploadMission(void);
 int startMission(void);
 int arm(void);
+int healthAllOk(void);
 int takeOff(void);
 int setTargetCoordinates(double la, double lo, double a, double y);
 int setTargetLatLong(double la, double lo);
@@ -30,8 +31,12 @@ int setAirspeed(double airspeed);
 double getYaw(void);
 double getRoll(void);
 double getPitch(void);
+double getInitialLatitude(void);
 double getLatitude(void);
+double getInitialLongitude(void);
 double getLongitude(void);
+double getTakeOffAltitude(void);
+double getInitialAltitude(void);
 double getAltitude(void);
 #ifdef __cplusplus
 }
