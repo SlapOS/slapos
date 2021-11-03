@@ -104,7 +104,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         do path_list.append(query) %}
 {%-       endif %}
 {%-       set path = '?'.join(path_list) %}
-{%-       if hostname and port %}
+{%-       if hostname and port or len(info_dict['netloc-list']) > 0 %}
   timeout server {{ slave_instance['request-timeout'] }}s
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
@@ -120,7 +120,15 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           endif %}
 {%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
 {%-         endif %}
+{%-         if len(info_dict['netloc-list']) > 0 %}
+{%-           set counter = {'count': 1} %}
+{%-           for netloc in info_dict['netloc-list'] %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-             do counter.__setitem__('count', counter['count'] + 1) %}
+{%-           endfor %}
+{%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-         endif %}
 {%-         for active_check_option in active_check_option_list %}
   {{ active_check_option }}
 {%-         endfor %}
@@ -129,7 +137,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         endif %}
 {%-       endif %}
 {%-     endif %}
-{%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] %}
+{%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] or len(info_dict['health-check-netloc-list']) > 0 %}
 {%-       set ssl_list = [] %}
 {%-       if info_dict['health-check-failover-scheme'] == 'https' %}
 {%-         if slave_instance['health-check-authenticate-to-failover-backend'] %}
@@ -159,10 +167,18 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
 {%-       endif %}
 {%-       set path = '?'.join(path_list) %}
 {%-       if hostname and port %}
-  timeout server {{ slave_instance['request-timeout'] }}s
-  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
-  retries {{ slave_instance['backend-connect-retries'] }}
+{%-         if len(info_dict['health-check-netloc-list']) > 0 %}
+{%-           set counter = {'count': 1} %}
+{%-           for netloc in info_dict['health-check-netloc-list'] %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }}
+{%-             do counter.__setitem__('count', counter['count'] + 1) %}
+{%-           endfor %}
+{%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
+{%-         endif %}
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  timeout server {{ slave_instance['request-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
 {%-         if path %}
   http-request set-path {{ path }}%[path]
 {%-         endif %}
