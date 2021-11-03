@@ -1071,6 +1071,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
+  def _get_backend_haproxy_configuration(self):
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      return fh.read()
+
   @classmethod
   def requestDefaultInstance(cls, state='started'):
     default_instance = super(
@@ -1326,6 +1332,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
+      'url-netloc-list': {
+        'url': cls.backend_url,
+        'url-netloc-list': '127.0.0.2:9999 127.0.0.3:9494',
+      },
       'auth-to-backend': {
         # in here use reserved port for the backend, which is going to be
         # started later
@@ -1352,6 +1362,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'strict-transport-security': '200',
         'strict-transport-security-sub-domains': True,
         'strict-transport-security-preload': True,
+      },
+      'https-url-netloc-list': {
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
+        'https-url-netloc-list': '127.0.0.2:9999 127.0.0.3:9494',
       },
       'server-alias': {
         'url': cls.backend_url,
@@ -1964,6 +1979,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that no needless entries are generated
     self.assertIn("backend _Url-http\n", content)
     self.assertNotIn("backend _Url-https\n", content)
+
+  def test_url_netloc_list(self):
+    self.assertSlaveBase('url-netloc-list')
+    backend_haproxy_configuration = self._get_backend_haproxy_configuration()
+
+    # simply check backend haproxy configuration according to the requirement
+    self.assertIn(
+      """backend _url-netloc-list-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _url-netloc-list-backend-http-1 127.0.0.2:9999
+  server _url-netloc-list-backend-http-2 127.0.0.3:9494""",
+      backend_haproxy_configuration
+    )
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
@@ -4463,6 +4493,32 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
+
+  def test_https_url_netloc_list(self):
+    self.assertSlaveBase('url-netloc-list')
+    backend_haproxy_configuration = self._get_backend_haproxy_configuration()
+
+    # simply check backend haproxy configuration according to the requirement
+    self.assertIn(
+      """backend _https-url-netloc-list-http
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _https-url-netloc-list-backend-http %s:%s
+  http-request set-path /http%%[path]""" % (
+        self._ipv4_address, self._server_http_port),
+      backend_haproxy_configuration
+    )
+
+    self.assertIn(
+      """backend _https-url-netloc-list-https
+  timeout server 12s
+  timeout connect 5s
+  retries 3
+  server _https-url-netloc-list-backend-https-1 127.0.0.2:9999
+  server _https-url-netloc-list-backend-https-2 127.0.0.3:9494""",
+      backend_haproxy_configuration
+    )
 
 
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -7168,6 +7224,20 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
         'health-check-failover-https-url':
         cls.backend_url + 'failover-https-url?a=b&c=',
       },
+      'health-check-failover-url-netloc-list': {
+        'https-only': False,  # http and https access to check
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'url': cls.backend_url + 'url',
+        'https-url': cls.backend_url + 'https-url',
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url',
+        'health-check-failover-url': cls.backend_url + 'failover-url?a=b&c=',
+        'health-check-failover-https-url':
+        cls.backend_url + 'failover-https-url?a=b&c=',
+        'health-check-failover-url-netloc-list':
+        '127.0.0.2:9999 127.0.0.3:9494',
+      },
       'health-check-failover-url-auth-to-backend': {
         'https-only': False,  # http and https access to check
         'health-check-timeout': 1,  # fail fast for test
@@ -7257,12 +7327,6 @@ backend _health-check-default-http
   timeout check 2s""" % (backend, )
     }
 
-  def _get_backend_haproxy_configuration(self):
-    backend_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
-    with open(backend_configuration_file) as fh:
-      return fh.read()
-
   def _test(self, key):
     parameter_dict = self.assertSlaveBase(key)
     self.assertIn(
@@ -7346,6 +7410,29 @@ backend _health-check-default-http
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
+    )
+
+  def test_health_check_failover_url_netloc_list(self):
+    self.assertSlaveBase('health-check-failover-url-netloc-list')
+    backend_haproxy_configuration = self._get_backend_haproxy_configuration()
+    self.assertIn(
+      """backend _health-check-failover-url-netloc-list-http-failover
+  server _health-check-failover-url-netloc-list-backend-http-1 127.0.0.2:9999
+  server _health-check-failover-url-netloc-list-backend-http-2 127.0.0.3:9494
+  timeout connect 5s
+  timeout server 12s
+  retries 3""",
+      backend_haproxy_configuration
+    )
+
+    self.assertIn(
+      """backend _health-check-failover-url-netloc-list-https-failover
+  server _health-check-failover-url-netloc-list-backend-https-1 127.0.0.2:9999
+  server _health-check-failover-url-netloc-list-backend-https-2 127.0.0.3:9494
+  timeout connect 5s
+  timeout server 12s
+  retries 3""",
+      backend_haproxy_configuration
     )
 
   def test_health_check_failover_url_auth_to_backend(self):

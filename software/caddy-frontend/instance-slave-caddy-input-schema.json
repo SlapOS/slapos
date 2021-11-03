@@ -363,6 +363,11 @@
       "type": "string",
       "title": "[EXPERT] List of netlocs for \"Failover backend URL\"",
       "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
+    },
+    "health-check-failover-https-url-netloc-list": {
+      "type": "string",
+      "title": "[EXPERT] List of netlocs for \"Failover backend URL\"",
+      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
     }
   },
   "title": "Input Parameters",
