@@ -151,7 +151,7 @@ function cli() {
               parachute(action)
               goto(point)
               altitude(altitude)
-              speed(altitude)
+              speed(speed)
               gotoCoord(latitude, longitude)
               exit
               help
