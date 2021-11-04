@@ -207,6 +207,7 @@ context =
 {%       endif %}
 {%     endif %}
 {%   endfor %}
+{%   set debugger = slave['debug-debug-debug'] %}
 {%   for url_key in ['url-netloc-list', 'https-url-netloc-list'] %}
 {%     if url_key in slave %}
 {%       do slave_warning_list.append('TODO implement validation %s %r' % (url_key, slave[url_key])) %}

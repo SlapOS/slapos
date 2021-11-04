@@ -120,6 +120,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           endif %}
 {%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
 {%-         endif %}
+{{ info_dict['debug'] }}
 {%-         if len(info_dict['netloc-list']) > 0 %}
 {%-           set counter = {'count': 1} %}
 {%-           for netloc in info_dict['netloc-list'] %}
