@@ -1,182 +1,207 @@
-import * as mavsdk from "{{ qjs_wrapper }}";
-import * as os from "os";
-import { fdopen, printf } from "std";
+/*jslint indent2 */
+/*global console, std */
+
+import {
+  arm,
+  doParachute,
+  land,
+  loiter,
+  setAirspeed,
+  setAltitude,
+  setTargetLatLong,
+  start,
+  stop,
+  stopPubsub,
+  takeOff
+} from "{{ qjs_wrapper }}"; //jslint-quiet
+import {Worker} from "os";
+/*jslint-disable*/
+import * as std from "std";
+/*jslint-enable*/
 
 const IP = "{{ autopilot_ip }}";
 const PORT = "7909";
-const URL = "udp://" + IP + ":" +  PORT;
-const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
+const URL = "udp://" + IP + ":" + PORT;
+const LOG_FILE = "{{ log_dir }}/mavsdk-log";
 
-function test(a, b) {
-  console.log(a, b);
+function disconnect() {
+  stop();
+  return 0;
+}
+
+function displayMessage(message) {
+  console.log(message);
+  return 0;
+}
+
+function parachute(param) {
+  doParachute(param);
+  return 0;
+}
+
+const wrongParameters = displayMessage.bind(null, "Wrong parameters");
+
+function checkNumber(value, toExecute) {
+  return (
+    Number.isNaN(value)
+    ? wrongParameters
+    : toExecute.bind(null, value)
+  );
 }
 
 function cli() {
+  let s;
+  let undefined_cmd;
+  let altitude;
+  let cmd;
+  let timeout;
+  let worker;
+  let name;
+  let latitude;
+  let longitude;
+  let param;
+  let speed;
 
-        var f = fdopen(os.stdin, "r");
-        var dict = {};
+  const help = `
+    connect(timeout)
+    disconnect
+    arm
+    takeoff
+    land
+    parachute(action)
+    goto(point)
+    altitude(altitude)
+    speed(speed)
+    gotoCoord(latitude, longitude)
+    exit
+    help
+ `;
 
-        printf("Will connect to %s\n", URL);
+  const f = std.fdopen(std.in, "r");
+  let dict = {};
 
-        while(true) {
-          printf("> ");
-          var s = f.getline();
-          var cmd;
-          var undefined_cmd = false;
+  console.log("Will connect to", URL);
 
-          switch(s) {
-            case "connect":
-              printf("Timeout: ");
-              var timeout = parseInt(f.getline());
-              if(isNaN(timeout)) {
-                console.log("Wrong parameters");
-                continue;
-              }
-              cmd = () => {return mavsdk.start(URL, LOG_FILE, timeout);};
-	      var worker = new os.Worker("{{ publish_script }}");
-              break;
+  while (true) {
+    std.printf("> ");
+    s = f.getline();
+    undefined_cmd = false;
 
-            case "disconnect":
-              cmd = () => {mavsdk.stop(); return 0;};
-              break;
+    switch (s) {
+    case "altitude":
+      std.printf("Altitude: ");
+      altitude = parseFloat(f.getline());
+      cmd = checkNumber(altitude, setAltitude);
+      break;
 
-            case "arm":
-              cmd = mavsdk.arm;
-              break;
+    case "arm":
+      cmd = arm;
+      break;
 
-            case "takeoff":
-              cmd = mavsdk.takeOff;
-              break;
+    case "connect":
+      std.printf("Timeout: ");
+      timeout = parseInt(f.getline());
+      cmd = checkNumber(timeout, start.bind(null, URL, LOG_FILE));
+      worker = new Worker("{{ publish_script }}");
+      break;
 
-            case "land":
-              cmd = mavsdk.land;
-              break;
+    case "define":
+      std.printf("Name: ");
+      name = f.getline();
+      std.printf("Latitude: ");
+      latitude = parseFloat(f.getline());
+      std.printf("Longitude: ");
+      longitude = parseFloat(f.getline());
+      dict[name] = [latitude, longitude];
+      cmd = displayMessage.bind(
+        null,
+        `${name} defined as ${latitude} ${longitude}`
+      );
+      break;
 
-            case "define":
-              printf("Name: ");
-              var name = f.getline();
-              printf("Latitude: ");
-              var latitude = parseFloat(f.getline());
-              printf("Longitude: ");
-              var longitude = parseFloat(f.getline());
-              dict[name] = [latitude, longitude];
-              continue;
+    case "disconnect":
+      cmd = disconnect;
+      break;
 
-            case "print":
-              printf("Name: ");
-              var name = f.getline();
-              if(name in dict) {
-                console.log(dict[name][0]);
-                console.log(dict[name][1]);
-              }
-              continue;
+    case "exit":
+      stopPubsub();
+      return;
 
-            case "parachute":
-              printf("Action: ");
-              var param = parseInt(f.getline());
-              if(isNaN(param)) {
-                console.log("Wrong parameters");
-                continue;
-              }
+    case "goto":
+      std.printf("Name: ");
+      name = f.getline();
+      if (dict.hasOwnProperty(name)) {
+        latitude = dict[name][0];
+        longitude = dict[name][1];
+        cmd = checkNumber(longitude, checkNumber(latitude, setTargetLatLong));
+      } else {
+        cmd = displayMessage.bind(`${name} is not defined yet`);
+      }
+      break;
 
-              cmd = () => {mavsdk.doParachute(param);return 0;};
-              break;
+    case "gotoCoord":
+      std.printf("Latitude: ");
+      latitude = parseFloat(f.getline());
+      std.printf("Longitude: ");
+      longitude = parseFloat(f.getline());
+      cmd = checkNumber(longitude, checkNumber(latitude, setTargetLatLong));
+      break;
 
-            case "loiter":
-              cmd = mavsdk.loiter;
-              break;
+    case "help":
+      cmd = displayMessage.bind(null, help);
+      break;
 
-            case "goto":
-              printf("Name: ");
-              var name = f.getline();
-              if(name in dict) {
-                var latitude = dict[name][0];
-                var longitude = dict[name][1];
-                if(isNaN(latitude) || isNaN(longitude)) {
-                  console.log("Wrong parameters");
-                  continue;
-                }
-                cmd = () => {return mavsdk.setTargetLatLong(latitude, longitude);};
-              }
-              else {
-                printf("%s wasn't defined yet\n", name);
-                continue;
-              }
-              break;
+    case "land":
+      cmd = land;
+      break;
 
-            case "altitude":
-              printf("Altitude: ");
-              var altitude = parseFloat(f.getline());
-              if(isNaN(altitude)) {
-                console.log("Wrong parameters");
-                continue;
-              }
-              cmd = () => {return mavsdk.setAltitude(altitude);};
-              break;
-            case "speed":
-              printf("Speed: ");
-              var speed = parseFloat(f.getline());
-              if(isNaN(speed)) {
-                console.log("Wrong parameters");
-                continue;
-              }
-              cmd = () => {return mavsdk.setAirspeed(speed);};
-              break;
+    case "loiter":
+      cmd = loiter;
+      break;
 
-            case "gotoCoord":
-              printf("Latitude: ");
-              var latitude = parseFloat(f.getline());
-              printf("Longitude: ");
-              var longitude = parseFloat(f.getline());
-              if(isNaN(latitude) || isNaN(longitude)) {
-                console.log("Wrong parameters");
-                continue;
-              }
-              cmd = () => {return mavsdk.setTargetLatLong(latitude, longitude);};
-              break;
+    case "parachute":
+      std.printf("Action: ");
+      param = parseInt(f.getline());
+      cmd = checkNumber(param, parachute);
+      break;
 
-            case "exit":
-	      mavsdk.stopPubsub();
-              return;
+    case "print":
+      std.printf("Name: ");
+      name = f.getline();
+      displayMessage.bind(
+        null,
+        dict.hasOwnProperty(name)
+        ? `${dict[name][0]}\n${dict[name][1]}`
+        : `${name} undefined`
+      );
+      break;
 
-            case "help":
-              var help = `
-              connect(timeout)
-              disconnect
-              arm
-              takeoff
-              land
-              parachute(action)
-              goto(point)
-              altitude(altitude)
-              speed(speed)
-              gotoCoord(latitude, longitude)
-              exit
-              help
-              `;
-              console.log(help);
-              cmd = () => {return 0;};
-              break;
+    case "speed":
+      std.printf("Speed: ");
+      speed = parseFloat(f.getline());
+      cmd = checkNumber(speed, setAirspeed);
+      break;
 
-            case "":
-              continue;
+    case "takeoff":
+      cmd = takeOff;
+      break;
 
-            default:
-              undefined_cmd = true;
-              console.log("    Undefined command");
-              cmd = () => {return 0;};
-          }
+    default:
+      undefined_cmd = true;
+      cmd = displayMessage.bind(null, "    Undefined command");
+    }
 
-          var ret = cmd();
-          if( ret != 0 )
-            console.log("    [ERROR] function:\n", cmd, "\nreturn value:", ret);
-          else if (s != "help" && !undefined_cmd )
-            console.log("    Command successful");
-        }
+    let ret = cmd();
+    if (ret !== 0) {
+      console.log("    [ERROR] function:\n", cmd, "\nreturn value:", ret);
+    } else if (s !== "help" && !undefined_cmd) {
+      console.log("    Command successful");
+    }
+  }
 
-        f.close();
+  f.close();
 
-	return;
+  return;
 }
 
 cli();

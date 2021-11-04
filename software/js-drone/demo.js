@@ -1,88 +1,132 @@
-import * as mavsdk from "{{ qjs_wrapper }}";
-import { sleep, Worker } from "os";
-import { exit, printf } from "std";
+/*jslint indent2 */
+/*global console */
 
-function exit_on_fail(ret, msg) {
-  if(ret) {
-    console.log(msg);
-    mavsdk.stopPubsub();
-    sleep(1000);
-    exit(-1);
-  }
-}
+import {
+  arm,
+  doParachute,
+  getAltitude,
+  getInitialAltitude,
+  getInitialLatitude,
+  getInitialLongitude,
+  getLatitude,
+  getLongitude,
+  getTakeOffAltitude,
+  getYaw,
+  healthAllOk,
+  loiter,
+  start,
+  setAltitude,
+  setTargetLatLong,
+  stop,
+  stopPubsub,
+  takeOff
+} from "{{ qjs_wrapper }}"; //jslint-quiet
+import {sleep, Worker} from "os";
+import {exit} from "std";
 
 const IP    = "{{ autopilot_ip }}";
 const PORT  = "7909";
+const URL = "udp://" + IP + ":" + PORT;
 const LOG_FILE  = "{{ log_dir }}/mavsdk-log";
+
 const EPSILON = 105;
 const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
 
-const DEMO = false;
-const SIMULATION = {{ is_a_simulation }};
-
-var LANDING_ALTITUDE = 150;
-var INITIAL_ALTITUDE = 210;
-var HIGH_ALTITUDE = 230;
-var LAT1 = 45.83055;
-var LON1 = 13.95279;
-var LAT2 = 45.82889;
-var LON2 = 13.95086;
-
-if(DEMO) {
-  LANDING_ALTITUDE = 105;
-  INITIAL_ALTITUDE = 100;
-  HIGH_ALTITUDE = 170;
-  LAT1 = 45.91044;
-  LON1 = 13.59627;
-  LAT2 = 45.90733;
-  LON2 = 13.59704;
-}
-
-const URL = "udp://" + IP + ":" + PORT;
-
-console.log("Will connect to", URL);
-
 function connect() {
-  exit_on_fail(mavsdk.start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
+  exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
 }
 
-function abs(x) {
-  if(x > 0)
-    return x
-  return -x;
-}
 function distance(lat1, lon1, lat2, lon2) {
-  var R = 6371e3; // meters
-  var la1 = lat1 * Math.PI/180; // la, lo in radians
-  var la2 = lat2 * Math.PI/180;
-  var diffla = (lat2-lat1) * Math.PI/180;
-  var difflo = (lon2-lon1) * Math.PI/180;
+  const R = 6371e3; // meters
+  const la1 = lat1 * Math.PI/180; // la, lo in radians
+  const la2 = lat2 * Math.PI/180;
+  const lo1 = lon1 * Math.PI/180;
+  const lo2 = lon2 * Math.PI/180;
 
-  var a = Math.sin(diffla/2) * Math.sin(diffla/2) +
-            Math.cos(la1) * Math.cos(la2) *
-            Math.sin(difflo/2) * Math.sin(difflo/2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  //haversine formula
+  const sinLat = Math.sin((la2 - la1)/2);
+  const sinLon = Math.sin((lo2 - lo1)/2);
+  const h = sinLat*sinLat + Math.cos(la1)*Math.cos(la2)*sinLon*sinLon
+  return 2*R*Math.asin(Math.sqrt(h));
+}
 
-  var d = R * c; // in meters
-  return d;
+function exit_on_fail(ret, msg) {
+  if(ret) {
+    console.log(msg);
+    stopPubsub();
+    sleep(3000);
+    exit(-1);
+  }
+}
+
+function goToAltitude(target_altitude, wait, go) {
+  var altitude;
+
+  if(go) {
+    exit_on_fail(
+      setAltitude(target_altitude),
+      `Failed to go to altitude ${target_altitude} m`
+    );
+  }
+
+  if(wait) {
+    waitForAltitude(target_altitude);
+  }
+}
+
+function land() {
+  var latitude;
+  var longitude;
+  var yaw;
+
+  var cmd_res;
+
+  console.log("[DEMO] Going to landing coords...\n");
+  setLatLong(LAT2, LON2, 0);
+  console.log("[DEMO] Setting altitude...\n");
+  goToAltitude(LANDING_ALTITUDE, true, true);
+
+  while(true) {
+    yaw = getYaw();
+    console.log(`[DEMO] Waiting for yaw... (${yaw} , ${TARGET_YAW})`);
+    if(Math.abs(yaw - TARGET_YAW) < EPSILON_YAW) {
+      break;
+    }
+    sleep(250);
+  }
+
+  console.log("[DEMO] Deploying parachute...");
+  exit_on_fail(doParachute(2), "Failed to deploy parachute");
 }
 
 function setLatLong(latitude, longitude, target_altitude) {
-  if(target_altitude != 0)
-    setAltitude(target_altitude, false, true);
-
   var i;
-  for(i = 0; i < 3; i++) {
-    exit_on_fail(mavsdk.setTargetLatLong(latitude, longitude), "Failed to go to (" + latitude + ", " + longitude + ")");
+  var cur_latitude;
+  var cur_longitude;
+  var d;
+  var altitude;
+
+  if(target_altitude !== 0) {
+    setAltitude(target_altitude, false, true);
+  }
+
+  for(i = 0; i < 3; i+=1) {
+    console.log(`Going to (${latitude}, ${longitude}) from
+                 (${getLatitude()}, ${getLongitude()}`);
+    exit_on_fail(
+      setTargetLatLong(latitude, longitude),
+      `Failed to go to (${latitude}, ${longitude})`
+    );
     sleep(500);
   }
   while(true) {
-    var cur_latitude = mavsdk.getLatitude();
-    var cur_longitude = mavsdk.getLongitude();
-    var d = distance(cur_latitude, cur_longitude, latitude, longitude);
-    printf("Waiting for drone to get to destination (%s m), (%s , %s), (%s, %s)\n", d, cur_latitude, cur_longitude, latitude, longitude);
+    cur_latitude = getLatitude();
+    cur_longitude = getLongitude();
+    d = distance(cur_latitude, cur_longitude, latitude, longitude);
+    console.log(`Waiting for drone to get to destination (${d} m),
+    (${cur_latitude} , ${cur_longitude}), (${latitude}, ${longitude})`);
     if(d < EPSILON) {
       sleep(6000);
       return;
@@ -90,87 +134,92 @@ function setLatLong(latitude, longitude, target_altitude) {
     sleep(1000);
   }
 
-  if(target_altitude != 0)
-    setAltitude(target_altitude, true, false);
-}
-
-function setAltitude(target_altitude, wait, go) {
-  if(go)
-    exit_on_fail(mavsdk.setAltitude(target_altitude), "Failed to go to altitude " + target_altitude + " m ");
-
-  if(wait) {
-    while(true) {
-      var altitude = mavsdk.getAltitude();
-      printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, target_altitude);
-      if(abs(altitude - target_altitude) < EPSILON_ALTITUDE)
-        break;
-      sleep(1000);
-    }
+  if(target_altitude !== 0) {
+    goToAltitude(target_altitude, true, false);
   }
 }
 
-function land() {
-  var latitude, longitude;
-
-  var cmd_res;
-
-  console.log("[DEMO] Going to landing coords...\n");
-  setLatLong(LAT2, LON2, 0);
-  console.log("[DEMO] Setting altitude...\n");
-  setAltitude(LANDING_ALTITUDE, true, true);
-
-  while(true) {
-    var yaw = mavsdk.getYaw();
-    printf("[DEMO] Waiting for yaw... (%s , %s)\n", yaw, TARGET_YAW);
-    if(abs(yaw - TARGET_YAW) < EPSILON_YAW)
-      break;
-    sleep(250);
-  }
-
-  std.printf("[DEMO] Deploying parachute...\n");
-  exit_on_fail(mavsdk.doParachute(2), "Failed to deploy parachute");
-}
-
-console.log("[DEMO] Connecting...\n");
-connect();
-var worker = new Worker("{{ publish_script }}");
-if(SIMULATION) {
-  /*while(mavsdk.healthAllOk() != true) {
-    console.log("[DEMO] Vehicule not ready to arm ...");
+function waitForAltitude(target_altitude) {
+  var altitude = getAltitude();
+  while(Math.abs(altitude - target_altitude) > EPSILON_ALTITUDE) {
+    console.log(
+      `[DEMO] Waiting for altitude... (${altitude} , ${target_altitude})`);
     sleep(1000);
-  }*/
-  exit_on_fail(arm(), "Failed to arm");
+    altitude = getAltitude();
+  }
+}
+
+(function() {
+  const DEMO = false;
+  const SIMULATION = {{ is_a_simulation }};
+
+  var worker;
+  var cmd_res;
+  var altitude;
+
+  var LANDING_ALTITUDE = 150;
+  var INITIAL_ALTITUDE = 210;
+  var HIGH_ALTITUDE = 230;
+  var LAT1 = 45.83055;
+  var LON1 = 13.95279;
+  var LAT2 = 45.82889;
+  var LON2 = 13.95086;
+
+  if(DEMO) {
+    LANDING_ALTITUDE = 105;
+    INITIAL_ALTITUDE = 100;
+    HIGH_ALTITUDE = 170;
+    LAT1 = 45.91044;
+    LON1 = 13.59627;
+    LAT2 = 45.90733;
+    LON2 = 13.59704;
+  }
+
+  console.log("Will connect to", URL);
+
+  console.log("[DEMO] Connecting...\n");
+  connect();
+  worker = new Worker("{{ publish_script }}");
+  if(SIMULATION) {
+    // healthCheck not ok for now
+    /*while(healthAllOk() != true) {
+      console.log("[DEMO] Vehicule not ready to arm ...");
+      sleep(1000);
+    }*/
+    exit_on_fail(arm(), "Failed to arm");
+    do {
+      sleep(1000);
+      cmd_res = takeOff();
+    } while(cmd_res);
+    // takeOff is 40 but climbout is 60
+    //waitForAltitude(getInitialAltitude() + getTakeOffAltitude());
+    waitForAltitude(getInitialAltitude() + 60);
+    goToAltitude(INITIAL_ALTITUDE + 1, true, true);
+
+    LAT1 = (getInitialLatitude() - 0.00166).toFixed(5);
+    LON1 = (getInitialLongitude() - 0.00193).toFixed(5);
+    LAT2 = (LAT1 - 0.00166).toFixed(5);
+    LON2 = (LON1 - 0.00193).toFixed(5);
+  }
 
   do {
     sleep(1000);
-    cmd_res = takeOff();
-  } while(cmd_res);
-  mavsdk.setAltitude(INITIAL_ALTITUDE + 1);
+    altitude = getAltitude();
+    console.log(
+      `[DEMO] Waiting for altitude... (${altitude} , ${INITIAL_ALTITUDE})`);
+  }
+  while(altitude < INITIAL_ALTITUDE);
 
-  LAT1 = (mavsdk.getInitialLatitude() - 0.00166).toFixed(5);
-  LON1 = (mavsdk.getInitialLongitude() - 0.00193).toFixed(5);
-  LAT2 = (LAT1 - 0.00166).toFixed(5);
-  LON2 = (LON1 - 0.00193).toFixed(5);
-}
-
-console.log("[DEMO] Setting loiter mode...\n");
-
-while(true) {
-  var altitude = mavsdk.getAltitude();
-  printf("[DEMO] Waiting for altitude... (%s , %s)\n", altitude, INITIAL_ALTITUDE);
-  if(altitude > INITIAL_ALTITUDE)
-    break;
+  console.log("[DEMO] Setting loiter mode...\n");
+  loiter();
   sleep(1000);
-}
 
-mavsdk.loiter();
-sleep(1000);
+  console.log("[DEMO] Going to first point...\n");
+  setLatLong(LAT1, LON1, HIGH_ALTITUDE);
 
-console.log("[DEMO] Going to first point...\n");
-setLatLong(LAT1, LON1, HIGH_ALTITUDE);
-
-sleep(30000);
-console.log("[DEMO] Landing...\n");
-land();
-mavsdk.stopPubsub();
-sleep(3000)
+  sleep(30000);
+  console.log("[DEMO] Landing...\n");
+  land();
+  stopPubsub();
+  sleep(3000);
+})();
