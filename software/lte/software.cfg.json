@@ -27,22 +27,6 @@
              "response": "instance-ims-schema.json",
              "index": 2
          },
-        "ims": {
-            "title": "MBMS",
-            "software-type": "mbms",
-            "description": "MBMS Configuration",
-            "request": "instance-mbms-input-schema.json",
-            "response": "instance-mbms-schema.json",
-            "index": 2
-        },
-        "license-server": {
-             "title": "License Server",
-             "software-type": "license",
-             "description": "License Server",
-             "request": "instance-license-server-input-schema.json",
-             "response": "instance-license-schema.json",
-             "index": 2
-         },
         "default": {
             "title": "Default",
             "software-type": "default",
