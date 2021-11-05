@@ -34,12 +34,6 @@
             "type": "string",
 	    "default": ""
         },
-         "license_key_path" : {
-            "title": "License Key Path",
-            "description": "Path to where the license *.key files are on the filesytem (to replace ~/.license folder",
-            "type": "string",
-            "default": ""
-        },
         "gtp_addr": {
             "title": "GTP bind address",
             "description": "IP address of the network interface connected to the core network",

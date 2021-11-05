@@ -21,12 +21,6 @@
             "description": "ue_db_path is used to extend configuration for include ue_db configuration",
             "type": "string",
             "default": ""
-        },
-        "license_key_path" : {
-            "title": "License Key Path",
-            "description": "Path to where the license *.key files are on the filesytem (to replace ~/.license folder",
-            "type": "string",
-            "default": ""
         }
    }
 }
