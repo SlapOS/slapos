@@ -225,6 +225,8 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
   script_relpath = os.path.join(
     'srv', 'runner', 'instance', 'slappart0',
     'srv', '.backup_identity_script')
+  signature_relpath = os.path.join(
+    'srv', 'backup', 'theia', 'backup.signature')
 
   def assertPromiseFailure(self, *msg):
     # Force promises to recompute regardless of periodicity
@@ -291,6 +293,10 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
     self.customSignatureScript(content=None)
     self.customRestoreScript(content=None)
     self.cleanupExitfiles()
+    try:
+      os.remove(self._getPartitionPath('import', self.signature_relpath))
+    except OSError:
+      pass
 
   def test_export_promise(self):
     self.writeFile(self.getExportExitfile(), '1')
@@ -303,17 +309,14 @@ class TestTheiaExportAndImportFailures(ExportAndImportMixin, ResilientTheiaTestC
   def test_custom_hash_script(self):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
-    backup_script = self._getPartitionPath(
-      'export', 'srv', 'backup', 'theia', self.script_relpath)
-    self.assertExportFailure('Compute backup signature\n ... ERROR !',
-      'Custom signature script %s failed' % os.path.abspath(backup_script),
+    custom_script = self._getPartitionPath('export', self.script_relpath)
+    self.assertExportFailure('Compute partitions backup signatures\n ... ERROR !',
+      'Custom signature script %s failed' % os.path.abspath(custom_script),
       'and stderr:\n%s' % errmsg)
 
   def test_signature_mismatch(self):
-    signature_file = self._getPartitionPath('import', 'srv', 'backup', 'theia', 'backup.signature')
-    moved_file = self._getPartitionPath('import', 'srv', 'backup', 'backup.signature.moved')
-    self.writeFile(moved_file, 'Bogus Hash\n', mode='a')
-    os.rename(moved_file, signature_file)
+    signature_file = self._getPartitionPath('import', self.signature_relpath)
+    self.writeFile(signature_file, 'Bogus Hash\n', mode='a')
     self.assertImportFailure('ERROR the backup signatures do not match')
 
   def test_restore_script_error(self):
@@ -397,8 +400,10 @@ class TestTheiaExportAndImport(ResilienceMixin, ExportAndImportMixin, ResilientT
     # Check that the dummy instance is not yet started
     self.checkLog(os.path.join(dummy_root, 'log.log'), self.initial_log, newline=None)
 
-    # Check that ~/srv/.backup_identity_script was called
-    signature = self._getPartitionPath('import', 'srv', 'backup', 'backup.signature.proof')
+    # Check that ~/srv/.backup_identity_script was detected and called
+    signature =  self._getPartitionPath(
+      'import', 'srv', 'backup', 'theia', 'slappart0.backup.signature.custom')
+    self.assertTrue(os.path.exists(signature))
     with open(signature) as f:
       self.assertIn('Custom script', f.read())
 
