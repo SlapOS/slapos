@@ -57,32 +57,32 @@ class TheiaImport(object):
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
     self.instance_dir = configp.get('slapos', 'instance_root')
-    mirror_dir = self.mirrorpath(self.instance_dir)
+    mirror_dir = self.mirror_path(self.instance_dir)
     partitions = glob.glob(os.path.join(mirror_dir, 'slappart*'))
     self.mirror_partition_dirs = [p for p in partitions if os.path.isdir(p)]
     self.logs = []
 
-  def mirrorpath(self, dst):
+  def mirror_path(self, dst):
     return os.path.abspath(os.path.join(
       self.backup_dir, os.path.relpath(dst, start=self.root_dir)))
 
-  def dstpath(self, src):
+  def dst_path(self, src):
     return os.path.abspath(os.path.join(
       self.root_dir, os.path.relpath(src, start=self.backup_dir)))
 
-  def restoretree(self, dst, exclude=(), extrargs=(), verbosity='-v'):
-    src = self.mirrorpath(dst)
+  def restore_tree(self, dst, exclude=(), extrargs=(), verbosity='-v'):
+    src = self.mirror_path(dst)
     return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
 
-  def restorefile(self, dst):
-    src = self.mirrorpath(dst)
+  def restore_file(self, dst):
+    src = self.mirror_path(dst)
     return copyfile(src, dst)
 
-  def restoredb(self):
-    copydb(self.sqlite3_bin, self.mirrorpath(self.proxy_db), self.proxy_db)
+  def restore_db(self):
+    copydb(self.sqlite3_bin, self.mirror_path(self.proxy_db), self.proxy_db)
 
-  def restorepartition(self, mirror_partition):
-    p = self.dstpath(mirror_partition)
+  def restore_partition(self, mirror_partition):
+    p = self.dst_path(mirror_partition)
     installed = parse_installed(p) if os.path.exists(p) else []
     copytree(self.rsync_bin, mirror_partition, p, exclude=installed)
 
@@ -97,31 +97,60 @@ class TheiaImport(object):
     print(' '.join(command))
     sp.check_call(command)
 
-  def verify(self, signaturefile):
-    pardir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
-    moved = os.path.join(pardir, 'backup.signature.moved')
-    proof = os.path.join(pardir, 'backup.signature.proof')
-    if os.path.exists(signaturefile):
-      os.rename(signaturefile, moved)
-    if not os.path.exists(moved):
-      msg = 'ERROR the backup signature file is missing'
-      print(msg)
+  def sign(self, signaturefile, root_dir):
+    with open(signaturefile, 'r') as f:
+      for line in f:
+        try:
+          _, relpath = line.strip().split(None, 1)
+        except ValueError:
+          yield 'Could not parse: %s' % line
+          continue
+        filepath = os.path.join(root_dir, relpath)
+        try:
+          signature = sha256sum(filepath)
+        except IOError:
+          yield 'Could not read: %s' % filepath
+          continue
+        yield '%s %s' % (signature, relpath)
+
+  def sign_custom(self, root_dir):
+    partition = self.dst_path(root_dir)
+    script = hashscript(partition)
+    if not script:
+      msg = 'ERROR: missing custom signature script for partition ' + partition
       raise Exception(msg)
+    return hashcustom(root_dir, script)
+
+  def find_signature_file(self, partition):
+    filename = os.path.basename(partition) + '.backup.signature'
+    signaturefile = os.path.join(self.backup_dir, filename)
+    if os.path.exists(signaturefile):
+      return signaturefile, False
+    signaturefile += '.custom'
+    if os.path.exists(signaturefile):
+      return signaturefile, True
+    raise Exception('ERROR: missing signature file for partition ' + partition)
+
+  def verify(self, signaturefile, root_dir, custom=False):
+    proof = signaturefile + '.proof'
+    if custom:
+      signatures = self.sign_custom(root_dir)
+    else:
+      signatures = self.sign(signaturefile, root_dir)
     with open(proof, 'w') as f:
-      for s in hashwalk(self.backup_dir, self.mirror_partition_dirs):
+      for s in signatures:
         f.write(s + '\n')
-    diffcommand = ('diff', moved, proof)
-    print(' '.join(diffcommand))
+    diffcommand = ('diff', signaturefile, proof)
     try:
       sp.check_output(
         diffcommand, stderr=sp.STDOUT, universal_newlines=True)
     except sp.CalledProcessError as e:
-      template = 'ERROR the backup signatures do not match\n\n%s'
-      msg = template % e.output
+      template = 'ERROR the backup signatures do not match\n\n%s\n%s'
+      msg = template % (' '.join(diffcommand), e.output)
       print(msg)
       raise Exception(msg)
 
-  def loginfo(self, msg):
+  def log(self, msg):
     print(msg)
     self.logs.append(msg)
 
@@ -144,44 +173,54 @@ class TheiaImport(object):
       sys.exit(exitcode)
 
   def restore(self):
-    self.loginfo('Verify backup signature')
-    self.verify(os.path.join(self.backup_dir, 'backup.signature'))
+    self.log('Verify main backup signature')
+    signaturefile = os.path.join(self.backup_dir, 'backup.signature')
+    self.verify(signaturefile, self.backup_dir)
 
-    self.loginfo('Stop slapproxy')
+    custom_partition_signatures = []
+    for m in self.mirror_partition_dirs:
+      signaturefile, custom = self.find_signature_file(m)
+      if custom:
+        custom_partition_signatures.append((signaturefile, m))
+      else:
+        self.log('Verify backup signature for ' + m)
+        self.verify(signaturefile, m)
+
+    self.log('Stop slapproxy')
     self.supervisorctl('stop', 'slapos-proxy')
 
-    self.loginfo('Restore partitions')
+    self.log('Restore partitions')
     for m in self.mirror_partition_dirs:
-      self.restorepartition(m)
+      self.restore_partition(m)
 
     for d in self.dirs:
-      self.loginfo('Restore directory ' + d)
-      self.restoretree(d)
+      self.log('Restore directory ' + d)
+      self.restore_tree(d)
 
-    self.loginfo('Restore slapproxy database')
-    self.restoredb()
+    self.log('Restore slapproxy database')
+    self.restore_db()
 
     timestamp = os.path.join(self.root_dir, 'etc', '.resilient_timestamp')
-    self.loginfo('Restore resilient timestamp ' + timestamp)
-    self.restorefile(timestamp)
+    self.log('Restore resilient timestamp ' + timestamp)
+    self.restore_file(timestamp)
 
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):
-      self.loginfo('Run custom restore script %s' % custom_script)
+      self.log('Run custom restore script %s' % custom_script)
       sp.check_call(custom_script)
 
-    self.loginfo('Start slapproxy again')
+    self.log('Start slapproxy again')
     self.supervisorctl('start', 'slapos-proxy')
 
-    self.loginfo('Reformat partitions')
+    self.log('Reformat partitions')
     self.slapos('node', 'format', '--now')
 
-    self.loginfo('Remove old supervisord configuration files')
+    self.log('Remove old supervisord configuration files')
     conf_dir = os.path.join(self.instance_dir, 'etc', 'supervisor.conf.d')
     for f in glob.glob(os.path.join(conf_dir, '*')):
       os.remove(f)
 
-    self.loginfo('Build Software Releases')
+    self.log('Build Software Releases')
     for i in range(3):
       try:
         self.slapos('node', 'software', '--all', '--logfile', self.sr_log)
@@ -191,18 +230,18 @@ class TheiaImport(object):
       else:
         break
 
-    self.loginfo('Remove old custom instance scripts')
+    self.log('Remove old custom instance scripts')
     partitions_glob = os.path.join(self.instance_dir, 'slappart*')
     scripts = os.path.join(partitions_glob, 'srv', 'runner-import-restore')
     for f in glob.glob(scripts):
       remove(f)
 
-    self.loginfo('Remove partition timestamps')
+    self.log('Remove partition timestamps')
     timestamps = os.path.join(partitions_glob, '.timestamp')
     for f in glob.glob(timestamps):
       remove(f)
 
-    self.loginfo('Build Instances')
+    self.log('Build Instances')
     cp_log = self.cp_log
     for i in range(3):
       try:
@@ -213,11 +252,15 @@ class TheiaImport(object):
       else:
         break
 
+    self.log('Verify custom backup signatures')
+    for signaturefile, m in custom_partition_signatures:
+      self.verify(signaturefile, m, True)
+
     for custom_script in glob.glob(scripts):
-      self.loginfo('Running custom instance script %s' % custom_script)
+      self.log('Running custom instance script %s' % custom_script)
       sp.check_call(custom_script)
 
-    self.loginfo('Done')
+    self.log('Done')
 
 
 if __name__ == '__main__':
