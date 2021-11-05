@@ -4,29 +4,11 @@
 
     "title": "Input Parameters",
     "properties": {
-        "Log": {
-            "type": "object",
-            "title": "Log Configuration",
-            "properties": {
-                "options": {
-                    "title": "Log Options",
-                    "description": "Log Options",
-                    "type": "string",
-                    "default": "all.level=debug,all.max_size=32"
-                }
-            }
-        },
         "gtp_addr": {
             "title": "GTP bind address",
             "description": "IP address of the network interface connected to the core network",
             "type": "string",
             "default": "127.0.1.1"
-        },
-        "mme_addr": {
-            "title": "MME address",
-            "description": "address of MME for S1AP connection",
-            "type": "string",
-            "default": "127.0.1.100"
         },
         "ue_db_path" : {
             "title": "UE configuration path (optional)",
@@ -34,53 +16,29 @@
             "type": "string",
             "default": ""
         },
-        "rf_params": {
-            "type": "object",
-            "title": "RF Parameters",
-            "properties": {
-                "tx_gain": {
-                    "title": "Tx gain",
-                    "description": "Tx gain (in dB)",
-                    "type": "number",
-                    "default": 90.0
-                },
-                "rx_gain": {
-                    "title": "Rx gain",
-                    "description": "Rx gain (in dB)",
-                    "type": "number",
-                    "default": 53.0
-                }
-            }
+        "tx_gain": {
+            "title": "Tx gain",
+            "description": "Tx gain (in dB)",
+            "type": "number",
+            "default": 70.0
         },
-        "license_key_path" : {
-            "title": "License Key Path",
-            "description": "Path to where the license *.key files are on the filesytem (to replace ~/.license folder",
-            "type": "string",
-            "default": ""
+        "rx_gain": {
+            "title": "Rx gain",
+            "description": "Rx gain (in dB)",
+            "type": "number",
+            "default": 30.0
         },
-        "cell_list": {
-            "title": "Cell List",
-            "description": "Cell List",
-            "type": "object",
-            "patternProperties": {
-                ".*": {
-                    "properties": {
-                        "dl_earfcn": {
-                            "title": "DL EARFCN",
-                            "description": "Downlink EARFCN of the cell",
-                            "type": "number",
-                            "default": 3350
-                        },
-                        "n_id_cell": {
-                            "title": "Physical cell ID",
-                            "description": "Physical cell ID",
-                            "type": "number",
-                            "default": 1
-                        }
-                    },
-                    "type": "object"
-                }
-            }
+        "dl_earfcn": {
+            "title": "DL EARFCN",
+            "description": "Downlink EARFCN of the cell",
+            "type": "number",
+            "default": 38050
+        },
+        "n_rb_dl": {
+            "title": "DL RB",
+            "description": "number of DL resource blocks",
+            "type": "number",
+            "default": 100
         }
     }
 }
