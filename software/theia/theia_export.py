@@ -55,49 +55,74 @@ class TheiaExport(object):
     self.copytree_partitions_args = {}
     self.logs = []
 
-  def mirrorpath(self, src):
+  def mirror_path(self, src):
     return os.path.abspath(os.path.join(
       self.backup_dir, os.path.relpath(src, start=self.root_dir)))
 
-  def backuptree(self, src, exclude=(), extrargs=(), verbosity='-v'):
-    dst = self.mirrorpath(src)
-    return copytree(self.rsync_bin, src, dst, exclude, extrargs, verbosity)
+  def backup_tree(self, src):
+    return copytree(self.rsync_bin, src, self.mirror_path(src))
 
-  def backupfile(self, src):
-    dst = self.mirrorpath(src)
-    return copyfile(src, dst)
+  def backup_file(self, src):
+    return copyfile(src, self.mirror_path(src))
 
-  def backupdb(self):
-    copydb(self.sqlite3_bin, self.proxy_db, self.mirrorpath(self.proxy_db))
+  def backup_db(self):
+    copydb(self.sqlite3_bin, self.proxy_db, self.mirror_path(self.proxy_db))
 
-  def backuppartition(self, partition):
+  def backup_partition(self, partition):
     installed = parse_installed(partition)
     rules = os.path.join(partition, 'srv', 'exporter.exclude')
     extrargs = ('--filter=.-/ ' + rules,) if os.path.exists(rules) else ()
-    self.backuptree(partition, exclude=installed, extrargs=extrargs)
-    self.copytree_partitions_args[partition] = (installed, extrargs)
+    dst = self.mirror_path(partition)
+    copytree(self.rsync_bin, partition, dst, installed, extrargs)
+    self.copytree_partitions_args[partition] = (dst, installed, extrargs)
 
-  def sign(self, signaturefile):
+  def sign(self, signaturefile, signatures):
     remove(signaturefile)
     pardir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
-    tmpfile = os.path.join(pardir, 'backup.signature.tmp')
-    mirror_partitions = [self.mirrorpath(p) for p in self.partition_dirs]
+    tmpfile = os.path.join(pardir, os.path.basename(signaturefile) + '.tmp')
     with open(tmpfile, 'w') as f:
-      for s in hashwalk(self.backup_dir, mirror_partitions):
+      for s in signatures:
         f.write(s + '\n')
     os.rename(tmpfile, signaturefile)
 
-  def checkpartition(self, partition, pattern='/srv/backup/'):
-    installed, extrargs = self.copytree_partitions_args[partition]
-    output = self.backuptree(
+  def sign_root(self):
+    signaturefile = os.path.join(self.backup_dir, 'backup.signature')
+    signatures = hashwalk(self.backup_dir, self.mirror_path(self.instance_dir))
+    self.sign(signaturefile, signatures)
+
+  def sign_partition(self, partition):
+    dst = self.mirror_path(partition)
+    filename = os.path.basename(partition) + '.backup.signature'
+    signaturefile = os.path.join(self.backup_dir, filename)
+    script = hashscript(partition)
+    if script:
+      signaturefile += '.custom'
+      self.sign(signaturefile, hashcustom(dst, script))
+    else:
+      self.sign(signaturefile, hashwalk(dst))
+
+  def remove_signatures(self):
+    pattern = os.path.join(self.backup_dir, '*backup.signature*')
+    signature_files = glob.glob(pattern)
+    for f in signature_files:
+      try:
+        os.remove(f)
+      except OSError:
+        pass
+
+  def check_partition(self, partition, pattern='/srv/backup/'):
+    dst, installed, extrargs = self.copytree_partitions_args[partition]
+    output = copytree(
+      self.rsync_bin,
       partition,
+      dst,
       exclude=installed,
       extrargs=extrargs + ('--dry-run', '--update'),
       verbosity='--out-format=%n',
     )
     return [path for path in output.splitlines() if pattern in path]
 
-  def loginfo(self, msg):
+  def log(self, msg):
     print(msg)
     self.logs.append(msg)
 
@@ -126,36 +151,42 @@ class TheiaExport(object):
     with open(timestamp, 'w') as f:
       f.write(str(export_start_date))
 
-    self.loginfo('Backup resilient timestamp ' + timestamp)
-    self.backupfile(timestamp)
+    self.remove_signatures()
+
+    self.log('Backup resilient timestamp ' + timestamp)
+    self.backup_file(timestamp)
 
     for d in self.dirs:
-      self.loginfo('Backup directory ' + d)
-      self.backuptree(d)
+      self.log('Backup directory ' + d)
+      self.backup_tree(d)
 
-    self.loginfo('Backup slapproxy database')
-    self.backupdb()
+    self.log('Backup slapproxy database')
+    self.backup_db()
 
-    self.loginfo('Backup partitions')
+    self.log('Backup partitions')
     for p in self.partition_dirs:
-      self.backuppartition(p)
+      self.backup_partition(p)
 
-    self.loginfo('Compute backup signature')
-    self.sign(os.path.join(self.backup_dir, 'backup.signature'))
+    self.log('Compute root backup signature')
+    self.sign_root()
+
+    self.log('Compute partitions backup signatures')
+    for p in self.partition_dirs:
+      self.sign_partition(p)
 
     time.sleep(10)
-    self.loginfo('Check partitions')
+    self.log('Check partitions')
     modified = list(itertools.chain.from_iterable(
-      self.checkpartition(p) for p in self.partition_dirs))
+      self.check_partition(p) for p in self.partition_dirs))
     if modified:
       msg = 'Some files have been modified since the backup started'
-      self.loginfo(msg + ':')
-      self.loginfo('\n'.join(modified))
-      self.loginfo("Let's wait %d minutes and try again" % BACKUP_WAIT)
+      self.log(msg + ':')
+      self.log('\n'.join(modified))
+      self.log("Let's wait %d minutes and try again" % BACKUP_WAIT)
       time.sleep(BACKUP_WAIT * 60)
       raise Exception(msg)
 
-    self.loginfo('Done')
+    self.log('Done')
 
 
 if __name__ == '__main__':

@@ -81,7 +81,6 @@ def remove(path):
 
 def parse_installed(partition):
   paths = []
-  custom_script = os.path.join(partition, 'srv', '.backup_identity_script')
   for cfg in glob.glob(os.path.join(partition, '.installed*.cfg')):
     try:
       with open(cfg) as f:
@@ -93,7 +92,7 @@ def parse_installed(partition):
       for section in six.itervalues(installed_cfg):
         for p in section.get('__buildout_installed__', '').splitlines():
           p = p.strip()
-          if p and p != custom_script:
+          if p:
             paths.append(p)
   return paths
 
@@ -108,31 +107,44 @@ def sha256sum(file_path, chunk_size=1024 * 1024):
   return sha256.hexdigest()
 
 
-def hashwalk(backup_dir, mirror_partitions):
-  scripts = {}
-  for p in mirror_partitions:
-    script_path = os.path.join(p, 'srv', '.backup_identity_script')
-    if os.path.exists(script_path):
-      scripts[os.path.abspath(p)] = script_path
-  for dirpath, dirnames, filenames in os.walk(backup_dir):
-    filenames.sort()
+def fast_hashwalk(root_dir):
+  for dirpath, dirnames, filenames in os.walk(root_dir):
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
-        displaypath = os.path.relpath(filepath, start=backup_dir)
+        displaypath = os.path.relpath(filepath, start=root_dir)
         yield '%s %s' % (sha256sum(filepath), displaypath)
-    remaining_dirnames = []
-    for subdir in dirnames:
-      subdirpath = os.path.abspath(os.path.join(dirpath, subdir))
-      custom_hashscript = scripts.get(subdirpath)
-      if custom_hashscript:
-        print('Using custom signature script %s' % custom_hashscript)
-        for s in hashcustom(subdirpath, backup_dir, custom_hashscript):
-          yield s
-      else:
-        remaining_dirnames.append(subdir)
-    remaining_dirnames.sort()
-    dirnames[:] = remaining_dirnames
+
+
+def exclude_hashwalk(root_dir, instance_dir):
+  root_dir = os.path.abspath(root_dir)
+  instance_dir = os.path.abspath(instance_dir)
+  for dirpath, dirnames, filenames in os.walk(root_dir):
+    for f in filenames:
+      filepath = os.path.join(dirpath, f)
+      if os.path.isfile(filepath):
+        displaypath = os.path.relpath(filepath, start=root_dir)
+        yield '%s %s' % (sha256sum(filepath), displaypath)
+    if dirpath == instance_dir:
+      remaining_dirs = []
+      for d in dirnames:
+        if not d.startswith('slappart'):
+          remaining_dirs.append(d)
+      dirnames[:] = remaining_dirs
+
+
+def hashwalk(root_dir, instance_dir=None):
+  if instance_dir and not os.path.relpath(
+      instance_dir, start=root_dir).startswith(os.pardir):
+    return exclude_hashwalk(root_dir, instance_dir)
+  return fast_hashwalk(root_dir)
+
+
+def hashscript(partition):
+  script = os.path.join(partition, 'srv', '.backup_identity_script')
+  if os.path.exists(script):
+    return script
+  return None
 
 
 @contextlib.contextmanager
@@ -145,10 +157,11 @@ def cwd(path):
     os.chdir(old_path)
 
 
-def hashcustom(mirrordir, backup_dir, custom_hashscript):
-  workingdir = os.path.join(mirrordir, os.pardir, os.pardir, os.pardir)
+def hashcustom(partition, script):
+  workingdir = os.path.join(partition, os.pardir, os.pardir, os.pardir)
   with cwd(os.path.abspath(workingdir)):
-    for dirpath, _, filenames in os.walk(mirrordir):
+    for dirpath, dirnames, filenames in os.walk(partition):
+      dirnames.sort()
       filepaths = []
       for f in filenames:
         path = os.path.join(dirpath, f)
@@ -157,16 +170,16 @@ def hashcustom(mirrordir, backup_dir, custom_hashscript):
       if not filepaths:
         continue
       hashprocess = sp.Popen(
-        custom_hashscript, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+        script, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
       out, err = hashprocess.communicate(str2bytes('\0'.join(filepaths)))
       if hashprocess.returncode != 0:
         template = "Custom signature script %s failed on inputs:\n%s"
-        msg = template % (custom_hashscript, '\n'.join(filepaths))
+        msg = template % (script, '\n'.join(filepaths))
         msg += "\nwith stdout:\n%s" % bytes2str(out)
         msg += "\nand stderr:\n%s" % bytes2str(err)
         raise Exception(msg)
       signatures = bytes2str(out).strip('\n').split('\n')
       signatures.sort()
-      displaypath = os.path.relpath(dirpath, start=backup_dir)
+      displaypath = os.path.relpath(dirpath, start=partition)
       for s in signatures:
-        yield '%s %s/ (custom)' % (s, displaypath)
+        yield '%s %s' % (s, displaypath)
