@@ -22,8 +22,8 @@
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
-{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
-{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 1024)) + 512)) %}
+{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
+{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -441,8 +441,8 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 smp-max-count = {{ cpu_max_count }}
 ram-max-size = {{ ram_max_size }}
 {%- if enable_device_hotplug %}
-init-ram-size = 1024
-init-smp-count = 1
+init-ram-size = 4096
+init-smp-count = 2
 {%- else %}
 init-ram-size = ${kvm-controller-parameter-dict:ram-size}
 init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
@@ -1068,14 +1068,14 @@ nbd2-host =
 boot-image-url-list =
 
 enable-device-hotplug = False
-ram-size = 1024
+ram-size = 4096
 ram-hotplug-slot-size = 512
-disk-size = 10
+disk-size = 40
 disk-type = virtio
 disk-format = qcow2
 disk-device-path =
 
-cpu-count = 1
+cpu-count = 2
 disk-cache =
 disk-aio =
 auto-ballooning = True

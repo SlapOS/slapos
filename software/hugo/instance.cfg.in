@@ -113,6 +113,7 @@ template =
   . ${hugo:go-environment}
   cd ${basedirectory:data}/${slap-configuration:configuration.site}
   if [ -d "public" ]; then rm -Rf public; fi
+  export TMPDIR=${hugo:path-tmp}
   hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false  
 
 [hugo-server-service]
