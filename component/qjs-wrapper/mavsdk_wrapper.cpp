@@ -100,7 +100,12 @@ int start(const char * url, const char * log_file, int timeout,
     log_file_fd << "Subscribing to flight mode..." << std::endl;
     // Subscribe to receive updates on flight mode. You can find out whether FollowMe is active.
     telemetry->subscribe_flight_mode([](Telemetry::FlightMode _flight_mode) {
+        if flight_mode != _flight_mode {
             flight_mode = _flight_mode;
+            log_file_fd << TELEMETRY_CONSOLE_TEXT
+                        << "Switching to flight mode: " << flight_mode
+                        << NORMAL_CONSOLE_TEXT << std::endl;
+        }
     });
 
     log_file_fd << "Subscribing to Euler angle..." << std::endl;
@@ -130,7 +135,7 @@ int start(const char * url, const char * log_file, int timeout,
             initial_coords_set = true;
         }
         log_file_fd << TELEMETRY_CONSOLE_TEXT // set to blue
-                  <<  drone_a << " m " << drone_at << " m " << drone_la << " " << drone_lo << " "
+                  << drone_a << " m " << drone_at << " m " << drone_la << " " << drone_lo << " "
                   << NORMAL_CONSOLE_TEXT // set to default color again
                   << std::endl;
     });
@@ -223,8 +228,8 @@ int arm(void)
     const Action::Result arm_result = action->arm();
 
     if (arm_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result << NORMAL_CONSOLE_TEXT
-                  << std::endl;
+        log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result
+                    << NORMAL_CONSOLE_TEXT << std::endl;
         return 1;
     }
     return 0;
