@@ -28,7 +28,7 @@ environment =
   MB_DB_USER=$${postgresql:superuser}
   MB_DB_PASS=$${postgresql:password}
   MB_DB_HOST=$${postgresql:ipv4}
-  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id}
+  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id}\ -Djavax.net.ssl.trustStore="$${metabase-truststore:file}"\ -Djavax.net.ssl.trustStorePassword="$${metabase-truststore:password}"
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
@@ -95,6 +95,41 @@ command =
 file = $${directory:etc}/.metabase_keystore
 password = $${metabase-keystore-password:passwd}
 alias = metabase
+
+[metabase-truststore-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
+
+[metabase-truststore]
+# Create a truststore, that can be used to store certificate of email
+# servers. Because truststore can not be empty, we import the certificate
+# from the keystore. This certificate will not be used, it's just a way
+# to initialize the truststore.
+# TODO: no ! copy system truststore instead ?
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  if [ ! -f $${:file} ]
+  then
+    ${java:location}/bin/keytool \
+      -export \
+      -rfc \
+      -alias "$${metabase-keystore:alias}" \
+      -keystore "$${metabase-keystore:file}" \
+      -storepass "$${metabase-keystore:password}" \
+      -file "$${:tmpfile-for-init}" &&
+    ${java:location}/bin/keytool \
+      -importcert \
+      --noprompt \
+      -alias "dummy-certificate-for-init" \
+      -keystore "$${:file}" \
+      -storepass "$${:password}" \
+      -file "$${:tmpfile-for-init}"
+  fi
+tmpfile-for-init = $${directory:tmp}/$${:_buildout_section_name_}-tmpfile-for-init
+file = $${directory:srv}/.metabase_truststore
+password = $${metabase-truststore-password:passwd}
+
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
