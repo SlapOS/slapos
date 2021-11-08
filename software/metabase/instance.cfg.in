@@ -49,6 +49,10 @@ promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url= $${metabase-instance:url}/api/session/properties
 
+[metabase-keystore-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
+
 [metabase-keystore]
 recipe = plone.recipe.command
 command =
@@ -61,7 +65,11 @@ command =
     -keystore "$${:file}" \
     -storepass "$${:password}"
 file = $${directory:etc}/.metabase_keystore
-password = insecure
+password = $${metabase-keystore-password:passwd}
+
+[postgresql-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
 
 [postgresql]
 recipe = slapos.cookbook:postgres
@@ -69,7 +77,7 @@ bin = ${postgresql10:location}/bin/
 services = $${directory:service}
 dbname  = metabase_db
 superuser = metabase-psql
-password = insecure
+password = $${postgresql-password:passwd}
 pgdata-directory = $${directory:srv}/postgresql
 
 ipv4 = $${instance-parameter:ipv4-random}
