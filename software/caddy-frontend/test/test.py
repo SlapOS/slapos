@@ -4629,12 +4629,15 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
   def getSlaveParameterDictDict(cls):
     return {
       'enable-http2-default': {
+        'url': cls.backend_url,
       },
       'enable-http2-false': {
         'enable-http2': 'false',
+        'url': cls.backend_url,
       },
       'enable-http2-true': {
         'enable-http2': 'true',
+        'url': cls.backend_url,
       },
       'dummy-cached': {
         'url': cls.backend_url,
@@ -4719,12 +4722,15 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
   def getSlaveParameterDictDict(cls):
     return {
       'enable-http2-default': {
+        'url': cls.backend_url,
       },
       'enable-http2-false': {
         'enable-http2': 'false',
+        'url': cls.backend_url,
       },
       'enable-http2-true': {
         'enable-http2': 'true',
+        'url': cls.backend_url,
       },
       'dummy-cached': {
         'url': cls.backend_url,
