@@ -457,6 +457,12 @@ static JSValue js_mavsdk_takeOff(JSContext *ctx, JSValueConst this_val,
     return JS_NewInt32(ctx, takeOff());
 }
 
+static JSValue js_mavsdk_takeOffAndWait(JSContext *ctx, JSValueConst this_val,
+                                 int argc, JSValueConst *argv)
+{
+    return JS_NewInt32(ctx, takeOffAndWait());
+}
+
 static JSValue js_mavsdk_land(JSContext *ctx, JSValueConst this_val,
                               int argc, JSValueConst *argv)
 {
@@ -487,6 +493,7 @@ static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("getInitialAltitude", 0, js_mavsdk_getInitialAltitude ),
     JS_CFUNC_DEF("getAltitude", 0, js_mavsdk_getAltitude ),
     JS_CFUNC_DEF("takeOff", 0, js_mavsdk_takeOff ),
+    JS_CFUNC_DEF("takeOffAndWait", 0, js_mavsdk_takeOffAndWait ),
     JS_CFUNC_DEF("land", 0, js_mavsdk_land ),
     JS_CFUNC_DEF("publish", 2, js_pubsub_publish ),
     JS_CFUNC_DEF("stopPubsub", 0, js_pubsub_stop ),

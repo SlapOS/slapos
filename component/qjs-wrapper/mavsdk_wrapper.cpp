@@ -100,7 +100,7 @@ int start(const char * url, const char * log_file, int timeout,
     log_file_fd << "Subscribing to flight mode..." << std::endl;
     // Subscribe to receive updates on flight mode. You can find out whether FollowMe is active.
     telemetry->subscribe_flight_mode([](Telemetry::FlightMode _flight_mode) {
-        if flight_mode != _flight_mode {
+        if(flight_mode != _flight_mode) {
             flight_mode = _flight_mode;
             log_file_fd << TELEMETRY_CONSOLE_TEXT
                         << "Switching to flight mode: " << flight_mode
@@ -245,12 +245,30 @@ int takeOff(void)
     if(!mavsdk_started)
         return 1;
 
+    while(flight_mode != Telemetry::FlightMode::Ready) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Not ready to takeoff yet"
+                    << NORMAL_CONSOLE_TEXT << std::endl;
+        sleep_for(seconds(1));
+    }
+
     log_file_fd << "Taking off..." << std::endl;
     const Action::Result takeoff_result = action->takeoff();
     if (takeoff_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Takeoff failed:" << takeoff_result
-                  << NORMAL_CONSOLE_TEXT << std::endl;
+                    << NORMAL_CONSOLE_TEXT << std::endl;
         return 1;
+    }
+    return 0;
+}
+
+int takeOffAndWait(void) {
+    if(takeOff()) {
+        return 1;
+    }
+
+    while(flight_mode == Telemetry::FlightMode::Ready) {
+        log_file_fd << TELEMETRY_CONSOLE_TEXT << "Takeoff pending"
+                    << NORMAL_CONSOLE_TEXT << std::endl;
     }
     return 0;
 }

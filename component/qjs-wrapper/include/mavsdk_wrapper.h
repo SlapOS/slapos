@@ -19,6 +19,7 @@ int startMission(void);
 int arm(void);
 int healthAllOk(void);
 int takeOff(void);
+int takeOffAndWait(void);
 int setTargetCoordinates(double la, double lo, double a, double y);
 int setTargetLatLong(double la, double lo);
 int setTargetAltitude(double a);

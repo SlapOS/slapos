@@ -19,7 +19,7 @@ import {
   setTargetLatLong,
   stop,
   stopPubsub,
-  takeOff
+  takeOffAndWait
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {sleep, Worker} from "os";
 import {exit} from "std";
@@ -187,13 +187,7 @@ function waitForAltitude(target_altitude) {
       sleep(1000);
     }*/
     exit_on_fail(arm(), "Failed to arm");
-    do {
-      sleep(1000);
-      cmd_res = takeOff();
-    } while(cmd_res);
-    // takeOff is 40 but climbout is 60
-    //waitForAltitude(getInitialAltitude() + getTakeOffAltitude());
-    waitForAltitude(getInitialAltitude() + 60);
+    takeOffAndWait();
     goToAltitude(INITIAL_ALTITUDE + 1, true, true);
 
     LAT1 = (getInitialLatitude() - 0.00166).toFixed(5);
