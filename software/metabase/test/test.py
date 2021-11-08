@@ -85,7 +85,7 @@ class TestMetabaseSetup(MetabaseTestCase):
             "username": email,
             "password": "wrong"
         })
-    self.assertEqual(requests.codes.bad_request, resp.status_code)
+    self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
     session = requests.post(
         parse.urljoin(url, '/api/session'),
