@@ -121,6 +121,10 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
   backup_max_tries = 480
   backup_wait_interval = 60
 
+  def test_twice(self):
+    # do nothing
+    pass
+
   def _prepareExport(self):
     super(TestTheiaResilienceERP5, self)._prepareExport()
 
