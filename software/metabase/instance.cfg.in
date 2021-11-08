@@ -10,7 +10,7 @@ offline = true
 [metabase-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/$${:_buildout_section_name_}
-command-line = sh -c "cd $${directory:srv-metabase}; ${java-re-8:location}/bin/java $JAVA_ARGS -jar ${metabase.jar:location}/metabase.jar"
+command-line = sh -c "cd $${directory:srv-metabase}; ${java:location}/bin/java $JAVA_ARGS -jar ${metabase.jar:location}/metabase.jar"
 # https://www.metabase.com/docs/latest/operations-guide/customizing-jetty-webserver.html
 # note that we set org.quartz.scheduler.instanceId through $JAVA_ARGS as a workaround for machines
 # which cannot resolve their hostnames. See also https://github.com/metabase/metabase/issues/8373
@@ -52,7 +52,7 @@ config-url= $${metabase-instance:url}/api/session/properties
 [metabase-keystore]
 recipe = plone.recipe.command
 command =
-  ${java-re-8-output:keytool} \
+  ${java:location}/bin/keytool \
     -genkeypair \
     -alias "metabase" \
     -keyalg RSA \
