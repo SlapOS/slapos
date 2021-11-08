@@ -108,12 +108,12 @@ int start(const char * url, const char * log_file, int timeout,
         }
     });
 
-    log_file_fd << "Subscribing to Euler angle..." << std::endl;
+    /*log_file_fd << "Subscribing to Euler angle..." << std::endl;
     telemetry->subscribe_attitude_euler([](Telemetry::EulerAngle euler_angle) {
         drone_roll = euler_angle.roll_deg;
         drone_pitch = euler_angle.pitch_deg;
         drone_yaw = euler_angle.yaw_deg;
-    });
+    });*/
 
     log_file_fd << "Subscribing to position..." << std::endl;
     // Set up callback to monitor altitude while the vehicle is in flight
@@ -125,7 +125,7 @@ int start(const char * url, const char * log_file, int timeout,
         drone_at = position.relative_altitude_m;
         publish_fn(drone_la, drone_lo, drone_a);
 
-        if(!initial_coords_set) {
+        if(!initial_coords_set && drone_la != 0) {
             initial_drone_la = drone_la;
             initial_drone_lo = drone_lo;
             initial_drone_la_rad = (PI * drone_la) / 180.F;
@@ -141,6 +141,32 @@ int start(const char * url, const char * log_file, int timeout,
     });
     log_file_fd << "MAVSDK started..." << std::endl;
     mavsdk_started = 1;
+    return 0;
+}
+
+int stop() {
+    if(!mavsdk_started)
+        return 1;
+    
+    if(!landed()) {
+      log_file_fd << ERROR_CONSOLE_TEXT << "You must land first !"
+                  << NORMAL_CONSOLE_TEXT << std::endl;
+      return 1;
+    }
+
+    const Action::Result shutdown_result = action->shutdown();
+    if (shutdown_result != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Shutdown failed:" << shutdown_result
+                    << NORMAL_CONSOLE_TEXT << std::endl;
+        return 1;
+    }
+
+    // Delete pointers
+    delete action;
+    delete mavlink_passthrough;
+    delete telemetry;
+    log_file_fd.close();
+
     return 0;
 }
 
@@ -210,19 +236,21 @@ int loiter(void) {
     const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
     if (cmd_result != MavlinkPassthrough::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Loiter failed" << cmd_result
-	       	          << NORMAL_CONSOLE_TEXT << std::endl;
+	       	    << NORMAL_CONSOLE_TEXT << std::endl;
        return 1;
-   }
+    }
 
-   log_file_fd << "Loiter mode set to ( " << drone_la << " , " << drone_lo
-               << " ) " << drone_a << " m" << std::endl;
     return 0;
 }
 
-int arm(void)
-{
+int arm(void) {
     if(!mavsdk_started)
         return 1;
+
+    while(!telemetry->health().is_home_position_ok) {
+        log_file_fd << "Waiting for home position to be set" << std::endl;
+        sleep_for(seconds(1));
+    }
 
     log_file_fd << "Arming..." << std::endl;
     const Action::Result arm_result = action->arm();
@@ -240,24 +268,31 @@ int healthAllOk(void)
     return telemetry->health_all_ok();
 }
 
+int landed(void) {
+  return !telemetry->in_air();
+}
+
+int droneLanded(void) {
+    return (flight_mode == Telemetry::FlightMode::Land && !telemetry->in_air());
+}
+
 int takeOff(void)
 {
     if(!mavsdk_started)
         return 1;
 
-    while(flight_mode != Telemetry::FlightMode::Ready) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Not ready to takeoff yet"
-                    << NORMAL_CONSOLE_TEXT << std::endl;
-        sleep_for(seconds(1));
-    }
-
-    log_file_fd << "Taking off..." << std::endl;
     const Action::Result takeoff_result = action->takeoff();
     if (takeoff_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Takeoff failed:" << takeoff_result
                     << NORMAL_CONSOLE_TEXT << std::endl;
         return 1;
     }
+
+    while(flight_mode != Telemetry::FlightMode::Takeoff) {
+        sleep_for(seconds(1));
+    }
+
+    log_file_fd << "Taking off..." << std::endl;
     return 0;
 }
 
@@ -266,9 +301,9 @@ int takeOffAndWait(void) {
         return 1;
     }
 
-    while(flight_mode == Telemetry::FlightMode::Ready) {
-        log_file_fd << TELEMETRY_CONSOLE_TEXT << "Takeoff pending"
-                    << NORMAL_CONSOLE_TEXT << std::endl;
+    while(flight_mode == Telemetry::FlightMode::Takeoff) {
+        log_file_fd << "Takeoff pending" << std::endl;
+        sleep_for(seconds(1));
     }
     return 0;
 }

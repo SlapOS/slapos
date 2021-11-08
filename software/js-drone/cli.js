@@ -14,7 +14,7 @@ import {
   stopPubsub,
   takeOff
 } from "{{ qjs_wrapper }}"; //jslint-quiet
-import {Worker} from "os";
+import {sleep, Worker} from "os";
 /*jslint-disable*/
 import * as std from "std";
 /*jslint-enable*/
@@ -23,6 +23,9 @@ const IP = "{{ autopilot_ip }}";
 const PORT = "7909";
 const URL = "udp://" + IP + ":" + PORT;
 const LOG_FILE = "{{ log_dir }}/mavsdk-log";
+
+var publishing = false;
+var worker;
 
 function disconnect() {
   stop();
@@ -37,6 +40,17 @@ function displayMessage(message) {
 function parachute(param) {
   doParachute(param);
   return 0;
+}
+
+function publish() {
+  worker = new Worker("{{ publish_script }}");
+  worker.onmessage = function(e) {
+    if(!e.data.publishing) {
+      worker.onmessage = null;
+    }
+  }
+  worker.postMessage({ action: "publish" });
+  publishing = true;
 }
 
 const wrongParameters = displayMessage.bind(null, "Wrong parameters");
@@ -55,7 +69,6 @@ function cli() {
   let altitude;
   let cmd;
   let timeout;
-  let worker;
   let name;
   let latitude;
   let longitude;
@@ -72,6 +85,7 @@ function cli() {
     goto(point)
     altitude(altitude)
     speed(speed)
+    stop
     gotoCoord(latitude, longitude)
     exit
     help
@@ -102,7 +116,7 @@ function cli() {
       std.printf("Timeout: ");
       timeout = parseInt(f.getline());
       cmd = checkNumber(timeout, start.bind(null, URL, LOG_FILE));
-      worker = new Worker("{{ publish_script }}");
+      publish();
       break;
 
     case "define":
@@ -124,7 +138,7 @@ function cli() {
       break;
 
     case "exit":
-      stopPubsub();
+      stopPubsub;
       return;
 
     case "goto":
@@ -180,6 +194,10 @@ function cli() {
       std.printf("Speed: ");
       speed = parseFloat(f.getline());
       cmd = checkNumber(speed, setAirspeed);
+      break;
+
+    case "stop":
+      cmd = stop;
       break;
 
     case "takeoff":

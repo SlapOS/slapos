@@ -266,13 +266,19 @@ static JSValue js_mavsdk_start(JSContext *ctx, JSValueConst this_val,
 static JSValue js_mavsdk_stop(JSContext *ctx, JSValueConst this_val,
                               int argc, JSValueConst *argv)
 {
-    return JS_UNDEFINED;
+    return JS_NewInt32(ctx, stop());
 }
 
 static JSValue js_mavsdk_healthAllOk(JSContext *ctx, JSValueConst this_val,
 				     int argc, JSValueConst *argv)
 {
     return JS_NewBool(ctx, healthAllOk());
+}
+
+static JSValue js_mavsdk_landed(JSContext *ctx, JSValueConst this_val,
+				                             int argc, JSValueConst *argv)
+{
+    return JS_NewBool(ctx, landed());
 }
 
 static JSValue js_mavsdk_arm(JSContext *ctx, JSValueConst this_val,
@@ -473,6 +479,7 @@ static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("start", 3, js_mavsdk_start ),
     JS_CFUNC_DEF("stop", 0, js_mavsdk_stop ),
     JS_CFUNC_DEF("healthAllOk", 0, js_mavsdk_healthAllOk ),
+    JS_CFUNC_DEF("landed", 0, js_mavsdk_landed ),
     JS_CFUNC_DEF("arm", 0, js_mavsdk_arm ),
     JS_CFUNC_DEF("setTargetCoordinates", 4, js_mavsdk_setTargetCoordinates ),
     JS_CFUNC_DEF("setTargetLatLong", 2, js_mavsdk_setTargetLatLong ),

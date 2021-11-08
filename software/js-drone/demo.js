@@ -12,7 +12,7 @@ import {
   getLongitude,
   getTakeOffAltitude,
   getYaw,
-  healthAllOk,
+  landed,
   loiter,
   start,
   setAltitude,
@@ -33,6 +33,9 @@ const EPSILON = 105;
 const EPSILON_YAW = 6;
 const EPSILON_ALTITUDE = 2;
 const TARGET_YAW = 0;
+
+var publishing = false;
+var worker;
 
 function connect() {
   exit_on_fail(start(URL, LOG_FILE, 60), "Failed to connect to " + URL);
@@ -55,8 +58,9 @@ function distance(lat1, lon1, lat2, lon2) {
 function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
-    stopPubsub();
-    sleep(3000);
+    if(publishing) {
+      stopPubsub();
+    }
     exit(-1);
   }
 }
@@ -77,16 +81,7 @@ function goToAltitude(target_altitude, wait, go) {
 }
 
 function land() {
-  var latitude;
-  var longitude;
   var yaw;
-
-  var cmd_res;
-
-  console.log("[DEMO] Going to landing coords...\n");
-  setLatLong(LAT2, LON2, 0);
-  console.log("[DEMO] Setting altitude...\n");
-  goToAltitude(LANDING_ALTITUDE, true, true);
 
   while(true) {
     yaw = getYaw();
@@ -99,6 +94,17 @@ function land() {
 
   console.log("[DEMO] Deploying parachute...");
   exit_on_fail(doParachute(2), "Failed to deploy parachute");
+}
+
+function publish() {
+  worker = new Worker("{{ publish_script }}");
+  worker.onmessage = function(e) {
+    if(!e.data.publishing) {
+      worker.onmessage = null;
+    }
+  }
+  worker.postMessage({ action: "publish" });
+  publishing = true;
 }
 
 function setLatLong(latitude, longitude, target_altitude) {
@@ -153,7 +159,6 @@ function waitForAltitude(target_altitude) {
   const DEMO = false;
   const SIMULATION = {{ is_a_simulation }};
 
-  var worker;
   var cmd_res;
   var altitude;
 
@@ -174,18 +179,13 @@ function waitForAltitude(target_altitude) {
     LAT2 = 45.90733;
     LON2 = 13.59704;
   }
+  publish();
 
   console.log("Will connect to", URL);
 
   console.log("[DEMO] Connecting...\n");
   connect();
-  worker = new Worker("{{ publish_script }}");
   if(SIMULATION) {
-    // healthCheck not ok for now
-    /*while(healthAllOk() != true) {
-      console.log("[DEMO] Vehicule not ready to arm ...");
-      sleep(1000);
-    }*/
     exit_on_fail(arm(), "Failed to arm");
     takeOffAndWait();
     goToAltitude(INITIAL_ALTITUDE + 1, true, true);
@@ -212,8 +212,17 @@ function waitForAltitude(target_altitude) {
   setLatLong(LAT1, LON1, HIGH_ALTITUDE);
 
   sleep(30000);
+  console.log("[DEMO] Going to landing coords...\n");
+  setLatLong(LAT2, LON2, 0);
+  console.log("[DEMO] Setting altitude...\n");
+  goToAltitude(LANDING_ALTITUDE, true, true);
+
   console.log("[DEMO] Landing...\n");
   land();
+
+  while(!landed()) {
+    sleep(1000);
+  }
+  stop();
   stopPubsub();
-  sleep(3000);
 })();

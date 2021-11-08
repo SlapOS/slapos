@@ -6,18 +6,10 @@ extern "C" {
 #endif
 int start(const char * url, const char * log_file, int timeout,
           void (*publishCoordinates)(double, double, float));
-int missionPush(
-    double latitude_deg,
-    double longitude_deg,
-    double relative_altitude_m,
-    double speed_m_s,
-    int is_fly_through,
-    double gimbal_pitch_deg,
-    double gimbal_yaw_deg);
-int uploadMission(void);
-int startMission(void);
+int stop(void);
 int arm(void);
 int healthAllOk(void);
+int landed(void);
 int takeOff(void);
 int takeOffAndWait(void);
 int setTargetCoordinates(double la, double lo, double a, double y);
