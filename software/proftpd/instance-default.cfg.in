@@ -86,7 +86,7 @@ template = inline:{{ slapparameter_dict['ssh-key'] | indent }}
 
 [proftpd-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = ${:_buildout_section_name_}.py
 config-host = ${proftpd:ipv6}
 config-port = ${proftpd:sftp-port}

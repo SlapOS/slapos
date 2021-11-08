@@ -43,12 +43,12 @@ KVM instance parameters:
 - nbd2-port (default: 1024)
 - nbd2-host
 
-- ram-size (default: 1024)
-- disk-size = (default: 10)
+- ram-size (default: 4096)
+- disk-size = (default: 40)
 - disk-type (default: virtio)
       Disk size and Disk type are used if no virtual hard drive is specified.
 
-- cpu-count (default: 1)
+- cpu-count (default: 2)
 - cpu-options
     cpu-option is a string: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]
 - numa

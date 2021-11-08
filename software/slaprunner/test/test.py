@@ -339,9 +339,9 @@ class TestWeb(SlaprunnerTestCase):
 class TestSSH(SlaprunnerTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    cls.ssh_key_list = [paramiko.RSAKey.generate(1024) for i in range(2)]
+    cls.ssh_key_list = [paramiko.ECDSAKey.generate(bits=384) for i in range(2)]
     return {
-        'user-authorized-key': 'ssh-rsa {}\nssh-rsa {}'.format(
+        'user-authorized-key': 'ecdsa-sha2-nistp384 {}\necdsa-sha2-nistp384 {}'.format(
           *[key.get_base64() for key in cls.ssh_key_list]
           )
     }
@@ -363,7 +363,7 @@ class TestSSH(SlaprunnerTestCase):
     username, fingerprint_from_url = ssh_info.split(';fingerprint=')
     client = paramiko.SSHClient()
 
-    self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), '')
+    self.assertTrue(fingerprint_from_url.startswith('ssh-rsa-'), fingerprint_from_url)
     fingerprint_from_url = fingerprint_from_url[len('ssh-rsa-'):]
 
     class KeyPolicy(object):

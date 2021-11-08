@@ -1,59 +1,69 @@
-diff -ur pysvn-1.7.10.orig/setup.py pysvn-1.7.10/setup.py
---- pysvn-1.7.10.orig/setup.py	2010-12-30 13:26:51.000000000 +0100
-+++ pysvn-1.7.10/setup.py	2015-08-14 10:29:25.562686564 +0200
-@@ -19,6 +19,10 @@
+diff --git a/setup.py b/setup.py
+index e5ce838..e2b95f8 100644
+--- a/setup.py
++++ b/setup.py
+@@ -40,9 +40,16 @@ import distutils.sysconfig
+ import platform
+ import shutil
+ import sys
++import subprocess
  import os
  import os.path
- import setuptools.command.bdist_egg
++import setuptools.command.bdist_egg
+ from setuptools.command.build_ext import build_ext
 +try:
 +  from ConfigParser import ConfigParser
 +except ImportError:
 +  from configparser import ConfigParser
++
  
  pysvn_version_info = {}
  f = open( 'Builder/version.info', 'r' )
-@@ -27,13 +28,26 @@
-     pysvn_version_info[ key ] = value
+@@ -77,6 +84,13 @@ class BuildExtensions(build_ext):
+             super( BuildExtensions, self ).build_extension( ext )
  
- def run(self):
-+    cfg = ConfigParser()
-+    cfg.read('setup.cfg')
-+    kw = {}
-+    for key in ('include-dirs', 'library-dirs'):
-+        if cfg.has_option('build_ext', key):
-+            kw[key] = cfg.get('build_ext', key)
+     def _build_pysvn( self, ext ):
++        cfg = ConfigParser()
++        cfg.read('setup.cfg')
++        kw = {}
++        for key in ('include-dirs', 'library-dirs'):
++            if cfg.has_option('build_ext', key):
++                kw[key] = cfg.get('build_ext', key)
 +
-     # Generate metadata first
-     self.run_command("egg_info")
-     os.chdir('Source')
--    os.system(sys.executable + ' setup.py configure')
-+    os.system(sys.executable + ' setup.py configure --include-dirs=%(include-dirs)s --library-dirs=%(library-dirs)s' % kw)
-     os.system('make clean')
-     os.system('make')
--    os.system('make egg DISTDIR="%s"' % os.path.abspath(os.path.join('..', self.dist_dir)))
-+    os.system('rm -rf dist; mkdir -p dist/EGG-INFO')
-+    os.system('cp -rvf pysvn dist')
-+    os.system('cp -rvf ../pysvn.egg-info/* dist/EGG-INFO')
-+    os.system('find dist/pysvn -type f | sed s:dist/:: > dist/EGG-INFO/SOURCES.txt')
-+    setuptools.command.bdist_egg.make_zipfile(
-+        self.egg_output, 'dist', verbose=self.verbose,
-+        dry_run=self.dry_run, mode=self.gen_header())
-     os.chdir('..')              # Go back in parent directory
-     # Add to 'Distribution.dist_files' so that the "upload" command works
-     getattr( self.distribution, 'dist_files', [] ).append(
-diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_configure.py
---- pysvn-1.7.10.orig/Source/setup_configure.py	2014-11-09 11:55:47.000000000 +0100
-+++ pysvn-1.7.10/Source/setup_configure.py	2015-08-17 10:41:05.781767086 +0200
-@@ -54,6 +54,8 @@
- class Options:
+         dest_dir = os.path.join( os.path.abspath( self.build_lib ), 'pysvn' )
+ 
+         # Generate metadata first
+@@ -91,9 +105,13 @@ class BuildExtensions(build_ext):
+         # Invoke the build system. This will generate the __init__.py and
+         # .so that we'll package.
+         os.chdir( 'Source' )
+-        os.system( sys.executable + ' setup.py configure' )
+-        os.system( 'make clean' )
+-        os.system( 'make' )
++        subprocess.check_call(sys.executable + ' setup.py configure --include-dirs=%(include-dirs)s --library-dirs=%(library-dirs)s' % kw, shell=True)
++        subprocess.check_call('make clean', shell=True)
++        subprocess.check_call('make', shell=True)
++        subprocess.check_call('rm -rf dist; mkdir -p dist/EGG-INFO', shell=True)
++        subprocess.check_call('cp -rvf pysvn dist', shell=True)
++        subprocess.check_call('cp -rvf ../pysvn.egg-info/* dist/EGG-INFO', shell=True)
++        subprocess.check_call('find dist/pysvn -type f | sed s:dist/:: > dist/EGG-INFO/SOURCES.txt', shell=True)
+ 
+         # Copy the built files to the destination pysvn/ directory.
+         self.mkpath( dest_dir )
+diff --git a/Source/setup_configure.py b/Source/setup_configure.py
+index 2bf8ca1..7037f8f 100644
+--- a/Source/setup_configure.py
++++ b/Source/setup_configure.py
+@@ -55,6 +55,8 @@ class Options:
      all_options_info = {
          '--arch':               (2, '<arch>'),
+         '--distro-dir':         (2, '<dir>'),
 +        '--library-dirs':       (1, '<dir>:<dir>:...'),
 +        '--include-dirs':       (1, '<dir>:<dir>:...'),
          '--apr-inc-dir':        (1, '<dir>'),
          '--apu-inc-dir':        (1, '<dir>'),
          '--apr-lib-dir':        (1, '<dir>'),
-@@ -511,12 +513,16 @@
+@@ -542,12 +544,16 @@ class Compiler:
          raise last_exception
  
      def find_svn_bin( self ):
@@ -70,28 +80,28 @@ diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_c
 +            return ''
  
      def find_svn_lib( self ):
-         folder = self.find_dir(
-@@ -589,8 +595,8 @@
+         last_exception = None
+@@ -633,8 +639,8 @@ class Compiler:
          # override the base_dir_list from the command line kw
          svn_root_dir = None
  
 -        if self.options.hasOption( kw ):
 -            base_dir_list = [self.options.getOption( kw )]
 +        if kw and self.options.hasOption( kw ):
-+            base_dir_list = self.options.getOption( kw ) + base_dir_list
++            base_dir_list = [self.options.getOption( kw )] + base_dir_list
  
-         elif( self.options.hasOption( '--svn-root-dir' )
-         and svn_root_suffix is not None ):
-@@ -604,7 +610,7 @@
+         debug( '__find_dir base_dir_list=%r' % (base_dir_list,) )
+ 
+@@ -644,7 +650,7 @@ class Compiler:
              if self.verbose:
                  print( 'Info: Checking for %s in %s' % (name, full_check_file) )
              if os.path.exists( full_check_file ):
 -                return os.path.abspath( dirname )
 +                return dirname
  
-         raise SetupError( 'cannot find %s %s - use %s' % (name, check_file, kw) )
+         raise SetupError( 'Cannot find %s %s - use %s' % (name, check_file, kw) )
  
-@@ -629,6 +635,17 @@
+@@ -669,6 +675,17 @@ class Compiler:
      def getSvnVersion( self ):
          return self.__svn_version_tuple
  
@@ -109,33 +119,42 @@ diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_c
  
  class Win32CompilerMSVC90(Compiler):
      def __init__( self, setup ):
-@@ -1093,7 +1110,7 @@
-                         '%(PYCXX)s/Src',
-                         '/usr/share/python%s/CXX' % distutils.sysconfig.get_python_version() # typical Linux
+@@ -1185,6 +1202,7 @@ class UnixCompilerGCC(CompilerGCC):
+         CompilerGCC.__init__( self, setup )
+ 
+         self._find_paths_pycxx_dir = [
++                        '../Import/pycxx-7.1.5',
+                         distutils.sysconfig.get_python_inc(), # typical Linux
+                         '/usr/include'
                          ]
+@@ -1194,7 +1212,7 @@ class UnixCompilerGCC(CompilerGCC):
+                         '/usr/src/CXX'
+                         ]
+ 
 -        self._find_paths_svn_inc = [
 +        self._find_paths_svn_inc = self._include_dirs() + [
                          '/usr/include/subversion-1',            # typical Linux
                          '/usr/local/include/subversion-1',      # typical *BSD
                          '/usr/pkg/include/subversion-1',        # netbsd
-@@ -1103,14 +1120,14 @@
-                         '/usr/local/bin',                        # typical *BSD
-                         '/usr/pkg/bin',                                # netbsd
+@@ -1204,7 +1222,7 @@ class UnixCompilerGCC(CompilerGCC):
+                         '/usr/local/bin',                       # typical *BSD
+                         '/usr/pkg/bin',                         # netbsd
                          ]
 -        self._find_paths_svn_lib = [
 +        self._find_paths_svn_lib = self._library_dirs() + [
                          '/usr/lib64',                           # typical 64bit Linux
                          '/usr/lib',                             # typical Linux
                          '/usr/local/lib64',                     # typical 64bit Linux
-                         '/usr/local/lib',                       # typical *BSD
+@@ -1212,7 +1230,7 @@ class UnixCompilerGCC(CompilerGCC):
                          '/usr/pkg/lib',                         # netbsd
+                         '/usr/lib/x86_64-linux-gnu',            # debian/unbuntu
                          ]
 -        self._find_paths_apr_inc = [
 +        self._find_paths_apr_inc = self._include_dirs() + [
                          '/usr/include/apr-1',                   # typical Linux
+                         '/usr/include/apr-1.0',                 # typical Linux
                          '/usr/local/apr/include/apr-1',         # Mac OS X www.metissian.com
-                         '/usr/pkg/include/apr-1',               # netbsd
-@@ -1120,7 +1137,7 @@
+@@ -1223,7 +1241,7 @@ class UnixCompilerGCC(CompilerGCC):
                          '/usr/local/include/apache2',           # alternate *BSD
                          ]
          self._find_paths_apr_util_inc = self._find_paths_apr_inc
@@ -144,7 +163,7 @@ diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_c
                          '/usr/lib64',                           # typical 64bit Linux
                          '/usr/lib',                             # typical Linux
                          '/usr/local/lib64',                     # typical 64bit Linux
-@@ -1186,6 +1203,8 @@
+@@ -1310,6 +1328,8 @@ class LinuxCompilerGCC(UnixCompilerGCC):
          if not self.setup.options.hasOption( '--norpath' ):
              py_ld_libs.extend( [
                      '-Wl,--rpath',

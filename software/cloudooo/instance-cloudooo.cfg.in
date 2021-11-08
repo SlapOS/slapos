@@ -105,7 +105,7 @@ ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 [apache-promise]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = apache.py
 config-url = https://{{ ipv4 }}:{{ apache_dict.values()[0][0] }}
 # XXX cloudooo replies "400 Bad Request" for GET on / but what we want to check

@@ -165,7 +165,7 @@ wrapper-path = $${rootdirectory:bin}/stalled-notifier-callbacks
 
 [notifier-stalled-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = stalled-notifier-callbacks.py
 config-command = $${notifier-stalled-promise-bin:wrapper-path}
 
@@ -217,7 +217,7 @@ wrapper-path = $${basedirectory:scripts}/sshd-graceful
 
 [sshd-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = sshd.py
 config-host = $${slap-network-information:global-ipv6}
 config-port = $${sshd-port:port}
@@ -261,7 +261,7 @@ mode = 700
 
 [resilient-sshkeys-sshd-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = public-key-existence.py
 config-command = $${resilient-sshkeys-sshd-promise-bin:output}
 
@@ -281,7 +281,7 @@ context =
 
 [notifier-feed-status-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = notifier-feed-check-malformed-or-failure.py
 config-command = $${notifier-feed-status-promise-bin:rendered}
 #----------------

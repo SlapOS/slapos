@@ -43,13 +43,14 @@ class Recipe(object):
 
   def __init__(self, buildout, name, options):
     storage_path = options['storage-path']
+    when_absent = options.get('when-absent', None)
     try:
       with open(storage_path) as f:
         readline = f.readline()
-    except IOError, e:
+    except IOError as e:
       if e.errno != errno.ENOENT:
         raise
-      readline = None
+      readline = when_absent
 
     self.readline = readline
     options['readline'] = readline

@@ -283,7 +283,7 @@ instance-promises =
 
 [check-port-listening-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 
 [sshd-listen-promise]
@@ -304,7 +304,7 @@ config-port = $${selenium-server-hub-instance:port}
 # Promise waiting for all nodes to be registered
 [selenium-server-hub-nodes-registered-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = $${:_buildout_section_name_}.py
 config-command =
   $${selenium-server-check-nodes-registered:rendered} $${selenium-server-hub-instance:api-url} $${:expected-node-count}

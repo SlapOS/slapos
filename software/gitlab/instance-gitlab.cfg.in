@@ -430,7 +430,7 @@ tune-command =
 # [promise-<something>] to check <something> by url
 [promise-byurl]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name   = ${:_buildout_section_name_}.py
 config-http-code   = 200
 
@@ -472,7 +472,7 @@ depend  =
 
 [promise-postgresql]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = promise-postgresql.py
 config-command =
     {{ postgresql_location }}/bin/psql \
@@ -515,7 +515,7 @@ depend  =
 
 [promise-redis]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = promise-redis.py
 config-command = ${service-redis:promise_wrapper}
 
@@ -769,7 +769,7 @@ depend  =
 # XXX this depends on gitlab-workhorse being up
 #     (nginx is configured to proxy all requests to gitlab-workhorse)
 config-url     = ${backend-info:url}/users/sign_in
-module = check_url_available
+promise = check_url_available
 
 [logrotate-entry-nginx]
 <= logrotate-entry-base

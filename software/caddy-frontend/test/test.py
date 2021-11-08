@@ -795,7 +795,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     with cls.slap.instance_supervisor_rpc as instance_supervisor:
       return getattr(instance_supervisor, method)(*args, **kwargs)
 
-  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+  def assertRejectedSlavePromiseEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
       'rejected-slave-promise-url')
 
@@ -806,7 +806,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       else:
         result_json = result.json()
       self.assertEqual(
-        parameter_dict['rejected-slave-dict'],
+        {},
         result_json
       )
     except AssertionError:
@@ -971,12 +971,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return parsed_parameter_dict
 
   def getMasterPartitionPath(self):
-    # partition w/o etc/trafficserver, but with buildout.cfg
+    # partition with etc/nginx-rejected-slave.conf
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(
-        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
-          os.path.join(q, 'buildout.cfg'))][0]
+      if os.path.exists(
+        os.path.join(q, 'etc', 'nginx-rejected-slave.conf'))][0]
 
   def parseConnectionParameterDict(self):
     return self.parseParameterDict(
@@ -1238,7 +1237,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     self.assertEqual(
       {
@@ -1269,7 +1268,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -1707,7 +1706,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -2231,7 +2230,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result,
       'Path',
       '/VirtualHostBase/'
-      'https//typezopepath.example.com:443/path/to/some/resource'
+      'https/typezopepath.example.com:443/path/to/some/resource'
       '/VirtualHostRoot/'
       'test-path/deeper'
     )
@@ -2793,7 +2792,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//typezope.example.com:443/'
+      '/VirtualHostBase/https/typezope.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2833,8 +2832,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2845,8 +2844,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostBase/http/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2868,8 +2867,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2883,8 +2882,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80/'
+      '/VirtualHostBase/http/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2911,8 +2910,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackend.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -2949,8 +2948,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//'
-      'typezopeprefergzipencodingtobackend.example.com:443/'
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackend.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -2982,8 +2981,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http//typezopevirtualhostroothttpport'
-      '.example.com:12345//VirtualHostRoot/test-path'
+      '/VirtualHostBase/http/typezopevirtualhostroothttpport'
+      '.example.com:12345/VirtualHostRoot/test-path'
     )
 
   def test_type_zope_virtualhostroot_https_port(self):
@@ -3000,8 +2999,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https//typezopevirtualhostroothttpsport'
-      '.example.com:12345//VirtualHostRoot/test-path'
+      '/VirtualHostBase/https/typezopevirtualhostroothttpsport'
+      '.example.com:12345/VirtualHostRoot/test-path'
     )
 
   def test_type_notebook(self):
@@ -5286,7 +5285,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -5296,10 +5295,6 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'rejected-slave-amount': '0',
       'slave-amount': '12',
       'rejected-slave-dict': {
-        # u"_ssl_ca_crt_only":
-        # [u"ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
-        # u"_ssl_key-ssl_crt-unsafe":
-        # [u"slave ssl_key and ssl_crt does not match"]
       },
       'warning-list': [
         u'apache-certificate is obsolete, please use master-key-upload-url',
@@ -5948,7 +5943,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -6053,7 +6048,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -6292,6 +6287,29 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'health-check-fall': '-2',
       }
     }
+
+  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+    rejected_slave_promise_url = parameter_dict.pop(
+      'rejected-slave-promise-url')
+
+    try:
+      result = requests.get(rejected_slave_promise_url, verify=False)
+      if result.text == '':
+        result_json = {}
+      else:
+        result_json = result.json()
+      self.assertEqual(
+        {
+          u'_SITE_4': [u"custom_domain 'duplicate.example.com' clashes"],
+          u'_SITE_2': [u"custom_domain 'duplicate.example.com' clashes"],
+          u'_SITE_3': [u"server-alias 'duplicate.example.com' clashes"]
+        },
+        result_json
+      )
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(e)
 
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()

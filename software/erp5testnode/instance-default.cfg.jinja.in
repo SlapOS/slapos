@@ -261,7 +261,7 @@ instance-promises =
 
 [shellinabox-frontend-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${shellinabox-frontend:hostname}
 config-port = $${shellinabox-frontend:port}
@@ -278,6 +278,6 @@ config-port = $${shellinabox-frontend:port}
 
 [testnode-log-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${testnode-log-frontend:connection-secure_access}

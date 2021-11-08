@@ -66,14 +66,14 @@ name = {{dns_name}}
 state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
 config-supported-zone-list = {{ ' '.join(supported_zone_list) }}
-config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
+config-soa = {{ "%s,%s,0,10800,3600,604800,3600" % (dns_domain, server_admin) }}
 {%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endfor -%}
 
 [{{promise_section_title}}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = {{promise_section_title}}.py
 config-host = {{ '${' ~ request_section_title ~ ':connection-powerdns-ipv6}' }}
 config-port = {{ '${' ~ request_section_title ~ ':connection-powerdns-port}' }}

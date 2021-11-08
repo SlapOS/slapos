@@ -134,7 +134,7 @@ mode = 755
 
 [importer-consistency-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = importer-consistency-promise.py
 config-command = ${importer-consistency-promise-bin:output}
 
@@ -158,7 +158,7 @@ mode = 755
 
 [software-release-deployment-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = software-release-deployment-promise.py
 config-command =${software-release-deployment-bin:output}
 

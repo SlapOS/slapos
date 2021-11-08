@@ -47,7 +47,7 @@ return = secure_access domain
 
 [jscrawler-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = jscrawler_frontend.py
 config-url = ${request-jscrawler-frontend:connection-secure_access}
 
@@ -59,7 +59,7 @@ log = ${httpd-wrapper:log-file}
 
 [httpd-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = httpd-listen.py
 config-host = ${httpd-wrapper:host}
 config-port = ${httpd-wrapper:port}

@@ -277,6 +277,8 @@ kvm_argument_list = [qemu_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
   '-nodefaults',
+  # switch to tablet mode for the mouse to have it synced with a client, see https://wiki.gentoo.org/wiki/QEMU/Options#USB
+  '-usbdevice', 'tablet',
 ]
 for disk_info in disk_info_list:
   kvm_argument_list += (

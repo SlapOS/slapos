@@ -77,7 +77,7 @@ return = domain secure_access
 
 [lamp-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = lamp-http-frontend.py
 url = ${request-frontend:connection-secure_access}
 config-url = ${:url}

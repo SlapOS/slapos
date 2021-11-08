@@ -217,7 +217,7 @@ wrapper-path = $${rootdirectory:bin}/stalled-pull-push
 
 [pull-push-stalled-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = stalled-pull-push.py
 config-command = $${pull-push-stalled-promise-bin:wrapper-path}
 
@@ -233,7 +233,7 @@ context =
 
 [notifier-feed-status-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = notifier-feed-check-malformed-or-failure.py
 config-command = $${notifier-feed-status-promise-bin:rendered}
 

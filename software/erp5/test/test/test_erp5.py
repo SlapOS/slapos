@@ -25,10 +25,11 @@
 #
 ##############################################################################
 
+from __future__ import absolute_import
 import os
 import json
 import glob
-import urlparse
+import six.moves.urllib.parse
 import socket
 import time
 
@@ -37,6 +38,9 @@ import requests
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
+import six
+from six.moves import map
+from six.moves import range
 setUpModule # pyflakes
 
 
@@ -48,7 +52,7 @@ class TestPublishedURLIsReachableMixin(object):
     # We access ERP5 trough a "virtual host", which should make
     # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
     # as base.
-    virtual_host_url = urlparse.urljoin(
+    virtual_host_url = six.moves.urllib.parse.urljoin(
         base_url,
         '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
         .format(site_id))
@@ -76,7 +80,7 @@ class TestPublishedURLIsReachableMixin(object):
 
     # login page can be rendered and contain the text "ERP5"
     r = session.get(
-        urlparse.urljoin(base_url, '{}/login_form'.format(site_id)),
+        six.moves.urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
         verify=verify,
         allow_redirects=False,
     )
@@ -119,6 +123,7 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'wsgi': False})}
 
+
 class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 Jupyter notebook
   """
@@ -142,6 +147,7 @@ class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
       [requests.codes.found, True, '/login?next=%2Ftree'],
       [result.status_code, result.is_redirect, result.headers['Location']]
     )
+
 
 class TestBalancerPorts(ERP5InstanceTestCase):
   """Instantiate with two zope families, this should create for each family:
@@ -169,7 +175,7 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     }
 
   def checkValidHTTPSURL(self, url):
-    parsed = urlparse.urlparse(url)
+    parsed = six.moves.urllib.parse.urlparse(url)
     self.assertEqual(parsed.scheme, 'https')
     self.assertTrue(parsed.hostname)
     self.assertTrue(parsed.port)
@@ -254,7 +260,7 @@ class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMi
     with open(config_file.strip()) as f:
       self.assertEqual(
           f.read(),
-          json.dumps(json.loads(self.getInstanceParameterDict()['_'])['test-runner']))
+          json.dumps(json.loads(self.getInstanceParameterDict()['_'])['test-runner'], sort_keys=True))
 
 
 class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -270,8 +276,8 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     """
     # self.computer_partition_root_path is the path of root partition.
     # we want to assert that no scripts exist in any partition.
-    bin_programs = map(os.path.basename,
-      glob.glob(self.computer_partition_root_path + "/../*/bin/*"))
+    bin_programs = list(map(os.path.basename,
+      glob.glob(self.computer_partition_root_path + "/../*/bin/*")))
 
     self.assertTrue(bin_programs) # just to check the glob was correct.
     self.assertNotIn('runUnitTest', bin_programs)
@@ -352,7 +358,7 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
       storage["storage"] = "root"
       storage["server"] = zeo_addr
       with open('%s/etc/zope-%s.conf' % (partition, zope)) as f:
-        conf = map(str.strip, f.readlines())
+        conf = list(map(str.strip, f.readlines()))
       i = conf.index("<zodb_db root>") + 1
       conf = iter(conf[i:conf.index("</zodb_db>", i)])
       for line in conf:
@@ -361,23 +367,23 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
             if line == '</zeoclient>':
               break
             checkParameter(line, storage)
-          for k, v in storage.iteritems():
+          for k, v in six.iteritems(storage):
             self.assertIsNone(v, k)
           del storage
         else:
           checkParameter(line, zodb)
-      for k, v in zodb.iteritems():
+      for k, v in six.iteritems(zodb):
         self.assertIsNone(v, k)
 
     partition = self.getComputerPartitionPath('zope-a')
-    for zope in xrange(3):
+    for zope in range(3):
       checkConf({
           "cache-size-bytes": "20MB",
         }, {
           "cache-size": "50MB",
         })
     partition = self.getComputerPartitionPath('zope-bb')
-    for zope in xrange(5):
+    for zope in range(5):
       checkConf({
           "cache-size-bytes": "500MB" if zope else 1<<20,
         }, {

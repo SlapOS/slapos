@@ -16,6 +16,7 @@
 # See COPYING file for full licensing terms.
 # See https://www.nexedi.com/licensing for rationale and options.
 
+from __future__ import absolute_import
 import json
 import os.path
 import unittest

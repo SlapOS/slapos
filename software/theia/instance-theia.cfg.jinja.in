@@ -82,21 +82,21 @@ instance-promises =
 
 [theia-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${theia-instance:ip}
 config-port = $${theia-instance:port}
 
 [frontend-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
 
 [frontend-authentification-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = $${:_buildout_section_name_}.py
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
@@ -106,7 +106,7 @@ config-url = https://$${:username}:$${:password}@[$${:ip}]:$${:port}
 
 [remote-frontend-url-available-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${remote-frontend:connection-secure_access}
 config-http-code = 401
@@ -114,7 +114,7 @@ config-http-code = 401
 {% if additional_frontend %}
 [remote-additional-frontend-url-available-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = $${:_buildout_section_name_}.py
 config-url = $${remote-additional-frontend:connection-secure_access}
 config-http-code = 401
@@ -122,7 +122,7 @@ config-http-code = 401
 
 [slapos-standalone-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 # XXX promise plugins can not contain "slapos" in their names
 name = standalone-listen-promise.py
 config-host = $${slapos-standalone-instance:hostname}
@@ -130,13 +130,13 @@ config-port = $${slapos-standalone-instance:port}
 
 [slapos-standalone-ready-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = standalone-ready-promise.py
 config-abstract = $${directory:runner}/standalone_ready
 
 [slapos-autorun-promise]
 <= monitor-promise-base
-module = check_service_state
+promise = check_service_state
 name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}

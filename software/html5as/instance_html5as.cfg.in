@@ -185,7 +185,7 @@ context =
 # Port Listening checking promise
 [port-listening-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = nginx-port-listening.py
 config-host = ${html5as:ip}
 config-port = ${html5as:port}
@@ -235,7 +235,7 @@ return = domain secure_access
 # Add a promise to make sure the cdn is properly configured
 [html5as-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = html5as-http-frontend.py
 url = ${html5as-frontend:connection-secure_access}
 config-url = ${:url}

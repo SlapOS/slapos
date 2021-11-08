@@ -302,14 +302,12 @@ pre = {{ monitor_statistic }} --history_folder ${monitor-directory:public}
 recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
-content =
-  from slapos.promise.plugin.${:module} import RunPromise
-mode = 600
+module = slapos.promise.plugin.${:promise}
 output = ${directory:plugins}/${:name}
 
 [monitor-httpd-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = monitor-httpd-listening-on-tcp.py
 config-url = ${monitor-httpd-conf-parameter:url}
 config-http-code = 401
@@ -360,7 +358,7 @@ return = domain secure_access
 # credentials.
 [check-monitor-password-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = check-monitor-frontend-password.py
 url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
@@ -371,7 +369,7 @@ config-password = ${monitor-instance-parameter:password}
 # supplied.
 [monitor-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = monitor-http-frontend.py
 url = ${monitor-frontend:connection-secure_access}
 config-url = ${:url}
@@ -379,7 +377,7 @@ config-http-code = 401
 
 [monitor-bootstrap-promise]
 <= monitor-promise-base
-module = monitor_bootstrap_status
+promise = monitor_bootstrap_status
 name = monitor-bootstrap-status.py
 config-process-pid-file = ${monitor-conf-parameters:pid-file}
 config-process-name = ${start-monitor:name}
@@ -387,13 +385,13 @@ config-status-file = ${monitor-conf-parameters:promise-output-file}
 
 [promise-check-slapgrid]
 <= monitor-promise-base
-module = check_partition_deployment_state
+promise = check_partition_deployment_state
 name = buildout-${slap-connection:partition-id}-status.py
 config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
 
 [promise-check-free-disk-space]
 <= monitor-promise-base
-module = check_free_disk_space
+promise = check_free_disk_space
 name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
 config-threshold-file = ${directory:etc}/min-free-disk-size

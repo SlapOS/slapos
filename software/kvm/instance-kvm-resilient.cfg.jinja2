@@ -102,13 +102,13 @@ mode = 700
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = kvm-frontend-url.py
 config-command = ${kvm-frontend-url-bin:output}
 
 [kvm-backend-url-promise]
 # Check that backend url is reachable
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = frontend_promise.py
 config-url = ${publish-connection-information:url}

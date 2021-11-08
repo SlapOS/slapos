@@ -81,7 +81,7 @@ mode = 700
 
 [backup-checksum-integrity-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = backup-checksum-integrity.py
 config-command = $${backup-checksum-integrity-promise-bin:rendered}
 
@@ -159,7 +159,7 @@ wrapper-path = $${basedirectory:services}/resilient-web-takeover-httpd
 
 [resilient-web-takeover-httpd-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = resilient-web-takeover-httpd.py
 config-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
 

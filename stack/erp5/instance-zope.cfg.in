@@ -358,7 +358,7 @@ hash-existing-files =
 
 [{{ section("promise-" ~ name) }}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = {{ name }}.py
 config-host = {{ ipv4 }}
 config-port = {{ port }}
@@ -373,7 +373,7 @@ ipv4-port = {{ port }}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = {{ zope_tunnel_base_name }}.py
 config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
@@ -384,7 +384,7 @@ config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% if longrequest_logger_interval > 0 -%}
 [{{ section('promise-check-' ~name ~ '-longrequest-error-log') }}]
 <= monitor-promise-base
-module = check_error_on_zope_longrequest_log
+promise = check_error_on_zope_longrequest_log
 name = {{'check-' ~ name ~ '-longrequest-error-log.py'}}
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
 config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
@@ -528,7 +528,7 @@ expected-value =
 
 [{{ section("promise-test-runner-apache-url") }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${promise-test-runner-apache-url-executable:path}
 
@@ -537,7 +537,7 @@ config-command = ${promise-test-runner-apache-url-executable:path}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 

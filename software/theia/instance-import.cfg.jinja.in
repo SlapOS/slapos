@@ -127,7 +127,7 @@ import-promises =
 
 [import-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = resiliency-import-promise.py
 config-command = $${import-promise-script:rendered}
 
