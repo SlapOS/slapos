@@ -1611,3 +1611,62 @@ INF: Storing errors in %(error_state_file)s
     self.assertFalse(
       os.path.exists(
         os.path.join(self.destination_directory, 'destination')))
+
+
+@skipUnlessKvm
+class TestParameterDefault(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'pd'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def mangleParameterDict(self, parameter_dict):
+    return parameter_dict
+
+  def _test(self, parameter_dict, expected):
+    self.rerequestInstance(self.mangleParameterDict(parameter_dict))
+    self.slap.waitForInstance(max_retry=10)
+    
+    kvm_raw = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
+    self.assertEqual(len(kvm_raw), 1)
+    kvm_raw = kvm_raw[0]
+    with open(kvm_raw, 'r') as fh:
+      kvm_raw = fh.read()
+    self.assertIn(expected, kvm_raw)
+
+  def test_disk_type_default(self):
+    self._test({}, "disk_type = 'virtio'")
+
+  def test_disk_type_set(self):
+    self._test({'disk-type': 'ide'}, "disk_type = 'ide'")
+
+  def test_network_adapter_default(self):
+    self._test({}, "network_adapter = 'virtio-net-pci")
+
+  def test_network_adapter_set(self):
+    self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+
+
+@skipUnlessKvm
+class TestParameterResilient(TestParameterDefault):
+  __partition_reference__ = 'pr'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestParameterCluster(TestParameterDefault):
+  __partition_reference__ = 'pc'
+  def mangleParameterDict(self, parameter_dict):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": parameter_dict
+      }
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
