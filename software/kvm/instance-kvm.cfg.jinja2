@@ -434,6 +434,8 @@ disk-format = ${slap-parameter:disk-format}
 disk-device-path = ${slap-parameter:disk-device-path}
 disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 
+network-adapter = ${slap-parameter:network-adapter}
+
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 
@@ -1074,6 +1076,8 @@ disk-size = 40
 disk-type = virtio
 disk-format = qcow2
 disk-device-path =
+
+network-adapter = virtio-net-pci
 
 cpu-count = 2
 disk-cache =
