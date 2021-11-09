@@ -127,6 +127,22 @@
       "type": "string",
       "default": "host"
     },
+    "network-adapter": {
+      "title": "Network adapter",
+      "description": "Network adapter provided to the guest. Allows to support legacy guests, which do not have drivers for default virtio-net-pci.",
+      "type": "string",
+      "default": "virtio-net-pci",
+      "enum": [
+        "virtio-net-pci",
+        "e1000",
+        "ne2k_isa",
+        "ne2k_pci",
+        "pcnet",
+        "rtl8139",
+        "usb-net",
+        "vmxnet3"
+      ]
+    },
     "nbd-host": {
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
