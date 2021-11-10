@@ -90,12 +90,12 @@ class TheiaImport(object):
     supervisor_command = (self.supervisorctl_bin, '-c', self.supervisord_conf)
     command = supervisor_command + args
     print(' '.join(command))
-    sp.check_call(command)
+    sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True)
 
   def slapos(self, *args):
     command = (self.slapos_bin,) + args + ('--cfg', self.slapos_cfg)
     print(' '.join(command))
-    sp.check_call(command)
+    sp.check_output(command, stderr=sp.STDOUT, universal_newlines=True)
 
   def sign(self, signaturefile, root_dir):
     with open(signaturefile, 'r') as f:
@@ -159,9 +159,11 @@ class TheiaImport(object):
     exitcode = 0
     try:
       self.restore()
-    except Exception:
+    except Exception as e:
       exitcode = 1
       exc = traceback.format_exc()
+      if isinstance(e, sp.CalledProcessError) and e.output:
+        exc = "%s\n\n%s" % (exc, e.output)
       with open(self.error_file, 'w') as f:
         f.write('\n ... OK\n\n'.join(self.logs))
         f.write('\n ... ERROR !\n\n')
@@ -207,7 +209,7 @@ class TheiaImport(object):
     custom_script = os.path.join(self.root_dir, 'srv', 'runner-import-restore')
     if os.path.exists(custom_script):
       self.log('Run custom restore script %s' % custom_script)
-      sp.check_call(custom_script)
+      sp.check_output(custom_script)
 
     self.log('Start slapproxy again')
     self.supervisorctl('start', 'slapos-proxy')
@@ -258,7 +260,7 @@ class TheiaImport(object):
 
     for custom_script in glob.glob(scripts):
       self.log('Running custom instance script %s' % custom_script)
-      sp.check_call(custom_script)
+      sp.check_output(custom_script)
 
     self.log('Done')
 
