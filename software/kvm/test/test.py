@@ -1180,27 +1180,6 @@ class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
 
 
 @skipUnlessKvm
-class TestCpuMemMaxDynamic(InstanceTestCase):
-  __partition_reference__ = 'cmm'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'cpu-count': 2,
-      'ram-size': 2048
-    }
-
-  def test(self):
-    with open(os.path.join(
-     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'r') as fh:
-      kvm_raw = fh.read()
-    self.assertIn('smp_count = 2', kvm_raw)
-    self.assertIn('smp_max_count = 3', kvm_raw)
-    self.assertIn('ram_size = 2048', kvm_raw)
-    self.assertIn("ram_max_size = '2560'", kvm_raw)
-
-
-@skipUnlessKvm
 class TestNatRules(InstanceTestCase):
   __partition_reference__ = 'nr'
 
@@ -1647,6 +1626,30 @@ class TestParameterDefault(InstanceTestCase, KvmMixin):
 
   def test_network_adapter_set(self):
     self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+
+  def test_cpu_count_default(self):
+    self._test({}, "init_smp_count = 2")
+
+  def test_cpu_count_default_max(self):
+    self._test({}, "smp_max_count = 3")
+
+  def test_cpu_count_set(self):
+    self._test({'cpu-count': 4}, "init_smp_count = 4")
+
+  def test_cpu_count_set_max(self):
+    self._test({'cpu-count': 4}, "smp_max_count = 5")
+
+  def test_ram_size_default(self):
+    self._test({}, "init_ram_size = 4096")
+
+  def test_cpu_count_default_max(self):
+    self._test({}, "ram_max_size = '4608'")
+
+  def test_ram_size_set(self):
+    self._test({'ram-size': 2048}, "init_ram_size = 2048")
+
+  def test_cpu_count_set_max(self):
+    self._test({'ram-size': 2048}, "ram_max_size = '2560'")
 
 
 @skipUnlessKvm
