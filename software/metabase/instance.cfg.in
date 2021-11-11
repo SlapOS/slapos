@@ -28,7 +28,7 @@ environment =
   MB_DB_USER=$${postgresql:superuser}
   MB_DB_PASS=$${postgresql:password}
   MB_DB_HOST=$${postgresql:ipv4}
-  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id}
+  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id} -Djava.io.tmpdir="$${directory:tmp}"
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
