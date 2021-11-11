@@ -7,6 +7,24 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+[fontconfig-conf]
+recipe = slapos.recipe.template:jinja2
+template = ${template-fonts-conf:output}
+rendered = $${directory:etc}/fonts.conf
+context =
+    key cachedir directory:fontconfig-cache
+    key fonts :fonts
+    key includes :includes
+fonts =
+    ${android-fonts:location}
+    ${dejavu-fonts:location}
+    ${ipa-fonts:location}
+    ${ipaex-fonts:location}
+    ${liberation-fonts:location}
+    ${ocrb-fonts:location}
+includes =
+    ${fontconfig:location}/etc/fonts/conf.d
+
 [metabase-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/$${:_buildout_section_name_}
@@ -28,7 +46,8 @@ environment =
   MB_DB_USER=$${postgresql:superuser}
   MB_DB_PASS=$${postgresql:password}
   MB_DB_HOST=$${postgresql:ipv4}
-  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id}
+  FONTCONFIG_FILE=$${fontconfig-conf:rendered}
+  JAVA_ARGS=-Dorg.quartz.scheduler.instanceId=$${slap-connection:computer-id}.$${slap-connection:partition-id} -Djava.io.tmpdir="$${directory:tmp}"
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
@@ -213,7 +232,7 @@ tmp = $${buildout:directory}/tmp
 service = $${:etc}/service
 srv-metabase = $${:srv}/metabase
 srv-backup = $${:srv}/backup
-
+fontconfig-cache = $${buildout:directory}/.fontconfig
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
