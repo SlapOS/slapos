@@ -539,7 +539,7 @@ context =
 
 [trafficserver-promise-listen-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = trafficserver-port-listening.py
 config-host = ${trafficserver-variable:local-ip}
 config-port = ${trafficserver-variable:input-port}
@@ -552,7 +552,7 @@ environment = TS_ROOT=${buildout:directory}
 
 [trafficserver-promise-cache-availability]
 <= monitor-promise-base
-module = trafficserver_cache_availability
+promise = trafficserver_cache_availability
 name = trafficserver-cache-availability.py
 config-wrapper-path = ${trafficserver-ctl:wrapper-path}
 
@@ -653,48 +653,48 @@ context =
 
 [promise-frontend-caddy-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = frontend-caddy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv4_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv4_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv6_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = backend_haproxy_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
@@ -798,7 +798,7 @@ extra-context =
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = backend-haproxy-configuration.py
 config-verification-script = ${promise-backend-haproxy-configuration-helper:rendered}
 
@@ -888,7 +888,7 @@ context =
 
 [monitor-verify-re6st-connectivity]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = re6st-connectivity.py
 config-url = ${configuration:re6st-verification-url}
 
@@ -924,7 +924,7 @@ return = domain secure_access
 
 [backend-haproxy-statistic-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = backend-haproxy-statistic-frontend.py
 config-http-code = 401
 config-url =
@@ -976,7 +976,7 @@ extra-context =
 
 [promise-slave-introspection-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = slave-introspection-configuration.py
 config-verification-script = ${promise-slave-introspection-configuration-helper:rendered}
 
@@ -993,7 +993,7 @@ context =
 
 [promise-slave-introspection-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = slave_introspection_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
@@ -1008,7 +1008,7 @@ delaycompress =
 
 [promise-logrotate-setup]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d

@@ -113,6 +113,7 @@ template =
   . ${hugo:go-environment}
   cd ${basedirectory:data}/${slap-configuration:configuration.site}
   if [ -d "public" ]; then rm -Rf public; fi
+  export TMPDIR=${hugo:path-tmp}
   hugo && hugo server --bind=${hugo:ip} --port=${hugo:hugo-port} --baseURL=${hugo-frontend:connection-secure_access} --appendPort=false  
 
 [hugo-server-service]
@@ -124,7 +125,7 @@ hash-files =
 
 [hugo-port-listening-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = hugo-port-listening.py
 config-host = ${hugo:ip}
 config-port = ${hugo:hugo-port}
@@ -144,7 +145,7 @@ return = domain secure_access
 
 [hugo-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = hugo-http-frontend.py
 url = ${hugo-frontend:connection-secure_access}
 config-url = ${:url}
@@ -212,7 +213,7 @@ template =
 
 [nginx-port-listening-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = nginx-port-listening.py
 config-host = ${hugo:ip}
 config-port = ${hugo:nginx-port}
@@ -238,7 +239,7 @@ return = domain secure_access
 
 [nginx-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = nginx-http-frontend.py
 url = ${nginx-frontend:connection-secure_access}
 config-url = ${:url}

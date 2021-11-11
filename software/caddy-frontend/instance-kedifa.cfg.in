@@ -193,7 +193,7 @@ template = inline:
 
 [promise-expose-csr_id-ip-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = expose-csr_id-ip-port-listening.py
 config-host = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
@@ -250,7 +250,7 @@ extra-context =
 
 [promise-kedifa-http-reply]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = kedifa-http-reply.py
 # Kedifa replies 400 on /, so use it to be sure that Kedifa replied
 config-http-code = 400
@@ -331,7 +331,7 @@ monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
 
 [promise-logrotate-setup]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d

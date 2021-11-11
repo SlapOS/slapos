@@ -225,7 +225,7 @@
               "title": "RAM size",
               "description": "RAM size, in MB.",
               "type": "integer",
-              "default": 1024,
+              "default": 4096,
               "minimum": 1024,
               "multipleOf": 512
             },
@@ -233,6 +233,7 @@
               "title": "Maximum RAM size, in MB",
               "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
               "type": "integer",
+              "default": 4608,
               "minimum": 1024,
               "multipleOf": 512
             },
@@ -254,7 +255,7 @@
               "title": "Disk size",
               "description": "Disk size, in GB.",
               "type": "integer",
-              "default": 10,
+              "default": 40,
               "minimum": 1
             },
             "disk-format": {
@@ -313,6 +314,7 @@
               "title": "CPU count",
               "description": "Number of CPU cores.",
               "type": "integer",
+              "default": 2,
               "minimum": 1
             },
             "cpu-max-count": {
@@ -474,9 +476,15 @@
               "oneOf": [
                 {
                   "const": [
-                    "https://shacache.nxdcdn.com/0a6aee1d9aafc1ed095105c052f9fdd65ed00ea9274188c9cd0072c8e6838ab40e246d45a1e6956d74ef1b04a1fc042151762f25412e9ff0cbf49418eef7992e#a3ebc76aec372808ad80000108a2593a"
+                    "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0"
                   ],
-                  "title": "Debian Buster 10.5 netinst x86_64"
+                  "title": "Debian Bullseye 11.1 netinst x86_64"
+                },
+                {
+                  "const": [
+                    "https://shacache.nxdcdn.com/d82b0510fd919c2a851ee93ea0f7ad6779bfa597297a5c7463b63746799f001321ec4c9b8ba6cfe20248dd2da28100ad3b78e74489a8c0c573238f226a509a9d#9d7b9cc850464d60ac174787c53e8f3f"
+                  ],
+                  "title": "Debian Buster 10.11 netinst x86_64"
                 },
                 {
                   "const": [

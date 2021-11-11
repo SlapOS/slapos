@@ -55,7 +55,7 @@ post = test ! -s {{ "${" ~ zeo_section_name ~":pid-path}" }} || {{ bin_directory
 
 [{{ section(zeo_section_name ~ "-promise") }}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = zeo-{{ family }}.py
 config-host = {{ "${" ~ zeo_section_name ~ ":ip}" }}
 config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
@@ -89,7 +89,7 @@ tidstorage-wrapper = ${directory:services}/tidstoraged
 
 [{{ section("promise-tidstorage") }}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = tidstorage.py
 config-host = ${tidstorage:ip}
 config-port = ${tidstorage:port}
@@ -177,7 +177,7 @@ mode = 755
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 

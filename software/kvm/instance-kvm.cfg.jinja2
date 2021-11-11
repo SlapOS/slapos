@@ -22,8 +22,8 @@
 {% set boot_image_url_list_enabled = 'boot-image-url-list' in slapparameter_dict %}
 {% set boot_image_url_select_enabled = 'boot-image-url-select' in slapparameter_dict %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
-{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 1)) + 1)) %}
-{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 1024)) + 512)) %}
+{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
+{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -91,7 +91,7 @@ bytes = 8
 ## boot-image-url-select support BEGIN
 [empty-file-state-base-select-promise]
 <= monitor-promise-base
-module = check_file_state
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-state = empty
 # It's very hard to put the username and password correctly, after schema://
@@ -190,7 +190,7 @@ config-filename = ${boot-image-url-select-download-wrapper:error-state-file}
 ## boot-image-url-list support BEGIN
 [empty-file-state-base-list-promise]
 <= monitor-promise-base
-module = check_file_state
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-state = empty
 # It's very hard to put the username and password correctly, after schema://
@@ -289,7 +289,7 @@ config-filename = ${boot-image-url-list-download-wrapper:error-state-file}
 ## virtual-hard-drive-url support BEGIN
 [empty-file-state-base-virtual-promise]
 <= monitor-promise-base
-module = check_file_state
+promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-state = empty
 # It's very hard to put the username and password correctly, after schema://
@@ -441,8 +441,8 @@ socket-path = ${kvm-controller-parameter-dict:socket-path}
 smp-max-count = {{ cpu_max_count }}
 ram-max-size = {{ ram_max_size }}
 {%- if enable_device_hotplug %}
-init-ram-size = 1024
-init-smp-count = 1
+init-ram-size = 4096
+init-smp-count = 2
 {%- else %}
 init-ram-size = ${kvm-controller-parameter-dict:ram-size}
 init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
@@ -586,7 +586,7 @@ command-line = ${kvm-controller:rendered}
 
 [kvm-vnc-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = vnc_promise.py
 config-host = ${kvm-parameter-dict:vnc-ip}
 config-port = ${kvm-parameter-dict:vnc-port}
@@ -614,7 +614,7 @@ mode = 700
 [kvm-disk-image-corruption-promise]
 # Check that disk image is not corrupted
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = kvm-disk-image-corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}
 
@@ -643,7 +643,7 @@ context =
 
 [kvm-started-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = qemu-virtual-machine-is-ready.py
 config-command = ${kvm-started-bin:rendered}
 
@@ -708,7 +708,7 @@ wrapper = ${directory:bin}/websockify
 
 [novnc-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = novnc_promise.py
 config-host = ${novnc-instance:ip}
 config-port = ${novnc-instance:port}
@@ -764,7 +764,7 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = frontend_promise.py
 config-url = ${publish-connection-information:url}
 
@@ -778,7 +778,7 @@ sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 
 [frontend-additional-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = frontend_additional_promise.py
 config-url = ${publish-connection-information:url-additional}
 {% endif %}
@@ -801,7 +801,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [httpd-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = httpd.py
 config-host = ${httpd:host}
 config-port = ${httpd:port}
@@ -1029,7 +1029,7 @@ context =
 
 [ansible-vm-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ansible_{{ name }}.py
 config-command = ${ansible-vm-bin:rendered}
 
@@ -1068,14 +1068,14 @@ nbd2-host =
 boot-image-url-list =
 
 enable-device-hotplug = False
-ram-size = 1024
+ram-size = 4096
 ram-hotplug-slot-size = 512
-disk-size = 10
+disk-size = 40
 disk-type = virtio
 disk-format = qcow2
 disk-device-path =
 
-cpu-count = 1
+cpu-count = 2
 disk-cache =
 disk-aio =
 auto-ballooning = True

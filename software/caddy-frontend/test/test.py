@@ -971,12 +971,11 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     return parsed_parameter_dict
 
   def getMasterPartitionPath(self):
-    # partition w/o etc/trafficserver, but with buildout.cfg
+    # partition with etc/nginx-rejected-slave.conf
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
-      if not os.path.exists(
-        os.path.join(q, 'etc', 'trafficserver')) and os.path.exists(
-          os.path.join(q, 'buildout.cfg'))][0]
+      if os.path.exists(
+        os.path.join(q, 'etc', 'nginx-rejected-slave.conf'))][0]
 
   def parseConnectionParameterDict(self):
     return self.parseParameterDict(

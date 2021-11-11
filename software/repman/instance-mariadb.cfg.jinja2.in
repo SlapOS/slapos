@@ -327,13 +327,13 @@ dash = {{ dumps(dash) }}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [{{ section('promise') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = mariadb.py
 config-command = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "{{ ip }}" "{{ port }}"
 

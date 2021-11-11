@@ -104,6 +104,7 @@ class Recipe(GenericBaseRecipe):
         else:
             paths.extend(self.createConfig())
             paths.extend(self.createRunScript())
+            self.updateSuperuser()
 
         return paths
 
@@ -205,9 +206,24 @@ class Recipe(GenericBaseRecipe):
 
         # encrypt the password to avoid storing in the logs
         enc_password = 'md5' + hashlib.md5((password + user).encode()).hexdigest()
+        change_password_query = """ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password)
 
-        self.runPostgresCommand(cmd="""ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password))
-
+        pgdata = self.options['pgdata-directory']
+        if os.path.exists(os.path.join(pgdata, 'postmaster.pid')):
+            psql_binary = os.path.join(self.options['bin'], 'psql')
+            # connect to a running postgres deamon
+            p = subprocess.Popen([
+                    psql_binary,
+                    '-h', pgdata,
+                    '-U', user,
+                    '-d', self.options['dbname'],
+                ],
+                stdin=subprocess.PIPE)
+            p.communicate((change_password_query + '\n').encode())
+            if p.returncode:
+                raise UserError("Error updating password")
+        else:
+            self.runPostgresCommand(cmd=change_password_query)
 
     def runPostgresCommand(self, cmd):
         """\

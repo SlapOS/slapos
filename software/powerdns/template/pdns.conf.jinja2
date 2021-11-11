@@ -1,8 +1,7 @@
 # -------------------------------------------------------------------------
 
 # Configure ip/port binding
-local-address={{ pdns.get('ipv4') }}
-local-ipv6={{ pdns.get('ipv6') }}
+local-address={{ pdns.get('ipv4') }}, {{ pdns.get('ipv6') }}
 local-port={{ pdns.get('port') }}
 
 

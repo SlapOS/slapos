@@ -272,7 +272,7 @@ hash-files = ${rsyslogd-cfg:rendered}
 
 [{{ section ('rsyslogd-listen-promise') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = rsyslogd_listen_promise.py
 config-command = test -S ${rsyslogd-cfg-parameter-dict:log-socket}
 
@@ -303,7 +303,7 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 [{{ section('haproxy-promise') }}]
 <= monitor-promise-base
 # Check any haproxy port in ipv4, expect other ports and ipv6 to behave consistently
-module = check_socket_listening
+promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
 config-port = {{ haproxy_dict.values()[0][0] }}
@@ -382,13 +382,13 @@ promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-apachedex-result.py
 config-command = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_path "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
