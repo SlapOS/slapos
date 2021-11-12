@@ -170,6 +170,19 @@ int stop() {
     return 0;
 }
 
+int reboot() {
+    if(!mavsdk_started)
+        return 1; 
+
+    const Action::Result reboot_result = action->reboot();
+    if (reboot_result != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Rebooting failed: "
+                    << reboot_result << NORMAL_CONSOLE_TEXT << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 int doParachute(int param) {
     if(!mavsdk_started)
         return 1;

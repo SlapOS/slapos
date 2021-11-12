@@ -7,6 +7,7 @@ extern "C" {
 int start(const char * url, const char * log_file, int timeout,
           void (*publishCoordinates)(double, double, float));
 int stop(void);
+int reboot(void);
 int arm(void);
 int healthAllOk(void);
 int landed(void);

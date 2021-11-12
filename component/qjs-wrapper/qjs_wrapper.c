@@ -269,6 +269,12 @@ static JSValue js_mavsdk_stop(JSContext *ctx, JSValueConst this_val,
     return JS_NewInt32(ctx, stop());
 }
 
+static JSValue js_mavsdk_reboot(JSContext *ctx, JSValueConst this_val,
+                                int argc, JSValueConst *argv)
+{
+    return JS_NewInt32(ctx, reboot());
+}
+
 static JSValue js_mavsdk_healthAllOk(JSContext *ctx, JSValueConst this_val,
 				     int argc, JSValueConst *argv)
 {
@@ -478,6 +484,7 @@ static JSValue js_mavsdk_land(JSContext *ctx, JSValueConst this_val,
 static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("start", 3, js_mavsdk_start ),
     JS_CFUNC_DEF("stop", 0, js_mavsdk_stop ),
+    JS_CFUNC_DEF("reboot", 0, js_mavsdk_reboot ),
     JS_CFUNC_DEF("healthAllOk", 0, js_mavsdk_healthAllOk ),
     JS_CFUNC_DEF("landed", 0, js_mavsdk_landed ),
     JS_CFUNC_DEF("arm", 0, js_mavsdk_arm ),

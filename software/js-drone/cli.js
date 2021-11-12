@@ -12,6 +12,7 @@ import {
   start,
   stop,
   stopPubsub,
+  reboot,
   takeOff
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {sleep, Worker} from "os";
@@ -87,6 +88,7 @@ function cli() {
     speed(speed)
     stop
     gotoCoord(latitude, longitude)
+    reboot
     exit
     help
  `;
@@ -198,6 +200,10 @@ function cli() {
 
     case "stop":
       cmd = stop;
+      break;
+
+    case "reboot":
+      comd = reboot;
       break;
 
     case "takeoff":
