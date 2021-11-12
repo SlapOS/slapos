@@ -39,6 +39,7 @@ extras_require = {
     'test': (
         'jsonschema',
         'mock',
+        'psycopg2',
         'testfixtures',
         'requests',
     ),
