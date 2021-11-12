@@ -56,6 +56,8 @@ static const double EARTH_RADIUS = 6371000.F;
 static int mavsdk_started = 0;
 static void (*publish_fn)(double, double, float);
 
+// Connexion management functions
+
 int start(const char * url, const char * log_file, int timeout,
           void (*publishCoordinates)(double, double, float))
 {
@@ -183,6 +185,28 @@ int reboot() {
     return 0;
 }
 
+// Flight state management functions
+
+int arm(void) {
+    if(!mavsdk_started)
+        return -1;
+
+    while(!telemetry->health().is_home_position_ok) {
+        log_file_fd << "Waiting for home position to be set" << std::endl;
+        sleep_for(seconds(1));
+    }
+
+    log_file_fd << "Arming..." << std::endl;
+    const Action::Result arm_result = action->arm();
+
+    if (arm_result != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result
+                    << NORMAL_CONSOLE_TEXT << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
 int doParachute(int param) {
     if(!mavsdk_started)
         return -1;
@@ -196,34 +220,31 @@ int doParachute(int param) {
     return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
 }
 
-int setAltitude(double altitude) {
+int land(void)
+{
     if(!mavsdk_started)
         return -1;
 
-    MavlinkPassthrough::CommandLong command;
-    command.command = 40000;
-    command.param1 = 1 | 2 | 4 | 8;
-    command.param2 = 1 | 2 | 8;
-    command.param3 = (float) altitude;
-    command.target_sysid = mavlink_passthrough->get_target_sysid();
-    command.target_compid = mavlink_passthrough->get_target_compid();
-
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
-}
-
-int setAirspeed(double airspeed) {
-    if(!mavsdk_started)
+    log_file_fd << "Landing..." << std::endl;
+    const Action::Result land_result = action->terminate();
+    if (land_result != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Land failed:" << land_result << NORMAL_CONSOLE_TEXT
+                  << std::endl;
         return -1;
+    }
 
-    MavlinkPassthrough::CommandLong command;
-    command.command = 40000;
-    command.param1 = 1 | 2 | 4 | 8;
-    command.param2 = 2 | 4 | 8;
-    command.param3 = (float) airspeed;
-    command.target_sysid = mavlink_passthrough->get_target_sysid();
-    command.target_compid = mavlink_passthrough->get_target_compid();
+    // Check if vehicle is still in air
+    while (telemetry->in_air()) {
+        log_file_fd << "Vehicle is landing..." << std::endl;
+        sleep_for(seconds(1));
+    }
+    log_file_fd << "Landed!" << std::endl;
 
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+    // We are relying on auto-disarming but let's keep watching the telemetry for a bit longer.
+    sleep_for(seconds(10));
+    log_file_fd << "Finished..." << std::endl;
+
+    return 0;
 }
 
 int loiter(void) {
@@ -254,39 +275,6 @@ int loiter(void) {
     }
 
     return 0;
-}
-
-int arm(void) {
-    if(!mavsdk_started)
-        return -1;
-
-    while(!telemetry->health().is_home_position_ok) {
-        log_file_fd << "Waiting for home position to be set" << std::endl;
-        sleep_for(seconds(1));
-    }
-
-    log_file_fd << "Arming..." << std::endl;
-    const Action::Result arm_result = action->arm();
-
-    if (arm_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result
-                    << NORMAL_CONSOLE_TEXT << std::endl;
-        return -1;
-    }
-    return 0;
-}
-
-int healthAllOk(void)
-{
-    return telemetry->health_all_ok();
-}
-
-int landed(void) {
-  return !telemetry->in_air();
-}
-
-int droneLanded(void) {
-    return (flight_mode == Telemetry::FlightMode::Land && !telemetry->in_air());
 }
 
 int takeOff(void)
@@ -321,6 +309,54 @@ int takeOffAndWait(void) {
     return 0;
 }
 
+// Flight management functions
+
+int setAirspeed(double airspeed) {
+    if(!mavsdk_started)
+        return -1;
+
+    MavlinkPassthrough::CommandLong command;
+    command.command = 40000;
+    command.param1 = 1 | 2 | 4 | 8;
+    command.param2 = 2 | 4 | 8;
+    command.param3 = (float) airspeed;
+    command.target_sysid = mavlink_passthrough->get_target_sysid();
+    command.target_compid = mavlink_passthrough->get_target_compid();
+
+    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+}
+
+int setAltitude(double altitude) {
+    if(!mavsdk_started)
+        return -1;
+
+    MavlinkPassthrough::CommandLong command;
+    command.command = 40000;
+    command.param1 = 1 | 2 | 4 | 8;
+    command.param2 = 1 | 2 | 8;
+    command.param3 = (float) altitude;
+    command.target_sysid = mavlink_passthrough->get_target_sysid();
+    command.target_compid = mavlink_passthrough->get_target_compid();
+
+    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+}
+
+int setTargetAltitude(double a)
+{
+    if(!mavsdk_started)
+        return -1;
+
+    log_file_fd << "Going to altitude " << a << "m" << std::endl;
+
+    const Action::Result result = action->goto_location(drone_la, drone_lo, (float) a, 0);
+    if (result != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
+                  << NORMAL_CONSOLE_TEXT << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
 int setTargetCoordinates(double la, double lo, double a, double y)
 {
     if(!mavsdk_started)
@@ -348,32 +384,41 @@ int setTargetCoordinatesXYZ(double x, double y, double z) {
     return setTargetCoordinates(la, lo, z, 0);
 }
 
-double getYaw(void) {
-    return drone_yaw;
+int setTargetLatLong(double la, double lo) {
+    return setTargetCoordinates(la, lo, drone_a, 0);
 }
 
-double getRoll(void) {
-    return drone_roll;
+// Information functions
+double getAltitude(void) {
+    return drone_a;
 }
 
-double getPitch(void) {
-    return drone_pitch;
+double getInitialAltitude(void) {
+    return initial_drone_a;
 }
 
 double getInitialLatitude(void) {
     return initial_drone_la;
 }
 
-double getLatitude(void) {
-    return drone_la;
-}
-
 double getInitialLongitude(void) {
     return initial_drone_lo;
 }
 
+double getLatitude(void) {
+    return drone_la;
+}
+
 double getLongitude(void) {
     return drone_lo;
+}
+
+double getPitch(void) {
+    return drone_pitch;
+}
+
+double getRoll(void) {
+    return drone_roll;
 }
 
 double getTakeOffAltitude(void) {
@@ -387,57 +432,15 @@ double getTakeOffAltitude(void) {
     return response.second;
 }
 
-double getInitialAltitude(void) {
-    return initial_drone_a;
+double getYaw(void) {
+    return drone_yaw;
 }
 
-double getAltitude(void) {
-    return drone_a;
-}
-
-int setTargetLatLong(double la, double lo) {
-    return setTargetCoordinates(la, lo, drone_a, 0);
-}
-
-int setTargetAltitude(double a)
+int healthAllOk(void)
 {
-    if(!mavsdk_started)
-        return -1;
-
-    log_file_fd << "Going to altitude " << a << "m" << std::endl;
-
-    const Action::Result result = action->goto_location(drone_la, drone_lo, (float) a, 0);
-    if (result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
-                  << NORMAL_CONSOLE_TEXT << std::endl;
-        return -1;
-    }
-    return 0;
+    return telemetry->health_all_ok();
 }
 
-int land(void)
-{
-    if(!mavsdk_started)
-        return -1;
-
-    log_file_fd << "Landing..." << std::endl;
-    const Action::Result land_result = action->terminate();
-    if (land_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Land failed:" << land_result << NORMAL_CONSOLE_TEXT
-                  << std::endl;
-        return -1;
-    }
-
-    // Check if vehicle is still in air
-    while (telemetry->in_air()) {
-        log_file_fd << "Vehicle is landing..." << std::endl;
-        sleep_for(seconds(1));
-    }
-    log_file_fd << "Landed!" << std::endl;
-
-    // We are relying on auto-disarming but let's keep watching the telemetry for a bit longer.
-    sleep_for(seconds(10));
-    log_file_fd << "Finished..." << std::endl;
-
-    return 0;
+int landed(void) {
+  return !telemetry->in_air();
 }
