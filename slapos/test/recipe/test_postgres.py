@@ -110,3 +110,7 @@ class PostgresTest(unittest.TestCase):
         'password authentication failed'
     ):
       psycopg2.connect(dsn)
+
+
+class PostgresTestNonStandardPort(PostgresTest):
+  port = 5433
