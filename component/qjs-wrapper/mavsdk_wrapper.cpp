@@ -68,7 +68,7 @@ int start(const char * url, const char * log_file, int timeout,
     if (connection_result != ConnectionResult::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Connection failed: " << connection_result
                   << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
 
     log_file_fd << "Waiting to discover msystem..." << std::endl;
@@ -89,7 +89,7 @@ int start(const char * url, const char * log_file, int timeout,
     if (fut.wait_for(seconds(timeout)) == std::future_status::timeout) {
         log_file_fd << ERROR_CONSOLE_TEXT << "No autopilot found, exiting." << NORMAL_CONSOLE_TEXT
                   << std::endl;
-        return 1;
+        return -1;
     }
 
     msystem = fut.get();
@@ -146,19 +146,19 @@ int start(const char * url, const char * log_file, int timeout,
 
 int stop() {
     if(!mavsdk_started)
-        return 1;
+        return -1;
     
     if(!landed()) {
       log_file_fd << ERROR_CONSOLE_TEXT << "You must land first !"
                   << NORMAL_CONSOLE_TEXT << std::endl;
-      return 1;
+      return -1;
     }
 
     const Action::Result shutdown_result = action->shutdown();
     if (shutdown_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Shutdown failed:" << shutdown_result
                     << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
 
     // Delete pointers
@@ -172,20 +172,20 @@ int stop() {
 
 int reboot() {
     if(!mavsdk_started)
-        return 1; 
+        return -1; 
 
     const Action::Result reboot_result = action->reboot();
     if (reboot_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Rebooting failed: "
                     << reboot_result << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
     return 0;
 }
 
 int doParachute(int param) {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     MavlinkPassthrough::CommandLong command;
     command.command = MAV_CMD_DO_PARACHUTE;
@@ -198,7 +198,7 @@ int doParachute(int param) {
 
 int setAltitude(double altitude) {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     MavlinkPassthrough::CommandLong command;
     command.command = 40000;
@@ -213,7 +213,7 @@ int setAltitude(double altitude) {
 
 int setAirspeed(double airspeed) {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     MavlinkPassthrough::CommandLong command;
     command.command = 40000;
@@ -228,7 +228,7 @@ int setAirspeed(double airspeed) {
 
 int loiter(void) {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     if(flight_mode == Telemetry::FlightMode::Hold) {
       std::cout << "Flight mode is " << flight_mode << std::endl;
@@ -250,7 +250,7 @@ int loiter(void) {
     if (cmd_result != MavlinkPassthrough::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Loiter failed" << cmd_result
 	       	    << NORMAL_CONSOLE_TEXT << std::endl;
-       return 1;
+       return -1;
     }
 
     return 0;
@@ -258,7 +258,7 @@ int loiter(void) {
 
 int arm(void) {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     while(!telemetry->health().is_home_position_ok) {
         log_file_fd << "Waiting for home position to be set" << std::endl;
@@ -271,7 +271,7 @@ int arm(void) {
     if (arm_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result
                     << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -292,13 +292,13 @@ int droneLanded(void) {
 int takeOff(void)
 {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     const Action::Result takeoff_result = action->takeoff();
     if (takeoff_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Takeoff failed:" << takeoff_result
                     << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
 
     while(flight_mode != Telemetry::FlightMode::Takeoff) {
@@ -311,7 +311,7 @@ int takeOff(void)
 
 int takeOffAndWait(void) {
     if(takeOff()) {
-        return 1;
+        return -1;
     }
 
     while(flight_mode == Telemetry::FlightMode::Takeoff) {
@@ -324,14 +324,14 @@ int takeOffAndWait(void) {
 int setTargetCoordinates(double la, double lo, double a, double y)
 {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     std::cout << "Going to altitude " << a <<  " m " << std::endl;
     const Action::Result result = action->goto_location(la, lo, (float) a, (float) y);
     if (result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
                   << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
 
     std::cout << "Going to location ( " << la << " , " << lo << " ) "
@@ -402,7 +402,7 @@ int setTargetLatLong(double la, double lo) {
 int setTargetAltitude(double a)
 {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     log_file_fd << "Going to altitude " << a << "m" << std::endl;
 
@@ -410,7 +410,7 @@ int setTargetAltitude(double a)
     if (result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
                   << NORMAL_CONSOLE_TEXT << std::endl;
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -418,14 +418,14 @@ int setTargetAltitude(double a)
 int land(void)
 {
     if(!mavsdk_started)
-        return 1;
+        return -1;
 
     log_file_fd << "Landing..." << std::endl;
     const Action::Result land_result = action->terminate();
     if (land_result != Action::Result::Success) {
         log_file_fd << ERROR_CONSOLE_TEXT << "Land failed:" << land_result << NORMAL_CONSOLE_TEXT
                   << std::endl;
-        return 1;
+        return -1;
     }
 
     // Check if vehicle is still in air
