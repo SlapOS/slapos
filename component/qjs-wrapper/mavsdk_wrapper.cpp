@@ -56,6 +56,27 @@ static const double EARTH_RADIUS = 6371000.F;
 static int mavsdk_started = 0;
 static void (*publish_fn)(double, double, float);
 
+// Logs functions
+void log(std::string message) {
+    log_file_fd << message << std::endl;
+}
+
+void log_error(std::string message) {
+    log(ERROR_CONSOLE_TEXT + message + NORMAL_CONSOLE_TEXT);
+}
+
+template <class Enumeration>
+void log_error_from_result(std::string message, Enumeration result) {
+  std::ostringstream oss;
+  oss << message << ": " << result;
+  log_error(oss.str());
+}
+
+void log_telemetry(std::string message) {
+          // set to blue                 set to default color again
+    log(TELEMETRY_CONSOLE_TEXT + message + NORMAL_CONSOLE_TEXT);
+}
+
 // Connexion management functions
 
 int start(const char * url, const char * log_file, int timeout,
@@ -66,21 +87,19 @@ int start(const char * url, const char * log_file, int timeout,
     log_file_fd.open(log_file);
 
     connection_result = _mavsdk.add_any_connection(connection_url);
-
     if (connection_result != ConnectionResult::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Connection failed: " << connection_result
-                  << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Connection failed", connection_result);
         return -1;
     }
 
-    log_file_fd << "Waiting to discover msystem..." << std::endl;
+    log("Waiting to discover msystem...");
     fut = prom.get_future();
 
     _mavsdk.subscribe_on_new_system([]() {
         auto msystem_tmp = _mavsdk.systems().back();
 
         if (msystem_tmp->has_autopilot()) {
-            log_file_fd << "Discovered autopilot" << std::endl;
+            log("Discovered autopilot");
 
             // Unsubscribe again as we only want to find one system.
             _mavsdk.subscribe_on_new_system(nullptr);
@@ -89,8 +108,7 @@ int start(const char * url, const char * log_file, int timeout,
     });
 
     if (fut.wait_for(seconds(timeout)) == std::future_status::timeout) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "No autopilot found, exiting." << NORMAL_CONSOLE_TEXT
-                  << std::endl;
+        log_error("No autopilot found, exiting.");
         return -1;
     }
 
@@ -99,25 +117,22 @@ int start(const char * url, const char * log_file, int timeout,
     action = new Action(msystem);
     mavlink_passthrough = new MavlinkPassthrough(msystem);
 
-    log_file_fd << "Subscribing to flight mode..." << std::endl;
+    log("Subscribing to flight mode...");
     // Subscribe to receive updates on flight mode. You can find out whether FollowMe is active.
     telemetry->subscribe_flight_mode([](Telemetry::FlightMode _flight_mode) {
         if(flight_mode != _flight_mode) {
             flight_mode = _flight_mode;
-            log_file_fd << TELEMETRY_CONSOLE_TEXT
-                        << "Switching to flight mode: " << flight_mode
-                        << NORMAL_CONSOLE_TEXT << std::endl;
         }
     });
 
-    /*log_file_fd << "Subscribing to Euler angle..." << std::endl;
+    /*log("Subscribing to Euler angle...");
     telemetry->subscribe_attitude_euler([](Telemetry::EulerAngle euler_angle) {
         drone_roll = euler_angle.roll_deg;
         drone_pitch = euler_angle.pitch_deg;
         drone_yaw = euler_angle.yaw_deg;
     });*/
 
-    log_file_fd << "Subscribing to position..." << std::endl;
+    log("Subscribing to position...");
     // Set up callback to monitor altitude while the vehicle is in flight
     publish_fn = publishCoordinates;
     telemetry->subscribe_position([](Telemetry::Position position) {
@@ -136,12 +151,13 @@ int start(const char * url, const char * log_file, int timeout,
             xy_ratio = std::cos(initial_drone_la_rad);
             initial_coords_set = true;
         }
-        log_file_fd << TELEMETRY_CONSOLE_TEXT // set to blue
-                  << drone_a << " m " << drone_at << " m " << drone_la << " " << drone_lo << " "
-                  << NORMAL_CONSOLE_TEXT // set to default color again
-                  << std::endl;
+
+        std::ostringstream oss;
+	      oss << drone_a << " m " << drone_at << " m "
+            << drone_la << " " << drone_lo << " ";
+        log_telemetry(oss.str());
     });
-    log_file_fd << "MAVSDK started..." << std::endl;
+    log("MAVSDK started...");
     mavsdk_started = 1;
     return 0;
 }
@@ -151,15 +167,13 @@ int stop() {
         return -1;
     
     if(!landed()) {
-      log_file_fd << ERROR_CONSOLE_TEXT << "You must land first !"
-                  << NORMAL_CONSOLE_TEXT << std::endl;
+      log_error("You must land first !");
       return -1;
     }
 
     const Action::Result shutdown_result = action->shutdown();
     if (shutdown_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Shutdown failed:" << shutdown_result
-                    << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Shutdown failed", shutdown_result);
         return -1;
     }
 
@@ -178,8 +192,7 @@ int reboot() {
 
     const Action::Result reboot_result = action->reboot();
     if (reboot_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Rebooting failed: "
-                    << reboot_result << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Rebooting failed", reboot_result);
         return -1;
     }
     return 0;
@@ -192,16 +205,14 @@ int arm(void) {
         return -1;
 
     while(!telemetry->health().is_home_position_ok) {
-        log_file_fd << "Waiting for home position to be set" << std::endl;
+        log("Waiting for home position to be set");
         sleep_for(seconds(1));
     }
 
-    log_file_fd << "Arming..." << std::endl;
+    log("Arming...");
     const Action::Result arm_result = action->arm();
-
     if (arm_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Arming failed:" << arm_result
-                    << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Arming failed", arm_result);
         return -1;
     }
     return 0;
@@ -213,11 +224,16 @@ int doParachute(int param) {
 
     MavlinkPassthrough::CommandLong command;
     command.command = MAV_CMD_DO_PARACHUTE;
-    command.param1 = param;
+    command.param1 = param; //see https://mavlink.io/en/messages/common.html#PARACHUTE_ACTION
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
+    if(cmd_result != MavlinkPassthrough::Result::Success) {
+        log_error_from_result("Parachute failed", cmd_result);
+        return -1;
+    }
+    return 0;
 }
 
 int land(void)
@@ -225,24 +241,23 @@ int land(void)
     if(!mavsdk_started)
         return -1;
 
-    log_file_fd << "Landing..." << std::endl;
+    log("Landing...");
     const Action::Result land_result = action->terminate();
     if (land_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Land failed:" << land_result << NORMAL_CONSOLE_TEXT
-                  << std::endl;
+        log_error_from_result("Land failed", land_result);
         return -1;
     }
 
     // Check if vehicle is still in air
     while (telemetry->in_air()) {
-        log_file_fd << "Vehicle is landing..." << std::endl;
+        log("Vehicle is landing...");
         sleep_for(seconds(1));
     }
-    log_file_fd << "Landed!" << std::endl;
+    log("Landed!");
 
     // We are relying on auto-disarming but let's keep watching the telemetry for a bit longer.
     sleep_for(seconds(10));
-    log_file_fd << "Finished..." << std::endl;
+    log("Finished...");
 
     return 0;
 }
@@ -269,11 +284,9 @@ int loiter(void) {
 
     const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
     if (cmd_result != MavlinkPassthrough::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Loiter failed" << cmd_result
-	       	    << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Loiter failed", cmd_result);
        return -1;
     }
-
     return 0;
 }
 
@@ -284,8 +297,7 @@ int takeOff(void)
 
     const Action::Result takeoff_result = action->takeoff();
     if (takeoff_result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Takeoff failed:" << takeoff_result
-                    << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Takeoff failed", takeoff_result);
         return -1;
     }
 
@@ -293,7 +305,7 @@ int takeOff(void)
         sleep_for(seconds(1));
     }
 
-    log_file_fd << "Taking off..." << std::endl;
+    log("Taking off...");
     return 0;
 }
 
@@ -303,7 +315,6 @@ int takeOffAndWait(void) {
     }
 
     while(flight_mode == Telemetry::FlightMode::Takeoff) {
-        log_file_fd << "Takeoff pending" << std::endl;
         sleep_for(seconds(1));
     }
     return 0;
@@ -346,12 +357,10 @@ int setTargetAltitude(double a)
     if(!mavsdk_started)
         return -1;
 
-    log_file_fd << "Going to altitude " << a << "m" << std::endl;
-
+    log("Going to altitude " + std::to_string(a) + "m");
     const Action::Result result = action->goto_location(drone_la, drone_lo, (float) a, 0);
     if (result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
-                  << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Goto location failed", result);
         return -1;
     }
     return 0;
@@ -362,16 +371,13 @@ int setTargetCoordinates(double la, double lo, double a, double y)
     if(!mavsdk_started)
         return -1;
 
-    std::cout << "Going to altitude " << a <<  " m " << std::endl;
+    std::cout << "Going to location (" << la << " , " << lo << ") "
+              << a <<  " m " << std::endl;
     const Action::Result result = action->goto_location(la, lo, (float) a, (float) y);
     if (result != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Goto location failed:" << result
-                  << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Goto location failed", result);
         return -1;
     }
-
-    std::cout << "Going to location ( " << la << " , " << lo << " ) "
-              << a << " m" << std::endl;
     return 0;
 }
 
@@ -425,8 +431,7 @@ double getTakeOffAltitude(void) {
     const std::pair<Action::Result, float> response = action->get_takeoff_altitude();
 
     if(response.first != Action::Result::Success) {
-        log_file_fd << ERROR_CONSOLE_TEXT << "Get takeoff altitude failed:"
-                    << response.first << NORMAL_CONSOLE_TEXT << std::endl;
+        log_error_from_result("Get takeoff altitude failed", response.first);
         return -1;
     }
     return response.second;
