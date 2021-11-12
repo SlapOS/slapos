@@ -13,12 +13,14 @@ int reboot(void);
 // Flight state management functions
 int arm(void);
 int doParachute(int param);
-int loiter(void);
+int loiter(double radius);
 int land(void);
 int takeOff(void);
 int takeOffAndWait(void);
 
 // Flight management functions
+int doReposition(double la, double lo, double a, double y);
+int loiterUnlimited(double radius, double la, double lo, double a);
 int setAirspeed(double airspeed);
 int setAltitude(double altitude);
 int setTargetAltitude(double a);

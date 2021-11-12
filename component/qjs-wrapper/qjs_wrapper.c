@@ -418,8 +418,19 @@ static JSValue js_mavsdk_getAltitude(JSContext *ctx, JSValueConst this_val,
 static JSValue js_mavsdk_loiter(JSContext *ctx, JSValueConst this_val,
                                 int argc, JSValueConst *argv)
 {
+    JSValueConst options;
+    JSValue val;
+    double radius = 10;
 
-    return JS_NewInt32(ctx, loiter());
+    if(argc >= 1) {
+        options = argv[1];
+	      val = JS_GetPropertyStr(ctx, options, "radius");
+	      if(JS_ToFloat64(ctx, &radius, val)) {
+	          return JS_EXCEPTION;
+	      }
+	      JS_FreeValue(ctx, val);
+    }
+    return JS_NewInt32(ctx, loiter(radius));
 }
 
 static JSValue js_mavsdk_doParachute(JSContext *ctx, JSValueConst this_val,

@@ -262,32 +262,15 @@ int land(void)
     return 0;
 }
 
-int loiter(void) {
+int loiter(double radius) {
     if(!mavsdk_started)
         return -1;
 
     if(flight_mode == Telemetry::FlightMode::Hold) {
-      std::cout << "Flight mode is " << flight_mode << std::endl;
-      return 0;
+	      std::cout << "Flight mode is " << flight_mode << std::endl;
+	      return 0;
     }
-
-    MavlinkPassthrough::CommandLong command;
-    command.command = MAV_CMD_DO_REPOSITION;
-    command.param1 = -1.f;
-    command.param2 = 1.f;
-    command.param3 = 0;
-    command.param5 = drone_la;
-    command.param6 = drone_lo;
-    command.param7 = drone_a;
-    command.target_sysid = mavlink_passthrough->get_target_sysid();
-    command.target_compid = mavlink_passthrough->get_target_compid();
-
-    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
-    if (cmd_result != MavlinkPassthrough::Result::Success) {
-        log_error_from_result("Loiter failed", cmd_result);
-       return -1;
-    }
-    return 0;
+    return loiterUnlimited(radius, drone_la, drone_lo, drone_a);
 }
 
 int takeOff(void)
@@ -321,6 +304,50 @@ int takeOffAndWait(void) {
 }
 
 // Flight management functions
+
+int doReposition(double la, double lo, double a, double y) {
+    if(!mavsdk_started)
+        return -1;
+
+    MavlinkPassthrough::CommandLong command;
+    command.command = MAV_CMD_DO_REPOSITION;
+    command.param1 = -1; // Ground speed, -1 for default
+    command.param2 = 1; // Bitmask of option flags (https://mavlink.io/en/messages/common.html#MAV_DO_REPOSITION_FLAGS)
+    command.param4 = y; // loiter direction, 0: clockwise 1: counter clockwise
+    command.param5 = la;
+    command.param6 = lo;
+    command.param7 = a;
+    command.target_sysid = mavlink_passthrough->get_target_sysid();
+    command.target_compid = mavlink_passthrough->get_target_compid();
+
+    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
+    if (cmd_result != MavlinkPassthrough::Result::Success) {
+        log_error_from_result("Reposition failed", cmd_result);
+        return -1;
+    }
+    return 0;
+}
+
+int loiterUnlimited(double radius, double la, double lo, double a) {
+    if(!mavsdk_started)
+        return -1;
+
+    MavlinkPassthrough::CommandLong command;
+    command.command = MAV_CMD_NAV_LOITER_UNLIM;
+    command.param2 = radius; // Loiter radius around waypoint. If positive loiter clockwise, else counter-clockwise
+    command.param5 = la;
+    command.param6 = lo;
+    command.param7 = a;
+    command.target_sysid = mavlink_passthrough->get_target_sysid();
+    command.target_compid = mavlink_passthrough->get_target_compid();
+
+    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
+    if (cmd_result != MavlinkPassthrough::Result::Success) {
+        log_error_from_result("Loiter failed", cmd_result);
+       return -1;
+    }
+    return 0;
+}
 
 int setAirspeed(double airspeed) {
     if(!mavsdk_started)
