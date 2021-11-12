@@ -147,6 +147,7 @@ class Recipe(GenericBaseRecipe):
         with open(postgres_conf, 'w') as cfg:
             cfg.write(textwrap.dedent("""\
                     listen_addresses = '%s'
+                    port = %s
                     logging_collector = on
                     log_rotation_size = 50MB
                     max_connections = 100
@@ -162,6 +163,7 @@ class Recipe(GenericBaseRecipe):
                     unix_socket_permissions = 0700
                     """ % (
                         ','.join(set(ipv4).union(ipv6)),
+                        self.options['port'],
                         pgdata,
                         )))
 
@@ -215,6 +217,7 @@ class Recipe(GenericBaseRecipe):
             p = subprocess.Popen([
                     psql_binary,
                     '-h', pgdata,
+                    '-p', self.options['port'],
                     '-U', user,
                     '-d', self.options['dbname'],
                 ],
