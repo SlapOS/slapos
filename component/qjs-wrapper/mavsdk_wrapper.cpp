@@ -349,45 +349,53 @@ int setTargetCoordinatesXYZ(double x, double y, double z) {
 }
 
 double getYaw(void) {
-  return drone_yaw;
+    return drone_yaw;
 }
-double getRoll(void) {
-  return drone_roll;
-}
-double getPitch(void) {
-  return drone_pitch;
-}
-double getInitialLatitude(void) {
-  return initial_drone_la;
-}
-double getLatitude(void) {
-  return drone_la;
-}
-double getInitialLongitude(void) {
-  return initial_drone_lo;
-}
-double getLongitude(void) {
-  return drone_lo;
-}
-double getTakeOffAltitude(void) {
-  const std::pair<Action::Result, float> response = action->get_takeoff_altitude();
 
-  if(response.first != Action::Result::Success) {
-    log_file_fd << ERROR_CONSOLE_TEXT << "Get takeoff altitude failed:" << response.first
-                << NORMAL_CONSOLE_TEXT << std::endl;
-    return -1;
-  }
-  return response.second;
+double getRoll(void) {
+    return drone_roll;
 }
+
+double getPitch(void) {
+    return drone_pitch;
+}
+
+double getInitialLatitude(void) {
+    return initial_drone_la;
+}
+
+double getLatitude(void) {
+    return drone_la;
+}
+
+double getInitialLongitude(void) {
+    return initial_drone_lo;
+}
+
+double getLongitude(void) {
+    return drone_lo;
+}
+
+double getTakeOffAltitude(void) {
+    const std::pair<Action::Result, float> response = action->get_takeoff_altitude();
+
+    if(response.first != Action::Result::Success) {
+        log_file_fd << ERROR_CONSOLE_TEXT << "Get takeoff altitude failed:"
+                    << response.first << NORMAL_CONSOLE_TEXT << std::endl;
+        return -1;
+    }
+    return response.second;
+}
+
 double getInitialAltitude(void) {
-  return initial_drone_a;
+    return initial_drone_a;
 }
+
 double getAltitude(void) {
-  return drone_a;
+    return drone_a;
 }
 
 int setTargetLatLong(double la, double lo) {
-
     return setTargetCoordinates(la, lo, drone_a, 0);
 }
 
