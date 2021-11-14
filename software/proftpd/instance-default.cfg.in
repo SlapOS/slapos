@@ -1,6 +1,9 @@
 [buildout]
 parts =
   promises
+  cron-service
+  cron-entry-logrotate
+  logrotate-entry-proftpd
   publish-connection-parameter
 
 extends = {{ template_monitor }}
@@ -137,6 +140,15 @@ recipe =
 instance-promises =
   ${proftpd-listen-promise:name}
 
+[logrotate-entry-proftpd]
+<= logrotate-entry-base
+name = proftpd
+log =
+  ${proftpd:sftp-log}
+  ${proftpd:xfer-log}
+  ${proftpd:ban-log}
+post =
+  test ! -s ${proftpd:pid-file} || kill -HUP $(cat "${proftpd:pid-file}")
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
