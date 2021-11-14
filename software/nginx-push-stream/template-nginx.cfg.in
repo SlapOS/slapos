@@ -1,7 +1,7 @@
 daemon off; # run in the foreground so supervisord can look after it
 
 worker_processes 4;
-pid $${directory:run}/nginx.pid;
+pid $${nginx-configuration:pid-file};
 
 events {
   worker_connections 768;
