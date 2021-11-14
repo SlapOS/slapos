@@ -25,12 +25,16 @@
 #
 ##############################################################################
 
+import functools
 import os
+import lzma
 import multiprocessing
+import urllib.parse
 
 import uritemplate
 import requests
 
+from slapos.testing.utils import CrontabMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -38,7 +42,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestNginxPushStream(SlapOSInstanceTestCase):
+class TestNginxPushStream(SlapOSInstanceTestCase, CrontabMixin):
   def setUp(self):
     self.connection_parameters = \
         self.computer_partition.getConnectionParameterDict()
@@ -83,3 +87,55 @@ class TestNginxPushStream(SlapOSInstanceTestCase):
 
     self.assertEqual(q.get_nowait(), b': ')
     self.assertEqual(q.get_nowait(), b'data: Hello')
+
+  def test_log_rotation(self):
+    status_url = urllib.parse.urljoin(
+        self.connection_parameters['publisher-url'], '/status')
+    error_url = urllib.parse.urljoin(
+        self.connection_parameters['publisher-url'], '/..')
+    log_file_path = functools.partial(
+        os.path.join,
+        self.computer_partition_root_path,
+        'var',
+        'log',
+    )
+    rotated_file_path = functools.partial(
+        os.path.join,
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'logrotate',
+    )
+
+    requests.get(status_url, verify=False)
+    with open(log_file_path('nginx-access.log')) as f:
+      self.assertIn('GET /status HTTP', f.read())
+    requests.get(error_url, verify=False)
+    with open(log_file_path('nginx-error.log')) as f:
+      self.assertIn('forbidden', f.read())
+
+    # first log rotation initialize the state, but does not actually rotate
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+
+    # today's file is not compressed
+    with open(rotated_file_path('nginx-access.log-20500102')) as f:
+      self.assertIn('GET /status HTTP', f.read())
+    with open(rotated_file_path('nginx-error.log-20500102')) as f:
+      self.assertIn('forbidden', f.read())
+
+    # after rotation, the program re-opened original log file and writes in
+    # expected location.
+    requests.get(status_url, verify=False)
+    with open(log_file_path('nginx-access.log')) as f:
+      self.assertIn('GET /status HTTP', f.read())
+    requests.get(error_url, verify=False)
+    with open(log_file_path('nginx-error.log')) as f:
+      self.assertIn('forbidden', f.read())
+
+    self._executeCrontabAtDate('logrotate', '2050-01-03')
+    # yesterday's file are compressed
+    with lzma.open(rotated_file_path('nginx-access.log-20500102.xz'), 'rt') as f:
+      self.assertIn('GET /status HTTP', f.read())
+    with lzma.open(rotated_file_path('nginx-error.log-20500102.xz'), 'rt') as f:
+      self.assertIn('forbidden', f.read())
