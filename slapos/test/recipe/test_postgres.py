@@ -2,12 +2,22 @@ import os
 import shutil
 import tempfile
 import textwrap
+import time
 import unittest
 
+try:
+  import subprocess32 as subprocess
+except ImportError:
+  import subprocess
+
+import psycopg2
 import zc.buildout.testing
 
 
 class PostgresTest(unittest.TestCase):
+  ipv4 = os.environ['SLAPOS_TEST_IPV4']
+  ipv6 = os.environ['SLAPOS_TEST_IPV6']
+  port = 5432
 
   def setUp(self):
     self.buildout = buildout = zc.buildout.testing.Buildout()
@@ -15,45 +25,14 @@ class PostgresTest(unittest.TestCase):
     self.addCleanup(shutil.rmtree, self.pgdata_directory)
     self.services_directory = tempfile.mkdtemp()
     self.addCleanup(shutil.rmtree, self.services_directory)
-    self.software_bin_dir = tempfile.mkdtemp()
 
-    # create fake programs
-    self.addCleanup(shutil.rmtree, self.software_bin_dir)
-    initdb = os.path.join(self.software_bin_dir, 'initdb')
-    with open(initdb, 'w') as f:
-      f.write(textwrap.dedent('''\
-        #!/bin/sh
-        if [ ! "$1" = -D ]
-        then
-          echo Wrong arguments, expecting -D datadir ... got: "$@"
-          exit 1
-        fi
-        mkdir "$2"
-      '''))
-    os.chmod(initdb, 0o775)
-
-    postgres = os.path.join(self.software_bin_dir, 'postgres')
-    with open(postgres, 'w') as f:
-      f.write(textwrap.dedent('''\
-        #!/bin/sh
-        exec cat > %s/postgres.sql
-      ''') % os.path.join(self.pgdata_directory, 'pgdata'))
-    os.chmod(postgres, 0o775)
-
-    psql = os.path.join(self.software_bin_dir, 'psql')
-    with open(psql, 'w') as f:
-      f.write(textwrap.dedent('''\
-        #!/bin/sh -xe
-        exec cat > %s/psql.sql
-      ''') % os.path.join(self.pgdata_directory, 'pgdata'))
-    os.chmod(psql, 0o775)
-
+    self.postgres_bin_directory = os.environ['SLAPOS_TEST_POSTGRESQL_PREFIX'] + '/bin'
     buildout['postgres'] = {
-      'bin': self.software_bin_dir,
+      'bin': self.postgres_bin_directory,
       'dbname': 'dbname',
-      'ipv4': '127.0.0.1',
-      'ipv6': '::1',
-      'port': '5443',
+      'ipv4': self.ipv4,
+      'ipv6': self.ipv6,
+      'port': self.port,
       'pgdata-directory': os.path.join(self.pgdata_directory, 'pgdata'),
       'services': self.services_directory,
       'superuser': 'superuser',
@@ -65,10 +44,30 @@ class PostgresTest(unittest.TestCase):
         'postgres',
         buildout['postgres'])
 
+  def start_postgres_server(self):
+    server_process = subprocess.Popen(
+        [ os.path.join(self.services_directory, 'postgres-start') ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    self.addCleanup(server_process.wait)
+    self.addCleanup(server_process.terminate)
+
+    # wait for server to accept connections
+    for i in range(60):
+      time.sleep(i)
+      try:
+        psycopg2.connect(self.buildout['postgres']['url']).close()
+      except psycopg2.OperationalError as e:
+        pass
+      else:
+        break
+
   def test_options(self):
     self.assertEqual(
-        'postgresql://superuser:secret@[::1]:5443/dbname',
-        self.buildout['postgres']['url'])
+        self.buildout['postgres']['url'],
+        'postgresql://superuser:secret@[{self.ipv6}]:{self.port}/dbname'.format(self=self),
+    )
 
   def test_install(self):
     installed = self.recipe.install()
@@ -78,11 +77,6 @@ class PostgresTest(unittest.TestCase):
     self.assertIn('pg_hba.conf', os.listdir(pgdata_directory))
     self.assertIn('postgres-start', os.listdir(self.services_directory))
 
-    with open(os.path.join(pgdata_directory, 'postgres.sql')) as f:
-      self.assertEqual(
-          f.read(),
-          'ALTER USER "superuser" ENCRYPTED PASSWORD \'md53992d9240b8f81ebd7e1f9a9fafeb06b\'\n'
-      )
     self.assertEqual(
         sorted(installed),
         sorted([
@@ -90,19 +84,33 @@ class PostgresTest(unittest.TestCase):
             os.path.join(pgdata_directory, 'pg_hba.conf'),
             os.path.join(self.services_directory, 'postgres-start')]))
 
+    self.start_postgres_server()
+    with psycopg2.connect(self.buildout['postgres']['url']) as cnx:
+      with cnx.cursor() as cursor:
+        cursor.execute("SELECT 1+1")
+        self.assertEqual(cursor.fetchone(), (2,))
+    cnx.close()
 
   def test_update_password(self):
     self.recipe.install()
-
-    # simulate a running server
-    pgdata_directory = os.path.join(self.pgdata_directory, 'pgdata')
-    open(os.path.join(pgdata_directory, 'postmaster.pid'), 'w').close()
-
+    self.start_postgres_server()
     self.recipe.options['password'] = 'new'
     self.recipe.install()
 
-    with open(os.path.join(pgdata_directory, 'psql.sql')) as f:
-      self.assertEqual(
-          f.read(),
-          'ALTER USER "superuser" ENCRYPTED PASSWORD \'md5442311d398491b7f6b512757b51ae9d8\'\n'
-      )
+    dsn = self.buildout['postgres']['url']
+    with psycopg2.connect(psycopg2.extensions.make_dsn(dsn, password='new')) as cnx:
+      with cnx.cursor() as cursor:
+        cursor.execute("SELECT 1+1")
+        self.assertEqual(cursor.fetchone(), (2,))
+    cnx.close()
+
+    # old password can no longer connect
+    with self.assertRaisesRegexp(
+        psycopg2.OperationalError,
+        'password authentication failed'
+    ):
+      psycopg2.connect(dsn)
+
+
+class PostgresTestNonStandardPort(PostgresTest):
+  port = 5433
