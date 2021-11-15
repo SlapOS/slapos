@@ -1,9 +1,7 @@
 #ifndef __PUBSUB_PUBLISH_H__
 #define __PUBSUB_PUBLISH_H__
 
-#include <open62541/server.h>
-
-#define countof(x) (sizeof(x) / sizeof((x)[0]))
+#include "pubsub_common.h"
 
 void writeFloat(char *name, float value);
 void writeDouble(char *name, double value);

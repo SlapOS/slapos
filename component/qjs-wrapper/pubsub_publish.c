@@ -167,7 +167,7 @@ int publish(UA_String *transportProfile,
     UA_Float defaultFloat = 0;
     UA_Double defaultDouble = 0;
 
-    PublishedVariable publishedVariableArray[] = {
+    const PublishedVariable publishedVariableArray[] = {
         {
             .name = "lattitude",
             .description = "Lattitude",

@@ -2,6 +2,7 @@
 
 #include "mavsdk_wrapper.h"
 #include "pubsub_publish.h"
+#include "pubsub_subscribe.h"
 
 static UA_Boolean running = true;
 
@@ -23,6 +24,30 @@ static JSValue js_pubsub_publish(JSContext *ctx, JSValueConst this_val,
         {UA_STRING_NULL , UA_STRING(urlBuffer)};
 
     res = publish(&transportProfile, &networkAddressUrl, &running);
+    JS_FreeCString(ctx, ipv6);
+    JS_FreeCString(ctx, port);
+
+    return JS_NewInt32(ctx, res);
+}
+
+static JSValue js_pubsub_subscribe(JSContext *ctx, JSValueConst this_val,
+                                   int argc, JSValueConst *argv)
+{
+    const char *ipv6;
+    const char *port;
+    char urlBuffer[44];
+    int res;
+
+    ipv6 = JS_ToCString(ctx, argv[0]);
+    port = JS_ToCString(ctx, argv[1]);
+    UA_snprintf(urlBuffer, sizeof(urlBuffer), "opc.udp://[%s]:%s/", ipv6, port);
+
+    UA_String transportProfile =
+        UA_STRING("http://opcfoundation.org/UA-Profile/Transport/pubsub-udp-uadp");
+    UA_NetworkAddressUrlDataType networkAddressUrl =
+        {UA_STRING_NULL , UA_STRING(urlBuffer)};
+
+    res = subscribe(&transportProfile, &networkAddressUrl, &running);
     JS_FreeCString(ctx, ipv6);
     JS_FreeCString(ctx, port);
 
@@ -321,6 +346,7 @@ static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("takeOffAndWait", 0, js_mavsdk_takeOffAndWait ),
     JS_CFUNC_DEF("land", 0, js_mavsdk_land ),
     JS_CFUNC_DEF("publish", 2, js_pubsub_publish ),
+    JS_CFUNC_DEF("subscribe", 2, js_pubsub_subscribe ),
     JS_CFUNC_DEF("stopPubsub", 0, js_pubsub_stop ),
 };
 
