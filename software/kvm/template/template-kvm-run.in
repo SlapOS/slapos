@@ -19,6 +19,8 @@ qemu_path = {{ repr(parameter_dict["qemu-path"]) }}
 disk_size = {{ repr(parameter_dict["disk-size"]) }}
 disk_type = {{ repr(parameter_dict["disk-type"]) }}
 
+network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
+
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
               {{ parameter_dict.get("nbd-port") }}),
@@ -255,7 +257,7 @@ if use_nat == 'true':
   if use_tap == 'true' and tap_ipv6_addr != '':
     rules += ',ipv6=off'
   nat_network_parameter = ['-netdev', rules,
-          '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, mac_address)]
+          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, mac_address)]
 if use_tap == 'true':
   number += 1
   vhost = ''
@@ -264,7 +266,7 @@ if use_tap == 'true':
   tap_network_parameter = ['-netdev',
           'tap,id=lan%s,ifname=%s,script=no,downscript=no%s' % (number,
             tap_interface, vhost),
-          '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, tap_mac_address)]
+          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, tap_mac_address)]
 
 smp = '%s,maxcpus=%s' % (init_smp_count, smp_max_count)
 ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
