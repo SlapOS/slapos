@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.213'
+version = '1.0.214'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -39,6 +39,7 @@ extras_require = {
     'test': (
         'jsonschema',
         'mock',
+        'psycopg2',
         'testfixtures',
         'requests',
     ),

@@ -1310,6 +1310,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'empty': {
       },
+      'bad-backend': {
+        'url': 'http://bad.backend/',
+      },
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
         # correctly handled

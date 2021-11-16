@@ -237,7 +237,7 @@ function GetOSVersion {
         os_RELEASE=$(lsb_release -r -s)
         os_UPDATE=""
         os_PACKAGE="rpm"
-        if [[ "Debian,Ubuntu,LinuxMint" =~ $os_VENDOR ]]; then
+        if [[ "Debian,Ubuntu,LinuxMint,Raspbian" =~ $os_VENDOR ]]; then
             os_PACKAGE="deb"
         elif [[ "SUSE LINUX" =~ $os_VENDOR ]]; then
             lsb_release -d -s | grep -q openSUSE
@@ -1036,7 +1036,8 @@ function update_package_repo {
         if [[ "$REPOS_UPDATED" != "True" || "$RETRY_UPDATE" = "True" ]]; then
             # if there are transient errors pulling the updates, that's fine.
             # It may be secondary repositories that we don't really care about.
-            apt_get update  || /bin/true
+            apt_get update --allow-releaseinfo-change || /bin/true
+            apt_get update || /bin/true
             REPOS_UPDATED=True
         fi
         $xtrace
@@ -1927,6 +1928,7 @@ $XTRACE
 # mode: shell-script
 # End:
 
+
 if [[ $EUID -gt 0 ]]; then
     echo "####################################################"
     echo "#                                                  #"
@@ -1969,7 +1971,7 @@ fi
 
 # Warn users who aren't on an explicitly supported distro, but allow them to
 # override check and attempt installation with ``export FORCE=yes``
-if [[ ! ${DISTRO} =~ (wheezy|jessie|trusty|vivid|xenial|rhel7|rhel6|LinuxMint-17.2) ]]; then
+if [[ ! ${DISTRO} =~ (jessie|stretch|buster|bullseye|xenial|bionic|focal|rhel7) ]]; then
     echo "WARNING: this script has not been tested on $DISTRO"
     if [[ "$FORCE" != "yes" ]]; then
         die $LINENO "If you wish to run this script anyway run with FORCE=yes"
@@ -1978,10 +1980,10 @@ fi
 
 # Make sure wheezy backports are available.
 if [[ $DISTRO == "wheezy" ]]; then
-    echo "deb http://ftp.debian.org/debian wheezy-backports main contrib " > /etc/apt/sources.list.d/wheezy-backports.list
+    echo "deb http://archive.debian.org/debian wheezy-backports main contrib " > /etc/apt/sources.list.d/wheezy-backports.list
 fi
 
-if is_fedora && [[ $DISTRO == "rhel7" ]]; then
+if is_fedora && [[ $DISTRO =~ rhel7|f20|f19 ]]; then
     # RHEL requires EPEL for many Ansible dependencies
 
     # NOTE: We always remove and install latest -- some environments
@@ -2007,6 +2009,8 @@ failovermethod=priority
 enabled=0
 gpgcheck=0
 EOF
+    yum clean all
+    yum makecache
     yum update -y
     yum_install yum-utils
     # Enable a bootstrap repo.  It is removed after finishing
@@ -2051,18 +2055,26 @@ EOF
     is_package_installed libselinux-python || install_package libselinux-python
 fi
 
+is_package_installed unzip || install_package unzip
 is_package_installed openssl || install_package openssl
-# stick to a specific ansible package version
-if is_ubuntu; then
-  # is_ubuntu also handle debian distro
-  is_package_installed ansible || install_package ansible=1.*
-elif is_fedora; then
-  # is_fedora also handle CentOS distro
-  is_package_installed ansible || install_package ansible1.9.noarch
+is_package_installed ansible || install_package ansible
+
+if ! is_ubuntu || [[ $DISTRO = wheezy || $DISTRO == jessie || $DISTRO == stretch || $DISTRO == xenial || $DISTRO == bionic ]]; then
+  is_package_installed python-pip || install_package python-pip
 else
-  is_package_installed ansible || install_package ansible
+  # Ansible is using python3 now
+  is_package_installed python3-pip || install_package python3-pip
 fi
-is_package_installed python-setuptools || install_package python-setuptools
+
+if is_ubuntu && [[ $DISTRO == focal || $DISTRO == buster ]]; then
+  # install python2 in distro where python2 is not installed by default and ansible python interpreter is still python2
+  is_package_installed python || install_package python
+fi
+
+if is_fedora && [[ $DISTRO == "f26" ]]; then
+  is_package_installed python2-rpm || install_package python2-rpm
+  is_package_installed yum || install_package yum
+fi
 
 if is_ubuntu && [[ $DISTRO == "trusty" ]]; then
   is_package_installed python-apt || install_package python-apt
@@ -2082,6 +2094,7 @@ fi
 ANSIBLE_PLUGIN_LOCATION="/usr/share/ansible_plugins/callback_plugins/"
 mkdir -p $ANSIBLE_PLUGIN_LOCATION
 /bin/cat << EOF > $ANSIBLE_PLUGIN_LOCATION/log_parse.py
+from __future__ import absolute_import
 import os
 import time
 import json
@@ -2111,11 +2124,11 @@ class CallbackModule(baseModule):
       else:
         for filename in os.listdir(self.log_path):
           filepath = os.path.join(self.log_path, filename)
-          if os.path.exists(filepath) and os.path.isfile(filepath):
+          if os.path.isfile(filepath):
             os.unlink(filepath)
 
     def writeLog(self, host, category, content):
-      if not self.fd_list.has_key(category):
+      if category not in self.fd_list:
         self.fd_list[category] = open(
           os.path.join(self.log_path, '%s_%s' % (host, category)), "a"
         )
@@ -2126,12 +2139,11 @@ class CallbackModule(baseModule):
       if host == "localhost":
         host = "127.0.0.1" # keep compatibility
 
-      if type(data) == dict:
+      if type(data) is dict:
         if '_ansible_verbose_override' in data:
           # avoid logging extraneous data
           return
 
-        data = data.copy()
         content = json.dumps(data)
 
         if ignore_errors:
@@ -2168,8 +2180,17 @@ class CallbackModule(baseModule):
 
 EOF
 
-ansible localhost -m easy_install -a name=slapcache --connection=local
-ansible localhost -m easy_install -a name=requests --connection=local
+ansible localhost -m pip -a name=setuptools --connection=local
+ansible localhost -m pip -a name=wheel --connection=local
+ansible localhost -m pip -a name=slapcache --connection=local
+ansible localhost -m pip -a name=requests --connection=local
+
+if [ ! -f /usr/share/ansible_plugins/mitogen.zip ]; then
+    wget -O /usr/share/ansible_plugins/mitogen.zip https://shacache.nxdcdn.com/3a935ff257ddc0ad4e0f23d71681e026f14f309f4bed0a8e2a217da9b294be2c676196703f0dde856ece49d711d0221deae70812f035b24aa5cdd0ca02790e85
+    unzip /usr/share/ansible_plugins/mitogen.zip -d /usr/share/ansible_plugins/mitogen/
+    mv /usr/share/ansible_plugins/mitogen/mitogen-*/* /usr/share/ansible_plugins/mitogen/
+fi
+
 
 # Include Additional Functions
 if [ ! -f /etc/opt/slapcache.cfg ]; then

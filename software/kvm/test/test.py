@@ -1180,27 +1180,6 @@ class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
 
 
 @skipUnlessKvm
-class TestCpuMemMaxDynamic(InstanceTestCase):
-  __partition_reference__ = 'cmm'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'cpu-count': 2,
-      'ram-size': 2048
-    }
-
-  def test(self):
-    with open(os.path.join(
-     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'r') as fh:
-      kvm_raw = fh.read()
-    self.assertIn('smp_count = 2', kvm_raw)
-    self.assertIn('smp_max_count = 3', kvm_raw)
-    self.assertIn('ram_size = 2048', kvm_raw)
-    self.assertIn("ram_max_size = '2560'", kvm_raw)
-
-
-@skipUnlessKvm
 class TestNatRules(InstanceTestCase):
   __partition_reference__ = 'nr'
 
@@ -1611,3 +1590,101 @@ INF: Storing errors in %(error_state_file)s
     self.assertFalse(
       os.path.exists(
         os.path.join(self.destination_directory, 'destination')))
+
+
+@skipUnlessKvm
+class TestParameterDefault(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'pd'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def mangleParameterDict(self, parameter_dict):
+    return parameter_dict
+
+  def _test(self, parameter_dict, expected):
+    self.rerequestInstance(self.mangleParameterDict(parameter_dict))
+    self.slap.waitForInstance(max_retry=10)
+    
+    kvm_raw = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
+    self.assertEqual(len(kvm_raw), 1)
+    kvm_raw = kvm_raw[0]
+    with open(kvm_raw, 'r') as fh:
+      kvm_raw = fh.read()
+    self.assertIn(expected, kvm_raw)
+
+  def test_disk_type_default(self):
+    self._test({}, "disk_type = 'virtio'")
+
+  def test_disk_type_set(self):
+    self._test({'disk-type': 'ide'}, "disk_type = 'ide'")
+
+  def test_network_adapter_default(self):
+    self._test({}, "network_adapter = 'virtio-net-pci")
+
+  def test_network_adapter_set(self):
+    self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+
+  def test_cpu_count_default(self):
+    self._test({}, "init_smp_count = 2")
+
+  def test_cpu_count_default_max(self):
+    self._test({}, "smp_max_count = 3")
+
+  def test_cpu_count_set(self):
+    self._test({'cpu-count': 4}, "init_smp_count = 4")
+
+  def test_cpu_count_set_max(self):
+    self._test({'cpu-count': 4}, "smp_max_count = 5")
+
+  def test_ram_size_default(self):
+    self._test({}, "init_ram_size = 4096")
+
+  def test_ram_size_default_max(self):
+    self._test({}, "ram_max_size = '4608'")
+
+  def test_ram_size_set(self):
+    self._test({'ram-size': 2048}, "init_ram_size = 2048")
+
+  def test_ram_size_set_max(self):
+    self._test({'ram-size': 2048}, "ram_max_size = '2560'")
+
+
+@skipUnlessKvm
+class TestParameterResilient(TestParameterDefault):
+  __partition_reference__ = 'pr'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestParameterCluster(TestParameterDefault):
+  __partition_reference__ = 'pc'
+
+  parameter_dict = {
+    "disable-ansible-promise": True
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": cls.parameter_dict
+      }
+    })}
+
+  def mangleParameterDict(self, parameter_dict):
+    local_parameter_dict = self.parameter_dict.copy()
+    local_parameter_dict.update(parameter_dict)
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": local_parameter_dict
+      }
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'

@@ -64,28 +64,28 @@ class TestPublishedURLIsReachableMixin(object):
     # erp5 site is not created, with 500 when mysql is not yet reachable, so we
     # configure this requests session to retry.
     # XXX we should probably add a promise instead
-    session = requests.Session()
-    session.mount(
-        base_url,
-        requests.adapters.HTTPAdapter(
-            max_retries=requests.packages.urllib3.util.retry.Retry(
-                total=60,
-                backoff_factor=.5,
-                status_forcelist=(404, 500, 503))))
+    with requests.Session() as session:
+      session.mount(
+          base_url,
+          requests.adapters.HTTPAdapter(
+              max_retries=requests.packages.urllib3.util.retry.Retry(
+                  total=60,
+                  backoff_factor=.5,
+                  status_forcelist=(404, 500, 503))))
 
-    r = session.get(virtual_host_url, verify=verify, allow_redirects=False)
-    self.assertEqual(r.status_code, requests.codes.found)
-    # access on / are redirected to login form, with virtual host preserved
-    self.assertEqual(r.headers.get('location'), 'https://virtual-host-name:1234/virtual_host_root/login_form')
+      r = session.get(virtual_host_url, verify=verify, allow_redirects=False)
+      self.assertEqual(r.status_code, requests.codes.found)
+      # access on / are redirected to login form, with virtual host preserved
+      self.assertEqual(r.headers.get('location'), 'https://virtual-host-name:1234/virtual_host_root/login_form')
 
-    # login page can be rendered and contain the text "ERP5"
-    r = session.get(
-        six.moves.urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
-        verify=verify,
-        allow_redirects=False,
-    )
-    self.assertEqual(r.status_code, requests.codes.ok)
-    self.assertIn("ERP5", r.text)
+      # login page can be rendered and contain the text "ERP5"
+      r = session.get(
+          six.moves.urllib.parse.urljoin(base_url, '{}/login_form'.format(site_id)),
+          verify=verify,
+          allow_redirects=False,
+      )
+      self.assertEqual(r.status_code, requests.codes.ok)
+      self.assertIn("ERP5", r.text)
 
   def test_published_family_default_v6_is_reachable(self):
     """Tests the IPv6 URL published by the root partition is reachable.

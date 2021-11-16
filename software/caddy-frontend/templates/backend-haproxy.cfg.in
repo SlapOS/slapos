@@ -13,6 +13,8 @@ defaults
   timeout client {{ configuration['request-timeout'] }}s
   timeout connect {{ configuration['backend-connect-timeout'] }}s
   retries {{ configuration['backend-connect-retries'] }}
+  {#- Allow to start with not resolved yet servers #}
+  default-server init-addr last,libc,none
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
 {%- macro frontend_entry(slave_instance, scheme, wildcard) %}

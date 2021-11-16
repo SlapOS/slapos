@@ -110,6 +110,7 @@ class CaucaseService(ManagedResource):
             '--netloc', backend_caucased_netloc,
             '--service-auto-approve-count', '1',
         ],
+        # capture subprocess output not to pollute test's own stdout
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
@@ -127,6 +128,7 @@ class CaucaseService(ManagedResource):
     # type: () -> None
     self._caucased_process.terminate()
     self._caucased_process.wait()
+    self._caucased_process.stdout.close()
     shutil.rmtree(self.directory)
 
 
@@ -525,26 +527,27 @@ class TestHTTP(BalancerTestCase):
   def test_keep_alive(self):
     # type: () -> None
     # when doing two requests, connection is established only once
-    session = requests.Session()
-    session.verify = False
+    with requests.Session() as session:
+      session.verify = False
 
-    # do a first request, which establish a first connection
-    session.get(self.default_balancer_url).raise_for_status()
-
-    # "break" new connection method and check we can make another request
-    with mock.patch(
-        "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
-    ) as new_conn:
+      # do a first request, which establish a first connection
       session.get(self.default_balancer_url).raise_for_status()
-    new_conn.assert_not_called()
 
-    parsed_url = six.moves.urllib.parse.urlparse(self.default_balancer_url)
-    # check that we have an open file for the ip connection
-    self.assertTrue([
-        c for c in psutil.Process(os.getpid()).connections()
-        if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
-        and c.raddr.port == parsed_url.port
-    ])
+      # "break" new connection method and check we can make another request
+      with mock.patch(
+          "requests.packages.urllib3.connectionpool.HTTPSConnectionPool._new_conn",
+      ) as new_conn:
+        session.get(self.default_balancer_url).raise_for_status()
+      new_conn.assert_not_called()
+
+      parsed_url = six.moves.urllib.parse.urlparse(self.default_balancer_url)
+
+      # check that we have an open file for the ip connection
+      self.assertTrue([
+          c for c in psutil.Process(os.getpid()).connections()
+          if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
+          and c.raddr.port == parsed_url.port
+      ])
 
 
 class ContentTypeHTTPServer(ManagedHTTPServer):
