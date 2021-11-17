@@ -59,6 +59,7 @@ context =
   key rotate_num :rotate-num
   key nocompress :nocompress
   key delaycompress :delaycompress
+  key truncate   :truncate
 post =
 pre =
 frequency = daily
@@ -66,6 +67,7 @@ rotate-num = 3650
 backup = ${logrotate-directory:logrotate-backup}
 nocompress =
 delaycompress = true
+truncate =
 
 [logrotate]
 recipe = slapos.cookbook:wrapper
