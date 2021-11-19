@@ -33,11 +33,6 @@ function displayMessage(message) {
   return 0;
 }
 
-function parachute(param) {
-  doParachute(param);
-  return 0;
-}
-
 function publish() {
   worker = new Worker("{{ publish_script }}");
   worker.onmessage = function(e) {
@@ -173,7 +168,7 @@ function cli() {
     case "parachute":
       std.printf("Action: ");
       param = parseInt(f.getline());
-      cmd = checkNumber(param, parachute);
+      cmd = checkNumber(param, doParachute);
       break;
 
     case "print":
