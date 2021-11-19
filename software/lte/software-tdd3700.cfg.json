@@ -1,13 +1,13 @@
 {
     "name": "LTE",
     "description": "LTE",
-    "serialisation": "json-in-xml",
+    "serialisation": "xml",
     "software-type": {
         "enb": {
              "title": "eNB",
              "software-type": "enb",
              "description": "eNodeB Configuration",
-             "request": "instance-enb-input-schema.json",
+             "request": "instance-enb-tdd3700-input-schema.json",
              "response": "instance-enb-schema.json",
              "index": 0
          },
@@ -19,21 +19,22 @@
              "response": "instance-epc-schema.json",
              "index": 1
          },
-        "ims": {
-             "title": "IMS",
-             "software-type": "ims",
-             "description": "IMS Configuration",
-             "request": "instance-ims-input-schema.json",
-             "response": "instance-ims-schema.json",
-             "index": 2
-         },
         "default": {
             "title": "Default",
             "software-type": "default",
             "description": "Default",
             "request": "instance-lte-input-schema.json",
             "response": "instance-lte-schema.json",
-            "index": 3
-        }
+            "index": 2
+        },
+        "epc-slave": {
+             "title": "Sim Card",
+             "description": "EPC Configuration",
+             "software-type": "epc",
+             "request": "instance-epc-slave-input-schema.json",
+             "response": "instance-epc-slave-schema.json",
+             "shared": true,
+             "index": 3
+         }
     }
 }
