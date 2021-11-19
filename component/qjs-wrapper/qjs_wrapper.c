@@ -4,7 +4,8 @@
 #include "pubsub_publish.h"
 #include "pubsub_subscribe.h"
 
-static UA_Boolean running = true;
+static UA_Boolean publishing = true;
+static UA_Boolean subscribing = true;
 
 static JSValue js_pubsub_publish(JSContext *ctx, JSValueConst this_val,
                                  int argc, JSValueConst *argv)
@@ -23,7 +24,7 @@ static JSValue js_pubsub_publish(JSContext *ctx, JSValueConst this_val,
     UA_NetworkAddressUrlDataType networkAddressUrl =
         {UA_STRING_NULL , UA_STRING(urlBuffer)};
 
-    res = publish(&transportProfile, &networkAddressUrl, &running);
+    res = publish(&transportProfile, &networkAddressUrl, &publishing);
     JS_FreeCString(ctx, ipv6);
     JS_FreeCString(ctx, port);
 
@@ -47,7 +48,7 @@ static JSValue js_pubsub_subscribe(JSContext *ctx, JSValueConst this_val,
     UA_NetworkAddressUrlDataType networkAddressUrl =
         {UA_STRING_NULL , UA_STRING(urlBuffer)};
 
-    res = subscribe(&transportProfile, &networkAddressUrl, &running);
+    res = subscribe(&transportProfile, &networkAddressUrl, &subscribing);
     JS_FreeCString(ctx, ipv6);
     JS_FreeCString(ctx, port);
 
@@ -61,10 +62,17 @@ void pubsub_set_coordinates(double lattitude, double longitude, float altitude)
     writeFloat("altitude", altitude);
 }
 
-static JSValue js_pubsub_stop(JSContext *ctx, JSValueConst this_val,
-                              int argc, JSValueConst *argv)
+static JSValue js_stop_publishing(JSContext *ctx, JSValueConst this_val,
+                                  int argc, JSValueConst *argv)
 {
-    running = false;
+    publishing = false;
+    return JS_NewInt32(ctx, 0);
+}
+
+static JSValue js_stop_subscribing(JSContext *ctx, JSValueConst this_val,
+                                   int argc, JSValueConst *argv)
+{
+    subscribing = false;
     return JS_NewInt32(ctx, 0);
 }
 
@@ -347,7 +355,8 @@ static const JSCFunctionListEntry js_mavsdk_funcs[] = {
     JS_CFUNC_DEF("land", 0, js_mavsdk_land ),
     JS_CFUNC_DEF("publish", 2, js_pubsub_publish ),
     JS_CFUNC_DEF("subscribe", 2, js_pubsub_subscribe ),
-    JS_CFUNC_DEF("stopPubsub", 0, js_pubsub_stop ),
+    JS_CFUNC_DEF("stopPublishing", 0, js_stop_publishing ),
+    JS_CFUNC_DEF("stopSubscribing", 0, js_stop_subscribing ),
 };
 
 static int js_mavsdk_init(JSContext *ctx, JSModuleDef *m)

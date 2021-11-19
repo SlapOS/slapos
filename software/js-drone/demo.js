@@ -18,7 +18,7 @@ import {
   setAltitude,
   setTargetLatLong,
   stop,
-  stopPubsub,
+  stopPublishing,
   takeOffAndWait
 } from "{{ qjs_wrapper }}"; //jslint-quiet
 import {sleep, Worker} from "os";
@@ -59,7 +59,7 @@ function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
     if(publishing) {
-      stopPubsub();
+      stopPublishing();
     }
     exit(-1);
   }
@@ -224,5 +224,5 @@ function waitForAltitude(target_altitude) {
     sleep(1000);
   }
   stop();
-  stopPubsub();
+  stopPublishing();
 })();

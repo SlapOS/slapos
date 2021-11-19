@@ -11,7 +11,8 @@ import {
   setTargetLatLong,
   start,
   stop,
-  stopPubsub,
+  stopPublishing,
+  stopSubscribing,
   reboot,
   takeOff
 } from "{{ qjs_wrapper }}"; //jslint-quiet
@@ -26,7 +27,9 @@ const URL = "udp://" + IP + ":" + PORT;
 const LOG_FILE = "{{ log_dir }}/mavsdk-log";
 
 var publishing = false;
-var worker;
+var subscribing = false;
+var publishWorker;
+var subscribeWorker;
 
 function displayMessage(message) {
   console.log(message);
@@ -34,14 +37,26 @@ function displayMessage(message) {
 }
 
 function publish() {
-  worker = new Worker("{{ publish_script }}");
-  worker.onmessage = function(e) {
+  publishWorker = new Worker("{{ publish_script }}");
+  publishWorker.onmessage = function(e) {
     if(!e.data.publishing) {
-      worker.onmessage = null;
+      publishWorker.onmessage = null;
     }
   }
-  worker.postMessage({ action: "publish" });
+  publishWorker.postMessage({ action: "publish" });
   publishing = true;
+}
+
+function subscribe() {
+  subscribeWorker = new Worker("{{ subscribe_script }}");
+  subscribeWorker.onmessage = function(e) {
+    if(!e.data.subscribing) {
+      subscribeWorker.onmessage = null;
+    }
+  }
+  subscribeWorker.postMessage({ action: "subscribe" });
+  subscribing = true;
+  return 0;
 }
 
 const wrongParameters = displayMessage.bind(null, "Wrong parameters");
@@ -76,6 +91,7 @@ function cli() {
     goto(point)
     altitude(altitude)
     speed(speed)
+    subscribe
     stop
     gotoCoord(latitude, longitude)
     reboot
@@ -130,7 +146,12 @@ function cli() {
       break;
 
     case "exit":
-      stopPubsub();
+      if(publishing) {
+        stopPublishing();
+      }
+      if(subscribing) {
+        stopSubscribing();
+      }
       return;
 
     case "goto":
@@ -188,8 +209,12 @@ function cli() {
       cmd = checkNumber(speed, setAirspeed);
       break;
 
+    case "subscribe":
+      cmd = subscribe;
+      break;
+
     case "reboot":
-      comd = reboot;
+      cmd = reboot;
       break;
 
     case "takeoff":
