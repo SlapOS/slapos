@@ -20,7 +20,7 @@
             "title": "DL EARFCN",
             "description": "Downlink EARFCN of the cell",
             "type": "number",
-            "default": 38050
+            "default": 44590
         },
         "n_rb_dl": {
             "title": "DL RB",
