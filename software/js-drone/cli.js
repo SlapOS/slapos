@@ -28,11 +28,6 @@ const LOG_FILE = "{{ log_dir }}/mavsdk-log";
 var publishing = false;
 var worker;
 
-function disconnect() {
-  stop();
-  return 0;
-}
-
 function displayMessage(message) {
   console.log(message);
   return 0;
@@ -136,7 +131,7 @@ function cli() {
       break;
 
     case "disconnect":
-      cmd = disconnect;
+      cmd = stop;
       break;
 
     case "exit":
@@ -196,10 +191,6 @@ function cli() {
       std.printf("Speed: ");
       speed = parseFloat(f.getline());
       cmd = checkNumber(speed, setAirspeed);
-      break;
-
-    case "stop":
-      cmd = stop;
       break;
 
     case "reboot":
