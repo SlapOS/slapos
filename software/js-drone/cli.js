@@ -140,7 +140,7 @@ function cli() {
       break;
 
     case "exit":
-      stopPubsub;
+      stopPubsub();
       return;
 
     case "goto":
