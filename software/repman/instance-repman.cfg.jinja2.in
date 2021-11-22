@@ -52,7 +52,13 @@ ssl = ${:config}/ssl
 {% import "supervisord_lib" as supervisord_lib with context %}
 {% set proxysql_controller = "proxysql-ctl" -%}
 {{ supervisord_lib.supervisord(proxysql_controller, buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
+
+[proxysql-controller-update]
+recipe = slapos.cookbook:wrapper
+command-line = ${proxysql-ctl-bin:wrapper-path} update
+wrapper-path = ${directory:scripts}/proxysql-ctl-update
 {% do part_list.append("supervisord-proxysql-ctl") -%}
+{% do part_list.append("proxysql-controller-update") -%}
 
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -177,6 +183,7 @@ maximum = 7132
 {% for key, value in parameter_dict.items() -%}
 {{ key }} = {{ value }}
 {% endfor -%}
+name = {{ name }}
 proxysql-user = {{ parameter_dict.get("proxysql-user", "external") }}
 proxy-port = {{ '${' ~ name ~ '-port:port}' }}
 proxy-admin-port = {{ '${' ~ name ~ '-admin-port:port}' }}
@@ -497,6 +504,8 @@ mail-to = {{ slapparameter_dict.get("mail-to", "") }}
 
 http-session-lifetime = {{ slapparameter_dict.get("http-session-lifetime", 86400) }}
 http-refresh-interval = {{ slapparameter_dict.get("http-refresh-interval", 4) }}
+ssl-cert = ${directory:ssl}/repman-cert.crt
+ssl-key = ${directory:ssl}/repman-cert.key
 
 [repman-config-folder]
 recipe = plone.recipe.command
