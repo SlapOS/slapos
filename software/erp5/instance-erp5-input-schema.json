@@ -622,6 +622,11 @@
               }
             }
           ]
+        },
+        "random-activity-priority": {
+          "type": "string",
+          "title": "Random Activity Priority",
+          "description": "Control `random_activity_priority` argument of test runner. Can be set to an empty string to automatically generate a seed for each test."
         }
       },
       "type": "object"
