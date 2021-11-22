@@ -10,7 +10,7 @@ BACKUP_FILE=virtual.qcow2
 
 QMP_CLIENT={{ buildout['directory'] }}/software_release/bin/qemu-qmp-client
 
-$QMP_CLIENT --socket {{ socket_path }} --drive-backup $BACKUP_DIR/$BACKUP_FILE
+$QMP_CLIENT --socket {{ socket_path }} --drive-backup $BACKUP_DIR/$BACKUP_FILE {{ device }}
 
 # Due to the way qmp works, the VM file cannot be compressed on the fly.
 # Although the compression step is optional, the importer uses the .gz file

@@ -1177,6 +1177,7 @@ context =
 [wipe-disk-device-wrapper]
 recipe = slapos.recipe.template:jinja2
 template = inline:
+  #!/bin/sh
 {%- for disk_device in disk_device_path.split() %}
   dd if=/dev/zero of={{ disk_device }} bs=4096 count=500k
 {%- endfor %}

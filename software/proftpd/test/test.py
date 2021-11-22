@@ -25,26 +25,25 @@
 #
 ##############################################################################
 
+import contextlib
+import io
+import logging
+import lzma
 import os
 import shutil
-from urllib.parse import urlparse, parse_qs
-import tempfile
-import io
 import subprocess
+import tempfile
 import time
 from http.server import BaseHTTPRequestHandler
-import logging
+from urllib.parse import parse_qs, urlparse
 
-import pysftp
-import psutil
 import paramiko
-from paramiko.ssh_exception import SSHException
-from paramiko.ssh_exception import AuthenticationException
-
+import psutil
+import pysftp
+from paramiko.ssh_exception import AuthenticationException, SSHException
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort
-from slapos.testing.utils import ManagedHTTPServer
-
+from slapos.testing.utils import (CrontabMixin, ManagedHTTPServer,
+                                  findFreeTCPPort)
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -227,8 +226,7 @@ class TestFilesAndSocketsInInstanceDir(ProFTPdTestCase):
     """
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
-    # there is only one process in this instance
-    process_info, = [p for p in all_process_info if p['name'] != 'watchdog']
+    process_info, = [p for p in all_process_info if 'proftpd' in p['name']]
     process = psutil.Process(process_info['pid'])
     self.assertEqual('proftpd', process.name())  # sanity check
     self.proftpdProcess = process
@@ -316,8 +314,7 @@ class TestSSHKey(TestSFTPOperations):
 class TestAuthenticationURL(TestSFTPOperations):
   class AuthenticationServer(ManagedHTTPServer):
     class RequestHandler(BaseHTTPRequestHandler):
-      def do_POST(self):
-        # type: () -> None
+      def do_POST(self) -> None:
         assert self.headers[
             'Content-Type'] == 'application/x-www-form-urlencoded', self.headers[
                 'Content-Type']
@@ -330,11 +327,13 @@ class TestAuthenticationURL(TestSFTPOperations):
           self.send_response(200)
           self.send_header("X-Proftpd-Authentication-Result", "Success")
           self.end_headers()
-          return self.wfile.write(b"OK")
+          self.wfile.write(b"OK")
+          return
         self.send_response(401)
-        return self.wfile.write(b"Forbidden")
+        self.wfile.write(b"Forbidden")
 
-      log_message = logging.getLogger(__name__ + '.AuthenticationServer').info
+      def log_message(self, msg, *args) -> None:
+        logging.getLogger(__name__ + '.AuthenticationServer').info(msg, *args)
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -364,3 +363,119 @@ class TestAuthenticationURL(TestSFTPOperations):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
     self.assertNotIn('username', parameter_dict)
     self.assertNotIn('password', parameter_dict)
+
+
+class LogRotationMixin(CrontabMixin):
+  """Mixin test for log rotations.
+
+  Verifies that after `_access` the `expected_logged_text` is found in `log_filename`.
+  This also checks that the log files are rotated properly.
+  """
+  log_filename: str = NotImplemented
+  expected_logged_text: str = NotImplemented
+
+  def _access(self) -> None:
+    raise NotImplementedError()
+
+  def assertFileContains(self, filename: str, text: str) -> None:
+    """assert that files contain the text, waiting for file to be created and
+    retrying a few times to tolerate the cases where text is not yet written
+    to file.
+    """
+    file_exists = False
+    for retry in range(10):
+      if os.path.exists(filename):
+        file_exists = True
+        if filename.endswith('.xz'):
+          f = lzma.open(filename, 'rt')
+        else:
+          f = open(filename, 'rt')
+        with contextlib.closing(f):
+          content = f.read()
+          if text in content:
+            return
+      time.sleep(0.1 * retry)
+    self.assertTrue(file_exists, f'{filename} does not exist')
+    self.assertIn(text, content)
+
+  def test(self) -> None:
+    self._access()
+    self.assertFileContains(
+        os.path.join(
+            self.computer_partition_root_path,
+            'var',
+            'log',
+            self.log_filename,
+        ),
+        self.expected_logged_text,
+    )
+
+    # first log rotation initialize the state, but does not actually rotate
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+
+    # today's file is not compressed
+    self.assertFileContains(
+        os.path.join(
+            self.computer_partition_root_path,
+            'srv',
+            'backup',
+            'logrotate',
+            f'{self.log_filename}-20500102',
+        ),
+        self.expected_logged_text,
+    )
+
+    # after rotation, the program re-opened original log file and writes in
+    # expected location, so access are logged again.
+    self._access()
+    self.assertFileContains(
+        os.path.join(
+            self.computer_partition_root_path,
+            'var',
+            'log',
+            self.log_filename,
+        ),
+        self.expected_logged_text,
+    )
+
+    self._executeCrontabAtDate('logrotate', '2050-01-03')
+    # yesterday's file is compressed
+    self.assertFileContains(
+        os.path.join(
+            self.computer_partition_root_path,
+            'srv',
+            'backup',
+            'logrotate',
+            f'{self.log_filename}-20500102.xz',
+        ),
+        self.expected_logged_text,
+    )
+
+
+class TestAccessLog(ProFTPdTestCase, LogRotationMixin):
+  log_filename = 'proftpd-sftp.log'
+  expected_logged_text = "user 'proftpd' authenticated via 'password' method"
+  def _access(self) -> None:
+    self._getConnection().close()
+
+
+class TestXferLog(ProFTPdTestCase, LogRotationMixin):
+  log_filename = 'proftpd-xfer.log'
+  expected_logged_text = '/testfile'
+  def _access(self) -> None:
+    with self._getConnection() as sftp:
+      with tempfile.NamedTemporaryFile(mode='w') as f:
+        f.write("Hello FTP !")
+        f.flush()
+        sftp.put(f.name, remotepath='testfile')
+
+
+class TestBanLog(ProFTPdTestCase, LogRotationMixin):
+  log_filename = 'proftpd-ban.log'
+  expected_logged_text = 'denied due to host ban'
+  def _access(self) -> None:
+    for _ in range(6):
+      with self.assertRaisesRegex(
+          Exception, '(Authentication failed|Connection reset by peer)'):
+        self._getConnection(password='wrong')

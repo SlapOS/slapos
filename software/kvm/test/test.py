@@ -573,6 +573,25 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
 
+  def test_kvm_exporter(self):
+    exporter_partition = os.path.join(
+      self.slap.instance_directory,
+      self.__partition_reference__ + '2')
+    backup_path = os.path.join(
+      exporter_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2.gz')
+    exporter = os.path.join(exporter_partition, 'bin', 'exporter')
+    if os.path.exists(backup_path):
+      os.unlink(backup_path)
+
+    def call_exporter():
+      try:
+        return (0, subprocess.check_output(
+          [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
+      except subprocess.CalledProcessError as e:
+        return (e.returncode, e.output.decode('utf-8'))
+    status_code, status_text = call_exporter()
+    self.assertEqual(0, status_code, status_text)
+
   def test(self):
     connection_parameter_dict = self\
       .computer_partition.getConnectionParameterDict()
@@ -644,6 +663,15 @@ ir3:sshd-graceful EXITED
 ir3:sshd-on-watch RUNNING""",
       self.getProcessInfo()
     )
+
+
+@skipUnlessKvm
+class TestInstanceResilientDiskTypeIde(InstanceTestCase, KvmMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'disk-type': 'ide'
+    }
 
 
 @skipUnlessKvm
