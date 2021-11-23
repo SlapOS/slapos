@@ -16,7 +16,7 @@ import {
   reboot,
   takeOff
 } from "{{ qjs_wrapper }}"; //jslint-quiet
-import {sleep, Worker} from "os";
+import {sleep, SIGINT, SIGTERM, signal, Worker} from "os";
 /*jslint-disable*/
 import * as std from "std";
 /*jslint-enable*/
@@ -45,6 +45,25 @@ function publish() {
   }
   publishWorker.postMessage({ action: "publish" });
   publishing = true;
+}
+
+function quit() {
+  stop();
+  stopPubsub();
+}
+
+function stopHandler(sign) {
+  console.log("received ctrl-c");
+  quit();
+}
+
+function stopPubsub() {
+  if(publishing) {
+    stopPublishing();
+  }
+  if(subscribing) {
+    stopSubscribing();
+  }
 }
 
 function subscribe() {
@@ -103,6 +122,8 @@ function cli() {
   let dict = {};
 
   console.log("Will connect to", URL);
+  signal(SIGINT, stopHandler);
+  signal(SIGTERM, stopHandler);
 
   while (true) {
     std.printf("> ");
@@ -146,12 +167,7 @@ function cli() {
       break;
 
     case "exit":
-      if(publishing) {
-        stopPublishing();
-      }
-      if(subscribing) {
-        stopSubscribing();
-      }
+      stopPubsub();
       return;
 
     case "goto":

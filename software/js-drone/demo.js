@@ -21,7 +21,7 @@ import {
   stopPublishing,
   takeOffAndWait
 } from "{{ qjs_wrapper }}"; //jslint-quiet
-import {sleep, Worker} from "os";
+import {sleep, SIGINT, SIGTERM, signal, Worker} from "os";
 import {exit} from "std";
 
 const IP    = "{{ autopilot_ip }}";
@@ -58,9 +58,7 @@ function distance(lat1, lon1, lat2, lon2) {
 function exit_on_fail(ret, msg) {
   if(ret) {
     console.log(msg);
-    if(publishing) {
-      stopPublishing();
-    }
+    quit();
     exit(-1);
   }
 }
@@ -107,6 +105,13 @@ function publish() {
   publishing = true;
 }
 
+function quit() {
+  stop();
+  if(publishing) {
+    stopPublishing();
+  }
+}
+
 function setLatLong(latitude, longitude, target_altitude) {
   var i;
   var cur_latitude;
@@ -145,6 +150,11 @@ function setLatLong(latitude, longitude, target_altitude) {
   }
 }
 
+function stopHandler(sign) {
+  console.log("received ctrl-c");
+  quit();
+}
+
 function waitForAltitude(target_altitude) {
   var altitude = getAltitude();
   while(Math.abs(altitude - target_altitude) > EPSILON_ALTITUDE) {
@@ -179,6 +189,8 @@ function waitForAltitude(target_altitude) {
     LAT2 = 45.90733;
     LON2 = 13.59704;
   }
+  signal(SIGINT, stopHandler);
+  signal(SIGTERM, stopHandler);
   publish();
 
   console.log("Will connect to", URL);
@@ -223,6 +235,5 @@ function waitForAltitude(target_altitude) {
   while(!landed()) {
     sleep(1000);
   }
-  stop();
-  stopPublishing();
+  quit();
 })();
