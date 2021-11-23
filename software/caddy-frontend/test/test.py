@@ -1721,9 +1721,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '51',
+      'accepted-slave-amount': '52',
       'rejected-slave-amount': '0',
-      'slave-amount': '51',
+      'slave-amount': '52',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
