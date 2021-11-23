@@ -57,24 +57,50 @@ static int mavsdk_started = 0;
 static void (*publish_fn)(double, double, float);
 
 // Logs functions
-void log(std::string message) {
+
+static void log(std::string message) {
     log_file_fd << message << std::endl;
 }
 
-void log_error(std::string message) {
+static void log_error(std::string message) {
     log(ERROR_CONSOLE_TEXT + message + NORMAL_CONSOLE_TEXT);
 }
 
 template <class Enumeration>
-void log_error_from_result(std::string message, Enumeration result) {
+static void log_error_from_result(std::string message, Enumeration result) {
   std::ostringstream oss;
   oss << message << ": " << result;
   log_error(oss.str());
 }
 
-void log_telemetry(std::string message) {
+static void log_telemetry(std::string message) {
           // set to blue                 set to default color again
     log(TELEMETRY_CONSOLE_TEXT + message + NORMAL_CONSOLE_TEXT);
+}
+
+// Action functions
+
+static int doAction(Action::Result (Action::*toDo)(void) const, std::string failure_message) {
+    if(!mavsdk_started) {
+        log_error("Mavsdk not started");
+        return -1;
+    }
+
+    const Action::Result result = (action->*toDo)();
+    if(result != Action::Result::Success) {
+        log_error_from_result(failure_message, result);
+        return -1;
+    }
+    return 0;
+}
+
+static int doMavlinkCommand(MavlinkPassthrough::CommandLong command, std::string failure_message) {
+    const MavlinkPassthrough::Result result = mavlink_passthrough->send_command_long(command);
+    if(result != MavlinkPassthrough::Result::Success) {
+        log_error_from_result(failure_message, result);
+        return -1;
+    }
+    return 0;
 }
 
 // Connexion management functions
@@ -171,9 +197,7 @@ int stop() {
       return -1;
     }
 
-    const Action::Result shutdown_result = action->shutdown();
-    if (shutdown_result != Action::Result::Success) {
-        log_error_from_result("Shutdown failed", shutdown_result);
+    if(doAction(&Action::shutdown, "Shutdown failed")) {
         return -1;
     }
 
@@ -187,15 +211,7 @@ int stop() {
 }
 
 int reboot() {
-    if(!mavsdk_started)
-        return -1; 
-
-    const Action::Result reboot_result = action->reboot();
-    if (reboot_result != Action::Result::Success) {
-        log_error_from_result("Rebooting failed", reboot_result);
-        return -1;
-    }
-    return 0;
+    return doAction(&Action::reboot, "Rebooting failed");
 }
 
 // Flight state management functions
@@ -210,12 +226,7 @@ int arm(void) {
     }
 
     log("Arming...");
-    const Action::Result arm_result = action->arm();
-    if (arm_result != Action::Result::Success) {
-        log_error_from_result("Arming failed", arm_result);
-        return -1;
-    }
-    return 0;
+    return doAction(&Action::arm, "Arming failed");
 }
 
 int doParachute(int param) {
@@ -227,24 +238,13 @@ int doParachute(int param) {
     command.param1 = param; //see https://mavlink.io/en/messages/common.html#PARACHUTE_ACTION
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
-
-    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
-    if(cmd_result != MavlinkPassthrough::Result::Success) {
-        log_error_from_result("Parachute failed", cmd_result);
-        return -1;
-    }
-    return 0;
+    return doMavlinkCommand(command, "Parachute failed");
 }
 
 int land(void)
 {
-    if(!mavsdk_started)
-        return -1;
-
     log("Landing...");
-    const Action::Result land_result = action->terminate();
-    if (land_result != Action::Result::Success) {
-        log_error_from_result("Land failed", land_result);
+    if(doAction(&Action::terminate, "Land failed")) {
         return -1;
     }
 
@@ -275,12 +275,7 @@ int loiter(double radius) {
 
 int takeOff(void)
 {
-    if(!mavsdk_started)
-        return -1;
-
-    const Action::Result takeoff_result = action->takeoff();
-    if (takeoff_result != Action::Result::Success) {
-        log_error_from_result("Takeoff failed", takeoff_result);
+    if(doAction(&Action::takeoff, "Takeoff failed")) {
         return -1;
     }
 
@@ -320,12 +315,7 @@ int doReposition(double la, double lo, double a, double y) {
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
-    if (cmd_result != MavlinkPassthrough::Result::Success) {
-        log_error_from_result("Reposition failed", cmd_result);
-        return -1;
-    }
-    return 0;
+    return doMavlinkCommand(command, "Reposition failed");
 }
 
 int loiterUnlimited(double radius, double la, double lo, double a) {
@@ -341,12 +331,7 @@ int loiterUnlimited(double radius, double la, double lo, double a) {
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    const MavlinkPassthrough::Result cmd_result = mavlink_passthrough->send_command_long(command);
-    if (cmd_result != MavlinkPassthrough::Result::Success) {
-        log_error_from_result("Loiter failed", cmd_result);
-       return -1;
-    }
-    return 0;
+    return doMavlinkCommand(command, "Loiter failed");
 }
 
 int setAirspeed(double airspeed) {
@@ -361,7 +346,7 @@ int setAirspeed(double airspeed) {
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+    return doMavlinkCommand(command, "Setting airspeed failed");
 }
 
 int setAltitude(double altitude) {
@@ -376,7 +361,7 @@ int setAltitude(double altitude) {
     command.target_sysid = mavlink_passthrough->get_target_sysid();
     command.target_compid = mavlink_passthrough->get_target_compid();
 
-    return !(mavlink_passthrough->send_command_long(command) == MavlinkPassthrough::Result::Success);
+    return doMavlinkCommand(command, "Setting altitude failed");
 }
 
 int setTargetAltitude(double a)
@@ -422,6 +407,7 @@ int setTargetLatLong(double la, double lo) {
 }
 
 // Information functions
+
 double getAltitude(void) {
     return drone_a;
 }
