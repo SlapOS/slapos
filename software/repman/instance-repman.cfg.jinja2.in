@@ -409,7 +409,7 @@ template =
   cp ${directory:ssl}/caucase.user.key ${directory:ssl}/caucase-full.key
   cat ${directory:ssl}/caucase.user.crt >> ${directory:ssl}/caucase-full.key
   for csr_id in {{ csrid_list | join(' ') }}; do
-    if [ "$csr_id" = "None" ]; then
+    if [ "$csr_id" = "None" ] || [ -z "$csr_id"]; then
       continue
     fi
     {{ buildout_bin_directory }}/caucase --ca-url {{ caucase_url }} --user-key ${directory:ssl}/caucase-full.key --sign-csr $csr_id
