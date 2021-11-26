@@ -21,7 +21,7 @@ database-host = {{ host }}:{{ port }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 partition-path = ${buildout:directory}
 receiver-port = ${dbjob-parameter:socat-port}
-csr-id = ${caucase-csr-id:csr_id}
+csr-id = ${caucase-csr-id:csr-id}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -87,22 +87,25 @@ recipe = plone.recipe.command
 output = ${directory:tmp}/csr_id
 command = 
   if [ -s "${mysql-directory:ssl}/server-cert.pem" ]; then
-    echo "None" > ${:output};
+    RESULT="None";
   else
     if [ -f "${caucase-updater-csr:csr}" ]; then
-      result=$({{ caucase_bin_client }} --ca-url {{ slapparameter_dict['caucase-url'] }} --send-csr ${caucase-updater-csr:csr} | cut -d ' ' -f1)
+      RESULT=$({{ caucase_bin_client }} --ca-url {{ slapparameter_dict['caucase-url'] }} --send-csr ${caucase-updater-csr:csr} | cut -d ' ' -f1)
       if [ ! $? -eq 0 ]; then
-        $result="None";
+        RESULT="None";
       fi
-      echo "$result" > ${:output}
     fi
   fi
+  cat <<EOF > ${:output}
+  [caucase]
+  csr-id = $(echo $RESULT)
+  EOF
 update-command = ${:command}
 
 [caucase-csr-id]
-recipe = collective.recipe.shelloutput
-commands = 
-  csr_id = if [ -f "${get-csr-id:output}" ]; then cat ${get-csr-id:output}; fi
+recipe = slapos.cookbook:zero-knowledge.read
+file-path = ${get-csr-id:output}
+csr-id =
 
 [my-cnf-parameters]
 socket = ${directory:run}/mariadb.sock
