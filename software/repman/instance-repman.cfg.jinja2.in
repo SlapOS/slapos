@@ -293,7 +293,7 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 
 {% set service_name = "proxysql-" ~ name -%}
 {% set proxysql_dict = {"name": service_name, "command": "${" ~ service_name ~ "-wrapper:wrapper-path}",
-  "stopwaitsecs": 60, "environment": [],
+  "stopwaitsecs": 60, "startretries": 10, "autorestart": True, "environment": [],
   "stdout_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log",
   "stderr_logfile": "${repman:proxies-log}/" ~ service_name ~ ".log" } %}
 
@@ -554,6 +554,9 @@ depends =
   ${replication-manager-reload:recipe}
   ${repman-listen-promise:recipe}
   ${repman-listen-ssl-promise:recipe}
+wait-for-files =
+  ${directory:ssl}/repman-cert.crt
+  ${directory:ssl}/repman-cert.key
 
 [repman-config.toml]
 recipe = slapos.recipe.template:jinja2

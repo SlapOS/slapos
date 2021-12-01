@@ -207,7 +207,7 @@ wait-for-files =
 {{ supervisord_lib.supervisord("mariadb-ctl", buildout_bin_directory, supervisord_conf, use_service_hash=False) }}
 {% do part_list.append("supervisord-mariadb-ctl") -%}
 {% set maradb_program_dict = {"name": "mariadb", "command": "${mysqld-launcher:wrapper-path}",
-  "stopwaitsecs": 86400, "environment": [],
+  "stopwaitsecs": 86400, "startretries": 10, "autorestart": True, "environment": [],
   "stdout_logfile": "${directory:log}/mariadb_stdout.log",
   "stderr_logfile": "${directory:log}/mariadb_stdout.log" } %}
 
