@@ -184,6 +184,7 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 recipe = slapos.cookbook:generate.password
 username = admin
 bytes = 12
+storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 
 [frontend-instance-port]
 recipe = slapos.cookbook:free_port
