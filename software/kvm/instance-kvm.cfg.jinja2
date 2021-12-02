@@ -84,7 +84,8 @@ storage-path = ${directory:srv}/tap_mac
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:srv}/passwd
+storage-path = ${directory:srv}/.passwd
+# VNC protocol supports passwords of 8 characters max
 bytes = 8
 
 {% if boot_image_url_select_enabled %}
