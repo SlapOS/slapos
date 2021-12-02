@@ -15,12 +15,6 @@
                     "default": "all.level=debug,all.max_size=32"
                 }
             }
-        },
-        "ue_db_path" : {
-            "title": "UE configuration path (optional)",
-            "description": "ue_db_path is used to extend configuration for include ue_db configuration",
-            "type": "string",
-            "default": ""
         }
    }
 }
