@@ -120,8 +120,13 @@ class Recipe(object):
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
 
-    # By default XXXX Way of doing it is ugly and dangerous
-    requested_state = options.get('state', buildout['slap-connection'].get('requested','started'))
+    # By default, propagate the state of the parent instance
+    # Except if parent is destroyed, as it may lead to the unexpected
+    # destruction of the full instance tree
+    default_state = buildout['slap-connection'].get('requested', 'started')
+    if default_state not in ('started', 'stopped'):
+      default_state = 'started'
+    requested_state = options.get('state', default_state)
     options['requested-state'] = requested_state
 
     slap = slapmodule.slap()
