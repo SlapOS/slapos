@@ -1407,7 +1407,8 @@ class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
     with open(slapos_wipe_device_disk) as fh:
       self.assertEqual(
         fh.read().strip(),
-        r"""dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
+        r"""#!/bin/sh
+dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
 dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
       )
     self.assertTrue(os.access(slapos_wipe_device_disk, os.X_OK))

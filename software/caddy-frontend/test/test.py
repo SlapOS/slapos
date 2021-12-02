@@ -644,16 +644,40 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       server_side=True)
 
     cls.backend_url = 'http://%s:%s/' % server.server_address
-    cls.server_process = multiprocessing.Process(
+    server_process = multiprocessing.Process(
       target=server.serve_forever, name='HTTPServer')
-    cls.server_process.start()
-    cls.logger.debug('Started process %s' % (cls.server_process,))
+    server_process.start()
+    cls.logger.debug('Started process %s' % (server_process,))
 
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
-    cls.server_https_process = multiprocessing.Process(
+    server_https_process = multiprocessing.Process(
       target=server_https.serve_forever, name='HTTPSServer')
-    cls.server_https_process.start()
-    cls.logger.debug('Started process %s' % (cls.server_https_process,))
+    server_https_process.start()
+    cls.logger.debug('Started process %s' % (server_https_process,))
+
+    class NetlocHandler(TestHandler):
+      identification = 'netloc'
+
+    netloc_a_http = ThreadedHTTPServer(
+      (cls._ipv4_address, cls._server_netloc_a_http_port),
+      NetlocHandler)
+    netloc_a_http_process = multiprocessing.Process(
+      target=netloc_a_http.serve_forever, name='netloc-a-http')
+    netloc_a_http_process.start()
+
+    netloc_b_http = ThreadedHTTPServer(
+      (cls._ipv4_address, cls._server_netloc_b_http_port),
+      NetlocHandler)
+    netloc_b_http_process = multiprocessing.Process(
+      target=netloc_b_http.serve_forever, name='netloc-b-http')
+    netloc_b_http_process.start()
+
+    cls.server_process_list = [
+      server_process,
+      server_https_process,
+      netloc_a_http_process,
+      netloc_b_http_process,
+    ]
 
   @classmethod
   def cleanUpCertificate(cls):
@@ -662,8 +686,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def stopServerProcess(cls):
-    for server in ['server_process', 'server_https_process']:
-      process = getattr(cls, server, None)
+    for process in cls.server_process_list:
       if process is not None:
         cls.logger.debug('Stopping process %s' % (process,))
         process.join(10)
@@ -1033,6 +1056,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -1071,6 +1096,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
+  def _get_backend_haproxy_configuration(self):
+    backend_configuration_file = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
+    with open(backend_configuration_file) as fh:
+      return fh.read()
+
   @classmethod
   def requestDefaultInstance(cls, state='started'):
     default_instance = super(
@@ -1326,6 +1357,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
+      'url-netloc-list': {
+        'url': cls.backend_url,
+        'url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
+          'ip': cls._ipv4_address,
+          'port_a': cls._server_netloc_a_http_port,
+          'port_b': cls._server_netloc_b_http_port},
+      },
       'auth-to-backend': {
         # in here use reserved port for the backend, which is going to be
         # started later
@@ -1352,6 +1390,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'strict-transport-security': '200',
         'strict-transport-security-sub-domains': True,
         'strict-transport-security-preload': True,
+      },
+      'https-url-netloc-list': {
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
+        'https-url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
+          'ip': cls._ipv4_address,
+          'port_a': cls._server_netloc_a_http_port,
+          'port_b': cls._server_netloc_b_http_port},
       },
       'server-alias': {
         'url': cls.backend_url,
@@ -1721,9 +1767,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
       'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
       'domain': 'example.com',
-      'accepted-slave-amount': '51',
+      'accepted-slave-amount': '54',
       'rejected-slave-amount': '0',
-      'slave-amount': '51',
+      'slave-amount': '54',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -1964,6 +2010,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     # check that no needless entries are generated
     self.assertIn("backend _Url-http\n", content)
     self.assertNotIn("backend _Url-https\n", content)
+
+  def test_url_netloc_list(self):
+    parameter_dict = self.assertSlaveBase('url-netloc-list')
+    result = fakeHTTPSResult(parameter_dict['domain'], 'path')
+    # assure that the request went to backend specified in the netloc
+    self.assertEqual(
+      result.headers['X-Backend-Identification'],
+      'netloc'
+    )
 
   def test_auth_to_backend(self):
     parameter_dict = self.assertSlaveBase('auth-to-backend')
@@ -4463,6 +4518,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
+
+  def test_https_url_netloc_list(self):
+    parameter_dict = self.assertSlaveBase('https-url-netloc-list')
+    result = fakeHTTPSResult(parameter_dict['domain'], 'path')
+    # assure that the request went to backend specified in the netloc
+    self.assertEqual(
+      result.headers['X-Backend-Identification'],
+      'netloc'
+    )
+
+    result = fakeHTTPResult(parameter_dict['domain'], 'path')
+    # assure that the request went to backend NOT specified in the netloc
+    self.assertNotIn('X-Backend-Identification', result.headers)
 
 
 class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
@@ -7168,6 +7236,23 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin):
         'health-check-failover-https-url':
         cls.backend_url + 'failover-https-url?a=b&c=',
       },
+      'health-check-failover-url-netloc-list': {
+        'https-only': False,  # http and https access to check
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'url': cls.backend_url + 'url',
+        'https-url': cls.backend_url + 'https-url',
+        'health-check': True,
+        'health-check-http-path': '/health-check-failover-url',
+        'health-check-failover-url': cls.backend_url + 'failover-url?a=b&c=',
+        'health-check-failover-https-url':
+        cls.backend_url + 'failover-https-url?a=b&c=',
+        'health-check-failover-url-netloc-list':
+        '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
+          'ip': cls._ipv4_address,
+          'port_a': cls._server_netloc_a_http_port,
+          'port_b': cls._server_netloc_b_http_port},
+      },
       'health-check-failover-url-auth-to-backend': {
         'https-only': False,  # http and https access to check
         'health-check-timeout': 1,  # fail fast for test
@@ -7257,12 +7342,6 @@ backend _health-check-default-http
   timeout check 2s""" % (backend, )
     }
 
-  def _get_backend_haproxy_configuration(self):
-    backend_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
-    with open(backend_configuration_file) as fh:
-      return fh.read()
-
   def _test(self, key):
     parameter_dict = self.assertSlaveBase(key)
     self.assertIn(
@@ -7314,6 +7393,14 @@ backend _health-check-default-http
       headers={'X-Reply-Status-Code': '502'})
     self.assertEqual(result.status_code, httplib.CREATED)
 
+    def restoreBackend():
+      result = requests.put(
+        self.backend_url + slave_parameter_dict[
+          'health-check-http-path'].strip('/'),
+        headers={})
+      self.assertEqual(result.status_code, httplib.CREATED)
+    self.addCleanup(restoreBackend)
+
     time.sleep(3)  # > health-check-timeout + health-check-interval
 
     result = fakeHTTPSResult(parameter_dict['domain'], '/failoverpath')
@@ -7346,6 +7433,38 @@ backend _health-check-default-http
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
       r'"GET /failoverpath HTTP/1.1"'
+    )
+
+  def test_health_check_failover_url_netloc_list(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-netloc-list')
+    slave_parameter_dict = self.getSlaveParameterDictDict()[
+      'health-check-failover-url-netloc-list']
+    # check normal access
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertNotIn('X-Backend-Identification', result.headers)
+    # start replying with bad status code
+    result = requests.put(
+      self.backend_url + slave_parameter_dict[
+        'health-check-http-path'].strip('/'),
+      headers={'X-Reply-Status-Code': '502'})
+    self.assertEqual(result.status_code, httplib.CREATED)
+    self.assertEqual(result.status_code, httplib.CREATED)
+
+    def restoreBackend():
+      result = requests.put(
+        self.backend_url + slave_parameter_dict[
+          'health-check-http-path'].strip('/'),
+        headers={})
+      self.assertEqual(result.status_code, httplib.CREATED)
+    self.addCleanup(restoreBackend)
+
+    time.sleep(3)  # > health-check-timeout + health-check-interval
+    # check failover, uses netloc
+    result = fakeHTTPSResult(parameter_dict['domain'], '/path')
+    self.assertEqual(
+      result.headers['X-Backend-Identification'],
+      'netloc'
     )
 
   def test_health_check_failover_url_auth_to_backend(self):
