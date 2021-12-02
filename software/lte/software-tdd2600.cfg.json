@@ -1,7 +1,7 @@
 {
     "name": "LTE",
     "description": "LTE",
-    "serialisation": "json-in-xml",
+    "serialisation": "xml",
     "software-type": {
         "enb": {
              "title": "eNB",
