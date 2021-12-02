@@ -102,7 +102,7 @@ config-port = ${proftpd:sftp-port}
 recipe = slapos.cookbook:wrapper
 wrapper-path =${buildout:bin-directory}/${:_buildout_section_name_}
 command-line =
-  {{ perl_bin }} {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid=${proftpd-userinfo:pw-uid} --gid=${proftpd-userinfo:gr-gid}  --file ${auth-user-file:output}
+  {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid=${proftpd-userinfo:pw-uid} --gid=${proftpd-userinfo:gr-gid}  --file ${auth-user-file:output}
 
 [auth-user-file]
 recipe = plone.recipe.command
