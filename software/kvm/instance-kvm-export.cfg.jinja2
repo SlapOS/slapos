@@ -24,10 +24,20 @@ rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
 # Resilient stack wants a "wrapper" parameter
 wrapper = ${:rendered}
 mode = 0700
+{%- set disk_type = slapparameter_dict.get('disk-type', 'virtio') %}
+{%- if disk_type == "virtio" %}
+device = virtio0
+{%- elif disk_type == "ide" %}
+{#-   Manually found device name in case of disk-type == ide #}
+device = ide0-hd0
+{%- else %}
+# unsupported disk-type {{ disk_type }}
+{%- endif %}
 context =
     section directory directory
     section buildout buildout
     key socket_path kvm-instance:socket-path
+    key device :device
     raw gzip_binary {{ gzip_binary }}
 
 # Extends publish section with resilient parameters

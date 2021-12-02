@@ -13,6 +13,7 @@
 {% set test_runner_address_list = [] -%}
 {% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
 {% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
+{% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
@@ -503,6 +504,9 @@ command-line-extra =
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
   --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
   --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
+  {% if test_runner_random_activity_priority is not none %}
+    --random_activity_priority={{ test_runner_random_activity_priority }}
+  {%- endif %}
 
 [{{ section('runTestSuite') }}]
 < = run-test-common

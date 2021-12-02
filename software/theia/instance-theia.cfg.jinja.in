@@ -71,7 +71,7 @@ recipe =
 instance-promises =
   $${theia-listen-promise:name}
   $${frontend-listen-promise:name}
-  $${frontend-authentification-promise:name}
+  $${frontend-authentication-promise:name}
   $${remote-frontend-url-available-promise:name}
   {% if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
@@ -94,15 +94,15 @@ name = $${:_buildout_section_name_}.py
 config-host = $${frontend-instance:ip}
 config-port = $${frontend-instance:port}
 
-[frontend-authentification-promise]
+[frontend-authentication-promise]
 <= monitor-promise-base
 promise = check_url_available
 name = $${:_buildout_section_name_}.py
-username = $${frontend-instance-password:username}
-password = $${frontend-instance-password:passwd}
 ip = $${frontend-instance:ip}
 port = $${frontend-instance:port}
-config-url = https://$${:username}:$${:password}@[$${:ip}]:$${:port}
+config-url = https://[$${:ip}]:$${:port}
+config-username = $${frontend-instance-password:username}
+config-password = $${frontend-instance-password:passwd}
 
 [remote-frontend-url-available-promise]
 <= monitor-promise-base
@@ -184,6 +184,7 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 recipe = slapos.cookbook:generate.password
 username = admin
 bytes = 12
+storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 
 [frontend-instance-port]
 recipe = slapos.cookbook:free_port

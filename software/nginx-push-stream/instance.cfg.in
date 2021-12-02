@@ -1,6 +1,9 @@
 [buildout]
 parts =
   nginx-service
+  cron-service
+  cron-entry-logrotate
+  logrotate-entry-nginx
   promises
   publish-connection-information
 extends = ${monitor-template:rendered}
@@ -46,6 +49,7 @@ output = $${directory:etc}/nginx.cfg
 mode = 0600
 access-log = $${directory:log}/nginx-access.log
 error-log = $${directory:log}/nginx-error.log
+pid-file = $${directory:run}/nginx.pid
 ip = $${slap-configuration:ipv6-random}
 local-ip = $${slap-configuration:ipv4-random}
 port = 9443
@@ -67,6 +71,15 @@ key-file = $${directory:ssl}/${:_buildout_section_name_}.key
 cert-file = $${directory:ssl}/${:_buildout_section_name_}.cert
 common-name = $${nginx-configuration:ip}
 stop-on-error = true
+
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = nginx
+log =
+  $${nginx-configuration:access-log}
+  $${nginx-configuration:error-log}
+post =
+  test ! -s $${nginx-configuration:pid-file} || kill -USR1 $(cat "$${nginx-configuration:pid-file}")
 
 [promises]
 recipe =
