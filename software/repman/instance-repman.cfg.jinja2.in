@@ -148,7 +148,7 @@ config-cluster = {{ name }}
 config-name = {{ dbname }}
 config-database-list = !py!{{ database_slave_list }}
 config-database-name = {{ dumps(db_list) }}
-config-require-ssl = {{ dumps(slapparameter_dict.get('require-ssl', True)) }}
+config-require-ssl = {{ dumps(slapparameter_dict.get('require-ssl', False)) }}
 return =
   database-host
   receiver-port
