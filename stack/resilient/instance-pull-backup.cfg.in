@@ -270,7 +270,7 @@ private-path-list +=
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+template = ${template-monitor-check-resilient-feed:target}
 rendered = $${monitor-directory:bin}/check-create-resilient-feed-files
 mode = 700
 context =

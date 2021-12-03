@@ -32,7 +32,7 @@ return =
 
 [proxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_executable }} {{ rina_proxy }} ${server:instance-guid} ${:ipv6} ${:port}
+command-line = {{ rina_proxy }} ${server:instance-guid} ${:ipv6} ${:port}
 wrapper-path = ${directory:service}/proxy
 environment =
   PATH={{ rina_tools_location }}/bin:%(PATH)s
