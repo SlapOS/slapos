@@ -62,13 +62,6 @@ class TestRepman(SlapOSInstanceTestCase):
 
     token = resp.json()['token']
     headers = {"authorization": "Bearer " + token}
-    resp = requests.get(
-        urljoin(self.url, '/api/clusters/cluster1/status'),
-        headers=headers,
-        verify=False,
-    )
-    self.assertEqual(resp.status_code, requests.codes.ok)
-    self.assertEqual(resp.json(), {"alive": "running"})
 
     for i in range(20):
       resp = requests.get(
@@ -88,3 +81,11 @@ class TestRepman(SlapOSInstanceTestCase):
     self.assertTrue(cluster['isProvision'])
     self.assertTrue(cluster['isFailable'])
     self.assertFalse(cluster['isDown'])
+
+    resp = requests.get(
+        urljoin(self.url, '/api/clusters/cluster1/status'),
+        headers=headers,
+        verify=False,
+    )
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    self.assertEqual(resp.json(), {"alive": "running"})
