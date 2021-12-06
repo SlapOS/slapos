@@ -77,7 +77,6 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
-          'accords = slapos.recipe.accords:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
