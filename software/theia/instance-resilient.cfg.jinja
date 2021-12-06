@@ -21,9 +21,9 @@ parts +=
 {%- set monitor_cors_domains = slapparameter_dict.pop('monitor-cors-domains', 'monitor.app.officejs.com') %}
 {%- set monitor_username = slapparameter_dict.get('monitor-username', '${monitor-instance-parameter:username}') %}
 {%- set monitor_password = slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}') %}
-{%- set monitor_return = ['monitor-base-url', 'monitor-setup-url'] %}
+{%- set monitor_return = ['monitor-base-url'] %}
 {%- set monitor_parameter = {'monitor-cors-domains': monitor_cors_domains, 'monitor-username' : monitor_username, 'monitor-password': monitor_password} %}
-{%- set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} %}
+{%- set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} %}
 
 
 {# Generate the sections to request the main theia, the clones and the PBS. #}
@@ -43,6 +43,6 @@ url = ${request-theia:connection-url}
 username = ${request-theia:connection-username}
 password = ${request-theia:connection-password}
 backend-url = ${request-theia:connection-backend-url}
-monitor-base-url = ${request-theia:connection-monitor-base-url}
-monitor-setup-url = ${request-theia:connection-monitor-setup-url}
+monitor-base-url = ${monitor-publish:monitor-base-url}
+monitor-setup-url = ${monitor-publish:monitor-setup-url}
 <= publish-connection-information
