@@ -7,9 +7,33 @@
              "title": "eNB",
              "software-type": "enb",
              "description": "eNodeB Configuration",
-             "request": "instance-enb-tdd3700-input-schema.json",
-             "response": "instance-enb-schema.json",
+             "request": "instance-tdd3700-enb-input-schema.json",
+             "response": "instance-tdd3700-enb-schema.json",
              "index": 0
+         },
+        "enb-epc": {
+             "title": "eNB and EPC",
+             "software-type": "enb-epc",
+             "description": "eNodeB and EPC Configuration",
+             "request": "instance-tdd3700-enb-epc-input-schema.json",
+             "response": "instance-tdd3700-enb-epc-schema.json",
+             "index": 1
+         },
+        "gnb": {
+             "title": "gNB",
+             "software-type": "gnb",
+             "description": "gNodeB Configuration",
+             "request": "instance-tdd3700-gnb-input-schema.json",
+             "response": "instance-tdd3700-gnb-schema.json",
+             "index": 2
+         },
+        "gnb-epc": {
+             "title": "gNB and EPC",
+             "software-type": "gnb-epc",
+             "description": "gNodeB and EPC Configuration",
+             "request": "instance-tdd3700-gnb-epc-input-schema.json",
+             "response": "instance-tdd3700-gnb-epc-schema.json",
+             "index": 3
          },
         "epc": {
              "title": "EPC",
@@ -17,16 +41,8 @@
              "description": "EPC Configuration",
              "request": "instance-epc-input-schema.json",
              "response": "instance-epc-schema.json",
-             "index": 1
+             "index": 4
          },
-        "default": {
-            "title": "Default",
-            "software-type": "default",
-            "description": "Default",
-            "request": "instance-lte-input-schema.json",
-            "response": "instance-lte-schema.json",
-            "index": 2
-        },
         "epc-slave": {
              "title": "Sim Card",
              "description": "EPC Configuration",
@@ -34,7 +50,7 @@
              "request": "instance-epc-slave-input-schema.json",
              "response": "instance-epc-slave-schema.json",
              "shared": true,
-             "index": 3
+             "index": 5
          }
     }
 }

@@ -7,32 +7,32 @@
              "title": "eNB",
              "software-type": "enb",
              "description": "eNodeB Configuration",
-             "request": "instance-tdd1900-enb-input-schema.json",
-             "response": "instance-tdd1900-enb-schema.json",
+             "request": "instance-{{ rf_mode }}-enb-input-schema.json",
+             "response": "instance-{{ rf_mode }}-enb-schema.json",
              "index": 0
          },
         "enb-epc": {
              "title": "eNB and EPC",
              "software-type": "enb-epc",
              "description": "eNodeB and EPC Configuration",
-             "request": "instance-tdd1900-enb-epc-input-schema.json",
-             "response": "instance-tdd1900-enb-epc-schema.json",
+             "request": "instance-{{ rf_mode }}-enb-epc-input-schema.json",
+             "response": "instance-{{ rf_mode }}-enb-epc-schema.json",
              "index": 1
          },
         "gnb": {
              "title": "gNB",
              "software-type": "gnb",
              "description": "gNodeB Configuration",
-             "request": "instance-tdd1900-gnb-input-schema.json",
-             "response": "instance-tdd1900-gnb-schema.json",
+             "request": "instance-{{ rf_mode }}-gnb-input-schema.json",
+             "response": "instance-{{ rf_mode }}-gnb-schema.json",
              "index": 2
          },
         "gnb-epc": {
              "title": "gNB and EPC",
              "software-type": "gnb-epc",
              "description": "gNodeB and EPC Configuration",
-             "request": "instance-tdd1900-gnb-epc-input-schema.json",
-             "response": "instance-tdd1900-gnb-epc-schema.json",
+             "request": "instance-{{ rf_mode }}-gnb-epc-input-schema.json",
+             "response": "instance-{{ rf_mode }}-gnb-epc-schema.json",
              "index": 3
          },
         "epc": {
