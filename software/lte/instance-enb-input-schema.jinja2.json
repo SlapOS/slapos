@@ -8,25 +8,25 @@
             "title": "Tx gain",
             "description": "Tx gain (in dB)",
             "type": "number",
-            "default": 70.0
+            "default": {{ default_lte_tx_gain }}
         },
         "rx_gain": {
             "title": "Rx gain",
             "description": "Rx gain (in dB)",
             "type": "number",
-            "default": 30.0
+            "default": {{ default_lte_rx_gain }}
         },
         "dl_earfcn": {
             "title": "DL EARFCN",
-            "description": "Downlink EARFCN of the cell",
+            "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
             "type": "number",
-            "default": 38050
+            "default": {{ default_dl_earfcn }}
         },
         "n_rb_dl": {
             "title": "DL RB",
             "description": "number of DL resource blocks",
             "type": "number",
-            "default": 100
+            "default": {{ default_lte_n_rb_dl }}
         }
     }
 }
