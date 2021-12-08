@@ -444,6 +444,39 @@ command =
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
 
+# Embedded Instance
+# -----------------
+
+{%- set embedded_sr = parameter_dict['embedded-sr'] %}
+{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
+{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
+{%- if embedded_sr %}
+{%-   if embedded_sr.startswith('~/') %}
+{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
+{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
+{%-   endif %}
+[request-embedded-instance-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/request_embedded.sh
+mode = 0700
+template =
+  inline:#!/bin/sh
+
+  slapos supply {{ embedded_sr }} slaprunner
+
+  slapos request "embedded_instance" {{ embedded_sr }}
+{%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
+{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:rendered}
+
+[embedded-instance-parameters]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/$${:_buildout_section_name_}.json
+template =
+  inline:{{ embedded_instance_parameters | indent(2) }}
+{%-   endif %}
+{%- endif %}
+
+
 # SlapOS Standalone
 # -----------------
 
@@ -488,12 +521,8 @@ template =
       $${slapos-standalone-config:port} \
       $${slapos-standalone-config:local-software-release-root} \
       $${slapos-standalone-config:computer-id} \
-      {%- if parameter_dict.get('embedded-sr') %}
-      --sr='{{ parameter_dict['embedded-sr'] }}' \
-      {%- if parameter_dict.get('embedded-sr-type') %}
-      --srtype='{{ parameter_dict['embedded-sr-type'] }}' \
-      {%- endif %}
-      --srparams='$${embedded-instance-parameters:rendered}' \
+      {%- if embedded_sr %}
+      --slapos_script=$${request-embedded-instance-script:rendered} \
       {%- endif %}
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
@@ -621,14 +650,6 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
-
-{% if parameter_dict.get('embedded-sr') -%}
-[embedded-instance-parameters]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}.json
-template =
-  inline:{{ parameter_dict['embedded-instance-parameters'] | indent(2) }}
-{%- endif %}
 
 [request-script-template]
 recipe = slapos.recipe.template:jinja2
