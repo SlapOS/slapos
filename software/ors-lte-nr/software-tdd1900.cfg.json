@@ -1,6 +1,6 @@
 {
-    "name": "LTE",
-    "description": "LTE",
+    "name": "ORS LTE NR",
+    "description": "LTE and NR amarisoft stack for ORS",
     "serialisation": "xml",
     "software-type": {
         "enb": {
