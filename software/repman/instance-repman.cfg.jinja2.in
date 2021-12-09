@@ -132,7 +132,7 @@ mode = 755
 [{{ section }}]
 <= request-common
 software-type = mariadb
-name = {{ dbname }}
+name = {{ dbname ~ '-' ~ name}}
 sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '')) }}
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
