@@ -1,38 +1,38 @@
 {
-    "name": "LTE",
-    "description": "LTE",
+    "name": "ORS Amarisoft",
+    "description": "4G and 5G amarisoft stack for ORS",
     "serialisation": "xml",
     "software-type": {
         "enb": {
              "title": "eNB",
              "software-type": "enb",
              "description": "eNodeB Configuration",
-             "request": "instance-tdd1900-enb-input-schema.json",
-             "response": "instance-tdd1900-enb-schema.json",
+             "request": "instance-tdd3700-enb-input-schema.json",
+             "response": "instance-tdd3700-enb-schema.json",
              "index": 0
          },
         "enb-epc": {
              "title": "eNB and EPC",
              "software-type": "enb-epc",
              "description": "eNodeB and EPC Configuration",
-             "request": "instance-tdd1900-enb-epc-input-schema.json",
-             "response": "instance-tdd1900-enb-epc-schema.json",
+             "request": "instance-tdd3700-enb-epc-input-schema.json",
+             "response": "instance-tdd3700-enb-epc-schema.json",
              "index": 1
          },
         "gnb": {
              "title": "gNB",
              "software-type": "gnb",
              "description": "gNodeB Configuration",
-             "request": "instance-tdd1900-gnb-input-schema.json",
-             "response": "instance-tdd1900-gnb-schema.json",
+             "request": "instance-tdd3700-gnb-input-schema.json",
+             "response": "instance-tdd3700-gnb-schema.json",
              "index": 2
          },
         "gnb-epc": {
              "title": "gNB and EPC",
              "software-type": "gnb-epc",
              "description": "gNodeB and EPC Configuration",
-             "request": "instance-tdd1900-gnb-epc-input-schema.json",
-             "response": "instance-tdd1900-gnb-epc-schema.json",
+             "request": "instance-tdd3700-gnb-epc-input-schema.json",
+             "response": "instance-tdd3700-gnb-epc-schema.json",
              "index": 3
          },
         "epc": {
