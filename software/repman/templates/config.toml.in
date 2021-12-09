@@ -22,6 +22,8 @@ db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 # Database hosts list to monitor, IP and port (optional), specified in the host:[port] format and separated by commas
 monitoring-address = "{{ parameter_dict['ipv4'] }}"
 monitoring-wait-retry = 1200
+monitoring-ssl-cert = "{{ parameter_dict['ssl-cert'] }}"
+monitoring-ssl-key = "{{ parameter_dict['ssl-key'] }}"
 
 #haproxy = true
 #haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
