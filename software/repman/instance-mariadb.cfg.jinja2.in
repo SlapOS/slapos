@@ -17,17 +17,10 @@
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
--extends = publish-early
 database-host = {{ host }}:{{ port }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 partition-path = ${buildout:directory}
 receiver-port = ${dbjob-parameter:socat-port}
-
-[publish-early]
-recipe = slapos.cookbook:publish-early
--init =
-
-database-list = {{ dumps(database_list) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -36,6 +29,22 @@ mode = 644
 [jinja2-template-executable]
 < = jinja2-template-base
 mode = 755
+
+[jinja2-template-script-base]
+< = jinja2-template-executable
+context =
+  key tmp_dir            directory:tmp
+  key partition_dir      buildout:directory
+  raw username           {{ slapparameter_dict['repman-user'] }}
+  raw password           {{ slapparameter_dict['repman-passwd'] }}
+  raw cluster_name       {{ slapparameter_dict['cluster'] }}
+  raw secure_url         {{ slapparameter_dict['repman-secure-url'] }}
+  raw mysql_conf         ${directory:etc}/mysql/my.cnf
+  raw dash_bin           {{ dash }}
+  raw jq_bin             {{ jq_bin }}
+  raw curl_bin           {{ curl_bin }}
+  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+  ${:extra-context}
 
 [simplefile]
 < = jinja2-template-base
@@ -92,6 +101,7 @@ heartbeat-user = {{ slapparameter_dict['heartbeat-user'] }}
 
 [init-script]
 < = jinja2-template-executable
+extensions = jinja2.ext.do
 # XXX: is there a better location ?
 rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}
@@ -106,19 +116,24 @@ init-script = ${init-script:rendered}
 mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
 [{{ section('update-mysql-script') }}]
-< = jinja2-template-executable
+< = jinja2-template-script-base
 rendered = ${directory:scripts}/mariadb_update
 init-password = ${directory:etc}/.init-passwd.done
 upgrade-done = ${directory:lib}/mariadb-update-done
-context =
+extra-context =
   key init_password_done :init-password
   key upgrade_done       :upgrade-done
   key init_root_sql      init-root-sql:rendered
   key mysql_update       update-mysql:output
-  raw mysql_conf         ${directory:etc}/mysql/my.cnf
-  raw dash_bin           {{ dash }}
-  raw mysql_bin          {{ parameter_dict['mariadb-location'] }}/bin/mysql
+  key init_database_sql  init-script:rendered
 template = {{ parameter_dict['template-init-root-wrapper'] }}
+
+[mysql-slave-db-cleanup]
+< = jinja2-template-script-base
+rendered = ${directory:bin}/manage_slave_db
+extra-context =
+  raw database_name      {{ slapparameter_dict['database-name'] }}
+template = {{ parameter_dict['template-manage-db'] }}
 
 [mysqld]
 < = jinja2-template-executable
@@ -284,6 +299,13 @@ cron-entries = ${cron:cron-entries}
 name = mariadb-need-start
 frequency = * * * * *
 command = ${template-mysqld-need-start:rendered}
+
+[{{ section('db-remove-cron-entry') }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = slave-db-remove
+frequency = */5 * * * *
+command = ${mysql-slave-db-cleanup:rendered}
 
 [template-mysqld-need-start]
 < = jinja2-template-executable
