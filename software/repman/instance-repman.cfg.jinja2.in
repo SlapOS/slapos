@@ -10,6 +10,15 @@
 {% set cluster_list = [] -%}
 {% set tag_list = ["gtidstrict", "bind", "pkg", "innodb", "noquerycache", "slow", "pfs", "linux", "readonly", "diskmonitor", "sqlerror", "compressbinlog", "bm4ci", "mroonga", "utctime", "readcommitted", "nohandshake"] -%}
 {% set frontend_parameter_dict = slapparameter_dict.get('slave-frontend', {}) -%}
+{% set database_slave_list = [] -%}
+{% set db_name_list = [] -%}
+
+{% macro password(name) -%}
+[{{ name }}-password]
+recipe = slapos.cookbook:generate.password
+bytes = 12
+
+{% endmacro -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -58,6 +67,24 @@ template = inline:#!{{ bash_bin }}
 rendered = ${directory:bin}/update-proxysql-config
 mode = 755
 
+{% for instance_dict in slave_instance_list -%}
+{% set slave_dict = {
+  'name': 'db_%s' % instance_dict['slave_reference'].replace('-', '_').lower(),
+  'user': instance_dict.get('db_user', 'user'),
+  'password': instance_dict.get('db_password', '${' ~ instance_dict['slave_reference'] ~ '-password:passwd}'),
+  'slave_reference': instance_dict['slave_reference'],
+  'charset': instance_dict.get('db_charset', '')
+  } -%}
+{% do database_slave_list.append(slave_dict) -%}
+{% do db_name_list.append(slave_dict['name']) -%}
+{{ password(instance_dict['slave_reference']) }}
+{% endfor %}
+[database-slave-information]
+{% for slave_dict in database_slave_list -%}
+{{ slave_dict['name'] }} = !py!{{ slave_dict }}
+{% endfor %}
+{% set db_list = db_name_list | join(' ') -%}
+
 {% do mariadb_dict.__setitem__('computer-memory-percent-threshold', 80) -%}
 {% set default_parameter_dict = {"cluster1": {"name": "cluster1", "db-prefered-master": "",
   "database-amount": 2, "proxysql-user": "external",
@@ -67,7 +94,6 @@ mode = 755
 {% do mariadb_dict.__setitem__('innodb-file-per-table', parameter_dict.get('innodb-file-per-table', 1)) -%}
 {% do mariadb_dict.__setitem__('use-ipv6', parameter_dict.get('use-ipv6', True)) -%}
 
-{% set database_list = parameter_dict.get('database-list', [{'name': 'repdb', 'user': 'user', 'password': 'insecure'}]) -%}
 # Request mariadb instances
 {% set db_amount = parameter_dict.get('database-amount', 2) -%}
 {% if db_amount < 2 -%}
@@ -77,12 +103,13 @@ mode = 755
 {% for i in range(0, db_amount) -%}
 {% do mariadb_dict.__setitem__('tcp-port', 2099 + (i * 100)) -%}
 {% set section = 'request-mariadb-' ~ i -%}
-{% set dbname = 'Mariadb-' ~ i -%}
+{% set dbname = 'Mariadb-' ~ i %}
+
 
 [{{ section }}]
 <= request-common
 software-type = mariadb
-name = {{ dbname }}
+name = {{ dbname ~ '-' ~ name}}
 sla-computer_guid = {{ dumps(parameter_dict.get('-sla-' ~ i ~'-computer_guid', '')) }}
 {% for key, value in mariadb_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
@@ -91,12 +118,13 @@ config-monitor-passwd = ${publish-early:monitor-password}
 config-root-password = ${publish-early:db-root-password}
 config-repman-user = ${repman-parameter:username}
 config-heartbeat-user = ${repman-parameter:heartbeat-user}
-#config-repman-passwd =  ${repman-parameter:password}
+config-repman-passwd =  ${repman-parameter:password}
 config-repman-url = ${nginx-parameter:backend-url}
 config-repman-secure-url = ${nginx-parameter:backend-ssl-url}
 config-cluster = {{ name }}
 config-name = {{ dbname }}
-config-database-list = {{ dumps(database_list) }}
+config-database-list = !py!{{ database_slave_list }}
+config-database-name = {{ dumps(db_list) }}
 return = 
   database-host
   receiver-port
@@ -248,20 +276,27 @@ config-port = {{ '${' ~ name ~ '-cluster-parameter:proxy-port}' }}
 {% do part_list.append('config-' ~ name) -%}
 {% do cluster_list.append("{'name': '" ~ name ~ "', 'host': '" ~ ipv4 ~ "', 'port': '${" ~ name ~ "-cluster-parameter:proxy-admin-port}'}") -%}
 
-{% set publish_database_list = [] -%}
-{% set publish_database_v6_list = [] -%}
-{% for database in database_list -%}
-{%   if database.get('user') -%}
-{%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%     do publish_database_v6_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%   else -%}
-{%     do publish_database_list.append("mysql://" ~ ipv4 ~ ":${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%     do publish_database_v6_list.append("mysql://[" ~ ip ~ "]:${" ~ name ~ "-cluster-parameter:proxy-port}/" ~ database['name']) -%}
-{%   endif -%}
-{% endfor -%}
 
-{% do publish_dict.__setitem__(name ~ '-database-list', "!py!['" ~ publish_database_list | join("', '") ~ "']") -%}
-{% do publish_dict.__setitem__(name ~ '-database-list-v6', "!py!['" ~ publish_database_v6_list | join("', '") ~ "']") -%}
+[{{ name}}-publish-slave-information]
+recipe = slapos.cookbook:switch-softwaretype
+default = {{ 'dynamic-' ~name ~ '-publish-slave-information:rendered' }}
+RootSoftwareInstance = ${:default}
+
+[dynamic-{{ name}}-publish-slave-information]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/database-publish-slave-information.cfg
+extensions = jinja2.ext.do
+template = {{ template_publish_slave_information }}
+context =
+    import json_module          json
+    key proxy_port              {{ name }}-cluster-parameter:proxy-port
+    raw eggs_directory          {{ eggs_directory }}
+    raw develop_eggs_directory  {{ develop_eggs_directory }}
+    raw ipv6                    {{ ip }}
+    raw ipv4                    {{ ipv4 }}
+    section slave_dict          database-slave-information
+
+{% do part_list.append(name ~ '-publish-slave-information') -%}
 {% endfor -%}
 
 [slap-configuration]
@@ -469,6 +504,7 @@ recipe = slapos.cookbook:publish-early
   monitor-password monitor-htpasswd:passwd
   db-root-password gen-root-password:passwd
   repman-password repman-password:passwd
+database-list = {{ db_list }}
 
 [publish-connection-parameter]
 <= monitor-publish
@@ -477,6 +513,7 @@ recipe = slapos.cookbook:publish
 backend-url = ${nginx-parameter:backend-ssl-url}
 url = ${repman-frontend:connection-secure_access}
 username = ${repman-parameter:username}
+database-list = {{ db_list }}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
@@ -546,6 +583,15 @@ command = ${template-proxysql-need-stop-start:rendered}
 # Deploy replication-manager instance
 #
 #############################
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
 [buildout]
 extends =
   {{ template_monitor }}
