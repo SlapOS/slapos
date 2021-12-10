@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 DBUSER={{ parameter_dict['db-user'] }}
 PASSWORD={{ parameter_dict['db-password'] }}
 ERROLOG={{ parameter_dict['mysql-dir'] }}/.system/logs/errors.log
@@ -43,7 +44,7 @@ partialRestore()
   done
   for file in $(find $BACKUPDIR/$dir/ -name "*.MYD" | xargs -n 1 basename | cut -d'.' --complement -f2-) ; do
     mv $BACKUPDIR/$dir/$file.* $DATADIR/$dir/
-    mysql --defaults-file=/etc/mysql/dbjob.cnf  -e "set sql_log_bin=0;FLUSH TABLE $dir.$file"
+    $MYSQL_CLIENT  -e "set sql_log_bin=0;FLUSH TABLE $dir.$file"
   done
   for file in $(find $BACKUPDIR/$dir/ -name "*.CSV" | xargs -n 1 basename | cut -d'.' --complement -f2-) ; do
     mv $BACKUPDIR/$dir/$file.* $DATADIR/$dir/
@@ -84,7 +85,7 @@ do
       flashbackmysqldump)
        echo "Waiting backup." >  {{ parameter_dict['log-dir'] }}/dbjob.out
        pauseJob
-       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER --init-command="set sql_log_bin=0" > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
+       socat -u {{ listen }}:{{ parameter_dict['socat-port'] }},bind={{ parameter_dict['host'] }},reuseaddr STDOUT | gunzip | mysql -h{{ parameter_dict['ip'] }} -P{{ parameter_dict['port'] }} -p$PASSWORD -u$DBUSER > {{ parameter_dict['log-dir'] }}/dbjob.out 2>&1
        $MYSQL_CLIENT  -e 'start slave;'
       ;;
       reseedmariabackup)
@@ -117,7 +118,7 @@ do
        cat $SLOWLOG| socat -u stdio TCP:$ADDRESS &>{{ parameter_dict['log-dir'] }}/dbjob.out
       ;;
       optimize)
-       mysqlcheck --defaults-file={{ parameter_dict['dbjob-cnf'] }} -o --all-databases --skip-write-binlog &>{{ parameter_dict['log-dir'] }}/dbjob.out
+       $MYSQL_CLIENT -o --all-databases --skip-write-binlog &>{{ parameter_dict['log-dir'] }}/dbjob.out
       ;;
       restart)
         {{ parameter_dict['restart-script'] }} > {{ parameter_dict['log-dir'] }}/dbjob.out

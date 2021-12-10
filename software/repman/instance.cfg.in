@@ -50,8 +50,8 @@ context =
     raw bash_bin                {{ bash_location }}/bin/bash
     raw jq_bin                  {{ jq_location }}/bin/jq
     raw curl_bin                {{ curl_location }}/bin/curl
-    raw openssl_bin            {{ openssl_location }}/bin/openssl
-    raw caucase_bin_client     {{ caucase_bin_client }}
+    raw openssl_bin             {{ openssl_location }}/bin/openssl
+    raw caucase_bin_client      {{ caucase_bin_client }}
 
     ${:extra-context}
 extra-context =
