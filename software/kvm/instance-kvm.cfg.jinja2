@@ -901,9 +901,9 @@ command =
   ip a | grep eth0: && [ \$IFACE = ens3 ] && IFACE=eth0
   ip a | grep eth1: && [ \$IFACE = ens4 ] && IFACE=eth1
   ${:ipv4-add-address}
+  ${:ipv4-set-link-up}
   ${:ipv4-add-gateway-route}
   ${:ipv4-add-default-route}
-  ${:ipv4-set-link-up}
   EOF
 update-command = ${:command}
 {% endif -%}
@@ -922,8 +922,8 @@ command =
   #!/bin/sh
   IFACE={{ iface }}
   ${:ipv6-add-address}
-  ${:ipv6-add-default-route}
   ${:ipv6-set-link-up}
+  ${:ipv6-add-default-route}
   EOF
 update-command = ${:command}
 {% endif -%}
