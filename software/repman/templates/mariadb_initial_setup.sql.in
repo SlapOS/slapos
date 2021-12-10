@@ -29,12 +29,12 @@ CREATE DATABASE IF NOT EXISTS `repman_slave_definition`;
 {% endif -%}
 CREATE DATABASE IF NOT EXISTS `{{ name }}` {{ charset_collate }};
 {% if user -%}
-GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}'{% if ssl %} REQUIRE SSL{% endif %};
+GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@`%` IDENTIFIED BY '{{ password }}'{% if ssl in ['True', 'true'] %} REQUIRE SSL{% endif %};
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@localhost IDENTIFIED BY '{{ password }}';
 GRANT ALL PRIVILEGES ON `{{ name }}`.* TO `{{ user }}`@'::' IDENTIFIED BY '{{ password }}';
 {%- endif %}
 {% endmacro -%}
 
 {% for entry in parameter_dict['database-list'] -%}
-{{   database(entry['name'], entry.get('user'), entry.get('password'), entry.get('require_ssl', True), entry.get('charset')) }}
+{{   database(entry['name'], entry.get('user'), entry.get('password'), entry.get('require_ssl', 'True') ~ '', entry.get('charset')) }}
 {% endfor -%}
