@@ -464,7 +464,7 @@ template =
 
   slapos supply {{ embedded_sr }} slaprunner
 
-  slapos request "Embedded Instance" {{ embedded_sr }}
+  slapos request "embedded_instance" {{ embedded_sr }}
 {%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
 {%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:rendered}
 
