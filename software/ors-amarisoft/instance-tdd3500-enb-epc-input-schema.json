@@ -1,32 +1,31 @@
 {
-    "type": "object",
-    "$schema": "http://json-schema.org/draft-04/schema",
-
-    "title": "Input Parameters",
-    "properties": {
-        "tx_gain": {
-            "title": "Tx gain",
-            "description": "Tx gain (in dB)",
-            "type": "number",
-            "default": 70
-        },
-        "rx_gain": {
-            "title": "Rx gain",
-            "description": "Rx gain (in dB)",
-            "type": "number",
-            "default": 30
-        },
-        "dl_earfcn": {
-            "title": "DL EARFCN",
-            "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
-            "type": "number",
-            "default": 42590
-        },
-        "n_rb_dl": {
-            "title": "DL RB",
-            "description": "number of DL resource blocks",
-            "type": "number",
-            "default": 100
-        }
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "tx_gain": {
+      "title": "Tx gain",
+      "description": "Tx gain (in dB)",
+      "type": "number",
+      "default": 70
+    },
+    "rx_gain": {
+      "title": "Rx gain",
+      "description": "Rx gain (in dB)",
+      "type": "number",
+      "default": 30
+    },
+    "dl_earfcn": {
+      "title": "DL EARFCN",
+      "description": "Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell",
+      "type": "number",
+      "default": 42590
+    },
+    "n_rb_dl": {
+      "title": "DL RB",
+      "description": "number of DL resource blocks",
+      "type": "number",
+      "default": 100
     }
+  }
 }
