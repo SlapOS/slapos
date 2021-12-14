@@ -13,7 +13,7 @@ NR_TX_GAIN=70
 NR_RX_GAIN=50
 
 global_context = {
-        'generated_file_message': "// This file was generated using a jinja2 template and the render-templates script, don't modify directly."
+        'generated_file_message': "This file was generated using a jinja2 template and the render-templates script, don't modify directly."
 }
 
 rf_mode_context_list = [
