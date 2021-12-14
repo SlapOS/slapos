@@ -13,6 +13,6 @@
     "lint-staged": "^12.1.2"
   },
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky install && git config merge.tool update-hash-mergetool && git config mergetool.update-hash-mergetool.cmd './update-hash-mergetool \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"' && git config mergetool.update-hash-mergetool.trustExitCode true"
   }
 }
