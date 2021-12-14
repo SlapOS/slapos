@@ -40,7 +40,7 @@ import six
 
 from six.moves.urllib.parse import urlparse, urljoin
 
-from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 
 
@@ -229,26 +229,76 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
     self.assertFalse(embedded_slapos_process.is_running())
 
 
-class TestTheiaWithSR(TheiaTestCase):
+class ReRequestMixin(object):
+  def rerequest(self, parameter_dict=None, state='started'):
+    software_url = self.getSoftwareURL()
+    software_type = self.getInstanceSoftwareType()
+    name = self.default_partition_reference
+    self.slap.request(
+      software_release=software_url,
+      software_type=software_type,
+      partition_reference=name,
+      partition_parameter_kw=parameter_dict,
+      state=state)
+
+  def reinstantiate(self):
+    # Process at least twice to propagate parameter changes
+    try:
+      self.slap.waitForInstance()
+    except SlapOSNodeCommandError:
+      pass
+    self.slap.waitForInstance(self.instance_max_retry)
+
+
+class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
   sr_url = '~/bogus/software.cfg'
   sr_type = 'bogus_type'
   instance_parameters = '{\n"bogus_param": "bogus_value",\n"bogus_param2": "bogus_value2"\n}'
 
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'embedded-sr': cls.sr_url,
-      'embedded-sr-type': cls.sr_type,
-      'embedded-instance-parameters': cls.instance_parameters
-    }
+  def proxy_show(self, slapos):
+    return subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
 
   def test(self):
-    home = self.computer_partition_root_path
-    bogus_sr = os.path.join(home, self.sr_url[2:])
-
     slapos = self._getSlapos()
-    info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
-    instance_name = "Embedded Instance"
+    home = self.computer_partition_root_path
+
+    # Check that no request script was generated
+    request_script = os.path.join(home, 'srv', 'project', 'request_embedded.sh')
+    self.assertFalse(os.path.exists(request_script))
+
+    # Manually request old-name 'Embedded Instance'
+    old_instance_name = "Embedded Instance"
+    subprocess.check_call((slapos, 'request', old_instance_name, 'bogus_url'))
+    self.assertIn(old_instance_name, self.proxy_show(slapos))
+
+    # Update Theia instance parameters
+    embedded_request_parameters = {
+      'embedded-sr': self.sr_url,
+      'embedded-sr-type': self.sr_type,
+      'embedded-instance-parameters': self.instance_parameters
+    }
+    self.rerequest(embedded_request_parameters)
+    self.reinstantiate()
+
+    # Check that embedded instance was requested
+    instance_name = "embedded_instance"
+    info = self.proxy_show(slapos)
+    try:
+      self.assertIn(instance_name, info)
+    except AssertionError:
+      for filename in os.listdir(home):
+        if 'standalone' in filename and '.log' in filename:
+          filepath = os.path.join(home, filename)
+          with open(filepath) as f:
+            print("Contents of filepath: " + filepath)
+            print(f.read())
+      raise
+
+    # Check that old-name instance was renamed
+    self.assertNotIn(old_instance_name, info)
+
+    # Check embedded instance parameters
+    bogus_sr = os.path.join(home, self.sr_url[2:])
 
     self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (bogus_sr,), info), info)
     self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (bogus_sr, self.sr_type, instance_name), info), info)
