@@ -176,7 +176,7 @@ context = key host_dict hosts-parameter:host-dict
 recipe = slapos.recipe.template:jinja2
 mode = 755
 template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
-  export HOSTS=${hosts:rendered}
+  export HOSTS_FILE=${hosts:rendered}
   export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
   exec "$@"
 rendered = ${directory:bin}/userhosts
