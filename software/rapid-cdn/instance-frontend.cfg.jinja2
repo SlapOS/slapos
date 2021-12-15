@@ -21,15 +21,16 @@ extends =
 {%-   do frontend.__setitem__('rapid-https','https://%s/' % (frontend['hostname'],)) %}
 {%-   do frontend.__setitem__('rapid-http','http://%s/' % (frontend['hostname'],)) %}
 {%-   do frontend.__setitem__('section-title', 'publish-frontend-' ~ hashlib.md5(frontend['title'].encode('utf-8')).hexdigest()) %}
+{%-   set frontend_dict = {} %}
 {%-   if '_' in slave %}
-{%-     do frontend.__setitem__('_', json.loads(slave['_'])) %}
-{%-   else %}
-{%-     for key in BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST %}
-{%-       if key in slave %}
-{%-         do frontend.__setitem__(key, slave[key]) %}
-{%-       endif %}
-{%-     endfor %}
+{%-     do frontend_dict.__update__(json.loads(slave['_'])) %}
 {%-   endif %}
+{%-   for key in BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST %}
+{%-     if key in slave %}
+{%-       do frontend_dict.__setitem__(key, slave[key]) %}
+{%-     endif %}
+{%-   endfor %}
+{%-   do frontend.__setitem__('_', frontend_dict) %}
 {%-   for key in FRONTEND_PARAMETER_KEY_LIST %}
 {%-     if key in frontend %}
 {%-       do frontend_transmit.__setitem__(key, frontend[key]) %}
