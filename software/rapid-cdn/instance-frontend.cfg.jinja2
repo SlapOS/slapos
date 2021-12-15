@@ -25,9 +25,11 @@ extends =
 {%-     do frontend.__setitem__('_', json.loads(slave['_'])) %}
 {%-   else %}
 {%-     for key in BACKWARD_COMPATIBLE_FRONTEND_KEY_LIST %}
+{%-       set backward_dict = {} %}
 {%-       if key in slave %}
-{%-         do frontend.__setitem__(key, slave[key]) %}
+{%-         do backward_dict.__setitem__(key, slave[key]) %}
 {%-       endif %}
+{%-       do frontend.__setitem__('_', backward_dict) %}
 {%-     endfor %}
 {%-   endif %}
 {%-   for key in FRONTEND_PARAMETER_KEY_LIST %}
