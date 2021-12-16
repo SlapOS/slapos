@@ -525,6 +525,9 @@ template =
 
   import slapos.slap.standalone
 
+  # Include this hash, so that if it changes the standalone service will be restarted
+  # {{ embedded_digest_hash }}
+
   shared_parts = """{{ '''${buildout:shared-part-list}''' | indent(2) }}"""
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
   partition_forward_configuration = (
