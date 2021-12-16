@@ -140,8 +140,8 @@ class Test(SlapOSInstanceTestCase):
     self.assertMonitorSetupUrl(json_parmeter_dict.pop('monitor-setup-url'))
     self.assertEqual(
       {
-        'kedifa-caucase-url': 'http://[::2]:8090',
-        'monitor-base-url': 'https://[::2]:8196',
+        'kedifa-caucase-url': 'http://[%s]:8090' % (self._ipv6_address,),
+        'monitor-base-url': 'https://[%s]:8196' % (self._ipv6_address,),
         'xxx-replace-with-information-fetch-depends': 'human\nlog-aggregator'
       },
       json_parmeter_dict)
