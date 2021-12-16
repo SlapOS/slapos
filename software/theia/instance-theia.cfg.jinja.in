@@ -151,7 +151,7 @@ config-port = $${slapos-standalone-instance:port}
 <= monitor-promise-base
 promise = check_socket_listening
 name = standalone-ready-promise.py
-config-abstract = $${directory:runner}/standalone_ready
+config-abstract = $${slapos-standalone-config:abstract-socket-path}
 
 [slapos-autorun-promise]
 <= monitor-promise-base
@@ -476,6 +476,9 @@ template =
 {%-   endif %}
 {%- endif %}
 
+{%- set embedded_digest = str(embedded_sr) + str(embedded_sr_type) + str(embedded_instance_parameters) %}
+{%- set embedded_digest_hash = hashlib_module.md5(embedded_digest).hexdigest() %}
+
 
 # SlapOS Standalone
 # -----------------
@@ -493,6 +496,7 @@ port = $${slapos-standalone-port:port}
 local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
+abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -524,6 +528,7 @@ template =
       {%- if embedded_sr %}
       --slapos_script=$${request-embedded-instance-script:rendered} \
       {%- endif %}
+      --abstract_socket_path='$${slapos-standalone-config:abstract-socket-path}' \
       $${slap-connection:server-url} \
       $${slap-connection:computer-id} \
       $${slap-connection:partition-id} \
