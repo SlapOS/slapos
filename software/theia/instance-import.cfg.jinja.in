@@ -84,7 +84,7 @@ mode = 0700
 exitcode-file = $${directory:srv}/import-exitcode-file
 error-file = $${directory:srv}/import-errormessage-file
 context =
-  raw python ${software-info:python-with-eggs}
+  raw python ${software-info:python-for-resiliency}
   raw theia_import ${software-info:theia-import}
   raw bash ${software-info:bash}
   raw rsync ${software-info:rsync}
