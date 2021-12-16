@@ -29,6 +29,11 @@ name = Import {{ parameter_dict['additional-frontend-name'] }}
 {%- endif %}
 
 
+# Change standalone socket path to avoid collisions
+[slapos-standalone-config]
+abstract-socket-path = $${directory:home}/standalone-import-ready
+
+
 # Change port ranges to avoid race conditions on port allocation
 [frontend-instance-port]
 minimum = 3200
