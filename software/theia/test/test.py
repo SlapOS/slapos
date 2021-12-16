@@ -230,9 +230,9 @@ class TestTheiaEmbeddedSlapOSShutdown(TheiaTestCase):
 
 
 class TestTheiaWithSR(TheiaTestCase):
-  sr_url = 'bogus/software.cfg'
+  sr_url = '~/bogus/software.cfg'
   sr_type = 'bogus_type'
-  instance_parameters = '{\n"bogus_param": "bogus_value"\n}'
+  instance_parameters = '{\n"bogus_param": "bogus_value",\n"bogus_param2": "bogus_value2"\n}'
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -243,15 +243,18 @@ class TestTheiaWithSR(TheiaTestCase):
     }
 
   def test(self):
+    home = self.computer_partition_root_path
+    bogus_sr = os.path.join(home, self.sr_url[2:])
+
     slapos = self._getSlapos()
     info = subprocess.check_output((slapos, 'proxy', 'show'), universal_newlines=True)
     instance_name = "Embedded Instance"
 
-    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (self.sr_url,), info), info)
-    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (self.sr_url, self.sr_type, instance_name), info), info)
+    self.assertIsNotNone(re.search(r"%s\s+slaprunner\s+available" % (bogus_sr,), info), info)
+    self.assertIsNotNone(re.search(r"%s\s+%s\s+%s" % (bogus_sr, self.sr_type, instance_name), info), info)
 
     service_info = subprocess.check_output((slapos, 'service', 'info', instance_name), universal_newlines=True)
-    self.assertIn("{'bogus_param': 'bogus_value'}", service_info)
+    self.assertIn("{'bogus_param': 'bogus_value', 'bogus_param2': 'bogus_value2'}", service_info)
 
 
 class TestTheiaFrontend(TheiaTestCase):
