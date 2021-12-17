@@ -40,6 +40,7 @@ context =
   key ipv6_random slap-configuration:ipv6-random
   key ipv4_random slap-configuration:ipv4-random
   import os_module os
+  import hashlib_module hashlib
 default-parameters =
   {
     "autorun": "running",
