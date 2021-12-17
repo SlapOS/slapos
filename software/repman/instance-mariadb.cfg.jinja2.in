@@ -171,9 +171,9 @@ extra-context =
   key init_database_sql  init-script:rendered
 template = {{ parameter_dict['template-init-root-wrapper'] }}
 
-[mysql-slave-db-cleanup]
+[{{ section('mysql-slave-db-cleanup') }}]
 < = jinja2-template-script-base
-rendered = ${directory:bin}/manage_slave_db
+rendered = ${directory:scripts}/manage-slave-db
 db-name = {{ slapparameter_dict['database-name'] }}
 extra-context =
   key database_name      :db-name
@@ -355,13 +355,6 @@ cron-entries = ${cron:cron-entries}
 name = mariadb-need-start
 frequency = * * * * *
 command = ${template-mysqld-need-start:rendered}
-
-[{{ section('db-remove-cron-entry') }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = slave-db-remove
-frequency = */5 * * * *
-command = ${mysql-slave-db-cleanup:rendered}
 
 [template-mysqld-need-start]
 < = jinja2-template-executable

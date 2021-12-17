@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 curl () {
   {{ curl_bin }} -k --silent -H "Accept: application/json" "$@"
 }
@@ -9,8 +11,7 @@ get_token () {
 }
 
 run_mysql () {
-  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" \
-  --protocol=socket -u$USER -hlocalhost "$@"
+  {{ mysql_bin }} --defaults-file="{{ mysql_conf }}" --protocol=socket "$@"
 }
 
 TOKEN=$(get_token | {{ jq_bin }} -r '.token')
@@ -30,7 +31,9 @@ CREATE TABLE IF NOT EXISTS \`slave\` (
 
 UPDATE \`slave\` set \`state\`=false;
 {% for name in database_name.split(' ') -%}
+{%  if name -%}
 REPLACE INTO \`slave\` VALUES ('{{ name }}', true);
+{%  endif -%}
 {% endfor -%}
 
 EOF
@@ -39,16 +42,19 @@ EOF
   run_mysql < {{ tmp_dir }}/.script.sql
   rm -f {{ tmp_dir }}/.script.sql
 
-  DBNAME=$(run_mysql -Be "SELECT name FROM repman_slave_definition.slave WHERE state=false");
+  DBNAME=$(run_mysql --skip-column-names -Be "SELECT name FROM repman_slave_definition.slave WHERE state=false");
   RET=$?
 
   if [ ! "$RET" = "0" ]; then
     echo "Mysql command failed: $DBNAME"
     exit $RET
   fi
+  if [ -z "$DBNAME" ]; then
+    echo "No database for slave to remove.";
+  fi
 
   for NAME in $DBNAME; do
-    if [ ! "$NAME" = "name" ]; then
+    if [ ! -z "$NAME" ]; then
       echo "Deleting database $NAME..."
       run_mysql -e "DROP DATABASE IF EXISTS $NAME";
       run_mysql -e "DELETE FROM repman_slave_definition.slave WHERE name='$NAME'";
