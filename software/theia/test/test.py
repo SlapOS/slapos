@@ -287,7 +287,7 @@ class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
       self.assertIn(instance_name, info)
     except AssertionError:
       for filename in os.listdir(home):
-        if 'standalone' in filename and '.log' in filename:
+        if 'request-embedded-instance' in filename and '.log' in filename:
           filepath = os.path.join(home, filename)
           with open(filepath) as f:
             print("Contents of filepath: " + filepath)
