@@ -36,6 +36,7 @@ import psutil
 import requests
 import six
 import six.moves.urllib.parse
+import urllib3
 
 from . import ERP5InstanceTestCase, setUpModule
 
@@ -66,8 +67,8 @@ class TestPublishedURLIsReachableMixin(object):
       session.mount(
           base_url,
           requests.adapters.HTTPAdapter(
-              max_retries=requests.packages.urllib3.util.retry.Retry(
-                  total=60,
+              max_retries=urllib3.util.retry.Retry(
+                  total=20,
                   backoff_factor=.5,
                   status_forcelist=(404, 500, 503))))
 
