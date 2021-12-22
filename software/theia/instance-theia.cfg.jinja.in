@@ -1,5 +1,15 @@
-{% set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
-{% set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
+{%- set additional_frontend = parameter_dict['additional-frontend-guid'] %}
+{%- set embedded_computer_id = 'slaprunner' %}
+{%- set embedded_sr = parameter_dict['embedded-sr'] %}
+{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
+{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
+{%- if embedded_sr %}
+{%-   if embedded_sr.startswith('~/') %}
+{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
+{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
+{%-   endif %}
+{%- endif -%}
 
 [buildout]
 extends =
@@ -51,6 +61,7 @@ dot-theia = $${:home}/.theia/
 pidfiles = $${:var}/run
 
 services = $${:etc}/service
+scripts = $${:etc}/run
 runner = $${:srv}/runner
 backup = $${:srv}/backup/theia
 project = $${:srv}/project
@@ -92,12 +103,15 @@ instance-promises =
   $${frontend-listen-promise:name}
   $${frontend-authentication-promise:name}
   $${remote-frontend-url-available-promise:name}
-  {% if additional_frontend %}
+  {%- if additional_frontend %}
   $${remote-additional-frontend-url-available-promise:name}
-  {% endif %}
+  {%- endif %}
   $${slapos-standalone-listen-promise:name}
   $${slapos-standalone-ready-promise:name}
   $${slapos-autorun-promise:name}
+  {%- if embedded_sr -%}
+  $${embedded-instance-promise:name}
+  {%- endif %}
 
 [theia-listen-promise]
 <= monitor-promise-base
@@ -160,6 +174,15 @@ name = autorun-state-promise.py
 config-service = $${slapos-autorun:service-name}
 config-expect = $${slapos-autorun:autorun}
 config-run-directory = $${directory:runner}/var/run
+
+{% if embedded_sr -%}
+[embedded-instance-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = embedded-instance-promise.py
+config-command = $${directory:runner}/bin/slapos service info embedded_instance
+requires = $${request-embedded-instance:rendered}
+{%- endif %}
 
 
 # Remote Caddy Frontend
@@ -447,14 +470,48 @@ command =
 # Embedded Instance
 # -----------------
 
-{%- set embedded_sr = parameter_dict['embedded-sr'] %}
-{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
-{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
-{%- if embedded_sr %}
-{%-   if embedded_sr.startswith('~/') %}
-{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
-{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
-{%-   endif %}
+{% if embedded_sr -%}
+[request-embedded-instance]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:scripts}/$${:_buildout_section_name_}
+template =
+  inline:#!/bin/sh
+  $${wait-standalone-ready:rendered}
+  export PATH=$${directory:runner}/bin
+  export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
+  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+  slapos console $${embedded-instance-compatibility-script:rendered}
+  $${request-embedded-instance-script:rendered}
+
+[wait-standalone-ready]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+template =
+  inline:#!${software-info:python}
+  import socket
+  s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+  try:
+    s.settimeout(60)
+    while True:
+      try:
+        s.connect("\0$${slapos-standalone-config:abstract-socket-path}")
+        break
+      except socket.timeout:
+        pass
+  finally:
+    s.close()
+
+[embedded-instance-compatibility-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}.py
+template =
+  inline:
+  for cp in slap.registerComputer("{{ embedded_computer_id }}").getComputerPartitionList():
+    if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
+      print("Renaming 'Embedded Instance' into 'embedded_instance'")
+      cp.rename(new_name="embedded_instance")
+      break
+
 [request-embedded-instance-script]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:project}/request_embedded.sh
@@ -476,9 +533,6 @@ template =
 {%-   endif %}
 {%- endif %}
 
-{%- set embedded_digest = str(embedded_sr) + str(embedded_sr_type) + str(embedded_instance_parameters) %}
-{%- set embedded_digest_hash = hashlib_module.md5(embedded_digest.encode()).hexdigest() %}
-
 
 # SlapOS Standalone
 # -----------------
@@ -495,8 +549,8 @@ ipv6 = {{ ipv6_random }}
 port = $${slapos-standalone-port:port}
 local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
-computer-id = slaprunner
-abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
+computer-id = {{ embedded_computer_id }}
+abstract-socket-path = $${directory:home}/standalone-ready
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -524,9 +578,6 @@ template =
   import traceback
 
   import slapos.slap.standalone
-
-  # Include this hash, so that if it changes the standalone service will be restarted
-  # {{ embedded_digest_hash }}
 
   shared_parts = """{{ '''${buildout:shared-part-list}''' | indent(2) }}"""
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
@@ -571,26 +622,7 @@ template =
       standalone.waitForInstance(max_retry=0)
     except slapos.slap.standalone.SlapOSNodeCommandError as e:
       print("Error instanciating: {}".format(e))
-{%- if embedded_sr %}
-    # Compatibility layer
-    try:
-      for cp in standalone.computer.getComputerPartitionList():
-        if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
-          print("Renaming 'Embedded Instance' into 'embedded_instance'")
-          cp.rename(new_name="embedded_instance")
-          break
-    except Exception:
-      print("Exception in compatibility layer, printing and moving on")
-      traceback.print_exc()
-    # Run request script
-    print("Running SlapOS script $${request-embedded-instance-script:rendered}")
-    slapos_env = {
-      'PATH': os.path.dirname(standalone._slapos_bin),
-      'SLAPOS_CONFIGURATION': standalone._slapos_config,
-      'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config
-    }
-    subprocess.call(("$${request-embedded-instance-script:rendered}",), env=slapos_env)
-{%- endif %}
+    # Open a socket to signal standalone is ready
     s = socket.socket(socket.AF_UNIX)
     s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
     s.listen(5)
