@@ -10,7 +10,7 @@ Usage::
 
 """
 
-import os
+from __future__ import print_function
 import sys
 import json
 import collections
@@ -19,15 +19,15 @@ import collections
 def main():
   exit_code = 0
   for f in sys.argv[1:]:
-    print 'Processing %s' % (f,)
-    with open(f, 'rb') as infile:
+    print('Processing', f,)
+    with open(f) as infile:
       try:
         obj = json.load(infile, object_pairs_hook=collections.OrderedDict)
       except ValueError as e:
         exit_code = 1
-        print e
+        print(e, file=sys.stderr)
       else:
-        with open(f, 'wb') as outfile:
+        with open(f, 'w') as outfile:
           json.dump(obj, outfile, sort_keys=False, indent=2, separators=(',', ': '))
           outfile.write('\n')
   sys.exit(exit_code)

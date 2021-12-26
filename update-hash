@@ -1,6 +1,14 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
-Suggested installation:
+Helper script to update buildout.hash.cfg
+
+Usage:
+$ ./update-hash [BUILDOUT_HASH_CFG]
+
+Automatic installation using husky, from the root of the repository:
+$ npm install
+
+Manual installation:
 $ cp update-hash .git/hooks/
 
 $ $EDITOR .git/hooks/pre-commit
@@ -36,7 +44,6 @@ import hashlib
 import os
 import shutil
 import sys
-import tempfile
 
 # Note: this is an intentionally very restrictive and primitive
 # ConfigParser-ish parser.
@@ -62,7 +69,11 @@ def main():
         try:
             outfile = os.fdopen(outfile_fd, 'w')
             write = outfile.write
-            nextLine = iter(infile).next
+            if sys.version_info <= (3,):
+                nextLine = iter(infile).next
+            else:
+                nextLine = iter(infile).__next__
+
             while True:
                 try:
                     line = nextLine()
@@ -80,7 +91,8 @@ def main():
                                             os.path.join(
                                                 infile_dirname,
                                                 *hash_file_path.split('/')
-                                            )
+                                            ),
+                                            'rb',
                                         ).read()
                                     ).hexdigest(),
                                     eol,

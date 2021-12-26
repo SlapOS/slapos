@@ -63,6 +63,25 @@ bash-completions = $${:home}/.local/share/bash-completion/completions/
 fish-completions = $${:home}/.config/fish/completions/
 
 
+# Monitor
+# -------
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
+{%- for k in ('monitor-cors-domains', 'monitor-username', 'monitor-password') %}
+{%-   set v = parameter_dict.get(k) %}
+{%-   if v %}
+{{ k[8:] }} = {{ v }}
+{%-   endif %}
+{%- endfor %}
+{%- for k in ('monitor-url-list', ) %}
+{%-   set v = parameter_dict.get(k) %}
+{%-   if v %}
+{{ k }} = {{ v }}
+{%-   endif %}
+{%- endfor %}
+
+
 # Promises
 # --------
 
@@ -132,7 +151,7 @@ config-port = $${slapos-standalone-instance:port}
 <= monitor-promise-base
 promise = check_socket_listening
 name = standalone-ready-promise.py
-config-abstract = $${directory:runner}/standalone_ready
+config-abstract = $${slapos-standalone-config:abstract-socket-path}
 
 [slapos-autorun-promise]
 <= monitor-promise-base
@@ -183,7 +202,6 @@ sla-instance_guid = {{ parameter_dict['additional-frontend-guid'] }}
 [frontend-instance-password]
 recipe = slapos.cookbook:generate.password
 username = admin
-bytes = 12
 storage-path = $${buildout:parts-directory}/.$${:_buildout_section_name_}
 
 [frontend-instance-port]
@@ -378,7 +396,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line = $${theia-service:rendered}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
-  ${yarn.lock:output}
+  ${yarn.lock:target}
   ${theia-wrapper:rendered}
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
@@ -426,6 +444,42 @@ command =
   ${buildout:bin-directory}/slapos complete --shell fish > $${directory:fish-completions}/slapos.fish
 
 
+# Embedded Instance
+# -----------------
+
+{%- set embedded_sr = parameter_dict['embedded-sr'] %}
+{%- set embedded_sr_type = parameter_dict['embedded-sr-type'] %}
+{%- set embedded_instance_parameters = parameter_dict['embedded-instance-parameters'] %}
+{%- if embedded_sr %}
+{%-   if embedded_sr.startswith('~/') %}
+{%-     set embedded_sr = os_module.path.join(partition_root_path, embedded_sr[2:]) %}
+{%-     set embedded_sr = os_module.path.normpath(embedded_sr) %}
+{%-   endif %}
+[request-embedded-instance-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/request_embedded.sh
+mode = 0700
+template =
+  inline:#!/bin/sh
+
+  slapos supply {{ embedded_sr }} slaprunner
+
+  slapos request "embedded_instance" {{ embedded_sr }}
+{%-   if embedded_sr_type %} --type {{ embedded_sr_type }} {%- endif %}
+{%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:rendered}
+
+[embedded-instance-parameters]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:project}/$${:_buildout_section_name_}.json
+template =
+  inline:{{ embedded_instance_parameters | indent(2) }}
+{%-   endif %}
+{%- endif %}
+
+{%- set embedded_digest = str(embedded_sr) + str(embedded_sr_type) + str(embedded_instance_parameters) %}
+{%- set embedded_digest_hash = hashlib_module.md5(embedded_digest.encode()).hexdigest() %}
+
+
 # SlapOS Standalone
 # -----------------
 
@@ -442,6 +496,7 @@ port = $${slapos-standalone-port:port}
 local-software-release-root = $${directory:home}
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
+abstract-socket-path = $${directory:home}/standalone-{{ embedded_digest_hash[:16] }}
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template:jinja2
@@ -453,6 +508,100 @@ template =
   export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
   echo 'Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` activated'
 
+[slapos-standalone-script]
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:bin}/$${:_buildout_section_name_}
+template =
+  inline:#!${python-for-standalone:executable}
+  import glob
+  import json
+  import os
+  import signal
+  import socket
+  import subprocess
+  import sys
+  import time
+  import traceback
+
+  import slapos.slap.standalone
+
+  # Include this hash, so that if it changes the standalone service will be restarted
+  # {{ embedded_digest_hash }}
+
+  shared_parts = """{{ '''${buildout:shared-part-list}''' | indent(2) }}"""
+  shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
+  partition_forward_configuration = (
+    slapos.slap.standalone.PartitionForwardAsPartitionConfiguration(
+      master_url="$${slap-connection:server-url}",
+      computer="$${slap-connection:computer-id}",
+      partition="$${slap-connection:partition-id}",
+      cert="$${slap-connection:cert-file}",
+      key="$${slap-connection:key-file}",
+      software_release_list=(
+        'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg',
+      ),
+    ),
+  )
+  standalone = slapos.slap.standalone.StandaloneSlapOS(
+    "$${directory:runner}",
+    "$${slapos-standalone-config:ipv4}",
+    $${slapos-standalone-config:port},
+    computer_id="$${slapos-standalone-config:computer-id}",
+    shared_part_list=shared_part_list,
+    software_root="$${directory:runner}/software",
+    instance_root="$${directory:runner}/instance",
+    partition_forward_configuration=partition_forward_configuration,
+    slapos_bin="${buildout:bin-directory}/slapos",
+    local_software_release_root="$${slapos-standalone-config:local-software-release-root}",
+  )
+
+  def signal_handler(signum, frame):
+    print("Signal {signum} received".format(signum=signum))
+    sys.exit()
+  signal.signal(signal.SIGTERM, signal_handler)
+
+  standalone.start()
+  try:
+    partition_count = 20
+    print("Standalone SlapOS: Formatting %d partitions" % partition_count)
+    standalone.format(partition_count, '$${slapos-standalone-config:ipv4}', '$${slapos-standalone-config:ipv6}')
+    print("Standalone SlapOS for computer `$${slapos-standalone-config:computer-id}` started")
+    # Run instance at least once, to start the supervisor managing instances.
+    try:
+      standalone.waitForInstance(max_retry=0)
+    except slapos.slap.standalone.SlapOSNodeCommandError as e:
+      print("Error instanciating: {}".format(e))
+{%- if embedded_sr %}
+    # Compatibility layer
+    try:
+      for cp in standalone.computer.getComputerPartitionList():
+        if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
+          print("Renaming 'Embedded Instance' into 'embedded_instance'")
+          cp.rename(new_name="embedded_instance")
+          break
+    except Exception:
+      print("Exception in compatibility layer, printing and moving on")
+      traceback.print_exc()
+    # Run request script
+    print("Running SlapOS script $${request-embedded-instance-script:rendered}")
+    slapos_env = {
+      'PATH': os.path.dirname(standalone._slapos_bin),
+      'SLAPOS_CONFIGURATION': standalone._slapos_config,
+      'SLAPOS_CLIENT_CONFIGURATION': standalone._slapos_config
+    }
+    subprocess.call(("$${request-embedded-instance-script:rendered}",), env=slapos_env)
+{%- endif %}
+    s = socket.socket(socket.AF_UNIX)
+    s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
+    s.listen(5)
+    print("Standalone SlapOS ready")
+    while True:
+      s.accept()[0].close()
+  finally:
+    print("Stopping standalone subsystem")
+    standalone.stop()
+    print("Exiting")
+
 [slapos-standalone]
 recipe = slapos.recipe.template:jinja2
 rendered = $${directory:bin}/$${:_buildout_section_name_}
@@ -463,25 +612,7 @@ template =
   #XXX find out where the extra nodejs in theia's PATH comes from
   export PATH=${nodejs:location}/bin/:$PATH
   . $${slapos-standalone-activate:rendered}
-  exec ${slapos-standalone:script-path} \
-      $${directory:runner} \
-      $${slapos-standalone-config:ipv4} \
-      $${slapos-standalone-config:ipv6} \
-      $${slapos-standalone-config:port} \
-      $${slapos-standalone-config:local-software-release-root} \
-      $${slapos-standalone-config:computer-id} \
-      {%- if parameter_dict.get('embedded-sr') %}
-      --sr='{{ parameter_dict['embedded-sr'] }}' \
-      {%- if parameter_dict.get('embedded-sr-type') %}
-      --srtype='{{ parameter_dict['embedded-sr-type'] }}' \
-      {%- endif %}
-      --srparams='$${embedded-instance-parameters:rendered}' \
-      {%- endif %}
-      $${slap-connection:server-url} \
-      $${slap-connection:computer-id} \
-      $${slap-connection:partition-id} \
-      --key='$${slap-connection:key-file}' \
-      --cert='$${slap-connection:cert-file}'
+  exec $${slapos-standalone-script:rendered}
 
 [slapos-standalone-instance]
 recipe = slapos.cookbook:wrapper
@@ -489,6 +620,7 @@ wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line = $${slapos-standalone:rendered}
 hash-files =
   $${slapos-standalone:rendered}
+  $${slapos-standalone-script:rendered}
 hostname = $${slapos-standalone-config:ipv4}
 port = $${slapos-standalone-config:port}
 
@@ -603,14 +735,6 @@ template =
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directory:project}
 link-binary = $${directory:runner}
-
-{% if parameter_dict.get('embedded-sr') -%}
-[embedded-instance-parameters]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:etc}/$${:_buildout_section_name_}.json
-template =
-  inline:{{ parameter_dict['embedded-instance-parameters'] | indent(2) }}
-{%- endif %}
 
 [request-script-template]
 recipe = slapos.recipe.template:jinja2

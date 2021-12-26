@@ -1437,7 +1437,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
     self.image_download_controller = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '0',
       'software_release', 'parts', 'image-download-controller',
-      'image-download-controller')
+      'image-download-controller.py')
 
   def tearDown(self):
     self.stopImageHttpServer()

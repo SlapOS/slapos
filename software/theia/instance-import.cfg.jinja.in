@@ -29,6 +29,11 @@ name = Import {{ parameter_dict['additional-frontend-name'] }}
 {%- endif %}
 
 
+# Change standalone socket path to avoid collisions
+[slapos-standalone-config]
+abstract-socket-path = $${directory:home}/standalone-import-ready
+
+
 # Change port ranges to avoid race conditions on port allocation
 [frontend-instance-port]
 minimum = 3200
@@ -79,7 +84,7 @@ mode = 0700
 exitcode-file = $${directory:srv}/import-exitcode-file
 error-file = $${directory:srv}/import-errormessage-file
 context =
-  raw python ${software-info:python-with-eggs}
+  raw python ${software-info:python-for-resiliency}
   raw theia_import ${software-info:theia-import}
   raw bash ${software-info:bash}
   raw rsync ${software-info:rsync}

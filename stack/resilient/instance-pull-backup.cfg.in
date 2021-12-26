@@ -250,6 +250,7 @@ monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
 monitor-url = $${monitor-publish-parameters:monitor-url}
 monitor-user = $${monitor-publish-parameters:monitor-user}
 monitor-password = $${monitor-publish-parameters:monitor-password}
+monitor-setup-url = $${monitor-publish:monitor-setup-url}
 
 #----------------
 #--
@@ -269,7 +270,7 @@ private-path-list +=
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+template = ${template-monitor-check-resilient-feed:target}
 rendered = $${monitor-directory:bin}/check-create-resilient-feed-files
 mode = 700
 context =

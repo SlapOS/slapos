@@ -10,7 +10,7 @@ test = dynamic-template-resilient-test:rendered
 
 [dynamic-template-resilient-test]
 recipe = slapos.recipe.template:jinja2
-template = ${template-resilient-test:location}/${template-resilient-test:filename}
+template = ${template-resilient-test:target}
 rendered = $${buildout:directory}/template-resilient-test.cfg
 bin-directory = ${buildout:bin-directory}
 context =
@@ -19,4 +19,3 @@ context =
     key slapparameter_dict slap-configuration:configuration
     raw bin_directory ${buildout:bin-directory}
     ${template-resilient-test:extra-context}
-mode = 0644

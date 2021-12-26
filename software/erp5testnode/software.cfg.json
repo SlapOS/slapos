@@ -5,9 +5,11 @@
   "software-type": {
     "default": {
       "title": "Default",
+      "software-type": "default",
       "description": "Default setup for ERP5TestNode Instance.",
       "request": "instance-erp5testnode-input-schema.json",
-      "response": "instance-output-schema.json"
+      "response": "instance-output-schema.json",
+      "index": 0
     }
   }
 }

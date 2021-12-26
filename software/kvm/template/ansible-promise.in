@@ -17,11 +17,12 @@ result_failed_ignore = '127.0.0.1_FAILED_IGNORED'
 def get_log(res):
   log = ""
   if type(res) == type(dict()):
-    log = '>> Running task: %s, args [%s]\n' % (res['invocation']['module_name'],
-                                      res['invocation']['module_args'])
+    module_name = res['invocation'].get('module_name', 'unkown_module_name')
+    module_args = res['invocation'].get('module_args', 'unkown_module_args')
+    log = '>> Running task: %s, args [%s]\n' % (module_name, module_args)
     for field in FIELDS:
       if field in res.keys():
-      	# use default encoding, check out sys.setdefaultencoding
+        # use default encoding, check out sys.setdefaultencoding
         log += '\n{0}:\n{1}'.format(field, res[field])
 
   return log

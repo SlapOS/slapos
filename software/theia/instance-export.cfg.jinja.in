@@ -33,7 +33,7 @@ mode = 0700
 exitcode-file = $${directory:srv}/export-exitcode-file
 error-file = $${directory:srv}/export-errormessage-file
 context =
-  raw python ${software-info:python-with-eggs}
+  raw python ${software-info:python-for-resiliency}
   raw theia_export ${software-info:theia-export}
   raw bash ${software-info:bash}
   raw rsync ${software-info:rsync}

@@ -39,7 +39,6 @@ setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestHtmlValidatorServer(InstanceTestCase):
-
   def test(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()
 
@@ -68,3 +67,8 @@ class TestHtmlValidatorServer(InstanceTestCase):
       [httplib.UNAUTHORIZED, False],
       [result.status_code, result.is_redirect]
     )
+
+class TestHtmlValidatorServerInsideWebRunner(TestHtmlValidatorServer):
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
