@@ -30,7 +30,10 @@ from __future__ import absolute_import
 import glob
 import json
 import os
+import shutil
 import socket
+import subprocess
+import tempfile
 
 import psutil
 import requests
@@ -388,3 +391,46 @@ class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReac
         }, {
           "cache-size": None,
         })
+
+
+class TestWatchActivities(ERP5InstanceTestCase):
+  """Tests for bin/watch_activities scripts in zope partitions.
+  """
+  __partition_reference__ = 'wa'
+
+  def test(self):
+    # "watch_activites" scripts use watch command. We'll fake a watch command
+    # that executes the actual command only once to check the output.
+    tmpdir = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, tmpdir)
+    with open(os.path.join(tmpdir, 'watch'), 'w') as f:
+      f.write("""#!/bin/sh
+
+      if [ "$1" != "-n" ] || [ "$2" != "5" ]
+      then
+        echo unexpected arguments: "$1" "$2"
+        exit 1
+      fi
+      shift
+      shift
+
+      exec bash -c "$@"
+      """)
+      os.fchmod(f.fileno(), 0o700)
+    try:
+      output = subprocess.check_output(
+          [
+              os.path.join(
+                  self.getComputerPartitionPath('zope-1'),
+                  'bin',
+                  'watch_activities',
+              )
+          ],
+          env=dict(os.environ,
+                   PATH=os.pathsep.join([tmpdir, os.environ['PATH']])),
+          stderr=subprocess.STDOUT,
+          universal_newlines=True,
+      )
+    except subprocess.CalledProcessError as e:
+      self.fail(e.output)
+    self.assertIn(' dict ', output)
