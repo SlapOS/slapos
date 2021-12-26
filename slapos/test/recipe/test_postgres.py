@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import textwrap
 import time
 import unittest
 
@@ -54,7 +53,7 @@ class PostgresTest(unittest.TestCase):
     self.addCleanup(server_process.terminate)
 
     # wait for server to accept connections
-    for i in range(60):
+    for i in range(10):
       time.sleep(i)
       try:
         psycopg2.connect(self.buildout['postgres']['url']).close()
@@ -114,3 +113,7 @@ class PostgresTest(unittest.TestCase):
 
 class PostgresTestNonStandardPort(PostgresTest):
   port = 5433
+
+
+class PostgresTestEmptyPort(PostgresTest):
+  port = ''
