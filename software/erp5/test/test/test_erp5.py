@@ -26,21 +26,19 @@
 ##############################################################################
 
 from __future__ import absolute_import
-import os
-import json
+
 import glob
-import six.moves.urllib.parse
+import json
+import os
 import socket
-import time
 
 import psutil
 import requests
-
-from . import ERP5InstanceTestCase
-from . import setUpModule
 import six
-from six.moves import map
-from six.moves import range
+import six.moves.urllib.parse
+
+from . import ERP5InstanceTestCase, setUpModule
+
 setUpModule # pyflakes
 
 
