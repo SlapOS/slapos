@@ -21,7 +21,9 @@ db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 #db-servers-ignored-hosts =
 # Database hosts list to monitor, IP and port (optional), specified in the host:[port] format and separated by commas
 monitoring-address = "{{ parameter_dict['ipv4'] }}"
-monitoring-wait-retry = 40
+monitoring-wait-retry = 1200
+monitoring-ssl-cert = "{{ parameter_dict['ssl-cert'] }}"
+monitoring-ssl-key = "{{ parameter_dict['ssl-key'] }}"
 
 #haproxy = true
 #haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
@@ -48,6 +50,7 @@ backup-restic-password = "{{ parameter_dict['password'] }}"
 backup-mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
 backup-mysqlbinlog-path = "{{ parameter_dict['mysqlbinlog-path'] }}"
 backup-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
+backup-mysqldump-options = "--hex-blob --single-transaction --verbose --all-databases --add-drop-database"
 
 # Mail configuration
 # Alert email sender (default "mrm@localhost")

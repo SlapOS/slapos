@@ -60,7 +60,7 @@ def setUpModule():
 
 class ERP5Mixin(object):
   _test_software_url = erp5_software_release_url
-  _connexion_parameters_regex = re.compile(r"{\s*'_'\s*:\s*'(.*)'\s*}")
+  _connexion_parameters_regex = re.compile(r"{.*}", re.DOTALL)
 
   def _getERP5ConnexionParameters(self, software_type='export'):
     slapos = self._getSlapos(software_type)
@@ -69,7 +69,7 @@ class ERP5Mixin(object):
       stderr=subprocess.STDOUT,
     )
     print(out)
-    return json.loads(self._connexion_parameters_regex.search(out).group(1))
+    return json.loads(self._connexion_parameters_regex.search(out).group(0).replace("'", '"'))
 
   def _getERP5Url(self, connexion_parameters, path=''):
     return urljoin(connexion_parameters['family-default-v6'], path)

@@ -217,7 +217,7 @@
             },
             "timerserver-interval": {
               "description": "Timerserver tick period, in seconds, or 0 to disable",
-              "default": 5,
+              "default": 1,
               "type": "number"
             },
             "private-dev-shm": {
