@@ -32,6 +32,18 @@
       "description": "Downlink Bandwidth (in MHz)",
       "type": "number",
       "default": {{ default_nr_bandwidth }}
+    },
+    "amf_addr": {
+      "title": "AMF Address",
+      "description": "IPv4 of the core network",
+      "type": "string",
+      "default": "127.0.0.100"
+    },
+    "gnb_id": {
+      "title": "gNB ID",
+      "description": "gNB ID",
+      "type": "string",
+      "default": "0x12345"
     }
   }
 }
