@@ -189,7 +189,7 @@ cert = ${haproxy-conf-ssl:certificate}
 ca-cert = ${haproxy-conf-ssl:ca-cert}
 crl = ${haproxy-conf-ssl:crl}
 {% endif %}
-stats-socket = ${directory:run}/haproxy.sock
+stats-socket = ${directory:run}/ha.sock
 path-routing-list = {{ dumps(slapparameter_dict['path-routing-list']) }}
 family-path-routing-dict = {{ dumps(slapparameter_dict['family-path-routing-dict']) }}
 pidfile = ${directory:run}/haproxy.pid
