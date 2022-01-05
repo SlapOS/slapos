@@ -41,8 +41,7 @@ for plugin_and_version in '''\
     vscode/lua/latest
     vscode/make/latest
     vscode/markdown/latest
-# https://github.com/eclipse-theia/theia/issues/7780
-    vscode/markdown-language-features/1.39.2
+    vscode/markdown-language-features/latest
     vscode/merge-conflict/latest
     vscode/npm/latest
     ms-vscode/node-debug/latest
@@ -71,13 +70,17 @@ for plugin_and_version in '''\
     vscode/theme-solarized-dark/latest
     vscode/theme-tomorrow-night-blue/latest
     vscode/typescript/latest
-    vscode/typescript-language-features/latest
+# latest (1.62.3) does not activate because it uses a proposed API not in theia:
+# Activating extension 'TypeScript and JavaScript Language Features (built-in)' failed: r.languages.createLanguageStatusItem is not a function
+    vscode/typescript-language-features/1.54.3
     vscode/vb/latest
     vscode/vscode-theme-seti/latest
     vscode/xml/latest
     vscode/yaml/latest
     EditorConfig/EditorConfig/latest
-    dbaeumer/vscode-eslint/latest
+# latest (2.2.2) does not activate:
+# Activating extension 'ESLint' failed: Class extends value undefined is not a constructor or null
+    dbaeumer/vscode-eslint/2.1.20
     ms-vscode/references-view/latest
 # golang.Go removed because it overwrites the PATH in theia shell
 # golang/Go/0.16.2
