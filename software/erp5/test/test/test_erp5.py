@@ -585,10 +585,12 @@ class ZopeTestMixin(CrontabMixin):
     )
 
   def setUp(self):
+    super(ZopeTestMixin, self).setUp()
     # run logrotate a first time so that it create state files
     self._executeCrontabAtDate('logrotate', '2000-01-01')
 
   def tearDown(self):
+    super(ZopeTestMixin, self).tearDown()
     # reset logrotate status
     logrotate_status = os.path.join(
         self.getComputerPartitionPath('zope-default'),
