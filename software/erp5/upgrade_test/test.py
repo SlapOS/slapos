@@ -44,8 +44,10 @@ new_software_release_url = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    old_software_release_url, software_id="upgrade_erp5")
-
+    old_software_release_url,
+    software_id="upgrade_erp5",
+    skip_software_check=True,
+)
 
 def setUpModule():
   installSoftwareUrlList(
