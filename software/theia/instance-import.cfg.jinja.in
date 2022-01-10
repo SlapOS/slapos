@@ -64,15 +64,14 @@ seed = Import {{ root_title }}
 # in post-notification-run:output and in importer:wrapper.
 
 [post-notification-run]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/post-notification-run-script
-output = $${:rendered}
-mode = 0700
-template =
-  inline:#!${software-info:bash}
-  # Do nothing because the backup signature will
-  # be verified by the import script itself
-  exit 0
+# Do nothing because the backup signature will
+# be verified by the import script itself
+recipe = slapos.recipe.build
+output = $${directory:bin}/post-notification-run-script
+location = $${:output}
+install =
+  import os
+  os.symlink("/bin/true", location)
 
 [importer]
 wrapper = $${theia-import-script:rendered}
