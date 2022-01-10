@@ -34,8 +34,10 @@ import unittest
 import urlparse
 import base64
 import hashlib
+import logging
 import contextlib
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler
+
 from io import BytesIO
 
 import paramiko
@@ -44,85 +46,75 @@ from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+import urllib3
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase
+from slapos.testing.utils import findFreeTCPPort, ImageComparisonTestCase, ManagedHTTPServer
 
 setUpModule, SeleniumServerTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
+
+class WebServer(ManagedHTTPServer):
+  class RequestHandler(BaseHTTPRequestHandler):
+    """Request handler for our test server.
+
+    The implemented server is:
+      - submit q and you'll get a page with q as title
+      - upload a file and the file content will be displayed in div.uploadedfile
+    """
+    def do_GET(self):
+      self.send_response(200)
+      self.end_headers()
+      self.wfile.write(
+          '''
+        <html>
+          <title>Test page</title>
+          <body>
+            <style> p { font-family: Arial; } </style>
+            <form action="/" method="POST" enctype="multipart/form-data">
+              <input name="q" type="text"></input>
+              <input name="f" type="file" ></input>
+              <input type="submit" value="I'm feeling lucky"></input>
+            </form>
+            <p>the quick brown fox jumps over the lazy dog</p>
+          </body>
+        </html>''')
+
+    def do_POST(self):
+      form = cgi.FieldStorage(
+          fp=self.rfile,
+          headers=self.headers,
+          environ={
+              'REQUEST_METHOD': 'POST',
+              'CONTENT_TYPE': self.headers['Content-Type'],
+          })
+      self.send_response(200)
+      self.end_headers()
+      file_data = 'no file'
+      if form.has_key('f'):
+        file_data = form['f'].file.read()
+      self.wfile.write(
+          '''
+        <html>
+          <title>%s</title>
+          <div>%s</div>
+        </html>
+      ''' % (form['q'].value, file_data))
+
+    log_message = logging.getLogger(__name__ + '.WebServer').info
+
+
 class WebServerMixin(object):
   """Mixin class which provides a simple web server reachable at self.server_url
   """
   def setUp(self):
-    """Start a minimal web server.
-    """
-    class TestHandler(BaseHTTPRequestHandler):
-      """Request handler for our test server.
-
-      The implemented server is:
-       - submit q and you'll get a page with q as title
-       - upload a file and the file content will be displayed in div.uploadedfile
-      """
-      def log_message(self, *args, **kw):
-        if SeleniumServerTestCase._debug:
-          BaseHTTPRequestHandler.log_message(self, *args, **kw)
-
-      def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(
-            '''
-          <html>
-            <title>Test page</title>
-            <body>
-              <style> p { font-family: Arial; } </style>
-              <form action="/" method="POST" enctype="multipart/form-data">
-                <input name="q" type="text"></input>
-                <input name="f" type="file" ></input>
-                <input type="submit" value="I'm feeling lucky"></input>
-              </form>
-              <p>the quick brown fox jumps over the lazy dog</p>
-            </body>
-          </html>''')
-
-      def do_POST(self):
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                'REQUEST_METHOD': 'POST',
-                'CONTENT_TYPE': self.headers['Content-Type'],
-            })
-        self.send_response(200)
-        self.end_headers()
-        file_data = 'no file'
-        if form.has_key('f'):
-          file_data = form['f'].file.read()
-        self.wfile.write(
-            '''
-          <html>
-            <title>%s</title>
-            <div>%s</div>
-          </html>
-        ''' % (form['q'].value, file_data))
-
-    super(WebServerMixin, self).setUp()
-    ip = os.environ.get('SLAPOS_TEST_IPV4', '127.0.1.1')
-    port = findFreeTCPPort(ip)
-    server = HTTPServer((ip, port), TestHandler)
-    self.server_process = multiprocessing.Process(target=server.serve_forever)
-    self.server_process.start()
-    self.server_url = 'http://%s:%s/' % (ip, port)
-
-  def tearDown(self):
-    self.server_process.terminate()
-    self.server_process.join()
-    super(WebServerMixin, self).tearDown()
+    self.server_url = self.getManagedResource('web_server', WebServer).url
 
 
 class BrowserCompatibilityMixin(WebServerMixin):
@@ -328,8 +320,13 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
     self.assertEqual('selenium', parsed.username)
     self.assertTrue(parsed.password)
 
+    # XXX we are using a self signed certificate, but selenium 3.141.0 does
+    # not expose API to ignore certificate verification
+    executor = RemoteConnection(webdriver_url, keep_alive=True)
+    executor._conn = urllib3.PoolManager(cert_reqs='CERT_NONE', ca_certs=None)
+
     driver = webdriver.Remote(
-        command_executor=webdriver_url,
+        command_executor=executor,
         desired_capabilities=DesiredCapabilities.CHROME)
 
     driver.get(self.server_url)
@@ -429,6 +426,14 @@ class TestFirefox68(
   desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='68.0.2esr')
   user_agent = 'Gecko/20100101 Firefox/68.0'
 
+class TestFirefox78(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.FIREFOX, version='78.1.0esr')
+  user_agent = 'Gecko/20100101 Firefox/78.0'
+
 
 class TestChrome69(
     BrowserCompatibilityMixin,
@@ -437,3 +442,12 @@ class TestChrome69(
 ):
   desired_capabilities = dict(DesiredCapabilities.CHROME, version='69.0.3497.0')
   user_agent = 'Chrome/69.0.3497.0'
+
+
+class TestChrome91(
+    BrowserCompatibilityMixin,
+    SeleniumServerTestCase,
+    ImageComparisonTestCase,
+):
+  desired_capabilities = dict(DesiredCapabilities.CHROME, version='91.0.4472.114')
+  user_agent = 'Chrome/91.0.4472.0'

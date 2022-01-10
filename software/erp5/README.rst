@@ -59,7 +59,7 @@ Setting up replication
 In addition to your usual parameter set, you needs to provide the following parameters::
 
   {
-    "zope-partition-dict": {},      So no zope is instanciated
+    "zope-partition-dict": {},      So no zope is instantiated
     "zodb": [
       {
         "storage-dict": {

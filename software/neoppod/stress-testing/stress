@@ -31,3 +31,7 @@ if returncode:
     subprocess.call(
         ('tar', '-caf', result('db.tar.xz'), 'neo_tests'),
         cwd=tempfile.gettempdir())
+    p = subprocess.Popen(('journalctl', '-o', 'export'), stdout=subprocess.PIPE)
+    with open(result('journalctl-export.xz'), 'wb') as f:
+        subprocess.call(('xz',), stdin=p.stdout, stdout=f)
+    p.wait()

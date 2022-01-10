@@ -2,16 +2,16 @@ diff --git a/src/global/mail_params.c b/src/global/mail_params.c
 index 2d91977..0f06298 100644
 --- a/src/global/mail_params.c
 +++ b/src/global/mail_params.c
-@@ -721,7 +721,9 @@ void    mail_params_init()
+@@ -911,7 +911,9 @@ void    mail_params_init()
      check_default_privs();
      check_mail_owner();
      check_sgid_group();
 +    /*
      check_overlap();
 +    */
- #ifdef HAS_DB
      dict_db_cache_size = var_db_read_buf;
- #endif
+     dict_lmdb_map_size = var_lmdb_map_size;
+     inet_windowsize = var_inet_windowsize;
 diff --git a/src/master/master.c b/src/master/master.c
 index a9d5d1b..db88c55 100644
 --- a/src/master/master.c
@@ -29,12 +29,13 @@ index a9d5d1b..db88c55 100644
  
      /*
       * Process JCL.
-@@ -392,8 +392,10 @@ int     main(int argc, char **argv)
+@@ -433,9 +433,11 @@ int     main(int argc, char **argv)
       * all MTA processes cleanly. Give up if we can't separate from our
       * parent process. We're not supposed to blow away the parent.
       */
 +    /*
-     if (debug_me == 0 && master_detach != 0 && setsid() == -1 && getsid(0) != getpid())
+     if (init_mode == 0 && debug_me == 0 && master_detach != 0
+ 	&& setsid() == -1 && getsid(0) != getpid())
  	msg_fatal("unable to set session and process group ID: %m");
 +    */
  

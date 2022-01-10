@@ -99,6 +99,7 @@ input = inline:
   no-tlsv1
   no-tlsv1_1
   no-stdout-log
+  simple-log
   log-file=${directory:log}/turnserver.log
   userdb=${directory:srv}/turndb
   pidfile=${directory:run}/turnserver.pid
@@ -119,16 +120,16 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 [promise-check-turnserver-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = turnserver-port-listening.py
-config-hostname = {{ listining_ip }}
+config-host = {{ listining_ip }}
 config-port = {{ turn_port }}
 
 [promise-check-turnserver-tls-port]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = turnserver-tls-port-listening.py
-config-hostname = {{ listining_ip }}
+config-host = {{ listining_ip }}
 config-port = {{ turn_tls_port }}
 
 [publish-connection-information]

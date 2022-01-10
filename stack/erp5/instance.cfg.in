@@ -31,11 +31,13 @@ extra-context =
 [dynamic-template-erp5-parameters]
 default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
 jupyter-enable-default = {{ jupyter_enable_default }}
+wcfs-enable-default = {{ wcfs_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 
 [context]
 root-common = {{ root_common }}
 caucase-jinja2-library = {{ caucase_jinja2_library }}
+template-zodb-base = {{ template_zodb_base }}
 
 [dynamic-template-erp5]
 <= jinja2-template-base
@@ -44,6 +46,7 @@ filename = instance-erp5.cfg
 extra-context =
     key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
+    key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
     import re re
@@ -56,13 +59,17 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 <= default-dynamic-template-parameters
-apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
+rsyslogd = {{ rsyslogd_location }}
+socat = {{ socat_location }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
+# XXX: only used in software/slapos-master:
+apache = {{ apache_location }}
 template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
@@ -103,7 +110,7 @@ link-binary = {{ dumps(zope_link_binary) }}
 fonts = {{ dumps(zope_fonts) }}
 fontconfig-includes = {{ dumps(zope_fontconfig_includes) }}
 template-fonts-conf = {{ dumps(template_fonts_conf) }}
-userhosts = {{ userhosts_location }}/bin/userhosts
+userhosts = {{ userhosts_location }}/lib/userhosts.so
 site-zcml = {{ site_zcml }}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
@@ -122,6 +129,9 @@ extra-context =
     import urllib_parse six.moves.urllib.parse
     import hashlib hashlib
     import itertools itertools
+    import json json
+import-list =
+    file instance_zodb_base context:template-zodb-base
 
 [dynamic-template-kumofs-parameters]
 <= default-dynamic-template-parameters
@@ -188,6 +198,15 @@ mode = 644
 [dynamic-template-jupyter]
 rendered = {{ template_jupyter_cfg }}
 
+[dynamic-template-wcfs]
+<= jinja2-template-base
+template = {{ instance_wcfs_cfg_in }}
+filename = instance_wcfs.cfg
+extra-context =
+    section parameter_dict dynamic-template-zope-parameters
+import-list =
+    file instance_zodb_base context:template-zodb-base
+
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
@@ -206,6 +225,7 @@ zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo:rendered
 zope = dynamic-template-zope:rendered
 jupyter = dynamic-template-jupyter:rendered
+wcfs = dynamic-template-wcfs:rendered
 
 # Keep cloudooo backward compatibility
 cloudooo = dynamic-template-legacy:output

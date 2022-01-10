@@ -14,10 +14,14 @@
  #}
 <fontconfig>
   <cachedir>{{ cachedir | escape}}</cachedir>
-  {% for font in fonts.splitlines() -%}
-    <dir>{{ font | escape}}</dir>
-  {% endfor %}
-  {% for include in includes.splitlines() -%}
-    <include>{{ include | escape}}</include>
-  {% endfor %}
+  {%- for font in fonts.splitlines() -%}
+    {% if font.strip() %}
+    <dir>{{ font.strip() | escape}}</dir>
+    {%- endif %}
+  {%- endfor %}
+  {%- for include in includes.splitlines() -%}
+    {% if include.strip() %}
+    <include>{{ include.strip() | escape}}</include>
+    {%- endif %}
+  {%- endfor %}
 </fontconfig>

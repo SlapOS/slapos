@@ -19,7 +19,7 @@
       "type": "string"
     },
     "domain": {
-      "description": "Base Domain for create subdomains (ie.: example.com).",
+      "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
       "title": "Domain",
       "type": "string"
@@ -49,17 +49,6 @@
       "description": "Value passed to -grace parameter of Caddy, see https://caddyserver.com/docs/cli .",
       "title": "Duration of the graceful shutdown period. Warning: Changing the parameter will result in restarting Caddy process.",
       "type": "integer"
-    },
-    "nginx-domain": {
-      "description": "Base Domain for create subdomains (ie.: example2.com) for websocket, notebook and eventsource.",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$",
-      "title": "[NOT IMPLEMENTED] Nginx Domain",
-      "type": "string"
-    },
-    "public-ipv4": {
-      "description": "Public ipv4 of the frontend (the one Caddy will be indirectly listening to).",
-      "title": "Public IPv4",
-      "type": "string"
     },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",

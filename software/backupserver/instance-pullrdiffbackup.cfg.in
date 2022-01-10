@@ -194,9 +194,9 @@ virtual-depends =
 
 [nginx-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = nginx_listen.py
-config-hostname = $${nginx-configuration:ip}
+config-host = $${nginx-configuration:ip}
 config-port = $${nginx-configuration:port}
 
 [nginx-configuration]

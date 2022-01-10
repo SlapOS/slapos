@@ -3,6 +3,35 @@ Changes
 
 Here are listed the most important changes, which might affect upgrades.
 
+1.0.XXX (XXXX-XX-XX)
+--------------------
+
+ * fix: exposed log file names are stabilised
+ * feature: in case of not found instance more information are provided
+ * feature: telemetry is fully disabled
+ * feature: Apache Traffic Server 8.0 is used
+ * feature: backend-haproxy statistic for haproxy's frontend is available
+ * fix: slave publication has been fixed in case of mixed case slave reference
+ * feature: running test/test.py resolves with starting backend used in tests
+ * fix: automatic caucase-updater usage has been fixed
+ * fix/workaround: reconnect to backend-haproxy from Caddy and Apache Traffic Server
+ * fix/feature: use explicitly Apache Traffic Server simulation of stale-if-error, as in reality Apache Traffic Server does not support it
+ * feature: dropped not used parameters
+ * feature: Strict-Transport-Security aka HSTS
+ * fix: use kedifa with with for file with multiple CAs
+ * feature: support query string (the characters after ? in the url) in url and https-url
+ * fix: by having unique acl names fix rare bug of directing traffic to https-url instead of url or otherwise
+ * feature: failover backend
+
+1.0.164 (2020-09-24)
+--------------------
+
+ * feature: serve a stale result up to 1 day if the origin server is down
+ * feature: request real frontend for slave introspection (aka log access)
+ * fix: Kedifa reloading, it was resulting with kedifa server disallowing access after some time
+ * feature: allow to set software release for each node, instead for the whole cluster
+ * fix: haproxy matches correct hostname in case of wildcards, instead of using wildcard host instead of the specific one
+
 1.0.160 (2020-08-25)
 --------------------
 

@@ -6,6 +6,8 @@ Frontend system using Caddy, based on apache-frontend software release, allowing
 
 Caddy Frontend works using the master instance / slave instance design. It means that a single main instance of Caddy will be used to act as frontend for many slaves.
 
+This documentation covers only specific scenarios. Most of the parameters are described in `software.cfg.json <software.cfg.json>`_.
+
 Software type
 =============
 
@@ -23,11 +25,11 @@ Slaves of the root instance are sent as a parameter to requested frontends which
 
 These parameters are:
 
-  * ``-frontend-type`` : the type to deploy frontends with. (default to 2)
-  * ``-frontend-quantity`` : The quantity of frontends to request (default to "default")
+  * ``-frontend-type`` : the type to deploy frontends with. (default to "default")
+  * ``-frontend-quantity`` : The quantity of frontends to request (default to "1")
   * ``-frontend-i-state``: The state of frontend i
+  * ``-frontend-i-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo
-  * ``-frontend-software-release-url``: Software release to be used for frontends, default to the current software release
   * ``-sla-i-foo`` : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 
 For example::
@@ -36,10 +38,10 @@ For example::
   <parameter id="-frontend-type">custom-personal</parameter>
   <parameter id="-frontend-2-state">stopped</parameter>
   <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-  <parameter id="-frontend-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg</parameter>
+  <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg</parameter>
 
 
-will request the third frontend on COMP-1234. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped
+will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/caddy-frontend/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
 
 *Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
 
@@ -60,14 +62,12 @@ This is to deploy an entire frontend server with a public IPv4.  If you want to 
 First, you will need to request a "master" instance of Caddy Frontend with:
 
   * A ``domain`` parameter where the frontend will be available
-  * A ``public-ipv4`` parameter to state which public IPv4 will be used
 
 like::
 
   <?xml version='1.0' encoding='utf-8'?>
   <instance>
    <parameter id="domain">moulefrite.org</parameter>
-   <parameter id="public-ipv4">xxx.xxx.xxx.xxx</parameter>
   </instance>
 
 Then, it is possible to request many slave instances (currently only from slapconsole, UI doesn't work yet) of Caddy Frontend, like::
@@ -131,7 +131,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem master-key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" master-key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -159,7 +159,7 @@ Example sessions is::
 
   cat certificate.pem ca.pem key.pem > bundle.pem
 
-  curl -g -X PUT --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" --data-binary @bundle.pem key-upload-url+authtoken
+  curl -g --upload-file bundle.pem --cacert "${frontend_name}.ca.crt" --crlfile "${frontend_name}.crl" key-upload-url+authtoken
 
 This replaces old request parameters:
 
@@ -189,10 +189,6 @@ Name of the domain to be used (example: mydomain.com). Sub domains of this domai
 
 Using the IP given by the Master Instance.  "domain" is a mandatory Parameter.
 
-public-ipv4
-~~~~~~~~~~~
-Public ipv4 of the frontend (the one Caddy will be indirectly listening to)
-
 port
 ~~~~
 Port used by Caddy. Optional parameter, defaults to 4443.
@@ -221,29 +217,26 @@ Example of value: "/erp5/web_site_module/hosting/"
 
 url
 ~~~
-Necessary to activate cache. ``url`` of backend to use.
-
-``url`` is an optional parameter.
+URL of the backend to use, optional but will result with non functioning slave.
 
 Example: http://mybackend.com/myresource
-
-domain
-~~~~~~
-
-Necessary to activate cache.
-
-The frontend will be accessible from this domain.
-
-``domain`` is an optional parameter.
-
-Example: www.mycustomdomain.com
 
 enable_cache
 ~~~~~~~~~~~~
 
-Necessary to activate cache.
+Enables HTTP cache, optional.
 
-``enable_cache`` is an optional parameter.
+
+health-check-*
+~~~~~~~~~~~~~~
+
+This set of parameters is used to control the way how the backend checks will be done. Such active checks can be really useful for `stale-if-error` caching technique and especially in case if backend is very slow to reply or to connect to.
+
+`health-check-http-method` can be used to configure the HTTP method used to check the backend. Special method `CONNECT` can be used to check only for connection attempt.
+
+Please be aware that the `health-check-timeout` is really short by default, so in case if `/` of the backend is slow to reply configure proper path with `health-check-http-path` to not mark such backend down too fast, before increasing the check timeout.
+
+Thanks to using health-check it's possible to configure failover system. By providing `health-check-failover-url` or `health-check-failover-https-url` some special backend can be used to reply in case if original backend replies with error (codes like `5xx`). As a note one can setup this failover URL like `https://failover.example.com/?p=` so that the path from the incoming request will be passed as parameter. Additionally authentication to failover URL is supported with `health-check-authenticate-to-failover-backend` and SSL Proxy verification with `health-check-failover-ssl-proxy-verify` and `health-check-failover-ssl-proxy-ca-crt`.
 
 Examples
 ========
@@ -392,6 +385,8 @@ Additional partition with KeDiFa (Key Distribution Facility) is by default reque
 
 By adding to the request keys like ``-sla-kedifa-<key>`` it is possible to provide SLA information for kedifa partition. Eg to put it on computer ``couscous`` it shall be ``-sla-kedifa-computer_guid: couscous``.
 
+Also ``-kedifa-software-release-url`` can be used to override the software release for kedifa partition.
+
 Notes
 =====
 
@@ -445,6 +440,15 @@ This allows backends to:
 
 Technical notes
 ===============
+
+Profile development guidelines
+------------------------------
+
+Keep the naming in instance profiles:
+
+ * ``software_parameter_dict`` for values coming from software
+ * ``instance_parameter_dict`` for **local** values generated by the instance, except ``configuration``
+ * ``slapparameter_dict`` for values coming from SlapOS Master
 
 Instantiated cluster structure
 ------------------------------

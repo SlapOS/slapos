@@ -125,12 +125,11 @@ array (
 );
 EOF
 
-# Install some nextcloud app
-php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install spreed
-php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install richdocuments
-php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install calendar
-php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install rainloop
-php_cmd {{ parameter_dict['nextcloud'] }}/occ app:install news
+# Install some nextcloud apps
+{%for app_name, app_location in nextcloud_apps.items() %}
+  cp -a {{ app_location }} {{ parameter_dict['nextcloud'] }}/apps/{{ app_name }}
+  php_cmd {{ parameter_dict['nextcloud'] }}/occ app:enable {{ app_name }}
+{%endfor%}
 
 php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set richdocuments wopi_url --value="{{ parameter_dict.get('collabora-url', '') }}"
 php_cmd {{ parameter_dict['nextcloud'] }}/occ config:app:set spreed stun_servers --value="[\"{{ parameter_dict['stun-server'] }}\"]"

@@ -51,10 +51,6 @@ def setUpModule():
 class ERP5InstanceTestCase(SlapOSInstanceTestCase):
   """ERP5 base test case
   """
-  # ERP5 instanciation needs to run several times before being ready, as
-  # the root instance request more instances.
-  instance_max_retry = 7 # XXX how many times ?
-
   def getRootPartitionConnectionParameterDict(self):
     """Return the output paramters from the root partition"""
     return json.loads(

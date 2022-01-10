@@ -87,9 +87,9 @@ instance-promises =
 
 [tomcat-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = $${:_buildout_section_name_}.py
-config-hostname= $${tomcat-instance:ip}
+config-host = $${tomcat-instance:ip}
 config-port = $${tomcat-instance:port}
 
 [publish-connection-parameter]

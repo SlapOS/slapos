@@ -86,6 +86,7 @@ template = {{ nextcloud_install_sh }}
 rendered = ${directory:scripts}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
+  section nextcloud_apps   nextcloud-apps
 mode = 744
 depends =
   ${service-redis:recipe}
@@ -97,6 +98,11 @@ depends =
   ${nextcloud-news-updater:recipe}
   ${nextcloud-config-update:recipe}
   ${nextcloud-install-promise:name}
+
+[nextcloud-apps]
+{% for app_name, app_location in nextcloud_apps.items() %}
+{{ app_name }} = {{ app_location }}
+{%endfor%}
 
 [nextcloud-install-promise]
 <= monitor-promise-base

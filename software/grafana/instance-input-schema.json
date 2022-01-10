@@ -17,8 +17,11 @@
     },
     "smtp-verify-ssl": {
       "description": "Verify SSL certificate of SMTP server",
-      "type": "boolean",
-      "default": true
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ]
     },
     "email-from-address": {
       "description": "Email address used in From: header of emails",

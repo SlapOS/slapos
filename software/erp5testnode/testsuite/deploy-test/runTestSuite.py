@@ -152,9 +152,12 @@ def main():
 
   revision = args.revision
   test_suite_title = args.test_suite_title or args.test_suite
+  # TODO: rewrite this unsing nxdtest, EggTestSuite no longer exist in erp5.util
   suite = testsuite.EggTestSuite(
       1, test_suite=args.test_suite, node_quantity=args.node_quantity,
       python_interpreter=args.python_interpreter,
+      shared_part_list=os.environ.get('SLAPOS_TEST_SHARED_PART_LIST', ''),
+      log_directory=os.environ.get('SLAPOS_TEST_LOG_DIRECTORY', ''),
       egg_test_path_dict={
           os.path.basename(os.path.normpath(path)): path
           for path in args.test_location.split(',')},

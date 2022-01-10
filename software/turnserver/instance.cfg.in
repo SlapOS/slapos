@@ -10,6 +10,7 @@ offline = true
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default  = $${dynamic-template-turnserver:rendered}
+insecure  = $${dynamic-template-insecure-turnserver:rendered}
 RootSoftwareInstance = $${:default}
 
 [slap-configuration]
@@ -48,5 +49,12 @@ turnserver-location = ${coturn:location}
 <= jinja2-template-base
 template = ${template-turnserver:location}/${template-turnserver:filename}
 filename = instance-turnserver.cfg
+extra-context =
+  section parameter_dict dynamic-template-turnserver-parameters
+
+[dynamic-template-insecure-turnserver]
+<= jinja2-template-base
+template = ${template-insecure-turnserver:location}/${template-insecure-turnserver:filename}
+filename = instance-insecure-turnserver.cfg
 extra-context =
   section parameter_dict dynamic-template-turnserver-parameters

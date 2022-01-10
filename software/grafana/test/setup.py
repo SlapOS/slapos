@@ -45,6 +45,7 @@ setup(
         'slapos.libnetworkcache',
         'erp5.util',
         'requests',
+        'six',
         'supervisor',
         'psutil',
     ],

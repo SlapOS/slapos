@@ -88,12 +88,6 @@ KVM instance parameters:
 - data-to-vm
     send some text content which will be accessible to the vm through the file: http://10.0.2.100/data
 
-- keyboard-layout-language (default: fr)
-    Change keyboard layout language (Change to en-us if you face some bad bihaviors)
-    Language list: ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
-    'fo', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'hr', 'hu', 'is', 'it', 'ja', 'lt',
-    'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
-    'th', 'tr']
 
 Resilient KVM instance
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -4,7 +4,7 @@
   rotate {{ rotate_num }}
   {% if nocompress %}nocompress
   {% else %}compress
-  delaycompress{% endif %}
+  {% if delaycompress %}delaycompress{% endif %}{% endif %}
   notifempty
   sharedscripts
   create

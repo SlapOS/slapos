@@ -129,7 +129,7 @@ To create the frontend, you now have to wait the slaprunner to be processed.
 
 You can define the type of your backend using "custom-frontend-backend-type". eg: zope
 
-If you deploy a server, which uses basic auth, you also have to declare the parameter "custom-frontend-basic-auth" as true, or your slaprunner instance won't show as correctly instanciated.
+If you deploy a server, which uses basic auth, you also have to declare the parameter "custom-frontend-basic-auth" as true, or your slaprunner instance won't show as correctly instantiated.
 
 Example :
 	<?xml version='1.0' encoding='utf-8'?>

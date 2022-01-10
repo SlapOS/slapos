@@ -1,7 +1,7 @@
 {
   "name": "ProFTPd",
   "description": "ProFTPd as a SFTP server with virtual users",
-  "serialisation": "json-in-xml",
+  "serialisation": "xml",
   "software-type": {
     "default": {
       "title": "Default",

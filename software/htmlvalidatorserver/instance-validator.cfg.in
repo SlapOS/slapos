@@ -55,9 +55,9 @@ scheme = https
 
 [tomcat-listen-promise]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = tomcat_listen.py
-config-hostname = $${tomcat-configuration:ip}
+config-host = $${tomcat-configuration:ip}
 config-port = $${tomcat-configuration:port}
 
 #################################

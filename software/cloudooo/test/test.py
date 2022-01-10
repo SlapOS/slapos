@@ -26,23 +26,43 @@
 #
 ##############################################################################
 
+import codecs
+import csv
+import multiprocessing
 import os
 import json
 import six.moves.xmlrpc_client as xmlrpclib
+import six.moves.urllib.parse as urllib_parse
 import ssl
 import base64
 import io
 
+import requests
 import PyPDF2
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-setUpModule, CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
+setUpModule, _CloudOooTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-# Cloudooo needs a lot of time before being available.
-CloudOooTestCase.instance_max_retry = 30
+
+class CloudOooTestCase(_CloudOooTestCase):
+  # Cloudooo needs a lot of time before being available.
+  instance_max_retry = 30
+
+  def setUp(self):
+    self.url = json.loads(
+        self.computer_partition.getConnectionParameterDict()["_"])['cloudooo']
+    # XXX ignore certificate errors
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    self.server = xmlrpclib.ServerProxy(
+        self.url,
+        context=ssl_context,
+        allow_none=True,
+    )
 
 
 def normalizeFontName(font_name):
@@ -87,19 +107,6 @@ class HTMLtoPDFConversionFontTestMixin:
     # type: (str) -> bytes
     """Convert the HTML source to pdf bytes.
     """
-
-  def setUp(self):
-    self.url = json.loads(
-        self.computer_partition.getConnectionParameterDict()["_"])['cloudooo']
-    # XXX ignore certificate errors
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-    self.server = xmlrpclib.ServerProxy(
-        self.url,
-        context=ssl_context,
-        allow_none=True,
-    )
 
   def test(self):
     actual_font_mapping_mapping = {}
@@ -237,3 +244,84 @@ class TestLibreoffice(HTMLtoPDFConversionFontTestMixin, CloudOooTestCase):
             'html',
             'pdf',
         ).encode())
+
+
+class TestLibreOfficeTextConversion(CloudOooTestCase):
+  __partition_reference__ = 'txt'
+
+  def test_html_to_text(self):
+    self.assertEqual(
+        base64.decodestring(
+            self.server.convertFile(
+                base64.encodestring(
+                    u'<html>héhé</html>'.encode('utf-8')).decode(),
+                'html',
+                'txt',
+            ).encode()),
+        codecs.BOM_UTF8 + b'h\xc3\xa9h\xc3\xa9\n',
+    )
+
+
+class TestLibreOfficeCluster(CloudOooTestCase):
+  __partition_reference__ = 'lc'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'backend-count': 4}
+
+  def test_multiple_conversions(self):
+    # make this function global so that it can be picked and used by multiprocessing
+    global _convert_html_to_text
+
+    def _convert_html_to_text(src_html):
+      return base64.decodestring(
+          self.server.convertFile(
+              base64.encodestring(src_html.encode()).decode(),
+              'html',
+              'txt',
+          ).encode())
+
+    pool = multiprocessing.Pool(5)
+    # TODO py3: use with pool
+    converted = pool.map(_convert_html_to_text,
+                         ['<html><body>hello</body></html>'] * 100)
+    pool.terminate()
+    pool.join()
+
+    self.assertEqual(converted, [codecs.BOM_UTF8 + b'hello\n'] * 100)
+
+    # haproxy stats are exposed
+    res = requests.get(
+        urllib_parse.urljoin(self.url, '/haproxy;csv'),
+        verify=False,
+        stream=True,
+    )
+    reader = csv.DictReader(res.raw)
+    line_list = list(reader)
+    # requests have been balanced
+    total_hrsp_2xx = {
+        line['svname']: int(line['hrsp_2xx'])
+        for line in line_list
+    }
+    self.assertEqual(total_hrsp_2xx['FRONTEND'], 100)
+    self.assertEqual(total_hrsp_2xx['BACKEND'], 100)
+    for backend in 'cloudooo_1', 'cloudooo_2', 'cloudooo_3', 'cloudooo_4':
+      # ideally there should be 25% of requests on each backend, because we use
+      # round robin scheduling, but it can happen that some backend take longer
+      # to start, so we are tolerant here and just check that each backend
+      # process at least 15% of requests. 
+      self.assertGreater(total_hrsp_2xx[backend], 15)
+    # no errors
+    total_eresp = {
+        line['svname']: int(line['eresp'] or 0)
+        for line in line_list
+    }
+    self.assertEqual(
+        total_eresp, {
+            'FRONTEND': 0,
+            'cloudooo_1': 0,
+            'cloudooo_2': 0,
+            'cloudooo_3': 0,
+            'cloudooo_4': 0,
+            'BACKEND': 0,
+        })

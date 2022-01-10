@@ -86,8 +86,8 @@ rendered = ${directory:srv}/exporter.exclude
 # Deploy zope promises scripts
 [promise-template]
 <= monitor-promise-base
-module = check_port_listening
-config-hostname = ${kumofs-instance:ip}
+module = check_socket_listening
+config-host = ${kumofs-instance:ip}
 config-port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-server]

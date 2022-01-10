@@ -2,6 +2,17 @@
 # Usage: env.sh [/path/to/env.sh]
 
 # ---- 8< ---- (buildout substitution here)
+# extend environment
+while read x ; do
+  k=$(echo $x | cut -d '=' -f 1  | sed -e 's/[[:space:]]*$//' )
+  v=$(echo $x | cut -d '=' -f 2- | sed -e 's/^[[:space:]]*//' )
+  if [ -n "$k" ]
+    then export $k="$v"
+  fi
+done <<-EOF
+  ${gowork:environment}
+EOF
+
 # PATH so that go & friends work out of the box
 export PATH=${gowork:golang}/bin:${git:location}/bin:${pkgconfig:location}/bin:${buildout:bin-directory}:${gcc:prefix}/bin:$PATH
 X=${gowork:directory}
@@ -10,10 +21,17 @@ export PKG_CONFIG_PATH=$(echo -n "${gowork:cpkgpath}" |tr '\n' ':'):$PKG_CONFIG_
 # ---- 8< ----
 
 export GOPATH=$X:$GOPATH
-export PATH=$X/bin:$PATH
-export PS1="(`basename $X`) $PS1"
+export GOBIN=$X/bin
 export GOCACHE=$X/cache
+export GOMODCACHE=$X/pkg/mod
 export GOENV=$X/goenv
+
+export PATH=$GOBIN:$PATH
+export PS1="(`basename $X`) $PS1"
+
+# by default make go run in module-aware mode only if go.mod is present, and in GOPATH-mode otherwise.
+# (we still have some GOPATH uses; TODO -> default to "on" after GOPATH-mode usage is gone)
+export GO111MODULE=auto
 
 # strip trailing : from $GOPATH, $PKG_CONFIG_PATH
 GOPATH=$${GOPATH%:}

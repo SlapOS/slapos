@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.152'
+version = '1.0.197'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -40,6 +40,7 @@ extras_require = {
         'jsonschema',
         'mock',
         'testfixtures',
+        'requests',
     ),
 }
 
@@ -116,8 +117,6 @@ setup(name=name,
           'ipv6toipv4 = slapos.recipe.6tunnel:SixToFour',
           'jsondump = slapos.recipe.jsondump:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
-          'libcloud = slapos.recipe.libcloud:Recipe',
-          'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'logrotate = slapos.recipe.logrotate:Recipe',
           'logrotate.d = slapos.recipe.logrotate:Part',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
@@ -159,7 +158,6 @@ setup(name=name,
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'simplehttpserver = slapos.recipe.simplehttpserver:Recipe',
-          'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',

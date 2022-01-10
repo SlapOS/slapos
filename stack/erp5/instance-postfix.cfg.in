@@ -80,9 +80,9 @@ wrapper-path = ${directory:run}/munnel
 
 [{{ section('munnel-promise') }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = munnel.py
-config-hostname = {{ ip }}
+config-host = {{ ip }}
 config-port = {{ milter_port }}
 {% endif -%}
 
@@ -262,9 +262,9 @@ wrapper-path = ${directory:run}/postfix-master
 
 [{{ section('postfix-promise') }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = postfix.py
-config-hostname = {{ ip }}
+config-host = {{ ip }}
 config-port = {{ tcpv4_port }}
 
 [{{ section('promise-check-computer-memory') }}]

@@ -1,0 +1,13 @@
+# Minimal whitelisted domains needed to instantiate the instance
+# Does not guarantee good usage of the guest VM itself
+# The full list shall end up in whitelist-domains-download:url
+# shcache.nxdcdn.com is default source for a lot of operations
+shacache.nxdcdn.com
+# stream.nxdcdn.com is needed by partition itself
+stream.nxdcdn.com
+# partition has to access default SlapOS Master
+slap.vifib.com
+slapos.vifib.com
+# Partition needs access to SlapOS Master related resources
+hnode.cdn.vifib.com
+node.cdn.vifib.com

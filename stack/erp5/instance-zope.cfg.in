@@ -1,9 +1,9 @@
+{% from "instance_zodb_base" import zodb_dict  with context %}
 {% set wsgi = slapparameter_dict['wsgi'] -%}
 {% set webdav = slapparameter_dict['webdav'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set ports = itertools.count(slapparameter_dict['port-base']) -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
-{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
 {% set selenium_server_configuration_dict = slapparameter_dict.get('selenium-server-configuration-dict', None) -%}
@@ -22,7 +22,7 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
-{% set hosts_dict = {} -%}
+{% set publishable_hosts_dict = {} -%}
 {% set port_dict = {} -%}
 {% for alias, url in (
     ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
@@ -32,15 +32,17 @@ partition. No more (undefined result), no less (IndexError).
   ) -%}
 {%   set parsed_url = urllib_parse.urlparse(url) -%}
 {%   do port_dict.__setitem__(alias, parsed_url.port)  -%}
-{%   do hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
+{%   do publishable_hosts_dict.__setitem__(alias, parsed_url.hostname)  -%}
 {%- endfor %}
 {% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
-{%   do hosts_dict.__setitem__(
+{%   do publishable_hosts_dict.__setitem__(
        'erp5-catalog-' ~ i,
        urllib_parse.urlparse(url).hostname,
      ) -%}
 {%- endfor %}
-{% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+{% do publishable_hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+{% set hosts_dict = publishable_hosts_dict.copy() -%}
+{% do hosts_dict.update(slapparameter_dict['computer-hosts-dict'].get(computer, {})) -%}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -62,6 +64,12 @@ environment +=
   FONTCONFIG_FILE=${fontconfig-conf:rendered}
 {% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
   WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
+  WENDELIN_CORE_WCFS_AUTOSTART=no
+{% if slapparameter_dict['wcfs_enable'] %}
+  WENDELIN_CORE_VIRTMEM=r:wcfs+w:uvmm
+{% else %}
+  WENDELIN_CORE_VIRTMEM=rw:uvmm
 {% endif %}
   ${:environment-extra}
 
@@ -173,12 +181,20 @@ template = inline: {{ '
 rendered = ${directory:etc}/hosts
 context = key host_dict hosts-parameter:host-dict
 
+[userhosts-bin]
+recipe = slapos.recipe.template:jinja2
+mode = 755
+template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
+  export HOSTS=${hosts:rendered}
+  export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
+  exec "$@"
+rendered = ${directory:bin}/userhosts
+
 [userhosts-wrapper-base]
 recipe = slapos.cookbook:wrapper
 environment =
   HOSTALIASES=${hostaliases:rendered}
-  HOSTS=${hosts:rendered}
-command-line = '{{ parameter_dict['userhosts'] }}' ${:wrapped-command-line}
+command-line = '${userhosts-bin:rendered}' ${:wrapped-command-line}
 
 {# Hack to deploy SSL certs via instance parameters -#}
 {% for zodb in six.itervalues(zodb_dict) -%}
@@ -248,25 +264,9 @@ cloudooo-url = {{ (cloudooo if cloudooo.port == None else
   cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
 
 {% endif -%}
-{% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
-{% for name, zodb in six.iteritems(zodb_dict) -%}
-{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
-{%   if zodb['type'] == 'zeo' -%}
-{%     do storage_dict.update(zeo_dict.get(name, ())) -%}
-{%   else -%}
-{%     if name == slapparameter_dict.get('neo-name') -%}
-{%       do storage_dict.update(master_nodes=slapparameter_dict['neo-masters'],
-                                name=slapparameter_dict['neo-cluster']) -%}
-{%     endif -%}
-{{     assert(storage_dict['master_nodes'], name) }}
-{%     if storage_dict.pop('ssl', 1) -%}
-{%       do storage_dict.update(ca='~/etc/ca.crt',
-                                cert='~/etc/neo.crt',
-                                key='~/etc/neo.key') -%}
-{%     endif -%}
-{%   endif -%}
-{% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
+publisher-timeout = {{ dumps(slapparameter_dict['publisher-timeout']) }}
+activity-timeout = {{ dumps(slapparameter_dict['activity-timeout']) }}
 instance = ${directory:instance}
 instance-products = ${directory:instance-products}
 deadlock-path = /manage_debug_threads
@@ -352,6 +352,10 @@ configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
 {%- if wsgi %}
 port = {{ port }}
 {%- endif %}
+hash-files =
+  ${:configuration-file}
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
 
 [{{ section("promise-" ~ name) }}]
 {% if six.PY3 -%}
@@ -360,24 +364,11 @@ port = {{ port }}
 recipe =
 {% else -%}
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ name }}.py
-config-hostname = {{ ipv4 }}
+config-host = {{ ipv4 }}
 config-port = {{ port }}
 {% endif -%}
-
-{% set extra_path_list = [] -%}
-{% set shell_escaped_extra_path_list = [] -%}
-{% for line in parameter_dict['extra-path-list'].splitlines() -%}
-{%   set line = line.strip() -%}
-{%   do extra_path_list.append(line) -%}
-{%   do shell_escaped_extra_path_list.append(line.replace("\x27", "\x27\\\x27\x27")) -%}
-{% endfor -%}
-[{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
-<= monitor-promise-base
-module = check_command_execute
-name = {{ name }}-is-running-actual-product.py
-config-command = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
@@ -389,9 +380,9 @@ ipv4-port = {{ port }}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 <= monitor-promise-base
-module = check_port_listening
+module = check_socket_listening
 name = {{ zope_tunnel_base_name }}.py
-config-hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% else -%}
 {%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
@@ -487,6 +478,7 @@ environment-extra =
   RUN_UNIT_TEST=${directory:bin}/runUnitTest
   SQLBENCH_PATH={{ parameter_dict['sqlbench_path'] }}
   TEST_CA_PATH=${directory:ca-dir}
+  ERP5_TEST_RUNNER_CONFIGURATION=${test-runner-configuration:rendered}
 {%- if wsgi %}
   erp5_wsgi=1
 {%- endif %}
@@ -504,6 +496,12 @@ command-line =
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
   --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+
+[test-runner-configuration]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/${:_buildout_section_name_}.json
+template = inline:
+  {{ json.dumps(slapparameter_dict['test-runner-configuration']) }}
 
 [{{ section('runUnitTest') }}]
 < = run-test-common
@@ -562,9 +560,10 @@ This has the downside of making each zope partition publish the (hopefuly) same
 dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
-hosts-dict = {{ dumps(hosts_dict) }}
+hosts-dict = {{ dumps(publishable_hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 test-runner-address-list = {{ dumps(test_runner_address_list) }}
+software-release-url = ${slap-connection:software-release-url}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}

@@ -38,7 +38,7 @@ class Re6stnetTest(unittest.TestCase):
                 'drop-service-wrapper': os.path.join(self.base_dir, 'drop_wrapper'),
                 'check-service-wrapper': os.path.join(self.base_dir, 'check_wrapper'),
                 'revoke-service-wrapper': os.path.join(self.base_dir, 'revoke_wrapper'),
-                'slave-instance-list': '{}'
+                'slave-instance-list': [],
                 }
     
   def tearDown(self):
@@ -119,11 +119,10 @@ class Re6stnetTest(unittest.TestCase):
   def test_install(self):
     self.options.update({
         'ipv6-prefix': '2001:db8:24::/48',
-        'slave-instance-list': '''[
+        'slave-instance-list': [
             {"slave_reference":"SOFTINST-58770"},
             {"slave_reference":"SOFTINST-58778"}
             ]
-            '''
         })
 
     recipe = self.new_recipe()
@@ -161,7 +160,7 @@ class Re6stnetTest(unittest.TestCase):
     
     # Remove one element
     self.options.update({
-        "slave-instance-list": """[{"slave_reference":"SOFTINST-58770"}]"""
+        "slave-instance-list": [{"slave_reference":"SOFTINST-58770"}]
         })
     recipe = self.new_recipe()
     recipe.generateCertificate = self.fake_generateCertificates

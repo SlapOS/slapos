@@ -25,13 +25,17 @@
 #
 ##############################################################################
 
-import os
-import textwrap
+from __future__ import unicode_literals
+import io
 import logging
+import os
 import tempfile
+import textwrap
 import time
 
+import psutil
 import requests
+from six.moves import configparser
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -44,11 +48,11 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 class GrafanaTestCase(SlapOSInstanceTestCase):
   """Base test case for grafana.
 
-  Since the instances takes timte to start and stop,
-  we increate as lot the number of retries.
+  Since the instances takes time to start and stop,
+  we increase the number of retries.
   """
+  instance_max_retry = 50
   report_max_retry = 30
-  instance_max_retry = 30
 
 
 class TestGrafana(GrafanaTestCase):
@@ -91,6 +95,52 @@ class TestGrafana(GrafanaTestCase):
     self.assertEqual(
         sorted(['influxdb', 'loki']),
         sorted([ds['type'] for ds in resp.json()]))
+
+  def test_email_disabled(self):
+    config = configparser.ConfigParser()
+    # grafana config file is like an ini file with an implicit default section
+    with open(
+        os.path.join(self.computer_partition_root_path, 'etc',
+                     'grafana-config-file.cfg')) as f:
+      config.readfp(io.StringIO('[default]\n' + f.read()))
+    self.assertEqual(config.get('smtp', 'enabled'), 'false')
+
+
+class TestGrafanaEmailEnabled(GrafanaTestCase):
+  __partition_reference__ = 'mail'
+  smtp_verify_ssl = "true"
+  smtp_skip_verify = "false"
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+        "smtp-server": "smtp.example.com:25",
+        "smtp-username": "smtp_username",
+        "smtp-password": "smtp_password",
+        'smtp-verify-ssl': cls.smtp_verify_ssl,
+        "email-from-address": "grafana@example.com",
+        "email-from-name": "Grafana From Name",
+    }
+
+  def test_email_enabled(self):
+    config = configparser.ConfigParser()
+    with open(
+        os.path.join(self.computer_partition_root_path, 'etc',
+                     'grafana-config-file.cfg')) as f:
+      config.readfp(io.StringIO('[default]\n' + f.read()))
+
+    self.assertEqual(config.get('smtp', 'enabled'), 'true')
+    self.assertEqual(config.get('smtp', 'host'), 'smtp.example.com:25')
+    self.assertEqual(config.get('smtp', 'user'), 'smtp_username')
+    self.assertEqual(config.get('smtp', 'password'), '"""smtp_password"""')
+    self.assertEqual(config.get('smtp', 'skip_verify'), self.smtp_skip_verify)
+    self.assertEqual(config.get('smtp', 'from_address'), 'grafana@example.com')
+    self.assertEqual(config.get('smtp', 'from_name'), 'Grafana From Name')
+
+
+class TestGrafanaEmailEnabledSkipVerify(TestGrafanaEmailEnabled):
+  smtp_verify_ssl = "false"
+  smtp_skip_verify = "true"
 
 
 class TestInfluxDb(GrafanaTestCase):
@@ -144,21 +194,27 @@ class TestLoki(GrafanaTestCase):
                 r'''
                 - job_name: {cls.__name__}
                   pipeline_stages:
-                    - regex:
-                        expression: "^(?P<timestamp>.*) - (?P<name>\\S+) - (?P<level>\\S+) - (?P<message>.*)"
-                    - timestamp:
-                        format: 2006-01-02T15:04:05Z00:00
-                        source: timestamp
-                    - labels:
-                        level:
-                        name:
+                    - match:
+                        selector: '{{job="{cls.__name__}"}}'
+                        stages:
+                          - multiline:
+                              firstline: '^\d{{4}}-\d{{2}}-\d{{2}}\s\d{{1,2}}\:\d{{2}}\:\d{{2}}\,\d{{3}}'
+                              max_wait_time: 3s
+                          - regex:
+                              expression: '^(?P<timestamp>.*) - (?P<name>\S+) - (?P<level>\S+) - (?P<message>.*)'
+                          - timestamp:
+                              format: 2006-01-02T15:04:05Z00:00
+                              source: timestamp
+                          - labels:
+                              level:
+                              name:
                   static_configs:
-                  - targets:
-                      - localhost
-                    labels:
-                      job: {cls.__name__}
-                      __path__: {cls._logfile.name}
-                ''').format(**locals())
+                    - targets:
+                        - localhost
+                      labels:
+                        job: {cls.__name__}
+                        __path__: {cls._logfile.name}
+            ''').format(**locals())
     }
 
   @classmethod
@@ -180,6 +236,7 @@ class TestLoki(GrafanaTestCase):
     # create a logger logging to the file that we have
     # configured in instance parameter.
     test_logger = logging.getLogger(self.id())
+    test_logger.propagate = False
     test_logger.setLevel(logging.INFO)
     test_handler = logging.FileHandler(filename=self._logfile.name)
     test_handler.setFormatter(
@@ -189,16 +246,25 @@ class TestLoki(GrafanaTestCase):
     test_logger.info("testing message")
     test_logger.info("testing another message")
     test_logger.warning("testing warn")
+    # log an exception, which will be multi line in log file.
+    def nested1():
+      def nested2():
+        raise ValueError('boom')
+      nested2()
+    try:
+      nested1()
+    except ValueError:
+      test_logger.exception("testing exception")
 
     # Check our messages have been ingested
     # we retry a few times, because there's a short delay until messages are
     # ingested and returned.
-    for i in range(10):
+    for i in range(60):
       resp = requests.get(
           '{self.loki_url}/api/prom/query?query={{job="TestLoki"}}'.format(
               **locals()),
           verify=False).json()
-      if not resp:
+      if len(resp.get('streams', [])) < 3:
         time.sleep(0.5 * i)
         continue
 
@@ -220,9 +286,83 @@ class TestLoki(GrafanaTestCase):
             line for line in info_stream['entries']
             if "testing another message" in line['line']
         ])
+
+    error_stream_list = [stream for stream in resp['streams'] if 'level="ERROR"' in stream['labels']]
+    self.assertEqual(1, len(error_stream_list), resp['streams'])
+    error_stream, = error_stream_list
+    line, = [line['line'] for line in error_stream['entries']]
+    # this entry is multi-line
+    self.assertIn('testing exception\nTraceback (most recent call last):\n', line)
+    self.assertIn('ValueError: boom', line)
+
     # The labels we have configued are also available
     resp = requests.get(
         '{self.loki_url}/api/prom/label'.format(**locals()),
         verify=False).json()
     self.assertIn('level', resp['values'])
     self.assertIn('name', resp['values'])
+
+
+class TestListenInPartition(GrafanaTestCase):
+  def setUp(self):
+    with self.slap.instance_supervisor_rpc as supervisor:
+      all_process_info = supervisor.getAllProcessInfo()
+
+    self.process_dict = {
+        p['name'].replace('-on-watch', ''): psutil.Process(p['pid'])
+        for p in all_process_info if p['name'] != 'watchdog'
+    }
+
+  def test_grafana_listen(self):
+    self.assertEqual(
+        [
+            c.laddr for c in self.process_dict['grafana'].connections()
+            if c.status == 'LISTEN'
+        ],
+        [(self._ipv6_address, 8180)],
+    )
+
+  def test_influxdb_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['influxdb'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 8088),
+            (self._ipv6_address, 8086),
+        ],
+    )
+
+  def test_telegraph_listen(self):
+    self.assertEqual(
+        [
+            c.laddr for c in self.process_dict['telegraf'].connections()
+            if c.status == 'LISTEN'
+        ],
+        [],
+    )
+
+  def test_loki_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['loki'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 3100),
+            (self._ipv4_address, 9095),
+        ],
+    )
+
+  def test_promtail_listen(self):
+    self.assertEqual(
+        sorted([
+            c.laddr for c in self.process_dict['promtail'].connections()
+            if c.status == 'LISTEN'
+        ]),
+        [
+            (self._ipv4_address, 19080),
+            (self._ipv4_address, 19095),
+        ],
+    )

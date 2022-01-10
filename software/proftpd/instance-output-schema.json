@@ -14,7 +14,7 @@
       "optional": true
     },
     "password": {
-      "description": "Password for default username",
+      "description": "Password for default username, when not using ssh-key",
       "type": "string",
       "optional": true
     }
