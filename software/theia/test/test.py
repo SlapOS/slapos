@@ -271,6 +271,14 @@ class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
     subprocess.check_call((slapos, 'request', old_instance_name, 'bogus_url'))
     self.assertIn(old_instance_name, self.proxy_show(slapos))
 
+    # Stop standalone so that it will be restarted to test compatibility
+    with self.slap.instance_supervisor_rpc as supervisor:
+      for process_info in supervisor.getAllProcessInfo():
+        service_name = process_info['name']
+        if 'standalone' in service_name:
+          supervisor.stopProcess('%s:%s' % (process_info['group'], service_name))
+          break
+
     # Update Theia instance parameters
     embedded_request_parameters = {
       'embedded-sr': self.sr_url,
@@ -280,6 +288,9 @@ class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
     self.rerequest(embedded_request_parameters)
     self.reinstantiate()
 
+    # Check that request script was generated
+    self.assertTrue(os.path.exists(request_script))
+
     # Check that embedded instance was requested
     instance_name = "embedded_instance"
     info = self.proxy_show(slapos)
@@ -287,10 +298,10 @@ class TestTheiaWithSR(TheiaTestCase, ReRequestMixin):
       self.assertIn(instance_name, info)
     except AssertionError:
       for filename in os.listdir(home):
-        if 'request-embedded-instance' in filename and '.log' in filename:
+        if 'standalone' in filename and '.log' in filename:
           filepath = os.path.join(home, filename)
           with open(filepath) as f:
-            print("Contents of filepath: " + filepath)
+            print("Contents of " + filepath)
             print(f.read())
       raise
 

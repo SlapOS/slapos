@@ -181,7 +181,7 @@ config-run-directory = $${directory:runner}/var/run
 promise = check_command_execute
 name = embedded-instance-promise.py
 config-command = $${directory:runner}/bin/slapos service info embedded_instance
-requires = $${request-embedded-instance:rendered}
+requires = $${request-embedded-instance:location}
 {%- endif %}
 
 
@@ -471,60 +471,28 @@ command =
 # -----------------
 
 {% if embedded_sr -%}
-[request-embedded-instance]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:scripts}/$${:_buildout_section_name_}
-template =
-  inline:#!/bin/sh
-  set -e
-  $${wait-standalone-ready:rendered}
-  export PATH=$${directory:runner}/bin
-  export SLAPOS_CONFIGURATION=$${slapos-standalone-config:slapos-configuration}
-  export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
-  slapos console $${embedded-instance-compatibility-script:rendered}
-  $${request-embedded-instance-script:location}
-
-[wait-standalone-ready]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}
-template =
-  inline:#!${software-info:python}
-  import socket
-  s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-  try:
-    s.settimeout(60)
-    while True:
-      try:
-        s.connect("\0$${slapos-standalone-config:abstract-socket-path}")
-        break
-      except socket.timeout:
-        pass
-  finally:
-    s.close()
-
-[embedded-instance-compatibility-script]
-recipe = slapos.recipe.template:jinja2
-rendered = $${directory:bin}/$${:_buildout_section_name_}.py
-template =
-  inline:
-  for cp in slap.registerComputer("{{ embedded_computer_id }}").getComputerPartitionList():
-    if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
-      print("Renaming 'Embedded Instance' into 'embedded_instance'")
-      cp.rename(new_name="embedded_instance")
-      break
-
-[editable-file]
-# Create a file that may be edited manually by the user without being overwritten.
+[embedded-instance-file]
+# Create or edit a file that may be edited manually by the user without being overwritten.
 # The file will only be overwritten if buildout receives new content.
+# After the file is modified by buildout, the standalone service is notified.
 recipe = slapos.recipe.build
 install =
   import os
+  import socket
   with open(options['location'], 'w') as f:
     f.write(options['content'])
     os.fchmod(f.fileno(), 0o700)
+  s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+  try:
+    s.connect("\0$${slapos-standalone-config:abstract-socket-path}")
+    s.sendall(b"r")
+  except socket.error:
+    pass
+  finally:
+    s.close()
 
-[request-embedded-instance-script]
-<= editable-file
+[request-embedded-instance]
+<= embedded-instance-file
 location = $${directory:project}/request_embedded.sh
 content =
   #!/bin/sh
@@ -537,7 +505,7 @@ content =
 {%-   if embedded_instance_parameters %} --parameters-file $${embedded-instance-parameters:location}
 
 [embedded-instance-parameters]
-<= editable-file
+<= embedded-instance-file
 location = $${directory:project}/$${:_buildout_section_name_}.json
 content =
   {{ embedded_instance_parameters | indent(2) }}
@@ -633,13 +601,39 @@ template =
       standalone.waitForInstance(max_retry=0)
     except slapos.slap.standalone.SlapOSNodeCommandError as e:
       print("Error instanciating: {}".format(e))
+    # Compatibility
+    try:
+      for cp in standalone.computer.getComputerPartitionList():
+        if cp.getInstanceParameterDict().get("instance_title") == "Embedded Instance":
+          print("Renaming 'Embedded Instance' into 'embedded_instance'")
+          cp.rename(new_name="embedded_instance")
+          break
+    except Exception:
+      pass
     # Open a socket to signal standalone is ready
     s = socket.socket(socket.AF_UNIX)
     s.bind("\0$${slapos-standalone-config:abstract-socket-path}")
     s.listen(5)
     print("Standalone SlapOS ready")
+    # Wait for connections and call embedded instance script when notified
+    request_script_path = "$${directory:project}/request_embedded.sh"
+    slapos_env = {
+      "PATH": "$${directory:runner}/bin",
+      "SLAPOS_CONFIGURATION": "$${slapos-standalone-config:slapos-configuration}",
+      "SLAPOS_CLIENT_CONFIGURATION": "$SLAPOS_CONFIGURATION",
+    }
+    do_request = True
     while True:
-      s.accept()[0].close()
+      if do_request:
+        try:
+          subprocess.call((request_script_path,), env=slapos_env)
+        except OSError:
+          pass
+      try:
+        conn, _ = s.accept()
+        do_request = bool(conn.recv(1))
+      finally:
+        conn.close()
   finally:
     print("Stopping standalone subsystem")
     standalone.stop()
