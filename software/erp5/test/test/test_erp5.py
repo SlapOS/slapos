@@ -802,6 +802,30 @@ class ZopeTestMixin(CrontabMixin):
     self.assertIn('Thread ', dump_response.text)
 
   def test_activity_processing(self):
+    def wait_for_activities(max_retries):
+      for retry in range(max_retries):
+        time.sleep(10)
+        resp = requests.get(
+            self.zope_verify_activity_processing_url,
+            params={
+                'mode': 'count',
+                'retry': retry,
+            },
+            verify=False,
+        )
+        if not resp.ok:
+          # XXX we start by flushing existing activities from site creation
+          # and inital upgrader run. During this time it may happen that
+          # ERP5 replies with site errors, we tolerate these errors and only
+          # check the final state.
+          continue
+        count = resp.json()['count']
+        if not count:
+          break
+      else:
+        self.assertEqual(count, 0)
+
+    wait_for_activities(60)
     requests.get(
         self.zope_verify_activity_processing_url,
         params={
@@ -809,21 +833,7 @@ class ZopeTestMixin(CrontabMixin):
         },
         verify=False,
     ).raise_for_status()
-
-    for retry in range(60):
-      time.sleep(10)
-      count = requests.get(
-          self.zope_verify_activity_processing_url,
-          params={
-              'mode': 'count',
-              'retry': retry,
-          },
-          verify=False,
-      ).json()['count']
-      if not count:
-        break
-    else:
-      self.assertEqual(count, 0)
+    wait_for_activities(10)
 
 
 class TestZopeMedusa(ZopeTestMixin, ERP5InstanceTestCase):
