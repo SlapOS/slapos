@@ -10,6 +10,15 @@
       "request": "instance-repman-input-schema.json",
       "response": "instance-repman-output-schema.json",
       "index": 0
+    },
+    "default-slave": {
+      "title": "Replication Manager Database",
+      "description": "Replication Manager Database",
+      "software-type": "default",
+      "request": "instance-repman-slave-input-schema.json",
+      "response": "instance-repman-output-schema.json",
+      "shared": true,
+      "index": 1
     }
   }
 }

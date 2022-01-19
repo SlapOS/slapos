@@ -1,6 +1,3 @@
-{% macro setbool(value) -%}
-{% if value in ['true', 'True'] %} true {% else %} false {% endif -%}
-{% endmacro -%}
 [Default]
 api-bind = "{{ parameter_dict['ipv4'] }}"
 http-bind-address = "{{ parameter_dict['ipv4'] }}"
@@ -11,17 +8,14 @@ monitoring-save-config = false
 api-https-bind = true
 api-credentials = "{{ parameter_dict['username'] }}:{{ parameter_dict['password'] }}"
 include = "{{ parameter_dict['cluster-d'] }}"
-autorejoin = {{ setbool(parameter_dict['autorejoin']) }}
-autoseed = {{ setbool(parameter_dict['autoseed']) }}
-{% if parameter_dict['autoseed'] in ['true', 'True'] -%}
-autorejoin-logical-backup = true
-{% endif -%}
 db-servers-binary-path = "{{ parameter_dict['mysql-bin-dir'] }}"
 # Database list of hosts to ignore in election
 #db-servers-ignored-hosts =
 # Database hosts list to monitor, IP and port (optional), specified in the host:[port] format and separated by commas
 monitoring-address = "{{ parameter_dict['ipv4'] }}"
-monitoring-wait-retry = 40
+monitoring-wait-retry = 1200
+monitoring-ssl-cert = "{{ parameter_dict['ssl-cert'] }}"
+monitoring-ssl-key = "{{ parameter_dict['ssl-key'] }}"
 
 #haproxy = true
 #haproxy-binary-path = "{{ parameter_dict['haproxy-bin'] }}"
@@ -48,6 +42,7 @@ backup-restic-password = "{{ parameter_dict['password'] }}"
 backup-mysqlclient-path = "{{ parameter_dict['mysqlclient-path'] }}"
 backup-mysqlbinlog-path = "{{ parameter_dict['mysqlbinlog-path'] }}"
 backup-mysqldump-path = "{{ parameter_dict['mysqldump-path'] }}"
+backup-mysqldump-options = "--hex-blob --single-transaction --verbose --all-databases --add-drop-database"
 
 # Mail configuration
 # Alert email sender (default "mrm@localhost")

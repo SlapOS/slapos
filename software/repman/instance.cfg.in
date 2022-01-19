@@ -28,8 +28,10 @@ mode    = 0644
 extensions = jinja2.ext.do
 rendered= ${buildout:directory}/${:_buildout_section_name_}
 supervisord-lib = {{ supervisord_lib }}
+causace-lib = {{ caucase_library }}
 import-list =
   file supervisord_lib :supervisord-lib
+  file caucase         :causace-lib
 context =
     key slapparameter_dict      slap-configuration:configuration
     key computer_id             slap-configuration:computer
@@ -48,6 +50,8 @@ context =
     raw bash_bin                {{ bash_location }}/bin/bash
     raw jq_bin                  {{ jq_location }}/bin/jq
     raw curl_bin                {{ curl_location }}/bin/curl
+    raw openssl_bin             {{ openssl_location }}/bin/openssl
+    raw caucase_bin_client      {{ caucase_bin_client }}
 
     ${:extra-context}
 extra-context =
@@ -56,6 +60,7 @@ extra-context =
 <= jinja2-template-base
 template= {{ template_repman_cfg }}
 extra-context =
+    key slave_instance_list         slap-configuration:slave-instance-list
     raw gowork_bin                  {{ gowork_bin }}
     raw haproxy_location            {{ haproxy_location }}
     raw nginx_bin                   {{ nginx_location }}/sbin/nginx
@@ -71,6 +76,7 @@ extra-context =
     raw proxysql_location          {{ proxysql_location }}
     raw template_repman_manager_sh {{ template_repman_manager_sh }}
     raw template_proxy_need_stopstart {{ proxy_need_stop_start_template }}
+    raw template_publish_slave_information {{ template_publish_slave }}
 
 [template-mariadb-parameters]
 bash = {{ bash_location }}
@@ -83,6 +89,7 @@ template-mariadb-init-root = {{ template_init_root_sql }}
 template-init-root-wrapper = {{ template_init_root_wrapper }}
 template-mysqld-wrapper = {{ template_mysqld_wrapper }}
 template-mysqld-need-start = {{ mysqld_start_template }}
+template-manage-db = {{ template_slave_db_manage }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 check-computer-memory-binary = {{ bin_directory }}/check-computer-memory
 bin-directory = {{ bin_directory }}

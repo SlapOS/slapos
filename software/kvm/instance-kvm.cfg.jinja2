@@ -1029,15 +1029,12 @@ config-command = ${ansible-vm-bin:rendered}
 
 {% if bootstrap_script_url -%}
 [download-bootstrap-script]
-recipe = slapos.recipe.build
-location = ${directory:public}/vm-bootstrap
-install =
-  from zc.buildout.download import check_md5sum, urlretrieve, ChecksumError
-  url, md5sum = {{ repr(bootstrap_script_url) }}.split('#')
-  urlretrieve(url, location)
-  if not check_md5sum(location, md5sum):
-    os.remove(location)
-    raise ChecksumError
+recipe = slapos.recipe.build:download
+offline = false
+destination = ${directory:public}/vm-bootstrap
+{% set bootstrap_script_url = bootstrap_script_url.split('#') -%}
+url = {{ bootstrap_script_url[0] }}
+md5sum = {{ bootstrap_script_url[1] }}
 {% endif -%}
 
 [logrotate-vm-bootstrap]

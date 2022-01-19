@@ -1,7 +1,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure', 'with-process-privilege': True}]) -%}
 {% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
