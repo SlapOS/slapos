@@ -35,6 +35,7 @@ import subprocess
 import tempfile
 import time
 import six
+import sys
 
 from six.moves.SimpleHTTPServer import SimpleHTTPRequestHandler
 from six.moves.socketserver import StreamRequestHandler, TCPServer
@@ -171,7 +172,7 @@ class SensorConfTestCase(WendelinTutorialTestCase):
 <source>
   @type exec
   tag tag.name
-  command python %s
+  command %s %s
   run_interval %ss
   <parse>
     keys pressure, humidity, temperature
@@ -186,7 +187,7 @@ class SensorConfTestCase(WendelinTutorialTestCase):
   <buffer>
     flush_mode immediate
   </buffer>
-</match>''' % (script_path, FLUSH_INTERVAL, cls._ipv6_address)
+</match>''' % (sys.executable, script_path, FLUSH_INTERVAL, cls._ipv6_address)
 
   @classmethod
   def sensor_script(cls, measurementList):
