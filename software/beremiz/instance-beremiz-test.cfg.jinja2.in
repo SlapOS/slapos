@@ -1,0 +1,51 @@
+[directory]
+tests = ${:srv}/tests
+
+[beremiz-x11]
+rendered = ${directory:bin}/beremiz-x11
+
+[xserver]
+display-num = 42
+
+[wmctrl]
+recipe = slapos.cookbook:wrapper
+command-line = {{ wmctrl_bin }}
+wrapper-path = ${directory:bin}/wmctrl
+environment =
+  XORG_LOCK_DIR=${xserver:lock-dir}
+  DISPLAY=${xserver:display}
+
+[runTestSuite]
+env.sh  = ${beremiz-env.sh:rendered}
+workdir = {{ beremiz_location }}
+
+[beremiz-tests]
+recipe = slapos.recipe.template:jinja2
+mode = 0700
+template =
+  inline:#!/bin/sh
+  cd {{ beremiz_location }}/tests
+  make test_dir=${directory:tests} xserver_command='echo "Using ${xserver:display} on Slapos X Server !";' "$@"
+rendered = ${directory:bin}/beremiztest
+
+[sikulix]
+recipe = slapos.cookbook:wrapper
+command-line = {{ sikulix_bin }} -v
+wrapper-path = ${directory:bin}/sikulix
+environment =
+  JAVA_TOOL_OPTIONS=-Duser.home=${buildout:directory} -Djava.io.tmpdir=${directory:tmp}
+
+[buildout]
+extends =
+  {{ instance_nxdtest }}
+  {{ instance_beremiz }}
+
+parts +=
+  sikulix
+  wmctrl
+  beremiz-tests
+  runTestSuite
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
