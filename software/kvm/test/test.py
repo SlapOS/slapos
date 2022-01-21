@@ -249,7 +249,13 @@ class TestMemoryManagement(InstanceTestCase, KvmMixin):
 
   def tearDown(self):
     self.rerequestInstance({})
-    self.slap.waitForInstance(max_retry=10)
+    try:
+      self.slap.waitForInstance(max_retry=10)
+    except SlapOSNodeCommandError:
+      self.logger.exception('Error waiting for instance after rerequesting')
+      self._storePartitionSnapshot('{}.tearDown rerequest'.format(self.id()))
+      raise
+    super(TestMemoryManagement, self).tearDown()
 
   def test_enable_device_hotplug(self):
     def getHotpluggedCpuRamValue():
@@ -835,10 +841,22 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     # clean up the instance for other tests
     # 1st remove all images...
     self.rerequestInstance({self.key: ''})
-    self.slap.waitForInstance(max_retry=10)
+    try:
+      self.slap.waitForInstance(max_retry=10)
+    except SlapOSNodeCommandError:
+      self.logger.exception('Error waiting for instance after removing images')
+      self._storePartitionSnapshot('{}.tearDown remove all images'.format(self.id()))
+      raise
+
     # 2nd ...move instance to "default" state
     self.rerequestInstance({})
-    self.slap.waitForInstance(max_retry=10)
+    try:
+      self.slap.waitForInstance(max_retry=10)
+    except SlapOSNodeCommandError:
+      self.logger.exception('Error waiting for instance after moving to "default" state')
+      self._storePartitionSnapshot('{}.tearDown move to default state'.format(self.id()))
+      raise
+
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
 
