@@ -89,34 +89,6 @@
       "type": "string",
       "default": ""
     },
-    "tags": {
-      "title": "Provisioning db tag list",
-      "description": "Provisioning db tags. Set one tag per line.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": [
-        "gtidstrict",
-        "bind",
-        "pkg",
-        "innodb",
-        "noquerycache",
-        "slow",
-        "pfs",
-        "linux",
-        "readonly",
-        "diskmonitor",
-        "sqlerror",
-        "compressbinlog",
-        "bm4ci",
-        "mroonga",
-        "utctime",
-        "readcommitted",
-        "nohandshake",
-        "ssl"
-      ]
-    },
     "http-session-lifetime": {
       "title": "Web Session life time in s",
       "description": "Web interface Session life time in seconds. Default 86400",
@@ -128,18 +100,6 @@
       "description": "Web interface refresh interval in s. Default 4s.",
       "type": "integer",
       "default": 4
-    },
-    "autorejoin": {
-      "title": "Automatic rejoin a failed master",
-      "description": "Automatic rejoin a failed master (default true)",
-      "type": "boolean",
-      "default": true
-    },
-    "autoseed": {
-      "title": "Automatic join a standalone node",
-      "description": "Automatic join a standalone node",
-      "type": "boolean",
-      "default": true
     },
     "require-ssl": {
       "title": "Enable REQUIRE SSL for repman database users",
@@ -195,6 +155,34 @@
               "description": "Computer Guid for the fourth slave database.",
               "type": "string",
               "default": ""
+            },
+            "tags": {
+              "title": "Provisioning db tag list",
+              "description": "Provisioning db tags. Set one tag per line.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "gtidstrict",
+                "bind",
+                "pkg",
+                "innodb",
+                "noquerycache",
+                "slow",
+                "pfs",
+                "linux",
+                "readonly",
+                "diskmonitor",
+                "sqlerror",
+                "compressbinlog",
+                "bm4ci",
+                "mroonga",
+                "utctime",
+                "readcommitted",
+                "nohandshake",
+                "ssl"
+              ]
             },
             "proxysql-user": {
               "title": "Proxysql username",
@@ -307,6 +295,18 @@
             "use-ipv6": {
               "title": "Mariadb server listen on IPv6",
               "description": "Listen on IPv6 instead of IPv4.",
+              "type": "boolean",
+              "default": true
+            },
+            "autorejoin": {
+              "title": "Automatic rejoin a failed master db",
+              "description": "Automatic rejoin a failed master (default: true).",
+              "type": "boolean",
+              "default": true
+            },
+            "autoseed": {
+              "title": "Automatic join a standalone node",
+              "description": "Automatic join a standalone mariadb node to the cluster.",
               "type": "boolean",
               "default": true
             },

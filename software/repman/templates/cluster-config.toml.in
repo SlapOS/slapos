@@ -12,6 +12,11 @@ monitoring-write-heartbeat-credential="{{ parameter_dict['heartbeat-user'] }}:{{
 db-servers-connect-timeout = 1
 slapos-db-partitions = "{{ parameter_dict['partition-list'] }}"
 slapos-proxysql-partitions = "{{ parameter_dict['proxysql-partition'] }}"
+autorejoin = {{ setbool(parameter_dict['autorejoin']) }}
+autoseed = {{ setbool(parameter_dict['autoseed']) }}
+{% if parameter_dict['autoseed'] in ['true', 'True'] -%}
+autorejoin-logical-backup = true
+{% endif -%}
 
 proxysql = true
 proxysql-port = {{ parameter_dict['proxy-port'] }}
