@@ -3614,7 +3614,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -3656,7 +3655,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -3714,7 +3712,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -3773,7 +3770,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -3975,7 +3971,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -4120,7 +4115,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -4167,7 +4161,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
 
@@ -4208,7 +4201,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
 
     # drop vary-keys
@@ -4242,7 +4234,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
 
     # drop vary-keys
@@ -5019,7 +5010,6 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
 
     headers = result.headers.copy()
 
-    self.assertKeyWithPop('Server', headers)
     self.assertKeyWithPop('Date', headers)
 
     # drop vary-keys
