@@ -78,16 +78,14 @@ large-file-threshold {{ parameter_dict['large-file-threshold'] }}
   node-id {{ node_id }}
 </product-config>
 
-{% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
-{% if timerserver_interval -%}
-{%   if parameter_dict['wsgi'] -%}
+{% if not parameter_dict['wsgi'] -%}
+{%   set timerserver_interval = parameter_dict['timerserver-interval'] -%}
+{%   if timerserver_interval -%}
 %import Products.TimerService.timerserver
-{%   else %}
-%import timerserver
-{%   endif -%}
 <timer-server>
   interval {{ timerserver_interval }}
 </timer-server>
+{%   endif %}
 
 {% endif -%}
 {% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
