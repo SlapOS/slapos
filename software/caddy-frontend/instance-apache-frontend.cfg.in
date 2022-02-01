@@ -63,6 +63,76 @@ parts =
 [caddyprofiledeps]
 recipe = caddyprofiledeps
 
+[frontend-node-id]
+# Store id file in top of hierarchy, so it does not depend on directory creation
+file = ${buildout:directory}/.frontend-node-id.txt
+location = ${buildout:bin-directory}/${:_buildout_section_name_}
+recipe = slapos.recipe.build
+init =
+  import os
+  import secrets
+  if not os.path.exists(options['file']):
+    with open(options['file'], 'w') as fh:
+      fh.write(secrets.token_urlsafe(4))
+  with open(options['file'], 'r') as fh:
+    options['value'] = fh.read()
+
+[frontend-node-private-salt]
+# Private, not communicated, stable hash, which can be used to salt other
+# hashes, so their values are connected to the node, but practicaly impossible
+# to crack (until the node is hacked itself, but then those values are
+# stolen anyway)
+recipe = slapos.recipe.build
+init =
+  import os
+  import uuid
+  if not os.path.exists(options['file']):
+    with open(options['file'], 'w') as fh:
+      fh.write(uuid.uuid4().hex)
+  with open(options['file'], 'r') as fh:
+    options['value'] = fh.read()
+file = ${buildout:directory}/.frontend-node-private-salt.txt
+
+[version-hash]
+recipe = slapos.recipe.build
+software-release-url = ${slap-connection:software-release-url}
+hash-salt = ${frontend-node-private-salt:value}
+init =
+  import hashlib
+  import base64
+  options['value'] = base64.urlsafe_b64encode(hashlib.md5(''.join([options['software-release-url'].strip(), options['hash-salt']])).digest())
+
+[frontend-node-information]
+recipe = slapos.recipe.build
+file = ${buildout:directory}/.frontend-node-information.json
+node-id = ${frontend-node-id:value}
+current-hash = ${version-hash:value}
+current-software-release-url = ${version-hash:software-release-url}
+init =
+  import json
+  changed = False
+  try:
+    with open(options['file'], 'r') as fh:
+      data = json.load(fh)
+  except Exception:
+    changed = True
+    data = {
+      'node-id': options['node-id'],
+      'version-hash-history': {options['current-hash']: options['current-software-release-url']}
+    }
+  if 'node-id' not in data:
+    data['node-id'] = options['node-id']
+    changed = True
+  if 'version-hash-history' not in data:
+    data['version-hash-history'] = {}
+    changed = True
+  if options['current-hash'] not in data['version-hash-history']:
+    data['version-hash-history'][options['current-hash']] = options['current-software-release-url']
+    changed = True
+  if changed:
+    with open(options['file'], 'w') as fh:
+      json.dump(data, fh)
+  options['value'] = data
 # Create all needed directories
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -305,6 +375,10 @@ extra-context =
     key software_type :software_type
     key frontend_lazy_graceful_reload frontend-caddy-lazy-graceful:rendered
     key monitor_base_url monitor-instance-parameter:monitor-base-url 
+    key node_id frontend-node-id:value
+    key version_hash version-hash:value
+    key software_release_url version-hash:software-release-url
+    key node_information frontend-node-information:value
     key custom_ssl_directory caddy-directory:custom-ssl-directory
 # BBB: SlapOS Master non-zero knowledge BEGIN
     key apache_certificate apache-certificate:rendered
@@ -462,6 +536,8 @@ disk-cache-size = ${configuration:disk-cache-size}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
+version-hash = ${version-hash:value}
+node-id = ${frontend-node-id:value}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
