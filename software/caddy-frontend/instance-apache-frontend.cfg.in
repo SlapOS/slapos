@@ -460,6 +460,7 @@ disk-cache-size = ${configuration:disk-cache-size}
 ram-cache-size = ${configuration:ram-cache-size}
 templates-dir = {{ software_parameter_dict['trafficserver'] }}/etc/trafficserver/body_factory
 request-timeout = ${configuration:request-timeout}
+trafficserver-version = {{ software_parameter_dict['trafficserver_version'] }}
 
 [trafficserver-configuration-directory]
 recipe = plone.recipe.command
