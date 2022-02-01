@@ -330,6 +330,8 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ configuration['port']) }}
 http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
+version-hash = {{ version_hash }}
+node-id = {{ node_id }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
@@ -463,6 +465,8 @@ csr-certificate = ${expose-csr-certificate-get:certificate}
 {#-   We unquote, as furl quotes automatically, but there is buildout value on purpose like ${...:...} in the passwod #}
 {%-   set statistic_url = urlparse_module.unquote(furled.tostr()) %}
 backend-haproxy-statistic-url = {{ statistic_url }}
+{#-   sort_keys are important in order to avoid shuffling parameters on each run #}
+node-information-json = {{ json_module.dumps(node_information, sort_keys=True) }}
 
 [kedifa-updater]
 recipe = slapos.cookbook:wrapper
@@ -513,6 +517,8 @@ global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
+version-hash = {{ version_hash }}
+node-id = {{ node_id }}
 
 [template-expose-csr-link-csr]
 recipe = plone.recipe.command
