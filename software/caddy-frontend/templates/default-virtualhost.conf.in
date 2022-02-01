@@ -21,6 +21,7 @@
     # workaround for lost connection to haproxy by reconnecting
     try_duration 3s
     try_interval 250ms
+    header_upstream Via "{>Via}, 2.0 CADDY-REQUEST"
 {%- endmacro %} {# proxy_header #}
 
 {%- macro hsts_header(tls) %}
@@ -48,6 +49,7 @@
 # SSL-disabled hosts
 {{ http_host_list|join(', ') }} {
 {%- endif %}
+  header / Via "2.0 CADDY-RESPONSE, {<Via}"
   bind {{ slave_parameter['local_ipv4'] }}
 {%- if tls %}
   tls {{ slave_parameter['certificate'] }} {{ slave_parameter['certificate'] }} {
