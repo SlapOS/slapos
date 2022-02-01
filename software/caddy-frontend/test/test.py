@@ -95,12 +95,6 @@ KEDIFA_PORT = '15080'
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
 
-# ATS version expectation in Via string
-VIA_STRING = (
-  r'^http\/1.1 caddy-frontend-1\[.*\] '
-  r'\(ApacheTrafficServer\/9\.[0-9]\.[0-9]+\)$',
-)[0]
-
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
@@ -430,6 +424,8 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   headers.setdefault('X-Forwarded-For', '192.168.0.1')
   headers.setdefault('X-Forwarded-Proto', 'irc')
   headers.setdefault('X-Forwarded-Port', '17')
+  # Expose some Via to show how nicely it arrives to the backend
+  headers.setdefault('Via', 'http/1.1 clientvia')
 
   session = requests.Session()
   if source_ip is not None:
@@ -470,6 +466,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   headers.setdefault('X-Forwarded-For', '192.168.0.1')
   headers.setdefault('X-Forwarded-Proto', 'irc')
   headers.setdefault('X-Forwarded-Port', '17')
+  # Expose some Via to show how nicely it arrives to the backend
+  headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
   session = requests.Session()
   if source_ip is not None:
@@ -604,6 +602,8 @@ class TestHandler(BaseHTTPRequestHandler):
       self.send_header('Set-Cookie', 'secured=value;secure')
       self.send_header('Set-Cookie', 'nonsecured=value')
 
+    if 'Via' not in drop_header_list:
+      self.send_header('Via', 'http/1.1 backendvia')
     if compress:
       self.send_header('Content-Encoding', 'gzip')
       out = StringIO.StringIO()
@@ -874,7 +874,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(e)
 
-  def assertResponseHeaders(self, result):
+  def assertResponseHeaders(
+    self, result, cached=False, via=True, backend_reached=True):
     headers = result.headers.copy()
     self.assertKeyWithPop('Date', headers)
     # drop vary-keys
@@ -883,8 +884,31 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     headers.pop('Keep-Alive', None)
     headers.pop('Transfer-Encoding', None)
 
-    self.assertEqual('TestBackend', headers.pop('Server', ''))
+    if backend_reached:
+      self.assertEqual('TestBackend', headers.pop('Server', ''))
 
+    via_id = '%s-%s' % (
+      self.node_information_dict['node-id'],
+      self.node_information_dict['version-hash-history'].keys()[0])
+    if via:
+      self.assertIn('Via', headers)
+      if cached:
+        self.assertEqual(
+          'http/1.1 backendvia, '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
+          'http/1.0 rapid-cdn-cache-%(via_id)s, '
+          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          headers.pop('Via')
+        )
+      else:
+        self.assertEqual(
+          'http/1.1 backendvia, '
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
+          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          headers.pop('Via')
+        )
+    else:
+      self.assertNotIn('Via', headers)
     return headers
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
@@ -953,6 +977,23 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
 
     return generate_auth_url, upload_url
+
+  def assertNodeInformationWithPop(self, parameter_dict):
+    key = 'caddy-frontend-1-node-information-json'
+    node_information_json_dict = {}
+    for k in parameter_dict.keys():
+      if k.startswith('caddy-frontend') and k.endswith(
+        'node-information-json'):
+        node_information_json_dict[k] = parameter_dict.pop(k)
+    self.assertEqual(
+      [key],
+      node_information_json_dict.keys()
+    )
+
+    node_information_dict = json.loads(node_information_json_dict[key])
+    self.assertIn("node-id", node_information_dict)
+    self.assertIn("version-hash-history", node_information_dict)
+    self.node_information_dict = node_information_dict
 
   def assertBackendHaproxyStatisticUrl(self, parameter_dict):
     url_key = 'caddy-frontend-1-backend-haproxy-statistic-url'
@@ -1280,6 +1321,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-').lower()
     self.assertEqual(
       {
@@ -1323,6 +1365,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     self.assertEqual(
       {
@@ -1354,6 +1397,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -1468,6 +1512,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
       'caddy-frontend-1-backend-client-csr-url', parameter_dict)
     self.assertKeyWithPop(
       'caddy-frontend-1-csr-certificate', parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -1924,6 +1969,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self._ipv6_address,
@@ -1954,6 +2000,40 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       open(
         os.path.join(
           partition_path, 'etc', 'httpd-cors.cfg'), 'r').read().strip())
+
+  def test_node_information_json(self):
+    node_information_file_path = glob.glob(os.path.join(
+      self.instance_path, '*', '.frontend-node-information.json'))[0]
+    with open(node_information_file_path, 'r') as fh:
+      current_node_information = json.load(fh)
+    modified_node_information = current_node_information.copy()
+    modified_node_information['version-hash-history'] = {'testhash': 'testurl'}
+
+    def writeNodeInformation(node_information, path):
+      with open(path, 'w') as fh:
+        json.dump(node_information, fh, sort_keys=True)
+      self.waitForInstance()
+      self.waitForInstance()
+      self.waitForInstance()
+
+    self.addCleanup(
+      writeNodeInformation, current_node_information,
+      node_information_file_path)
+
+    # simulate that upgrade happened
+    writeNodeInformation(
+      modified_node_information,
+      node_information_file_path)
+    parameter_dict = self.parseConnectionParameterDict()
+    expected_node_information = {
+      'node-id': current_node_information['node-id'],
+      'version-hash-history': current_node_information['version-hash-history']
+    }
+    expected_node_information['version-hash-history']['testhash'] = 'testurl'
+    self.assertEqual(
+      json.loads(parameter_dict['caddy-frontend-1-node-information-json']),
+      expected_node_information
+    )
 
   def test_slave_partition_state(self):
     partition_path = self.getSlavePartitionPath()
@@ -2041,7 +2121,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def assertBackendHeaders(
     self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
-    proto='https', ignore_header_list=None):
+    proto='https', ignore_header_list=None, cached=False):
     if ignore_header_list is None:
       ignore_header_list = []
     if 'Host' not in ignore_header_list:
@@ -2060,6 +2140,28 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       backend_header_dict['x-forwarded-proto'],
       proto
     )
+    via_id = '%s-%s' % (
+      self.node_information_dict['node-id'],
+      self.node_information_dict['version-hash-history'].keys()[0])
+    if cached:
+      self.assertEqual(
+        [
+          'http/1.1 clientvia',
+          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s, '
+          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
+        ],
+        backend_header_dict['via']
+      )
+    else:
+      self.assertEqual(
+        [
+          'http/1.1 clientvia',
+          'HTTP/1.1 rapid-cdn-frontend-%(via_id)s' % dict(via_id=via_id),
+          'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
+        ],
+        backend_header_dict['via']
+      )
 
   def test_telemetry_disabled(self):
     # here we trust that telemetry not present in error log means it was
@@ -2075,6 +2177,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-').lower()
     self.assertEqual(
       {
@@ -2105,7 +2208,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertNotIn('Strict-Transport-Security', result.headers)
+    headers = self.assertResponseHeaders(result)
+    self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(result, 'Path', '?a=b&c=/test-path/deeper')
 
     try:
@@ -2114,12 +2218,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
-    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertFalse('Content-Encoding' in headers)
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
-      result.headers['Set-Cookie']
+      headers['Set-Cookie']
     )
 
     self.assertLastLogLineRegexp(
@@ -2150,9 +2254,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.status_code
     )
 
+    headers = self.assertResponseHeaders(
+      result_http, via=False, backend_reached=False)
     self.assertEqual(
       'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
-      result_http.headers['Location']
+      headers['Location']
     )
 
     # check that timeouts are correctly set in the haproxy configuration
@@ -2322,6 +2428,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-').lower()
     self.assertEqual(
       {
@@ -2374,6 +2481,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-').lower()
     self.assertEqual(
       {
@@ -2559,6 +2667,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('server-alias-wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliaswildcard.example.com',
@@ -2599,6 +2708,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('server-alias-duplicated')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliasduplicated.example.com',
@@ -2634,6 +2744,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'server-alias_custom_domain-duplicated')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'alias4.example.com',
@@ -2665,6 +2776,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
@@ -2716,6 +2828,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_only')
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtonly.example.com',
@@ -2748,6 +2861,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_garbage')
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtgarbage.example.com',
@@ -2802,6 +2916,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtdoesnotmatch.example.com',
@@ -2872,6 +2987,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -2899,6 +3015,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -2934,6 +3051,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('custom_domain_wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '*.customdomain.example.com',
@@ -2961,6 +3079,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     hostname = reference.translate(None, '_-')
     self.assertEqual(
@@ -3235,6 +3354,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertLogAccessUrlWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -3509,6 +3629,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -3545,6 +3666,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslproxyverifysslproxycacrtunverified.example.com',
@@ -3754,6 +3876,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -3774,7 +3897,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, True)
     self.assertKeyWithPop('Age', headers)
 
     self.assertEqual(
@@ -3788,13 +3911,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_cache_server_alias(self):
     parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
@@ -3807,7 +3925,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
     self.assertEqual(
@@ -3821,13 +3939,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     result = fakeHTTPResult(
       'enablecacheserveralias1.example.com',
@@ -3856,7 +3969,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
     self.assertKeyWithPop('Age', headers)
     self.assertEqual(
       {
@@ -3877,17 +3990,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
-    self.assertResponseHeaders(result)
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'HTTP/test', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
-
-    self.assertEqual(httplib.OK, result.status_code)
-    self.assertEqualResultJson(result, 'Path', '/HTTP/test')
-    self.assertResponseHeaders(result)
+    self.assertResponseHeaders(result, cached=True)
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3904,7 +4007,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -3919,13 +4022,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     # BEGIN: Check that squid.log is correctly filled in
     ats_log_file_list = glob.glob(
@@ -4113,13 +4211,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     # check stale-if-error support is really respected if not present in the
     # request
@@ -4235,7 +4328,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -4248,13 +4341,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     try:
       j = result.json()
@@ -4274,7 +4362,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, via=False)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -4287,13 +4375,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_http2_false(self):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
@@ -4664,6 +4747,24 @@ class TestReplicateSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseSlaveParameterDict('replicate')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    key_list = [
+      'caddy-frontend-1-node-information-json',
+      'caddy-frontend-2-node-information-json'
+    ]
+    node_information_json_dict = {}
+    for k in parameter_dict.keys():
+      if k.startswith('caddy-frontend') and k.endswith(
+        'node-information-json'):
+        node_information_json_dict[k] = parameter_dict.pop(k)
+    self.assertEqual(
+      key_list,
+      node_information_json_dict.keys()
+    )
+
+    node_information_dict = json.loads(node_information_json_dict[key_list[0]])
+    self.assertIn("node-id", node_information_dict)
+    self.assertIn("version-hash-history", node_information_dict)
+    self.node_information_dict = node_information_dict
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
@@ -4795,6 +4896,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -4815,6 +4917,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
@@ -4835,6 +4938,7 @@ class TestEnableHttp2ByDefaultFalseSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -4885,6 +4989,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -4905,6 +5010,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-false')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2false.example.com',
@@ -4925,6 +5031,7 @@ class TestEnableHttp2ByDefaultDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -4971,6 +5078,7 @@ class TestRe6stVerificationUrlDefaultSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'default.None',
@@ -5037,6 +5145,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase,
     parameter_dict = self.parseSlaveParameterDict('default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'backend-client-caucase-url': 'http://[%s]:8990' % self._ipv6_address,
@@ -5077,6 +5186,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
     parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -5126,6 +5236,7 @@ class TestEnableHttp2ByDefaultFalseSlaveGlobalDisableHttp2(
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -5157,6 +5268,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
     parameter_dict = self.parseSlaveParameterDict('enable-http2-true')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2true.example.com',
@@ -5177,6 +5289,7 @@ class TestEnableHttp2ByDefaultDefaultSlaveGlobalDisableHttp2(
     parameter_dict = self.parseSlaveParameterDict('enable-http2-default')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'enablehttp2default.example.com',
@@ -5233,6 +5346,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
@@ -5426,6 +5540,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5496,6 +5611,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict('ssl_from_master')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = 'ssl_from_master'.translate(None, '_-')
     self.assertEqual(
       {
@@ -5523,6 +5639,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
@@ -5577,6 +5694,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     hostname = reference.translate(None, '_-')
     self.assertEqual(
@@ -5609,6 +5727,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     hostname = reference.translate(None, '_-')
     self.assertEqual(
@@ -5670,6 +5789,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertLogAccessUrlWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -5697,6 +5817,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
@@ -5755,6 +5876,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertLogAccessUrlWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': '%s.example.com' % (hostname,),
@@ -5786,6 +5908,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = reference.translate(None, '_-')
     self.assertEqual(
       {
@@ -5848,6 +5971,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
 
     hostname = reference.translate(None, '_-')
     self.assertEqual(
@@ -5878,6 +6002,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
     self.assertLogAccessUrlWithPop(parameter_dict)
     generate_auth, upload_url = self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'customdomainsslcrtsslkeysslcacrt.example.com',
@@ -5966,6 +6091,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_garbage')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtgarbage.example.com',
@@ -5997,6 +6123,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseSlaveParameterDict('ssl_ca_crt_does_not_match')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'sslcacrtdoesnotmatch.example.com',
@@ -6080,6 +6207,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6105,6 +6233,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseSlaveParameterDict('ssl_from_master')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertNodeInformationWithPop(parameter_dict)
     hostname = 'ssl_from_master'.translate(None, '_-')
     self.assertEqual(
       {
@@ -6185,6 +6314,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6453,6 +6583,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertRejectedSlavePromiseWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6602,6 +6733,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('SERVER-ALIAS-SAME')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'serveraliassame.example.com',
@@ -6685,6 +6817,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('DEFAULT-PATH-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
@@ -6719,6 +6852,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV4-TEST-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv4testunsafe.example.com',
@@ -6763,6 +6897,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('MONITOR-IPV6-TEST-UNSAFE')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'monitoripv6testunsafe.example.com',
@@ -6805,6 +6940,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('SITE_1')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'duplicate.example.com',
@@ -6928,6 +7064,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict_wildcard = self.parseSlaveParameterDict('wildcard')
     self.assertLogAccessUrlWithPop(parameter_dict_wildcard)
     self.assertKedifaKeysWithPop(parameter_dict_wildcard, '')
+    self.assertNodeInformationWithPop(parameter_dict_wildcard)
     hostname = '*.alias1'
     self.assertEqual(
       {
@@ -6943,6 +7080,7 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict_specific = self.parseSlaveParameterDict('zspecific')
     self.assertLogAccessUrlWithPop(parameter_dict_specific)
     self.assertKedifaKeysWithPop(parameter_dict_specific, '')
+    self.assertNodeInformationWithPop(parameter_dict_specific)
     hostname = 'zspecific.alias1'
     self.assertEqual(
       {
