@@ -330,6 +330,7 @@ certificate = {{ certificate }}
 https_port = {{ dumps('' ~ configuration['port']) }}
 http_port = {{ dumps('' ~ configuration['plain_http_port']) }}
 local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
+caddy-version = {{ software_parameter_dict['caddy_version'] }}
 {%-   for key, value in slave_instance.iteritems() %}
 {%-     if value is not none %}
 {{ key }} = {{ dumps(value) }}
@@ -513,6 +514,7 @@ global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 backend-connect-timeout = {{ dumps('' ~ configuration['backend-connect-timeout']) }}
 backend-connect-retries =  {{ dumps('' ~ configuration['backend-connect-retries']) }}
+haproxy-version = {{ dumps(software_parameter_dict['haproxy_version']) }}
 
 [store-backend-haproxy-csr_id]
 recipe = plone.recipe.command
