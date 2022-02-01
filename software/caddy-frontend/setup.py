@@ -10,6 +10,7 @@ setup(
     'furl',
     'orderedmultidict',
     'caucase',
+    'python2-secrets',
   ],
   entry_points={
     'zc.buildout': [
