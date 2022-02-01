@@ -95,12 +95,6 @@ KEDIFA_PORT = '15080'
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
 
-# ATS version expectation in Via string
-VIA_STRING = (
-  r'^http\/1.1 caddy-frontend-1\[.*\] '
-  r'\(ApacheTrafficServer\/9\.[0-9]\.[0-9]+\)$',
-)[0]
-
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
@@ -430,6 +424,8 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
   headers.setdefault('X-Forwarded-For', '192.168.0.1')
   headers.setdefault('X-Forwarded-Proto', 'irc')
   headers.setdefault('X-Forwarded-Port', '17')
+  # Expose some Via to show how nicely it arrives to the backend
+  headers.setdefault('Via', 'http/1.1 clientvia')
 
   session = requests.Session()
   if source_ip is not None:
@@ -470,6 +466,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
   headers.setdefault('X-Forwarded-For', '192.168.0.1')
   headers.setdefault('X-Forwarded-Proto', 'irc')
   headers.setdefault('X-Forwarded-Port', '17')
+  # Expose some Via to show how nicely it arrives to the backend
+  headers.setdefault('Via', 'http/1.1 clientvia')
   headers['Host'] = '%s:%s' % (domain, port)
   session = requests.Session()
   if source_ip is not None:
@@ -604,6 +602,8 @@ class TestHandler(BaseHTTPRequestHandler):
       self.send_header('Set-Cookie', 'secured=value;secure')
       self.send_header('Set-Cookie', 'nonsecured=value')
 
+    if 'Via' not in drop_header_list:
+      self.send_header('Via', 'http/1.1 backendvia')
     if compress:
       self.send_header('Content-Encoding', 'gzip')
       out = StringIO.StringIO()
@@ -874,7 +874,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(e)
 
-  def assertResponseHeaders(self, result):
+  def assertResponseHeaders(
+    self, result, cached=False, via=True, backend_reached=True):
     headers = result.headers.copy()
     self.assertKeyWithPop('Date', headers)
     # drop vary-keys
@@ -883,8 +884,28 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     headers.pop('Keep-Alive', None)
     headers.pop('Transfer-Encoding', None)
 
-    self.assertEqual('TestBackend', headers.pop('Server', ''))
+    if backend_reached:
+      self.assertEqual('TestBackend', headers.pop('Server', ''))
 
+    if via:
+      self.assertIn('Via', headers)
+      if cached:
+        self.assertEqual(
+          'http/1.1 backendvia, '
+          'HTTP/1.1 HAPROXY-RESPONSE, '
+          'http/1.0 ATS-RESPONSE, '
+          'HTTP/1.1 CADDY-RESPONSE',
+          headers.pop('Via')
+        )
+      else:
+        self.assertEqual(
+          'http/1.1 backendvia, '
+          'HTTP/1.1 HAPROXY-RESPONSE, '
+          'HTTP/1.1 CADDY-RESPONSE',
+          headers.pop('Via')
+        )
+    else:
+      self.assertNotIn('Via', headers)
     return headers
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
@@ -2041,7 +2062,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
   def assertBackendHeaders(
     self, backend_header_dict, domain, source_ip=SOURCE_IP, port=HTTPS_PORT,
-    proto='https', ignore_header_list=None):
+    proto='https', ignore_header_list=None, cached=False):
     if ignore_header_list is None:
       ignore_header_list = []
     if 'Host' not in ignore_header_list:
@@ -2060,6 +2081,25 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       backend_header_dict['x-forwarded-proto'],
       proto
     )
+    if cached:
+      self.assertEqual(
+        [
+          'http/1.1 clientvia',
+          'HTTP/1.1 caddy-nxd-v1.0.3-1-03fba31bf, '
+          'http/1.1 trafficserver-9.1.1',
+          'HTTP/1.1 haproxy-2.0.25'
+        ],
+        backend_header_dict['via']
+      )
+    else:
+      self.assertEqual(
+        [
+          'http/1.1 clientvia',
+          'HTTP/1.1 caddy-nxd-v1.0.3-1-03fba31bf',
+          'HTTP/1.1 haproxy-2.0.25'
+        ],
+        backend_header_dict['via']
+      )
 
   def test_telemetry_disabled(self):
     # here we trust that telemetry not present in error log means it was
@@ -2105,7 +2145,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       self.certificate_pem,
       der2pem(result.peercert))
 
-    self.assertNotIn('Strict-Transport-Security', result.headers)
+    headers = self.assertResponseHeaders(result)
+    self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(result, 'Path', '?a=b&c=/test-path/deeper')
 
     try:
@@ -2114,12 +2155,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
     self.assertEqual(j['Incoming Headers']['timeout'], '10')
-    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertFalse('Content-Encoding' in headers)
     self.assertBackendHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
-      result.headers['Set-Cookie']
+      headers['Set-Cookie']
     )
 
     self.assertLastLogLineRegexp(
@@ -2150,9 +2191,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result_http.status_code
     )
 
+    headers = self.assertResponseHeaders(
+      result_http, via=False, backend_reached=False)
     self.assertEqual(
       'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
-      result_http.headers['Location']
+      headers['Location']
     )
 
     # check that timeouts are correctly set in the haproxy configuration
@@ -3774,7 +3817,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, True)
     self.assertKeyWithPop('Age', headers)
 
     self.assertEqual(
@@ -3788,13 +3831,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_cache_server_alias(self):
     parameter_dict = self.assertSlaveBase('enable_cache_server_alias')
@@ -3807,7 +3845,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
     self.assertEqual(
@@ -3821,13 +3859,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     result = fakeHTTPResult(
       'enablecacheserveralias1.example.com',
@@ -3856,7 +3889,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
     self.assertKeyWithPop('Age', headers)
     self.assertEqual(
       {
@@ -3877,17 +3910,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
-    self.assertResponseHeaders(result)
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'HTTP/test', headers={
-        'X-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
-        'revalidate=3600, stale-if-error=3600'})
-
-    self.assertEqual(httplib.OK, result.status_code)
-    self.assertEqualResultJson(result, 'Path', '/HTTP/test')
-    self.assertResponseHeaders(result)
+    self.assertResponseHeaders(result, cached=True)
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3904,7 +3927,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -3919,13 +3942,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     # BEGIN: Check that squid.log is correctly filled in
     ats_log_file_list = glob.glob(
@@ -4113,13 +4131,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     # check stale-if-error support is really respected if not present in the
     # request
@@ -4235,7 +4248,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, cached=True)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -4248,13 +4261,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
     try:
       j = result.json()
@@ -4274,7 +4282,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = self.assertResponseHeaders(result)
+    headers = self.assertResponseHeaders(result, via=False)
 
     self.assertKeyWithPop('Age', headers)
 
@@ -4287,13 +4295,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     )
 
     backend_headers = result.json()['Incoming Headers']
-    self.assertBackendHeaders(backend_headers, parameter_dict['domain'])
-    via = backend_headers.pop('via', None)
-    self.assertNotEqual(via, None)
-    self.assertRegexpMatches(
-      via,
-      VIA_STRING
-    )
+    self.assertBackendHeaders(
+      backend_headers, parameter_dict['domain'], cached=True)
 
   def test_enable_http2_false(self):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
