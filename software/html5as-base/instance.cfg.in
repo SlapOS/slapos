@@ -18,7 +18,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ template_instance_html5as_target }}
 rendered = ${buildout:directory}/${:filename}
 filename = instance-html5as.cfg
-context = 
+context =
   section buildout buildout
   section parameter_list profile-common
 # partition_ipv6 is the random ipv6 allocated to the local partition

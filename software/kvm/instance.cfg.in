@@ -67,7 +67,7 @@ filename = template-kvm-cluster.cfg
 extra-context =
   section parameter_dict dynamic-template-kvm-cluster-parameters
   raw logrotate_cfg ${template-logrotate-base:rendered}
-  raw template_content ${template-content:location}/${template-content:filename}
+  raw template_content ${template-content:target}
   raw template_httpd_cfg ${template-httpd:rendered}
   raw template_monitor ${monitor2-template:rendered}
 
@@ -77,13 +77,13 @@ template = ${template-kvm:location}/instance-kvm.cfg.jinja2
 filename = template-kvm.cfg
 extra-context =
   section slap_configuration slap-configuration
-  raw ansible_promise_tpl ${template-ansible-promise:location}/${template-ansible-promise:filename}
+  raw ansible_promise_tpl ${template-ansible-promise:target}
   raw curl_executable_location ${curl:location}/bin/curl
   raw dash_executable_location ${dash:location}/bin/dash
   raw dnsresolver_executable ${buildout:bin-directory}/dnsresolver
   raw dcron_executable_location ${dcron:location}/sbin/crond
-  raw debian_amd64_netinst_location ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
-  raw whitelist_domains_default ${whitelist-domains-default:location}/${whitelist-domains-default:filename}
+  raw debian_amd64_netinst_location ${debian-amd64-bullseye-netinst.iso:target}
+  raw whitelist_domains_default ${whitelist-domains-default:target}
   raw whitelist_firewall_download_controller ${whitelist-firewall-download-controller:target}
   raw image_download_controller ${image-download-controller:target}
   raw image_download_config_creator ${image-download-config-creator:target}
@@ -94,12 +94,12 @@ extra-context =
   raw python_eggs_executable ${buildout:bin-directory}/${python-with-eggs:interpreter}
   raw qemu_executable_location ${qemu:location}/bin/qemu-system-x86_64
   raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
-  raw qemu_start_promise_tpl ${template-qemu-ready:location}/${template-qemu-ready:filename}
+  raw qemu_start_promise_tpl ${template-qemu-ready:target}
   raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
   raw template_httpd_cfg ${template-httpd:rendered}
-  raw template_content ${template-content:location}/${template-content:filename}
-  raw template_kvm_controller_run ${template-kvm-controller:location}/${template-kvm-controller:filename}
-  raw template_kvm_run ${template-kvm-run:location}/${template-kvm-run:filename}
+  raw template_content ${template-content:target}
+  raw template_kvm_controller_run ${template-kvm-controller:target}
+  raw template_kvm_run ${template-kvm-run:target}
   raw template_monitor ${monitor2-template:rendered}
   raw websockify_executable_location ${buildout:directory}/bin/websockify
   raw wipe_disk_wrapper ${buildout:directory}/bin/securedelete
@@ -134,7 +134,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     raw kvm_template $${dynamic-template-kvm:rendered}
-    raw template_kvm_export ${template-kvm-export-script:location}/${template-kvm-export-script:filename}
+    raw template_kvm_export ${template-kvm-export-script:target}
     key pbsready_export_template template-pbsready-export:rendered
     raw gzip_binary ${gzip:location}/bin/gzip
     key slapparameter_dict slap-configuration:configuration
@@ -149,7 +149,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     raw qemu_location ${qemu:location}
-    raw template_kvm_import ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
+    raw template_kvm_import ${template-kvm-import-script:target}
     key pbsready_import_template template-pbsready-import:rendered
     key slapparameter_dict slap-configuration:configuration
     raw zcat_binary ${gzip:location}/bin/zcat

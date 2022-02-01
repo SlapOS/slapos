@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
   "properties": {
     "ipv6-prefix": {
       "title": "Ipv6 prefix to use to setup the new re6st network",

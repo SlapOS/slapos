@@ -28,7 +28,7 @@ depend  =
 
 [redis-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = redis.py
 config-command = ${service-redis:promise_wrapper}
 
@@ -106,7 +106,7 @@ depends =
 
 [nextcloud-install-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-nextcloud-install.py
 config-command = ${nc-install-wrapper:output}
 

@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.197'
+version = '1.0.226'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -39,6 +39,7 @@ extras_require = {
     'test': (
         'jsonschema',
         'mock',
+        'psycopg2',
         'testfixtures',
         'requests',
     ),
@@ -63,7 +64,6 @@ setup(name=name,
       install_requires=[
         'enum34; python_version<"3.4"',  # for inotify-simple
         'jsonschema',
-        'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotify_simple',
@@ -77,7 +77,6 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
-          'accords = slapos.recipe.accords:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
@@ -90,8 +89,6 @@ setup(name=name,
           'check_parameter = slapos.recipe.check_parameter:Recipe',
           'cloud9 = slapos.recipe.cloud9:Recipe',
           'cloudooo.test = slapos.recipe.erp5_test:CloudoooRecipe',
-          'condor = slapos.recipe.condor:Recipe',
-          'condor.submit = slapos.recipe.condor:AppSubmit',
           'copyfilelist = slapos.recipe.copyfilelist:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
@@ -110,7 +107,6 @@ setup(name=name,
           'generic.kumofs = slapos.recipe.generic_kumofs:Recipe',
           'generic.memcached = slapos.recipe.generic_memcached:Recipe',
           'generic.mysql.wrap_update_mysql = slapos.recipe.generic_mysql:WrapUpdateMySQL',
-          'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'gitinit = slapos.recipe.gitinit:Recipe',
           'haproxy = slapos.recipe.haproxy:Recipe',
           'ipv4toipv6 = slapos.recipe.6tunnel:FourToSix',
@@ -126,7 +122,6 @@ setup(name=name,
           'neoppod.admin = slapos.recipe.neoppod:Admin',
           'neoppod.master = slapos.recipe.neoppod:Master',
           'neoppod.storage = slapos.recipe.neoppod:Storage',
-          'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
           'notifier = slapos.recipe.notifier:Recipe',
           'notifier.callback = slapos.recipe.notifier:Callback',
           'notifier.notify = slapos.recipe.notifier:Notify',
@@ -161,13 +156,9 @@ setup(name=name,
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
-          'slapcontainer = slapos.recipe.container:Recipe',
-          'softwaretype = slapos.recipe.softwaretype:Recipe', # BBB
-          'sphinx= slapos.recipe.sphinx:Recipe',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
-          'stunnel = slapos.recipe.stunnel:Recipe',
           'switch-softwaretype = slapos.recipe.switch_softwaretype:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
@@ -182,9 +173,6 @@ setup(name=name,
           'zeo = slapos.recipe.zeo:Recipe',
           'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
           'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
-        ],
-        'slapos.recipe.nosqltestbed.plugin': [
-          'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
       extras_require=extras_require,

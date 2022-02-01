@@ -1,0 +1,14 @@
+{
+  "name": "Headless Chromium",
+  "description": "Headless (stripped-down) Chromium shell",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Standalone headless shell",
+      "request": "instance-headless-chromium-input-schema.json",
+      "response": "instance-headless-chromium-output-schema.json",
+      "index": 0
+    }
+  }
+}

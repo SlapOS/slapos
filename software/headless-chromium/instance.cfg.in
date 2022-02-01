@@ -1,0 +1,52 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[profile-common]
+openssl-location = {{ openssl_location }}
+nginx-location = {{ nginx_location }}
+liberation-fonts-location = {{ liberation_fonts_location }}
+fontconfig-location = {{ fontconfig_location }}
+chromium-wrapper = {{ chromium_wrapper }}
+devtools-frontend = {{ devtools_frontend }}
+template-nginx-config = {{ template_nginx_config_target }}
+template-fonts-conf = {{ template_fonts_conf_target }}
+template-monitor = {{ template_monitor }}
+template-mime-types = {{ template_mime_types_target }}
+
+[instance-headless-chromium]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_instance_headless_chromium_target }}
+rendered = ${buildout:directory}/${:filename}
+filename = instance-headless-chromium.cfg
+context =
+  section buildout buildout
+  section parameter_list profile-common
+  key partition_ipv4 slap-configuration:ipv4-random
+  key partition_ipv6 slap-configuration:ipv6-random
+  key slapparameter_dict slap-configuration:configuration
+  jsonkey default_parameter_dict :default-parameters
+default-parameters =
+  {
+    "remote-debugging-port": 8081,
+    "nginx-proxy-port": 8082,
+    "target-url": "https://www.example.com",
+    "monitor-httpd-port": 8083
+  }
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = ${:default}
+default = instance-headless-chromium:rendered
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}

@@ -3,7 +3,7 @@ request = portal.REQUEST
 reference = request['reference']
 data_chunk = request['data_chunk']
 
-module = portal.data_stream_module
+promise = portal.data_stream_module
 try:
   data_stream = module[reference]
 except KeyError:

@@ -137,12 +137,17 @@ command-line = ${buildout:bin-directory}/generatefeed --output $${:feed-path} --
 feed-path = $${directory:monitor-resilient}/pbs-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 
+[pbs-status-feed-first-run]
+recipe = plone.recipe.command
+command = $${pbs-resilient-status-feed:wrapper-path}
+stop-on-error = true
+
 [cron-pbs-status-feed]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = resilient-pbs-status-feed
 frequency = */5 * * * *
-command = $${pbs-resilient-status-feed:wrapper-path}
+command = $${pbs-status-feed-first-run:command}
 
 [logrotate-entry-notifier]
 <= logrotate-entry-base
@@ -212,7 +217,7 @@ wrapper-path = $${rootdirectory:bin}/stalled-pull-push
 
 [pull-push-stalled-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = stalled-pull-push.py
 config-command = $${pull-push-stalled-promise-bin:wrapper-path}
 
@@ -228,7 +233,7 @@ context =
 
 [notifier-feed-status-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = notifier-feed-check-malformed-or-failure.py
 config-command = $${notifier-feed-status-promise-bin:rendered}
 
@@ -245,6 +250,7 @@ monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
 monitor-url = $${monitor-publish-parameters:monitor-url}
 monitor-user = $${monitor-publish-parameters:monitor-user}
 monitor-password = $${monitor-publish-parameters:monitor-password}
+monitor-setup-url = $${monitor-publish:monitor-setup-url}
 
 #----------------
 #--
@@ -264,7 +270,7 @@ private-path-list +=
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+template = ${template-monitor-check-resilient-feed:target}
 rendered = $${monitor-directory:bin}/check-create-resilient-feed-files
 mode = 700
 context =

@@ -17,27 +17,31 @@ def updateMysql(mysql_upgrade_binary, mysql_binary, mysql_script_file):
   while True:
     while True:
       mysql_upgrade = subprocess.Popen(mysql_upgrade_binary,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True)
       result = mysql_upgrade.communicate()[0]
       if mysql_upgrade.returncode:
         print("Command %r failed with result:\n%s" % (mysql_upgrade_binary, result))
         break
       print("MySQL database upgraded with result:\n%s" % result)
       mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
-          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+          universal_newlines=True)
       result = mysql.communicate(mysql_script)[0]
       if mysql.returncode:
         print('Command %r failed with:\n%s' % (mysql_list, result))
         break
       # import timezone database
       mysql_tzinfo_to_sql = subprocess.Popen(mysql_tzinfo_to_sql_list, stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               universal_newlines=True)
       timezone_sql = mysql_tzinfo_to_sql.communicate()[0]
       if mysql_tzinfo_to_sql.returncode != 0:
         print('Command %r failed with:\n%s' % (mysql_tzinfo_to_sql_list, result))
         break
       mysql = subprocess.Popen(mysql_list + ('mysql',), stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               universal_newlines=True)
       result = mysql.communicate(timezone_sql)[0]
       if mysql.returncode:
         print('Command %r failed with:\n%s' % (mysql_list, result))

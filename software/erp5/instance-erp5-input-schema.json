@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Parameters to instantiate ERP5",
+  "type": "object",
   "additionalProperties": false,
   "definitions": {
     "routing-rule-list": {
@@ -216,7 +217,7 @@
             },
             "timerserver-interval": {
               "description": "Timerserver tick period, in seconds, or 0 to disable",
-              "default": 5,
+              "default": 1,
               "type": "number"
             },
             "private-dev-shm": {
@@ -564,7 +565,8 @@
                 "target": {
                   "description": "Target system",
                   "type": "string",
-                  "const": "selenium-server"
+                  "const": "selenium-server",
+                  "default": "selenium-server"
                 },
                 "server-url": {
                   "description": "URL of the selenium server",
@@ -620,6 +622,11 @@
               }
             }
           ]
+        },
+        "random-activity-priority": {
+          "type": "string",
+          "title": "Random Activity Priority",
+          "description": "Control `random_activity_priority` argument of test runner. Can be set to an empty string to automatically generate a seed for each test."
         }
       },
       "type": "object"

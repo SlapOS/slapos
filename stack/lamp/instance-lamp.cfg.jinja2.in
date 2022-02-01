@@ -77,12 +77,11 @@ return = domain secure_access
 
 [lamp-frontend-promise]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = lamp-http-frontend.py
 url = ${request-frontend:connection-secure_access}
 config-url = ${:url}
 config-custom-domain = {{ slapparameter_dict.get('custom-domain', '') }}
-config-check-secure = 1
 
 {% do publish_dict.__setitem__('url', '${lamp-frontend-promise:url}') -%}
 

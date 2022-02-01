@@ -52,7 +52,7 @@ wrapper-path = ${directory:service-on-watch}/wcfs
 
 [wcfs-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = {{ bin_directory }}/wcfs status {{ zurl }}
 

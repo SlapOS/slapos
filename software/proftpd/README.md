@@ -12,6 +12,5 @@ http://www.proftpd.org/docs/
 
 # TODO
 
- * log rotation
  * make sure SFTPLog is useful (seems very verbose and does not contain more than stdout)
  * allow configuring webhooks when new file is uploaded

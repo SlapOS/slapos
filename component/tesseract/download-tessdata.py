@@ -19,9 +19,13 @@ def post_make_hook(options, buildout, env):
   for url in options['tessdata-urls'].splitlines():
     url, _, md5sum = url.partition('#')
     if url:
+      destination = os.path.join(
+          options['tessdata-location'],
+          os.path.basename(url),
+      )
       download(
           url,
           md5sum=md5sum,
-          path=os.path.join(options['tessdata-location'],
-                            os.path.basename(url)),
+          path=destination,
       )
+      os.chmod(destination, 0o750)

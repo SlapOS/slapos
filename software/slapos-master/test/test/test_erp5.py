@@ -41,31 +41,50 @@ import requests
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
-setUpModule  # pyflakes
+setUpModule # pyflakes
 
 
 class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
   """
-  def _checkERP5IsReachable(self, url):
+
+  def _checkERP5IsReachable(self, base_url, site_id, verify):
+    # We access ERP5 trough a "virtual host", which should make
+    # ERP5 produce URLs using https://virtual-host-name:1234/virtual_host_root
+    # as base.
+    virtual_host_url = urlparse.urljoin(
+        base_url,
+        '/VirtualHostBase/https/virtual-host-name:1234/{}/VirtualHostRoot/_vh_virtual_host_root/'
+        .format(site_id))
+
     # What happens is that instantiation just create the services, but does not
     # wait for ERP5 to be initialized. When this test run ERP5 instance is
-    # instantiated, but zope is still busy creating the site and haproxy
-    # replies with 503 Service Unavailable when zope is not started yet, with
-    # 404 when erp5 site is not created, with 500 when mysql is not yet
-    # reachable, so we retry in a loop until we get a succesful response.
-    for i in range(1, 60):
-      # XXX can we get CA from caucase already ?
-      r = requests.get(url, verify=False)
-      if r.status_code != requests.codes.ok:
-        delay = i * 2
-        self.logger.warn(
-          "ERP5 was not available, sleeping for %ds and retrying", delay)
-        time.sleep(delay)
-        continue
-      r.raise_for_status()
-      break
+    # instantiated, but zope is still busy creating the site and haproxy replies
+    # with 503 Service Unavailable when zope is not started yet, with 404 when
+    # erp5 site is not created, with 500 when mysql is not yet reachable, so we
+    # configure this requests session to retry.
+    # XXX we should probably add a promise instead
+    session = requests.Session()
+    session.mount(
+        base_url,
+        requests.adapters.HTTPAdapter(
+            max_retries=requests.packages.urllib3.util.retry.Retry(
+                total=60,
+                backoff_factor=.5,
+                status_forcelist=(404, 500, 503))))
 
+    r = session.get(virtual_host_url, verify=verify, allow_redirects=False)
+    self.assertEqual(r.status_code, requests.codes.found)
+    # access on / are redirected to login form, with virtual host preserved
+    self.assertEqual(r.headers.get('location'), 'https://virtual-host-name:1234/virtual_host_root/login_form')
+
+    # login page can be rendered and contain the text "ERP5"
+    r = session.get(
+        urlparse.urljoin(base_url, '{}/login_form'.format(site_id)),
+        verify=verify,
+        allow_redirects=False,
+    )
+    self.assertEqual(r.status_code, requests.codes.ok)
     self.assertIn("ERP5", r.text)
 
   def test_published_family_default_v6_is_reachable(self):
@@ -73,15 +92,18 @@ class TestPublishedURLIsReachableMixin(object):
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default-v6'], param_dict['site-id']))
+      param_dict['family-default-v6'],
+      param_dict['site-id'],
+      verify=False)
 
   def test_published_family_default_v4_is_reachable(self):
     """Tests the IPv4 URL published by the root partition is reachable.
     """
     param_dict = self.getRootPartitionConnectionParameterDict()
     self._checkERP5IsReachable(
-      urlparse.urljoin(param_dict['family-default'], param_dict['site-id']))
-
+      param_dict['family-default'],
+      param_dict['site-id'],
+      verify=False)
 
 class TestDefaultParameters(
   ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
@@ -98,6 +120,30 @@ class TestMedusa(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({'wsgi': False})}
+
+class TestJupyter(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+  """Test ERP5 Jupyter notebook
+  """
+  __partition_reference__ = 'jupyter'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({'jupyter': {'enable': True}})}
+
+  def test_jupyter_notebook_is_reachable(self):
+    param_dict = self.getRootPartitionConnectionParameterDict()
+
+    self.assertEqual(
+      'https://[%s]:8888/tree' % self._ipv6_address,
+      param_dict['jupyter-url']
+    )
+
+    result = requests.get(
+      param_dict['jupyter-url'], verify=False, allow_redirects=False)
+    self.assertEqual(
+      [requests.codes.found, True, '/login?next=%2Ftree'],
+      [result.status_code, result.is_redirect, result.headers['Location']]
+    )
 
 
 class TestApacheBalancerPorts(ERP5InstanceTestCase):
@@ -132,19 +178,16 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     self.assertTrue(parsed.port)
 
   def test_published_family_parameters(self):
-    # when we request two families, we have two published family-{family_name}
-    # URLs
+    # when we request two families, we have two published family-{family_name} URLs
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       self.checkValidHTTPSURL(
           param_dict['family-{family_name}'.format(family_name=family_name)])
       self.checkValidHTTPSURL(
-          param_dict['family-{family_name}-v6'.format(
-            family_name=family_name)])
+          param_dict['family-{family_name}-v6'.format(family_name=family_name)])
 
   def test_published_test_runner_url(self):
-    # each family's also a list of test test runner URLs, by default 3 per
-    # family
+    # each family's also a list of test test runner URLs, by default 3 per family
     param_dict = self.getRootPartitionConnectionParameterDict()
     for family_name in ('family1', 'family2'):
       family_test_runner_url_list = param_dict[
@@ -154,8 +197,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
         self.checkValidHTTPSURL(url)
 
   def test_zope_listen(self):
-    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8
-    # zope running.
+    # we requested 3 zope in family1 and 5 zopes in family2, we should have 8 zope running.
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
     self.assertEqual(
@@ -190,46 +232,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     ])
 
 
-class TestDisableTestRunner(
-  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
-  """Test ERP5 can be instantiated without test runner.
-  """
-  __partition_reference__ = 'distr'
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {'_': json.dumps({'test-runner': {'enabled': False}})}
-
-  def test_no_runUnitTestScript(self):
-    """No runUnitTest script should be generated in any partition.
-    """
-    # self.computer_partition_root_path is the path of root partition.
-    # we want to assert that no scripts exist in any partition.
-    bin_programs = map(
-      os.path.basename,
-      glob.glob(self.computer_partition_root_path + "/../*/bin/*"))
-
-    self.assertTrue(bin_programs)  # just to check the glob was correct.
-    self.assertNotIn('runUnitTest', bin_programs)
-    self.assertNotIn('runTestSuite', bin_programs)
-
-  def test_no_apache_testrunner_port(self):
-    # Apache only listen on two ports, there is no apache ports allocated for
-    # test runner
-    with self.slap.instance_supervisor_rpc as supervisor:
-      all_process_info = supervisor.getAllProcessInfo()
-    process_info, = [p for p in all_process_info if p['name'] == 'apache']
-    apache_process = psutil.Process(process_info['pid'])
-    self.assertEqual(
-        sorted([socket.AF_INET, socket.AF_INET6]),
-        sorted(
-            c.family
-            for c in apache_process.connections()
-            if c.status == 'LISTEN'
-        ))
-
-
-class TestZopeNodeParameterOverride(
-  ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
+class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test override zope node parameters
   """
   __partition_reference__ = 'override'
@@ -244,7 +247,7 @@ class TestZopeNodeParameterOverride(
         "server": {},
         "cache-size-bytes": "20MB",
         "cache-size-bytes!": [
-          ("bb-0", 1 << 20),
+          ("bb-0", 1<<20),
           ("bb-.*", "500MB"),
         ],
         "pool-timeout": "10m",
@@ -315,7 +318,7 @@ class TestZopeNodeParameterOverride(
     partition = self.getComputerPartitionPath('zope-bb')
     for zope in xrange(5):
       checkConf({
-          "cache-size-bytes": "500MB" if zope else 1 << 20,
+          "cache-size-bytes": "500MB" if zope else 1<<20,
         }, {
           "cache-size": None,
         })

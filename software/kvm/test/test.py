@@ -31,10 +31,12 @@ import os
 import glob
 import hashlib
 import psutil
+import re
 import requests
 import six
 import slapos.util
 import sqlite3
+import stat
 from six.moves.urllib.parse import parse_qs, urlparse
 import unittest
 import subprocess
@@ -46,6 +48,7 @@ import time
 import shutil
 import sys
 
+from slapos.qemuqmpclient import QemuQMPWrapper
 from slapos.proxy.db_version import DB_VERSION
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -60,6 +63,8 @@ if has_kvm:
     os.path.abspath(
       os.path.join(os.path.dirname(__file__), '..',
                    'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+  # XXX Keep using slapos node instance --all, because of missing promises
+  InstanceTestCase.slap._force_slapos_node_instance_all = True
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
@@ -203,6 +208,108 @@ i0:whitelist-firewall-{hash} RUNNING""",
     )
 
 
+@skipUnlessKvm
+class TestMemoryManagement(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'i'
+
+  def getKvmProcessInfo(self, switch_list):
+    return_list = []
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
+                 if 'kvm-' in q['name']][0]['pid']
+      kvm_process = psutil.Process(kvm_pid)
+      get_next = False
+      for entry in kvm_process.cmdline():
+        if get_next:
+          return_list.append(entry)
+          get_next = False
+        elif entry in switch_list:
+          get_next = True
+    return kvm_pid, return_list
+
+  def test(self):
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
+      info_list
+    )
+    self.rerequestInstance({
+      'ram-size': '1536',
+      'cpu-count': '2',
+    })
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['2,maxcpus=3', '1536M,slots=128,maxmem=2048M'],
+      info_list
+    )
+
+    # assert that process was restarted
+    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
+
+  def tearDown(self):
+    self.rerequestInstance({})
+    self.slap.waitForInstance(max_retry=10)
+
+  def test_enable_device_hotplug(self):
+    def getHotpluggedCpuRamValue():
+      qemu_wrapper = QemuQMPWrapper(os.path.join(
+        self.computer_partition_root_path, 'var', 'qmp_socket'))
+      ram_mb = sum(
+        [q['size']
+         for q in qemu_wrapper.getMemoryInfo()['hotplugged']]) / 1024 / 1024
+      cpu_count = len(
+        [q['CPU'] for q in qemu_wrapper.getCPUInfo()['hotplugged']])
+      return {'cpu_count': cpu_count, 'ram_mb': ram_mb}
+
+    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+    self.assertEqual(
+      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
+      info_list
+    )
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 0, 'ram_mb': 0}
+    )
+
+    parameter_dict = {
+      'enable-device-hotplug': 'true',
+      # to avoid restarts the max RAM and CPU has to be static
+      'ram-max-size': '8192',
+      'cpu-max-count': '6',
+    }
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=2)
+    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
+      info_list
+    )
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 0, 'ram_mb': 0}
+    )
+    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
+    parameter_dict.update(**{
+      'ram-size': '5120',
+      'cpu-count': '4'
+    })
+    self.rerequestInstance(parameter_dict)
+    self.slap.waitForInstance(max_retry=10)
+    kvm_pid_3, info_list = self.getKvmProcessInfo(['-smp', '-m'])
+
+    self.assertEqual(
+      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
+      info_list
+    )
+    self.assertEqual(kvm_pid_2, kvm_pid_3, "Unexpected: KVM restarted")
+    self.assertEqual(
+      getHotpluggedCpuRamValue(),
+      {'cpu_count': 2, 'ram_mb': 1024}
+    )
+
+
 class MonitorAccessMixin(object):
   def sqlite3_connect(self):
     sqlitedb_file = os.path.join(
@@ -223,7 +330,7 @@ class MonitorAccessMixin(object):
       }
       return db.execute(
         "SELECT reference, xml, connection_xml, partition_reference,"
-              " software_release, requested_state, software_type"
+        " software_release, requested_state, software_type"
         " FROM partition%s"
         " WHERE slap_state='busy'" % DB_VERSION).fetchall()
     finally:
@@ -466,6 +573,25 @@ class TestInstanceResilient(InstanceTestCase, KvmMixin):
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
 
+  def test_kvm_exporter(self):
+    exporter_partition = os.path.join(
+      self.slap.instance_directory,
+      self.__partition_reference__ + '2')
+    backup_path = os.path.join(
+      exporter_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2.gz')
+    exporter = os.path.join(exporter_partition, 'bin', 'exporter')
+    if os.path.exists(backup_path):
+      os.unlink(backup_path)
+
+    def call_exporter():
+      try:
+        return (0, subprocess.check_output(
+          [exporter], stderr=subprocess.STDOUT).decode('utf-8'))
+      except subprocess.CalledProcessError as e:
+        return (e.returncode, e.output.decode('utf-8'))
+    status_code, status_text = call_exporter()
+    self.assertEqual(0, status_code, status_text)
+
   def test(self):
     connection_parameter_dict = self\
       .computer_partition.getConnectionParameterDict()
@@ -537,6 +663,15 @@ ir3:sshd-graceful EXITED
 ir3:sshd-on-watch RUNNING""",
       self.getProcessInfo()
     )
+
+
+@skipUnlessKvm
+class TestInstanceResilientDiskTypeIde(InstanceTestCase, KvmMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'disk-type': 'ide'
+    }
 
 
 @skipUnlessKvm
@@ -707,6 +842,29 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.stopImageHttpServer()
     super(InstanceTestCase, self).tearDown()
 
+  def getRunningImageList(self, kvm_instance_partition,
+      _match_cdrom=re.compile('file=(.+),media=cdrom$').match,
+      _sub_iso=re.compile(r'(/debian)(-[^-/]+)(-[^/]+-netinst\.iso)$').sub,
+      ):
+    with self.slap.instance_supervisor_rpc as instance_supervisor:
+      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
+                       if 'kvm-' in q['name'])['pid']
+    sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
+                            % re.escape(self.slap.shared_directory)).sub
+    image_list = []
+    for entry in psutil.Process(kvm_pid).cmdline():
+      m = _match_cdrom(entry)
+      if m:
+        path = m.group(1)
+        st = os.stat(path)
+        if stat.S_ISREG(st.st_mode) and st.st_size:
+          image_list.append(
+            _sub_iso(r'\1-${ver}\3',
+            sub_shared(r'${shared}/',
+            path.replace(kvm_instance_partition, '${inst}')
+          )))
+    return image_list
+
   def test(self):
     partition_parameter_kw = {
       self.key: self.test_input % (
@@ -738,23 +896,6 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
     self.assertTrue(os.path.islink(image2_link))
     self.assertEqual(os.readlink(image2_link), image2)
 
-    def getRunningImageList():
-      running_image_list = []
-      with self.slap.instance_supervisor_rpc as instance_supervisor:
-        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                   if 'kvm-' in q['name']][0]['pid']
-        kvm_process = psutil.Process(kvm_pid)
-        software_root = '/'.join([
-          self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
-        for entry in kvm_process.cmdline():
-          if entry.startswith('file') and 'media=cdrom' in entry:
-            # do cleanups
-            entry = entry.replace(software_root, '')
-            entry = entry.replace(kvm_instance_partition, '')
-            running_image_list.append(entry)
-      return running_image_list
-
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
@@ -764,12 +905,11 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     self.assertEqual(
       [
-        'file=/srv/%s/image_001,media=cdrom' % (self.image_directory,),
-        'file=/srv/%s/image_002,media=cdrom' % (self.image_directory,),
-        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom'
+        '${inst}/srv/%s/image_001' % self.image_directory,
+        '${inst}/srv/%s/image_002' % self.image_directory,
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      getRunningImageList()
+      self.getRunningImageList(kvm_instance_partition)
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -791,9 +931,8 @@ class TestBootImageUrlList(InstanceTestCase, FakeImageServerMixin):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
     )
 
   def assertPromiseFails(self, promise):
@@ -927,23 +1066,6 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
 
-    def getRunningImageList():
-      running_image_list = []
-      with self.slap.instance_supervisor_rpc as instance_supervisor:
-        kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                   if 'kvm-' in q['name']][0]['pid']
-        kvm_process = psutil.Process(kvm_pid)
-        software_root = '/'.join([
-          self.slap.software_directory,
-          hashlib.md5(self.getSoftwareURL().encode('utf-8')).hexdigest()])
-        for entry in kvm_process.cmdline():
-          if entry.startswith('file') and 'media=cdrom' in entry:
-            # do cleanups
-            entry = entry.replace(software_root, '')
-            entry = entry.replace(kvm_instance_partition, '')
-            running_image_list.append(entry)
-      return running_image_list
-
     # mimic the requirement: restart the instance by requesting it stopped and
     # then started started, like user have to do it
     self.rerequestInstance(partition_parameter_kw, state='stopped')
@@ -953,12 +1075,11 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     self.assertEqual(
       [
-        'file=/srv/boot-image-url-select-repository/image_001,media=cdrom',
-        'file=/srv/boot-image-url-list-repository/image_001,media=cdrom',
-        'file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-        'media=cdrom'
+        '${inst}/srv/boot-image-url-select-repository/image_001',
+        '${inst}/srv/boot-image-url-list-repository/image_001',
+        '${shared}/debian-${ver}-amd64-netinst.iso',
       ],
-      getRunningImageList()
+      self.getRunningImageList(kvm_instance_partition)
     )
 
     # cleanup of images works, also asserts that configuration changes are
@@ -995,9 +1116,8 @@ class TestBootImageUrlSelect(TestBootImageUrlList):
 
     # again only default image is available in the running process
     self.assertEqual(
-      ['file=/parts/debian-amd64-netinst.iso/debian-amd64-netinst.iso,'
-       'media=cdrom'],
-      getRunningImageList()
+      ['${shared}/debian-${ver}-amd64-netinst.iso'],
+      self.getRunningImageList(kvm_instance_partition)
     )
 
 
@@ -1085,27 +1205,6 @@ class TestBootImageUrlSelectKvmCluster(TestBootImageUrlListKvmCluster):
   input_value = "[\"%s#%s\"]"
   key = 'boot-image-url-select'
   config_file_name = 'boot-image-url-select.json'
-
-
-@skipUnlessKvm
-class TestCpuMemMaxDynamic(InstanceTestCase):
-  __partition_reference__ = 'cmm'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      'cpu-count': 2,
-      'ram-size': 2048
-    }
-
-  def test(self):
-    with open(os.path.join(
-     self.computer_partition_root_path, 'bin', 'kvm_raw'), 'r') as fh:
-      kvm_raw = fh.read()
-    self.assertIn('smp_count = 2', kvm_raw)
-    self.assertIn('smp_max_count = 3', kvm_raw)
-    self.assertIn('ram_size = 2048', kvm_raw)
-    self.assertIn("ram_max_size = '2560'", kvm_raw)
 
 
 @skipUnlessKvm
@@ -1308,7 +1407,8 @@ class TestDiskDevicePathWipeDiskOndestroy(InstanceTestCase, KvmMixin):
     with open(slapos_wipe_device_disk) as fh:
       self.assertEqual(
         fh.read().strip(),
-        r"""dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
+        r"""#!/bin/sh
+dd if=/dev/zero of=/dev/virt0 bs=4096 count=500k
 dd if=/dev/zero of=/dev/virt1 bs=4096 count=500k"""
       )
     self.assertTrue(os.access(slapos_wipe_device_disk, os.X_OK))
@@ -1337,7 +1437,7 @@ class TestImageDownloadController(InstanceTestCase, FakeImageServerMixin):
     self.image_download_controller = os.path.join(
       self.slap.instance_directory, self.__partition_reference__ + '0',
       'software_release', 'parts', 'image-download-controller',
-      'image-download-controller')
+      'image-download-controller.py')
 
   def tearDown(self):
     self.stopImageHttpServer()
@@ -1519,3 +1619,101 @@ INF: Storing errors in %(error_state_file)s
     self.assertFalse(
       os.path.exists(
         os.path.join(self.destination_directory, 'destination')))
+
+
+@skipUnlessKvm
+class TestParameterDefault(InstanceTestCase, KvmMixin):
+  __partition_reference__ = 'pd'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default'
+
+  def mangleParameterDict(self, parameter_dict):
+    return parameter_dict
+
+  def _test(self, parameter_dict, expected):
+    self.rerequestInstance(self.mangleParameterDict(parameter_dict))
+    self.slap.waitForInstance(max_retry=10)
+    
+    kvm_raw = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
+    self.assertEqual(len(kvm_raw), 1)
+    kvm_raw = kvm_raw[0]
+    with open(kvm_raw, 'r') as fh:
+      kvm_raw = fh.read()
+    self.assertIn(expected, kvm_raw)
+
+  def test_disk_type_default(self):
+    self._test({}, "disk_type = 'virtio'")
+
+  def test_disk_type_set(self):
+    self._test({'disk-type': 'ide'}, "disk_type = 'ide'")
+
+  def test_network_adapter_default(self):
+    self._test({}, "network_adapter = 'virtio-net-pci")
+
+  def test_network_adapter_set(self):
+    self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+
+  def test_cpu_count_default(self):
+    self._test({}, "init_smp_count = 2")
+
+  def test_cpu_count_default_max(self):
+    self._test({}, "smp_max_count = 3")
+
+  def test_cpu_count_set(self):
+    self._test({'cpu-count': 4}, "init_smp_count = 4")
+
+  def test_cpu_count_set_max(self):
+    self._test({'cpu-count': 4}, "smp_max_count = 5")
+
+  def test_ram_size_default(self):
+    self._test({}, "init_ram_size = 4096")
+
+  def test_ram_size_default_max(self):
+    self._test({}, "ram_max_size = '4608'")
+
+  def test_ram_size_set(self):
+    self._test({'ram-size': 2048}, "init_ram_size = 2048")
+
+  def test_ram_size_set_max(self):
+    self._test({'ram-size': 2048}, "ram_max_size = '2560'")
+
+
+@skipUnlessKvm
+class TestParameterResilient(TestParameterDefault):
+  __partition_reference__ = 'pr'
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+
+@skipUnlessKvm
+class TestParameterCluster(TestParameterDefault):
+  __partition_reference__ = 'pc'
+
+  parameter_dict = {
+    "disable-ansible-promise": True
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": cls.parameter_dict
+      }
+    })}
+
+  def mangleParameterDict(self, parameter_dict):
+    local_parameter_dict = self.parameter_dict.copy()
+    local_parameter_dict.update(parameter_dict)
+    return {'_': json.dumps({
+      "kvm-partition-dict": {
+        "KVM0": local_parameter_dict
+      }
+    })}
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'

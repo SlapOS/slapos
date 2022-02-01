@@ -4,6 +4,7 @@
 {%- for i in range(1, replicate_quantity + 1) %}
 {%- do parameter_dict.setdefault("title-%d" % i, "") %}
 {%- do parameter_dict.setdefault("port-%d" % i, 8081 + i) %}
+{%- do parameter_dict.setdefault("monitor-httpd-port-%d" % i, 8197 + i) %}
 {%- endfor %}
 
 # Standard buildout section
@@ -30,7 +31,8 @@ software-type = default
 # What parameter are neede to be retrieved
 return = server_url server-cdn-url monitor-setup-url
 # Provided parameters
-config-download_url = {{ parameter_dict['download_url'] }}
+# We add: or '', otherwise jinja2 will render a 'None' string
+config-download_url = {{ parameter_dict['download_url'] or '' }}
 
 # Create request section in a loop.
 {% for i in range(1, replicate_quantity + 1) %}
@@ -41,6 +43,7 @@ config-download_url = {{ parameter_dict['download_url'] }}
 name = instance-html5as-{{ i }}
 config-port = {{ parameter_dict["port-%s" % i] }}
 config-title = {{ parameter_dict["title-%s" % i] }}
+config-monitor-httpd-port = {{ parameter_dict["monitor-httpd-port-%s" % i] }}
 {%   if "sla-%s-computer-guid" % i in parameter_dict -%}
 sla-computer_guid = {{ parameter_dict["sla-%s-computer-guid" % i] }}
 {%   endif -%}

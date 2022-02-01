@@ -170,14 +170,14 @@ context =
 
 [re6st-registry-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = re6st-registry.py
 config-host = ${re6st-registry:ipv4}
 config-port = ${re6st-registry:port}
 
 [apache-registry-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = apache-re6st-registry.py
 config-host = ${apache-conf:ipv6}
 config-port = ${apache-conf:port}

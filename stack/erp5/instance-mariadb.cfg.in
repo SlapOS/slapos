@@ -1,7 +1,7 @@
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure', 'with-process-privilege': True}]) -%}
 {% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 1)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
@@ -333,7 +333,7 @@ context =
 {%if slapparameter_dict.get('max-slowqueries-threshold') and slapparameter_dict.get('slowest-query-threshold') %}
 [{{ section('monitor-promise-slowquery-result') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-slow-query-pt-digest-result.py
 config-command = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_path "${directory:slowquery}" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${:max_queries_threshold}" --slowest_query_threshold "${:slowest_queries_threshold}"
 max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
@@ -342,13 +342,13 @@ slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 
 [{{ section('promise') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = mariadb.py
 config-command = "${binary-wrap-mysql:wrapper-path}"  --execute ';' {% if database_list and database_list[0].get('user') %} --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}" --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}" {% endif %}
 

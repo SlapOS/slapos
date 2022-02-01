@@ -87,7 +87,7 @@ wrapper-path = ${directory:service}/helloweb-${:kind}
 # promise, that checks that helloweb service is alive
 [helloweb-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = helloweb-${:kind}.py
 
 {# macro to instantiate service of `kind` to listen on `port` #}

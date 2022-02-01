@@ -91,6 +91,6 @@ mode = 700
 [kvm-disk-image-corruption-promise]
 # Check that disk image is not corrupted
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = kvm-disk-image-corruption.py
 config-command = ${kvm-disk-image-corruption-bin:output}

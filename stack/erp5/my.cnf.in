@@ -56,6 +56,16 @@ log_bin = {{ log_bin }}
 {% set binlog_expire_days = parameter_dict['binlog-expire-days'] -%}
 {% if binlog_expire_days > 0 %}expire_logs_days = {{ binlog_expire_days }}{% endif %}
 server_id = {{ parameter_dict['server-id'] }}
+# Note: increases writes on replica (it writes to relay log and to database as
+# usual, but then also to binlog), but with the advantage of allowing such node
+# to switch role later, or to allow another replica to catch up with it if the
+# primary is not available anymore. This also increases the disk usage on the
+# replica, as the binlogs are stored as usual.
+log_slave_updates = 1
+# Note: as of at least mariadb 10.3.27, the relay log name is not based on the
+# hostname, but still there is a line in mariadb_error.log on every start
+# warning about this missing option. So provide it.
+relay-log = mariadb-relay-bin
 {% endif %}
 
 # Some dangerous settings you may want to uncomment temporarily

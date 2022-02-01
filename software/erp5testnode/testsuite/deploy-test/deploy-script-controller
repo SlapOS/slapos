@@ -83,8 +83,6 @@ function upload ()
   add_checks $LOG_FILE
   t=`date '+%Y%m%d%H%S'`
   mv $LOG_FILE ${LOG_FILE}.$t
-  # just to be sure flush all disk operations before uploading
-  flush
   curl -q -X POST --data-urlencode "path=test-script-result/log-file.log.$t" --data-urlencode "content@${LOG_FILE}.$t" http://10.0.2.100/
 }
 

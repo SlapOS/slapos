@@ -337,8 +337,8 @@ class TestFrontend(WebServerMixin, SeleniumServerTestCase):
 class TestSSHServer(SeleniumServerTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
-    cls.ssh_key = paramiko.RSAKey.generate(1024)
-    return {'ssh-authorized-key': 'ssh-rsa {}'.format(cls.ssh_key.get_base64())}
+    cls.ssh_key = paramiko.ECDSAKey.generate(bits=384)
+    return {'ssh-authorized-key': 'ecdsa-sha2-nistp384 {}'.format(cls.ssh_key.get_base64())}
 
   def test_connect(self):
     parameter_dict = self.computer_partition.getConnectionParameterDict()

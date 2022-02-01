@@ -43,7 +43,7 @@ rendered = ${rootdirectory:bin}/check-nbd-running.sh
 
 [nbd-promise]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = nbd_promise.py
 config-command = ${nbd-checker-bin:rendered}
 
@@ -65,7 +65,7 @@ key = ${gen-passwd:passwd}
 
 [onetimeupload-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = onetimeupload_promise.py
 config-host = ${onetimeupload-instance:ip}
 config-port = ${onetimeupload-instance:port}

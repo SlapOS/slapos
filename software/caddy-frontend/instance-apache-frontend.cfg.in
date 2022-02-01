@@ -1,4 +1,3 @@
-{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 [buildout]
@@ -11,6 +10,7 @@ parts =
   directory
   logrotate-entry-caddy
   caddy-frontend
+  caddyprofiledeps
   switch-caddy-softwaretype
   caucase-updater
   caucase-updater-promise
@@ -58,6 +58,7 @@ parts =
   promise-slave-introspection-https
   promise-slave-introspection-configuration
   logrotate-entry-slave-introspection
+  backend-haproxy-statistic-frontend-promise
 
 [caddyprofiledeps]
 recipe = caddyprofiledeps
@@ -97,9 +98,11 @@ expose-csr_id-var = ${:var}/expose-csr_id
 slave-introspection-var = ${:var}/slave-introspection
 
 [switch-caddy-softwaretype]
-recipe = slapos.cookbook:softwaretype
-single-default = ${dynamic-custom-personal-profile-slave-list:rendered}
-single-custom-personal = ${dynamic-custom-personal-profile-slave-list:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-custom-personal-profile-slave-list:rendered
+RootSoftwareInstance = ${:default}
+single-default = dynamic-custom-personal-profile-slave-list:rendered
+single-custom-personal = dynamic-custom-personal-profile-slave-list:rendered
 
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
@@ -114,7 +117,7 @@ slave-introspection-domain = ${slave-introspection-frontend:connection-domain}
 # Self Signed certificate for HTTPS IP accesses to the frontend
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-network-information:global-ipv6}
+ipv6 = ${slap-configuration:ipv6-random}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
@@ -138,7 +141,7 @@ command =
 # Self Signed certificate for HTTPS access to the frontend with fallback certificate
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-network-information:global-ipv6}
+ipv6 = ${slap-configuration:ipv6-random}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${caddy-directory:master-autocert-dir}/fallback-access.crt
 {#- Can be stopped on error, as does not rely on self provided service #}
@@ -282,6 +285,7 @@ software_type = single-custom-personal
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational-unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 backend-client-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
+partition_ipv6 =  ${slap-configuration:ipv6-random}
 extra-context =
     key caddy_configuration_directory caddy-directory:slave-configuration
     key backend_client_caucase_url :backend-client-caucase-url
@@ -293,7 +297,7 @@ extra-context =
     key caddy_log_directory caddy-directory:slave-log
     key expose_csr_id_organization :organization
     key expose_csr_id_organizational_unit :organizational-unit
-    key global_ipv6 slap-network-information:global-ipv6
+    key global_ipv6 slap-configuration:ipv6-random
     key empty_template software-release-path:template-empty
     key template_default_slave_configuration software-release-path:template-default-slave-virtualhost
     key software_type :software_type
@@ -328,8 +332,8 @@ extra-context =
     section frontend_configuration frontend-configuration
     key http_port configuration:plain_http_port
     key https_port configuration:port
+    key global_ipv6 slap-configuration:ipv6-random
     key local_ipv4 :local_ipv4
-    key global_ipv6 slap-network-information:global-ipv6
     key error_log caddy-configuration:error-log
     key not_found_file caddy-configuration:not-found-file
     key username monitor-instance-parameter:username
@@ -535,7 +539,7 @@ context =
 
 [trafficserver-promise-listen-port]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = trafficserver-port-listening.py
 config-host = ${trafficserver-variable:local-ip}
 config-port = ${trafficserver-variable:input-port}
@@ -548,7 +552,7 @@ environment = TS_ROOT=${buildout:directory}
 
 [trafficserver-promise-cache-availability]
 <= monitor-promise-base
-module = trafficserver_cache_availability
+promise = trafficserver_cache_availability
 name = trafficserver-cache-availability.py
 config-wrapper-path = ${trafficserver-ctl:wrapper-path}
 
@@ -649,48 +653,48 @@ context =
 
 [promise-frontend-caddy-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = frontend-caddy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:rendered}
 
 [promise-caddy-frontend-v4-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv4_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v4-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv4_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-caddy-frontend-v6-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv6_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:port}
 
 [promise-caddy-frontend-v6-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = caddy_frontend_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
 [promise-backend-haproxy-http]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = backend_haproxy_http.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:http-port}
 
 [promise-backend-haproxy-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
 config-port = ${backend-haproxy-configuration:https-port}
@@ -794,7 +798,7 @@ extra-context =
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = backend-haproxy-configuration.py
 config-verification-script = ${promise-backend-haproxy-configuration-helper:rendered}
 
@@ -884,7 +888,7 @@ context =
 
 [monitor-verify-re6st-connectivity]
 <= monitor-promise-base
-module = check_url_available
+promise = check_url_available
 name = re6st-connectivity.py
 config-url = ${configuration:re6st-verification-url}
 
@@ -904,7 +908,7 @@ recipe = slapos.cookbook:requestoptional
 name = Slave Introspection Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.slave-introspection-https-port'] }}/
 config-https-only = true
 return = domain secure_access
 
@@ -914,9 +918,17 @@ recipe = slapos.cookbook:requestoptional
 name = Backend Haproxy Statistic Frontend {{ instance_parameter_dict['configuration.frontend-name'] }}
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config-url = https://[${slap-network-information:global-ipv6}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
+config-url = https://[${slap-configuration:ipv6-random}]:{{ instance_parameter_dict['configuration.backend-haproxy-statistic-port'] }}/
 config-https-only = true
 return = domain secure_access
+
+[backend-haproxy-statistic-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = backend-haproxy-statistic-frontend.py
+config-http-code = 401
+config-url =
+  ${backend-haproxy-statistic-frontend:connection-secure_access}
 
 [slave-introspection-configuration-state]
 <= jinja2-template-base
@@ -964,7 +976,7 @@ extra-context =
 
 [promise-slave-introspection-configuration]
 <= monitor-promise-base
-module = validate_frontend_configuration
+promise = validate_frontend_configuration
 name = slave-introspection-configuration.py
 config-verification-script = ${promise-slave-introspection-configuration-helper:rendered}
 
@@ -981,7 +993,7 @@ context =
 
 [promise-slave-introspection-https]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = slave_introspection_https.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${frontend-configuration:slave-introspection-https-port}
@@ -996,7 +1008,7 @@ delaycompress =
 
 [promise-logrotate-setup]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command =
   ${logrotate:wrapper-path} -d
@@ -1022,5 +1034,3 @@ config-command =
 {%- for key, value in software_parameter_dict.iteritems() %}
 {{ key }} = {{ dumps(value) }}
 {%- endfor %}
-
-{%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}

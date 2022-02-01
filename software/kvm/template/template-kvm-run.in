@@ -19,6 +19,8 @@ qemu_path = {{ repr(parameter_dict["qemu-path"]) }}
 disk_size = {{ repr(parameter_dict["disk-size"]) }}
 disk_type = {{ repr(parameter_dict["disk-type"]) }}
 
+network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
+
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 nbd_list = (('{{ parameter_dict.get("nbd-host") }}',
               {{ parameter_dict.get("nbd-port") }}),
@@ -37,9 +39,9 @@ mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
 tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
 numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
-ram_size = {{ parameter_dict.get("ram-size") }}
 ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
 init_ram_size = {{ parameter_dict.get("init-ram-size") }}
+init_smp_count = {{ parameter_dict.get("init-smp-count") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
@@ -78,7 +80,6 @@ if not disk_info_list:
 {%- endfor %}
   })
 
-smp_count = {{ parameter_dict.get("smp-count") }}
 smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
 cpu_model = '{{ parameter_dict.get("cpu-model") }}'.strip()
@@ -256,7 +257,7 @@ if use_nat == 'true':
   if use_tap == 'true' and tap_ipv6_addr != '':
     rules += ',ipv6=off'
   nat_network_parameter = ['-netdev', rules,
-          '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, mac_address)]
+          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, mac_address)]
 if use_tap == 'true':
   number += 1
   vhost = ''
@@ -265,14 +266,10 @@ if use_tap == 'true':
   tap_network_parameter = ['-netdev',
           'tap,id=lan%s,ifname=%s,script=no,downscript=no%s' % (number,
             tap_interface, vhost),
-          '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, tap_mac_address)]
+          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, tap_mac_address)]
 
-if enable_device_hotplug != 'true':
-  smp = '%s,maxcpus=%s' % (smp_count, smp_max_count)
-  ram = '%sM,slots=128,maxmem=%sM' % (ram_size, ram_max_size)
-else:
-  smp = '1,maxcpus=%s' % smp_max_count
-  ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
+smp = '%s,maxcpus=%s' % (init_smp_count, smp_max_count)
+ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
@@ -282,6 +279,8 @@ kvm_argument_list = [qemu_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
   '-nodefaults',
+  # switch to tablet mode for the mouse to have it synced with a client, see https://wiki.gentoo.org/wiki/QEMU/Options#USB
+  '-usbdevice', 'tablet',
 ]
 for disk_info in disk_info_list:
   kvm_argument_list += (

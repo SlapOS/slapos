@@ -1,6 +1,7 @@
 import os, shutil, tempfile, unittest
 from slapos.recipe import promise_plugin
 from slapos.test.utils import makeRecipe
+from zc.buildout import UserError
 from pprint import pformat
 import stat, json
 import six
@@ -10,7 +11,7 @@ class TestPromisePlugin(unittest.TestCase):
   def setUp(self):
     self.tmp = tempfile.mkdtemp()
     self.output = os.path.join(self.tmp, 'output.py')
-    self.options = options = {
+    self.options = {
       'output': self.output,
       'eggs': 'slapos.cookbook'
     }
@@ -18,9 +19,16 @@ class TestPromisePlugin(unittest.TestCase):
   def tearDown(self):
     shutil.rmtree(self.tmp)
 
-  def test_parameters(self):
-    self.options['mode'] = '0644'
-    self.options['import'] = 'slapos.promise.plugin.check_site_available'
+  def makeRecipe(self):
+    return makeRecipe(
+            promise_plugin.Recipe,
+            options=self.options,
+            name='plugin')
+
+  def installRecipe(self):
+    self.makeRecipe().install()
+
+  def setConfig(self):
     self.options['config-param1'] = "YY^@12"
     self.options['config-param2'] = "23'91'"
     self.options['config-param3'] = None
@@ -28,88 +36,102 @@ class TestPromisePlugin(unittest.TestCase):
 in multi line
 123444
 """
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    recipe.install()
 
+  def assertOutput(self, *expect):
     self.assertTrue(os.path.exists(self.output))
     with open(self.output, 'r') as f:
       content = f.read()
-    self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
+    for s in expect:
+      self.assertIn(s, content)
+
+  def assertConfig(self):
+    items = self.options.items()
+    expect = {k[7:] : v  for k, v in items if k.startswith('config-')}
+    self.assertOutput("extra_config_dict = %s" % pformat(expect, indent=2))
+
+  def assertEmptyConfig(self):
+    self.assertOutput("extra_config_dict = %s" % ('{}' if six.PY3 else '{ }'))
+
+  def test_module(self):
+    self.options['module'] = 'slapos.promise.plugin.check_site_available'
+    self.installRecipe()
+    self.assertOutput("from %s import RunPromise" % self.options['module'])
+    self.assertEmptyConfig()
+
+  def test_file(self):
+    self.options['file'] = __file__
+    self.installRecipe()
+    self.assertOutput("exec(_(%r))" % self.options['file'])
+    self.assertEmptyConfig()
+
+  def test_module_and_parameters(self):
+    self.options['module'] = 'slapos.promise.plugin.check_site_available'
+    self.setConfig()
+    self.installRecipe()
+    self.assertOutput("from %s import RunPromise" % self.options['module'])
+    self.assertConfig()
+
+  def test_file_and_parameters(self):
+    self.options['file'] = __file__
+    self.setConfig()
+    self.installRecipe()
+    self.assertOutput("exec(_(%r))" % self.options['file'])
+    self.assertConfig()
+
+  def test_mode(self):
+    self.options['mode'] = '0644'
+    self.options['module'] = 'slapos.promise.plugin.check_site_available'
+    self.installRecipe()
     self.assertEqual(stat.S_IMODE(os.stat(self.output).st_mode), int('644', 8))
 
-    expected_dict = dict(
-      param1=self.options['config-param1'],
-      param2=self.options['config-param2'],
-      param3=self.options['config-param3'],
-      param4=self.options['config-param4'],
-    )
-    self.assertIn('extra_config_dict = %s' % pformat(expected_dict, indent=2), content)
+  def test_module_and_class(self):
+    self.options['module'] = m = 'slapos.promise.plugin.check_site_available'
+    self.options['class']  = 'MyPromise'
+    self.installRecipe()
+    self.assertOutput("from %s import MyPromise as RunPromise" % m)
 
-  def test_no_module_set(self):
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    with self.assertRaises(KeyError):
-      recipe.install()
+  def test_file_and_class(self):
+    self.options['file'] = __file__
+    self.options['class'] = 'MyPromise'
+    self.installRecipe()
+    self.assertOutput("exec(_(%r))\n\nRunPromise = MyPromise" % __file__)
 
-  def test_default(self):
-    self.options['import'] = 'slapos.promise.plugin.check_site_available'
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    recipe.install()
+  def test_no_module_or_file(self):
+    with self.assertRaises(UserError) as p:
+      self.makeRecipe()
+    msg = str(p.exception)
+    self.assertEqual(msg, "Either 'module' or 'file' is required but not both")
 
-    self.assertTrue(os.path.exists(self.output))
-    self.assertEqual(stat.S_IMODE(os.stat(self.output).st_mode), int('644', 8))
-    with open(self.output) as f:
-      content = f.read()
-    self.assertIn("from slapos.promise.plugin.check_site_available import RunPromise", content)
-    self.assertIn('extra_config_dict = %s' % ('{}' if six.PY3 else '{ }'), content)
-
+  def test_module_and_file(self):
+    self.options['module'] = 'slapos.promise.plugin.check_site_available'
+    self.options['file'] = __file__
+    self.test_no_module_or_file()
 
   def test_bad_parameters(self):
-    self.options['import'] = 'slapos.promise.plugin.check_site_available'
-    self.options['config-param1; print "toto"'] = """#xxxx"\nimport os; os.stat(f)"""
-    self.options['config-param2\n@domething'] = '"#$$*PPP\n\n p = 2*5; print "result is %s" % p'
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    recipe.install()
+    self.options['module'] = 'slapos.promise.plugin.check_site_available'
+    self.options.update((
+      ('config-param1; print "toto"', '#xxxx"\nimport os; os.stat(f)'),
+      ('config-param2\n@domething', '"#$$*PPP\np = 2*5; print "result=%s" % p')
+    ))
+    self.installRecipe()
+    self.assertOutput(
+      r"""'param1; print "toto"': '#xxxx"\nimport os; os.stat(f)',""",
+      r"""'param2\n@domething': '"#$$*PPP\np = 2*5; print "result=%s" % p'"""
+    )
 
-    self.assertTrue(os.path.exists(self.output))
-    with open(self.output) as f:
-      content = f.read()
+  def test_bad_module(self):
+    self.options['module'] = 'slapos.promise.plugin.check_site_available; print "toto"'
+    with self.assertRaises(UserError) as p:
+      self.makeRecipe()
+    self.assertEqual(str(p.exception), "%r is not a valid module name" % self.options['module'])
 
-    expected_param1 = r"""'param1; print "toto"': '#xxxx"\nimport os; os.stat(f)',"""
-    expected_param2 = r"""'param2\n@domething': '"#$$*PPP\n\n p = 2*5; print "result is %s" % p'"""
-    self.assertIn(expected_param1, content)
-    self.assertIn(expected_param2, content)
+  def test_bad_file(self):
+    self.options['file'] = 'print "toto"'
+    self.installRecipe()
+    self.assertOutput(r"""exec(_('print "toto"'))""")
 
-  def test_bad_module_path(self):
-    self.options['import'] = 'slapos.promise.plugin.check_site_available; print "toto"'
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    with self.assertRaises(ValueError) as p:
-      recipe.install()
-
-    self.assertEqual(str(p.exception), "Import path %r is not a valid" % self.options['import'])
-
-  def test_bad_content(self):
-    self.options['content'] = 'from slapos.plugin.check_site_available import toto; print "toto"'
-    recipe = makeRecipe(
-            promise_plugin.Recipe,
-            options=self.options,
-            name='plugin')
-    with self.assertRaises(ValueError) as p:
-      recipe.install()
-
-    self.assertEqual(str(p.exception), "Promise content %r is not valid" % self.options['content'])
-
+  def test_bad_class(self):
+    self.options['class'] = 'MyPromise; print "toto"'
+    with self.assertRaises(UserError) as p:
+      self.makeRecipe()
+    self.assertEqual(str(p.exception), "%r is not a valid class name" % self.options['class'])

@@ -135,8 +135,9 @@ mount.neoppod = {{parameter_dict['neoppod']}}
       status_dict['stderr'] = ''.join(stderr)
 
       if not returncode:
+        os.rename(partdir, dist)
         try:
-          with open(os.path.join(partdir, 'status')) as f:
+          with open(os.path.join(dist, 'status')) as f:
             status = int(f.read())
         except Exception:
           pass
@@ -145,7 +146,7 @@ mount.neoppod = {{parameter_dict['neoppod']}}
           try:
             curses.setupterm('screen')
             rmkx = curses.tigetstr('rmkx')
-            with open(os.path.join(partdir, 'stdout')) as f:
+            with open(os.path.join(dist, 'stdout')) as f:
               stdout = f.read()
             status_dict['stdout'] = stdout[stdout.rindex(rmkx)+len(rmkx):]
           except Exception:

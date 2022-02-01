@@ -10,23 +10,31 @@
       "response": "instance-default-output-schema.json",
       "index": 0
     },
-    "edgetest": {
-      "title": "Edge Test",
-      "description": "Cluster of bots to perform a distributed monitoring ",
-      "request": "instance-edgetest-input-schema.json",
+    "edgetest-basic": {
+      "title": "Edge Test Basic",
+      "description": "Basic URL monitoring configuration",
+      "request": "instance-edgetest-basic-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
       "index": 1
     },
-    "edgetest-slave": {
-      "title": "Edge Test Slave",
-      "shared": true,
-      "software-type": "edgetest",
-      "description": "Cluster of bots to perform a distributed monitoring ",
-      "request": "instance-edgetest-slave-input-schema.json",
+    "edgetest": {
+      "title": "Edge Test [OBSOLETE]",
+      "description": "Cluster of bots to perform a distributed monitoring. OBSOLETE: Use Edge Test Basic.",
+      "request": "instance-edgetest-input-schema.json",
       "response": "instance-default-output-schema.json",
       "serialisation": "json-in-xml",
       "index": 2
+    },
+    "edgetest-slave": {
+      "title": "Edge Test Slave [OBSOLETE]",
+      "shared": true,
+      "software-type": "edgetest",
+      "description": "Cluster of bots to perform a distributed monitoring. OBSOLETE: Use Edge Test Basic.",
+      "request": "instance-edgetest-slave-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "serialisation": "json-in-xml",
+      "index": 3
     }
   }
 }

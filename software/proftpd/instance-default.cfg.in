@@ -1,6 +1,9 @@
 [buildout]
 parts =
   promises
+  cron-service
+  cron-entry-logrotate
+  logrotate-entry-proftpd
   publish-connection-parameter
 
 extends = {{ template_monitor }}
@@ -86,7 +89,7 @@ template = inline:{{ slapparameter_dict['ssh-key'] | indent }}
 
 [proftpd-listen-promise]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = ${:_buildout_section_name_}.py
 config-host = ${proftpd:ipv6}
 config-port = ${proftpd:sftp-port}
@@ -99,7 +102,7 @@ config-port = ${proftpd:sftp-port}
 recipe = slapos.cookbook:wrapper
 wrapper-path =${buildout:bin-directory}/${:_buildout_section_name_}
 command-line =
-  {{ perl_bin }} {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid=${proftpd-userinfo:pw-uid} --gid=${proftpd-userinfo:gr-gid}  --file ${auth-user-file:output}
+  {{ ftpasswd_bin }} --passwd --home=${proftpd:data-dir} --shell=/bin/false --uid=${proftpd-userinfo:pw-uid} --gid=${proftpd-userinfo:gr-gid}  --file ${auth-user-file:output}
 
 [auth-user-file]
 recipe = plone.recipe.command
@@ -137,6 +140,15 @@ recipe =
 instance-promises =
   ${proftpd-listen-promise:name}
 
+[logrotate-entry-proftpd]
+<= logrotate-entry-base
+name = proftpd
+log =
+  ${proftpd:sftp-log}
+  ${proftpd:xfer-log}
+  ${proftpd:ban-log}
+post =
+  test ! -s ${proftpd:pid-file} || kill -HUP $(cat "${proftpd:pid-file}")
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish

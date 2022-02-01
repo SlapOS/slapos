@@ -82,7 +82,7 @@ wrapper-path = ${monitor-directory:bin}/monitor-collect-csv-dump
 
 [monitor-check-memory-usage]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory-usage.py
 config-command = {{ buildout_bin}}/check-computer-memory -db ${monitor-instance-parameter:collector-db} --threshold ${slap-parameter:memory-percent-threshold} --unit percent
 
@@ -90,11 +90,8 @@ config-command = {{ buildout_bin}}/check-computer-memory -db ${monitor-instance-
 recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.toolbox
-file = ${monitor-conf-parameters:promise-output-file}
-content = 
-  from slapos.promise.plugin.check_server_cpu_load import RunPromise
+module = slapos.promise.plugin.check_server_cpu_load
 output = ${directory:plugins}/system-CPU-load-check.py
-mode = 600
 config-cpu-load-threshold = ${slap-parameter:cpu-load-threshold}
 
 [publish-connection-information]

@@ -13,7 +13,13 @@
 {% set test_runner_address_list = [] -%}
 {% set test_runner_enabled = slapparameter_dict['test-runner-enabled'] -%}
 {% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
+{% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
+{% if webdav -%}
+{%   set timerserver_interval = 0 -%}
+{% else -%}
+{%   set timerserver_interval = slapparameter_dict['timerserver-interval'] -%}
+{%- endif %}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {#
@@ -185,7 +191,7 @@ context = key host_dict hosts-parameter:host-dict
 recipe = slapos.recipe.template:jinja2
 mode = 755
 template = inline:#!{{ parameter_dict['dash'] }}/bin/dash
-  export HOSTS=${hosts:rendered}
+  export HOSTS_FILE=${hosts:rendered}
   export LD_PRELOAD={{ parameter_dict['userhosts'] }}:$LD_PRELOAD
   exec "$@"
 rendered = ${directory:bin}/userhosts
@@ -221,7 +227,7 @@ pem = {{dumps(storage_dict.pop(k))}}
 <= run-common
 instance-home = ${directory:instance}
 {% if wsgi -%}
-wrapped-command-line = '{{ bin_directory }}/runwsgi' {% if webdav %}-w{% endif %} {{ ipv4 }}:${:port} '${:configuration-file}'
+wrapped-command-line = '{{ bin_directory }}/runwsgi' {% if webdav %}-w{% endif %} {{ ipv4 }}:${:port} {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %} '${:configuration-file}'
 {% else -%}
 wrapped-command-line = '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 {%- endif %}
@@ -279,11 +285,6 @@ tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% set large_file_threshold = slapparameter_dict['large-file-threshold']  -%}
 thread-amount = {{ thread_amount }}
 webdav = {{ dumps(webdav) }}
-{% if webdav -%}
-{%   set timerserver_interval = 0 -%}
-{% else -%}
-{%   set timerserver_interval = slapparameter_dict['timerserver-interval'] -%}
-{%- endif %}
 wsgi = {{ dumps(wsgi) }}
 timerserver-interval = {{ dumps(timerserver_interval) }}
 
@@ -364,7 +365,7 @@ hash-existing-files =
 recipe =
 {% else -%}
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = {{ name }}.py
 config-host = {{ ipv4 }}
 config-port = {{ port }}
@@ -380,7 +381,7 @@ ipv4-port = {{ port }}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 <= monitor-promise-base
-module = check_socket_listening
+promise = check_socket_listening
 name = {{ zope_tunnel_base_name }}.py
 config-host = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
@@ -391,7 +392,7 @@ config-port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 {% if longrequest_logger_interval > 0 -%}
 [{{ section('promise-check-' ~name ~ '-longrequest-error-log') }}]
 <= monitor-promise-base
-module = check_error_on_zope_longrequest_log
+promise = check_error_on_zope_longrequest_log
 name = {{'check-' ~ name ~ '-longrequest-error-log.py'}}
 config-log-file = {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }}
 config-error-threshold = {{ slapparameter_dict["zope-longrequest-logger-error-threshold"] }}
@@ -511,6 +512,9 @@ command-line-extra =
   --extra_sql_connection_string_list '{{ ','.join(connection_string_list[1:]) }}'
   --zserver {{ test_runner_address_list[0][0] ~ ':' ~ test_runner_address_list[0][1] }}
   --zserver_frontend_url {{ slapparameter_dict['test-runner-apache-url-list'][0] }}
+  {% if test_runner_random_activity_priority is not none %}
+    --random_activity_priority={{ test_runner_random_activity_priority }}
+  {%- endif %}
 
 [{{ section('runTestSuite') }}]
 < = run-test-common
@@ -536,7 +540,7 @@ expected-value =
 
 [{{ section("promise-test-runner-apache-url") }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = ${:_buildout_section_name_}.py
 config-command = ${promise-test-runner-apache-url-executable:path}
 
@@ -545,7 +549,7 @@ config-command = ${promise-test-runner-apache-url-executable:path}
 
 [{{ section('promise-check-computer-memory') }}]
 <= monitor-promise-base
-module = check_command_execute
+promise = check_command_execute
 name = check-computer-memory.py
 config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict["computer-memory-percent-threshold"] }}" --unit percent
 

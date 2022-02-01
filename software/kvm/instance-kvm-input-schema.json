@@ -5,7 +5,7 @@
   "properties": {
     "enable-device-hotplug": {
       "title": "Enable device hotplug mode",
-      "description": "If yes, this will allow to Create devices like CPU and Memory in hotplug mode without restart the VM. Operatin System should be configured to Online new created devices.",
+      "description": "Allows to increase amount of RAM (ram-size) and CPU (cmp-count) without restart of the VM process, up to defined maximums (ram-max-size and cpu-max-count). Operation system have to support online addition of RAM and CPU.",
       "type": "boolean",
       "default": false
     },
@@ -13,7 +13,7 @@
       "title": "RAM size",
       "description": "RAM size, in MB.",
       "type": "integer",
-      "default": 1024,
+      "default": 4096,
       "minimum": 1024,
       "multipleOf": 512
     },
@@ -21,6 +21,7 @@
       "title": "Maximum RAM size, in MB",
       "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
       "type": "integer",
+      "default": 4608,
       "minimum": 1024,
       "multipleOf": 512
     },
@@ -42,7 +43,7 @@
       "title": "Disk size",
       "description": "Disk size, in GB.",
       "type": "integer",
-      "default": 10,
+      "default": 40,
       "minimum": 1
     },
     "disk-type": {
@@ -101,7 +102,8 @@
       "title": "CPU count",
       "description": "Number of CPU cores.",
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "default": 2
     },
     "cpu-max-count": {
       "title": "Maximum CPU amount",
@@ -124,6 +126,22 @@
       "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
       "type": "string",
       "default": "host"
+    },
+    "network-adapter": {
+      "title": "Network adapter",
+      "description": "Network adapter provided to the guest. Allows to support legacy guests, which do not have drivers for default virtio-net-pci.",
+      "type": "string",
+      "default": "virtio-net-pci",
+      "enum": [
+        "virtio-net-pci",
+        "e1000",
+        "ne2k_isa",
+        "ne2k_pci",
+        "pcnet",
+        "rtl8139",
+        "usb-net",
+        "vmxnet3"
+      ]
     },
     "nbd-host": {
       "title": "NBD hostname",
