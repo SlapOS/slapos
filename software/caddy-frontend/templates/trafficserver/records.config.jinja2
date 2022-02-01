@@ -18,6 +18,12 @@ LOCAL proxy.local.incoming_ip_to_bind STRING {{ ats_configuration['local-ip'] }}
 CONFIG proxy.config.log.logfile_dir STRING {{ ats_directory['log'] }}
 # Never change Server header
 CONFIG proxy.config.http.response_server_enabled INT 0
+# Handle Via header
+CONFIG proxy.config.http.insert_request_via_str INT 1
+CONFIG proxy.config.http.request_via_str STRING trafficserver-{{ ats_configuration['version'] }}
+CONFIG proxy.config.http.insert_response_via_str INT 1
+CONFIG proxy.config.http.response_via_str STRING ATS-RESPONSE
+
 # Implement RFC 5861 with core
 CONFIG proxy.config.http.cache.open_write_fail_action INT 2
 CONFIG proxy.config.body_factory.template_sets_dir STRING  {{ ats_configuration['templates-dir'] }}
@@ -52,13 +58,6 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 #    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
 CONFIG proxy.config.http.server_ports STRING {{ ats_configuration['local-ip'] + ':' + ats_configuration['input-port'] }}
-
-##############################################################################
-# Via: headers. Docs:
-#     https://docs.trafficserver.apache.org/records.config#proxy-config-http-insert-response-via-str
-##############################################################################
-CONFIG proxy.config.http.insert_request_via_str INT 1
-CONFIG proxy.config.http.insert_response_via_str INT 0
 
 ##############################################################################
 # Parent proxy configuration, in addition to these settings also see parent.config. Docs:
