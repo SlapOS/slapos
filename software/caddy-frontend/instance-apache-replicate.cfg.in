@@ -286,7 +286,7 @@ config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 software-type = {{frontend_type}}
-return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url
+return = slave-instance-information-list monitor-base-url backend-client-csr-url kedifa-csr-url csr-certificate backend-haproxy-statistic-url node-information-json
 
 {#- Send only needed parameters to frontend nodes #}
 {%- set base_node_configuration_dict = {} %}
@@ -376,6 +376,7 @@ kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
 {% for frontend in frontend_list %}
   {% set section_part = '${request-' + frontend %}
 {{ frontend }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+{{ frontend }}-node-information-json = ${frontend-information:{{ frontend }}-node-information-json}
 {% endfor %}
 {% if not aibcc_enabled %}
 {% for frontend in frontend_list %}
@@ -461,6 +462,12 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
+[frontend-information]
+{% for frontend in frontend_list %}
+  {% set section_part = '${request-' + frontend %}
+{{ frontend }}-node-information-json = {{ section_part }}:connection-node-information-json}
+{% endfor %}
+
 [dynamic-publish-slave-information]
 < = jinja2-template-base
 template = {{ software_parameter_dict['profile_replicate_publish_slave_information'] }}
@@ -468,6 +475,7 @@ filename = dynamic-publish-slave-information.cfg
 extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
+    section frontend_information frontend-information
     section rejected_slave_information rejected-slave-information
     section active_slave_instance_dict active-slave-instance
     section warning_slave_information warning-slave-information
