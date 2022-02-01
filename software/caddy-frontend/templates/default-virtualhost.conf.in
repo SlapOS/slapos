@@ -21,6 +21,9 @@
     # workaround for lost connection to haproxy by reconnecting
     try_duration 3s
     try_interval 250ms
+    {#- Theoretically headers can be separated by commas or multuplied, which RFC? SOURCE? #}
+    header_upstream +Via "{proto} CADDY-REQUEST"
+    header_downstream +Via "HTTP/X.X-NOT-IMPLEMENTED_proto_response CADDY-RESPONSE"
 {%- endmacro %} {# proxy_header #}
 
 {%- macro hsts_header(tls) %}
