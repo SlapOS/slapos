@@ -28,7 +28,7 @@
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
-{% for zope_parameter_dict in zope_partition_dict.values() -%}
+{% for zope_parameter_dict in six.itervalues(zope_partition_dict) -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
 {%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
@@ -49,7 +49,7 @@ config-computer-memory-percent-threshold = {{ dumps(monitor_dict.get('computer-m
 name = {{ name }}
 software-type = {{ software_type }}
 return = {{ ' '.join(ret) }}
-{% for ret, publish in ret.iteritems() -%}
+{% for ret, publish in six.iteritems(ret) -%}
 {%   if publish -%}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}') %}
 {%   endif -%}
@@ -58,10 +58,10 @@ return = {{ ' '.join(ret) }}
 {%   endif -%}
 {% endfor -%}
 {{ root_common.sla(name) }}
-{% for k, v in config.iteritems() -%}
+{% for k, v in six.iteritems(config) -%}
 config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
-{% for k, v in key_config.iteritems() -%}
+{% for k, v in six.iteritems(key_config) -%}
 config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 config-name = {{ name }}
@@ -177,7 +177,7 @@ connection-url = smtp://127.0.0.2:0/
 {% endfor -%}
 {% do assert(len(mountpoints) == len(zodb_dict)) -%}
 {% set neo = [] -%}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 {%     set ((name, server_dict),) = server_dict.items() -%}
 {%     do neo.append(server_dict.get('cluster')) -%}
@@ -196,7 +196,7 @@ connection-url = smtp://127.0.0.2:0/
 
 [request-zodb-base]
 config-zodb-dict = {{ dumps(zodb_dict) }}
-{% for server_type, server_dict in storage_dict.iteritems() -%}
+{% for server_type, server_dict in six.iteritems(storage_dict) -%}
 {%   if server_type == 'neo' -%}
 config-neo-cluster = ${publish-early:neo-cluster}
 config-neo-name = {{ server_dict.keys()[0] }}
@@ -272,7 +272,7 @@ software-type = zope
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
-{% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
+{% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
@@ -461,7 +461,7 @@ recipe = slapos.cookbook:publish.serialised
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
-hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+hosts-dict = {{ '${' ~ next(iter(zope_address_list_id_dict))[0] ~ ':connection-hosts-dict}' }}
 {% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
