@@ -150,7 +150,7 @@ defaults
 {% set family_path_routing_dict = parameter_dict['family-path-routing-dict'] %}
 {% set path_routing_list = parameter_dict['path-routing-list'] %}
 
-{% for name, (port, _, certificate_authentication, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
+{% for name, (port, _, certificate_authentication, backend_list) in sorted(six.iteritems(parameter_dict['backend-dict'])) -%}
 listen family_{{ name }}
 {%-  if parameter_dict.get('ca-cert') -%}
 {%-    set ssl_auth = ' ca-file ' ~ parameter_dict['ca-cert'] ~ ' verify' ~ ( ' required' if certificate_authentication else ' optional' ) ~ ' crl-file ' ~ parameter_dict['crl'] %}
@@ -192,7 +192,7 @@ listen family_{{ name }}
 {% endfor %}
 
 
-{% for (ip, port), (_, backend_dict) in sorted(parameter_dict['zope-virtualhost-monster-backend-dict'].iteritems()) -%}
+{% for (ip, port), (_, backend_dict) in sorted(six.iteritems(parameter_dict['zope-virtualhost-monster-backend-dict'])) -%}
 {%   set group_name = 'testrunner_' ~ loop.index0 %}
 frontend frontend_{{ group_name }}
   bind {{ ip }}:{{ port }} {{ bind_ssl_crt }}
