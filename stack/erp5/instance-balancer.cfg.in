@@ -38,7 +38,7 @@ mode = 644
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
-{%   set hash = hashlib.md5(frontend_caucase_url).hexdigest() -%}
+{%   set hash = hashlib.md5(six.ensure_binary(frontend_caucase_url)).hexdigest() -%}
 {%   do frontend_caucase_url_hash_list.append(hash) -%}
 {%   set data_dir = '${directory:client-cert-ca}/%s' % hash -%}
 {{   caucase.updater(
@@ -120,9 +120,10 @@ update-command = ${:command}
 {% set haproxy_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
 {% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
-{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
+{% import "functools" as functools %}
+{% set next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port'])) -%}
 {% for family_name, parameter_id_list in sorted(
-  slapparameter_dict['zope-family-dict'].iteritems()) -%}
+  six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
 {%   set zope_family_address_list = [] -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
 {%   set has_webdav = [] -%}
@@ -306,7 +307,7 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
-config-port = {{ haproxy_dict.values()[0][0] }}
+config-port = {{ list(haproxy_dict.values())[0][0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
