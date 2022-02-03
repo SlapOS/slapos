@@ -81,7 +81,6 @@ trusted-proxy 0.0.0.0
 {%   endif %}
 
 {% endif -%}
-
 {% set sql_connection_string = parameter_dict.get('sql-connection-string') -%}
 {% if sql_connection_string -%}
 {%   set bt5_repository_url = [] -%}
