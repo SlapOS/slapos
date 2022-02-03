@@ -83,6 +83,15 @@ hello = {{ slapparameter_dict.get('hello', 15) }}
 min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
 encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 same-country = {{ slapparameter_dict.get('same-country', '') }}
+{%- set community = slapparameter_dict.get('community-conf') %}
+{%- ifcommunity %}
+community-path = ${re6st-community-conf:output}
+
+[re6st-community-conf]
+recipe = slapos.recipe.template
+inline = {{ dumps(community) }}
+output = ${re6stnet-dirs:conf}/community.conf
+{%- endif %}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
