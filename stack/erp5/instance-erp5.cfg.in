@@ -28,7 +28,7 @@
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
-{% for zope_parameter_dict in list(zope_partition_dict.values()) -%}
+{% for zope_parameter_dict in six.itervalues(zope_partition_dict) -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
 {%   do zope_parameter_dict.setdefault('instance-count', 1) -%}
@@ -272,7 +272,7 @@ software-type = zope
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
-{% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
+{% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set promise_software_url_section_name = 'promise-software-url' ~ partition_name -%}
@@ -461,7 +461,7 @@ recipe = slapos.cookbook:publish.serialised
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
-hosts-dict = {{ '${' ~ list(zope_address_list_id_dict)[0] ~ ':connection-hosts-dict}' }}
+hosts-dict = {{ '${' ~ next(iter(zope_address_list_id_dict)) ~ ':connection-hosts-dict}' }}
 {% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}

@@ -307,7 +307,7 @@ certificate-and-key = ${directory:etc}/certificate-and-key-generated.pem
 promise = check_socket_listening
 name = haproxy.py
 config-host = {{ ipv4 }}
-config-port = {{ list(haproxy_dict.values())[0][0] }}
+config-port = {{ next(six.itervalues(haproxy_dict))[0] }}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
