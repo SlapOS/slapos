@@ -83,12 +83,22 @@ hello = {{ slapparameter_dict.get('hello', 15) }}
 min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
 encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 same-country = {{ slapparameter_dict.get('same-country', '') }}
+{% if slapparameter_dict.get('community-conf', '') %}
+community-path = ${re6st-community-conf:output}
+{% endif %}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['template-re6st-registry-conf'] }}
 rendered = ${re6stnet-dirs:conf}/registry.conf
 context = section parameter_dict re6st-registry-conf-dict
+
+{% if slapparameter_dict.get('community-conf', '') %}
+[re6st-community-conf]
+recipe = slapos.recipe.template
+inline = {{ dumps(slapparameter_dict.get('community-conf', '')) }}
+output = ${re6stnet-dirs:conf}/community.conf
+{% endif %}
 
 depends = ${re6st-compat:recipe}
 [re6st-compat]
