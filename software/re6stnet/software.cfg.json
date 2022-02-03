@@ -6,6 +6,7 @@
     "default": {
       "title": "Default",
       "description": "Re6st registry",
+      "serialisation": "json-in-xml",
       "request": "instance-re6stnet-input-schema.json",
       "response": "instance-re6stnet-output-schema.json",
       "index": 0

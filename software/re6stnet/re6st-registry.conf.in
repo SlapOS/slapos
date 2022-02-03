@@ -30,3 +30,6 @@ max-clients {{ parameter_dict['max-clients'] }}
 {% if parameter_dict.get('same-country') -%}
 same-country {{ parameter_dict['same-country'] }}
 {% endif -%}
+{% if parameter_dict.get('community-path') -%}
+community {{ parameter_dict['community-path'] }}
+{% endif -%}
