@@ -64,7 +64,7 @@ def main():
         if response.code == 200:
           static_dict = json.loads(response.read())
           activity_list = []
-          for _, value in static_dict.iteritems():
+          for _, value in six.iteritems(static_dict):
             activity_list += value['line_list']
           if len(activity_list) == 0:
             break
@@ -181,7 +181,7 @@ def main():
 
   try:
     test_result = tool.createTestResult(revision = revision,
-                                        test_name_list = test_line_dict.keys(),
+                                        test_name_list = list(test_line_dict),
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
