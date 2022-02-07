@@ -250,7 +250,7 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-globalstate
 frequency = */2 * * * *
-command = {{ bin_directory }}/randomsleep 20 && ${monitor-globalstate-wrapper:wrapper-path}
+command = {{ randomsleep }} 20 && ${monitor-globalstate-wrapper:wrapper-path}
 
 [monitor-globalstate-first-run]
 recipe = plone.recipe.command
@@ -262,14 +262,14 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor-configurator
 frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 10 && ${monitor-configurator-wrapper:wrapper-path}
+command = {{ randomsleep }} 10 && ${monitor-configurator-wrapper:wrapper-path}
 
 [monitor-collect-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = monitor_collect
 frequency = * * * * *
-command = {{ bin_directory }}/randomsleep 40 && ${monitor-collect-wrapper:wrapper-path}
+command = {{ randomsleep }} 40 && ${monitor-collect-wrapper:wrapper-path}
 
 [logrotate-entry-monitor-data]
 recipe = collective.recipe.template
