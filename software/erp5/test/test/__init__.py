@@ -29,15 +29,13 @@ from __future__ import absolute_import
 import json
 import os
 
-import six
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
 _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..',
-                     'software%s.cfg' % ("-py3" if six.PY3 else ""))))
+        os.path.join(os.path.dirname(__file__), '..', '..', 'software%s.cfg' % (
+          '-py3' if os.environ['SLAPOS_SR_TEST_NAME'] == 'erp5-py3' else ''))))
 
 
 setup_module_executed = False
