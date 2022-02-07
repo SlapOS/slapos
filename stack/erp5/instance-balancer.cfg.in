@@ -120,7 +120,6 @@ update-command = ${:command}
 {% set haproxy_dict = {} -%}
 {% set zope_virtualhost_monster_backend_dict = {} %}
 {% set test_runner_url_dict = {} %} {# family_name => list of URLs #}
-{% import "functools" as functools %}
 {% set next_port = functools.partial(next, itertools.count(slapparameter_dict['tcpv4-port'])) -%}
 {% for family_name, parameter_id_list in sorted(
   six.iteritems(slapparameter_dict['zope-family-dict'])) -%}
