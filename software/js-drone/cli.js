@@ -111,7 +111,6 @@ function cli() {
     altitude(altitude)
     speed(speed)
     subscribe
-    stop
     gotoCoord(latitude, longitude)
     reboot
     exit
