@@ -569,9 +569,18 @@ class TestHandler(BaseHTTPRequestHandler):
           header_dict[header] = value.strip()
     if response is None:
       if 'x-reply-body' not in self.headers.dict:
+        headers_dict = dict()
+        for header in self.headers.keys():
+          content = self.headers.getheaders(header)
+          if len(content) == 0:
+            headers_dict[header] = None
+          elif len(content) == 1:
+            headers_dict[header] = content[0]
+          else:
+            headers_dict[header] = content
         response = {
           'Path': self.path,
-          'Incoming Headers': self.headers.dict
+          'Incoming Headers': headers_dict
         }
         response = json.dumps(response, indent=2)
       else:
