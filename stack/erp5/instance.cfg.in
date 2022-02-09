@@ -178,7 +178,6 @@ template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
-    import base64 base64
 
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until

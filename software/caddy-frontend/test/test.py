@@ -485,6 +485,9 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
 class TestHandler(BaseHTTPRequestHandler):
   identification = None
   configuration = {}
+  # override Server header response
+  server_version = "TestBackend"
+  sys_version = ""
 
   def log_message(self, *args):
     if os.environ.get('SLAPOS_TEST_DEBUG'):
@@ -842,6 +845,19 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       raise
     except Exception as e:
       self.fail(e)
+
+  def assertResponseHeaders(self, result):
+    headers = result.headers.copy()
+    self.assertKeyWithPop('Date', headers)
+    # drop vary-keys
+    headers.pop('Connection', None)
+    headers.pop('Content-Length', None)
+    headers.pop('Keep-Alive', None)
+    headers.pop('Transfer-Encoding', None)
+
+    self.assertEqual('TestBackend', headers.pop('Server', ''))
+
+    return headers
 
   def assertLogAccessUrlWithPop(self, parameter_dict):
     log_access_url = parameter_dict.pop('log-access-url')
@@ -3612,17 +3628,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
+    headers = self.assertResponseHeaders(result)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
 
     self.assertEqual(
       {
@@ -3654,18 +3661,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = result.headers.copy()
+    headers = self.assertResponseHeaders(result)
 
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
     self.assertEqual(
       {
         'Content-type': 'application/json',
@@ -3712,18 +3710,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
+    headers = self.assertResponseHeaders(result)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
     self.assertEqual(
       {
         'Content-type': 'application/json',
@@ -3743,7 +3731,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertEqual(httplib.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTPS/test')
 
-    headers = result.headers.copy()
+    self.assertResponseHeaders(result)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3753,8 +3741,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqual(httplib.OK, result.status_code)
     self.assertEqualResultJson(result, 'Path', '/HTTP/test')
-
-    headers = result.headers.copy()
+    self.assertResponseHeaders(result)
 
   def test_enable_cache(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
@@ -3771,17 +3758,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = result.headers.copy()
+    headers = self.assertResponseHeaders(result)
 
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
 
     self.assertEqual(
       {
@@ -3973,17 +3952,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
-    headers = result.headers.copy()
+    headers = self.assertResponseHeaders(result)
 
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
 
     self.assertEqual(
       {
@@ -4118,17 +4089,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = result.headers.copy()
+    headers = self.assertResponseHeaders(result)
 
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
 
     self.assertEqual(
       {
@@ -4165,17 +4128,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = result.headers.copy()
+    headers = self.assertResponseHeaders(result)
 
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
     self.assertKeyWithPop('Age', headers)
-
-    # drop keys appearing randomly in headers
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Content-Length', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
 
     self.assertEqual(
       {
@@ -4206,16 +4161,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
+    headers = self.assertResponseHeaders(result)
 
     self.assertEqual(
       {
@@ -4240,17 +4186,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
+    headers = self.assertResponseHeaders(result)
     self.assertEqual(
       {
         'Content-type': 'application/json',
@@ -5017,17 +4953,7 @@ class TestSlaveGlobalDisableHttp2(TestSlave):
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
-    headers = result.headers.copy()
-
-    self.assertKeyWithPop('Server', headers)
-    self.assertKeyWithPop('Date', headers)
-
-    # drop vary-keys
-    headers.pop('Content-Length', None)
-    headers.pop('Transfer-Encoding', None)
-    headers.pop('Connection', None)
-    headers.pop('Keep-Alive', None)
-
+    headers = self.assertResponseHeaders(result)
     self.assertEqual(
       {
         'Content-type': 'application/json',

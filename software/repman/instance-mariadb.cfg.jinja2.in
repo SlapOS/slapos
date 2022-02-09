@@ -214,16 +214,10 @@ wait-for-files =
 {{ supervisord_lib.supervisord_program("mariadb", maradb_program_dict) }}
 {% do part_list.append("supervisord-mariadb") %}
 
-[odbc-ini-text]
-text = {{ dumps(base64.b64encode( slapparameter_dict.get('odbc-ini', '').encode() )) }}
-
 [{{ section('odbc-ini') }}]
-< = jinja2-template-base
-rendered = ${directory:etc}/odbc.ini
-template = inline:{% raw -%}
-  {{ parameter_dict['text'].decode('base64') }}
-  {%- endraw %}
-context = section parameter_dict odbc-ini-text
+recipe = slapos.recipe.template
+output = ${directory:etc}/odbc.ini
+inline = {{ dumps(slapparameter_dict.get('odbc-ini', '')) }}
 
 [{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
