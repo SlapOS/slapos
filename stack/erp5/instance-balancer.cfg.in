@@ -205,7 +205,7 @@ template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
 context =
   section parameter_dict haproxy-cfg-parameter-dict
-  import urlparse urlparse
+  import urllib_parse six.moves.urllib.parse
 extensions = jinja2.ext.do
 
 [haproxy-reload]
