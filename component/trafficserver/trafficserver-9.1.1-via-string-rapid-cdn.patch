@@ -1,0 +1,46 @@
+diff -ur trafficserver-9.1.1.orig/proxy/http/HttpTransactHeaders.cc trafficserver-9.1.1/proxy/http/HttpTransactHeaders.cc
+--- trafficserver-9.1.1.orig/proxy/http/HttpTransactHeaders.cc	2022-02-09 12:21:56.591350540 +0100
++++ trafficserver-9.1.1/proxy/http/HttpTransactHeaders.cc	2022-03-07 13:02:31.503849619 +0100
+@@ -758,15 +758,6 @@
+     write_hdr_protocol_stack(via_string, via_limit - via_string, ProtocolStackDetail::Standard, proto_buf.data(), n_proto);
+   *via_string++ = ' ';
+ 
+-  via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
+-
+-  *via_string++ = '[';
+-  memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
+-  via_string += TS_UUID_STRING_LEN;
+-  *via_string++ = ']';
+-  *via_string++ = ' ';
+-  *via_string++ = '(';
+-
+   memcpy(via_string, s->http_config_param->proxy_request_via_string, s->http_config_param->proxy_request_via_string_len);
+   via_string += s->http_config_param->proxy_request_via_string_len;
+ 
+@@ -793,7 +784,6 @@
+     }
+   }
+ 
+-  *via_string++ = ')';
+   *via_string   = 0;
+ 
+   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
+@@ -848,10 +838,6 @@
+     write_hdr_protocol_stack(via_string, via_limit - via_string, ProtocolStackDetail::Standard, proto_buf.data(), n_proto);
+   *via_string++ = ' ';
+ 
+-  via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
+-  *via_string++ = ' ';
+-  *via_string++ = '(';
+-
+   memcpy(via_string, s->http_config_param->proxy_response_via_string, s->http_config_param->proxy_response_via_string_len);
+   via_string += s->http_config_param->proxy_response_via_string_len;
+ 
+@@ -877,7 +863,6 @@
+     }
+   }
+ 
+-  *via_string++ = ')';
+   *via_string   = 0;
+ 
+   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
