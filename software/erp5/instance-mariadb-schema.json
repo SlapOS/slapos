@@ -111,6 +111,16 @@
       "default": false,
       "type": "boolean"
     },
+    "character-set-server": {
+      "description": "The server default character set",
+      "default": "utf8mb4",
+      "type": "string"
+    },
+    "collation-server": {
+      "description": "The server default collation",
+      "default": "utf8mb4_general_ci",
+      "type": "string"
+    },
     "ssl": {
       "description": "Enable and define SSL support for network connections",
       "default": {},
