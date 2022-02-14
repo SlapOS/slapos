@@ -1,0 +1,74 @@
+#############################
+#
+# Deploy beremiz' runtime  instance
+#
+#############################
+[buildout]
+parts =
+  directory
+  publish-connection-parameter
+  download-plc
+  beremiz-runtime
+#  beremiz-runtime-promise
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+extends = {{ template_monitor }}
+
+
+[download-plc]
+recipe = plone.recipe.command
+update-command = ${:command}
+url = ${instance-parameter:configuration.runtime_plc_url}
+md5sum = ${instance-parameter:configuration.runtime_plc_md5sum}
+# XXX:  do check md5sum !
+command = 
+  wget ${:url} -O plc.tgz
+  tar zxvf plc.tgz 
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.runtime_plc_url =
+configuration.runtime_plc_md5sum =
+# XXX: we can get rid of plc_name in future
+configuration.runtime_plc_name = 
+configuration.autostart = 1
+configuration.interface = 0.0.0.0
+# XXX: randomly generated one on slap's interface?
+configuration.port = 61248
+configuration.plc_runtime_path = ${directory:home}/${:configuration.runtime_plc_name}
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+log = ${:var}/log
+
+[beremiz-runtime]
+logfile = ${directory:log}/beremiz-runtime.log
+recipe = slapos.cookbook:wrapper
+command-line =
+    {{ buildout['bin-directory'] }}/pythonwitheggs {{ buildout['directory'] }}/src/beremiz/Beremiz_service.py -a ${instance-parameter:configuration.autostart} -p ${instance-parameter:configuration.port} -i ${instance-parameter:configuration.interface} -x 1 ${directory:home}/${instance-parameter:configuration.runtime_plc_name}
+wrapper-path = ${directory:service}/beremiz-runtime
+
+[beremiz-runtime-promise]
+<= monitor-promise-base
+module = check_port_listening
+name = beremiz-runtime.py
+config-hostname= ${instance-parameter:configuration.interface}
+config-port    = ${instance-parameter:configuration.port}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+port = ${instance-parameter:configuration.port}
+interface = ${instance-parameter:configuration.interface}
