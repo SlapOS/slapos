@@ -132,6 +132,7 @@ csr_work_path = ${directory:tmp}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
+  [ -f {:csr_id_path} ] && exit 0
   {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ caucase_url }} \
     --ca-crt ${kedifa-config:ca-certificate} \
