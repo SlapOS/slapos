@@ -531,6 +531,16 @@ command =
     --send-csr {{ backend_haproxy_configuration['csr'] }} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
+[store-backend-haproxy-csr]
+recipe = plone.recipe.command
+
+csr_path = {{ directory['csr_id'] }}/backend-haproxy-csr.pem
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  cp ${backend-client-caucase-updater-provided-csr:rendered} ${:csr_path}
+
 ##<Backend haproxy>
 
 [buildout]
@@ -571,6 +581,16 @@ command =
     --mode service \
     --send-csr {{ kedifa_configuration['csr'] }} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
+
+[store-csr]
+recipe = plone.recipe.command
+
+csr_path = {{ directory['csr_id'] }}/csr.pem
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  cp ${caucase-updater-provided-csr:rendered} ${:csr_path}
 
 [certificate-csr_id]
 recipe = plone.recipe.command
@@ -641,7 +661,9 @@ config-port = ${expose-csr_id-configuration:port}
 [expose-csr_id]
 depends =
   ${store-csr_id:command}
+  ${store-csr:command}
   ${store-backend-haproxy-csr_id:command}
+  ${store-backend-haproxy-csr:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
   -c ${expose-csr_id-template:rendered}
