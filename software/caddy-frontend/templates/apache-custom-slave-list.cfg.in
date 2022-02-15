@@ -523,6 +523,7 @@ csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
+  [ -f ${:csr_id_path} ] && exit 0
   {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ backend_haproxy_configuration['caucase-url'] }} \
     --ca-crt {{ backend_haproxy_configuration['cas-ca-certificate'] }} \
@@ -573,6 +574,7 @@ csr_work_path = {{ directory['tmp'] }}/${:_buildout_section_name_}
 stop-on-error = False
 update-command = ${:command}
 command =
+  [ -f ${:csr_id_path} ] && exit 0
   {{ software_parameter_dict['bin_directory'] }}/caucase \
     --ca-url {{ kedifa_configuration['caucase-url'] }} \
     --ca-crt {{ kedifa_configuration['cas-ca-certificate'] }} \
