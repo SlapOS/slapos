@@ -113,6 +113,16 @@ stop-on-error = True
      template_csr='${kedifa-csr:template-csr}'
 )}}
 
+[store-csr]
+recipe = plone.recipe.command
+
+csr_path = ${directory:csr_id}/csr.pem
+
+stop-on-error = False
+update-command = ${:command}
+command =
+  cp ${caucase-updater-csr:csr} ${:csr_path}
+
 [store-csr_id]
 recipe = plone.recipe.command
 
@@ -199,7 +209,9 @@ config-host = ${expose-csr_id-configuration:ip}
 config-port = ${expose-csr_id-configuration:port}
 
 [expose-csr_id]
-depends = ${store-csr_id:command}
+depends =
+  ${store-csr_id:command}
+  ${store-csr:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
   -c ${expose-csr_id-template:rendered}
