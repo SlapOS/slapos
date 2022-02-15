@@ -1728,7 +1728,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
         'enable_cache': True,
         'disable-via-header': True,
       },
-      'enable_cache-https-only': {
+      'enable_cache-https-only-false': {
         'url': cls.backend_url,
         'https-only': False,
         'enable_cache': True,
@@ -3845,8 +3845,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin):
       result.headers['Location']
     )
 
-  def test_enable_cache_https_only(self):
-    parameter_dict = self.assertSlaveBase('enable_cache-https-only')
+  def test_enable_cache_https_only_false(self):
+    parameter_dict = self.assertSlaveBase('enable_cache-https-only-false')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
