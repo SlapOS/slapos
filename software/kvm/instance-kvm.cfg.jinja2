@@ -879,6 +879,7 @@ ipv6-network-info =
 
 
 {% if use_tap and slap_configuration.get('tap-ipv4-addr') -%}
+{%   do part_list.append('network-config-ipv4') %}
 [network-config-ipv4]
 recipe = plone.recipe.command
 filename = netconfig.sh
