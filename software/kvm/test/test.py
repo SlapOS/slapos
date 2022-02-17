@@ -443,6 +443,12 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, InstanceTestCase):
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+    # check that expected files to configure the VM are exposed by the instance
+    self.assertEqual(
+      ['delDefaultIface', 'netconfig.sh'],
+      sorted(os.listdir(os.path.join(
+        self.computer_partition_root_path, 'srv', 'public')))
+    )
 
 
 @skipUnlessKvm
