@@ -1,0 +1,69 @@
+# parameters required by the configuration instance
+[instance-parameter]
+matomo = ${:document-root}
+admin-user = admin
+admin-password = admin
+trusted-domain-list = 
+  [${apache-php-configuration:ip}]:${apache-php-configuration:port}
+  ${slap-parameter:instance.trusted-domain-1}
+  ${slap-parameter:instance.trusted-domain-2}
+  ${slap-parameter:instance.trusted-domain-3}
+
+trusted-proxy-list = ${slap-parameter:instance.trusted-proxy-list}
+cli-url = ${slap-parameter:instance.cli-url}
+    
+#php.ini parameters
+php.memory_limit = 512M
+php.date.timezone = Europe/Paris
+php.upload_max_filesize = 10240M
+php.post_max_size = 10240M
+php.session.cookie_secure = True
+php.max_execution_time = 1800
+php.max_input_time = 3600
+php.output_buffering = 'Off'
+php.max_file_uploads = 100
+
+# Instance configuration
+collabora-url = ${slap-parameter:instance.collabora-url}
+stun-server = ${slap-parameter:instance.stun-server}
+turn-server = ${slap-parameter:instance.turn-server}
+turn-secret = ${slap-parameter:instance.turn-secret}
+
+[php-bin]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php
+command-line = ${instance-parameter:php-bin} -c ${php.ini-conf:rendered}
+
+[publish-connection-information]
+admin-user = ${instance-parameter:admin-user}
+admin-password = ${instance-parameter:admin-password}
+
+[matomo-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_apache_httpd }}
+rendered = ${directory:apache.d}/matomo.conf
+context =
+  section parameter_dict apache-php-configuration
+
+[matomo-install.sh]
+recipe = slapos.recipe.template:jinja2
+template = {{ matomo_install_sh }}
+rendered = ${directory:scripts}/matomo-install
+context =
+  section parameter_dict instance-parameter
+depends =
+  ${matomo-apache-httpd:recipe}
+
+[slap-parameter]
+instance.collabora-url = https://collabora.host.vifib.net/
+instance.stun-server = turn.vifib.com:5349
+instance.turn-server =
+instance.turn-secret =
+
+instance.cli-url = ${apache-php-configuration:url}
+instance.trusted-domain-1 =
+instance.trusted-domain-2 =
+instance.trusted-domain-3 =
+instance.trusted-proxy-list =
+
+
