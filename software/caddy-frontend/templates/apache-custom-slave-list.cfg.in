@@ -453,8 +453,10 @@ recipe = slapos.cookbook:publish.serialised
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list, sort_keys=True) }}
 {%- endif %}
 monitor-base-url = {{ monitor_base_url }}
-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/csr_id.txt
-backend-client-csr_id-url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}/backend-haproxy-csr_id.txt
+csr_id-url = ${expose-csr_id:url}/csr_id.txt
+backend-client-csr_id-url = ${expose-csr_id:url}/backend-haproxy-csr_id.txt
+kedifa-csr-url = ${expose-csr_id:url}/${store-kedifa-csr:filename}
+backend-client-csr-url = ${expose-csr_id:url}/${store-backend-haproxy-csr:filename}
 csr_id-certificate = ${get-csr_id-certificate:certificate}
 {%-   set furled = furl_module.furl(backend_haproxy_configuration['statistic-frontend-secure_access']) %}
 {%-   do furled.set(username = backend_haproxy_configuration['statistic-username']) %}
@@ -532,6 +534,24 @@ command =
     --send-csr {{ backend_haproxy_configuration['csr'] }} > ${:csr_work_path} && \
   cut -d ' ' -f 1 ${:csr_work_path} > ${:csr_id_path}
 
+[store-csr]
+recipe = plone.recipe.command
+stop-on-error = False
+update-command = ${:command}
+csr_path = {{ directory['csr_id'] }}/${:filename}
+command =
+  ln -sf ${:csr} ${:csr_path}
+
+[store-backend-haproxy-csr]
+<= store-csr
+filename = backend-haproxy-csr.pem
+csr = {{ backend_haproxy_configuration['csr'] }}
+
+[store-kedifa-csr]
+<= store-csr
+filename = kedifa-csr.pem
+csr = {{ kedifa_configuration['csr'] }}
+
 ##<Backend haproxy>
 
 [buildout]
@@ -551,7 +571,6 @@ parts +=
     publish-caddy-information
     tunnel-6to4-base-http_port
     tunnel-6to4-base-https_port
-    expose-csr_id
     promise-expose-csr_id-ip-port
 
 cache-access = {{ cache_access }}
@@ -643,10 +662,11 @@ config-port = ${expose-csr_id-configuration:port}
 [expose-csr_id]
 depends =
   ${store-csr_id:command}
-  ${store-backend-haproxy-csr_id:command}
+  ${store-kedifa-csr:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
   -c ${expose-csr_id-template:rendered}
+url = https://[${expose-csr_id-configuration:ip}]:${expose-csr_id-configuration:port}
 
 wrapper-path = {{ directory['service'] }}/expose-csr_id
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg

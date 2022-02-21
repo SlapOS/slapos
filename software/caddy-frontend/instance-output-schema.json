@@ -50,6 +50,10 @@
       "description": "URL on which KeDiFa publishes its csr_id sent to caucase.",
       "type": "string"
     },
+    "kedifa-csr-url": {
+      "description": "URL on which KeDiFa publishes its CSR sent to caucase.",
+      "type": "string"
+    },
     "kedifa-csr_id-certificate": {
       "description": "Certificate used to serve data on kedifa-csr_id-url.",
       "type": "string"
@@ -60,6 +64,14 @@
     },
     "caddy-frontend-N-csr_id-url": {
       "description": "URL on which frontend node number N publishes its csr_id sent to caucase.",
+      "type": "string"
+    },
+    "caddy-frontend-N-kedifa-csr-url": {
+      "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase.",
+      "type": "string"
+    },
+    "caddy-frontend-N-backend-client-csr-url": {
+      "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase.",
       "type": "string"
     },
     "caddy-frontend-N-csr_id-certificate": {
