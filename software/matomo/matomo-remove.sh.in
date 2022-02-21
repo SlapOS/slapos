@@ -1,0 +1,16 @@
+#!/bin/bash
+#remove all files in srv/www/matomo to srv/www
+#so we can directly access by url root
+
+set -e
+set -x
+
+if [ ! -d parameter_dict['document-root'] ]; then
+  exit 1;
+fi
+
+cd {{ parameter_dict['document-root'] }}
+mv ./matomo/* .
+rmdir ./matomo
+
+
